@@ -37,7 +37,6 @@ protected:
 
     void logWarning(const char* msg, const char *op) const;
     void logNonFiniteValueWarning() const;
-    void sendLogEvent(Metric::String name, double value) const;
 };
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
@@ -86,7 +85,7 @@ public:
     ~ValueMetric();
 
     MetricValueClass::UP getValues() const override {
-        return MetricValueClass::UP(new Values(_values.getValues()));
+        return std::make_unique<Values>(_values.getValues());
     }
 
     void unsetOnZeroValue() { _values.setFlag(UNSET_ON_ZERO_VALUE); }

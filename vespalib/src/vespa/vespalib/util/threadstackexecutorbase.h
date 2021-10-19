@@ -47,18 +47,13 @@ private:
     struct Worker {
         std::mutex              lock;
         std::condition_variable cond;
+        vespalib::steady_time   wakeupTime;
         uint32_t   pre_guard;
         bool       idle;
         uint32_t   post_guard;
         TaggedTask task;
-        Worker() : lock(), cond(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
-        void verify(bool expect_idle) const {
-            (void) expect_idle;
-            assert(pre_guard == 0xaaaaaaaa);
-            assert(post_guard == 0x55555555);
-            assert(idle == expect_idle);
-            assert(!task.task == expect_idle);
-        }
+        Worker();
+        void verify(bool expect_idle) const;
     };
 
     struct BarrierCompletion {
@@ -80,12 +75,14 @@ private:
     std::unique_ptr<FastOS_ThreadPool>   _pool;
     mutable std::mutex                   _lock;
     std::condition_variable              _cond;
-    Stats                                _stats;
+    ExecutorStats                        _stats;
     Gate                                 _executorCompletion;
     ArrayQueue<TaggedTask>               _tasks;
     ArrayQueue<Worker*>                  _workers;
     std::vector<BlockedThread*>          _blocked;
     EventBarrier<BarrierCompletion>      _barrier;
+    steady_time                          _lastStatSampleTime;
+    duration                             _workingTime;
     uint32_t                             _taskCount;
     uint32_t                             _taskLimit;
     bool                                 _closed;
@@ -188,7 +185,7 @@ public:
      **/
     size_t num_idle_workers() const;
 
-    Stats getStats() override;
+    ExecutorStats getStats() override;
 
     Task::UP execute(Task::UP task) override;
 

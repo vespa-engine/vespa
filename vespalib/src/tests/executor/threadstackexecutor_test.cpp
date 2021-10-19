@@ -71,7 +71,7 @@ struct MyState {
     {
         ASSERT_TRUE(!checked);
         checked = true;
-        ThreadStackExecutor::Stats stats = executor.getStats();
+        ExecutorStats stats = executor.getStats();
         EXPECT_EQUAL(expect_running + expect_deleted, MyTask::runCnt);
         EXPECT_EQUAL(expect_rejected + expect_deleted, MyTask::deleteCnt);
         EXPECT_EQUAL(expect_queue + expect_running + expect_deleted,stats.acceptedTasks);
@@ -190,12 +190,15 @@ TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(
 }
 
 TEST("require that stats can be accumulated") {
-    ThreadStackExecutor::Stats stats(ThreadExecutor::Stats::QueueSizeT(1) ,2,3,7);
+    ExecutorStats stats(3, ExecutorStats::QueueSizeT(1) ,2,3,7, 0.6);
     EXPECT_EQUAL(1u, stats.queueSize.max());
     EXPECT_EQUAL(2u, stats.acceptedTasks);
     EXPECT_EQUAL(3u, stats.rejectedTasks);
     EXPECT_EQUAL(7u, stats.workingDays);
-    stats += ThreadStackExecutor::Stats(ThreadExecutor::Stats::QueueSizeT(7),8,9,11);
+    EXPECT_EQUAL(3u, stats.executorCount);
+    EXPECT_EQUAL(0.6, stats.dutyCycle);
+    EXPECT_EQUAL(0.2, stats.getNormalizedDutyCycle());
+    stats += ExecutorStats(7, ExecutorStats::QueueSizeT(7),8,9,11, 1.9);
     EXPECT_EQUAL(2u, stats.queueSize.count());
     EXPECT_EQUAL(8u, stats.queueSize.total());
     EXPECT_EQUAL(8u, stats.queueSize.max());
@@ -203,10 +206,12 @@ TEST("require that stats can be accumulated") {
     EXPECT_EQUAL(8u, stats.queueSize.max());
     EXPECT_EQUAL(4.0, stats.queueSize.average());
 
+    EXPECT_EQUAL(10u, stats.executorCount);
     EXPECT_EQUAL(10u, stats.acceptedTasks);
     EXPECT_EQUAL(12u, stats.rejectedTasks);
     EXPECT_EQUAL(18u, stats.workingDays);
-
+    EXPECT_EQUAL(2.5, stats.dutyCycle);
+    EXPECT_EQUAL(0.25, stats.getNormalizedDutyCycle());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

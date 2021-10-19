@@ -12,11 +12,6 @@ class ThreadExecutor : public Executor
 {
 public:
     /**
-     * Internal stats that we want to observe externally. Note that
-     * all stats are reset each time they are observed.
-     **/
-    using Stats = ExecutorStats;
-    /**
      * Get number of threads in the executor pool.
      * @return number of threads in the pool
      */
@@ -26,7 +21,7 @@ public:
      * Observe and reset stats for this object.
      * @return stats
      **/
-    virtual Stats getStats() = 0;
+    virtual ExecutorStats getStats() = 0;
 
     /**
      * Sets a new upper limit for accepted number of tasks.

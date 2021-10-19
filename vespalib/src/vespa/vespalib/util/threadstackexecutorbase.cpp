@@ -24,6 +24,25 @@ ThreadInit::Run(FastOS_ThreadInterface *, void *) {
 
 }
 
+ThreadStackExecutorBase::Worker::Worker()
+    : lock(),
+      cond(),
+      wakeupTime(),
+      pre_guard(0xaaaaaaaa),
+      idle(true),
+      post_guard(0x55555555),
+      task()
+{}
+
+void
+ThreadStackExecutorBase::Worker::verify(bool expect_idle) const {
+    (void) expect_idle;
+    assert(pre_guard == 0xaaaaaaaa);
+    assert(post_guard == 0x55555555);
+    assert(idle == expect_idle);
+    assert(!task.task == expect_idle);
+}
+
 void
 ThreadStackExecutorBase::BlockedThread::wait() const
 {
@@ -104,12 +123,14 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
         }
         _workers.push(&worker);
         _stats.workingDays++;
+        _workingTime += steady_clock::now() - worker.wakeupTime;
     }
     {
         unique_lock guard(worker.lock);
         while (worker.idle) {
             worker.cond.wait(guard);
         }
+        worker.wakeupTime = steady_clock::now();
     }
     worker.idle = !worker.task.task;
     return !worker.idle;
@@ -121,6 +142,7 @@ ThreadStackExecutorBase::run()
     Worker worker;
     _master = this;
     worker.verify(/* idle: */ true);
+    worker.wakeupTime = steady_clock::now();
     while (obtainTask(worker)) {
         worker.verify(/* idle: */ false);
         worker.task.task->run();
@@ -146,6 +168,8 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
       _tasks(),
       _workers(),
       _barrier(),
+      _lastStatSampleTime(steady_clock::now()),
+      _workingTime(duration::zero()),
       _taskCount(0),
       _taskLimit(taskLimit),
       _closed(false),
@@ -158,6 +182,8 @@ void
 ThreadStackExecutorBase::start(uint32_t threads)
 {
     assert(threads > 0);
+    _stats.executorCount = threads;
+    _lastStatSampleTime = steady_clock::now();
     for (uint32_t i = 0; i < threads; ++i) {
         FastOS_ThreadInterface *thread = _pool->NewThread(_thread_init.get());
         assert(thread != nullptr);
@@ -204,12 +230,17 @@ ThreadStackExecutorBase::num_idle_workers() const
     return _workers.size();
 }
 
-ThreadStackExecutorBase::Stats
+ExecutorStats
 ThreadStackExecutorBase::getStats()
 {
     std::unique_lock guard(_lock);
-    Stats stats = _stats;
-    _stats = Stats();
+    ExecutorStats stats = _stats;
+    stats.executorCount = getNumThreads();
+    steady_time now = steady_clock::now();
+    stats.dutyCycle = _workingTime / (now - _lastStatSampleTime);
+    _workingTime = duration::zero();
+    _lastStatSampleTime = now;
+    _stats = ExecutorStats();
     _stats.queueSize.add(_taskCount);
     return stats;
 }

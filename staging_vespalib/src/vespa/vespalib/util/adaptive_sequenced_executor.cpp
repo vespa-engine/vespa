@@ -21,6 +21,7 @@ AdaptiveSequencedExecutor::Strand::~Strand()
 
 AdaptiveSequencedExecutor::Worker::Worker()
     : cond(),
+      wakeupTime(steady_clock::now()),
       state(State::RUNNING),
       strand(nullptr)
 {
@@ -151,9 +152,12 @@ AdaptiveSequencedExecutor::obtain_strand(Worker &worker, std::unique_lock<std::m
     } else {
         worker.state = Worker::State::BLOCKED;
         _worker_stack.push(&worker);
+        _stats.workingDays++;
+        _workingTime += steady_clock::now() - worker.wakeupTime;
         while (worker.state == Worker::State::BLOCKED) {
             worker.cond.wait(lock);
         }
+        worker.wakeupTime = steady_clock::now();
     }
     return (worker.state == Worker::State::RUNNING);
 }
@@ -233,6 +237,8 @@ AdaptiveSequencedExecutor::AdaptiveSequencedExecutor(size_t num_strands, size_t 
       _worker_stack(num_threads),
       _self(),
       _stats(),
+      _lastStatSampleTime(steady_clock::now()),
+      _workingTime(duration::zero()),
       _cfg(num_threads, max_waiting, max_pending)
 {
     _stats.queueSize.add(_self.pending_tasks);
@@ -293,7 +299,6 @@ AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task)
             assert(worker->strand == nullptr);
             worker->state = Worker::State::RUNNING;
             worker->strand = &strand;
-            _stats.workingDays++;
             guard.unlock(); // UNLOCK
             worker->cond.notify_one();
         }
@@ -325,12 +330,16 @@ AdaptiveSequencedExecutor::setTaskLimit(uint32_t task_limit)
     }
 }
 
-AdaptiveSequencedExecutor::Stats
+ExecutorStats
 AdaptiveSequencedExecutor::getStats()
 {
     auto guard = std::lock_guard(_mutex);
-    Stats stats = _stats;
-    _stats = Stats();
+    ExecutorStats stats = _stats;
+    steady_time now = steady_clock::now();
+    _stats.dutyCycle = _workingTime / (now - _lastStatSampleTime);
+    _workingTime = duration::zero();
+    _lastStatSampleTime = now;
+    _stats = ExecutorStats();
     _stats.queueSize.add(_self.pending_tasks);
     return stats;
 }

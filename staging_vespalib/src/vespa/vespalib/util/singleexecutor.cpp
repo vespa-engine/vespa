@@ -19,6 +19,9 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t wat
       _consumerCondition(),
       _producerCondition(),
       _thread(*this),
+      _lastStatSampleTime(steady_clock::now()),
+      _lastWakeupTime(steady_clock::now()),
+      _workingTime(duration::zero()),
       _workingDays(0),
       _lastAccepted(0),
       _queueSize(),
@@ -117,7 +120,10 @@ SingleExecutor::run() {
         Lock lock(_mutex);
         if (numTasks() <= 0) {
             _workingDays++;
-            _consumerCondition.wait_for(lock, _reactionTime);
+            steady_time now = steady_clock::now();
+            _workingTime += now - _lastWakeupTime;
+            _lastWakeupTime = now + _reactionTime;
+            _consumerCondition.wait_until(lock, _lastWakeupTime);
         }
         _wakeupConsumerAt.store(0, std::memory_order_relaxed);
     }
@@ -152,7 +158,6 @@ SingleExecutor::wait_for_room(Lock & lock) {
         drain(lock);
         _tasks = std::make_unique<Task::UP[]>(_wantedTaskLimit);
         _taskLimit = _wantedTaskLimit.load();
-        taskLimit = _taskLimit;
     }
     _queueSize.add(numTasks());
     while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
@@ -160,14 +165,17 @@ SingleExecutor::wait_for_room(Lock & lock) {
     }
 }
 
-ThreadExecutor::Stats
+ExecutorStats
 SingleExecutor::getStats() {
     Lock lock(_mutex);
     uint64_t accepted = _wp.load(std::memory_order_relaxed);
-    Stats stats(_queueSize, (accepted - _lastAccepted), 0, _workingDays);
+    steady_time now = steady_clock::now();
+    ExecutorStats stats(1, _queueSize, (accepted - _lastAccepted), 0, _workingDays, _workingTime / (now - _lastStatSampleTime));
     _workingDays = 0;
+    _workingTime = duration::zero();
+    _lastStatSampleTime = now;
     _lastAccepted = accepted;
-    _queueSize = Stats::QueueSizeT() ;
+    _queueSize = ExecutorStats::QueueSizeT() ;
     return stats;
 }
 

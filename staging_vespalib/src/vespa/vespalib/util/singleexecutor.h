@@ -29,7 +29,7 @@ public:
     uint32_t getTaskLimit() const override { return _taskLimit.load(std::memory_order_relaxed); }
     uint32_t get_watermark() const { return _watermark; }
     duration get_reaction_time() const { return _reactionTime; }
-    Stats getStats() override;
+    ExecutorStats getStats() override;
     SingleExecutor & shutdown() override;
 private:
     using Lock = std::unique_lock<std::mutex>;
@@ -54,9 +54,12 @@ private:
     std::condition_variable     _consumerCondition;
     std::condition_variable     _producerCondition;
     vespalib::Thread            _thread;
+    steady_time                 _lastStatSampleTime;
+    vespalib::steady_time       _lastWakeupTime;
+    vespalib::duration          _workingTime;
     uint64_t                    _workingDays;
     uint64_t                    _lastAccepted;
-    Stats::QueueSizeT           _queueSize;
+    ExecutorStats::QueueSizeT   _queueSize;
     std::atomic<uint64_t>       _wakeupConsumerAt;
     std::atomic<uint64_t>       _producerNeedWakeupAt;
     std::atomic<uint64_t>       _wp;

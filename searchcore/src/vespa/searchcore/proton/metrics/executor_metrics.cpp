@@ -5,12 +5,13 @@
 namespace proton {
 
 void
-ExecutorMetrics::update(const vespalib::ThreadStackExecutorBase::Stats &stats)
+ExecutorMetrics::update(const vespalib::ExecutorStats &stats)
 {
     maxPending.set(stats.queueSize.max());
     accepted.inc(stats.acceptedTasks);
     rejected.inc(stats.rejectedTasks);
     workingDays.inc(stats.workingDays);
+    dutyCycle.set(stats.getNormalizedDutyCycle());
     const auto & qSize = stats.queueSize;
     queueSize.addValueBatch(qSize.average(), qSize.count(), qSize.min(), qSize.max());
 }
@@ -21,6 +22,7 @@ ExecutorMetrics::ExecutorMetrics(const std::string &name, metrics::MetricSet *pa
       accepted("accepted", {}, "Number of accepted tasks", this),
       rejected("rejected", {}, "Number of rejected tasks", this),
       workingDays("workingdays", {}, "Number of days a worker showed up for work", this),
+      dutyCycle("dutycycle", {}, "percentage of time a thread has been active", this),
       queueSize("queuesize", {}, "Size of task queue", this)
 {
 }

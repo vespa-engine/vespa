@@ -26,7 +26,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::ValueMetric(
 {}
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
-ValueMetric<AvgVal, TotVal, SumOnAdd>::~ValueMetric() { }
+ValueMetric<AvgVal, TotVal, SumOnAdd>::~ValueMetric() = default;
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 void ValueMetric<AvgVal, TotVal, SumOnAdd>::inc(AvgVal incVal)
@@ -239,8 +239,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::getDoubleValue(stringref id) const
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 void
-ValueMetric<AvgVal, TotVal, SumOnAdd>::addMemoryUsage(
-        MemoryConsumption& mc) const
+ValueMetric<AvgVal, TotVal, SumOnAdd>::addMemoryUsage(MemoryConsumption& mc) const
 {
     ++mc._valueMetricCount;
     mc._valueMetricValues += _values.getMemoryUsageAllocatedInternally();
