@@ -87,10 +87,6 @@ public class Reconfigurer extends AbstractComponent {
     // TODO jonmv: unit test this
     private void reconfigure(ZookeeperServerConfig newConfig) {
         Instant reconfigTriggered = Instant.now();
-        // No point in trying to reconfigure if there is only one server in the new ensemble,
-        // the others will be shutdown or are about to be shutdown
-        if (newConfig.server().size() == 1) shutdownAndDie(Duration.ZERO);
-
         String newServers = String.join(",", servers(newConfig));
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster." +
                             "\nServers in active config:" + servers(activeConfig) +
