@@ -797,6 +797,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.mergethrottler.queuesize.max"));
         metrics.add(new Metric("vds.mergethrottler.queuesize.sum"));
         metrics.add(new Metric("vds.mergethrottler.queuesize.count"));
+        metrics.add(new Metric("vds.mergethrottler.active_window_size.max"));
+        metrics.add(new Metric("vds.mergethrottler.active_window_size.sum"));
+        metrics.add(new Metric("vds.mergethrottler.active_window_size.count"));
         metrics.add(new Metric("vds.mergethrottler.bounced_due_to_back_pressure.rate"));
         metrics.add(new Metric("vds.mergethrottler.locallyexecutedmerges.ok.rate"));
         metrics.add(new Metric("vds.mergethrottler.mergechains.ok.rate"));
