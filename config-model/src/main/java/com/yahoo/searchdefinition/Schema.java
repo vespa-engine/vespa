@@ -67,7 +67,7 @@ public class Schema implements ImmutableSchema {
     /** The stemming setting of this schema. Default is BEST. */
     private Stemming stemming = null;
 
-    private final FieldSets fieldSets = new FieldSets();
+    private final FieldSets fieldSets = new FieldSets(Optional.of(this));
 
     /** The document contained in this schema */
     private SDDocumentType documentType;
@@ -697,13 +697,7 @@ public class Schema implements ImmutableSchema {
         return false;
     }
 
-    public FieldSets fieldSets() {
-        if (inherited.isEmpty()) return fieldSets;
-
-        var fieldSets = new FieldSets(requireInherited().fieldSets());
-        fieldSets.add(this.fieldSets);
-        return fieldSets;
-    }
+    public FieldSets fieldSets() {  return fieldSets; }
 
     /** Returns the schema inherited by this, or throws if none */
     private Schema requireInherited() { return owner.schemas().get(inherited.get()); }

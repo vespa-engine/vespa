@@ -55,19 +55,13 @@ public class DocumentSummary extends FieldView {
     }
 
     public SummaryField getSummaryField(String name) {
-        // TODO: This before parent?
-        var parent = getInherited();
-        if (parent != null) {
-            return parent.getSummaryField(name);
-        }
-        return (SummaryField) get(name);
+        var field = (SummaryField)get(name);
+        if (field != null) return field;
+        if (getInherited() == null)  return null;
+        return getInherited().getSummaryField(name);
     }
 
-    /** Returns a summary field if defined in this, not any parent */
-    public SummaryField getSummaryFieldInThis(String name) {
-        return (SummaryField) get(name);
-    }
-
+    // TODO: This does not handle overriding in child summaries correctly
     public Collection<SummaryField> getSummaryFields() {
         var fields = new ArrayList<SummaryField>(getFields().size());
         var parent = getInherited();
@@ -113,11 +107,6 @@ public class DocumentSummary extends FieldView {
     /** Returns the parent of this, or null if none is inherited */
     public DocumentSummary getInherited() {
         return owner.getSummary(inherited);
-    }
-
-    /** Returns the name of the summary this was declared to inherit, or null if not set to inherit anything */
-    public String getInheritedName() {
-        return inherited;
     }
 
     @Override

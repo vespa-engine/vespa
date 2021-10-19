@@ -109,6 +109,116 @@ public class SchemaTestCase {
                 "      indexing: summary" +
                 "    }" +
                 "  }" +
+                "  fieldset child_set {" +
+                "    fields: cf1, pf1" +
+                "  }" +
+                "  stemming: shortest" +
+                "  index child_index {" +
+                "    stemming: shortest" +
+                "  }" +
+                "  field child_field type string {" +
+                "      indexing: input pf1 | lowercase | index | attribute | summary" +
+                "  }" +
+                "  rank-profile child_profile inherits parent_profile {" +
+                "  }" +
+                "  constant child_constant {" +
+                "    file: constants/my_constant_tensor_file.json" +
+                "    type: tensor<float>(x{},y{})" +
+                "  }" +
+                "  onnx-model child_model {" +
+                "    file: models/my_model.onnx" +
+                "  }" +
+                "  document-summary child_summary inherits parent_summary {" +
+                "    summary cf1 type string {}" +
+                "  }" +
+                "  import field parentschema_ref.name as child_imported {}" +
+                "}");
+
+        SearchBuilder builder = new SearchBuilder(new DeployLoggerStub());
+        builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
+        builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
+        builder.importString(parentLines);
+        builder.importString(childLines);
+        builder.build(true);
+        var application = builder.application();
+
+        var child = application.schemas().get("child");
+        assertEquals("pf1", child.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
+        assertEquals("[cf1, pf1]", child.fieldSets().userFieldSets().get("child_set").getFieldNames().toString());
+        assertEquals(Stemming.SHORTEST, child.getStemming());
+        assertEquals(Stemming.BEST, child.getIndex("parent_index").getStemming());
+        assertEquals(Stemming.SHORTEST, child.getIndex("child_index").getStemming());
+        assertNotNull(child.getField("parent_field"));
+        assertNotNull(child.getField("child_field"));
+        assertNotNull(child.getExtraField("parent_field"));
+        assertNotNull(child.getExtraField("child_field"));
+        assertNotNull(application.rankProfileRegistry().get(child, "parent_profile"));
+        assertNotNull(application.rankProfileRegistry().get(child, "child_profile"));
+        assertEquals("parent_profile", application.rankProfileRegistry().get(child, "child_profile").getInheritedName());
+        assertNotNull(child.rankingConstants().get("parent_constant"));
+        assertNotNull(child.rankingConstants().get("child_constant"));
+        assertTrue(child.rankingConstants().asMap().containsKey("parent_constant"));
+        assertTrue(child.rankingConstants().asMap().containsKey("child_constant"));
+        assertNotNull(child.onnxModels().get("parent_model"));
+        assertNotNull(child.onnxModels().get("child_model"));
+        assertTrue(child.onnxModels().asMap().containsKey("parent_model"));
+        assertTrue(child.onnxModels().asMap().containsKey("child_model"));
+        assertNotNull(child.getSummary("parent_summary"));
+        assertNotNull(child.getSummary("child_summary"));
+        assertEquals("parent_summary", child.getSummary("child_summary").getInherited().getName());
+        assertTrue(child.getSummaries().containsKey("parent_summary"));
+        assertTrue(child.getSummaries().containsKey("child_summary"));
+        assertNotNull(child.getSummaryField("pf1"));
+        assertNotNull(child.getSummaryField("cf1"));
+        assertNotNull(child.getExplicitSummaryField("pf1"));
+        assertNotNull(child.getExplicitSummaryField("cf1"));
+        assertNotNull(child.getUniqueNamedSummaryFields().get("pf1"));
+        assertNotNull(child.getUniqueNamedSummaryFields().get("cf1"));
+        assertNotNull(child.temporaryImportedFields().get().fields().get("parent_imported"));
+        assertNotNull(child.temporaryImportedFields().get().fields().get("child_imported"));
+    }
+
+    @Test
+    public void testSchemaInheritanceEmptyChildren() throws ParseException {
+        String parentLines = joinLines(
+                "schema parent {" +
+                "  document parent {" +
+                "    field pf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "  fieldset parent_set {" +
+                "    fields: pf1" +
+                "  }" +
+                "  stemming: none" +
+                "  index parent_index {" +
+                "    stemming: best" +
+                "  }" +
+                "  field parent_field type string {" +
+                "      indexing: input pf1 | lowercase | index | attribute | summary" +
+                "  }" +
+                "  rank-profile parent_profile {" +
+                "  }" +
+                "  constant parent_constant {" +
+                "    file: constants/my_constant_tensor_file.json" +
+                "    type: tensor<float>(x{},y{})" +
+                "  }" +
+                "  onnx-model parent_model {" +
+                "    file: models/my_model.onnx" +
+                "  }" +
+                "  document-summary parent_summary {" +
+                "    summary pf1 type string {}" +
+                "  }" +
+                "  import field parentschema_ref.name as parent_imported {}" +
+                "  raw-as-base64-in-summary" +
+                "}");
+        String childLines = joinLines(
+                "schema child inherits parent {" +
+                "  document child inherits parent {" +
+                "    field cf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
                 "}");
         String grandchildLines = joinLines(
                 "schema grandchild inherits child {" +
@@ -148,7 +258,6 @@ public class SchemaTestCase {
         assertNotNull(schema.getSummaryField("pf1"));
         assertNotNull(schema.getExplicitSummaryField("pf1"));
         assertNotNull(schema.getUniqueNamedSummaryFields().get("pf1"));
-        assertTrue(schema.temporaryImportedFields().isPresent());
         assertNotNull(schema.temporaryImportedFields().get().fields().get("parent_imported"));
         assertTrue(schema.isRawAsBase64());
     }

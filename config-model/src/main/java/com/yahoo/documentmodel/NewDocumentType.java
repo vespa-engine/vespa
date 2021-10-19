@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Collections.emptySet;
@@ -53,7 +54,7 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         this(
                 name,
                 new StructDataType(name.getName() + ".header"),
-                new FieldSets(),
+                new FieldSets(Optional.empty()),
                 documentReferences,
                 importedFieldNames);
     }

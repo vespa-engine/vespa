@@ -4,6 +4,8 @@ package com.yahoo.searchdefinition;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.yahoo.searchdefinition.document.FieldSet;
 
@@ -15,22 +17,14 @@ import com.yahoo.searchdefinition.document.FieldSet;
  */
 public class FieldSets {
 
+    private final Optional<Schema> owner;
     private final Map<String, FieldSet> userFieldSets;
     private final Map<String, FieldSet> builtInFieldSets;
 
-    public FieldSets() {
+    public FieldSets(Optional<Schema> owner) {
+        this.owner = owner;
         userFieldSets = new LinkedHashMap<>();
         builtInFieldSets = new LinkedHashMap<>();
-    }
-
-    FieldSets(FieldSets other) {
-        userFieldSets = new LinkedHashMap<>(other.userFieldSets);
-        builtInFieldSets = new LinkedHashMap<>(other.builtInFieldSets);
-    }
-
-    void add(FieldSets other) {
-        userFieldSets.putAll(other.userFieldSets);
-        builtInFieldSets.putAll(other.builtInFieldSets);
     }
 
     /**
@@ -63,12 +57,22 @@ public class FieldSets {
 
     /** Returns the built in field sets, unmodifiable */
     public Map<String, FieldSet> builtInFieldSets() {
-        return Collections.unmodifiableMap(builtInFieldSets);
+        if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(builtInFieldSets);
+        if (builtInFieldSets.isEmpty()) return owner.get().inherited().get().fieldSets().builtInFieldSets();
+
+        var fieldSets = new LinkedHashMap<>(owner.get().inherited().get().fieldSets().builtInFieldSets());
+        fieldSets.putAll(builtInFieldSets);
+        return Collections.unmodifiableMap(fieldSets);
     }
     
     /** Returns the user defined field sets, unmodifiable */
     public Map<String, FieldSet> userFieldSets() {
-        return Collections.unmodifiableMap(userFieldSets);
+        if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(userFieldSets);
+        if (userFieldSets.isEmpty()) return owner.get().inherited().get().fieldSets().userFieldSets();
+
+        var fieldSets = new LinkedHashMap<>(owner.get().inherited().get().fieldSets().userFieldSets());
+        fieldSets.putAll(userFieldSets);
+        return Collections.unmodifiableMap(fieldSets);
     }
     
 }
