@@ -14,6 +14,7 @@ struct ExecutorMetrics : metrics::MetricSet
     metrics::LongValueMetric maxPending; // TODO Remove on Vespa 8 or sooner if possible.
     metrics::LongCountMetric accepted;
     metrics::LongCountMetric rejected;
+    metrics::LongCountMetric workingDays;
     metrics::LongAverageMetric queueSize;
 
     void update(const vespalib::ThreadStackExecutorBase::Stats &stats);

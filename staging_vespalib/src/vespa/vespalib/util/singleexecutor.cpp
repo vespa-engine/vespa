@@ -19,6 +19,7 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t wat
       _consumerCondition(),
       _producerCondition(),
       _thread(*this),
+      _workingDays(0),
       _lastAccepted(0),
       _queueSize(),
       _wakeupConsumerAt(0),
@@ -115,6 +116,7 @@ SingleExecutor::run() {
         _wakeupConsumerAt.store(_wp.load(std::memory_order_relaxed) + _watermark, std::memory_order_relaxed);
         Lock lock(_mutex);
         if (numTasks() <= 0) {
+            _workingDays++;
             _consumerCondition.wait_for(lock, _reactionTime);
         }
         _wakeupConsumerAt.store(0, std::memory_order_relaxed);
@@ -162,7 +164,8 @@ ThreadExecutor::Stats
 SingleExecutor::getStats() {
     Lock lock(_mutex);
     uint64_t accepted = _wp.load(std::memory_order_relaxed);
-    Stats stats(_queueSize, (accepted - _lastAccepted), 0);
+    Stats stats(_queueSize, (accepted - _lastAccepted), 0, _workingDays);
+    _workingDays = 0;
     _lastAccepted = accepted;
     _queueSize = Stats::QueueSizeT() ;
     return stats;

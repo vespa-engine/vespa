@@ -56,9 +56,10 @@ struct ExecutorStats {
     QueueSizeT queueSize;
     size_t acceptedTasks;
     size_t rejectedTasks;
-    ExecutorStats() : ExecutorStats(QueueSizeT(), 0, 0) {}
-    ExecutorStats(QueueSizeT queueSize_in, size_t accepted, size_t rejected)
-        : queueSize(queueSize_in), acceptedTasks(accepted), rejectedTasks(rejected)
+    size_t workingDays; // Number of time a worker showed up for work,
+    ExecutorStats() : ExecutorStats(QueueSizeT(), 0, 0, 0) {}
+    ExecutorStats(QueueSizeT queueSize_in, size_t accepted, size_t rejected, size_t wakeupCount)
+        : queueSize(queueSize_in), acceptedTasks(accepted), rejectedTasks(rejected), workingDays(wakeupCount)
     {}
     ExecutorStats & operator += (const ExecutorStats & rhs) {
         queueSize = QueueSizeT(queueSize.count() + rhs.queueSize.count(),
@@ -67,6 +68,7 @@ struct ExecutorStats {
                                queueSize.max() + rhs.queueSize.max());
         acceptedTasks += rhs.acceptedTasks;
         rejectedTasks += rhs.rejectedTasks;
+        workingDays += rhs.workingDays;
         return *this;
     }
 };

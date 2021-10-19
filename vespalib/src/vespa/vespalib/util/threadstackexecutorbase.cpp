@@ -103,6 +103,7 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
             return false;
         }
         _workers.push(&worker);
+        _stats.workingDays++;
     }
     {
         unique_lock guard(worker.lock);

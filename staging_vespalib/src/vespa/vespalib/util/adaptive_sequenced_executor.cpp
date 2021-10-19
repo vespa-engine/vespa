@@ -293,6 +293,7 @@ AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task)
             assert(worker->strand == nullptr);
             worker->state = Worker::State::RUNNING;
             worker->strand = &strand;
+            _stats.workingDays++;
             guard.unlock(); // UNLOCK
             worker->cond.notify_one();
         }

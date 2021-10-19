@@ -36,7 +36,7 @@ void ForegroundTaskExecutor::setTaskLimit(uint32_t) {
 }
 
 vespalib::ExecutorStats ForegroundTaskExecutor::getStats() {
-    return vespalib::ExecutorStats(vespalib::ExecutorStats::QueueSizeT(0) , _accepted.load(std::memory_order_relaxed), 0);
+    return vespalib::ExecutorStats(vespalib::ExecutorStats::QueueSizeT(0) , _accepted.load(std::memory_order_relaxed), 0, 1);
 }
 
 ISequencedTaskExecutor::ExecutorId

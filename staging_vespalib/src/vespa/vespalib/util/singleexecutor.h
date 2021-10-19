@@ -54,6 +54,7 @@ private:
     std::condition_variable     _consumerCondition;
     std::condition_variable     _producerCondition;
     vespalib::Thread            _thread;
+    uint64_t                    _workingDays;
     uint64_t                    _lastAccepted;
     Stats::QueueSizeT           _queueSize;
     std::atomic<uint64_t>       _wakeupConsumerAt;

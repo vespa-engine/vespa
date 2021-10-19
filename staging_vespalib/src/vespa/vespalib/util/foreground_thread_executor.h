@@ -23,7 +23,7 @@ public:
     }
     size_t getNumThreads() const override { return 0; }
     Stats getStats() override {
-        return ExecutorStats(ExecutorStats::QueueSizeT(), _accepted.load(std::memory_order_relaxed), 0);
+        return ExecutorStats(ExecutorStats::QueueSizeT(), _accepted.load(std::memory_order_relaxed), 0, 1);
     }
     void setTaskLimit(uint32_t taskLimit) override { (void) taskLimit; }
     uint32_t getTaskLimit() const override { return std::numeric_limits<uint32_t>::max(); }

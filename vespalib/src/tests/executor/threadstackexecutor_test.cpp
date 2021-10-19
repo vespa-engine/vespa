@@ -33,17 +33,18 @@ std::atomic<uint32_t> MyTask::runCnt(0);
 std::atomic<uint32_t> MyTask::deleteCnt(0);
 
 struct MyState {
+    static constexpr uint32_t NUM_THREADS = 10;
     Gate                gate;     // to block workers
     CountDownLatch      latch;    // to wait for workers
     ThreadStackExecutor executor;
     bool                checked;
-    MyState() : gate(), latch(10), executor(10, 128000, 20), checked(false)
+    MyState() : gate(), latch(10), executor(NUM_THREADS, 128000, 20), checked(false)
     {
         MyTask::resetStats();
     }
     MyState &execute(uint32_t cnt) {
         for (uint32_t i = 0; i < cnt; ++i) {
-            executor.execute(Task::UP(new MyTask(gate, latch)));
+            executor.execute(std::make_unique<MyTask>(gate, latch));
         }
         return *this;
     }
@@ -73,9 +74,10 @@ struct MyState {
         ThreadStackExecutor::Stats stats = executor.getStats();
         EXPECT_EQUAL(expect_running + expect_deleted, MyTask::runCnt);
         EXPECT_EQUAL(expect_rejected + expect_deleted, MyTask::deleteCnt);
-        EXPECT_EQUAL(expect_queue + expect_running + expect_deleted,
-                     stats.acceptedTasks);
+        EXPECT_EQUAL(expect_queue + expect_running + expect_deleted,stats.acceptedTasks);
         EXPECT_EQUAL(expect_rejected, stats.rejectedTasks);
+        EXPECT_TRUE(stats.workingDays > 0);
+        EXPECT_TRUE(stats.workingDays <= (NUM_THREADS + stats.acceptedTasks));
         EXPECT_TRUE(!(gate.getCount() == 1) || (expect_deleted == 0));
         if (expect_deleted == 0) {
             EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
@@ -84,6 +86,7 @@ struct MyState {
         EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
         EXPECT_EQUAL(0u, stats.acceptedTasks);
         EXPECT_EQUAL(0u, stats.rejectedTasks);
+        EXPECT_EQUAL(0u, stats.workingDays);
         return *this;
     }
 };
@@ -187,11 +190,12 @@ TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(
 }
 
 TEST("require that stats can be accumulated") {
-    ThreadStackExecutor::Stats stats(ThreadExecutor::Stats::QueueSizeT(1) ,2,3);
+    ThreadStackExecutor::Stats stats(ThreadExecutor::Stats::QueueSizeT(1) ,2,3,7);
     EXPECT_EQUAL(1u, stats.queueSize.max());
     EXPECT_EQUAL(2u, stats.acceptedTasks);
     EXPECT_EQUAL(3u, stats.rejectedTasks);
-    stats += ThreadStackExecutor::Stats(ThreadExecutor::Stats::QueueSizeT(7),8,9);
+    EXPECT_EQUAL(7u, stats.workingDays);
+    stats += ThreadStackExecutor::Stats(ThreadExecutor::Stats::QueueSizeT(7),8,9,11);
     EXPECT_EQUAL(2u, stats.queueSize.count());
     EXPECT_EQUAL(8u, stats.queueSize.total());
     EXPECT_EQUAL(8u, stats.queueSize.max());
@@ -201,6 +205,7 @@ TEST("require that stats can be accumulated") {
 
     EXPECT_EQUAL(10u, stats.acceptedTasks);
     EXPECT_EQUAL(12u, stats.rejectedTasks);
+    EXPECT_EQUAL(18u, stats.workingDays);
 
 }
 
