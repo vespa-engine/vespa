@@ -83,6 +83,8 @@ TEST("requireThatAllNodesCanBeVisited") {
     checkVisit<PredicateQuery>(new SimplePredicateQuery(PredicateQueryTerm::UP(), "field", 0, Weight(0)));
     checkVisit<RegExpTerm>(new SimpleRegExpTerm("t", "field", 0, Weight(0)));
     checkVisit<NearestNeighborTerm>(new SimpleNearestNeighborTerm("query_tensor", "doc_tensor", 0, Weight(0), 123, true, 321, 100100.25));
+    checkVisit<TrueQueryNode>(new SimpleTrue());
+    checkVisit<FalseQueryNode>(new SimpleFalse());
 }
 
 }  // namespace
