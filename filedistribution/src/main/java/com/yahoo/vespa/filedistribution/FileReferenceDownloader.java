@@ -50,7 +50,7 @@ public class FileReferenceDownloader {
         this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
     }
 
-    private void startDownload(FileReferenceDownload fileReferenceDownload) {
+    private void waitUntilDownloadStarted(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Instant end = Instant.now().plus(downloadTimeout);
         boolean downloadStarted = false;
@@ -75,14 +75,14 @@ public class FileReferenceDownloader {
         }
     }
 
-    Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
+    Future<Optional<File>> startDownload(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         Optional<FileReferenceDownload> inProgress = downloads.get(fileReference);
         if (inProgress.isPresent()) return inProgress.get().future();
 
         log.log(Level.FINE, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
         downloads.add(fileReferenceDownload);
-        downloadExecutor.submit(() -> startDownload(fileReferenceDownload));
+        downloadExecutor.submit(() -> waitUntilDownloadStarted(fileReferenceDownload));
         return fileReferenceDownload.future();
     }
 
