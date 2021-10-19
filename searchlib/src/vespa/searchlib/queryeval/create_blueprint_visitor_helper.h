@@ -73,6 +73,9 @@ public:
     void visit(query::SuffixTerm &n) override = 0;
     void visit(query::RegExpTerm &n) override = 0;
     void visit(query::NearestNeighborTerm &n) override = 0;
+
+    void visit(query::TrueQueryNode &) final override;
+    void visit(query::FalseQueryNode &) final override;
 };
 
 }

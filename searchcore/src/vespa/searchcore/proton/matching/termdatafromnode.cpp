@@ -26,6 +26,8 @@ struct TermDataFromTermVisitor
     void visit(ProtonRank &) override {}
     void visit(ProtonWeakAnd &) override {}
     void visit(ProtonSameElement &) override { }
+    void visit(ProtonTrue &) override {}
+    void visit(ProtonFalse &) override {}
 
     void visit(ProtonWeightedSetTerm &n) override { visitTerm(n); }
     void visit(ProtonDotProduct &n) override { visitTerm(n); }

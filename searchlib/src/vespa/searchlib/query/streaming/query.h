@@ -49,6 +49,14 @@ public:
     bool evaluate() const override;
 };
 
+/** False operator. Matches nothing. */
+class FalseNode : public QueryConnector
+{
+public:
+    FalseNode() : QueryConnector("AND") { }
+    bool evaluate() const override;
+};
+
 /**
    N-ary Or operator that simply ANDs all the nodes together.
 */

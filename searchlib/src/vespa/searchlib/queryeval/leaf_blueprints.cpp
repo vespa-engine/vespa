@@ -2,6 +2,7 @@
 
 #include "leaf_blueprints.h"
 #include "emptysearch.h"
+#include "full_search.h"
 #include "simplesearch.h"
 #include "fake_search.h"
 
@@ -35,6 +36,24 @@ EmptyBlueprint::EmptyBlueprint(const FieldSpecBaseList &fields)
 EmptyBlueprint::EmptyBlueprint()
     : SimpleLeafBlueprint(FieldSpecBaseList())
 {
+}
+
+
+SearchIterator::UP
+AlwaysTrueBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &, bool) const
+{
+    return std::make_unique<FullSearch>();
+}
+
+SearchIterator::UP
+AlwaysTrueBlueprint::createFilterSearch(bool /*strict*/, FilterConstraint /* constraint */) const
+{
+    return std::make_unique<FullSearch>();
+}
+
+AlwaysTrueBlueprint::AlwaysTrueBlueprint() : SimpleLeafBlueprint(FieldSpecBaseList())
+{
+    setEstimate(HitEstimate(search::endDocId, false));
 }
 
 //-----------------------------------------------------------------------------

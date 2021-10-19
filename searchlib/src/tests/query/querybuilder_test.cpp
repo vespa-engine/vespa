@@ -47,7 +47,7 @@ PredicateQueryTerm::UP getPredicateQueryTerm() {
 template <class NodeTypes>
 Node::UP createQueryTree() {
     QueryBuilder<NodeTypes> builder;
-    builder.addAnd(11);
+    builder.addAnd(12);
     {
         builder.addRank(2);
         {
@@ -110,6 +110,11 @@ Node::UP createQueryTree() {
             builder.addStringTerm(str[6], view[6], id[6], weight[7]);
         }
         builder.add_nearest_neighbor_term("query_tensor", "doc_tensor", id[3], weight[5], 7, true, 33, 100100.25);
+        builder.addAndNot(2);
+        {
+            builder.add_true_node();
+            builder.add_false_node();
+        }
     }
     Node::UP node = builder.build();
     ASSERT_TRUE(node.get());
@@ -172,10 +177,12 @@ void checkQueryTreeTypes(Node *node) {
     typedef typename NodeTypes::WeakAnd WeakAnd;
     typedef typename NodeTypes::PredicateQuery PredicateQuery;
     typedef typename NodeTypes::RegExpTerm RegExpTerm;
+    typedef typename NodeTypes::TrueQueryNode TrueNode;
+    typedef typename NodeTypes::FalseQueryNode FalseNode;
 
     ASSERT_TRUE(node);
     auto* and_node = as_node<And>(node);
-    EXPECT_EQUAL(11u, and_node->getChildren().size());
+    EXPECT_EQUAL(12u, and_node->getChildren().size());
 
     auto* rank = as_node<Rank>(and_node->getChildren()[0]);
     EXPECT_EQUAL(2u, rank->getChildren().size());
@@ -292,6 +299,13 @@ void checkQueryTreeTypes(Node *node) {
     EXPECT_EQUAL(id[3], nearest_neighbor->getId());
     EXPECT_EQUAL(weight[5].percent(), nearest_neighbor->getWeight().percent());
     EXPECT_EQUAL(7u, nearest_neighbor->get_target_num_hits());
+
+    and_not = as_node<AndNot>(and_node->getChildren()[11]);
+    EXPECT_EQUAL(2u, and_not->getChildren().size());
+    auto* true_node = as_node<TrueNode>(and_not->getChildren()[0]);
+    auto* false_node = as_node<FalseNode>(and_not->getChildren()[1]);
+    EXPECT_TRUE(true_node);
+    EXPECT_TRUE(false_node);
 }
 
 struct AbstractTypes {
@@ -316,6 +330,8 @@ struct AbstractTypes {
     typedef search::query::WeakAnd WeakAnd;
     typedef search::query::PredicateQuery PredicateQuery;
     typedef search::query::RegExpTerm RegExpTerm;
+    typedef search::query::TrueQueryNode TrueQueryNode;
+    typedef search::query::FalseQueryNode FalseQueryNode;
 };
 
 // Builds a tree with simplequery and checks that the results have the
@@ -409,6 +425,8 @@ struct MyNearestNeighborTerm : NearestNeighborTerm {
       : NearestNeighborTerm(query_tensor_name, field_name, i, w, target_num_hits, allow_approximate, explore_additional_hits, distance_threshold)
     {}
 };
+struct MyTrue : TrueQueryNode {};
+struct MyFalse : FalseQueryNode {};
 
 struct MyQueryNodeTypes {
     typedef MyAnd And;
@@ -434,6 +452,8 @@ struct MyQueryNodeTypes {
     typedef MyPredicateQuery PredicateQuery;
     typedef MyRegExpTerm RegExpTerm;
     typedef MyNearestNeighborTerm NearestNeighborTerm;
+    typedef MyTrue TrueQueryNode;
+    typedef MyFalse FalseQueryNode;
 };
 
 TEST("require that Custom Query Trees Can Be Built") {

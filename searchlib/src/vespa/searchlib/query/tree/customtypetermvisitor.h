@@ -28,6 +28,10 @@ private:
     void visit(typename NodeTypes::WeakAnd &n) override { visitChildren(n); }
     void visit(typename NodeTypes::SameElement &n) override { visitChildren(n); }
 
+    // leaf nodes without terms:
+    void visit(typename NodeTypes::TrueQueryNode &) override {}
+    void visit(typename NodeTypes::FalseQueryNode &) override {}
+
     // phrases and weighted set terms are conceptual leaf nodes and
     // should be handled that way.
 };

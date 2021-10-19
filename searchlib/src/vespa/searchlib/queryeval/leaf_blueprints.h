@@ -22,6 +22,15 @@ public:
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
 
+class AlwaysTrueBlueprint : public SimpleLeafBlueprint
+{
+protected:
+    SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
+public:
+    AlwaysTrueBlueprint();
+    SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
+};
+
 //-----------------------------------------------------------------------------
 
 class SimpleBlueprint : public SimpleLeafBlueprint

@@ -126,6 +126,10 @@ TrueNode::evaluate() const
     return true;
 }
 
+bool FalseNode::evaluate() const {
+    return false;
+}
+
 bool
 AndQueryNode::evaluate() const
 {

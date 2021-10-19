@@ -90,4 +90,12 @@ CreateBlueprintVisitorHelper::visitWandTerm(query::WandTerm &n) {
                       n);
 }
 
+void CreateBlueprintVisitorHelper::visit(query::TrueQueryNode &) {
+    setResult(std::make_unique<AlwaysTrueBlueprint>());
+}
+
+void CreateBlueprintVisitorHelper::visit(query::FalseQueryNode &) {
+    setResult(std::make_unique<EmptyBlueprint>());
+}
+
 }
