@@ -11,7 +11,6 @@ import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -37,6 +36,7 @@ public class FileDownloader implements AutoCloseable {
     private final Supervisor supervisor;
     private final File downloadDirectory;
     private final Duration timeout;
+    private final Duration sleepBetweenRetries;
     private final FileReferenceDownloader fileReferenceDownloader;
     private final Downloads downloads = new Downloads();
 
@@ -61,7 +61,8 @@ public class FileDownloader implements AutoCloseable {
         this.supervisor = supervisor;
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        // Needed to receive RPC receiveFile* calls from server after asking for files
+        this.sleepBetweenRetries = sleepBetweenRetries;
+        // Needed to receive RPC receiveFile* calls from server after starting download of file reference
         new FileReceiver(supervisor, downloads, downloadDirectory);
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout, sleepBetweenRetries);
     }
@@ -83,12 +84,11 @@ public class FileDownloader implements AutoCloseable {
 
     Future<Optional<File>> getFutureFile(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        Objects.requireNonNull(fileReference, "file reference cannot be null");
 
         Optional<File> file = getFileFromFileSystem(fileReference);
         return (file.isPresent())
                 ? CompletableFuture.completedFuture(file)
-                : download(fileReferenceDownload);
+                : startDownload(fileReferenceDownload);
     }
 
     public Map<FileReference, Double> downloadStatus() { return downloads.downloadStatus(); }
@@ -119,18 +119,24 @@ public class FileDownloader implements AutoCloseable {
         }
     }
 
+    boolean fileReferenceExists(FileReference fileReference) {
+        return getFileFromFileSystem(fileReference).isPresent();
+    }
+
     boolean isDownloading(FileReference fileReference) {
         return downloads.get(fileReference).isPresent();
     }
 
-    /** Start a download, don't wait for result */
+    /** Start a download if needed, don't wait for result */
     public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        getFutureFile(fileReferenceDownload);
+        if (fileReferenceExists(fileReferenceDownload.fileReference())) return;
+
+        startDownload(fileReferenceDownload);
     }
 
-    /** Download, the future returned will be complete()d by receiving method in {@link FileReceiver} */
-    private synchronized Future<Optional<File>> download(FileReferenceDownload fileReferenceDownload) {
-        return fileReferenceDownloader.download(fileReferenceDownload);
+    /** Start downloading, the future returned will be complete()d by receiving method in {@link FileReceiver} */
+    private synchronized Future<Optional<File>> startDownload(FileReferenceDownload fileReferenceDownload) {
+        return fileReferenceDownloader.startDownload(fileReferenceDownload);
     }
 
     public void close() {

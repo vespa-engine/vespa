@@ -5,6 +5,7 @@ package com.yahoo.vespa.filedistribution;
 import com.yahoo.config.FileReference;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -22,6 +23,7 @@ public class FileReferenceDownload {
     }
 
     public FileReferenceDownload(FileReference fileReference, boolean downloadFromOtherSourceIfNotFound, String client) {
+        Objects.requireNonNull(fileReference, "file reference cannot be null");
         this.fileReference = fileReference;
         this.future = new CompletableFuture<>();
         this.downloadFromOtherSourceIfNotFound = downloadFromOtherSourceIfNotFound;
