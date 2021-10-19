@@ -15,7 +15,6 @@
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/server/blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
-#include <vespa/searchcore/proton/server/i_document_scan_iterator.h>
 #include <vespa/searchcore/proton/server/i_operation_storer.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
 #include <vespa/searchcore/proton/server/idocumentmovehandler.h>
@@ -728,7 +727,7 @@ MyExecutor::isIdle()
 {
     (void) getStats();
     sync();
-    Stats stats(getStats());
+    auto stats = getStats();
     return stats.acceptedTasks == 0u;
 }
 

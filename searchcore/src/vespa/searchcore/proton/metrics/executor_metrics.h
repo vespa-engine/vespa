@@ -5,7 +5,7 @@
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/countmetric.h>
 #include <vespa/metrics/valuemetric.h>
-#include <vespa/vespalib/util/threadstackexecutorbase.h>
+#include <vespa/vespalib/util/executor_stats.h>
 
 namespace proton {
 
@@ -16,7 +16,7 @@ struct ExecutorMetrics : metrics::MetricSet
     metrics::LongCountMetric rejected;
     metrics::LongAverageMetric queueSize;
 
-    void update(const vespalib::ThreadStackExecutorBase::Stats &stats);
+    void update(const vespalib::ExecutorStats &stats);
     ExecutorMetrics(const std::string &name, metrics::MetricSet *parent);
     ~ExecutorMetrics();
 };

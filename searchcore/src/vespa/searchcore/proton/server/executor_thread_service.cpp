@@ -73,7 +73,7 @@ ExecutorThreadService::isCurrentThread() const
     return FastOS_Thread::CompareThreadIds(_threadId->_id, currentThreadId);
 }
 
-vespalib::ThreadExecutor::Stats ExecutorThreadService::getStats() {
+vespalib::ExecutorStats ExecutorThreadService::getStats() {
     return _executor.getStats();
 }
 

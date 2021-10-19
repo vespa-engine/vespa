@@ -21,7 +21,7 @@ public:
     ExecutorThreadService(vespalib::SyncableThreadExecutor &executor);
     ~ExecutorThreadService();
 
-    Stats getStats() override;
+    vespalib::ExecutorStats getStats() override;
 
     vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) override {
         return _executor.execute(std::move(task));

@@ -16,7 +16,6 @@ class SyncableThreadExecutor;
 class SequencedTaskExecutor final : public ISequencedTaskExecutor
 {
 public:
-    using Stats = vespalib::ExecutorStats;
     using ISequencedTaskExecutor::getExecutorId;
     using OptimizeFor = vespalib::Executor::OptimizeFor;
 
@@ -26,7 +25,7 @@ public:
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     ExecutorId getExecutorId(uint64_t componentId) const override;
     void sync() override;
-    Stats getStats() override;
+    ExecutorStats getStats() override;
     void wakeup() override;
 
     /*

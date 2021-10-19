@@ -22,8 +22,7 @@ namespace vespalib {
 class AdaptiveSequencedExecutor : public ISequencedTaskExecutor
 {
 private:
-    using Stats = vespalib::ExecutorStats;
-    using Task = vespalib::Executor::Task;
+    using Task = Executor::Task;
 
     struct TaggedTask {
         Task::UP task;
@@ -128,7 +127,7 @@ private:
     vespalib::ArrayQueue<Worker*>      _worker_stack;
     EventBarrier<BarrierCompletion>    _barrier;
     Self                               _self;
-    Stats                              _stats;
+    ExecutorStats                      _stats;
     Config                             _cfg;
 
     void maybe_block_self(std::unique_lock<std::mutex> &lock);
@@ -147,7 +146,7 @@ public:
     void executeTask(ExecutorId id, Task::UP task) override;
     void sync() override;
     void setTaskLimit(uint32_t task_limit) override;
-    vespalib::ExecutorStats getStats() override;
+    ExecutorStats getStats() override;
     Config get_config() const;
 };
 

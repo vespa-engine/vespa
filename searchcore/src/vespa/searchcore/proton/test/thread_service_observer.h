@@ -40,7 +40,7 @@ public:
     }
     size_t getNumThreads() const override { return _service.getNumThreads(); }
 
-    Stats getStats() override {
+    vespalib::ExecutorStats getStats() override {
         return _service.getStats();
     }
 
