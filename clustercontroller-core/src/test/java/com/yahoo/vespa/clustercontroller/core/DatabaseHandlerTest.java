@@ -65,9 +65,9 @@ public class DatabaseHandlerTest {
         }
 
         DatabaseHandler createHandler() throws Exception {
-            Context context = mock(Context.class);
-            when(context.id()).thenReturn(new FleetControllerId("clusterName", 0));
-            return new DatabaseHandler(context, mockDbFactory, mockTimer, databaseAddress, monitor);
+            FleetControllerContext fleetControllerContext = mock(FleetControllerContext.class);
+            when(fleetControllerContext.id()).thenReturn(new FleetControllerId("clusterName", 0));
+            return new DatabaseHandler(fleetControllerContext, mockDbFactory, mockTimer, databaseAddress, monitor);
         }
     }
 

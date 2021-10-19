@@ -10,7 +10,6 @@ import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
 public interface RunDataExtractor {
 
     FleetControllerOptions getOptions();
-    long getConfigGeneration();
     ContentCluster getCluster();
 
 }

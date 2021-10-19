@@ -8,14 +8,14 @@ import java.util.logging.Logger;
 /**
  * @author hakon
  */
-public class ContextImpl implements Context {
+public class FleetControllerContextImpl implements FleetControllerContext {
     private final FleetControllerId id;
 
-    public ContextImpl(FleetControllerOptions options) {
+    public FleetControllerContextImpl(FleetControllerOptions options) {
         this(FleetControllerId.fromOptions(options));
     }
 
-    public ContextImpl(FleetControllerId id) {
+    public FleetControllerContextImpl(FleetControllerId id) {
         this.id = id;
     }
 

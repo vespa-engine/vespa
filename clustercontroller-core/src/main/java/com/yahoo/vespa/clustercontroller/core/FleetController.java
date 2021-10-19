@@ -52,7 +52,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     private static final Logger logger = Logger.getLogger(FleetController.class.getName());
 
-    private final Context context;
+    private final FleetControllerContext context;
     private final Timer timer;
     private final Object monitor;
     private final EventLog eventLog;
@@ -105,12 +105,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         @Override
         public FleetControllerOptions getOptions() { return options; }
         @Override
-        public long getConfigGeneration() { return 0; }
-        @Override
         public ContentCluster getCluster() { return cluster; }
     };
 
-    public FleetController(Context context,
+    public FleetController(FleetControllerContext context,
                            Timer timer,
                            EventLog eventLog,
                            ContentCluster cluster,
@@ -151,7 +149,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 new LegacyNodePageRequestHandler(timer, eventLog, cluster));
         this.statusRequestRouter.addHandler(
                 "^/state.*",
-                new NodeHealthRequestHandler(dataExtractor));
+                new NodeHealthRequestHandler());
         this.statusRequestRouter.addHandler(
                 "^/clusterstate",
                 new ClusterStateRequestHandler(stateVersionTracker));
@@ -168,7 +166,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public static FleetController create(FleetControllerOptions options,
                                          StatusPageServerInterface statusPageServer,
                                          MetricReporter metricReporter) throws Exception {
-        var context = new ContextImpl(options);
+        var context = new FleetControllerContextImpl(options);
         var timer = new RealTimer();
         var metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex, options.clusterName);
         var log = new EventLog(timer, metricUpdater);
@@ -1122,14 +1120,15 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     @Override
     public void run() {
         controllerThreadId = Thread.currentThread().getId();
-        context.log(logger, Level.INFO, "Starting ticks");
+        context.log(logger, Level.INFO, "Starting tick loop");
         try {
             processingCycle = true;
             while (isRunning()) {
                 tick();
             }
+            context.log(logger, Level.INFO, "Tick loop stopped");
         } catch (InterruptedException e) {
-            context.log(logger, Level.FINE, () -> "Event thread stopped by interrupt exception: " + e);
+            context.log(logger, Level.INFO, "Event thread stopped by interrupt exception: ", e);
         } catch (Throwable t) {
             t.printStackTrace();
             context.log(logger, Level.SEVERE, "Fatal error killed fleet controller", t);

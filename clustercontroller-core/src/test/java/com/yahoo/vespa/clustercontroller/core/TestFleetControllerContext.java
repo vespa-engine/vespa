@@ -4,8 +4,8 @@ package com.yahoo.vespa.clustercontroller.core;
 /**
  * @author hakon
  */
-public class TestContext extends ContextImpl {
-    public TestContext(FleetControllerOptions options) {
+public class TestFleetControllerContext extends FleetControllerContextImpl {
+    public TestFleetControllerContext(FleetControllerOptions options) {
         super(options);
     }
 

@@ -157,7 +157,7 @@ public abstract class FleetControllerTest implements Waiter {
 
     FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
         Objects.requireNonNull(status, "status server cannot be null");
-        var context = new TestContext(options);
+        var context = new TestFleetControllerContext(options);
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
         var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
         var log = new EventLog(timer, metricUpdater);

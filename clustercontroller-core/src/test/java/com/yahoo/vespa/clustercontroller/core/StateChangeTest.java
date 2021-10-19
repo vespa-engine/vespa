@@ -49,7 +49,7 @@ public class StateChangeTest extends FleetControllerTest {
             nodes.add(new Node(NodeType.DISTRIBUTOR, i));
         }
 
-        var context = new TestContext(options);
+        var context = new TestFleetControllerContext(options);
         communicator = new DummyCommunicator(nodes, timer);
         var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
         eventLog = new EventLog(timer, metricUpdater);

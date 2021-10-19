@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  *
  * @author hakon
  */
-public interface Context {
+public interface FleetControllerContext {
     FleetControllerId id();
 
     default void log(Logger logger, Level level, String message) { log(logger, level, () -> message); }

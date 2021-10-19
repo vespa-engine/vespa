@@ -14,7 +14,7 @@ public class MasterElectionHandler implements MasterInterface {
 
     private static final Logger logger = Logger.getLogger(MasterElectionHandler.class.getName());
 
-    private final Context context;
+    private final FleetControllerContext context;
     private final Object monitor;
     private final Timer timer;
     private final int index;
@@ -28,7 +28,7 @@ public class MasterElectionHandler implements MasterInterface {
     private long masterZooKeeperCooldownPeriod; // The period in ms that we won't take over unless master come back.
     private boolean usingZooKeeper = false; // Unit tests may not use ZooKeeper at all.
 
-    public MasterElectionHandler(Context context, int index, int totalCount, Object monitor, Timer timer) {
+    public MasterElectionHandler(FleetControllerContext context, int index, int totalCount, Object monitor, Timer timer) {
         this.context = context;
         this.monitor = monitor;
         this.timer = timer;
