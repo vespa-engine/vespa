@@ -5,7 +5,7 @@
 namespace proton {
 
 void
-ExecutorMetrics::update(const vespalib::ThreadStackExecutorBase::Stats &stats)
+ExecutorMetrics::update(const vespalib::ExecutorStats &stats)
 {
     maxPending.set(stats.queueSize.max());
     accepted.inc(stats.acceptedTasks);

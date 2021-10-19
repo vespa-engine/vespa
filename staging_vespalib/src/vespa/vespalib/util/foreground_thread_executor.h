@@ -22,7 +22,7 @@ public:
         return Task::UP();
     }
     size_t getNumThreads() const override { return 0; }
-    Stats getStats() override {
+    ExecutorStats getStats() override {
         return ExecutorStats(ExecutorStats::QueueSizeT(), _accepted.load(std::memory_order_relaxed), 0);
     }
     void setTaskLimit(uint32_t taskLimit) override { (void) taskLimit; }

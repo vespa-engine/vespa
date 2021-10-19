@@ -324,12 +324,12 @@ AdaptiveSequencedExecutor::setTaskLimit(uint32_t task_limit)
     }
 }
 
-AdaptiveSequencedExecutor::Stats
+ExecutorStats
 AdaptiveSequencedExecutor::getStats()
 {
     auto guard = std::lock_guard(_mutex);
-    Stats stats = _stats;
-    _stats = Stats();
+    ExecutorStats stats = _stats;
+    _stats = ExecutorStats();
     _stats.queueSize.add(_self.pending_tasks);
     return stats;
 }

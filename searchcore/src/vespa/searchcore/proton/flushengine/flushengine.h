@@ -114,7 +114,7 @@ public:
      *
      * @return executor stats
      **/
-    vespalib::ThreadStackExecutor::Stats getExecutorStats() { return _executor.getStats(); }
+    vespalib::ExecutorStats getExecutorStats() { return _executor.getStats(); }
 
     /**
      * Returns the underlying executor. Only used for state explorers.

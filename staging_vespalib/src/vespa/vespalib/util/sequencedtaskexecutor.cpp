@@ -99,10 +99,10 @@ SequencedTaskExecutor::wakeup() {
     }
 }
 
-SequencedTaskExecutor::Stats
+ExecutorStats
 SequencedTaskExecutor::getStats()
 {
-    Stats accumulatedStats;
+    ExecutorStats accumulatedStats;
     for (auto &executor :* _executors) {
         accumulatedStats += executor->getStats();
     }

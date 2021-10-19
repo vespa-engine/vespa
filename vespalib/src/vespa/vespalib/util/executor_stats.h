@@ -3,6 +3,7 @@
 #pragma once
 
 #include <limits>
+#include <cstdint>
 
 namespace vespalib {
 
@@ -15,10 +16,10 @@ public:
     AggregatedAverage() : AggregatedAverage(0ul, T(0), std::numeric_limits<T>::max(), std::numeric_limits<T>::min()) { }
     explicit AggregatedAverage(T value) : AggregatedAverage(1, value, value, value) { }
     AggregatedAverage(size_t count_in, T total_in, T min_in, T max_in)
-            : _count(count_in),
-              _total(total_in),
-              _min(min_in),
-              _max(max_in)
+        : _count(count_in),
+          _total(total_in),
+          _min(min_in),
+          _max(max_in)
     { }
     AggregatedAverage & operator += (const AggregatedAverage & rhs) {
         add(rhs);

@@ -33,17 +33,18 @@ std::atomic<uint32_t> MyTask::runCnt(0);
 std::atomic<uint32_t> MyTask::deleteCnt(0);
 
 struct MyState {
+    static constexpr uint32_t NUM_THREADS = 10;
     Gate                gate;     // to block workers
     CountDownLatch      latch;    // to wait for workers
     ThreadStackExecutor executor;
     bool                checked;
-    MyState() : gate(), latch(10), executor(10, 128000, 20), checked(false)
+    MyState() : gate(), latch(10), executor(NUM_THREADS, 128000, 20), checked(false)
     {
         MyTask::resetStats();
     }
     MyState &execute(uint32_t cnt) {
         for (uint32_t i = 0; i < cnt; ++i) {
-            executor.execute(Task::UP(new MyTask(gate, latch)));
+            executor.execute(std::make_unique<MyTask>(gate, latch));
         }
         return *this;
     }
@@ -70,7 +71,7 @@ struct MyState {
     {
         ASSERT_TRUE(!checked);
         checked = true;
-        ThreadStackExecutor::Stats stats = executor.getStats();
+        ExecutorStats stats = executor.getStats();
         EXPECT_EQUAL(expect_running + expect_deleted, MyTask::runCnt);
         EXPECT_EQUAL(expect_rejected + expect_deleted, MyTask::deleteCnt);
         EXPECT_EQUAL(expect_queue + expect_running + expect_deleted,
@@ -187,11 +188,11 @@ TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(
 }
 
 TEST("require that stats can be accumulated") {
-    ThreadStackExecutor::Stats stats(ThreadExecutor::Stats::QueueSizeT(1) ,2,3);
+    ExecutorStats stats(ExecutorStats::QueueSizeT(1) ,2,3);
     EXPECT_EQUAL(1u, stats.queueSize.max());
     EXPECT_EQUAL(2u, stats.acceptedTasks);
     EXPECT_EQUAL(3u, stats.rejectedTasks);
-    stats += ThreadStackExecutor::Stats(ThreadExecutor::Stats::QueueSizeT(7),8,9);
+    stats += ExecutorStats(ExecutorStats::QueueSizeT(7),8,9);
     EXPECT_EQUAL(2u, stats.queueSize.count());
     EXPECT_EQUAL(8u, stats.queueSize.total());
     EXPECT_EQUAL(8u, stats.queueSize.max());
