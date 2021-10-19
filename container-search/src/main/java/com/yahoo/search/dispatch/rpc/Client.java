@@ -84,9 +84,6 @@ interface Client {
     }
 
     interface NodeConnection {
-        void getDocsums(List<FastHit> hits, CompressionType compression, int uncompressedLength, byte[] compressedSlime,
-                RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds);
-
         void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
                      ResponseReceiver responseReceiver, double timeoutSeconds);
 

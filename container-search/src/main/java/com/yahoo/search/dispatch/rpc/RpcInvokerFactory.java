@@ -43,13 +43,7 @@ public class RpcInvokerFactory extends InvokerFactory {
         Query query = result.getQuery();
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
-
         return new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery);
-    }
-
-    // for testing
-    public FillInvoker createFillInvoker(DocumentDatabase documentDb) {
-        return new RpcFillInvoker(rpcResourcePool, documentDb);
     }
 
 }
