@@ -1151,6 +1151,10 @@ TEST_F(MergeThrottlerTest, busy_returned_on_full_queue_for_merges_sent_from_dist
     size_t maxQueue = _throttlers[0]->getMaxQueueSize();
     ASSERT_EQ(20, maxQueue);
     ASSERT_LT(maxPending, 100);
+
+    EXPECT_EQ(_throttlers[0]->getMetrics().active_window_size.getLast(), 0);
+    EXPECT_EQ(_throttlers[0]->getMetrics().queueSize.getLast(), 0);
+
     for (size_t i = 0; i < maxPending + maxQueue; ++i) {
         std::vector<MergeBucketCommand::Node> nodes({{0}, {1}, {2}});
         // No chain set, i.e. merge command is freshly squeezed from a distributor.
@@ -1162,6 +1166,7 @@ TEST_F(MergeThrottlerTest, busy_returned_on_full_queue_for_merges_sent_from_dist
     // Wait till we have maxPending replies and maxQueue queued
     _topLinks[0]->waitForMessages(maxPending, _messageWaitTime);
     waitUntilMergeQueueIs(*_throttlers[0], maxQueue, _messageWaitTime);
+    EXPECT_EQ(_throttlers[0]->getMetrics().active_window_size.getLast(), maxPending);
     EXPECT_EQ(maxQueue, _throttlers[0]->getMetrics().queueSize.getMaximum());
 
     // Clear all forwarded merges

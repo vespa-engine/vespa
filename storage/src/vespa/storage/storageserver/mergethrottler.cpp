@@ -72,6 +72,7 @@ MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
     : metrics::MetricSet("mergethrottler", {}, "", owner),
       averageQueueWaitingTime("averagequeuewaitingtime", {}, "Average time a merge spends in the throttler queue", this),
       queueSize("queuesize", {}, "Length of merge queue", this),
+      active_window_size("active_window_size", {}, "Number of merges active within the pending window size", this),
       bounced_due_to_back_pressure("bounced_due_to_back_pressure", {}, "Number of merges bounced due to resource exhaustion back-pressure", this),
       chaining("mergechains", this),
       local("locallyexecutedmerges", this)
@@ -366,6 +367,7 @@ MergeThrottler::removeActiveMerge(ActiveMergeMap::iterator mergeIter)
     LOG(debug, "Removed merge for %s from internal state",
         mergeIter->first.toString().c_str());
     _merges.erase(mergeIter);
+    update_active_merge_window_size_metric();
 }
 
 api::StorageMessage::SP
@@ -815,6 +817,7 @@ MergeThrottler::processNewMergeCommand(
     // merge throttling window.
     assert(_merges.find(mergeCmd.getBucket()) == _merges.end());
     auto state = _merges.emplace(mergeCmd.getBucket(), ChainedMergeState(msg)).first;
+    update_active_merge_window_size_metric();
 
     LOG(debug, "Added merge %s to internal state",
         mergeCmd.toString().c_str());
@@ -1244,6 +1247,11 @@ void
 MergeThrottler::set_disable_queue_limits_for_chained_merges(bool disable_limits) noexcept {
     std::lock_guard lock(_stateLock);
     _disable_queue_limits_for_chained_merges = disable_limits;
+}
+
+void
+MergeThrottler::update_active_merge_window_size_metric() noexcept {
+    _metrics->active_window_size.set(static_cast<int64_t>(_merges.size()));
 }
 
 void

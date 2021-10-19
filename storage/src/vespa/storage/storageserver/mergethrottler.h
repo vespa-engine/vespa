@@ -64,6 +64,7 @@ public:
     public:
         metrics::DoubleAverageMetric averageQueueWaitingTime;
         metrics::LongValueMetric queueSize;
+        metrics::LongValueMetric active_window_size;
         metrics::LongCountMetric bounced_due_to_back_pressure;
         MergeOperationMetrics chaining;
         MergeOperationMetrics local;
@@ -387,6 +388,8 @@ private:
     void handleOutdatedMerges(const api::SetSystemStateCommand&);
     void rejectOperationsInThreadQueue(MessageGuard&, uint32_t minimumStateVersion);
     void markActiveMergesAsAborted(uint32_t minimumStateVersion);
+
+    void update_active_merge_window_size_metric() noexcept;
 
     // const function, but metrics are mutable
     void updateOperationMetrics(
