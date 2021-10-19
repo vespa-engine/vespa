@@ -50,6 +50,11 @@ public class Reconfigurer extends AbstractComponent {
         this.sleeper = Objects.requireNonNull(sleeper);
     }
 
+    @Override
+    public void deconstruct() {
+        shutdown();
+    }
+
     QuorumPeer startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server,
                             Supplier<QuorumPeer> quorumPeerCreator) {
         if (zooKeeperRunner == null) {
