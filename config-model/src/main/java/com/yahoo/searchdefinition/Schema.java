@@ -62,7 +62,7 @@ public class Schema implements ImmutableSchema {
     /** True if this doesn't define a search, just a document type */
     private final boolean documentsOnly;
 
-    private boolean rawAsBase64 = false;
+    private Boolean rawAsBase64 = null;
 
     /** The stemming setting of this schema. Default is BEST. */
     private Stemming stemming = null;
@@ -173,7 +173,11 @@ public class Schema implements ImmutableSchema {
      *
      * @return true if raw shall be encoded as base64 in summary
      */
-    public boolean isRawAsBase64() { return rawAsBase64; }
+    public boolean isRawAsBase64() {
+        if (rawAsBase64 != null) return rawAsBase64;
+        if (inherited.isEmpty()) return false;
+        return requireInherited().isRawAsBase64();
+    }
 
     public void enableRawAsBase64() { rawAsBase64 = true; }
 

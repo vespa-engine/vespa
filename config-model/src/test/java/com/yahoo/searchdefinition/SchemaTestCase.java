@@ -100,6 +100,7 @@ public class SchemaTestCase {
                 "    summary pf1 type string {}" +
                 "  }" +
                 "  import field parentschema_ref.name as parent_imported {}" +
+                "  raw-as-base64-in-summary" +
                 "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +
@@ -136,6 +137,7 @@ public class SchemaTestCase {
         assertNotNull(child.getUniqueNamedSummaryFields().get("pf1"));
         assertTrue(child.temporaryImportedFields().isPresent());
         assertNotNull(child.temporaryImportedFields().get().fields().get("parent_imported"));
+        assertTrue(child.isRawAsBase64());
     }
 
 }
