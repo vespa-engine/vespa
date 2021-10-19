@@ -95,6 +95,9 @@ public class SchemaTestCase {
                 "  onnx-model parent_model {" +
                 "    file: models/my_model.onnx" +
                 "  }" +
+                "  document-summary parent_summary {" +
+                "    summary pf1 type string {}" +
+                "  }" +
                 "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +
@@ -123,6 +126,11 @@ public class SchemaTestCase {
         assertTrue(child.rankingConstants().asMap().containsKey("parent_constant"));
         assertNotNull(child.onnxModels().get("parent_model"));
         assertTrue(child.onnxModels().asMap().containsKey("parent_model"));
+        assertNotNull(child.getSummary("parent_summary"));
+        assertTrue(child.getSummaries().containsKey("parent_summary"));
+        assertNotNull(child.getSummaryField("pf1"));
+        assertNotNull(child.getExplicitSummaryField("pf1"));
+        assertNotNull(child.getUniqueNamedSummaryFields().get("pf1"));
     }
 
 }

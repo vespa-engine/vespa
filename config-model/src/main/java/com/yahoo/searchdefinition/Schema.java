@@ -531,7 +531,10 @@ public class Schema implements ImmutableSchema {
      * @return Summary found.
      */
     public DocumentSummary getSummary(String name) {
-        return summaries.get(name);
+        var summary = summaries.get(name);
+        if (summary != null) return summary;
+        if (inherited.isEmpty()) return null;
+        return requireInherited().getSummary(name);
     }
 
     /**
@@ -548,47 +551,56 @@ public class Schema implements ImmutableSchema {
                 return summaryField;
             }
         }
-        return null;
+        if (inherited.isEmpty()) return null;
+        return requireInherited().getSummaryField(name);
     }
 
     /**
      * Returns the first explicit instance found of a summary field with this name, or null if not present explicitly in
      * any summary class
      *
-     * @param name Thge name of the explicit summary field to get.
-     * @return The SummaryField found.
+     * @param name the name of the explicit summary field to get.
+     * @return the SummaryField found.
      */
     public SummaryField getExplicitSummaryField(String name) {
         for (DocumentSummary summary : summaries.values()) {
             SummaryField summaryField = summary.getSummaryField(name);
-            if (summaryField != null && !summaryField.isImplicit()) {
+            if (summaryField != null && !summaryField.isImplicit())
                 return summaryField;
-            }
         }
-        return null;
+        if (inherited.isEmpty()) return null;
+        return requireInherited().getExplicitSummaryField(name);
     }
 
     /**
      * Summaries defined by fields of this search definition. The default summary, named "default", is always the first
      * one in the returned iterator.
-     *
-     * @return The map of document summaries.
      */
     public Map<String, DocumentSummary> getSummaries() {
-        return summaries;
+        // Shortcuts
+        if (inherited.isEmpty()) return summaries;
+        if (summaries.isEmpty()) return requireInherited().getSummaries();
+
+        var allSummaries = new LinkedHashMap<>(requireInherited().getSummaries());
+        allSummaries.putAll(summaries);
+        return allSummaries;
     }
 
+    /** Returns the summaries defines in this only, not any that are inherited. */
+    public Map<String, DocumentSummary> getSummariesInThis() { return Collections.unmodifiableMap(summaries); }
+
     /**
-     * <p>Returns all summary fields, of all document summaries, which has the given field as source. If there are
+     * Returns all summary fields, of all document summaries, which has the given field as source. If there are
      * multiple summary fields with the same name, the last one will be used (they should all have the same content, if
-     * this is a valid search definition).</p> <p>The map gets owned by the receiver.</p>
+     * this is a valid search definition).The map becomes owned by the receiver.
      *
-     * @param field The source field.
-     * @return The map of summary fields found.
+     * @param field the source field
+     * @return the map of summary fields found
      */
     @Override
     public Map<String, SummaryField> getSummaryFields(ImmutableSDField field) {
-        Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>();
+        Map<String, SummaryField> summaryFields = inherited.isPresent() ? requireInherited().getSummaryFields(field)
+                                                                        : new java.util.LinkedHashMap<>();
         for (DocumentSummary documentSummary : summaries.values()) {
             for (SummaryField summaryField : documentSummary.getSummaryFields()) {
                 if (summaryField.hasSource(field.getName())) {
@@ -600,15 +612,14 @@ public class Schema implements ImmutableSchema {
     }
 
     /**
-     * <p>Returns one summary field for each summary field name. If there are multiple summary fields with the same
+     * Returns one summary field for each summary field name. If there are multiple summary fields with the same
      * name, the last one will be used. Multiple fields of the same name should all have the same content in a valid
      * search definition, except from the destination set. So this method can be used for all summary handling except
-     * processing the destination set.</p> <p>The map gets owned by the receiver.</p>
-     *
-     * @return Map of unique summary fields
+     * processing the destination set. The map becomes owned by the receiver.
      */
     public Map<String, SummaryField> getUniqueNamedSummaryFields() {
-        Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>();
+        Map<String, SummaryField> summaryFields = inherited.isPresent() ? requireInherited().getUniqueNamedSummaryFields()
+                                                                        : new java.util.LinkedHashMap<>();
         for (DocumentSummary documentSummary : summaries.values()) {
             for (SummaryField summaryField : documentSummary.getSummaryFields()) {
                 summaryFields.put(summaryField.getName(), summaryField);

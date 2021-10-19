@@ -55,10 +55,16 @@ public class DocumentSummary extends FieldView {
     }
 
     public SummaryField getSummaryField(String name) {
+        // TODO: This before parent?
         var parent = getInherited();
         if (parent != null) {
             return parent.getSummaryField(name);
         }
+        return (SummaryField) get(name);
+    }
+
+    /** Returns a summary field if defined in this, not any parent */
+    public SummaryField getSummaryFieldInThis(String name) {
         return (SummaryField) get(name);
     }
 
