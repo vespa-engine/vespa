@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.ConnectionPool;
 
 import java.io.File;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,27 +51,17 @@ public class FileReferenceDownloader {
 
     private void waitUntilDownloadStarted(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        Instant end = Instant.now().plus(downloadTimeout);
-        boolean downloadStarted = false;
         int retryCount = 0;
         do {
-            try {
-                if (startDownloadRpc(fileReferenceDownload, retryCount)) {
-                    downloadStarted = true;
-                } else {
-                    retryCount++;
-                    long sleepTime = Math.min(sleepBetweenRetries.toMillis() * retryCount,
-                                              Math.max(0, Duration.between(Instant.now(), end).toMillis()));
-                    Thread.sleep(sleepTime);
-                }
-            }
-            catch (InterruptedException e) { /* ignored */}
-        } while (Instant.now().isBefore(end) && !downloadStarted);
+            if (startDownloadRpc(fileReferenceDownload, retryCount))
+                return;
 
-        if ( !downloadStarted) {
-            fileReferenceDownload.future().completeExceptionally(new RuntimeException("Failed getting file reference '" + fileReference.value() + "'"));
-            downloads.remove(fileReference);
-        }
+            try { Thread.sleep(sleepBetweenRetries.toMillis()); } catch (InterruptedException e) { /* ignored */}
+            retryCount++;
+        } while (retryCount < 5);
+
+        fileReferenceDownload.future().completeExceptionally(new RuntimeException("Failed getting " + fileReference));
+        downloads.remove(fileReference);
     }
 
     Future<Optional<File>> startDownload(FileReferenceDownload fileReferenceDownload) {
@@ -99,7 +88,7 @@ public class FileReferenceDownloader {
         double timeoutSecs = (double) rpcTimeout.getSeconds();
         timeoutSecs += retryCount * 10.0;
         connection.invokeSync(request, timeoutSecs);
-        Level logLevel = (retryCount > 5 ? Level.INFO : Level.FINE);
+        Level logLevel = (retryCount > 3 ? Level.INFO : Level.FINE);
         if (validateResponse(request)) {
             log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
             if (request.returnValues().get(0).asInt32() == 0) {
