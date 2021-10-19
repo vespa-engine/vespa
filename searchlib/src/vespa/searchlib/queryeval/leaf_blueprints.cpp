@@ -53,7 +53,7 @@ AlwaysTrueBlueprint::createFilterSearch(bool /*strict*/, FilterConstraint /* con
 
 AlwaysTrueBlueprint::AlwaysTrueBlueprint() : SimpleLeafBlueprint(FieldSpecBaseList())
 {
-    setEstimate(HitEstimate(std::numeric_limits<int32_t>::max(), false));
+    setEstimate(HitEstimate(search::endDocId, false));
 }
 
 //-----------------------------------------------------------------------------
