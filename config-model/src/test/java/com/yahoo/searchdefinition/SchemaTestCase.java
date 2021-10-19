@@ -110,34 +110,47 @@ public class SchemaTestCase {
                 "    }" +
                 "  }" +
                 "}");
+        String grandchildLines = joinLines(
+                "schema grandchild inherits child {" +
+                "  document grandchild inherits child {" +
+                "    field gf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "}");
 
         SearchBuilder builder = new SearchBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
         builder.importString(parentLines);
         builder.importString(childLines);
+        builder.importString(grandchildLines);
         builder.build(true);
         var application = builder.application();
 
-        var child = application.schemas().get("child");
-        assertEquals("pf1", child.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
-        assertEquals(Stemming.NONE, child.getStemming());
-        assertEquals(Stemming.BEST, child.getIndex("parent_index").getStemming());
-        assertNotNull(child.getField("parent_field"));
-        assertNotNull(child.getExtraField("parent_field"));
-        assertNotNull(application.rankProfileRegistry().get(child, "parent_profile"));
-        assertNotNull(child.rankingConstants().get("parent_constant"));
-        assertTrue(child.rankingConstants().asMap().containsKey("parent_constant"));
-        assertNotNull(child.onnxModels().get("parent_model"));
-        assertTrue(child.onnxModels().asMap().containsKey("parent_model"));
-        assertNotNull(child.getSummary("parent_summary"));
-        assertTrue(child.getSummaries().containsKey("parent_summary"));
-        assertNotNull(child.getSummaryField("pf1"));
-        assertNotNull(child.getExplicitSummaryField("pf1"));
-        assertNotNull(child.getUniqueNamedSummaryFields().get("pf1"));
-        assertTrue(child.temporaryImportedFields().isPresent());
-        assertNotNull(child.temporaryImportedFields().get().fields().get("parent_imported"));
-        assertTrue(child.isRawAsBase64());
+        assertInheritedFromParent(application.schemas().get("child"), application);
+        assertInheritedFromParent(application.schemas().get("grandchild"), application);
+    }
+
+    private void assertInheritedFromParent(Schema schema, Application application) {
+        assertEquals("pf1", schema.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
+        assertEquals(Stemming.NONE, schema.getStemming());
+        assertEquals(Stemming.BEST, schema.getIndex("parent_index").getStemming());
+        assertNotNull(schema.getField("parent_field"));
+        assertNotNull(schema.getExtraField("parent_field"));
+        assertNotNull(application.rankProfileRegistry().get(schema, "parent_profile"));
+        assertNotNull(schema.rankingConstants().get("parent_constant"));
+        assertTrue(schema.rankingConstants().asMap().containsKey("parent_constant"));
+        assertNotNull(schema.onnxModels().get("parent_model"));
+        assertTrue(schema.onnxModels().asMap().containsKey("parent_model"));
+        assertNotNull(schema.getSummary("parent_summary"));
+        assertTrue(schema.getSummaries().containsKey("parent_summary"));
+        assertNotNull(schema.getSummaryField("pf1"));
+        assertNotNull(schema.getExplicitSummaryField("pf1"));
+        assertNotNull(schema.getUniqueNamedSummaryFields().get("pf1"));
+        assertTrue(schema.temporaryImportedFields().isPresent());
+        assertNotNull(schema.temporaryImportedFields().get().fields().get("parent_imported"));
+        assertTrue(schema.isRawAsBase64());
     }
 
 }
