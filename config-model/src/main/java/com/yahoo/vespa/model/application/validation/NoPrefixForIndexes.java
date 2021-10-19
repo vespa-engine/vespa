@@ -48,7 +48,7 @@ public class NoPrefixForIndexes extends Validator {
     }
 
     private void failField(Schema schema, ImmutableSDField field) {
-        throw new IllegalArgumentException("For search '" + schema.getName() + "', field '" + field.getName() +
+        throw new IllegalArgumentException("For " + schema + ", field '" + field.getName() +
                                            "': match/index:prefix is not supported for indexes.");
     }
 }

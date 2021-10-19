@@ -31,11 +31,8 @@ public class FastAccessValidator extends Processor {
                                          .collect(Collectors.joining(", "));
         if ( ! invalidAttributes.isEmpty()) {
             throw new IllegalArgumentException(
-                    String.format(
-                            "For search '%s': The following attributes have a type that is incompatible with fast-access: %s. " +
-                                    "Predicate, tensor and reference attributes are incompatible with fast-access.",
-                            schema.getName(),
-                            invalidAttributes));
+                            "For " + schema + ": The following attributes have a type that is incompatible with fast-access: " +
+                            invalidAttributes + ". Predicate, tensor and reference attributes are incompatible with fast-access.");
         }
     }
 

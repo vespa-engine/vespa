@@ -22,14 +22,14 @@ public class FastAccessValidatorTest {
         SearchBuilder builder = new SearchBuilder(new RankProfileRegistry());
         builder.importString(
                 TestUtil.joinLines(
-                        "search parent {",
+                        "schema parent {",
                         "  document parent {",
                         "    field int_field type int { indexing: attribute }",
                         "  }",
                         "}"));
         builder.importString(
                 TestUtil.joinLines(
-                        "search test {",
+                        "schema test {",
                         "    document test { ",
                         "        field int_attribute type int { ",
                         "            indexing: attribute ",
@@ -51,7 +51,7 @@ public class FastAccessValidatorTest {
                         "}"));
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
-                "For search 'test': The following attributes have a type that is incompatible " +
+                "For schema 'test': The following attributes have a type that is incompatible " +
                         "with fast-access: predicate_attribute, tensor_attribute, reference_attribute. " +
                         "Predicate, tensor and reference attributes are incompatible with fast-access.");
         builder.build();

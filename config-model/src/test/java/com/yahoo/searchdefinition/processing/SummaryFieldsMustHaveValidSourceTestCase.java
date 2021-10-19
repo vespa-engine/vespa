@@ -24,7 +24,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
             SearchBuilder.buildFromFile("src/test/examples/invalidsummarysource.sd");
             fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'invalidsummarysource', summary class 'baz', summary field 'cox': there is no valid source 'nonexistingfield'.", e.getMessage());
+            assertEquals("For schema 'invalidsummarysource', summary class 'baz', summary field 'cox': there is no valid source 'nonexistingfield'.", e.getMessage());
         }
     }
 
@@ -34,7 +34,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
             SearchBuilder.buildFromFile("src/test/examples/invalidimplicitsummarysource.sd");
             fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'invalidsummarysource', summary class 'baz', summary field 'cox': there is no valid source 'cox'.", e.getMessage());
+            assertEquals("For schema 'invalidsummarysource', summary class 'baz', summary field 'cox': there is no valid source 'cox'.", e.getMessage());
         }
     }
 
@@ -44,7 +44,7 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends AbstractSchemaTest
             SearchBuilder.buildFromFile("src/test/examples/invalidselfreferringsummary.sd");
             fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'invalidselfreferringsummary', summary class 'withid', summary field 'w': there is no valid source 'w'.", e.getMessage());
+            assertEquals("For schema 'invalidselfreferringsummary', summary class 'withid', summary field 'w': there is no valid source 'w'.", e.getMessage());
         }
     }
 

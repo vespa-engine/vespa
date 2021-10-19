@@ -21,7 +21,7 @@ public class SchemaMustHaveDocumentTest {
             fail("SD without document");
         } catch (IllegalArgumentException e) {
             if (!e.getMessage()
-                  .contains("For search 'imageconfig': A search specification must have an equally named document inside of it.")) {
+                  .contains("For schema 'imageconfig': A search specification must have an equally named document inside of it.")) {
                 throw e;
             }
         }

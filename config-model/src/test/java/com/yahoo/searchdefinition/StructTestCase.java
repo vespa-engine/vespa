@@ -37,7 +37,7 @@ public class StructTestCase extends AbstractSchemaTestCase {
         try {
             DocumenttypesConfig.Builder dt = Deriver.getDocumentTypesConfig("src/test/examples/structanddocumentwithsamenames.sd");
         } catch (Exception e) {
-            fail("Should not have thrown exception " + e.toString());
+            fail("Should not have thrown exception " + e);
         }
     }
 

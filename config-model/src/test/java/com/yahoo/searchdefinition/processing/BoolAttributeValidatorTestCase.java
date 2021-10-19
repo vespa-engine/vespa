@@ -21,7 +21,7 @@ public class BoolAttributeValidatorTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'b': Only single value bool attribute fields are supported",
+            assertEquals("For schema 'test', field 'b': Only single value bool attribute fields are supported",
                          e.getMessage());
         }
     }
@@ -33,13 +33,14 @@ public class BoolAttributeValidatorTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'b': Only single value bool attribute fields are supported",
+            assertEquals("For schema 'test', field 'b': Only single value bool attribute fields are supported",
                     e.getMessage());
         }
     }
 
     private String getSd(String field) {
-        return joinLines("search test {",
+        return joinLines(
+                "schema test {",
                 "  document test {",
                 "    " + field,
                 "  }",

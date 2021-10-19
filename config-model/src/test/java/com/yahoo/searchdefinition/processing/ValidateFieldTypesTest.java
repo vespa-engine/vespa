@@ -43,7 +43,7 @@ public class ValidateFieldTypesTest {
         ValidateFieldTypes validator = new ValidateFieldTypes(schema, null, null, null);
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
-                "For search '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
+                "For schema '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
                 "Expected int for summary field '" + IMPORTED_FIELD_NAME + "', got string.");
         validator.process(true, false);
     }

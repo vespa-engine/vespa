@@ -354,10 +354,10 @@ public class DocumentModelBuilder {
                 throw new IllegalArgumentException("Data type '" + sdoc.getName() + "' is not a struct => tostring='" + sdoc.toString() + "'.");
             }
         }
-        for (AnnotationType annotation : sdoc.getAnnotations()) {
+        for (AnnotationType annotation : sdoc.getAnnotations().values()) {
             dt.add(annotation);
         }
-        for (AnnotationType annotation : sdoc.getAnnotations()) {
+        for (AnnotationType annotation : sdoc.getAnnotations().values()) {
             SDAnnotationType sa = (SDAnnotationType) annotation;
             if (annotation.getInheritedTypes().isEmpty() && (sa.getInherits() != null) ) {
                 annotationInheritance.put(annotation, sa.getInherits());

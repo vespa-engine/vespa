@@ -23,8 +23,8 @@ public class SearchMustHaveDocument extends Processor {
         if ( ! validate) return;
 
         if (schema.getDocument() == null)
-            throw new IllegalArgumentException("For search '" + schema.getName() +
-                                               "': A search specification must have an equally named document inside of it.");
+            throw new IllegalArgumentException("For " + schema +
+                                               ": A search specification must have an equally named document inside of it.");
     }
 
 }

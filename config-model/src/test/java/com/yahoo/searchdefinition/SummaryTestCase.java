@@ -27,7 +27,7 @@ public class SummaryTestCase {
     @Test
     public void testMemorySummary() throws ParseException {
         String sd = joinLines(
-                "search memorysummary {",
+                "schema memorysummary {",
                 "  document memorysummary {",
                 "      field inmemory type string {",
                 "          indexing: attribute | summary",
@@ -45,7 +45,7 @@ public class SummaryTestCase {
     @Test
     public void testDiskSummary() throws ParseException {
         String sd = joinLines(
-                "search disksummary {",
+                "schema disksummary {",
                 "  document-summary foobar {",
                 "      summary foo1 type string { source: inmemory }",
                 "      summary foo2 type string { source: ondisk }",
@@ -72,7 +72,7 @@ public class SummaryTestCase {
     @Test
     public void testDiskSummaryExplicit() throws ParseException {
         String sd = joinLines(
-                "search disksummary {",
+                "schema disksummary {",
                 "  document disksummary {",
                 "      field inmemory type string {",
                 "          indexing: attribute | summary",
@@ -95,7 +95,7 @@ public class SummaryTestCase {
     @Test
     public void testStructMemorySummary() throws ParseException {
         String sd = joinLines(
-                "search structmemorysummary {",
+                "schema structmemorysummary {",
                 "  document structmemorysummary {",
                 "      struct elem {",
                 "        field name type string {}",
@@ -126,7 +126,7 @@ public class SummaryTestCase {
     @Test
     public void testInheritance() throws Exception {
         String sd = joinLines(
-                "search music {",
+                "schema music {",
                 "  document music {",
                 "    field title type string {",
                 "      indexing: summary | attribute | index",
@@ -185,7 +185,7 @@ public class SummaryTestCase {
     @Test
     public void testRedeclaringInheritedFieldFails() throws Exception {
         String sd = joinLines(
-                "search music {",
+                "schema music {",
                 "  document music {",
                 "    field title type string {",
                 "      indexing: summary | attribute | index",
@@ -210,7 +210,7 @@ public class SummaryTestCase {
             SearchBuilder.createFromString(sd, logger);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'music', summary class 'title2', summary field 'title': Can not use " +
+            assertEquals("For schema 'music', summary class 'title2', summary field 'title': Can not use " +
                          "source 'title_short' for this summary field, an equally named field in summary class 'title' " +
                          "uses a different source: 'title'.", e.getMessage());
         }

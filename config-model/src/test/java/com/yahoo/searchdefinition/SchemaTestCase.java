@@ -98,6 +98,7 @@ public class SchemaTestCase {
                 "  document-summary parent_summary {" +
                 "    summary pf1 type string {}" +
                 "  }" +
+                //"  import field parentschema_ref.name as parent_name {}" +
                 "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +

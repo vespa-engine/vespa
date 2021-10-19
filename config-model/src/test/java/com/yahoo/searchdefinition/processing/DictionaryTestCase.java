@@ -144,7 +144,7 @@ public class DictionaryTestCase {
         try {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED, "dictionary:hash");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': hash dictionary require cased match", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': hash dictionary require cased match", e.getMessage());
         }
     }
     @Test
@@ -152,7 +152,7 @@ public class DictionaryTestCase {
         try {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED, "dictionary { hash\nuncased\n}");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': hash dictionary require cased match", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': hash dictionary require cased match", e.getMessage());
         }
     }
     @Test
@@ -165,7 +165,7 @@ public class DictionaryTestCase {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED, "dictionary { hash\ncased\n}");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
         }
     }
     @Test
@@ -181,13 +181,13 @@ public class DictionaryTestCase {
         try {
             verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.CASED, Case.CASED, "dictionary { btree\nhash\ncased\n}");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
         }
     }
     @Test
     public void testNonNumericFieldsFailsDictionaryControl() throws ParseException {
         String def = TestUtil.joinLines(
-                "search test {",
+                "schema test {",
                 "    document test {",
                 "        field n1 type bool {",
                 "            indexing: summary | attribute",
@@ -199,13 +199,13 @@ public class DictionaryTestCase {
             SearchBuilder sb = SearchBuilder.createFromString(def);
             fail("Controlling dictionary for non-numeric fields are not yet supported.");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': You can only specify 'dictionary:' for numeric or string fields", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': You can only specify 'dictionary:' for numeric or string fields", e.getMessage());
         }
     }
     @Test
     public void testNonFastSearchNumericFieldsFailsDictionaryControl() throws ParseException {
         String def = TestUtil.joinLines(
-                "search test {",
+                "schema test {",
                 "    document test {",
                 "        field n1 type int {",
                 "            indexing: summary | attribute",
@@ -217,14 +217,14 @@ public class DictionaryTestCase {
             SearchBuilder sb = SearchBuilder.createFromString(def);
             fail("Controlling dictionary for non-fast-search fields are not allowed.");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': You must specify 'attribute:fast-search' to allow dictionary control", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': You must specify 'attribute:fast-search' to allow dictionary control", e.getMessage());
         }
     }
 
     @Test
     public void testCasingForNonFastSearch() throws ParseException {
         String def = TestUtil.joinLines(
-                "search test {",
+                "schema test {",
                 "    document test {",
                 "        field s1 type string {",
                 "            indexing: attribute | summary",

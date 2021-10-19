@@ -53,7 +53,7 @@ public class PositionTestCase {
             SearchBuilder.buildFromFile("src/test/examples/position_index.sd");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'position_index', field 'pos': Indexing of data type 'position' is not " +
+            assertEquals("For schema 'position_index', field 'pos': Indexing of data type 'position' is not " +
                          "supported, replace 'index' statement with 'attribute'.", e.getMessage());
         }
     }

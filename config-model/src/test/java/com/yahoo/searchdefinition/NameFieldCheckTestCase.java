@@ -52,7 +52,8 @@ public class NameFieldCheckTestCase extends AbstractSchemaTestCase {
                     "}");
             fail("Should throw exception.");
         } catch (Exception e) {
-            assertEquals("For search 'duplicatenamesinsearch', field 'grpphotoids64': Incompatible types. Expected Array<long> for index field 'grpphotoids64', got string.", e.getMessage());
+            assertEquals("For schema 'duplicatenamesinsearch', field 'grpphotoids64': " +
+                         "Incompatible types. Expected Array<long> for index field 'grpphotoids64', got string.", e.getMessage());
         }
     }
 

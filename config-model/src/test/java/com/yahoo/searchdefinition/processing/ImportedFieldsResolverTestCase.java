@@ -60,7 +60,7 @@ public class ImportedFieldsResolverTestCase {
     @Test
     public void resolver_fails_if_document_reference_is_not_found() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', import field 'my_attribute_field': "
+        exceptionRule.expectMessage("For schema 'child', import field 'my_attribute_field': "
                 + "Reference field 'not_ref' not found");
         new SearchModel().addImportedField("my_attribute_field", "not_ref", "budget").resolve();
     }
@@ -68,7 +68,7 @@ public class ImportedFieldsResolverTestCase {
     @Test
     public void resolver_fails_if_referenced_field_is_not_found() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', import field 'my_attribute_field': "
+        exceptionRule.expectMessage("For schema 'child', import field 'my_attribute_field': "
                 + "Field 'not_existing' via reference field 'ref': Not found");
         new SearchModel().addImportedField("my_attribute_field", "ref", "not_existing").resolve();
     }
@@ -76,7 +76,7 @@ public class ImportedFieldsResolverTestCase {
     @Test
     public void resolver_fails_if_imported_field_is_not_an_attribute() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', import field 'my_not_attribute': "
+        exceptionRule.expectMessage("For schema 'child', import field 'my_not_attribute': "
                 + "Field 'not_attribute' via reference field 'ref': Is not an attribute field. Only attribute fields supported");
         new SearchModel().addImportedField("my_not_attribute", "ref", "not_attribute").resolve();
     }
@@ -85,7 +85,7 @@ public class ImportedFieldsResolverTestCase {
     public void resolver_fails_if_imported_field_is_indexing() {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
-                "For search 'child', import field 'my_attribute_and_index': " +
+                "For schema 'child', import field 'my_attribute_and_index': " +
                         "Field 'attribute_and_index' via reference field 'ref': Is an index field. Not supported");
         new SearchModel()
                 .addImportedField("my_attribute_and_index", "ref", "attribute_and_index")
@@ -96,7 +96,7 @@ public class ImportedFieldsResolverTestCase {
     public void resolver_fails_if_imported_field_is_of_type_predicate() {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
-                "For search 'child', import field 'my_predicate_field': " +
+                "For schema 'child', import field 'my_predicate_field': " +
                         "Field 'predicate_field' via reference field 'ref': Is of type 'predicate'. Not supported");
         new SearchModel().addImportedField("my_predicate_field", "ref", "predicate_field").resolve();
     }

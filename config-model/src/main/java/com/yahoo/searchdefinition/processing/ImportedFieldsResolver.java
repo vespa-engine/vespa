@@ -26,7 +26,7 @@ import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isM
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
 
 /**
- * Iterates all imported fields from SD-parsing and validates and resolves them into concrete fields from referenced document types.
+ * Iterates all imported fields from schema parsing and validates and resolves them into concrete fields from referenced document types.
  *
  * @author geirst
  */
@@ -193,14 +193,15 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     private void fail(TemporaryImportedField importedField, String msg) {
-        throw new IllegalArgumentException("For search '" + schema.getName() + "', import field '" + importedField.fieldName() + "': " + msg);
+        throw new IllegalArgumentException("For " + schema + ", import field '" +
+                                           importedField.fieldName() + "': " + msg);
     }
 
     private void fail(TemporaryImportedField importedField, String importedNestedFieldName, String msg) {
         if (importedField.fieldName().equals(importedNestedFieldName)) {
             fail(importedField, msg);
         }
-        throw new IllegalArgumentException("For search '" + schema.getName() + "', import field '" +
+        throw new IllegalArgumentException("For " + schema + ", import field '" +
                                            importedField.fieldName() + "' (nested to '" + importedNestedFieldName + "'): " + msg);
     }
 }

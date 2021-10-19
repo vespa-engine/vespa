@@ -41,8 +41,8 @@ public class SummaryNamesFieldCollisions extends Processor {
                         String prevSource = prevClassAndSource.getSecond();
                         if ( ! prevClass.equals(summary.getName())) {
                             if ( ! prevSource.equals(source.getName())) {
-                                throw new IllegalArgumentException("For search '" + schema.getName() +
-                                                                   "', summary class '" + summary.getName() + "'," +
+                                throw new IllegalArgumentException("For " + schema +
+                                                                   ", summary class '" + summary.getName() + "'," +
                                                                    " summary field '" + summaryField.getName() + "':" +
                                                                    " Can not use source '" + source.getName() +
                                                                    "' for this summary field, an equally named field in summary class '" +

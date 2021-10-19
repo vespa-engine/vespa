@@ -43,8 +43,8 @@ public class FieldSetSettings extends Processor {
     private void checkFieldNames(Schema schema, FieldSet fieldSet) {
         for (String field : fieldSet.getFieldNames()) {
             if (schema.getField(field) == null)
-                throw new IllegalArgumentException("For search '" + schema.getName() +
-                                                   "': Field '" + field + "' in " + fieldSet + " does not exist.");
+                throw new IllegalArgumentException("For " + schema + ": Field '" + field + "' in " +
+                                                   fieldSet + " does not exist.");
         }
     }
 

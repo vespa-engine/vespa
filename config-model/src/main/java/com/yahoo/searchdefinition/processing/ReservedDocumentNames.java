@@ -32,9 +32,8 @@ public class ReservedDocumentNames extends Processor {
         if ( ! validate) return;
 
         String docName = schema.getDocument().getName();
-        if (RESERVED_NAMES.contains(docName)) {
-            throw new IllegalArgumentException("For search '" + schema.getName() + "': Document name '" + docName +
-                                               "' is reserved.");
-        }
+        if (RESERVED_NAMES.contains(docName))
+            throw new IllegalArgumentException("For " + schema + ": Document name '" + docName + "' is reserved.");
     }
+
 }

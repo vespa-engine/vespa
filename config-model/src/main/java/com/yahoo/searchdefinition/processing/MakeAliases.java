@@ -31,7 +31,7 @@ public class MakeAliases extends Processor {
             for (Map.Entry<String, String> e : field.getAliasToName().entrySet()) {
                 String alias = e.getKey();
                 String name = e.getValue();
-                String errMsg = "For search '" + schema.getName() + "': alias '" + alias + "' ";
+                String errMsg = "For " + schema + ": alias '" + alias + "' ";
                 if (validate && schema.existsIndex(alias)) {
                     throw new IllegalArgumentException(errMsg + "is illegal since it is the name of an index.");
                 }

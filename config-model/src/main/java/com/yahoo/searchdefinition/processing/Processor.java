@@ -112,12 +112,12 @@ public abstract class Processor {
         return someRankSettings.iterator();
     }
 
-    protected String formatError(String searchName, String fieldName, String msg) {
-        return "For search '" + searchName + "', field '" + fieldName + "': " + msg;
+    protected String formatError(String schemaName, String fieldName, String msg) {
+        return "For schema '" + schemaName + "', field '" + fieldName + "': " + msg;
     }
 
-    protected RuntimeException newProcessException(String searchName, String fieldName, String msg) {
-        return new IllegalArgumentException(formatError(searchName, fieldName, msg));
+    protected RuntimeException newProcessException(String schemaName, String fieldName, String msg) {
+        return new IllegalArgumentException(formatError(schemaName, fieldName, msg));
     }
 
     protected RuntimeException newProcessException(Schema schema, Field field, String msg) {
@@ -128,8 +128,8 @@ public abstract class Processor {
         throw newProcessException(schema, field, msg);
     }
 
-    protected void warn(String searchName, String fieldName, String message) {
-        String fullMsg = formatError(searchName, fieldName, message);
+    protected void warn(String schemaName, String fieldName, String message) {
+        String fullMsg = formatError(schemaName, fieldName, message);
         deployLogger.logApplicationPackage(Level.WARNING, fullMsg);
     }
 
@@ -137,8 +137,8 @@ public abstract class Processor {
         warn(schema.getName(), field.getName(), message);
     }
 
-    protected void info(String searchName, String fieldName, String message) {
-        String fullMsg = formatError(searchName, fieldName, message);
+    protected void info(String schemaName, String fieldName, String message) {
+        String fullMsg = formatError(schemaName, fieldName, message);
         deployLogger.logApplicationPackage(Level.INFO, fullMsg);
     }
 
