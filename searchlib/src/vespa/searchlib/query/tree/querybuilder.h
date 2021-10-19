@@ -100,10 +100,10 @@ public:
 // control of the query node instantiation.
 
 template <class NodeTypes>
-typename NodeTypes::True *create_true() { return new typename NodeTypes::True; }
+typename NodeTypes::TrueQueryNode *create_true() { return new typename NodeTypes::TrueQueryNode; }
 
 template <class NodeTypes>
-typename NodeTypes::False *create_false() { return new typename NodeTypes::False; }
+typename NodeTypes::FalseQueryNode *create_false() { return new typename NodeTypes::FalseQueryNode; }
 
 // Intermediate nodes
 template <class NodeTypes>
@@ -335,10 +335,10 @@ public:
         adjustWeight(weight);
         return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, explore_additional_hits, distance_threshold));
     }
-    typename NodeTypes::True &add_true_node() {
+    typename NodeTypes::TrueQueryNode &add_true_node() {
         return addTerm(create_true<NodeTypes>());
     }
-    typename NodeTypes::False &add_false_node() {
+    typename NodeTypes::FalseQueryNode &add_false_node() {
         return addTerm(create_false<NodeTypes>());
     }
 };

@@ -177,8 +177,8 @@ void checkQueryTreeTypes(Node *node) {
     typedef typename NodeTypes::WeakAnd WeakAnd;
     typedef typename NodeTypes::PredicateQuery PredicateQuery;
     typedef typename NodeTypes::RegExpTerm RegExpTerm;
-    typedef typename NodeTypes::True TrueNode;
-    typedef typename NodeTypes::False FalseNode;
+    typedef typename NodeTypes::TrueQueryNode TrueNode;
+    typedef typename NodeTypes::FalseQueryNode FalseNode;
 
     ASSERT_TRUE(node);
     auto* and_node = as_node<And>(node);
@@ -330,8 +330,8 @@ struct AbstractTypes {
     typedef search::query::WeakAnd WeakAnd;
     typedef search::query::PredicateQuery PredicateQuery;
     typedef search::query::RegExpTerm RegExpTerm;
-    typedef search::query::TrueQueryNode True;
-    typedef search::query::FalseQueryNode False;
+    typedef search::query::TrueQueryNode TrueQueryNode;
+    typedef search::query::FalseQueryNode FalseQueryNode;
 };
 
 // Builds a tree with simplequery and checks that the results have the
@@ -452,8 +452,8 @@ struct MyQueryNodeTypes {
     typedef MyPredicateQuery PredicateQuery;
     typedef MyRegExpTerm RegExpTerm;
     typedef MyNearestNeighborTerm NearestNeighborTerm;
-    typedef MyTrue True;
-    typedef MyFalse False;
+    typedef MyTrue TrueQueryNode;
+    typedef MyFalse FalseQueryNode;
 };
 
 TEST("require that Custom Query Trees Can Be Built") {

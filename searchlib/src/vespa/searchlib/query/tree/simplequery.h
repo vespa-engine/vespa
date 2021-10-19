@@ -122,8 +122,8 @@ struct SimpleQueryNodeTypes {
     using And = SimpleAnd;
     using AndNot = SimpleAndNot;
     using Equiv = SimpleEquiv;
-    using False = SimpleFalse;
-    using True = SimpleTrue;
+    using TrueQueryNode = SimpleTrue;
+    using FalseQueryNode = SimpleFalse;
     using NumberTerm = SimpleNumberTerm;
     using LocationTerm = SimpleLocationTerm;
     using Near = SimpleNear;

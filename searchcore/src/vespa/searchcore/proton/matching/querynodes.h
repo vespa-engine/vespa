@@ -162,8 +162,8 @@ struct ProtonNodeTypes {
     typedef ProtonPredicateQuery  PredicateQuery;
     typedef ProtonRegExpTerm      RegExpTerm;
     typedef ProtonNearestNeighborTerm NearestNeighborTerm;
-    typedef ProtonTrue            True;
-    typedef ProtonFalse           False;
+    typedef ProtonTrue            TrueQueryNode;
+    typedef ProtonFalse           FalseQueryNode;
 };
 
 }

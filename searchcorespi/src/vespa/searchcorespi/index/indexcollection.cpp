@@ -188,6 +188,8 @@ private:
     void visit(Near &)        override { }
     void visit(ONear &)       override { }
     void visit(SameElement &) override { }
+    void visit(TrueQueryNode &)    override {}
+    void visit(FalseQueryNode &)   override {}
 
     void visit(WeightedSetTerm &n) override { visitTerm(n); }
     void visit(DotProduct &n)      override { visitTerm(n); }
@@ -203,8 +205,6 @@ private:
     void visit(PredicateQuery &n)  override { visitTerm(n); }
     void visit(RegExpTerm &n)      override { visitTerm(n); }
     void visit(NearestNeighborTerm &n) override { visitTerm(n); }
-    void visit(TrueQueryNode &)    override {}
-    void visit(FalseQueryNode &)   override {}
 
 public:
     CreateBlueprintVisitor(const IIndexCollection &indexes,

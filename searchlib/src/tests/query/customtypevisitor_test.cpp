@@ -72,8 +72,8 @@ struct MyQueryNodeTypes {
     typedef MyPredicateQuery PredicateQuery;
     typedef MyRegExpTerm RegExpTerm;
     typedef MyNearestNeighborTerm NearestNeighborTerm;
-    typedef MyFalse False;
-    typedef MyTrue True;
+    typedef MyFalse FalseQueryNode;
+    typedef MyTrue TrueQueryNode;
 };
 
 class MyCustomVisitor : public CustomTypeVisitor<MyQueryNodeTypes>
