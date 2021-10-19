@@ -296,8 +296,10 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                  protonConfig.numthreadspersearch,
                                                  protonConfig.distributionkey,
                                                  protonConfig.search.async);
+    _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
     _distributionKey = protonConfig.distributionkey;
-    _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
+    _summaryEngine = std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
+    _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
     _docsumBySlime = std::make_unique<DocsumBySlime>(*_summaryEngine);
 
     IFlushStrategy::SP strategy;
