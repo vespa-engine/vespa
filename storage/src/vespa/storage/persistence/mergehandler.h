@@ -45,7 +45,8 @@ public:
     MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
                  const ClusterContext& cluster_context, const framework::Clock & clock,
                  uint32_t maxChunkSize = 4190208,
-                 uint32_t commonMergeChainOptimalizationMinimumSize = 64);
+                 uint32_t commonMergeChainOptimalizationMinimumSize = 64,
+                 bool async_apply_bucket_diff = false);
 
     bool buildBucketInfoList(
             const spi::Bucket& bucket,
@@ -77,6 +78,7 @@ private:
     spi::PersistenceProvider &_spi;
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;
+    const bool                _async_apply_bucket_diff;
 
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,

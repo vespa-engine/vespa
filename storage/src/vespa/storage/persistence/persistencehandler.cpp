@@ -19,7 +19,8 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
       _processAllHandler(_env, provider),
       _mergeHandler(_env, provider, component.cluster_context(), _clock,
                     cfg.bucketMergeChunkSize,
-                    cfg.commonMergeChainOptimalizationMinimumSize),
+                    cfg.commonMergeChainOptimalizationMinimumSize,
+                    cfg.asyncApplyBucketDiff),
       _asyncHandler(_env, provider, bucketOwnershipNotifier, sequencedExecutor, component.getBucketIdFactory()),
       _splitJoinHandler(_env, provider, bucketOwnershipNotifier, cfg.enableMultibitSplitOptimalization),
       _simpleHandler(_env, provider)

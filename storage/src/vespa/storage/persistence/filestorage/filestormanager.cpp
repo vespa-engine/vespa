@@ -10,7 +10,6 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/messagebucket.h>
-#include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/persistence/persistencethread.h>
 #include <vespa/storage/persistence/persistencehandler.h>
