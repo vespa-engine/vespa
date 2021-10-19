@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchdefinition.processing.ImportedFieldsResolver;
 import com.yahoo.searchdefinition.processing.OnnxModelTypeResolver;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
@@ -98,7 +99,7 @@ public class SchemaTestCase {
                 "  document-summary parent_summary {" +
                 "    summary pf1 type string {}" +
                 "  }" +
-                //"  import field parentschema_ref.name as parent_name {}" +
+                "  import field parentschema_ref.name as parent_imported {}" +
                 "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +
@@ -111,6 +112,7 @@ public class SchemaTestCase {
 
         SearchBuilder builder = new SearchBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
+        builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
         builder.importString(parentLines);
         builder.importString(childLines);
         builder.build(true);
@@ -132,6 +134,8 @@ public class SchemaTestCase {
         assertNotNull(child.getSummaryField("pf1"));
         assertNotNull(child.getExplicitSummaryField("pf1"));
         assertNotNull(child.getUniqueNamedSummaryFields().get("pf1"));
+        assertTrue(child.temporaryImportedFields().isPresent());
+        assertNotNull(child.temporaryImportedFields().get().fields().get("parent_imported"));
     }
 
 }

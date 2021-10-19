@@ -251,7 +251,6 @@ public class AdjustPositionSummaryFieldsTestCase {
             assertNotNull(schema.temporaryImportedFields().get());
             assertFalse(schema.importedFields().isPresent());
             new ImportedFieldsResolver(schema, null, null, null).process(true, false);
-            assertFalse(schema.temporaryImportedFields().isPresent());
             assertNotNull(schema.importedFields().get());
             new AdjustPositionSummaryFields(schema, null, null, null).process(true, false);
         }

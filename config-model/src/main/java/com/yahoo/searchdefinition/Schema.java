@@ -87,7 +87,11 @@ public class Schema implements ImmutableSchema {
 
     private final OnnxModels onnxModels;
 
-    private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
+    /** All imported fields of this (and parent schemas) */
+    // TODO: Use empty, not optional
+    // TODO: Merge this and importedFields
+    private final Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields(this));
+    /** The resulting processed field */
     private Optional<ImportedFields> importedFields = Optional.empty();
 
     private final Application owner;
@@ -226,7 +230,6 @@ public class Schema implements ImmutableSchema {
     }
 
     public void setImportedFields(ImportedFields importedFields) {
-        temporaryImportedFields = Optional.empty();
         this.importedFields = Optional.of(importedFields);
     }
 
