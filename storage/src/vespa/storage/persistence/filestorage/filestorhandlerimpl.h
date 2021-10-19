@@ -218,7 +218,7 @@ public:
     }
 
     void addMergeStatus(const document::Bucket&, std::shared_ptr<MergeStatus>) override;
-    MergeStatus& editMergeStatus(const document::Bucket&) override;
+    std::shared_ptr<MergeStatus> editMergeStatus(const document::Bucket&) override;
     bool isMerging(const document::Bucket&) const override;
     void clearMergeStatus(const document::Bucket& bucket) override;
     void clearMergeStatus(const document::Bucket& bucket, const api::ReturnCode& code) override;

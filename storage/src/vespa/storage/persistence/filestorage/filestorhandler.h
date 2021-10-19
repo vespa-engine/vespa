@@ -200,13 +200,13 @@ public:
     virtual void addMergeStatus(const document::Bucket&, std::shared_ptr<MergeStatus>) = 0;
 
     /**
-     * Returns the reference to the current merge status for the given bucket.
+     * Returns a shared pointer to the current merge status for the given bucket.
      * This allows unlocked access to an internal variable, so users should
      * first check that noone else is using it by calling isMerging() first.
      *
      * @param bucket The bucket to start merging.
      */
-    virtual MergeStatus& editMergeStatus(const document::Bucket& bucket) = 0;
+    virtual std::shared_ptr<MergeStatus> editMergeStatus(const document::Bucket& bucket) = 0;
 
     /**
      * Returns true if the bucket is currently being merged on this node.
