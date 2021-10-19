@@ -27,8 +27,6 @@ class AlwaysTrueBlueprint : public SimpleLeafBlueprint
 protected:
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
 public:
-    //AlwaysTrueBlueprint(const FieldSpecBaseList &fields);
-    //AlwaysTrueBlueprint(const FieldSpecBase &field);
     AlwaysTrueBlueprint();
     SearchIterator::UP createFilterSearch(bool strict, FilterConstraint constraint) const override;
 };
