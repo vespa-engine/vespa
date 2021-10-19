@@ -24,6 +24,25 @@ ThreadInit::Run(FastOS_ThreadInterface *, void *) {
 
 }
 
+ThreadStackExecutorBase::Worker::Worker()
+    : lock(),
+      cond(),
+      idleTracker(),
+      pre_guard(0xaaaaaaaa),
+      idle(true),
+      post_guard(0x55555555),
+      task()
+{}
+
+void
+ThreadStackExecutorBase::Worker::verify(bool expect_idle) const {
+    (void) expect_idle;
+    assert(pre_guard == 0xaaaaaaaa);
+    assert(post_guard == 0x55555555);
+    assert(idle == expect_idle);
+    assert(!task.task == expect_idle);
+}
+
 void
 ThreadStackExecutorBase::BlockedThread::wait() const
 {
@@ -103,11 +122,17 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
             return false;
         }
         _workers.push(&worker);
+        //TODO Not entirely correct as this counts working days, not wakeUps.
+        //But it should be the same, and here it is thread safe.
+        _stats.wakeupCount++;
     }
     {
         unique_lock guard(worker.lock);
         while (worker.idle) {
+            worker.idleTracker.set_idle(steady_clock::now());
             worker.cond.wait(guard);
+            //TODO: _idleTracker.was_idle is not thread safe !!!! Must find other solution. Atomic ?
+            _idleTracker.was_idle(worker.idleTracker.set_active(steady_clock::now()));
         }
     }
     worker.idle = !worker.task.task;
@@ -141,6 +166,7 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
       _lock(),
       _cond(),
       _stats(),
+      _idleTracker(steady_clock::now()),
       _executorCompletion(),
       _tasks(),
       _workers(),
@@ -157,6 +183,8 @@ void
 ThreadStackExecutorBase::start(uint32_t threads)
 {
     assert(threads > 0);
+    _stats.executorCount = threads;
+    _idleTracker.reset(steady_clock::now(), threads);
     for (uint32_t i = 0; i < threads; ++i) {
         FastOS_ThreadInterface *thread = _pool->NewThread(_thread_init.get());
         assert(thread != nullptr);
@@ -164,7 +192,8 @@ ThreadStackExecutorBase::start(uint32_t threads)
     }
 }
 
-size_t ThreadStackExecutorBase::getNumThreads() const {
+size_t
+ThreadStackExecutorBase::getNumThreads() const {
     return _pool->GetNumStartedThreads();
 }
 
@@ -208,6 +237,12 @@ ThreadStackExecutorBase::getStats()
 {
     std::unique_lock guard(_lock);
     ExecutorStats stats = _stats;
+    stats.executorCount = getNumThreads();
+    steady_time now = steady_clock::now();
+    for (size_t i(0); i < _workers.size(); i++) {
+        _idleTracker.was_idle(_workers.access(i)->idleTracker.reset(now));
+    }
+    stats.absUtil = _idleTracker.reset(now, 1);
     _stats = ExecutorStats();
     _stats.queueSize.add(_taskCount);
     return stats;

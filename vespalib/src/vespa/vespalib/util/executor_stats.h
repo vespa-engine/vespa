@@ -51,25 +51,37 @@ private:
 
 /**
  * Struct representing stats for an executor.
+ * Note that aggregation requires sample interval to be the same(similar) for all samples.
  **/
 struct ExecutorStats {
     using QueueSizeT = AggregatedAverage<size_t>;
+    uint32_t   executorCount;
     QueueSizeT queueSize;
-    size_t acceptedTasks;
-    size_t rejectedTasks;
-    ExecutorStats() : ExecutorStats(QueueSizeT(), 0, 0) {}
-    ExecutorStats(QueueSizeT queueSize_in, size_t accepted, size_t rejected)
-        : queueSize(queueSize_in), acceptedTasks(accepted), rejectedTasks(rejected)
+    size_t     acceptedTasks;
+    size_t     rejectedTasks;
+    size_t     wakeupCount; // Number of times a worker was woken up,
+    double     absUtil;
+    ExecutorStats() : ExecutorStats(1, QueueSizeT(), 0, 0, 0, 1.0) {}
+    ExecutorStats(uint32_t executorCount_in, QueueSizeT queueSize_in, size_t accepted, size_t rejected, size_t wakeupCount_in, double absUtil_in)
+        : executorCount(executorCount_in),
+          queueSize(queueSize_in),
+          acceptedTasks(accepted),
+          rejectedTasks(rejected),
+          wakeupCount(wakeupCount_in),
+          absUtil(absUtil_in)
     {}
-    ExecutorStats & operator += (const ExecutorStats & rhs) {
+    void aggregate(const ExecutorStats & rhs) {
+        executorCount += rhs.executorCount;
         queueSize = QueueSizeT(queueSize.count() + rhs.queueSize.count(),
                                queueSize.total() + rhs.queueSize.total(),
                                queueSize.min() + rhs.queueSize.min(),
                                queueSize.max() + rhs.queueSize.max());
         acceptedTasks += rhs.acceptedTasks;
         rejectedTasks += rhs.rejectedTasks;
-        return *this;
+        wakeupCount += rhs.wakeupCount;
+        absUtil += rhs.absUtil;
     }
+    double getUtil() const { return absUtil / executorCount; }
 };
 
 }
