@@ -9,13 +9,6 @@
 
 namespace storage::spi {
 
-RemoveResult
-AbstractPersistenceProvider::removeIfFound(const Bucket& b, Timestamp timestamp,
-                                           const DocumentId& id, Context& context)
-{
-    return remove(b, timestamp, id, context);
-}
-
 void
 AbstractPersistenceProvider::removeIfFoundAsync(const Bucket& b, Timestamp timestamp,
                                                 const DocumentId& id, Context& context, OperationComplete::UP onComplete)
@@ -28,16 +21,6 @@ AbstractPersistenceProvider::getModifiedBuckets(BucketSpace) const
 {
     BucketIdListResult::List list;
     return BucketIdListResult(list);
-}
-
-void
-AbstractPersistenceProvider::setActiveStateAsync(const Bucket &, BucketInfo::ActiveState, OperationComplete::UP op) {
-    op->onComplete(std::make_unique<Result>());
-}
-
-void
-AbstractPersistenceProvider::deleteBucketAsync(const Bucket &, Context &, OperationComplete::UP op) {
-    op->onComplete(std::make_unique<Result>());
 }
 
 }

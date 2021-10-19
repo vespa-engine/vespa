@@ -157,10 +157,10 @@ public:
     Result setClusterState(BucketSpace bucketSpace, const ClusterState& newState) override;
     void setActiveStateAsync(const Bucket&, BucketInfo::ActiveState, OperationComplete::UP) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
-    Result put(const Bucket&, Timestamp, DocumentSP, Context&) override;
     GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;
-    RemoveResult remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&) override;
-    UpdateResult update(const Bucket&, Timestamp, DocumentUpdateSP, Context&) override;
+    void putAsync(const Bucket&, Timestamp, DocumentSP, Context&, OperationComplete::UP) override;
+    void removeAsync(const Bucket& b, Timestamp t, const DocumentId& did, Context&, OperationComplete::UP) override;
+    void updateAsync(const Bucket&, Timestamp, DocumentUpdateSP, Context&, OperationComplete::UP) override;
 
     CreateIteratorResult
     createIterator(const Bucket &bucket, FieldSetSP fs, const Selection &, IncludedVersions, Context &context) override;

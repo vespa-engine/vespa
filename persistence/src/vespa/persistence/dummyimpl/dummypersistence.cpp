@@ -15,7 +15,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <algorithm>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -74,11 +73,9 @@ BucketContent::getBucketInfo() const
     uint32_t totalSize = 0;
     uint32_t checksum = 0;
 
-    for (std::vector<BucketEntry>::const_iterator
-             it = _entries.begin(); it != _entries.end(); ++it)
-    {
-        const DocEntry& entry(*it->entry);
-        const GlobalId& gid(it->gid);
+    for (const BucketEntry & bucketEntry : _entries) {
+        const DocEntry& entry(*bucketEntry.entry);
+        const GlobalId& gid(bucketEntry.gid);
 
         GidMapType::const_iterator gidIt(_gidMap.find(gid));
         assert(gidIt != _gidMap.end());
@@ -94,7 +91,7 @@ BucketContent::getBucketInfo() const
         ++unique;
         uniqueSize += entry.getSize();
 
-        checksum ^= computeEntryChecksum(*it);
+        checksum ^= computeEntryChecksum(bucketEntry);
     }
     if (!unique) {
         checksum = 0;
@@ -115,12 +112,6 @@ BucketContent::getBucketInfo() const
 }
 
 namespace {
-struct HasDocId {
-    const DocumentId &_did;
-    HasDocId(const DocumentId &did) : _did(did) {}
-    bool operator()(const DocEntry &entry)
-    { return *entry.getDocumentId() == _did; }
-};
 
 struct TimestampLess {
     bool operator()(const BucketEntry &bucketEntry, Timestamp t)
@@ -128,15 +119,6 @@ struct TimestampLess {
     bool operator()(Timestamp t, const BucketEntry &bucketEntry)
     { return t < bucketEntry.entry->getTimestamp(); }
 };
-
-template <typename Iter>
-typename std::iterator_traits<Iter>::value_type
-dereferenceOrDefaultIfAtEnd(Iter it, Iter end) {
-    if (it == end) {
-        return typename std::iterator_traits<Iter>::value_type();
-    }
-    return *it;
-}
 
 }  // namespace
 
@@ -442,51 +424,52 @@ DummyPersistence::getBucketInfo(const Bucket& b) const
     return BucketInfoResult(info);
 }
 
-Result
-DummyPersistence::put(const Bucket& b, Timestamp t, Document::SP doc, Context&)
+void
+DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, Context&, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "put(%s, %" PRIu64 ", %s)",
-        b.toString().c_str(),
-        uint64_t(t),
-        doc->getId().toString().c_str());
+        b.toString().c_str(), uint64_t(t), doc->getId().toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
     if (!bc.get()) {
-        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
-    }
-
-    DocEntry::SP existing = (*bc)->getEntry(t);
-    if (existing.get()) {
-        if (doc->getId() == *existing->getDocumentId()) {
-            return Result();
+        bc.reset();
+        onComplete->onComplete(std::make_unique<BucketInfoResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
+    } else {
+        DocEntry::SP existing = (*bc)->getEntry(t);
+        if (existing) {
+            bc.reset();
+            if (doc->getId() == *existing->getDocumentId()) {
+                onComplete->onComplete(std::make_unique<Result>());
+            } else {
+                onComplete->onComplete(std::make_unique<Result>(Result::ErrorType::TIMESTAMP_EXISTS,
+                                                                "Timestamp already existed"));
+            }
         } else {
-            return Result(Result::ErrorType::TIMESTAMP_EXISTS,
-                          "Timestamp already existed");
+            LOG(spam, "Inserting document %s", doc->toString(true).c_str());
+            auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
+            (*bc)->insert(std::move(entry));
+            bc.reset();
+            onComplete->onComplete(std::make_unique<Result>());
         }
     }
-
-    LOG(spam, "Inserting document %s", doc->toString(true).c_str());
-
-    auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
-    (*bc)->insert(std::move(entry));
-    return Result();
 }
 
-UpdateResult
-DummyPersistence::update(const Bucket& bucket, Timestamp ts, DocumentUpdateSP upd, Context& context)
+void
+DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdateSP upd, Context& context, OperationComplete::UP onComplete)
 {
     GetResult getResult = get(bucket, document::AllFields(), upd->getId(), context);
 
     if (getResult.hasError()) {
-        return UpdateResult(getResult.getErrorCode(), getResult.getErrorMessage());
+        onComplete->onComplete(std::make_unique<UpdateResult>(getResult.getErrorCode(), getResult.getErrorMessage()));
+        return;
     }
-
     auto docToUpdate = getResult.getDocumentPtr();
     Timestamp updatedTs = getResult.getTimestamp();
     if (!docToUpdate) {
         if (!upd->getCreateIfNonExistent()) {
-            return UpdateResult();
+            onComplete->onComplete(std::make_unique<UpdateResult>());
+            return;
         } else {
             docToUpdate = std::make_shared<document::Document>(upd->getType(), upd->getId());
             updatedTs = ts;
@@ -498,14 +481,14 @@ DummyPersistence::update(const Bucket& bucket, Timestamp ts, DocumentUpdateSP up
     Result putResult = put(bucket, ts, std::move(docToUpdate), context);
 
     if (putResult.hasError()) {
-        return UpdateResult(putResult.getErrorCode(), putResult.getErrorMessage());
+        onComplete->onComplete(std::make_unique<UpdateResult>(putResult.getErrorCode(), putResult.getErrorMessage()));
+    } else {
+        onComplete->onComplete(std::make_unique<UpdateResult>(updatedTs));
     }
-
-    return UpdateResult(updatedTs);
 }
 
-RemoveResult
-DummyPersistence::remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&)
+void
+DummyPersistence::removeAsync(const Bucket& b, Timestamp t, const DocumentId& did, Context &, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "remove(%s, %" PRIu64 ", %s)",
@@ -515,19 +498,21 @@ DummyPersistence::remove(const Bucket& b, Timestamp t, const DocumentId& did, Co
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
-    if (!bc.get()) {
-        return RemoveResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
-    }
+    if ( ! bc ) {
+        bc.reset();
+        onComplete->onComplete(std::make_unique<RemoveResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
+    } else {
+        DocEntry::SP entry((*bc)->getEntry(did));
+        bool foundPut(entry.get() && !entry->isRemove());
+        auto remEntry = std::make_unique<DocEntry>(t, REMOVE_ENTRY, did);
 
-    DocEntry::SP entry((*bc)->getEntry(did));
-    bool foundPut(entry.get() && !entry->isRemove());
-    DocEntry::UP remEntry(new DocEntry(t, REMOVE_ENTRY, did));
-
-    if ((*bc)->hasTimestamp(t)) {
-        (*bc)->eraseEntry(t);
+        if ((*bc)->hasTimestamp(t)) {
+            (*bc)->eraseEntry(t);
+        }
+        (*bc)->insert(std::move(remEntry));
+        bc.reset();
+        onComplete->onComplete(std::make_unique<RemoveResult>(foundPut));
     }
-    (*bc)->insert(std::move(remEntry));
-    return RemoveResult(foundPut);
 }
 
 GetResult
