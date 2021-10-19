@@ -4,6 +4,8 @@ package com.yahoo.concurrent.maintenance;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.net.HostName;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -94,7 +96,8 @@ public abstract class Maintainer implements Runnable {
 
     /** Convenience methods to convert attempts and failures into a success factor */
     protected final double asSuccessFactor(int attempts, int failures) {
-        return attempts == 0 ? 1.0 : 1 - (double)failures / attempts;
+        double factor = attempts == 0 ? 1.0 : 1 - (double)failures / attempts;
+        return new BigDecimal(factor).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
     /** Returns the interval at which this job is set to run */
