@@ -53,10 +53,6 @@ resource_exhaustion_merge_back_pressure_duration_secs double default=30.0
 ## a busy-reply that would subsequently be unwound through the entire merge chain.
 disable_queue_limits_for_chained_merges bool default=false
 
-## If set, portions of apply bucket diff handling will be performed asynchronously
-## with persistence thread not waiting for local writes to complete.
-async_apply_bucket_diff bool default=false
-
 ## Whether the deadlock detector should be enabled or not. If disabled, it will
 ## still run, but it will never actually abort the process it is running in.
 enable_dead_lock_detector bool default=false restart

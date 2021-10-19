@@ -23,13 +23,15 @@ namespace storage {
 MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
                            const ClusterContext& cluster_context, const framework::Clock & clock,
                            uint32_t maxChunkSize,
-                           uint32_t commonMergeChainOptimalizationMinimumSize)
+                           uint32_t commonMergeChainOptimalizationMinimumSize,
+                           bool async_apply_bucket_diff)
     : _clock(clock),
       _cluster_context(cluster_context),
       _env(env),
       _spi(spi),
       _maxChunkSize(maxChunkSize),
-      _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize)
+      _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize),
+      _async_apply_bucket_diff(async_apply_bucket_diff)
 {
 }
 
