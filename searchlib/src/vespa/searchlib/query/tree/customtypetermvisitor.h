@@ -29,8 +29,8 @@ private:
     void visit(typename NodeTypes::SameElement &n) override { visitChildren(n); }
 
     // leaf nodes without terms:
-    void visit(TrueQueryNode &) override {}
-    void visit(FalseQueryNode &) override {}
+    void visit(typename NodeTypes::True &) override {}
+    void visit(typename NodeTypes::False &) override {}
 
     // phrases and weighted set terms are conceptual leaf nodes and
     // should be handled that way.

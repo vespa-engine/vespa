@@ -6,7 +6,6 @@
 #include "create_blueprint_visitor_helper.h"
 #include <vespa/vespalib/objects/visit.h>
 
-using search::query::FalseQueryNode;
 using search::query::LocationTerm;
 using search::query::NearestNeighborTerm;
 using search::query::Node;
@@ -18,7 +17,6 @@ using search::query::RegExpTerm;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
-using search::query::TrueQueryNode;
 
 namespace search::queryeval {
 

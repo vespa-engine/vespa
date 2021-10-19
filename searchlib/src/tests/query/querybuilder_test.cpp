@@ -409,6 +409,8 @@ struct MyNearestNeighborTerm : NearestNeighborTerm {
       : NearestNeighborTerm(query_tensor_name, field_name, i, w, target_num_hits, allow_approximate, explore_additional_hits, distance_threshold)
     {}
 };
+struct MyTrue : TrueQueryNode {};
+struct MyFalse : FalseQueryNode {};
 
 struct MyQueryNodeTypes {
     typedef MyAnd And;
@@ -434,6 +436,8 @@ struct MyQueryNodeTypes {
     typedef MyPredicateQuery PredicateQuery;
     typedef MyRegExpTerm RegExpTerm;
     typedef MyNearestNeighborTerm NearestNeighborTerm;
+    typedef MyTrue True;
+    typedef MyFalse False;
 };
 
 TEST("require that Custom Query Trees Can Be Built") {

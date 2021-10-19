@@ -159,11 +159,10 @@ protected:
     void visit(ProtonPredicateQuery &n)  override { buildTerm(n); }
     void visit(ProtonRegExpTerm &n)      override { buildTerm(n); }
     void visit(ProtonNearestNeighborTerm &n) override { buildTerm(n); }
-
-    void visit(search::query::TrueQueryNode &) override {
+    void visit(ProtonTrue &) override {
         _result = std::make_unique<AlwaysTrueBlueprint>();
     }
-    void visit(search::query::FalseQueryNode &) override {
+    void visit(ProtonFalse &) override {
         _result = std::make_unique<EmptyBlueprint>();
     }
 

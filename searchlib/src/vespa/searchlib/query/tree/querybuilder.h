@@ -99,6 +99,12 @@ public:
 // You may specialize these functions for your own traits class to have full
 // control of the query node instantiation.
 
+template <class NodeTypes>
+typename NodeTypes::True *create_true() { return new typename NodeTypes::True; }
+
+template <class NodeTypes>
+typename NodeTypes::False *create_false() { return new typename NodeTypes::False; }
+
 // Intermediate nodes
 template <class NodeTypes>
 typename NodeTypes::And *createAnd() { return new typename NodeTypes::And; }
@@ -329,8 +335,12 @@ public:
         adjustWeight(weight);
         return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, explore_additional_hits, distance_threshold));
     }
-    void add_true_node() { addTerm(new TrueQueryNode()); }
-    void add_false_node() { addTerm(new TrueQueryNode()); }
+    typename NodeTypes::True &add_true_node() {
+        return addTerm(create_true<NodeTypes>());
+    }
+    typename NodeTypes::False &add_false_node() {
+        return addTerm(create_false<NodeTypes>());
+    }
 };
 
 }

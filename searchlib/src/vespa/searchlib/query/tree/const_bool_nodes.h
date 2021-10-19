@@ -7,11 +7,13 @@
 namespace search::query {
 
 class TrueQueryNode : public Node {
+public:
     ~TrueQueryNode();
     void accept(QueryVisitor &visitor) override { visitor.visit(*this); }
 };
 
 class FalseQueryNode : public Node {
+public:
     ~FalseQueryNode();
     void accept(QueryVisitor &visitor) override { visitor.visit(*this); }
 };

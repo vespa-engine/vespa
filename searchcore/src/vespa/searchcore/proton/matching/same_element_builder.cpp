@@ -67,8 +67,8 @@ public:
     void visit(ProtonPredicateQuery &) override {}
     void visit(ProtonRegExpTerm &n) override { visitTerm(n); }
     void visit(ProtonNearestNeighborTerm &) override {}
-    void visit(search::query::TrueQueryNode &) override {}
-    void visit(search::query::FalseQueryNode &) override {}
+    void visit(ProtonTrue &) override {}
+    void visit(ProtonFalse &) override {}
 };
 
 } // namespace proton::matching::<unnamed>

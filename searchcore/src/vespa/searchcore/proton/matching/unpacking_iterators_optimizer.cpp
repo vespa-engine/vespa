@@ -57,8 +57,8 @@ struct TermExpander : QueryVisitor {
     void visit(PredicateQuery &) override {}
     void visit(RegExpTerm &) override {}
     void visit(NearestNeighborTerm &) override {}
-    void visit(search::query::TrueQueryNode &) override {}
-    void visit(search::query::FalseQueryNode &) override {}
+    void visit(TrueQueryNode &) override {}
+    void visit(FalseQueryNode &) override {}
 
     void flush(Intermediate &parent) {
         for (Node::UP &term: terms) {

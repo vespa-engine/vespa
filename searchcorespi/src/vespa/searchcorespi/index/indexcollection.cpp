@@ -204,7 +204,7 @@ private:
     void visit(RegExpTerm &n)      override { visitTerm(n); }
     void visit(NearestNeighborTerm &n) override { visitTerm(n); }
     void visit(TrueQueryNode &)    override {}
-    void visit(FalseQueryNode &)    override {}
+    void visit(FalseQueryNode &)   override {}
 
 public:
     CreateBlueprintVisitor(const IIndexCollection &indexes,
