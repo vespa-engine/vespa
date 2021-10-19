@@ -86,7 +86,7 @@ FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, std::shared_
     _mergeStates[bucket] = status;
 }
 
-MergeStatus&
+std::shared_ptr<MergeStatus>
 FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
 {
     std::lock_guard mlock(_mergeStatesLock);
@@ -94,7 +94,7 @@ FileStorHandlerImpl::editMergeStatus(const document::Bucket& bucket)
     if ( ! status ) {
         throw vespalib::IllegalStateException("No merge state exist for " + bucket.toString(), VESPA_STRLOC);
     }
-    return *status;
+    return status;
 }
 
 bool
