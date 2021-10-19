@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
 import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
 
 import java.io.IOException;
 import java.net.URI;
@@ -46,10 +45,10 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     private final ContainerUserPrincipalLookupService userPrincipalLookupService;
     private final Path containerRootOnHost;
 
-    ContainerFileSystemProvider(Path containerRootOnHost, UserNamespace userNamespace, VespaUser vespaUser) {
+    ContainerFileSystemProvider(Path containerRootOnHost, UserNamespace userNamespace) {
         this.containerFs = new ContainerFileSystem(this);
         this.userPrincipalLookupService = new ContainerUserPrincipalLookupService(
-                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userNamespace, vespaUser);
+                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userNamespace);
         this.containerRootOnHost = containerRootOnHost;
     }
 

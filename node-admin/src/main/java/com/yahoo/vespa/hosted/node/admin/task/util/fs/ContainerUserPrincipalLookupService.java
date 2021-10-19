@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
 import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
 
 import java.io.IOException;
 import java.nio.file.attribute.GroupPrincipal;
@@ -14,21 +13,15 @@ import java.util.Objects;
 /**
  * @author valerijf
  */
-public class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
+class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
 
     private final UserPrincipalLookupService baseFsUserPrincipalLookupService;
     private final UserNamespace userNamespace;
-    private final VespaUser vespaUser;
 
-    ContainerUserPrincipalLookupService(
-            UserPrincipalLookupService baseFsUserPrincipalLookupService, UserNamespace userNamespace, VespaUser vespaUser) {
+    ContainerUserPrincipalLookupService(UserPrincipalLookupService baseFsUserPrincipalLookupService, UserNamespace userNamespace) {
         this.baseFsUserPrincipalLookupService = Objects.requireNonNull(baseFsUserPrincipalLookupService);
         this.userNamespace = Objects.requireNonNull(userNamespace);
-        this.vespaUser = Objects.requireNonNull(vespaUser);
     }
-
-    public UserNamespace userNamespace() { return userNamespace; }
-    public VespaUser vespaUser() { return vespaUser; }
 
     public int userIdOnHost(int containerUid)  { return userNamespace.userIdOnHost(containerUid); }
     public int groupIdOnHost(int containerGid) { return userNamespace.groupIdOnHost(containerGid); }
@@ -37,27 +30,27 @@ public class ContainerUserPrincipalLookupService extends UserPrincipalLookupServ
 
     @Override
     public ContainerUserPrincipal lookupPrincipalByName(String name) throws IOException {
-        int containerUid = resolveName(name, vespaUser.name(), vespaUser.uid());
-        String user = resolveId(containerUid, vespaUser.name(), vespaUser.uid());
+        int containerUid = resolveName(name, userNamespace.vespaUser(), userNamespace.vespaUserId());
+        String user = resolveId(containerUid, userNamespace.vespaUser(), userNamespace.vespaUserId());
         String hostUid = String.valueOf(userIdOnHost(containerUid));
         return new ContainerUserPrincipal(containerUid, user, baseFsUserPrincipalLookupService.lookupPrincipalByName(hostUid));
     }
 
     @Override
     public ContainerGroupPrincipal lookupPrincipalByGroupName(String group) throws IOException {
-        int containerGid = resolveName(group, vespaUser.group(), vespaUser.gid());
-        String name = resolveId(containerGid, vespaUser.group(), vespaUser.gid());
+        int containerGid = resolveName(group, userNamespace.vespaGroup(), userNamespace.vespaGroupId());
+        String name = resolveId(containerGid, userNamespace.vespaGroup(), userNamespace.vespaGroupId());
         String hostGid = String.valueOf(groupIdOnHost(containerGid));
         return new ContainerGroupPrincipal(containerGid, name, baseFsUserPrincipalLookupService.lookupPrincipalByGroupName(hostGid));
     }
 
     public ContainerUserPrincipal userPrincipal(int uid, UserPrincipal baseFsPrincipal) {
-        String name = resolveId(uid, vespaUser.name(), vespaUser.uid());
+        String name = resolveId(uid, userNamespace.vespaUser(), userNamespace.vespaUserId());
         return new ContainerUserPrincipal(uid, name, baseFsPrincipal);
     }
     
     public ContainerGroupPrincipal groupPrincipal(int gid, GroupPrincipal baseFsPrincipal) {
-        String name = resolveId(gid, vespaUser.group(), vespaUser.gid());
+        String name = resolveId(gid, userNamespace.vespaGroup(), userNamespace.vespaGroupId());
         return new ContainerGroupPrincipal(gid, name, baseFsPrincipal);
     }
 
