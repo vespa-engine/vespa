@@ -21,7 +21,6 @@ spi::Result spi_result_ok;
 spi::Result spi_result_fail(spi::Result::ErrorType::RESOURCE_EXHAUSTED, "write blocked");
 document::BucketIdFactory bucket_id_factory;
 const char *test_op = "put";
-metrics::DoubleAverageMetric dummy_metric("dummy", metrics::DoubleAverageMetric::Tags(), "dummy desc");
 document::Bucket dummy_document_bucket(makeDocumentBucket(document::BucketId(0, 16)));
 
 class DummyMergeBucketInfoSyncer : public MergeBucketInfoSyncer
@@ -42,10 +41,10 @@ public:
 ApplyBucketDiffEntryResult
 make_result(spi::Result &spi_result, const DocumentId &doc_id)
 {
-    std::promise<std::pair<std::unique_ptr<spi::Result>, double>> result_promise;
-    result_promise.set_value(std::make_pair(std::make_unique<spi::Result>(spi_result), 0.1));
+    std::promise<std::unique_ptr<spi::Result>> result_promise;
+    result_promise.set_value(std::make_unique<spi::Result>(spi_result));
     spi::Bucket bucket(makeDocumentBucket(bucket_id_factory.getBucketId(doc_id)));
-    return ApplyBucketDiffEntryResult(result_promise.get_future(), bucket, doc_id, test_op, dummy_metric);
+    return ApplyBucketDiffEntryResult(result_promise.get_future(), bucket, doc_id, test_op);
 }
 
 void push_ok(ApplyBucketDiffState &state)
