@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Set;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
@@ -78,7 +79,8 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         String fieldName = "location";
         SDField field = document.addField(fieldName, PositionDataType.INSTANCE);
         field.parseIndexingScript("{ attribute | summary }");
-        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
+        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
+                                 true, false, Set.of());
         SummaryMap summaryMap = new SummaryMap(schema);
 
         Iterator transforms = summaryMap.resultTransformIterator();

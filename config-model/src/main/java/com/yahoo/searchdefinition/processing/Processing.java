@@ -9,6 +9,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Executor of processors. This defines the right order of processor execution.
@@ -97,28 +98,31 @@ public class Processing {
      * Runs all search processors on the given {@link Schema} object. These will modify the search object, <b>possibly
      * exchanging it with another</b>, as well as its document types.
      *
-     * @param schema The search to process.
-     * @param deployLogger The log to log messages and warnings for application deployment to
+     * @param schema the search to process
+     * @param deployLogger the log to log messages and warnings for application deployment to
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
-     * @param queryProfiles The query profiles contained in the application this search is part of.
+     * @param queryProfiles the query profiles contained in the application this search is part of
+     * @param processorsToSkip a set of processor classes we should not invoke in this. Useful for testing.
      */
     public void process(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
-                        QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
+                        QueryProfiles queryProfiles, boolean validate, boolean documentsOnly,
+                        Set<Class<? extends Processor>> processorsToSkip) {
         Collection<ProcessorFactory> factories = processors();
         factories.stream()
                 .map(factory -> factory.create(schema, deployLogger, rankProfileRegistry, queryProfiles))
+                .filter(processor -> ! processorsToSkip.contains(processor.getClass()))
                 .forEach(processor -> processor.process(validate, documentsOnly));
     }
 
     /**
      * Runs rank profiles processors only.
      *
-     * @param deployLogger The log to log messages and warnings for application deployment to
+     * @param deployLogger the log to log messages and warnings for application deployment to
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
-     * @param queryProfiles The query profiles contained in the application this search is part of.
+     * @param queryProfiles the query profiles contained in the application this search is part of
      */
     public void processRankProfiles(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
-                        QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
+                                    QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
         Collection<ProcessorFactory> factories = rankProfileProcessors();
         factories.stream()
                  .map(factory -> factory.create(null, deployLogger, rankProfileRegistry, queryProfiles))
@@ -127,7 +131,8 @@ public class Processing {
 
     @FunctionalInterface
     public interface ProcessorFactory {
-        Processor create(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles);
+        Processor create(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
+                         QueryProfiles queryProfiles);
     }
 
 }

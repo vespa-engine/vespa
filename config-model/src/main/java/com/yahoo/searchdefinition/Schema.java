@@ -141,7 +141,7 @@ public class Schema implements ImmutableSchema {
         this.documentsOnly = documentsOnly;
         largeRankExpressions = new LargeRankExpressions(fileRegistry);
         rankingConstants = new RankingConstants(fileRegistry, Optional.of(this));
-        onnxModels = new OnnxModels(fileRegistry);
+        onnxModels = new OnnxModels(fileRegistry, Optional.of(this));
     }
 
     protected void setName(String name) {

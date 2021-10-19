@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchdefinition.processing.OnnxModelTypeResolver;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
@@ -91,6 +92,9 @@ public class SchemaTestCase {
                 "    file: constants/my_constant_tensor_file.json" +
                 "    type: tensor<float>(x{},y{})" +
                 "  }" +
+                "  onnx-model parent_model {" +
+                "    file: models/my_model.onnx" +
+                "  }" +
                 "}");
         String childLines = joinLines(
                 "schema child inherits parent {" +
@@ -100,7 +104,14 @@ public class SchemaTestCase {
                 "    }" +
                 "  }" +
                 "}");
-        var application = SearchBuilder.createFromStrings(new DeployLoggerStub(), parentLines, childLines).application();
+
+        SearchBuilder builder = new SearchBuilder(new DeployLoggerStub());
+        builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
+        builder.importString(parentLines);
+        builder.importString(childLines);
+        builder.build(true);
+        var application = builder.application();
+
         var child = application.schemas().get("child");
         assertEquals("pf1", child.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
         assertEquals(Stemming.NONE, child.getStemming());
@@ -110,6 +121,8 @@ public class SchemaTestCase {
         assertNotNull(application.rankProfileRegistry().get(child, "parent_profile"));
         assertNotNull(child.rankingConstants().get("parent_constant"));
         assertTrue(child.rankingConstants().asMap().containsKey("parent_constant"));
+        assertNotNull(child.onnxModels().get("parent_model"));
+        assertTrue(child.onnxModels().asMap().containsKey("parent_model"));
     }
 
 }

@@ -21,6 +21,7 @@ import com.yahoo.searchdefinition.parser.SDParser;
 import com.yahoo.searchdefinition.parser.SimpleCharStream;
 import com.yahoo.searchdefinition.parser.TokenMgrException;
 import com.yahoo.searchdefinition.processing.Processing;
+import com.yahoo.searchdefinition.processing.Processor;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.yolean.Exceptions;
@@ -32,9 +33,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Helper class for importing {@link Schema} objects in an unambiguous way. The pattern for using this is to 1) Import
@@ -57,6 +60,8 @@ public class SearchBuilder {
 
     private List<Schema> schemaList = new LinkedList<>();
     private boolean isBuilt = false;
+
+    private final Set<Class<? extends Processor>> processorsToSkip = new HashSet<>();
 
     /** For testing only */
     public SearchBuilder() {
@@ -260,12 +265,16 @@ public class SearchBuilder {
         isBuilt = true;
     }
 
+    /** Returns a modifiable set of processors we should skip for these schemas. Useful for testing. */
+    public Set<Class<? extends Processor>> processorsToSkip() { return processorsToSkip; }
+
     /**
      * Processes and returns the given {@link Schema} object. This method has been factored out of the {@link
      * #build()} method so that subclasses can choose not to build anything.
      */
     private void process(Schema schema, QueryProfiles queryProfiles, boolean validate) {
-        new Processing().process(schema, deployLogger, application.rankProfileRegistry(), queryProfiles, validate, documentsOnly);
+        new Processing().process(schema, deployLogger, application.rankProfileRegistry(), queryProfiles, validate,
+                                 documentsOnly, processorsToSkip);
     }
 
     /**

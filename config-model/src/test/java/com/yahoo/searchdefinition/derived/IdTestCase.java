@@ -11,6 +11,8 @@ import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
+import java.util.Set;
+
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -30,7 +32,8 @@ public class IdTestCase extends AbstractExportingTestCase {
         uri.parseIndexingScript("{ summary | index }");
         document.addField(uri);
 
-        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
+        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
+                                 true, false, Set.of());
 
         assertNull(document.getField("uri"));
         assertNull(document.getField("Uri"));

@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import static com.yahoo.searchdefinition.processing.AssertIndexingScript.assertIndexing;
 import static org.junit.Assert.assertEquals;
@@ -155,7 +156,8 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
         sdoc.addField(unprocessedField);
         Schema schema = new Schema("test");
         schema.addDocument(sdoc);
-        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
+        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(),
+                                 new QueryProfiles(), true, false, Set.of());
         return unprocessedField.getIndexingScript();
     }
 

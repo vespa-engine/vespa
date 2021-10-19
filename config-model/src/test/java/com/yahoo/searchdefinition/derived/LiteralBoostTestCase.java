@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Set;
 
 import static com.yahoo.searchdefinition.processing.AssertIndexingScript.assertIndexing;
 import static org.junit.Assert.assertTrue;
@@ -29,19 +30,20 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testLiteralBoost() {
-        Schema schema =new Schema("literalboost");
+        Schema schema = new Schema("literalboost");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
-        SDDocumentType document=new SDDocumentType("literalboost");
+        SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
-        SDField field1= document.addField("a", DataType.STRING);
+        SDField field1 = document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
         field1.setLiteralBoost(20);
-        RankProfile other=new RankProfile("other", schema, rankProfileRegistry, schema.rankingConstants());
+        RankProfile other = new RankProfile("other", schema, rankProfileRegistry, schema.rankingConstants());
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true, false);
-        DerivedConfiguration derived=new DerivedConfiguration(schema, rankProfileRegistry);
+        new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
+                                 true, false, Set.of());
+        DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check attribute fields
         derived.getAttributeFields(); // TODO: assert content
@@ -52,8 +54,8 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
                        schema);
 
         // Check index info addition
-        IndexInfo indexInfo=derived.getIndexInfo();
-        assertTrue(indexInfo.hasCommand("a","literal-boost"));
+        IndexInfo indexInfo = derived.getIndexInfo();
+        assertTrue(indexInfo.hasCommand("a", "literal-boost"));
     }
 
     /**
@@ -61,13 +63,13 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testNonDefaultRankLiteralBoost() {
-        Schema schema =new Schema("literalboost");
+        Schema schema = new Schema("literalboost");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
-        SDDocumentType document=new SDDocumentType("literalboost");
+        SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
-        SDField field1= document.addField("a", DataType.STRING);
+        SDField field1 = document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
-        RankProfile other=new RankProfile("other", schema, rankProfileRegistry, schema.rankingConstants());
+        RankProfile other = new RankProfile("other", schema, rankProfileRegistry, schema.rankingConstants());
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
@@ -80,21 +82,21 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
                        schema);
 
         // Check index info addition
-        IndexInfo indexInfo=derived.getIndexInfo();
+        IndexInfo indexInfo = derived.getIndexInfo();
         assertTrue(indexInfo.hasCommand("a","literal-boost"));
     }
 
     /** Tests literal boosts in two fields going to the same index */
     @Test
     public void testTwoLiteralBoostFields() {
-        Schema schema =new Schema("msb");
+        Schema schema = new Schema("msb");
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
-        SDDocumentType document=new SDDocumentType("msb");
+        SDDocumentType document = new SDDocumentType("msb");
         schema.addDocument(document);
-        SDField field1= document.addField("title", DataType.STRING);
+        SDField field1 = document.addField("title", DataType.STRING);
         field1.parseIndexingScript("{ summary | index }");
         field1.setLiteralBoost(20);
-        SDField field2= document.addField("body", DataType.STRING);
+        SDField field2 = document.addField("body", DataType.STRING);
         field2.parseIndexingScript("{ summary | index }");
         field2.setLiteralBoost(20);
 

@@ -12,6 +12,8 @@ import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
+import java.util.Set;
+
 import static org.junit.Assert.assertFalse;
 /**
  * Tests automatic type conversion using multifield indices
@@ -31,7 +33,8 @@ public class TypeConversionTestCase extends AbstractSchemaTestCase {
         a.parseIndexingScript("{ index }");
         document.addField(a);
 
-        new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true, false);
+        new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
+                                 true, false, Set.of());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
         IndexInfo indexInfo = derived.getIndexInfo();
         assertFalse(indexInfo.hasCommand("default", "compact-to-term"));
