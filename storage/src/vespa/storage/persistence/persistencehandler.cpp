@@ -87,19 +87,20 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     return MessageTracker::UP();
 }
 
-void
-PersistenceHandler::handleReply(api::StorageReply& reply) const
+MessageTracker::UP
+PersistenceHandler::handleReply(api::StorageReply& reply, MessageTracker::UP tracker) const
 {
     switch (reply.getType().getId()) {
     case api::MessageType::GETBUCKETDIFF_REPLY_ID:
         _mergeHandler.handleGetBucketDiffReply(static_cast<api::GetBucketDiffReply&>(reply), _env._fileStorHandler);
         break;
     case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
-        _mergeHandler.handleApplyBucketDiffReply(static_cast<api::ApplyBucketDiffReply&>(reply), _env._fileStorHandler);
+        _mergeHandler.handleApplyBucketDiffReply(static_cast<api::ApplyBucketDiffReply&>(reply), _env._fileStorHandler, std::move(tracker));
         break;
     default:
         break;
     }
+    return tracker;
 }
 
 MessageTracker::UP
@@ -112,7 +113,7 @@ PersistenceHandler::processMessage(api::StorageMessage& msg, MessageTracker::UP 
         try{
             LOG(debug, "Handling reply: %s", msg.toString().c_str());
             LOG(spam, "Message content: %s", msg.toString(true).c_str());
-            handleReply(static_cast<api::StorageReply&>(msg));
+            return handleReply(static_cast<api::StorageReply&>(msg), std::move(tracker));
         } catch (std::exception& e) {
             // It's a reply, so nothing we can do.
             LOG(debug, "Caught exception for %s: %s", msg.toString().c_str(), e.what());
