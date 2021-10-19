@@ -60,18 +60,6 @@ class RpcClient implements Client {
         }
 
         @Override
-        public void getDocsums(List<FastHit> hits, CompressionType compression, int uncompressedLength,
-                               byte[] compressedSlime, RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds) {
-            Request request = new Request("proton.getDocsums");
-            request.parameters().add(new Int8Value(compression.getCode()));
-            request.parameters().add(new Int32Value(uncompressedLength));
-            request.parameters().add(new DataValue(compressedSlime));
-
-            request.setContext(hits);
-            invokeAsync(request, timeoutSeconds, new RpcDocsumResponseWaiter(this, responseReceiver));
-        }
-
-        @Override
         public void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
                             ResponseReceiver responseReceiver, double timeoutSeconds) {
             Request request = new Request(rpcMethod);
@@ -100,44 +88,6 @@ class RpcClient implements Client {
         @Override
         public String toString() {
             return description;
-        }
-
-    }
-
-    private static class RpcDocsumResponseWaiter implements RequestWaiter {
-
-        /** The node to which we made the request we are waiting for - for error messages only */
-        private final RpcNodeConnection node;
-
-        /** The handler to which the response is forwarded */
-        private final RpcFillInvoker.GetDocsumsResponseReceiver handler;
-
-        public RpcDocsumResponseWaiter(RpcNodeConnection node, RpcFillInvoker.GetDocsumsResponseReceiver handler) {
-            this.node = node;
-            this.handler = handler;
-        }
-
-        @Override
-        public void handleRequestDone(Request requestWithResponse) {
-            if (requestWithResponse.isError()) {
-                handler.receive(ResponseOrError.fromError("Error response from " + node + ": " + requestWithResponse.errorMessage()));
-                return;
-            }
-
-            Values returnValues = requestWithResponse.returnValues();
-            if (returnValues.size() < 3) {
-                handler.receive(ResponseOrError.fromError(
-                        "Invalid getDocsums response from " + node + ": Expected 3 return arguments, got " + returnValues.size()));
-                return;
-            }
-
-            byte compression = returnValues.get(0).asInt8();
-            int uncompressedSize = returnValues.get(1).asInt32();
-            byte[] compressedSlimeBytes = returnValues.get(2).asData();
-            @SuppressWarnings("unchecked") // TODO: Non-protobuf rpc docsums to be removed soon
-            List<FastHit> hits = (List<FastHit>) requestWithResponse.getContext();
-            handler.receive(
-                    ResponseOrError.fromResponse(new GetDocsumsResponse(compression, uncompressedSize, compressedSlimeBytes, hits)));
         }
 
     }

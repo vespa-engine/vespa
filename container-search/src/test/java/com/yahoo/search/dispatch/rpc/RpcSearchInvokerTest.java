@@ -9,7 +9,6 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.rpc.RpcFillInvoker.GetDocsumsResponseReceiver;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
@@ -84,12 +83,6 @@ public class RpcSearchInvokerTest {
             @Override
             public NodeConnection createConnection(String hostname, int port) {
                 return new NodeConnection() {
-                    @Override
-                    public void getDocsums(List<FastHit> hits, CompressionType compression, int uncompressedLength, byte[] compressedSlime,
-                            GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds) {
-                        fail("Unexpected call");
-                    }
-
                     @Override
                     public void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
                             ResponseReceiver responseReceiver, double timeoutSeconds) {

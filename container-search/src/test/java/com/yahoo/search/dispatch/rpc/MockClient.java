@@ -55,46 +55,6 @@ public class MockClient implements Client {
         }
 
         @Override
-        public void getDocsums(List<FastHit> hitsContext, CompressionType compression, int uncompressedSize, byte[] compressedSlime,
-                RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds) {
-            if (malfunctioning) {
-                responseReceiver.receive(ResponseOrError.fromError("Malfunctioning"));
-                return;
-            }
-
-            Inspector request = BinaryFormat.decode(compressor.decompress(compressedSlime, compression, uncompressedSize)).get();
-            String docsumClass = request.field("class").asString();
-            List<Map<String, Object>> docsumsToReturn = new ArrayList<>();
-            request.field("gids").traverse((ArrayTraverser) (index, gid) -> {
-                GlobalId docId = new GlobalId(gid.asData());
-                docsumsToReturn.add(docsums.get(new DocsumKey(toString(), docId, docsumClass)));
-            });
-            Slime responseSlime = new Slime();
-            Cursor root = responseSlime.setObject();
-            Cursor docsums = root.setArray("docsums");
-            for (Map<String, Object> docsumFields : docsumsToReturn) {
-                if (docsumFields == null) continue;
-
-                Cursor docsumItem = docsums.addObject();
-                Cursor docsum = docsumItem.setObject("docsum");
-                for (Map.Entry<String, Object> field : docsumFields.entrySet()) {
-                    if (field.getValue() instanceof Integer)
-                        docsum.setLong(field.getKey(), (Integer) field.getValue());
-                    else if (field.getValue() instanceof String)
-                        docsum.setString(field.getKey(), (String) field.getValue());
-                    else
-                        throw new RuntimeException();
-                }
-            }
-            byte[] slimeBytes = BinaryFormat.encode(responseSlime);
-            CompressionType responseCompressionType = compression == CompressionType.INCOMPRESSIBLE ? CompressionType.NONE : compression;
-            Compressor.Compression compressionResult = compressor.compress(responseCompressionType, slimeBytes);
-            GetDocsumsResponse response = new GetDocsumsResponse(compressionResult.type().getCode(), slimeBytes.length,
-                    compressionResult.data(), hitsContext);
-            responseReceiver.receive(ResponseOrError.fromResponse(response));
-        }
-
-        @Override
         public void request(String rpcMethod, CompressionType compression, int uncompressedLength, byte[] compressedPayload,
                 ResponseReceiver responseReceiver, double timeoutSeconds) {
             if (malfunctioning) {
