@@ -19,14 +19,19 @@ import com.sun.jna.Platform;
  */
 public class NativeIO {
     private final static Logger logger = Logger.getLogger(NativeIO.class.getName());
+    private final static String DISABLE_NATIVE_IO = "DISABLE_NATIVE_IO";
     private static final int POSIX_FADV_DONTNEED = 4; // See /usr/include/linux/fadvise.h
     private static boolean initialized = false;
+    private static boolean disabled = false;
     private static Throwable initError = null;
     static {
         try {
             if (Platform.isLinux()) {
-                Native.register(Platform.C_LIBRARY_NAME);
-                initialized = true;
+                disabled = System.getenv().containsKey(DISABLE_NATIVE_IO);
+                if (!disabled) {
+                    Native.register(Platform.C_LIBRARY_NAME);
+                    initialized = true;
+                }
             }
         } catch (Throwable throwable) {
             initError = throwable;
@@ -40,7 +45,11 @@ public class NativeIO {
 
     public NativeIO() {
         if (!initialized) {
-            logger.warning("native IO not possible due to " + getError().getMessage());
+            if (disabled) {
+                logger.info("Native IO has been disable explicit via system property " + DISABLE_NATIVE_IO);
+            } else {
+                logger.warning("Native IO not possible due to " + getError().getMessage());
+            }
         }
     }
 
