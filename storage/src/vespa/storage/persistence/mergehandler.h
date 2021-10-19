@@ -68,7 +68,7 @@ public:
     MessageTrackerUP handleGetBucketDiff(api::GetBucketDiffCommand&, MessageTrackerUP) const;
     void handleGetBucketDiffReply(api::GetBucketDiffReply&, MessageSender&) const;
     MessageTrackerUP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTrackerUP) const;
-    void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&) const;
+    void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&, MessageTrackerUP) const;
 
 private:
     const framework::Clock   &_clock;

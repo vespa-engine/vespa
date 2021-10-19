@@ -38,7 +38,7 @@ public:
 private:
     // Message handling functions
     MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, MessageTracker::UP tracker) const;
-    void handleReply(api::StorageReply&) const;
+    MessageTracker::UP handleReply(api::StorageReply&, MessageTracker::UP) const;
 
     MessageTracker::UP processMessage(api::StorageMessage& msg, MessageTracker::UP tracker) const;
 
