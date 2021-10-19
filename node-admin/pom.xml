@@ -73,7 +73,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.velocity</groupId>
-            <artifactId>velocity-engine-core</artifactId>
+            <artifactId>velocity</artifactId>
             <scope>compile</scope>
         </dependency>
 
