@@ -182,7 +182,7 @@ ProcessMemoryStats::toString() const
 ProcessMemoryStats
 ProcessMemoryStats::create(uint64_t sizeEpsilon)
 {
-    constexpr size_t NUM_TRIES = 10;
+    constexpr size_t NUM_TRIES = 3;
     std::vector<ProcessMemoryStats> samples;
     samples.reserve(NUM_TRIES);
     samples.push_back(createStatsFromSmaps());
