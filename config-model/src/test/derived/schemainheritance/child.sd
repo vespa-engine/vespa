@@ -1,4 +1,4 @@
-schema child {
+schema child inherits parent {
 
     document child inherits parent {
 
