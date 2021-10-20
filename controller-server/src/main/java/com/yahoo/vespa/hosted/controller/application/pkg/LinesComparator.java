@@ -1,4 +1,3 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /*
  * Line based variant of Apache commons-text StringComparator
  * https://github.com/apache/commons-text/blob/3b1a0a5a47ee9fa2b36f99ca28e2e1d367a10a11/src/main/java/org/apache/commons/text/diff/StringsComparator.java
