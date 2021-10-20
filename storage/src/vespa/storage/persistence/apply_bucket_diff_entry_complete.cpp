@@ -6,10 +6,11 @@
 
 namespace storage {
 
-ApplyBucketDiffEntryComplete::ApplyBucketDiffEntryComplete(ResultPromise result_promise, const framework::Clock& clock)
+ApplyBucketDiffEntryComplete::ApplyBucketDiffEntryComplete(ResultPromise result_promise, const framework::Clock& clock, metrics::DoubleAverageMetric& latency_metric)
     : _result_handler(nullptr),
       _result_promise(std::move(result_promise)),
-      _start_time(clock)
+      _start_time(clock),
+      _latency_metric(latency_metric)
 {
 }
 
@@ -21,7 +22,9 @@ ApplyBucketDiffEntryComplete::onComplete(std::unique_ptr<spi::Result> result)
     if (_result_handler != nullptr) {
         _result_handler->handle(*result);
     }
-    _result_promise.set_value(std::make_pair(std::move(result), _start_time.getElapsedTimeAsDouble()));
+    double elapsed = _start_time.getElapsedTimeAsDouble();
+    _latency_metric.addValue(elapsed);
+    _result_promise.set_value(std::move(result));
 }
 
 void

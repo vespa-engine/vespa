@@ -15,15 +15,14 @@ namespace storage {
  * Result of a bucket diff entry spi operation (putAsync or removeAsync)
  */
 class ApplyBucketDiffEntryResult {
-    using FutureResult = std::future<std::pair<std::unique_ptr<spi::Result>, double>>;
+    using FutureResult = std::future<std::unique_ptr<spi::Result>>;
     FutureResult         _future_result;
     spi::Bucket          _bucket;
     document::DocumentId _doc_id;
     const char*          _op;
-    metrics::DoubleAverageMetric& _latency_metric;
 
 public:
-    ApplyBucketDiffEntryResult(FutureResult future_result, spi::Bucket bucket, document::DocumentId doc_id, const char *op, metrics::DoubleAverageMetric& latency_metric);
+    ApplyBucketDiffEntryResult(FutureResult future_result, spi::Bucket bucket, document::DocumentId doc_id, const char *op);
     ApplyBucketDiffEntryResult(ApplyBucketDiffEntryResult &&rhs);
     ~ApplyBucketDiffEntryResult();
     void wait();
