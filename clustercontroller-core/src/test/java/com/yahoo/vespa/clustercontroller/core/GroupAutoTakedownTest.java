@@ -307,7 +307,7 @@ public class GroupAutoTakedownTest {
         assertEquals("distributor:6 storage:6 .4.t:123456", fixture.generatedClusterState());
 
         DatabaseHandler handler = mock(DatabaseHandler.class);
-        DatabaseHandler.Context context = mock(DatabaseHandler.Context.class);
+        DatabaseHandler.DatabaseContext context = mock(DatabaseHandler.DatabaseContext.class);
         when(context.getCluster()).thenReturn(fixture.cluster);
 
         Set<ConfiguredNode> nodes = new HashSet<>(fixture.cluster.clusterInfo().getConfiguredNodes().values());

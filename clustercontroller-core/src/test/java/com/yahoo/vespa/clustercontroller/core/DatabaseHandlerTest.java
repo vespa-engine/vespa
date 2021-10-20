@@ -10,7 +10,6 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,8 +40,8 @@ public class DatabaseHandlerTest {
             when(mockTimer.getCurrentTimeInMillis()).thenReturn(1000000L);
         }
 
-        DatabaseHandler.Context createMockContext() {
-            return new DatabaseHandler.Context() {
+        DatabaseHandler.DatabaseContext createMockContext() {
+            return new DatabaseHandler.DatabaseContext() {
                 @Override
                 public ContentCluster getCluster() {
                     return clusterFixture.cluster();
@@ -66,7 +65,9 @@ public class DatabaseHandlerTest {
         }
 
         DatabaseHandler createHandler() throws Exception {
-            return new DatabaseHandler(mockDbFactory, mockTimer, databaseAddress, 0, monitor);
+            FleetControllerContext fleetControllerContext = mock(FleetControllerContext.class);
+            when(fleetControllerContext.id()).thenReturn(new FleetControllerId("clusterName", 0));
+            return new DatabaseHandler(fleetControllerContext, mockDbFactory, mockTimer, databaseAddress, monitor);
         }
     }
 
