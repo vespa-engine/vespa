@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/fastos/file.h>
-#include <algorithm>
 #include <limits>
 #include <stdexcept>
 #include <cassert>
@@ -615,9 +614,9 @@ asciistream asciistream::createFromDevice(stringref fileName)
     FastOS_File file(vespalib::string(fileName).c_str());
     asciistream is;
     if (file.OpenReadOnly()) {
-        char buf[8_Ki];
-        for (ssize_t actual = file.Read(buf, sizeof(buf)); actual > 0; actual = file.Read(buf, sizeof(buf))) {
-            is << stringref(buf, actual);
+        MallocPtr buf(64_Ki);
+        for (ssize_t actual = file.Read(buf, buf.size()); actual > 0; actual = file.Read(buf, buf.size())) {
+            is << stringref(buf.c_str(), actual);
         }
     }
     return is;
