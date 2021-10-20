@@ -94,8 +94,6 @@ public class ContainerFileSystem extends FileSystem {
     }
 
     public static ContainerFileSystem create(Path containerStorageRoot, UserNamespace userNamespace, VespaUser vespaUser) {
-        ContainerFileSystem containerFs = new ContainerFileSystemProvider(containerStorageRoot, userNamespace, vespaUser).getFileSystem(null);
-        containerFs.createRoot();
-        return containerFs;
+        return new ContainerFileSystemProvider(containerStorageRoot, userNamespace, vespaUser).getFileSystem(null);
     }
 }

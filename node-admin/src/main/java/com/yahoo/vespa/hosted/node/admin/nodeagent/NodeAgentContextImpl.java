@@ -268,6 +268,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     .orElseGet(() -> new VespaUser("vespa", "vespa", 1000, 100));
             ContainerFileSystem containerFs = ContainerFileSystem.create(containerStorage
                     .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userNamespace, vespaUser);
+            containerFs.createRoot();
 
             return new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),
