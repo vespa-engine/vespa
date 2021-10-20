@@ -96,7 +96,7 @@ func cloneApplication(source string, name string) {
 		}
 	}
 	if !found {
-		fatalErr(nil, "Could not find source application '", color.Cyan(source), "'")
+		fatalErr(nil, "Could not find source application '", color.Cyan(source), "'. Try with -f to ignore cache")
 	} else {
 		log.Print("Created ", color.Cyan(name))
 	}
