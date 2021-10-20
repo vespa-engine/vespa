@@ -25,16 +25,16 @@ import static org.junit.Assert.*;
  *
  * @author  bratseth
  */
-public class AttributeSettingsTestCase extends SchemaTestCase {
+public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void testAttributeSettings() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/attributesettings.sd");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/attributesettings.sd");
 
-        SDField f1=(SDField) search.getDocument().getField("f1");
+        SDField f1=(SDField) schema.getDocument().getField("f1");
         assertEquals(1, f1.getAttributes().size());
         Attribute a1 = f1.getAttributes().get(f1.getName());
         assertThat(a1.getType(), is(Attribute.Type.LONG));
@@ -45,7 +45,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertFalse(a1.isRemoveIfZero());
         assertFalse(a1.isCreateIfNonExistent());
 
-        SDField f2=(SDField) search.getDocument().getField("f2");
+        SDField f2=(SDField) schema.getDocument().getField("f2");
         assertEquals(1, f2.getAttributes().size());
         Attribute a2 = f2.getAttributes().get(f2.getName());
         assertThat(a2.getType(), is(Attribute.Type.LONG));
@@ -56,7 +56,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertFalse(a2.isRemoveIfZero());
         assertFalse(a2.isCreateIfNonExistent());
         assertThat(f2.getAliasToName().get("f2alias"), is("f2"));
-        SDField f3=(SDField) search.getDocument().getField("f3");
+        SDField f3=(SDField) schema.getDocument().getField("f3");
         assertEquals(1, f3.getAttributes().size());
         assertThat(f3.getAliasToName().get("f3alias"), is("f3"));
 
@@ -69,17 +69,17 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertFalse(a3.isRemoveIfZero());
         assertFalse(a3.isCreateIfNonExistent());
 
-        assertWeightedSet(search,"f4",true,true);
-        assertWeightedSet(search,"f5",true,true);
-        assertWeightedSet(search,"f6",true,true);
-        assertWeightedSet(search,"f7",true,false);
-        assertWeightedSet(search,"f8",true,false);
-        assertWeightedSet(search,"f9",false,true);
-        assertWeightedSet(search,"f10",false,true);
+        assertWeightedSet(schema, "f4", true, true);
+        assertWeightedSet(schema, "f5", true, true);
+        assertWeightedSet(schema, "f6", true, true);
+        assertWeightedSet(schema, "f7", true, false);
+        assertWeightedSet(schema, "f8", true, false);
+        assertWeightedSet(schema, "f9", false, true);
+        assertWeightedSet(schema, "f10", false, true);
     }
 
-    private void assertWeightedSet(Search search, String name, boolean createIfNonExistent, boolean removeIfZero) {
-        SDField f4 = (SDField) search.getDocument().getField(name);
+    private void assertWeightedSet(Schema schema, String name, boolean createIfNonExistent, boolean removeIfZero) {
+        SDField f4 = (SDField) schema.getDocument().getField(name);
         assertEquals(1, f4.getAttributes().size());
         Attribute a4 = f4.getAttributes().get(f4.getName());
         assertThat(a4.getType(), is(Attribute.Type.STRING));
@@ -93,14 +93,14 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
 
     @Test
     public void requireThatFastAccessCanBeSet() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/attributesettings.sd");
-        SDField field = (SDField) search.getDocument().getField("fast_access");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/attributesettings.sd");
+        SDField field = (SDField) schema.getDocument().getField("fast_access");
         assertEquals(1, field.getAttributes().size());
         Attribute attr = field.getAttributes().get(field.getName());
         assertTrue(attr.isFastAccess());
     }
 
-    private Search getSearch(String sd) throws ParseException {
+    private Schema getSearch(String sd) throws ParseException {
         SearchBuilder builder = new SearchBuilder();
         builder.importString(sd);
         builder.build();
@@ -108,8 +108,8 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
     }
 
     private Attribute getAttributeF(String sd) throws ParseException {
-        Search search = getSearch(sd);
-        SDField field = (SDField) search.getDocument().getField("f");
+        Schema schema = getSearch(sd);
+        SDField field = (SDField) schema.getDocument().getField("f");
         return field.getAttributes().get(field.getName());
     }
 
@@ -183,7 +183,7 @@ public class AttributeSettingsTestCase extends SchemaTestCase {
         assertTrue(attr.isMutable());
     }
 
-    private Search getSearchWithMutables() throws ParseException {
+    private Schema getSearchWithMutables() throws ParseException {
         return getSearch(
                 "search test {\n" +
                     "  document test { \n" +

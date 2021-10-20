@@ -5,9 +5,9 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 
 import static com.yahoo.searchdefinition.processing.AssertIndexingScript.assertIndexing;
 import static org.junit.Assert.assertEquals;
@@ -28,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Simon Thoresen Hult
  */
-public class IndexingScriptRewriterTestCase extends SchemaTestCase {
+public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testSetLanguageRewriting() {
@@ -153,9 +154,10 @@ public class IndexingScriptRewriterTestCase extends SchemaTestCase {
     private static ScriptExpression processField(SDField unprocessedField) {
         SDDocumentType sdoc = new SDDocumentType("test");
         sdoc.addField(unprocessedField);
-        Search search = new Search("test");
-        search.addDocument(sdoc);
-        new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
+        Schema schema = new Schema("test");
+        schema.addDocument(sdoc);
+        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(),
+                                 new QueryProfiles(), true, false, Set.of());
         return unprocessedField.getIndexingScript();
     }
 

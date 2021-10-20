@@ -2,16 +2,16 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -22,17 +22,18 @@ import com.yahoo.searchdefinition.document.TemporarySDField;
  * Fixture class used for ImportedFieldsResolverTestCase and AdjustPositionSummaryFieldsTestCase.
  */
 public class ParentChildSearchModel {
-    private final ApplicationPackage app = MockApplicationPackage.createEmpty();
-    public Search parentSearch;
-    public Search childSearch;
+
+    private final Application application = new Application(MockApplicationPackage.createEmpty());
+    public Schema parentSchema;
+    public Schema childSchema;
 
     ParentChildSearchModel() {
-        parentSearch = createSearch("parent");
-        childSearch = createSearch("child");
+        parentSchema = createSearch("parent");
+        childSchema = createSearch("child");
     }
 
-    protected Search createSearch(String name) {
-        Search result = new Search(name, app, new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+    protected Schema createSearch(String name) {
+        Schema result = new Schema(name, application, new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         result.addDocument(new SDDocumentType(name));
         return result;
     }
@@ -47,7 +48,7 @@ public class ParentChildSearchModel {
         return new TemporarySDField(fieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(parentType)));
     }
 
-    protected static void addRefField(Search child, Search parent, String fieldName) {
+    protected static void addRefField(Schema child, Schema parent, String fieldName) {
         SDField refField = createRefField(parent.getName(), fieldName);
         child.getDocument().addField(refField);
         child.getDocument().setDocumentReferences(new DocumentReferences(ImmutableMap.of(refField.getName(),
@@ -55,11 +56,11 @@ public class ParentChildSearchModel {
     }
 
     protected ParentChildSearchModel addImportedField(String fieldName, String referenceFieldName, String targetFieldName) {
-        return addImportedField(childSearch, fieldName, referenceFieldName, targetFieldName);
+        return addImportedField(childSchema, fieldName, referenceFieldName, targetFieldName);
     }
 
-    protected ParentChildSearchModel addImportedField(Search search, String fieldName, String referenceFieldName, String targetFieldName) {
-        search.temporaryImportedFields().get().add(new TemporaryImportedField(fieldName, referenceFieldName, targetFieldName));
+    protected ParentChildSearchModel addImportedField(Schema schema, String fieldName, String referenceFieldName, String targetFieldName) {
+        schema.temporaryImportedFields().get().add(new TemporaryImportedField(fieldName, referenceFieldName, targetFieldName));
         return this;
     }
 }

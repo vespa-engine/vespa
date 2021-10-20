@@ -30,21 +30,21 @@ public class DocumentGraphValidatorTest {
 
     @Test
     public void simple_ref_dag_is_allowed() {
-        Search advertiserSearch = createSearchWithName("advertiser");
-        Search campaignSearch = createSearchWithName("campaign");
-        Search adSearch = createSearchWithName("ad");
-        createDocumentReference(adSearch, advertiserSearch, "advertiser_ref");
-        createDocumentReference(adSearch, campaignSearch, "campaign_ref");
+        Schema advertiserSchema = createSearchWithName("advertiser");
+        Schema campaignSchema = createSearchWithName("campaign");
+        Schema adSchema = createSearchWithName("ad");
+        createDocumentReference(adSchema, advertiserSchema, "advertiser_ref");
+        createDocumentReference(adSchema, campaignSchema, "campaign_ref");
 
         DocumentGraphValidator validator = new DocumentGraphValidator();
-        validator.validateDocumentGraph(documentListOf(advertiserSearch, campaignSearch, adSearch));
+        validator.validateDocumentGraph(documentListOf(advertiserSchema, campaignSchema, adSchema));
     }
 
     @Test
     public void simple_inheritance_dag_is_allowed() {
-        Search grandfather = createSearchWithName("grandfather");
-        Search father = createSearchWithName("father", grandfather);
-        Search son = createSearchWithName("son", father);
+        Schema grandfather = createSearchWithName("grandfather");
+        Schema father = createSearchWithName("father", grandfather);
+        Schema son = createSearchWithName("son", father);
 
         DocumentGraphValidator validator = new DocumentGraphValidator();
         validator.validateDocumentGraph(documentListOf(son, father, grandfather));
@@ -52,16 +52,16 @@ public class DocumentGraphValidatorTest {
 
     @Test
     public void complex_dag_is_allowed() {
-        Search grandfather = createSearchWithName("grandfather");
-        Search father = createSearchWithName("father", grandfather);
-        Search mother = createSearchWithName("mother", grandfather);
+        Schema grandfather = createSearchWithName("grandfather");
+        Schema father = createSearchWithName("father", grandfather);
+        Schema mother = createSearchWithName("mother", grandfather);
         createDocumentReference(father, mother, "wife_ref");
-        Search son = createSearchWithName("son", father, mother);
-        Search daughter = createSearchWithName("daughter", father, mother);
+        Schema son = createSearchWithName("son", father, mother);
+        Schema daughter = createSearchWithName("daughter", father, mother);
         createDocumentReference(daughter, son, "brother_ref");
 
-        Search randomGuy1 = createSearchWithName("randomguy1");
-        Search randomGuy2 = createSearchWithName("randomguy2");
+        Schema randomGuy1 = createSearchWithName("randomguy1");
+        Schema randomGuy2 = createSearchWithName("randomguy2");
         createDocumentReference(randomGuy1, mother, "secret_ref");
 
         DocumentGraphValidator validator = new DocumentGraphValidator();
@@ -70,54 +70,54 @@ public class DocumentGraphValidatorTest {
 
     @Test
     public void ref_cycle_is_forbidden() {
-        Search search1 = createSearchWithName("doc1");
-        Search search2 = createSearchWithName("doc2");
-        Search search3 = createSearchWithName("doc3");
-        createDocumentReference(search1, search2, "ref_2");
-        createDocumentReference(search2, search3, "ref_3");
-        createDocumentReference(search3, search1, "ref_1");
+        Schema schema1 = createSearchWithName("doc1");
+        Schema schema2 = createSearchWithName("doc2");
+        Schema schema3 = createSearchWithName("doc3");
+        createDocumentReference(schema1, schema2, "ref_2");
+        createDocumentReference(schema2, schema3, "ref_3");
+        createDocumentReference(schema3, schema1, "ref_1");
 
         DocumentGraphValidator validator = new DocumentGraphValidator();
         exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
         exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc2->doc3->doc1.");
-        validator.validateDocumentGraph(documentListOf(search1, search2, search3));
+        validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
     }
 
     @Test
     public void inherit_cycle_is_forbidden() {
-        Search search1 = createSearchWithName("doc1");
-        Search search2 = createSearchWithName("doc2", search1);
-        Search search3 = createSearchWithName("doc3", search2);
-        search1.getDocument().inherit(search3.getDocument());
+        Schema schema1 = createSearchWithName("doc1");
+        Schema schema2 = createSearchWithName("doc2", schema1);
+        Schema schema3 = createSearchWithName("doc3", schema2);
+        schema1.getDocument().inherit(schema3.getDocument());
 
         DocumentGraphValidator validator = new DocumentGraphValidator();
         exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
         exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc3->doc2->doc1.");
-        validator.validateDocumentGraph(documentListOf(search1, search2, search3));
+        validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
     }
 
     @Test
     public void combined_inherit_and_ref_cycle_is_forbidden() {
-        Search search1 = createSearchWithName("doc1");
-        Search search2 = createSearchWithName("doc2", search1);
-        Search search3 = createSearchWithName("doc3", search2);
-        createDocumentReference(search1, search3, "ref_1");
+        Schema schema1 = createSearchWithName("doc1");
+        Schema schema2 = createSearchWithName("doc2", schema1);
+        Schema schema3 = createSearchWithName("doc3", schema2);
+        createDocumentReference(schema1, schema3, "ref_1");
 
         DocumentGraphValidator validator = new DocumentGraphValidator();
         exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
         exceptionRule.expectMessage("Document dependency cycle detected: doc1->doc3->doc2->doc1.");
-        validator.validateDocumentGraph(documentListOf(search1, search2, search3));
+        validator.validateDocumentGraph(documentListOf(schema1, schema2, schema3));
     }
 
     @Test
     public void self_reference_is_forbidden() {
-        Search adSearch = createSearchWithName("ad");
-        createDocumentReference(adSearch, adSearch, "ad_ref");
+        Schema adSchema = createSearchWithName("ad");
+        createDocumentReference(adSchema, adSchema, "ad_ref");
 
         DocumentGraphValidator validator = new DocumentGraphValidator();
         exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
         exceptionRule.expectMessage("Document dependency cycle detected: ad->ad.");
-        validator.validateDocumentGraph(documentListOf(adSearch));
+        validator.validateDocumentGraph(documentListOf(adSchema));
     }
 
     /**
@@ -127,8 +127,8 @@ public class DocumentGraphValidatorTest {
     @Test
     public void self_inheritance_forbidden() {
         try {
-            Search adSearch = createSearchWithName("ad");
-            SDDocumentType document = adSearch.getDocument();
+            Schema adSchema = createSearchWithName("ad");
+            SDDocumentType document = adSchema.getDocument();
             document.inherit(document);
             fail("Expected exception");
         }
@@ -137,22 +137,22 @@ public class DocumentGraphValidatorTest {
         }
     }
 
-    private static List<SDDocumentType> documentListOf(Search... searches) {
-        return Arrays.stream(searches).map(Search::getDocument).collect(toList());
+    private static List<SDDocumentType> documentListOf(Schema... schemas) {
+        return Arrays.stream(schemas).map(Schema::getDocument).collect(toList());
     }
 
-    private static Search createSearchWithName(String name, Search... parents) {
-        Search campaignSearch = new Search(name);
+    private static Schema createSearchWithName(String name, Schema... parents) {
+        Schema campaignSchema = new Schema(name);
         SDDocumentType document = new SDDocumentType(name);
-        campaignSearch.addDocument(document);
+        campaignSchema.addDocument(document);
         document.setDocumentReferences(new DocumentReferences(Collections.emptyMap()));
         Arrays.stream(parents)
-                .map(Search::getDocument)
+                .map(Schema::getDocument)
                 .forEach(document::inherit);
-        return campaignSearch;
+        return campaignSchema;
     }
 
-    private static void createDocumentReference(Search from, Search to, String refFieldName) {
+    private static void createDocumentReference(Schema from, Schema to, String refFieldName) {
         SDField refField = new TemporarySDField(refFieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(to.getName())));
         SDDocumentType fromDocument = from.getDocument();
         fromDocument.addField(refField);

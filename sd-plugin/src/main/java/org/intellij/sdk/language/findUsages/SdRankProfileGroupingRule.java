@@ -13,6 +13,10 @@ import org.intellij.sdk.language.psi.SdRankProfileDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class represent a Rank Profile that groups elements in the "Find Usages" window.
+ * @author shahariel
+ */
 public class SdRankProfileGroupingRule extends SingleParentUsageGroupingRule implements DumbAware {
 
     @Override

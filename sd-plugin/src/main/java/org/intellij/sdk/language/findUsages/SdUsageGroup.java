@@ -16,6 +16,10 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+/**
+ * This class represent a group of elements in the "Find Usages" window.
+ * @author shahariel
+ */
 public class SdUsageGroup implements UsageGroup {
     private final VirtualFile myFile;
     private final SmartPsiElementPointer<SdDeclaration> myElementPointer;

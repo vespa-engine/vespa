@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -134,7 +134,8 @@ public class MatchedElementsOnlyResolverTestCase {
                 "  }",
                 "}");
 
-        var search = buildSearch(joinLines("field my_field type array<string> {",
+        var search = buildSearch(joinLines(
+                "field my_field type array<string> {",
                 "  indexing: attribute | summary",
                 "}"),
                 documentSummary);
@@ -147,7 +148,7 @@ public class MatchedElementsOnlyResolverTestCase {
     @Test
     public void unsupported_field_type_throws() throws ParseException {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'test', document summary 'default', summary field 'my_field': " +
+        exceptionRule.expectMessage("For schema 'test', document summary 'default', summary field 'my_field': " +
                 "'matched-elements-only' is not supported for this field type. " +
                 "Supported field types are: array of primitive, weighted set of primitive, " +
                 "array of simple struct, map of primitive type to simple struct, " +
@@ -168,11 +169,11 @@ public class MatchedElementsOnlyResolverTestCase {
         assertEquals(expSourceField, field.getSingleSource());
     }
 
-    private Search buildSearch(String field) throws ParseException {
+    private Schema buildSearch(String field) throws ParseException {
         return buildSearch(field, "");
     }
 
-    private Search buildSearch(String field, String summary) throws ParseException {
+    private Schema buildSearch(String field, String summary) throws ParseException {
         var builder = new SearchBuilder(new RankProfileRegistry());
         builder.importString(joinLines("search test {",
                 "  document test {",

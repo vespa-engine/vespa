@@ -9,8 +9,8 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaTestCase;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
@@ -28,9 +28,9 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class RankingExpressionsTestCase extends SchemaTestCase {
+public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
 
-    private static Search createSearch(String dir, ModelContext.Properties deployProperties, RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
+    private static Schema createSearch(String dir, ModelContext.Properties deployProperties, RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
         return SearchBuilder.createFromDirectory(dir, new MockFileRegistry(), new TestableDeployLogger(), deployProperties, rankProfileRegistry).getSearch();
     }
 
@@ -38,8 +38,8 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
     public void testFunctions() throws IOException, ParseException {
         ModelContext.Properties deployProperties = new TestProperties();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        Search search = createSearch("src/test/examples/rankingexpressionfunction", deployProperties, rankProfileRegistry);
-        RankProfile functionsRankProfile = rankProfileRegistry.get(search, "macros");
+        Schema schema = createSearch("src/test/examples/rankingexpressionfunction", deployProperties, rankProfileRegistry);
+        RankProfile functionsRankProfile = rankProfileRegistry.get(schema, "macros");
         Map<String, RankProfile.RankingExpressionFunction> functions = functionsRankProfile.getFunctions();
         assertEquals(2, functions.get("titlematch$").function().arguments().size());
         assertEquals("var1", functions.get("titlematch$").function().arguments().get(0));
@@ -52,7 +52,7 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
         assertEquals(0, functions.get("artistmatch").function().arguments().size());
 
         RawRankProfile rawRankProfile = new RawRankProfile(functionsRankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(),
-                new ImportedMlModels(), new AttributeFields(search), deployProperties);
+                                                           new ImportedMlModels(), new AttributeFields(schema), deployProperties);
         List<Pair<String, String>> rankProperties = rawRankProfile.configProperties();
         assertEquals(6, rankProperties.size());
 
@@ -75,8 +75,8 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
     @Test(expected = IllegalArgumentException.class)
     public void testThatIncludingFileInSubdirFails() throws IOException, ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        Search search = createSearch("src/test/examples/rankingexpressioninfile", new TestProperties(), registry);
-        new DerivedConfiguration(search, registry); // rank profile parsing happens during deriving
+        Schema schema = createSearch("src/test/examples/rankingexpressioninfile", new TestProperties(), registry);
+        new DerivedConfiguration(schema, registry); // rank profile parsing happens during deriving
     }
 
     private void verifyProfile(RankProfile profile, List<String> expectedFunctions, List<Pair<String, String>> rankProperties,
@@ -96,20 +96,20 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
         }
     }
 
-    private void verifySearch(Search search, RankProfileRegistry rankProfileRegistry, LargeRankExpressions largeExpressions,
+    private void verifySearch(Schema schema, RankProfileRegistry rankProfileRegistry, LargeRankExpressions largeExpressions,
                               QueryProfileRegistry queryProfiles, ImportedMlModels models, ModelContext.Properties properties)
     {
-        AttributeFields attributes = new AttributeFields(search);
+        AttributeFields attributes = new AttributeFields(schema);
 
-        verifyProfile(rankProfileRegistry.get(search, "base"), Arrays.asList("large_f", "large_m"),
-                Arrays.asList(new Pair<>("rankingExpression(large_f).expressionName", "base.large_f"), new Pair<>("rankingExpression(large_m).expressionName", "base.large_m")),
-                largeExpressions, queryProfiles, models, attributes, properties);
+        verifyProfile(rankProfileRegistry.get(schema, "base"), Arrays.asList("large_f", "large_m"),
+                      Arrays.asList(new Pair<>("rankingExpression(large_f).expressionName", "base.large_f"), new Pair<>("rankingExpression(large_m).expressionName", "base.large_m")),
+                      largeExpressions, queryProfiles, models, attributes, properties);
         for (String child : Arrays.asList("child_a", "child_b")) {
-            verifyProfile(rankProfileRegistry.get(search, child), Arrays.asList("large_f", "large_m", "large_local_f", "large_local_m"),
-                    Arrays.asList(new Pair<>("rankingExpression(large_f).expressionName", child + ".large_f"), new Pair<>("rankingExpression(large_m).expressionName", child + ".large_m"),
+            verifyProfile(rankProfileRegistry.get(schema, child), Arrays.asList("large_f", "large_m", "large_local_f", "large_local_m"),
+                          Arrays.asList(new Pair<>("rankingExpression(large_f).expressionName", child + ".large_f"), new Pair<>("rankingExpression(large_m).expressionName", child + ".large_m"),
                             new Pair<>("rankingExpression(large_local_f).expressionName", child + ".large_local_f"), new Pair<>("rankingExpression(large_local_m).expressionName", child + ".large_local_m"),
                             new Pair<>("vespa.rank.firstphase", "rankingExpression(firstphase)"), new Pair<>("rankingExpression(firstphase).expressionName", child + ".firstphase")),
-                    largeExpressions, queryProfiles, models, attributes, properties);
+                          largeExpressions, queryProfiles, models, attributes, properties);
         }
     }
 
@@ -120,9 +120,9 @@ public class RankingExpressionsTestCase extends SchemaTestCase {
         LargeRankExpressions largeExpressions = new LargeRankExpressions(new MockFileRegistry());
         QueryProfileRegistry queryProfiles = new QueryProfileRegistry();
         ImportedMlModels models = new ImportedMlModels();
-        Search search = createSearch("src/test/examples/largerankingexpressions", properties, rankProfileRegistry);
-        verifySearch(search, rankProfileRegistry, largeExpressions, queryProfiles, models, properties);
+        Schema schema = createSearch("src/test/examples/largerankingexpressions", properties, rankProfileRegistry);
+        verifySearch(schema, rankProfileRegistry, largeExpressions, queryProfiles, models, properties);
         // Need to verify that second derivation works as that will happen if same sd is used in multiple content clusters
-        verifySearch(search, rankProfileRegistry, largeExpressions, queryProfiles, models, properties);
+        verifySearch(schema, rankProfileRegistry, largeExpressions, queryProfiles, models, properties);
     }
 }

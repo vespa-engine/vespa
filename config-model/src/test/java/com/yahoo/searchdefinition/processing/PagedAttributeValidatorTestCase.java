@@ -31,13 +31,14 @@ public class PagedAttributeValidatorTestCase {
             createFromString(getSd(fieldType));
             fail("Expected exception");
         }  catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'foo': The 'paged' attribute setting is only supported for dense tensor types",
+            assertEquals("For schema 'test', field 'foo': The 'paged' attribute setting is only supported for dense tensor types",
                     e.getMessage());
         }
     }
 
     private String getSd(String type) {
-        return joinLines("search test {",
+        return joinLines(
+                "schema test {",
                 "  document test {",
                 "    field foo type " + type + "{",
                 "      indexing: attribute",

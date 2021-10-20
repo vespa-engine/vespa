@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -42,12 +42,12 @@ public class SummaryClass extends Derived {
      *
      * @param deployLogger a {@link DeployLogger}
      */
-    public SummaryClass(Search search, DocumentSummary summary, DeployLogger deployLogger) {
+    public SummaryClass(Schema schema, DocumentSummary summary, DeployLogger deployLogger) {
         this.deployLogger = deployLogger;
-        this.rawAsBase64 = search.isRawAsBase64();
+        this.rawAsBase64 = schema.isRawAsBase64();
         this.omitSummaryFeatures = summary.omitSummaryFeatures();
         deriveName(summary);
-        deriveFields(search,summary);
+        deriveFields(schema, summary);
         deriveImplicitFields(summary);
     }
 
@@ -62,9 +62,9 @@ public class SummaryClass extends Derived {
         }
     }
 
-    private void deriveFields(Search search, DocumentSummary summary) {
+    private void deriveFields(Schema schema, DocumentSummary summary) {
         for (SummaryField summaryField : summary.getSummaryFields()) {
-            if (!accessingDiskSummary && search.isAccessingDiskSummary(summaryField)) {
+            if (!accessingDiskSummary && schema.isAccessingDiskSummary(summaryField)) {
                 accessingDiskSummary = true;
             }
             addField(summaryField.getName(), summaryField.getDataType(), summaryField.getTransform());

@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
-import com.yahoo.searchdefinition.ImmutableSearch;
+import com.yahoo.searchdefinition.ImmutableSchema;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -54,7 +54,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
     }
 
     public static ExpressionNode transformFeature(ReferenceNode feature, RankProfile rankProfile) {
-        ImmutableSearch search = rankProfile.getSearch();
+        ImmutableSchema search = rankProfile.getSearch();
         final String featureName = feature.getName();
         if ( ! featureName.equals("onnxModel") && ! featureName.equals("onnx")) return feature;
 

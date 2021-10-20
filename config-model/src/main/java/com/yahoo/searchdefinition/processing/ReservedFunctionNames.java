@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConstants;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -22,8 +22,8 @@ public class ReservedFunctionNames extends Processor {
 
     private static Set<String> reservedNames = getReservedNames();
 
-    public ReservedFunctionNames(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public ReservedFunctionNames(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override

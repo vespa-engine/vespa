@@ -6,6 +6,11 @@ import com.intellij.lang.ASTNode;
 import org.intellij.sdk.language.psi.SdNamedElement;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This abstract class is used to wrap a Psi Element with SdNamedElement interface, which enables the element to be a
+ * "name owner" (like an identifier). It allows the element to take a part in references, find usages and more.
+ * @author shahariel
+ */
 public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements SdNamedElement {
     
     public SdNamedElementImpl(@NotNull ASTNode node) {

@@ -88,11 +88,11 @@ public class Index implements Cloneable, Serializable {
      * Whether this field should be stemmed in this search definition,
      * this is never null
      */
-    public Stemming getStemming(Search search) {
+    public Stemming getStemming(Schema schema) {
         if (stemming != null)
             return stemming;
         else
-            return search.getStemming();
+            return schema.getStemming();
     }
 
     /**

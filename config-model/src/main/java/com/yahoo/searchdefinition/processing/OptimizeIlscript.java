@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionOptimizer;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
@@ -14,22 +14,22 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class OptimizeIlscript extends Processor {
 
-    public OptimizeIlscript(Search search,
+    public OptimizeIlscript(Schema schema,
                             DeployLogger deployLogger,
                             RankProfileRegistry rankProfileRegistry,
                             QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;
 
             field.setIndexingScript((ScriptExpression)new ExpressionOptimizer().convert(script));
             if ( ! field.getIndexingScript().toString().equals(script.toString())) {
-                info(search, field, "Rewrote ilscript from:\n" + script.toString() +
+                info(schema, field, "Rewrote ilscript from:\n" + script.toString() +
                                     "\nto\n" + field.getIndexingScript().toString());
             }
         }

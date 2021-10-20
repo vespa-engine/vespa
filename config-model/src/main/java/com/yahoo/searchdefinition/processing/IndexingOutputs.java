@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -24,40 +24,40 @@ import java.util.*;
  */
 public class IndexingOutputs extends Processor {
 
-    public IndexingOutputs(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public IndexingOutputs(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;
 
             Set<String> summaryFields = new TreeSet<>();
-            findSummaryTo(search, field, summaryFields, summaryFields);
-            MyConverter converter = new MyConverter(search, field, summaryFields, validate);
+            findSummaryTo(schema, field, summaryFields, summaryFields);
+            MyConverter converter = new MyConverter(schema, field, summaryFields, validate);
             field.setIndexingScript((ScriptExpression)converter.convert(script));
         }
     }
 
-    public void findSummaryTo(Search search, SDField field, Set<String> dynamicSummary, Set<String> staticSummary) {
-        Map<String, SummaryField> summaryFields = search.getSummaryFields(field);
+    public void findSummaryTo(Schema schema, SDField field, Set<String> dynamicSummary, Set<String> staticSummary) {
+        Map<String, SummaryField> summaryFields = schema.getSummaryFields(field);
         if (summaryFields.isEmpty()) {
             fillSummaryToFromField(field, dynamicSummary, staticSummary);
         } else {
-            fillSummaryToFromSearch(search, field, summaryFields, dynamicSummary, staticSummary);
+            fillSummaryToFromSearch(schema, field, summaryFields, dynamicSummary, staticSummary);
         }
     }
 
-    private void fillSummaryToFromSearch(Search search, SDField field, Map<String, SummaryField> summaryFields,
-                                                Set<String> dynamicSummary, Set<String> staticSummary) {
+    private void fillSummaryToFromSearch(Schema schema, SDField field, Map<String, SummaryField> summaryFields,
+                                         Set<String> dynamicSummary, Set<String> staticSummary) {
         for (SummaryField summaryField : summaryFields.values()) {
-            fillSummaryToFromSummaryField(search, field, summaryField, dynamicSummary, staticSummary);
+            fillSummaryToFromSummaryField(schema, field, summaryField, dynamicSummary, staticSummary);
         }
     }
 
-    private void fillSummaryToFromSummaryField(Search search, SDField field, SummaryField summaryField,
+    private void fillSummaryToFromSummaryField(Schema schema, SDField field, SummaryField summaryField,
                                                Set<String> dynamicSummary, Set<String> staticSummary) {
         SummaryTransform summaryTransform = summaryField.getTransform();
         String summaryName = summaryField.getName();
@@ -69,7 +69,7 @@ public class IndexingOutputs extends Processor {
         if (summaryTransform.isDynamic()) {
             DataType fieldType = field.getDataType();
             if (fieldType != DataType.URI && fieldType != DataType.STRING) {
-                warn(search, field, "Dynamic summaries are only supported for fields of type " +
+                warn(schema, field, "Dynamic summaries are only supported for fields of type " +
                                     "string, ignoring summary field '" + summaryField.getName() +
                                     "' for sd field '" + field.getName() + "' of type " +
                                     fieldType.getName() + ".");
@@ -94,13 +94,13 @@ public class IndexingOutputs extends Processor {
 
     private class MyConverter extends ExpressionConverter {
 
-        final Search search;
+        final Schema schema;
         final Field field;
         final Set<String> summaryFields;
         final boolean validate;
 
-        MyConverter(Search search, Field field, Set<String> summaryFields, boolean validate) {
-            this.search = search;
+        MyConverter(Schema schema, Field field, Set<String> summaryFields, boolean validate) {
+            this.schema = schema;
             this.field = field;
             this.summaryFields = summaryFields.isEmpty() ? Collections.singleton(field.getName()) : summaryFields;
             this.validate = validate;
@@ -116,7 +116,7 @@ public class IndexingOutputs extends Processor {
                 return true; // inject appropriate field name
             }
             if ( validate && ! fieldName.equals(field.getName())) {
-                fail(search, field, "Indexing expression '" + exp + "' attempts to write to a field other than '" +
+                fail(schema, field, "Indexing expression '" + exp + "' attempts to write to a field other than '" +
                                     field.getName() + "'.");
             }
             return false;

@@ -96,7 +96,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     protected File root() { return root; }
 
     @Override
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("deprecation") // NOT redundant
     public String getApplicationName() {
         return "mock application";
     }
@@ -204,6 +204,15 @@ public class MockApplicationPackage implements ApplicationPackage {
                        .withEmptyHosts()
                        .withEmptyServices()
                        .withSchemaDir(dir).build();
+    }
+
+    // TODO: It might work to just merge this and the above
+    public static ApplicationPackage fromSearchDefinitionAndRootDirectory(String dir) {
+        return new MockApplicationPackage.Builder()
+                .withRoot(new File(dir))
+                .withEmptyHosts()
+                .withEmptyServices()
+                .withSchemaDir(dir).build();
     }
 
     public static class Builder {

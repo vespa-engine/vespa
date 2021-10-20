@@ -9,61 +9,67 @@ import com.intellij.navigation.ItemPresentation;
 import com.intellij.psi.NavigatablePsiElement;
 import com.intellij.psi.PsiElement;
 import org.intellij.sdk.language.SdUtil;
+import org.intellij.sdk.language.psi.SdDocumentAnnotationDefinition;
 import org.intellij.sdk.language.psi.SdDocumentDefinition;
 import org.intellij.sdk.language.psi.SdDocumentStructDefinition;
 import org.intellij.sdk.language.psi.SdDocumentSummaryDefinition;
 import org.intellij.sdk.language.psi.SdFile;
 import org.intellij.sdk.language.psi.SdRankProfileDefinition;
+import org.intellij.sdk.language.psi.SdSchemaAnnotationDefinition;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class is used for the presentation of an element in the "Structure View" window.
+ * @author shahariel
+ */
 public class SdStructureViewElement implements StructureViewTreeElement, SortableTreeElement {
-
+    
     private final NavigatablePsiElement myElement;
-
+    
     public SdStructureViewElement(NavigatablePsiElement element) {
         this.myElement = element;
     }
-
+    
     @Override
     public Object getValue() {
         return myElement;
     }
-
+    
     @Override
     public void navigate(boolean requestFocus) {
         myElement.navigate(requestFocus);
     }
-
+    
     @Override
     public boolean canNavigate() {
         return myElement.canNavigate();
     }
-
+    
     @Override
     public boolean canNavigateToSource() {
         return myElement.canNavigateToSource();
     }
-
+    
     @NotNull
     @Override
     public String getAlphaSortKey() {
         String name = myElement.getName();
         return name != null ? name : "";
     }
-
+    
     @NotNull
     @Override
     public ItemPresentation getPresentation() {
         ItemPresentation presentation = myElement.getPresentation();
         return presentation != null ? presentation : new PresentationData();
     }
-
+    
     @Override
     public TreeElement @NotNull [] getChildren() {
-        List<PsiElement> children = new ArrayList<>();;
+        List<PsiElement> children = new ArrayList<>();
         if (myElement instanceof SdFile) {
             children = SdUtil.findSchemaChildren(myElement);
         } else if (myElement instanceof SdDocumentDefinition) {
@@ -74,6 +80,9 @@ public class SdStructureViewElement implements StructureViewTreeElement, Sortabl
             children = SdUtil.findRankProfileChildren(myElement);
         } else if (myElement instanceof SdDocumentSummaryDefinition) {
             children = SdUtil.findDocumentSummaryChildren(myElement);
+        } else if (myElement instanceof SdSchemaAnnotationDefinition ||
+                   myElement instanceof SdDocumentAnnotationDefinition) {
+            children = SdUtil.findAnnotationChildren(myElement);
         }
         
         List<TreeElement> treeElements = new ArrayList<>(children.size());

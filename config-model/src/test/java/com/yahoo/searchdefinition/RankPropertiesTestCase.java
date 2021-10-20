@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class RankPropertiesTestCase extends SchemaTestCase {
+public class RankPropertiesTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRankPropertyInheritance() throws ParseException {
@@ -49,12 +49,12 @@ public class RankPropertiesTestCase extends SchemaTestCase {
                 "    }",
                 "}"));
         builder.build();
-        Search search = builder.getSearch();
-        AttributeFields attributeFields = new AttributeFields(search);
+        Schema schema = builder.getSearch();
+        AttributeFields attributeFields = new AttributeFields(schema);
 
         {
             // Check declared model
-            RankProfile parent = rankProfileRegistry.get(search, "parent");
+            RankProfile parent = rankProfileRegistry.get(schema, "parent");
             assertEquals("query(a) = 1500", parent.getRankProperties().get(0).toString());
 
             // Check derived model
@@ -64,11 +64,11 @@ public class RankPropertiesTestCase extends SchemaTestCase {
 
         {
             // Check declared model
-            RankProfile parent = rankProfileRegistry.get(search, "child");
+            RankProfile parent = rankProfileRegistry.get(schema, "child");
             assertEquals("query(a) = 2000", parent.getRankProperties().get(0).toString());
 
             // Check derived model
-            RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.get(search, "child"),
+            RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.get(schema, "child"),
                                                          new LargeRankExpressions(new MockFileRegistry()),
                                                          new QueryProfileRegistry(),
                                                          new ImportedMlModels(),
@@ -126,8 +126,8 @@ public class RankPropertiesTestCase extends SchemaTestCase {
                 "    }",
                 "}"));
         builder.build();
-        Search search = builder.getSearch();
-        RankProfile a = rankProfileRegistry.get(search, "a");
+        Schema schema = builder.getSearch();
+        RankProfile a = rankProfileRegistry.get(schema, "a");
         List<RankProfile.ExecuteOperation> operations = a.getExecuteOperations();
         assertEquals(3, operations.size());
         assertEquals(RankProfile.ExecuteOperation.Phase.onmatch, operations.get(0).phase);
@@ -140,7 +140,7 @@ public class RankPropertiesTestCase extends SchemaTestCase {
         assertEquals("synthetic_attribute_c", operations.get(2).attribute);
         assertEquals("--", operations.get(2).operation);
 
-        AttributeFields attributeFields = new AttributeFields(search);
+        AttributeFields attributeFields = new AttributeFields(schema);
         RawRankProfile raw = new RawRankProfile(a, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, new TestProperties());
         assertEquals(7, raw.configProperties().size());
         assertEquals("(vespa.execute.onmatch.attribute, synthetic_attribute_a)", raw.configProperties().get(0).toString());

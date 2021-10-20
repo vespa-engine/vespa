@@ -7,6 +7,10 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Icon;
 
+/**
+ * This class is used for the extension (in plugin.xml), to define SD as a file's type.
+ * @author shahariel
+ */
 public class SdFileType extends LanguageFileType {
     
     public static final SdFileType INSTANCE = new SdFileType();

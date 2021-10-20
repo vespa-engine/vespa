@@ -24,7 +24,10 @@ import com.intellij.openapi.project.Project;
 
 import com.intellij.psi.util.PsiTreeUtil;
 
-
+/**
+ * This class is used for the extension (in plugin.xml), to enable "Call Hierarchy" window using the plugin code.
+ * @author shahariel
+ */
 public class SdCallHierarchyProvider implements HierarchyProvider {
 
     @Override

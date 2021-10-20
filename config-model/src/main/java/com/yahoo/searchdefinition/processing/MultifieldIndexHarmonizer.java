@@ -3,8 +3,8 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.processing.multifieldresolver.IndexCommandResolver;
 import com.yahoo.searchdefinition.processing.multifieldresolver.RankTypeResolver;
 import com.yahoo.searchdefinition.processing.multifieldresolver.StemmingResolver;
@@ -25,18 +25,18 @@ public class MultifieldIndexHarmonizer extends Processor {
     /** A map from index names to a List of fields going to that index */
     private Map<String,List<SDField>> indexToFields=new java.util.HashMap<>();
 
-    public MultifieldIndexHarmonizer(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public MultifieldIndexHarmonizer(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        populateIndexToFields(search);
-        resolveAllConflicts(search);
+        populateIndexToFields(schema);
+        resolveAllConflicts(schema);
     }
 
-    private void populateIndexToFields(Search search) {
-        for (SDField field : search.allConcreteFields() ) {
+    private void populateIndexToFields(Schema schema) {
+        for (SDField field : schema.allConcreteFields() ) {
             if ( ! field.doesIndexing()) continue;
             addIndexField(field.getName(), field);
         }
@@ -51,12 +51,12 @@ public class MultifieldIndexHarmonizer extends Processor {
         fields.add(field);
     }
 
-    private void resolveAllConflicts(Search search) {
+    private void resolveAllConflicts(Schema schema) {
         for (Map.Entry<String, List<SDField>> entry : indexToFields.entrySet()) {
             String indexName = entry.getKey();
             List<SDField> fields = entry.getValue();
             if (fields.size() == 1) continue; // It takes two to make a conflict
-            resolveConflicts(indexName, fields, search);
+            resolveConflicts(indexName, fields, schema);
         }
     }
 
@@ -65,12 +65,12 @@ public class MultifieldIndexHarmonizer extends Processor {
      *
      * @param indexName the name of the index in question
      * @param fields all the fields indexed to this index
-     * @param search the search definition having this
+     * @param schema the search definition having this
      */
-    private void resolveConflicts(String indexName,List<SDField> fields,Search search) {
-        new StemmingResolver(indexName, fields, search, deployLogger).resolve();
-        new IndexCommandResolver(indexName, fields, search, deployLogger).resolve();
-        new RankTypeResolver(indexName, fields, search, deployLogger).resolve();
+    private void resolveConflicts(String indexName, List<SDField> fields, Schema schema) {
+        new StemmingResolver(indexName, fields, schema, deployLogger).resolve();
+        new IndexCommandResolver(indexName, fields, schema, deployLogger).resolve();
+        new RankTypeResolver(indexName, fields, schema, deployLogger).resolve();
     }
 
 }

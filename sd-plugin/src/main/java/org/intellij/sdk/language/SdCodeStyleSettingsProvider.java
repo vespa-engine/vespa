@@ -11,6 +11,10 @@ import com.intellij.psi.codeStyle.CustomCodeStyleSettings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class is used for the extension (in plugin.xml) to the class SdCodeStyleSettings.
+ * @author shahariel
+ */
 public class SdCodeStyleSettingsProvider extends CodeStyleSettingsProvider {
     
     @Override

@@ -14,7 +14,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.protect.Validator;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.validation.Validation;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class DerivedConfiguration {
 
-    private final Search search;
+    private final Schema schema;
     private Summaries summaries;
     private SummaryMap summaryMap;
     private Juniperrc juniperrc;
@@ -48,23 +48,23 @@ public class DerivedConfiguration {
      * Creates a complete derived configuration from a search definition.
      * Only used in tests.
      *
-     * @param search the search to derive a configuration from. Derived objects will be snapshots, but this argument is
+     * @param schema the search to derive a configuration from. Derived objects will be snapshots, but this argument is
      *               live. Which means that this object will be inconsistent when the given search definition is later
      *               modified.
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      */
-    public DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry) {
-        this(search, rankProfileRegistry, new QueryProfileRegistry());
+    public DerivedConfiguration(Schema schema, RankProfileRegistry rankProfileRegistry) {
+        this(schema, rankProfileRegistry, new QueryProfileRegistry());
     }
 
-    DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
-        this(search, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfiles, new ImportedMlModels(), new InThreadExecutorService());
+    DerivedConfiguration(Schema schema, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
+        this(schema, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfiles, new ImportedMlModels(), new InThreadExecutorService());
     }
 
     /**
      * Creates a complete derived configuration snapshot from a search definition.
      *
-     * @param search             the search to derive a configuration from. Derived objects will be snapshots, but this
+     * @param schema             the search to derive a configuration from. Derived objects will be snapshots, but this
      *                           argument is live. Which means that this object will be inconsistent when the given
      *                           search definition is later modified.
      * @param deployLogger       a {@link DeployLogger} for logging when doing operations on this
@@ -72,34 +72,34 @@ public class DerivedConfiguration {
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      * @param queryProfiles      the query profiles of this application
      */
-    public DerivedConfiguration(Search search,
+    public DerivedConfiguration(Schema schema,
                                 DeployLogger deployLogger,
                                 ModelContext.Properties deployProperties,
                                 RankProfileRegistry rankProfileRegistry,
                                 QueryProfileRegistry queryProfiles,
                                 ImportedMlModels importedModels,
                                 ExecutorService executor) {
-        Validator.ensureNotNull("Search definition", search);
-        this.search = search;
+        Validator.ensureNotNull("Search definition", schema);
+        this.schema = schema;
         this.queryProfiles = queryProfiles;
-        if ( ! search.isDocumentsOnly()) {
-            streamingFields = new VsmFields(search);
-            streamingSummary = new VsmSummary(search);
+        if ( ! schema.isDocumentsOnly()) {
+            streamingFields = new VsmFields(schema);
+            streamingSummary = new VsmSummary(schema);
         }
-        if ( ! search.isDocumentsOnly()) {
-            attributeFields = new AttributeFields(search);
-            summaries = new Summaries(search, deployLogger);
-            summaryMap = new SummaryMap(search);
-            juniperrc = new Juniperrc(search);
-            rankProfileList = new RankProfileList(search, search.rankingConstants(), search.rankExpressionFiles(),
-                                                  search.onnxModels(), attributeFields, rankProfileRegistry,
+        if ( ! schema.isDocumentsOnly()) {
+            attributeFields = new AttributeFields(schema);
+            summaries = new Summaries(schema, deployLogger);
+            summaryMap = new SummaryMap(schema);
+            juniperrc = new Juniperrc(schema);
+            rankProfileList = new RankProfileList(schema, schema.rankingConstants(), schema.rankExpressionFiles(),
+                                                  schema.onnxModels(), attributeFields, rankProfileRegistry,
                                                   queryProfiles, importedModels, deployProperties, executor);
-            indexingScript = new IndexingScript(search);
-            indexInfo = new IndexInfo(search);
-            indexSchema = new IndexSchema(search);
-            importedFields = new ImportedFields(search);
+            indexingScript = new IndexingScript(schema);
+            indexInfo = new IndexInfo(schema);
+            indexSchema = new IndexSchema(schema);
+            importedFields = new ImportedFields(schema);
         }
-        Validation.validate(this, search);
+        Validation.validate(this, schema);
     }
 
     /**
@@ -109,7 +109,7 @@ public class DerivedConfiguration {
      * @throws IOException if exporting fails, some files may still be created
      */
     public void export(String toDirectory) throws IOException {
-        if (!search.isDocumentsOnly()) {
+        if (!schema.isDocumentsOnly()) {
             summaries.export(toDirectory);
             summaryMap.export(toDirectory);
             juniperrc.export(toDirectory);
@@ -171,8 +171,8 @@ public class DerivedConfiguration {
         this.indexingScript = script;
     }
 
-    public Search getSearch() {
-        return search;
+    public Schema getSearch() {
+        return schema;
     }
 
     public RankProfileList getRankProfileList() {

@@ -1,7 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
+import com.yahoo.searchdefinition.Schema;
+
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -14,15 +17,32 @@ import java.util.Map;
  */
 public class TemporaryImportedFields {
 
+    private final Schema owner;
     private final Map<String, TemporaryImportedField> fields = new LinkedHashMap<>();
+
+    public TemporaryImportedFields(Schema owner) {
+        this.owner = owner;
+    }
 
     public void add(TemporaryImportedField importedField) {
         fields.put(importedField.fieldName(), importedField);
     }
 
-    public boolean hasField(String fieldName) { return fields.get(fieldName) != null; }
+    public boolean hasField(String fieldName) {
+        boolean has = fields.get(fieldName) != null;
+        if (has) return true;
+        if (owner.inherited().isEmpty()) return false;
+        if (owner.inherited().get().temporaryImportedFields().isEmpty()) return false;
+        return owner.inherited().get().temporaryImportedFields().get().hasField(fieldName);
+    }
 
     public Map<String, TemporaryImportedField> fields() {
-        return Collections.unmodifiableMap(fields);
+        if (owner.inherited().isEmpty()) return Collections.unmodifiableMap(fields);
+        if (owner.inherited().get().temporaryImportedFields().isEmpty()) return Collections.unmodifiableMap(fields);
+
+        var allFields = new HashMap<>(owner.inherited().get().temporaryImportedFields().get().fields());
+        allFields.putAll(fields);
+        return allFields;
     }
+
 }

@@ -18,6 +18,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class represent a reference to a Psi Element.
+ * @author shahariel
+ */
 public class SdReference extends PsiReferenceBase<PsiElement> implements PsiPolyVariantReference {
     
     private final String elementName;

@@ -5,28 +5,28 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.NumericDataType;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 public class StringSettingsOnNonStringFields extends Processor {
 
-    public StringSettingsOnNonStringFields(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public StringSettingsOnNonStringFields(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if ( ! doCheck(field)) continue;
             if (field.getMatching().isTypeUserSet()) {
-                warn(search, field, "Matching type " + field.getMatching().getType() +
+                warn(schema, field, "Matching type " + field.getMatching().getType() +
                                     " is only allowed for string fields.");
             }
             if (field.getRanking().isLiteral()) {
-                warn(search, field, "Rank type literal only applies to string fields");
+                warn(schema, field, "Rank type literal only applies to string fields");
             }
         }
     }

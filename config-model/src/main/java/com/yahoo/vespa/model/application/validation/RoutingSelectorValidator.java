@@ -10,7 +10,6 @@ import com.yahoo.vespa.model.search.IndexedSearchCluster;
 
 /**
  * Validates routing selector for search and content clusters
- *
  */
 public class RoutingSelectorValidator extends Validator {
 
@@ -30,4 +29,5 @@ public class RoutingSelectorValidator extends Validator {
             }
         }
     }
+
 }

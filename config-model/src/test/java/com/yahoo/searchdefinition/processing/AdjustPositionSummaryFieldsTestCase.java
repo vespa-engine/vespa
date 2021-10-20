@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -73,7 +73,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     public void test_pos_default_summary_no_attr_no_rename() {
         SearchModel model = new SearchModel(false, false, false);
         model.resolve();
-        assertNull(model.childSearch.getSummary("default")); // ImplicitSummaries processing not run in this test
+        assertNull(model.childSchema.getSummary("default")); // ImplicitSummaries processing not run in this test
     }
 
     @Test
@@ -92,8 +92,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     @Test
     public void test_pos_summary_no_attr() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', field 'my_pos': "
-                + "No position attribute 'pos_zcurve'");
+        exceptionRule.expectMessage("For schema 'child', field 'my_pos': No position attribute 'pos_zcurve'");
         SearchModel model = new SearchModel(false, false, false);
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
         model.resolve();
@@ -102,8 +101,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     @Test
     public void test_pos_summary_bad_attr() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', field 'my_pos': "
-                + "No position attribute 'pos_zcurve'");
+        exceptionRule.expectMessage("For schema 'child', field 'my_pos': No position attribute 'pos_zcurve'");
         SearchModel model = new SearchModel(false, false, true);
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, "pos");
         model.resolve();
@@ -112,7 +110,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     @Test
     public void test_imported_pos_summary_no_attr() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', import field 'my_pos_zcurve': "
+        exceptionRule.expectMessage("For schema 'child', import field 'my_pos_zcurve': "
                 + "Field 'pos_zcurve' via reference field 'ref': Not found");
         SearchModel model = new SearchModel(true, false, false);
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
@@ -122,7 +120,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     @Test
     public void test_imported_pos_summary_bad_attr() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', field 'my_pos': "
+        exceptionRule.expectMessage("For schema 'child', field 'my_pos': "
                 + "No position attribute 'my_pos_zcurve'");
         SearchModel model = new SearchModel(true, false, true);
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
@@ -132,7 +130,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     @Test
     public void test_my_pos_position_summary_bad_datatype() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', field 'my_pos.position': "
+        exceptionRule.expectMessage("For schema 'child', field 'my_pos.position': "
                 + "exists with type 'datatype string (code: 2)', should be of type 'datatype Array<string> (code: -1486737430)");
         SearchModel model = new SearchModel();
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
@@ -143,7 +141,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     @Test
     public void test_my_pos_position_summary_bad_transform() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', field 'my_pos.position': "
+        exceptionRule.expectMessage("For schema 'child', field 'my_pos.position': "
                 + "has summary transform 'none', should have transform 'positions'");
         SearchModel model = new SearchModel();
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
@@ -154,7 +152,7 @@ public class AdjustPositionSummaryFieldsTestCase {
     @Test
     public void test_my_pos_position_summary_bad_source() {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For search 'child', field 'my_pos.position': "
+        exceptionRule.expectMessage("For schema 'child', field 'my_pos.position': "
                 + "has source '[source field 'pos']', should have source 'source field 'my_pos_zcurve''");
         SearchModel model = new SearchModel();
         model.addSummaryField("my_pos", PositionDataType.INSTANCE, null, null);
@@ -175,21 +173,21 @@ public class AdjustPositionSummaryFieldsTestCase {
         SearchModel(boolean importedPos, boolean setupPosAttr, boolean setupBadAttr) {
             super();
             if (importedPos) {
-                createPositionField(parentSearch, setupPosAttr, setupBadAttr);
+                createPositionField(parentSchema, setupPosAttr, setupBadAttr);
             }
-            addRefField(childSearch, parentSearch, "ref");
+            addRefField(childSchema, parentSchema, "ref");
             if (importedPos) {
                 addImportedField("my_pos", "ref", "pos");
             } else {
-                createPositionField(childSearch, setupPosAttr, setupBadAttr);
+                createPositionField(childSchema, setupPosAttr, setupBadAttr);
             }
         }
 
-        private void createPositionField(Search search, boolean setupPosAttr, boolean setupBadAttr) {
+        private void createPositionField(Schema schema, boolean setupPosAttr, boolean setupBadAttr) {
             String ilScript = setupPosAttr ? "{ summary | attribute }" : "{ summary }";
-            search.getDocument().addField(createField("pos", PositionDataType.INSTANCE, ilScript));
+            schema.getDocument().addField(createField("pos", PositionDataType.INSTANCE, ilScript));
             if (setupBadAttr) {
-                search.getDocument().addField(createField("pos_zcurve", DataType.LONG, "{ attribute }"));
+                schema.getDocument().addField(createField("pos_zcurve", DataType.LONG, "{ attribute }"));
             }
         }
 
@@ -198,10 +196,10 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         public void addSummaryField(String summaryName, String fieldName, DataType dataType, SummaryTransform transform, String source) {
-            DocumentSummary summary = childSearch.getSummary(summaryName);
+            DocumentSummary summary = childSchema.getSummary(summaryName);
             if (summary == null) {
-                summary = new DocumentSummary(summaryName, childSearch);
-                childSearch.addSummary(summary);
+                summary = new DocumentSummary(summaryName, childSchema);
+                childSchema.addSummary(summary);
             }
             SummaryField summaryField = new SummaryField(fieldName, dataType);
             if (source != null) {
@@ -218,7 +216,7 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         public void assertNoSummaryField(String summaryName, String fieldName) {
-            DocumentSummary summary = childSearch.getSummary(summaryName);
+            DocumentSummary summary = childSchema.getSummary(summaryName);
             assertNotNull(summary);
             SummaryField summaryField = summary.getSummaryField(fieldName);
             assertNull(summaryField);
@@ -229,7 +227,7 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         public void assertSummaryField(String summaryName, String fieldName, DataType dataType, SummaryTransform transform, String source) {
-            DocumentSummary summary = childSearch.getSummary(summaryName);
+            DocumentSummary summary = childSchema.getSummary(summaryName);
             assertNotNull(summary);
             SummaryField summaryField = summary.getSummaryField(fieldName);
             assertNotNull(summaryField);
@@ -244,18 +242,17 @@ public class AdjustPositionSummaryFieldsTestCase {
         }
 
         public void resolve() {
-            resolve(parentSearch);
-            resolve(childSearch);
+            resolve(parentSchema);
+            resolve(childSchema);
         }
 
-        private static void resolve(Search search) {
-            new CreatePositionZCurve(search, null, null, null).process(true, false);
-            assertNotNull(search.temporaryImportedFields().get());
-            assertFalse(search.importedFields().isPresent());
-            new ImportedFieldsResolver(search, null, null, null).process(true, false);
-            assertFalse(search.temporaryImportedFields().isPresent());
-            assertNotNull(search.importedFields().get());
-            new AdjustPositionSummaryFields(search, null, null, null).process(true, false);
+        private static void resolve(Schema schema) {
+            new CreatePositionZCurve(schema, null, null, null).process(true, false);
+            assertNotNull(schema.temporaryImportedFields().get());
+            assertFalse(schema.importedFields().isPresent());
+            new ImportedFieldsResolver(schema, null, null, null).process(true, false);
+            assertNotNull(schema.importedFields().get());
+            new AdjustPositionSummaryFields(schema, null, null, null).process(true, false);
         }
     }
 }

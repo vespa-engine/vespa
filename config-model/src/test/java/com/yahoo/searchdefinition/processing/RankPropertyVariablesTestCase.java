@@ -5,9 +5,9 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile.RankProperty;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -16,21 +16,21 @@ import java.util.List;
 
 import static org.junit.Assert.fail;
 
-public class RankPropertyVariablesTestCase extends SchemaTestCase {
+public class RankPropertyVariablesTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRankPropVariables() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        Search search = SearchBuilder.buildFromFile("src/test/examples/rankpropvars.sd",
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/rankpropvars.sd",
                                                     new BaseDeployLogger(),
                                                     rankProfileRegistry,
                                                     new QueryProfileRegistry());
-        assertRankPropEquals(rankProfileRegistry.get(search, "other").getRankProperties(), "$testvar1", "foo");
-        assertRankPropEquals(rankProfileRegistry.get(search, "other").getRankProperties(), "$testvar_2", "bar");
-        assertRankPropEquals(rankProfileRegistry.get(search, "other").getRankProperties(), "$testvarOne23", "baz");
-        assertRankPropEquals(rankProfileRegistry.get(search, "another").getRankProperties(), "$Testvar1", "1");
-        assertRankPropEquals(rankProfileRegistry.get(search, "another").getRankProperties(), "$Testvar_4", "4");
-        assertRankPropEquals(rankProfileRegistry.get(search, "another").getRankProperties(), "$testvarFour23", "234234.234");
+        assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvar1", "foo");
+        assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvar_2", "bar");
+        assertRankPropEquals(rankProfileRegistry.get(schema, "other").getRankProperties(), "$testvarOne23", "baz");
+        assertRankPropEquals(rankProfileRegistry.get(schema, "another").getRankProperties(), "$Testvar1", "1");
+        assertRankPropEquals(rankProfileRegistry.get(schema, "another").getRankProperties(), "$Testvar_4", "4");
+        assertRankPropEquals(rankProfileRegistry.get(schema, "another").getRankProperties(), "$testvarFour23", "234234.234");
     }
 
     private void assertRankPropEquals(List<RankProperty> props, String key, String val) {

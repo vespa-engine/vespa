@@ -21,7 +21,7 @@ public class ReservedDocumentNamesTestCase extends AbstractExportingTestCase {
             assertCorrectDeriving("reserved_position");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'position': Document name 'position' is reserved.", e.getMessage());
+            assertEquals("For schema 'position': Document name 'position' is reserved.", e.getMessage());
         }
     }
 }

@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -20,11 +20,11 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class ReferenceFieldsProcessor extends Processor {
 
-    public ReferenceFieldsProcessor(Search search,
+    public ReferenceFieldsProcessor(Schema schema,
                                     DeployLogger deployLogger,
                                     RankProfileRegistry rankProfileRegistry,
                                     QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -34,7 +34,7 @@ public class ReferenceFieldsProcessor extends Processor {
     }
 
     private void clearSummaryAttributeAspectForExplicitSummaryFields() {
-        for (DocumentSummary docSum : search.getSummaries().values()) {
+        for (DocumentSummary docSum : schema.getSummaries().values()) {
             docSum.getSummaryFields().stream()
                     .filter(summaryField  -> summaryField.getDataType() instanceof ReferenceDataType)
                     .forEach(summaryField -> summaryField.setTransform(SummaryTransform.NONE));
@@ -42,7 +42,7 @@ public class ReferenceFieldsProcessor extends Processor {
     }
 
     private void clearSummaryAttributeAspectForConcreteFields() {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if (field.getDataType() instanceof ReferenceDataType) {
                 removeFromAttributePrefetchSummaryClass(field);
                 clearSummaryTransformOnSummaryFields(field);
@@ -51,14 +51,14 @@ public class ReferenceFieldsProcessor extends Processor {
     }
 
     private void removeFromAttributePrefetchSummaryClass(SDField field) {
-        DocumentSummary summary = search.getSummary("attributeprefetch");
+        DocumentSummary summary = schema.getSummary("attributeprefetch");
         if (summary != null) {
             summary.remove(field.getName());
         }
     }
 
     private void clearSummaryTransformOnSummaryFields(SDField field) {
-        search.getSummaryFields(field).values().forEach(summaryField -> summaryField.setTransform(SummaryTransform.NONE));
+        schema.getSummaryFields(field).values().forEach(summaryField -> summaryField.setTransform(SummaryTransform.NONE));
     }
 
 }

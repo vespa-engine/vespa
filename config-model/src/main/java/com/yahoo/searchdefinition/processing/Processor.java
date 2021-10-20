@@ -7,7 +7,7 @@ import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -24,7 +24,7 @@ import java.util.logging.Level;
  */
 public abstract class Processor {
 
-    protected final Search search;
+    protected final Schema schema;
     protected final DeployLogger deployLogger;
     protected final RankProfileRegistry rankProfileRegistry;
     protected final QueryProfiles queryProfiles;
@@ -32,16 +32,16 @@ public abstract class Processor {
     /**
      * Base constructor
      *
-     * @param search the search to process
+     * @param schema the search to process
      * @param deployLogger Logger du use when logging deploy output.
      * @param rankProfileRegistry Registry with all rank profiles, used for lookup and insertion.
      * @param queryProfiles The query profiles contained in the application this search is part of.
      */
-    public Processor(Search search,
+    public Processor(Schema schema,
                      DeployLogger deployLogger,
                      RankProfileRegistry rankProfileRegistry,
                      QueryProfiles queryProfiles) {
-        this.search = search;
+        this.schema = schema;
         this.deployLogger = deployLogger;
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfiles = queryProfiles;
@@ -62,19 +62,19 @@ public abstract class Processor {
     /**
      * Convenience method for adding a no-strings-attached implementation field for a regular field
      *
-     * @param search       the search definition in question
+     * @param schema       the search definition in question
      * @param field        the field to add an implementation field for
      * @param suffix       the suffix of the added implementation field (without the underscore)
      * @param indexing     the indexing statement of the field
      * @param queryCommand the query command of the original field, or null if none
      * @return the implementation field which is added to the search
      */
-    protected SDField addField(Search search, SDField field, String suffix, String indexing, String queryCommand) {
-        SDField implementationField = search.getConcreteField(field.getName() + "_" + suffix);
+    protected SDField addField(Schema schema, SDField field, String suffix, String indexing, String queryCommand) {
+        SDField implementationField = schema.getConcreteField(field.getName() + "_" + suffix);
         if (implementationField != null) {
             deployLogger.logApplicationPackage(Level.WARNING, "Implementation field " + implementationField + " added twice");
         } else {
-            implementationField = new SDField(search.getDocument(), field.getName() + "_" + suffix, DataType.STRING);
+            implementationField = new SDField(schema.getDocument(), field.getName() + "_" + suffix, DataType.STRING);
         }
         implementationField.setRankType(RankType.EMPTY);
         implementationField.setStemming(Stemming.NONE);
@@ -83,12 +83,12 @@ public abstract class Processor {
         String indexName = field.getName();
         String implementationIndexName = indexName + "_" + suffix;
         Index implementationIndex = new Index(implementationIndexName);
-        search.addIndex(implementationIndex);
+        schema.addIndex(implementationIndex);
         if (queryCommand != null) {
             field.addQueryCommand(queryCommand);
         }
-        search.addExtraField(implementationField);
-        search.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, implementationField.getName());
+        schema.addExtraField(implementationField);
+        schema.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, implementationField.getName());
         return implementationField;
     }
 
@@ -97,11 +97,11 @@ public abstract class Processor {
      * definition.
      */
     protected Iterator<RankProfile.RankSetting> matchingRankSettingsIterator(
-            Search search, RankProfile.RankSetting.Type type)
+            Schema schema, RankProfile.RankSetting.Type type)
     {
         List<RankProfile.RankSetting> someRankSettings = new java.util.ArrayList<>();
 
-        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             for (Iterator j = profile.declaredRankSettingIterator(); j.hasNext(); ) {
                 RankProfile.RankSetting setting = (RankProfile.RankSetting)j.next();
                 if (setting.getType().equals(type)) {
@@ -112,38 +112,38 @@ public abstract class Processor {
         return someRankSettings.iterator();
     }
 
-    protected String formatError(String searchName, String fieldName, String msg) {
-        return "For search '" + searchName + "', field '" + fieldName + "': " + msg;
+    protected String formatError(String schemaName, String fieldName, String msg) {
+        return "For schema '" + schemaName + "', field '" + fieldName + "': " + msg;
     }
 
-    protected RuntimeException newProcessException(String searchName, String fieldName, String msg) {
-        return new IllegalArgumentException(formatError(searchName, fieldName, msg));
+    protected RuntimeException newProcessException(String schemaName, String fieldName, String msg) {
+        return new IllegalArgumentException(formatError(schemaName, fieldName, msg));
     }
 
-    protected RuntimeException newProcessException(Search search, Field field, String msg) {
-        return newProcessException(search.getName(), field.getName(), msg);
+    protected RuntimeException newProcessException(Schema schema, Field field, String msg) {
+        return newProcessException(schema.getName(), field.getName(), msg);
     }
 
-    public void fail(Search search, Field field, String msg) {
-        throw newProcessException(search, field, msg);
+    public void fail(Schema schema, Field field, String msg) {
+        throw newProcessException(schema, field, msg);
     }
 
-    protected void warn(String searchName, String fieldName, String message) {
-        String fullMsg = formatError(searchName, fieldName, message);
+    protected void warn(String schemaName, String fieldName, String message) {
+        String fullMsg = formatError(schemaName, fieldName, message);
         deployLogger.logApplicationPackage(Level.WARNING, fullMsg);
     }
 
-    protected void warn(Search search, Field field, String message) {
-        warn(search.getName(), field.getName(), message);
+    protected void warn(Schema schema, Field field, String message) {
+        warn(schema.getName(), field.getName(), message);
     }
 
-    protected void info(String searchName, String fieldName, String message) {
-        String fullMsg = formatError(searchName, fieldName, message);
+    protected void info(String schemaName, String fieldName, String message) {
+        String fullMsg = formatError(schemaName, fieldName, message);
         deployLogger.logApplicationPackage(Level.INFO, fullMsg);
     }
 
-    protected void info(Search search, Field field, String message) {
-        info(search.getName(), field.getName(), message);
+    protected void info(Schema schema, Field field, String message) {
+        info(schema.getName(), field.getName(), message);
     }
 
 }

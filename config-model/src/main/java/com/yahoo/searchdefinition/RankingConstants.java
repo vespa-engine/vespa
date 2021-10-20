@@ -6,7 +6,9 @@ import com.yahoo.vespa.model.AbstractService;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -18,11 +20,16 @@ import java.util.function.Function;
  */
 public class RankingConstants {
 
-    private final Map<String, RankingConstant> constants = new ConcurrentHashMap<>();
     private final FileRegistry fileRegistry;
 
-    public RankingConstants(FileRegistry fileRegistry) {
+    /** The schema this belongs to, or empty if it is global */
+    private final Optional<Schema> owner;
+
+    private final Map<String, RankingConstant> constants = new ConcurrentHashMap<>();
+
+    public RankingConstants(FileRegistry fileRegistry, Optional<Schema> owner) {
         this.fileRegistry = fileRegistry;
+        this.owner = owner;
     }
 
     public void add(RankingConstant constant) {
@@ -33,12 +40,14 @@ public class RankingConstants {
         if ( prev != null )
             throw new IllegalArgumentException("Ranking constant '" + name + "' defined twice");
     }
+
     public void putIfAbsent(RankingConstant constant) {
         constant.validate();
         constant.register(fileRegistry);
         String name = constant.getName();
         constants.putIfAbsent(name, constant);
     }
+
     public void computeIfAbsent(String name, Function<? super String, ? extends RankingConstant> createConstant) {
         constants.computeIfAbsent(name, key -> {
             RankingConstant constant = createConstant.apply(key);
@@ -50,16 +59,26 @@ public class RankingConstants {
 
     /** Returns the ranking constant with the given name, or null if not present */
     public RankingConstant get(String name) {
-        return constants.get(name);
+        var constant = constants.get(name);
+        if (constant != null) return constant;
+        if (owner.isPresent() && owner.get().inherited().isPresent())
+            return owner.get().inherited().get().rankingConstants().get(name);
+        return null;
     }
 
     /** Returns a read-only map of the ranking constants in this indexed by name */
     public Map<String, RankingConstant> asMap() {
-        return Collections.unmodifiableMap(constants);
+        // Shortcuts
+        if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(constants);
+        if (constants.isEmpty()) return owner.get().inherited().get().rankingConstants().asMap();
+
+        var allConstants = new HashMap<>(owner.get().inherited().get().rankingConstants().asMap());
+        allConstants.putAll(constants);
+        return Collections.unmodifiableMap(allConstants);
     }
 
     /** Initiate sending of these constants to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
-        constants.values().forEach(constant -> constant.sendTo(services));
+        asMap().values().forEach(constant -> constant.sendTo(services));
     }
 }

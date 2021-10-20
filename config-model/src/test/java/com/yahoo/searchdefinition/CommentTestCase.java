@@ -14,12 +14,12 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
-public class CommentTestCase extends SchemaTestCase {
+public class CommentTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testComments() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/comment.sd");
-        SDField field = search.getConcreteField("a");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/comment.sd");
+        SDField field = schema.getConcreteField("a");
         assertEquals("{ input a | tokenize normalize stem:\"BEST\" | summary a | index a; }",
                      field.getIndexingScript().toString());
     }

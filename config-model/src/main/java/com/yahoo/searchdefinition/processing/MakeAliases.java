@@ -3,10 +3,10 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.ArrayList;
@@ -20,22 +20,22 @@ import java.util.Map;
  */
 public class MakeAliases extends Processor {
 
-    public MakeAliases(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public MakeAliases(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         List<String> usedAliases = new ArrayList<>();
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             for (Map.Entry<String, String> e : field.getAliasToName().entrySet()) {
                 String alias = e.getKey();
                 String name = e.getValue();
-                String errMsg = "For search '" + search.getName() + "': alias '" + alias + "' ";
-                if (validate && search.existsIndex(alias)) {
+                String errMsg = "For " + schema + ": alias '" + alias + "' ";
+                if (validate && schema.existsIndex(alias)) {
                     throw new IllegalArgumentException(errMsg + "is illegal since it is the name of an index.");
                 }
-                if (validate && search.getAttribute(alias) != null) {
+                if (validate && schema.getAttribute(alias) != null) {
                     throw new IllegalArgumentException(errMsg + "is illegal since it is the name of an attribute.");
                 }
                 if (validate && usedAliases.contains(alias)) {

@@ -7,7 +7,7 @@ import java.util.Map;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryField.Source;
@@ -21,8 +21,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class SummaryNamesFieldCollisions extends Processor {
 
-    public SummaryNamesFieldCollisions(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public SummaryNamesFieldCollisions(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -30,7 +30,7 @@ public class SummaryNamesFieldCollisions extends Processor {
         if ( ! validate) return;
 
         Map<String, Pair<String, String>> fieldToClassAndSource = new HashMap<>();
-        for (DocumentSummary summary : search.getSummaries().values()) {
+        for (DocumentSummary summary : schema.getSummaries().values()) {
             if ("default".equals(summary.getName())) continue;
             for (SummaryField summaryField : summary.getSummaryFields() ) {
                 if (summaryField.isImplicit()) continue;
@@ -41,12 +41,12 @@ public class SummaryNamesFieldCollisions extends Processor {
                         String prevSource = prevClassAndSource.getSecond();
                         if ( ! prevClass.equals(summary.getName())) {
                             if ( ! prevSource.equals(source.getName())) {
-                                throw new IllegalArgumentException("For search '"+ search.getName() +
-                                                                   "', summary class '" + summary.getName()+"'," +
-                                		                           " summary field '" + summaryField.getName() + "':" +
-                                		                           " Can not use source '" + source.getName() +
+                                throw new IllegalArgumentException("For " + schema +
+                                                                   ", summary class '" + summary.getName() + "'," +
+                                                                   " summary field '" + summaryField.getName() + "':" +
+                                                                   " Can not use source '" + source.getName() +
                                                                    "' for this summary field, an equally named field in summary class '" +
-                                                                   prevClass + "' uses a different source: '"+prevSource+"'.");
+                                                                   prevClass + "' uses a different source: '" + prevSource + "'.");
                             }
                         }
                     } else {

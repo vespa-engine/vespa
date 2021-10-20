@@ -3,13 +3,12 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.test.TestUtil;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import org.junit.Test;
@@ -24,13 +23,13 @@ import static org.junit.Assert.fail;
  * @author baldersheim
  */
 public class DictionaryTestCase {
-    private static AttributesConfig getConfig(Search search) {
-        AttributeFields attributes = new AttributeFields(search);
+    private static AttributesConfig getConfig(Schema schema) {
+        AttributeFields attributes = new AttributeFields(schema);
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         attributes.getConfig(builder);
         return builder.build();
     }
-    private Search createSearch(String def) throws ParseException {
+    private Schema createSearch(String def) throws ParseException {
         SearchBuilder sb = SearchBuilder.createFromString(def);
         return sb.getSearch();
     }
@@ -47,20 +46,20 @@ public class DictionaryTestCase {
                         "        }",
                         "    }",
                         "}");
-        Search search = createSearch(def);
-        assertNull(search.getAttribute("s1").getDictionary());
-        assertNull(search.getAttribute("n1").getDictionary());
+        Schema schema = createSearch(def);
+        assertNull(schema.getAttribute("s1").getDictionary());
+        assertNull(schema.getAttribute("n1").getDictionary());
         assertEquals(AttributesConfig.Attribute.Dictionary.Type.BTREE,
-                getConfig(search).attribute().get(0).dictionary().type());
+                getConfig(schema).attribute().get(0).dictionary().type());
         assertEquals(AttributesConfig.Attribute.Dictionary.Type.BTREE,
-                getConfig(search).attribute().get(1).dictionary().type());
+                getConfig(schema).attribute().get(1).dictionary().type());
         assertEquals(AttributesConfig.Attribute.Dictionary.Match.UNCASED,
-                getConfig(search).attribute().get(0).dictionary().match());
+                getConfig(schema).attribute().get(0).dictionary().match());
         assertEquals(AttributesConfig.Attribute.Dictionary.Match.UNCASED,
-                getConfig(search).attribute().get(1).dictionary().match());
+                getConfig(schema).attribute().get(1).dictionary().match());
     }
 
-    Search verifyDictionaryControl(Dictionary.Type expected, String type, String ... cfg) throws ParseException
+    Schema verifyDictionaryControl(Dictionary.Type expected, String type, String ... cfg) throws ParseException
     {
         String def = TestUtil.joinLines(
                 "search test {",
@@ -72,11 +71,11 @@ public class DictionaryTestCase {
                 "        }",
                 "    }",
                 "}");
-        Search search = createSearch(def);
+        Schema schema = createSearch(def);
         AttributesConfig.Attribute.Dictionary.Type.Enum expectedConfig = toCfg(expected);
-        assertEquals(expected, search.getAttribute("n1").getDictionary().getType());
-        assertEquals(expectedConfig, getConfig(search).attribute().get(0).dictionary().type());
-        return search;
+        assertEquals(expected, schema.getAttribute("n1").getDictionary().getType());
+        assertEquals(expectedConfig, getConfig(schema).attribute().get(0).dictionary().type());
+        return schema;
     }
 
     AttributesConfig.Attribute.Dictionary.Type.Enum toCfg(Dictionary.Type v) {
@@ -95,12 +94,12 @@ public class DictionaryTestCase {
     void verifyStringDictionaryControl(Dictionary.Type expectedType, Case expectedCase, Case matchCasing,
                                        String ... cfg) throws ParseException
     {
-        Search search = verifyDictionaryControl(expectedType, "string", cfg);
-        ImmutableSDField f = search.getField("n1");
+        Schema schema = verifyDictionaryControl(expectedType, "string", cfg);
+        ImmutableSDField f = schema.getField("n1");
         AttributesConfig.Attribute.Dictionary.Match.Enum expectedCaseCfg = toCfg(expectedCase);
         assertEquals(matchCasing, f.getMatching().getCase());
-        assertEquals(expectedCase, search.getAttribute("n1").getDictionary().getMatch());
-        assertEquals(expectedCaseCfg, getConfig(search).attribute().get(0).dictionary().match());
+        assertEquals(expectedCase, schema.getAttribute("n1").getDictionary().getMatch());
+        assertEquals(expectedCaseCfg, getConfig(schema).attribute().get(0).dictionary().match());
     }
 
     @Test
@@ -145,7 +144,7 @@ public class DictionaryTestCase {
         try {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED, "dictionary:hash");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': hash dictionary require cased match", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': hash dictionary require cased match", e.getMessage());
         }
     }
     @Test
@@ -153,7 +152,7 @@ public class DictionaryTestCase {
         try {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED, "dictionary { hash\nuncased\n}");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': hash dictionary require cased match", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': hash dictionary require cased match", e.getMessage());
         }
     }
     @Test
@@ -166,7 +165,7 @@ public class DictionaryTestCase {
             verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED, "dictionary { hash\ncased\n}");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
         }
     }
     @Test
@@ -182,13 +181,13 @@ public class DictionaryTestCase {
         try {
             verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.CASED, Case.CASED, "dictionary { btree\nhash\ncased\n}");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
         }
     }
     @Test
     public void testNonNumericFieldsFailsDictionaryControl() throws ParseException {
         String def = TestUtil.joinLines(
-                "search test {",
+                "schema test {",
                 "    document test {",
                 "        field n1 type bool {",
                 "            indexing: summary | attribute",
@@ -200,13 +199,13 @@ public class DictionaryTestCase {
             SearchBuilder sb = SearchBuilder.createFromString(def);
             fail("Controlling dictionary for non-numeric fields are not yet supported.");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': You can only specify 'dictionary:' for numeric or string fields", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': You can only specify 'dictionary:' for numeric or string fields", e.getMessage());
         }
     }
     @Test
     public void testNonFastSearchNumericFieldsFailsDictionaryControl() throws ParseException {
         String def = TestUtil.joinLines(
-                "search test {",
+                "schema test {",
                 "    document test {",
                 "        field n1 type int {",
                 "            indexing: summary | attribute",
@@ -218,14 +217,14 @@ public class DictionaryTestCase {
             SearchBuilder sb = SearchBuilder.createFromString(def);
             fail("Controlling dictionary for non-fast-search fields are not allowed.");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'n1': You must specify 'attribute:fast-search' to allow dictionary control", e.getMessage());
+            assertEquals("For schema 'test', field 'n1': You must specify 'attribute:fast-search' to allow dictionary control", e.getMessage());
         }
     }
 
     @Test
     public void testCasingForNonFastSearch() throws ParseException {
         String def = TestUtil.joinLines(
-                "search test {",
+                "schema test {",
                 "    document test {",
                 "        field s1 type string {",
                 "            indexing: attribute | summary",
@@ -240,12 +239,12 @@ public class DictionaryTestCase {
                 "        }",
                 "    }",
                 "}");
-        Search search = createSearch(def);
-        assertEquals(Case.UNCASED, search.getAttribute("s1").getCase());
-        assertEquals(Case.UNCASED, search.getAttribute("s2").getCase());
-        assertEquals(Case.CASED, search.getAttribute("s3").getCase());
-        assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(search).attribute().get(0).match());
-        assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(search).attribute().get(1).match());
-        assertEquals(AttributesConfig.Attribute.Match.CASED, getConfig(search).attribute().get(2).match());
+        Schema schema = createSearch(def);
+        assertEquals(Case.UNCASED, schema.getAttribute("s1").getCase());
+        assertEquals(Case.UNCASED, schema.getAttribute("s2").getCase());
+        assertEquals(Case.CASED, schema.getAttribute("s3").getCase());
+        assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(schema).attribute().get(0).match());
+        assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(schema).attribute().get(1).match());
+        assertEquals(AttributesConfig.Attribute.Match.CASED, getConfig(schema).attribute().get(2).match());
     }
 }

@@ -6,7 +6,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -33,18 +33,18 @@ import java.util.logging.Level;
  */
 public class CreatePositionZCurve extends Processor {
 
-    public CreatePositionZCurve(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public CreatePositionZCurve(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             DataType fieldType = field.getDataType();
             if ( ! isSupportedPositionType(fieldType)) continue;
 
             if (validate && field.doesIndexing()) {
-                fail(search, field, "Indexing of data type '" + fieldType.getName() + "' is not supported, " +
+                fail(schema, field, "Indexing of data type '" + fieldType.getName() + "' is not supported, " +
                                     "replace 'index' statement with 'attribute'.");
             }
 
@@ -57,8 +57,8 @@ public class CreatePositionZCurve extends Processor {
 
             String zName = PositionDataType.getZCurveFieldName(fieldName);
             SDField zCurveField = createZCurveField(field, zName, validate);
-            search.addExtraField(zCurveField);
-            search.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, zCurveField.getName());
+            schema.addExtraField(zCurveField);
+            schema.fieldSets().addBuiltInFieldSetItem(BuiltInFieldSets.INTERNAL_FIELDSET_NAME, zCurveField.getName());
 
             // configure summary
             Collection<String> summaryTo = removeSummaryTo(field);
@@ -88,8 +88,8 @@ public class CreatePositionZCurve extends Processor {
     }
 
     private SDField createZCurveField(SDField inputField, String fieldName, boolean validate) {
-        if (validate && search.getConcreteField(fieldName) != null || search.getAttribute(fieldName) != null) {
-            throw newProcessException(search, null, "Incompatible position attribute '" + fieldName +
+        if (validate && schema.getConcreteField(fieldName) != null || schema.getAttribute(fieldName) != null) {
+            throw newProcessException(schema, null, "Incompatible position attribute '" + fieldName +
                                                     "' already created.");
         }
         boolean isArray = inputField.getDataType() instanceof ArrayDataType;
@@ -109,7 +109,7 @@ public class CreatePositionZCurve extends Processor {
 
     private void ensureCompatibleSummary(SDField field, String sourceName, String summaryName, DataType summaryType,
                                          SummaryTransform summaryTransform, Collection<String> summaryTo, boolean validate) {
-        SummaryField summary = search.getSummaryField(summaryName);
+        SummaryField summary = schema.getSummaryField(summaryName);
         if (summary == null) {
             summary = new SummaryField(summaryName, summaryType, summaryTransform);
             summary.addDestination("default");
@@ -117,7 +117,7 @@ public class CreatePositionZCurve extends Processor {
             field.addSummaryField(summary);
         } else if (!summary.getDataType().equals(summaryType)) {
             if (validate)
-                fail(search, field, "Incompatible summary field '" + summaryName + "' type "+summary.getDataType()+" already created.");
+                fail(schema, field, "Incompatible summary field '" + summaryName + "' type " + summary.getDataType() + " already created.");
         } else if (summary.getTransform() == SummaryTransform.NONE) {
             summary.setTransform(summaryTransform);
             summary.addDestination("default");

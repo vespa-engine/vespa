@@ -8,6 +8,10 @@ import org.intellij.sdk.language.SdFileType;
 import org.intellij.sdk.language.SdLanguage;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This class represent an SD file.
+ * @author shahariel
+ */
 public class SdFile extends PsiFileBase {
     
     public SdFile(@NotNull FileViewProvider viewProvider) {

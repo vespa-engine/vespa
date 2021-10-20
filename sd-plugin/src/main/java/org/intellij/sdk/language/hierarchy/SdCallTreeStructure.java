@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * This abstract class represents a general tree in the "Call Hierarchy" window.
+ * @author shahariel
+ */
 public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
     protected final String myScopeType;
     protected final SdFile myFile;

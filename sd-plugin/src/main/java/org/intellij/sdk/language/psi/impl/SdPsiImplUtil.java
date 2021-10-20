@@ -6,16 +6,16 @@ import com.intellij.lang.ASTNode;
 import com.intellij.navigation.ItemPresentation;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.intellij.sdk.language.SdIcons;
 import org.intellij.sdk.language.SdReference;
 import org.intellij.sdk.language.SdUtil;
-import org.intellij.sdk.language.hierarchy.SdHierarchyUtil;
+import org.intellij.sdk.language.psi.SdAnnotationFieldDefinition;
 import org.intellij.sdk.language.psi.SdArgumentDefinition;
 import org.intellij.sdk.language.psi.SdDeclaration;
 import org.intellij.sdk.language.psi.SdDeclarationType;
+import org.intellij.sdk.language.psi.SdDocumentAnnotationDefinition;
 import org.intellij.sdk.language.psi.SdDocumentDefinition;
 import org.intellij.sdk.language.psi.SdDocumentFieldDefinition;
 import org.intellij.sdk.language.psi.SdDocumentStructDefinition;
@@ -32,6 +32,7 @@ import org.intellij.sdk.language.psi.SdImportFieldDefinition;
 import org.intellij.sdk.language.psi.SdItemRawScoreDefinition;
 import org.intellij.sdk.language.psi.SdQueryDefinition;
 import org.intellij.sdk.language.psi.SdRankProfileDefinition;
+import org.intellij.sdk.language.psi.SdSchemaAnnotationDefinition;
 import org.intellij.sdk.language.psi.SdSchemaFieldDefinition;
 import org.intellij.sdk.language.psi.SdStructFieldDefinition;
 import org.intellij.sdk.language.psi.SdSummaryDefinition;
@@ -42,8 +43,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.Icon;
 
 /**
- * I this class there are implementations of methods from rules in the .bnf file. While generating the psi files
+ * In this class there are implementations of methods of rules in the .bnf file. While generating the psi files
  * (classes and interfaces) the implementations would be taken from here.
+ * @author shahariel
  */
 public class SdPsiImplUtil {
     
@@ -69,12 +71,17 @@ public class SdPsiImplUtil {
             return SdDeclarationType.DOCUMENT;
         } else if (declaration instanceof SdDocumentStructDefinition) {
             return SdDeclarationType.STRUCT;
+        } else if (declaration instanceof SdSchemaAnnotationDefinition ||
+                   declaration instanceof SdDocumentAnnotationDefinition) {
+            return SdDeclarationType.ANNOTATION;
         } else if (declaration instanceof SdDocumentStructFieldDefinition) {
             return SdDeclarationType.DOCUMENT_STRUCT_FIELD;
         } else if (declaration instanceof SdDocumentFieldDefinition) {
             return SdDeclarationType.DOCUMENT_FIELD;
         } else if (declaration instanceof SdStructFieldDefinition) {
             return SdDeclarationType.STRUCT_FIELD;
+        } else if (declaration instanceof SdAnnotationFieldDefinition) {
+            return SdDeclarationType.ANNOTATION_FIELD;
         } else if (declaration instanceof SdQueryDefinition) {
             return SdDeclarationType.QUERY;
         } else if (declaration instanceof SdItemRawScoreDefinition) {
@@ -120,7 +127,7 @@ public class SdPsiImplUtil {
     // ################################### //
     // ##### getName implementations ##### //
     // ################################### //
-
+    
     @NotNull
     public static String getName(SdIdentifier element) {
         if (element != null) {
@@ -137,7 +144,7 @@ public class SdPsiImplUtil {
         if (declaration instanceof SdImportFieldDefinition) {
             ASTNode asNode = declaration.getNode().findChildByType(SdTypes.AS);
             node = declaration.getNode().findChildByType(SdTypes.IDENTIFIER_VAL, asNode);
-        } else if (declaration instanceof SdRankProfileDefinition || declaration instanceof SdDocumentSummaryDefinition 
+        } else if (declaration instanceof SdRankProfileDefinition || declaration instanceof SdDocumentSummaryDefinition
                    || declaration instanceof SdQueryDefinition) {
             node = declaration.getNode().findChildByType(SdTypes.IDENTIFIER_WITH_DASH_VAL);
         } else {
@@ -254,7 +261,7 @@ public class SdPsiImplUtil {
             public String getPresentableText() {
                 if (element instanceof SdFunctionDefinition) {
                     return SdUtil.createFunctionDescription((SdFunctionDefinition) element);
-                } 
+                }
                 SdRankProfileDefinition rankProfileParent = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
                 if (rankProfileParent != null) {
                     if (element instanceof SdQueryDefinition || element instanceof SdItemRawScoreDefinition) {
@@ -277,7 +284,8 @@ public class SdPsiImplUtil {
                 if (element instanceof SdFile) {
                     return SdIcons.FILE;
                 } else if (element instanceof SdSchemaFieldDefinition || element instanceof SdDocumentFieldDefinition ||
-                           element instanceof SdQueryDefinition || element instanceof SdItemRawScoreDefinition) {
+                           element instanceof SdAnnotationFieldDefinition || element instanceof SdQueryDefinition ||
+                           element instanceof SdItemRawScoreDefinition) {
                     return AllIcons.Nodes.Field;
                 } else if (element instanceof SdStructFieldDefinition  ||
                            element instanceof SdDocumentStructFieldDefinition) {
@@ -296,6 +304,9 @@ public class SdPsiImplUtil {
                     return SdIcons.DOCUMENT_SUMMARY;
                 } else if (element instanceof SdDocumentDefinition) {
                     return SdIcons.DOCUMENT;
+                } else if (element instanceof SdSchemaAnnotationDefinition ||
+                           element instanceof SdDocumentAnnotationDefinition) {
+                    return AllIcons.Nodes.ObjectTypeAttribute;
                 }
                 else {
                     return null;
@@ -306,7 +317,7 @@ public class SdPsiImplUtil {
     
     public static ItemPresentation getPresentation(final SdSummaryDefinition element) {
         return new ItemPresentation() {
-
+            
             @Override
             public String getPresentableText() {
                 return element.getName();
@@ -327,7 +338,7 @@ public class SdPsiImplUtil {
     
     public static ItemPresentation getPresentation(final SdFirstPhaseDefinition element) {
         return new ItemPresentation() {
-
+            
             @Override
             public String getPresentableText() {
                 SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);

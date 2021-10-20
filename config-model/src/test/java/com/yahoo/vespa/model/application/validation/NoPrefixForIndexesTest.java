@@ -28,7 +28,7 @@ public class NoPrefixForIndexesTest {
             new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/prefix_index/").create();
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'simple', field 'artist': match/index:prefix is not supported for indexes.", e.getMessage());
+            assertEquals("For schema 'simple', field 'artist': match/index:prefix is not supported for indexes.", e.getMessage());
         }
     }
 
@@ -38,7 +38,7 @@ public class NoPrefixForIndexesTest {
             new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/prefix_index_and_attribute/").create();
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'simple', field 'artist': match/index:prefix is not supported for indexes.", e.getMessage());
+            assertEquals("For schema 'simple', field 'artist': match/index:prefix is not supported for indexes.", e.getMessage());
         }
     }
 }

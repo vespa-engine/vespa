@@ -6,20 +6,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A registry of annotation types.&nbsp;This can be set up programmatically or from config.
+ * A registry of annotation types. This can be set up programmatically or from config.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class AnnotationTypeRegistry {
-    private Map<Integer, AnnotationType> idMap = new HashMap<Integer, AnnotationType>();
-    private Map<String, AnnotationType> nameMap = new HashMap<String, AnnotationType>();
+
+    private final Map<Integer, AnnotationType> idMap = new HashMap<>();
+    private final Map<String, AnnotationType> nameMap = new HashMap<>();
 
     /** Creates a new empty registry. */
     public AnnotationTypeRegistry() {
     }
 
     /**
-     * Register a new annotation type.&nbsp;WARNING!&nbsp;Only to be used by the configuration system and in unit tests.&nbsp;Not to be used in production code.
+     * Register a new annotation type.
+     * WARNING! Only to be used by the configuration system and in unit tests. Not to be used in production code.
      *
      * @param type the type to register
      * @throws IllegalArgumentException if a type is already registered with this name or this id, and it is non-equal to the argument.
@@ -39,9 +41,10 @@ public class AnnotationTypeRegistry {
     }
 
     /**
-     * Unregisters the type given by the argument.&nbsp;WARNING!&nbsp;Only to be used by the configuration system and in unit tests.&nbsp;Not to be used in production code.
+     * Unregisters the type given by the argument.
+     * WARNING! Only to be used by the configuration system and in unit tests. Not to be used in production code.
      *
-     * @param name the name of the type to unregister.
+     * @param name the name of the type to unregister
      * @return true if the type was successfully unregistered, false otherwise (it was not present)
      */
     public boolean unregister(String name) {
@@ -54,9 +57,10 @@ public class AnnotationTypeRegistry {
     }
 
     /**
-     * Unregisters the type given by the argument.&nbsp;WARNING!&nbsp;Only to be used by the configuration system and in unit tests.&nbsp;Not to be used in production code.
+     * Unregisters the type given by the argument.
+     * WARNING! Only to be used by the configuration system and in unit tests. Not to be used in production code.
      *
-     * @param id the id of the type to unregister.
+     * @param id the id of the type to unregister
      * @return true if the type was successfully unregistered, false otherwise (it was not present)
      */
     public boolean unregister(int id) {
@@ -69,11 +73,13 @@ public class AnnotationTypeRegistry {
     }
 
     /**
-     * Unregisters the type given by the argument.&nbsp;WARNING!&nbsp;Only to be used by the configuration system and in unit tests.&nbsp;Not to be used in production code.
+     * Unregisters the type given by the argument.
+     * WARNING! Only to be used by the configuration system and in unit tests. Not to be used in production code.
      *
-     * @param type the AnnotationType to unregister.
+     * @param type the AnnotationType to unregister
      * @return true if the type was successfully unregistered, false otherwise (it was not present)
-     * @throws IllegalArgumentException if the ID and name of this annotation type are present, but they do not belong together.
+     * @throws IllegalArgumentException if the ID and name of this annotation type are present,
+     *                                  but they do not belong together.
      */
     public boolean unregister(AnnotationType type) {
         if (idMap.containsKey(type.getId()) && nameMap.containsKey(type.getName())) {
@@ -85,11 +91,12 @@ public class AnnotationTypeRegistry {
                 idMap.remove(type.getId());
                 nameMap.remove(type.getName());
             } else {
-                throw new IllegalArgumentException("The ID and name of this annotation type are present, but they do not belong together. Not removing type.");
+                throw new IllegalArgumentException("The ID and name of this annotation type are present, " +
+                                                   "but they do not belong together. Not removing type.");
             }
             return true;
         }
-        //it's not there, but that's no problem
+        // It's not there, but that's no problem
         return false;
     }
 
@@ -113,11 +120,7 @@ public class AnnotationTypeRegistry {
         return idMap.get(id);
     }
 
-    /**
-     * Returns an <strong>unmodifiable</strong> {@link Map} of all types registered.
-     *
-     * @return an unmodifiable {@link Map} of all types registered.
-     */
+    /** Returns an unmodifiable of all types registered. */
     public Map<String, AnnotationType> getTypes() {
         return Collections.unmodifiableMap(nameMap);
     }
@@ -127,4 +130,5 @@ public class AnnotationTypeRegistry {
         idMap.clear();
         nameMap.clear();
     }
+
 }

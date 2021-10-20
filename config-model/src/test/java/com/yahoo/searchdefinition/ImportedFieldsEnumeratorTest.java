@@ -19,35 +19,35 @@ public class ImportedFieldsEnumeratorTest {
     @Test
     public void imported_fields_are_enumerated_and_copied_from_correct_search_instance() {
         String PARENT = "parent";
-        Search parentSearch = new Search(PARENT);
-        SDDocumentType parentDocument = new SDDocumentType(PARENT, parentSearch);
+        Schema parentSchema = new Schema(PARENT);
+        SDDocumentType parentDocument = new SDDocumentType(PARENT, parentSchema);
         var parentField = new SDField("their_field", DataType.INT);
         AttributeUtils.addAttributeAspect(parentField);
         parentDocument.addField(parentField);
-        parentSearch.addDocument(parentDocument);
+        parentSchema.addDocument(parentDocument);
 
         String FOO = "foo";
-        Search fooSearch = new Search(FOO);
+        Schema fooSchema = new Schema(FOO);
         SDField fooRefToParent = new SDField(
                 "foo_ref", ReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(fooRefToParent);
-        var fooImports = fooSearch.temporaryImportedFields().get();
+        var fooImports = fooSchema.temporaryImportedFields().get();
         fooImports.add(new TemporaryImportedField("my_first_import", "foo_ref", "their_field"));
         fooImports.add(new TemporaryImportedField("my_second_import", "foo_ref", "their_field"));
-        SDDocumentType fooDocument = new SDDocumentType(FOO, fooSearch);
-        fooSearch.addDocument(fooDocument);
+        SDDocumentType fooDocument = new SDDocumentType(FOO, fooSchema);
+        fooSchema.addDocument(fooDocument);
 
         String BAR = "bar";
-        Search barSearch = new Search(BAR);
+        Schema barSchema = new Schema(BAR);
         SDField barRefToParent = new SDField(
                 "bar_ref", ReferenceDataType.createWithInferredId(parentDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(barRefToParent);
-        var barImports = barSearch.temporaryImportedFields().get();
+        var barImports = barSchema.temporaryImportedFields().get();
         barImports.add(new TemporaryImportedField("my_cool_import", "my_ref", "their_field"));
-        SDDocumentType barDocument = new SDDocumentType(BAR, barSearch);
-        barSearch.addDocument(barDocument);
+        SDDocumentType barDocument = new SDDocumentType(BAR, barSchema);
+        barSchema.addDocument(barDocument);
 
-        var enumerator = new ImportedFieldsEnumerator(List.of(parentSearch, fooSearch, barSearch));
+        var enumerator = new ImportedFieldsEnumerator(List.of(parentSchema, fooSchema, barSchema));
 
         enumerator.enumerateImportedFields(parentDocument);
         assertImportedFieldsAre(parentDocument, List.of()); // No imported fields in parent
