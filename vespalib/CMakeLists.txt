@@ -55,6 +55,7 @@ vespa_define_module(
     src/tests/eventbarrier
     src/tests/exception_classes
     src/tests/executor
+    src/tests/executor_idle_tracking
     src/tests/explore_modern_cpp
     src/tests/false
     src/tests/fiddle
