@@ -296,7 +296,7 @@ public class ApplicationHandlerTest {
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
                                        "          \"readyMillis\": " + (now - 1000) +
-                                       "        }," +
+                                       "        }" +
                                        "      }" +
                                        "    }," +
                                        "    \"foo\": {" +
@@ -524,7 +524,7 @@ public class ApplicationHandlerTest {
                          "      \"ready\": {\n" +
                          "        \"bar\": {},\n" +
                          "        \"hax\": {}\n" +
-                         "      },\n" +
+                         "      }\n" +
                          "    },\n" +
                          "    \"moo\": {\n" +
                          "      \"pending\": {},\n" +

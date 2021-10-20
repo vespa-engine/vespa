@@ -20,10 +20,11 @@ import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
@@ -206,7 +207,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
-            writePrivateKeyAndCertificate(context.userNamespace().vespaUserId(),
+            writePrivateKeyAndCertificate(context.vespaUser(),
                     privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
@@ -234,7 +235,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                 context.identity(),
                                 identityDocument.providerUniqueId().asDottedString(),
                                 csr);
-                writePrivateKeyAndCertificate(context.userNamespace().vespaUserId(),
+                writePrivateKeyAndCertificate(context.vespaUser(),
                         privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
@@ -251,19 +252,19 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
 
-    private static void writePrivateKeyAndCertificate(int vespaUid,
+    private static void writePrivateKeyAndCertificate(VespaUser vespaUser,
                                                       ContainerPath privateKeyFile,
                                                       PrivateKey privateKey,
                                                       ContainerPath certificateFile,
                                                       X509Certificate certificate) {
-        writeFile(privateKeyFile, vespaUid, KeyUtils.toPem(privateKey));
-        writeFile(certificateFile, vespaUid, X509CertificateUtils.toPem(certificate));
+        writeFile(privateKeyFile, vespaUser, KeyUtils.toPem(privateKey));
+        writeFile(certificateFile, vespaUser, X509CertificateUtils.toPem(certificate));
     }
 
-    private static void writeFile(ContainerPath path, int vespaUid, String utf8Content) {
+    private static void writeFile(ContainerPath path, VespaUser vespaUser, String utf8Content) {
         new UnixPath(path.resolveSibling(path.getFileName() + ".tmp"))
                 .writeUtf8File(utf8Content, "r--------")
-                .setOwnerId(vespaUid)
+                .setOwnerId(vespaUser.uid())
                 .atomicMove(path);
     }
 

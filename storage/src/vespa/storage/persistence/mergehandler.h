@@ -62,7 +62,7 @@ public:
                           std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                           uint8_t nodeIndex,
                           spi::Context& context,
-                          ApplyBucketDiffState& async_results) const;
+                          std::shared_ptr<ApplyBucketDiffState> async_results) const;
     void sync_bucket_info(const spi::Bucket& bucket) const override;
 
     MessageTrackerUP handleMergeBucket(api::MergeBucketCommand&, MessageTrackerUP) const;
@@ -90,10 +90,11 @@ private:
      * Invoke either put, remove or unrevertable remove on the SPI
      * depending on the flags in the diff entry.
      */
-    ApplyBucketDiffEntryResult applyDiffEntry(const spi::Bucket&,
-                                              const api::ApplyBucketDiffCommand::Entry&,
-                                              spi::Context& context,
-                                              const document::DocumentTypeRepo& repo) const;
+    void applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results,
+                        const spi::Bucket&,
+                        const api::ApplyBucketDiffCommand::Entry&,
+                        spi::Context& context,
+                        const document::DocumentTypeRepo& repo) const;
 
     /**
      * Fill entries-vector with metadata for bucket up to maxTimestamp,

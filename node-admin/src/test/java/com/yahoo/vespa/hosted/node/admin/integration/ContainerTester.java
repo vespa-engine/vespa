@@ -93,7 +93,7 @@ public class ContainerTester implements AutoCloseable {
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
                 NodeAgentContextImpl.builder(nodeSpec).acl(acl).fileSystem(fileSystem).build();
         nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeAgentContextFactory, nodeRepository, orchestrator,
-                nodeAdmin, HOST_HOSTNAME, clock, flagSource);
+                nodeAdmin, HOST_HOSTNAME);
 
         loopThread = new Thread(() -> {
             nodeAdminStateUpdater.start();

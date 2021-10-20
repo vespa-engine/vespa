@@ -73,8 +73,15 @@
         </dependency>
         <dependency>
             <groupId>org.apache.velocity</groupId>
-            <artifactId>velocity</artifactId>
+            <artifactId>velocity-engine-core</artifactId>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <!-- Must use the one provided by Jdisc to prevent two instances of slf4j classes. -->
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Test -->

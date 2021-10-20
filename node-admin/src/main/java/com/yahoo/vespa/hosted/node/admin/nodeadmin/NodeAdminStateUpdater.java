@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -13,7 +12,6 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextFactory;
 import com.yahoo.yolean.Exceptions;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -59,9 +57,7 @@ public class NodeAdminStateUpdater {
             NodeRepository nodeRepository,
             Orchestrator orchestrator,
             NodeAdmin nodeAdmin,
-            HostName hostHostname,
-            Clock clock,
-            FlagSource flagSource) {
+            HostName hostHostname) {
         this.nodeAgentContextFactory = nodeAgentContextFactory;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;

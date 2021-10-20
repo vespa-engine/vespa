@@ -382,6 +382,9 @@ struct ServiceLayerConfigSet : public StorageConfigSet
           stor_bucket_init(),
           stor_visitor()
     {
+        if (params.get_async_apply_bucket_diff().has_value()) {
+            stor_filestor.asyncApplyBucketDiff = params.get_async_apply_bucket_diff().value();
+        }
         stor_filestor.numResponseThreads = params.get_response_threads();
         stor_filestor.numNetworkThreads = params.get_rpc_network_threads();
         stor_filestor.useAsyncMessageHandlingOnSchedule = params.get_use_async_message_handling_on_schedule();

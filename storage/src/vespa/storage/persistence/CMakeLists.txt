@@ -2,7 +2,6 @@
 vespa_add_library(storage_spersistence OBJECT
     SOURCES
     apply_bucket_diff_entry_complete.cpp
-    apply_bucket_diff_entry_result.cpp
     apply_bucket_diff_state.cpp
     asynchandler.cpp
     bucketownershipnotifier.cpp
