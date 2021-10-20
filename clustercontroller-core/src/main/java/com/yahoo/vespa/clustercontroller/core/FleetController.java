@@ -83,6 +83,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final StatusPageServer.PatternRequestRouter statusRequestRouter = new StatusPageServer.PatternRequestRouter();
     private final List<ClusterStateBundle> newStates = new ArrayList<>();
     private final List<ClusterStateBundle> convergedStates = new ArrayList<>();
+    private long configGeneration = -1;
+    private long nextConfigGeneration = -1;
     private final Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
     private final MetricUpdater metricUpdater;
 
@@ -104,6 +106,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final RunDataExtractor dataExtractor = new RunDataExtractor() {
         @Override
         public FleetControllerOptions getOptions() { return options; }
+        @Override
+        public long getConfigGeneration() { return configGeneration; }
         @Override
         public ContentCluster getCluster() { return cluster; }
     };
@@ -149,7 +153,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 new LegacyNodePageRequestHandler(timer, eventLog, cluster));
         this.statusRequestRouter.addHandler(
                 "^/state.*",
-                new NodeHealthRequestHandler());
+                new NodeHealthRequestHandler(dataExtractor));
         this.statusRequestRouter.addHandler(
                 "^/clusterstate",
                 new ClusterStateRequestHandler(stateVersionTracker));
@@ -298,12 +302,13 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         nodeLookup.shutdown();
     }
 
-    public void updateOptions(FleetControllerOptions options) {
+    public void updateOptions(FleetControllerOptions options, long configGeneration) {
         var newId = FleetControllerId.fromOptions(options);
         synchronized(monitor) {
             assert newId.equals(context.id());
             context.log(logger, Level.INFO, "FleetController has new options");
             nextOptions = options.clone();
+            nextConfigGeneration = configGeneration;
             monitor.notifyAll();
         }
     }
@@ -546,6 +551,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
         long currentTime = timer.getCurrentTimeInMillis();
         nextStateSendTime = Math.min(currentTime + options.minTimeBetweenNewSystemStates, nextStateSendTime);
+        configGeneration = nextConfigGeneration;
+        nextConfigGeneration = -1;
     }
 
     private void selfTerminateIfConfiguredNodeIndexHasChanged() {
