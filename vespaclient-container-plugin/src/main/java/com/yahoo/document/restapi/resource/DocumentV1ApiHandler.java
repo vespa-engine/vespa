@@ -9,6 +9,7 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.container.core.HandlerMetricContextUtil;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.jdisc.ContentChannelOutputStream;
+import com.yahoo.container.jdisc.MaxPendingContentChannelOutputStream;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
@@ -582,7 +583,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         private JsonResponse(ResponseHandler handler, boolean streaming) throws IOException {
             this.handler = handler;
-            out = new ContentChannelOutputStream(buffer);
+            out = streaming ? new MaxPendingContentChannelOutputStream(buffer, 1 << 24)
+                            : new ContentChannelOutputStream(buffer);
             json = jsonFactory.createGenerator(out);
             json.writeStartObject();
         }
