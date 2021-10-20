@@ -346,7 +346,7 @@ public class RpcServerTest extends FleetControllerTest {
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
-            fleetController.updateOptions(options, 0);
+            fleetController.updateOptions(options);
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:m .1.s:m .2.s:r .3.s:r .4.s:r");
         }
 
@@ -376,7 +376,7 @@ public class RpcServerTest extends FleetControllerTest {
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
-            fleetController.updateOptions(options, 0);
+            fleetController.updateOptions(options);
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:m .1.s:m");
         }
 
@@ -415,7 +415,7 @@ public class RpcServerTest extends FleetControllerTest {
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
-            fleetController.updateOptions(options, 0);
+            fleetController.updateOptions(options);
             waitForState("version:\\d+ distributor:5 storage:5");
         }
 
@@ -430,7 +430,7 @@ public class RpcServerTest extends FleetControllerTest {
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
-            fleetController.updateOptions(options, 0);
+            fleetController.updateOptions(options);
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:r .1.s:r .2.s:r .3.s:r .4.s:r");
         }
 
@@ -444,7 +444,7 @@ public class RpcServerTest extends FleetControllerTest {
             options.slobrokConnectionSpecs = this.options.slobrokConnectionSpecs;
             this.options.maxInitProgressTime = 30000;
             this.options.stableStateTimePeriod = 60000;
-            fleetController.updateOptions(options, 0);
+            fleetController.updateOptions(options);
             waitForState("version:\\d+ distributor:7 storage:7 .0.s:r .1.s:r .2.s:r .3.s:r .4.s:r");
         }
 

@@ -40,12 +40,12 @@ public class DistributionBitCountTest extends FleetControllerTest {
     public void testDistributionBitCountConfigIncrease() throws Exception {
         setUpSystem("DistributionBitCountTest::testDistributionBitCountConfigIncrease");
         options.distributionBits = 20;
-        fleetController.updateOptions(options, 0);
+        fleetController.updateOptions(options);
         ClusterState currentState = waitForState("version:\\d+ bits:20 distributor:10 storage:10");
 
         int version = currentState.getVersion();
         options.distributionBits = 23;
-        fleetController.updateOptions(options, 0);
+        fleetController.updateOptions(options);
         assertEquals(version, currentState.getVersion());
     }
 
@@ -56,7 +56,7 @@ public class DistributionBitCountTest extends FleetControllerTest {
     public void testDistributionBitCountConfigDecrease() throws Exception {
         setUpSystem("DistributionBitCountTest::testDistributionBitCountConfigDecrease");
         options.distributionBits = 12;
-        fleetController.updateOptions(options, 0);
+        fleetController.updateOptions(options);
         waitForState("version:\\d+ bits:12 distributor:10 storage:10");
     }
 

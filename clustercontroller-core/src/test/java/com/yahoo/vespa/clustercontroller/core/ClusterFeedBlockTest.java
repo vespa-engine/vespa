@@ -135,8 +135,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
         // Increase cheese allowance. Should now automatically unblock since reported usage is lower.
-        int dummyConfigGeneration = 2;
-        ctrl.updateOptions(createOptions(mapOf(usage("cheese", 0.9), usage("wine", 0.4))), dummyConfigGeneration);
+        ctrl.updateOptions(createOptions(mapOf(usage("cheese", 0.9), usage("wine", 0.4))));
         ctrl.tick(); // Options propagation
         ctrl.tick(); // State recomputation
         assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());

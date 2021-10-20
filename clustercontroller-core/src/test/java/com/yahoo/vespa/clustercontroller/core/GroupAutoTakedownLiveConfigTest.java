@@ -9,8 +9,6 @@ import static org.junit.Assert.assertFalse;
 
 public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
 
-    private long mockConfigGeneration = 1;
-
     private static FleetControllerOptions createOptions(DistributionBuilder.GroupBuilder groupBuilder, double minNodeRatio) {
         FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder));
@@ -21,8 +19,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
     }
 
     private void updateConfigLive(FleetControllerOptions newOptions) {
-        ++mockConfigGeneration;
-        this.fleetController.updateOptions(newOptions, mockConfigGeneration);
+        this.fleetController.updateOptions(newOptions);
     }
 
     private void reconfigureWithMinNodeRatio(double minNodeRatio) {
