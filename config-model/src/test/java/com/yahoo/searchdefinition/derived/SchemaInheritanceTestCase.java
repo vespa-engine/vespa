@@ -3,11 +3,13 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.io.IOUtils;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -17,12 +19,17 @@ public class SchemaInheritanceTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testIt() throws IOException, ParseException {
-        SearchBuilder builder = SearchBuilder.createFromDirectory("src/test/derived/schemainheritance/",
-                                                                  new MockFileRegistry(),
-                                                                  new TestableDeployLogger(),
-                                                                  new TestProperties());
-        derive("schemainheritance", builder, builder.getSearch("child"));
-        assertCorrectConfigFiles("schemainheritance");
+        try {
+            SearchBuilder builder = SearchBuilder.createFromDirectory("src/test/derived/schemainheritance/",
+                                                                      new MockFileRegistry(),
+                                                                      new TestableDeployLogger(),
+                                                                      new TestProperties());
+            derive("schemainheritance", builder, builder.getSearch("child"));
+            assertCorrectConfigFiles("schemainheritance");
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(new File("src/test/derived/schemainheritance/models.generated/"));
+        }
     }
 
 }
