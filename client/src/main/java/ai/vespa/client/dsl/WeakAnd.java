@@ -5,13 +5,10 @@ import java.util.stream.Collectors;
 
 public class WeakAnd extends QueryChain {
 
-    private final String fieldName;
     private Annotation annotation;
     private final Query value;
 
-
-    WeakAnd(String fieldName, Query value) {
-        this.fieldName = fieldName;
+    WeakAnd(Query value) {
         this.value = value;
         this.nonEmpty = true;
     }

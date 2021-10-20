@@ -233,8 +233,8 @@ class QTest extends Specification {
         given:
         def q = Q.select("*")
             .from("sd1")
-            .where(Q.weakand("f1", Q.p("f1").contains("v1").and("f2").contains("v2")))
-            .and(Q.weakand("f3", Q.p("f1").contains("v1").and("f2").contains("v2"))
+            .where(Q.weakand(Q.p("f1").contains("v1").and("f2").contains("v2")))
+            .and(Q.weakand(Q.p("f1").contains("v1").and("f2").contains("v2"))
                 .annotate(A.a("scoreThreshold", 0.13))
             )
             .semicolon()
