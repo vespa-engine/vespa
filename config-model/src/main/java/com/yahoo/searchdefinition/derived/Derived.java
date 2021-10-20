@@ -6,7 +6,7 @@ import com.yahoo.config.ConfigInstance.Builder;
 import com.yahoo.document.Field;
 import com.yahoo.io.IOUtils;
 import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -36,14 +36,14 @@ public abstract class Derived implements Exportable {
      * and derive(SDField) for each search definition level field
      * AND sets the name of this to the name of the input search definition
      */
-    protected void derive(Search search) {
-        setName(search.getName());
-        derive(search.getDocument(), search);
-        for (Index index : search.getExplicitIndices())
-            derive(index, search);
-        for (SDField field : search.allExtraFields())
-            derive(field, search);
-        search.allImportedFields().forEach(importedField -> derive(importedField, search));
+    protected void derive(Schema schema) {
+        setName(schema.getName());
+        derive(schema.getDocument(), schema);
+        for (Index index : schema.getExplicitIndices())
+            derive(index, schema);
+        for (SDField field : schema.allExtraFields())
+            derive(field, schema);
+        schema.allImportedFields().forEach(importedField -> derive(importedField, schema));
     }
 
 
@@ -51,11 +51,11 @@ public abstract class Derived implements Exportable {
      * Derives the content of this configuration. This
      * default calls derive(SDField) for each document field
      */
-    protected void derive(SDDocumentType document, Search search) {
+    protected void derive(SDDocumentType document, Schema schema) {
         for (Field field : document.fieldSet()) {
             SDField sdField = (SDField) field;
             if ( ! sdField.isExtraField()) {
-                derive(sdField, search);
+                derive(sdField, schema);
             }
         }
     }
@@ -64,13 +64,13 @@ public abstract class Derived implements Exportable {
      * Derives the content of this configuration. This
      * default does nothing.
      */
-    protected void derive(ImmutableSDField field, Search search) {}
+    protected void derive(ImmutableSDField field, Schema schema) {}
 
     /**
      * Derives the content of this configuration. This
      * default does nothing.
      */
-    protected void derive(Index index, Search search) {
+    protected void derive(Index index, Schema schema) {
     }
 
     protected abstract String getDerivedName();

@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
  * Test generated config for federation.
  * @author Tony Vaagenes
  */
-public class FederationTest extends SearchChainsTestBase {
+public class FederationTest extends SchemaChainsTestBase {
     @Override
     Element servicesXml() {
         return parse(

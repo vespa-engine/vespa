@@ -7,7 +7,7 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.DocumentReference;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
@@ -26,7 +26,7 @@ import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isM
 import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
 
 /**
- * Iterates all imported fields from SD-parsing and validates and resolves them into concrete fields from referenced document types.
+ * Iterates all imported fields from schema parsing and validates and resolves them into concrete fields from referenced document types.
  *
  * @author geirst
  */
@@ -35,15 +35,15 @@ public class ImportedFieldsResolver extends Processor {
     private final Map<String, ImportedField> importedFields = new LinkedHashMap<>();
     private final Optional<DocumentReferences> references;
 
-    public ImportedFieldsResolver(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
-        references = search.getDocument().getDocumentReferences();
+    public ImportedFieldsResolver(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
+        references = schema.getDocument().getDocumentReferences();
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        search.temporaryImportedFields().get().fields().forEach((name, field) -> resolveImportedField(field, validate));
-        search.setImportedFields(new ImportedFields(importedFields));
+        schema.temporaryImportedFields().get().fields().forEach((name, field) -> resolveImportedField(field, validate));
+        schema.setImportedFields(new ImportedFields(importedFields));
     }
 
     private void resolveImportedField(TemporaryImportedField importedField, boolean validate) {
@@ -166,8 +166,8 @@ public class ImportedFieldsResolver extends Processor {
     private ImmutableSDField getTargetField(TemporaryImportedField importedField,
                                             DocumentReference reference) {
         String targetFieldName = importedField.targetFieldName();
-        Search targetSearch = reference.targetSearch();
-        ImmutableSDField targetField = targetSearch.getField(targetFieldName);
+        Schema targetSchema = reference.targetSearch();
+        ImmutableSDField targetField = targetSchema.getField(targetFieldName);
         if (targetField == null) {
             fail(importedField, targetFieldAsString(targetFieldName, reference) + ": Not found");
         }
@@ -193,14 +193,15 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     private void fail(TemporaryImportedField importedField, String msg) {
-        throw new IllegalArgumentException("For search '" + search.getName() + "', import field '" + importedField.fieldName() + "': " + msg);
+        throw new IllegalArgumentException("For " + schema + ", import field '" +
+                                           importedField.fieldName() + "': " + msg);
     }
 
     private void fail(TemporaryImportedField importedField, String importedNestedFieldName, String msg) {
         if (importedField.fieldName().equals(importedNestedFieldName)) {
             fail(importedField, msg);
         }
-        throw new IllegalArgumentException("For search '" + search.getName() + "', import field '" +
-                importedField.fieldName() + "' (nested to '" + importedNestedFieldName + "'): " + msg);
+        throw new IllegalArgumentException("For " + schema + ", import field '" +
+                                           importedField.fieldName() + "' (nested to '" + importedNestedFieldName + "'): " + msg);
     }
 }

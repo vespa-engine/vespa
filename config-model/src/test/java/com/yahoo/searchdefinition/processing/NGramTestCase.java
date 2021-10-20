@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -21,22 +21,22 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
-public class NGramTestCase extends SchemaTestCase {
+public class NGramTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testNGram() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/ngram.sd");
-        assertNotNull(search);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/ngram.sd");
+        assertNotNull(schema);
 
-        SDField gram1 = search.getConcreteField("gram_1");
+        SDField gram1 = schema.getConcreteField("gram_1");
         assertEquals(Matching.Type.GRAM, gram1.getMatching().getType());
         assertEquals(1, gram1.getMatching().getGramSize());
 
-        SDField gram2 = search.getConcreteField("gram_2");
+        SDField gram2 = schema.getConcreteField("gram_2");
         assertEquals(Matching.Type.GRAM, gram2.getMatching().getType());
         assertEquals(-1, gram2.getMatching().getGramSize()); // Not set explicitly
 
-        SDField gram3=search.getConcreteField("gram_3");
+        SDField gram3= schema.getConcreteField("gram_3");
         assertEquals(Matching.Type.GRAM,gram3.getMatching().getType());
         assertEquals(3, gram3.getMatching().getGramSize());
 
@@ -55,7 +55,7 @@ public class NGramTestCase extends SchemaTestCase {
     @Test
     public void testInvalidNGramSetting1() throws IOException, ParseException {
         try {
-            Search search = SearchBuilder.buildFromFile("src/test/examples/invalidngram1.sd");
+            Schema schema = SearchBuilder.buildFromFile("src/test/examples/invalidngram1.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {
@@ -66,7 +66,7 @@ public class NGramTestCase extends SchemaTestCase {
     @Test
     public void testInvalidNGramSetting2() throws IOException, ParseException {
         try {
-            Search search = SearchBuilder.buildFromFile("src/test/examples/invalidngram2.sd");
+            Schema schema = SearchBuilder.buildFromFile("src/test/examples/invalidngram2.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {
@@ -77,7 +77,7 @@ public class NGramTestCase extends SchemaTestCase {
     @Test
     public void testInvalidNGramSetting3() throws IOException, ParseException {
         try {
-            Search search = SearchBuilder.buildFromFile("src/test/examples/invalidngram3.sd");
+            Schema schema = SearchBuilder.buildFromFile("src/test/examples/invalidngram3.sd");
             fail("Should cause an exception");
         }
         catch (IllegalArgumentException e) {

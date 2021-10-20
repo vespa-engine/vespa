@@ -178,7 +178,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         version = deployState.getVespaVersion();
         fileRegistry = deployState.getFileRegistry();
         largeRankExpressions = new LargeRankExpressions(deployState.getFileRegistry());
-        rankingConstants = new RankingConstants(deployState.getFileRegistry());
+        rankingConstants = new RankingConstants(deployState.getFileRegistry(), Optional.empty());
         validationOverrides = deployState.validationOverrides();
         applicationPackage = deployState.getApplicationPackage();
         provisioned = deployState.provisioned();
@@ -189,7 +189,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         rankProfileList = new RankProfileList(null, // null search -> global
                                               rankingConstants,
                                               largeRankExpressions,
-                                              new OnnxModels(deployState.getFileRegistry()),
+                                              new OnnxModels(deployState.getFileRegistry(), Optional.empty()),
                                               AttributeFields.empty,
                                               deployState.rankProfileRegistry(),
                                               deployState.getQueryProfiles().getRegistry(),
@@ -336,7 +336,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     private OnnxModels onnxModelInfoFromSource(ImportedMlModel model) {
-        OnnxModels onnxModels = new OnnxModels(fileRegistry);
+        OnnxModels onnxModels = new OnnxModels(fileRegistry, Optional.empty());
         if (model.modelType().equals(ImportedMlModel.ModelType.ONNX)) {
             String path = model.source();
             String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
@@ -350,7 +350,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     private OnnxModels onnxModelInfoFromStore(String modelName) {
         String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
-        OnnxModels onnxModels = new OnnxModels(fileRegistry);
+        OnnxModels onnxModels = new OnnxModels(fileRegistry, Optional.empty());
         loadOnnxModelInfo(onnxModels, modelName, path);
         return onnxModels;
     }

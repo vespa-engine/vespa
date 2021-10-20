@@ -7,9 +7,9 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
@@ -23,7 +23,7 @@ import java.io.IOException;
  *
  * @author bratseth
  */
-public abstract class AbstractExportingTestCase extends SchemaTestCase {
+public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
 
     private static final String tempDir = "temp/";
     private static final String searchDefRoot = "src/test/derived/";
@@ -50,12 +50,13 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
                                                                properties,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
-                                                               new ImportedMlModels(), new InThreadExecutorService());
+                                                               new ImportedMlModels(),
+                                                               new InThreadExecutorService());
         return export(dirName, builder, config);
     }
 
-    DerivedConfiguration derive(String dirName, SearchBuilder builder, Search search) throws IOException {
-        DerivedConfiguration config = new DerivedConfiguration(search,
+    DerivedConfiguration derive(String dirName, SearchBuilder builder, Schema schema) throws IOException {
+        DerivedConfiguration config = new DerivedConfiguration(schema,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry());
         return export(dirName, builder, config);
@@ -117,8 +118,8 @@ public abstract class AbstractExportingTestCase extends SchemaTestCase {
         return derived;
     }
 
-    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, Search search, String name) throws IOException {
-        DerivedConfiguration derived = derive(name, builder, search);
+    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, Schema schema, String name) throws IOException {
+        DerivedConfiguration derived = derive(name, builder, schema);
         assertCorrectConfigFiles(name);
         return derived;
     }

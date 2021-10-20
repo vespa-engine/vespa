@@ -28,6 +28,7 @@ import com.yahoo.document.*;
 import com.yahoo.documentmodel.*;
 import com.yahoo.compress.Compressor;
 import com.yahoo.compress.CompressionType;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.document.*;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
@@ -40,8 +41,8 @@ import com.yahoo.searchdefinition.DefaultRankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
 import com.yahoo.searchdefinition.RankProfile.DiversitySettings;
-import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.DocumentOnlySearch;
+import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.DocumentOnlySchema;
 import com.yahoo.searchdefinition.UnrankedRankProfile;
 import com.yahoo.searchdefinition.fieldoperation.*;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -61,6 +62,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
+import java.util.Optional;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
@@ -68,15 +70,15 @@ import java.util.LinkedHashMap;
 import java.util.logging.Level;
 
 /**
- * A search definition parser
+ * The schema parser
  *
  * @author bratseth
  */
- @SuppressWarnings("deprecation")
+@SuppressWarnings("deprecation")
 public class SDParser {
 
     private DocumentTypeManager docMan = null;
-    private ApplicationPackage app;
+    private Application application;
     private FileRegistry fileRegistry;
     private DeployLogger deployLogger;
     private ModelContext.Properties properties;
@@ -86,20 +88,20 @@ public class SDParser {
     /**
      * Creates a parser
      *
-     * @param documentsOnly true to only parse the document aspect of a search definition (e.g skip rank profiles)
+     * @param documentsOnly true to only parse the document aspect of a schema (e.g skip rank profiles)
      */
     public SDParser(SimpleCharStream stream,
                     FileRegistry fileRegistry,
                     DeployLogger deployLogger,
                     ModelContext.Properties properties,
-                    ApplicationPackage applicationPackage,
+                    Application application,
                     RankProfileRegistry rankProfileRegistry,
                     boolean documentsOnly) {
         this(stream);
         this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
         this.properties = properties;
-        this.app = applicationPackage;
+        this.application = application;
         this.rankProfileRegistry = rankProfileRegistry;
         this.documentsOnly = documentsOnly;
     }
@@ -411,20 +413,20 @@ SPECIAL_TOKEN :
 // --------------------------------------------------------------------------------
 
 /**
- * The rule consumes any search definition and returns the corresponding object. This is the only production that should
+ * The rule consumes any schema and returns the corresponding object. This is the only production that should
  * ever consume leading newlines.
  *
- * @param dir The directory containing the file being parsed.
- * @return The search definition object.
+ * @param dir the directory containing the file being parsed
+ * @return the schema object
  */
-Search search(DocumentTypeManager docMan, String dir) :
+Schema schema(DocumentTypeManager docMan, String dir) :
 {
     this.docMan = docMan;
-    Search search;
+    Schema schema;
 }
 {
-    (<NL>)* (search = rootSchema(dir) | search = rootDocument(dir))
-    { return search; }
+    (<NL>)* (schema = rootSchema(dir) | schema = rootDocument(dir))
+    { return schema; }
 }
 
 /**
@@ -434,43 +436,44 @@ Search search(DocumentTypeManager docMan, String dir) :
  * @param dir the directory containing the file being parsed.
  * @return the schema definition object.
  */
-Search rootSchema(String dir) :
+Schema rootSchema(String dir) :
 {
     String name;
-    Search search;
+    String inherited = null;
+    Schema schema;
 }
 {
-    ( ( <SCHEMA> | <SEARCH> ) name = identifier() {
-        search = new Search(name, app, fileRegistry,deployLogger, properties);
-        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry, search.rankingConstants()));
-        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry, search.rankingConstants()));}
-      lbrace() (rootSchemaItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
-    { return search; }
+    ( ( <SCHEMA> | <SEARCH> ) name = identifier() (<INHERITS> inherited = identifier() )? {
+        schema = new Schema(name, Optional.ofNullable(inherited), application, fileRegistry, deployLogger, properties);
+        rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
+        rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));}
+      lbrace() (rootSchemaItem(schema) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
+    { return schema; }
 }
 
 /**
  * Consumes an element of a schema block. This and rootSearch() are the only rules that should ever consume
  * trailing newline tokens.
  *
- * @param search The search object to modify.
+ * @param schema the schema object to modify.
  * @return Null.
  */
-Object rootSchemaItem(Search search) : { }
+Object rootSchemaItem(Schema schema) : { }
 {
-    ( document(search)
-      | rawAsBase64(search)
-      | documentSummary(search)
-      | field(null, search)
-      | index(search, null)
-      | rankingConstant(search)
-      | rankProfile(search)
-      | searchStemming(search)
-      | useDocument(search)
-      | structOutside(search)
-      | annotationOutside(search)
-      | fieldSet(search)
-      | importField(search)
-      | onnxModel(search) )
+    ( document(schema)
+      | rawAsBase64(schema)
+      | documentSummary(schema)
+      | field(null, schema)
+      | index(schema, null)
+      | rankingConstant(schema)
+      | rankProfile(schema)
+      | searchStemming(schema)
+      | useDocument(schema)
+      | structOutside(schema)
+      | annotationOutside(schema)
+      | fieldSet(schema)
+      | importField(schema)
+      | onnxModel(schema) )
     { return null; }
 }
 
@@ -480,99 +483,99 @@ Object rootSchemaItem(Search search) : { }
  * @param dir the directory containing the file being parsed.
  * @return the schema definition object.
  */
-Search rootDocument(String dir) :
+Schema rootDocument(String dir) :
 {
-    Search search = new DocumentOnlySearch(app, fileRegistry, deployLogger, properties);
+    Schema schema = new DocumentOnlySchema(application, fileRegistry, deployLogger, properties);
 }
 {
-    ( (rootDocumentItem(search) (<NL>)*)*<EOF> )
-    { return search; }
+    ( (rootDocumentItem(schema) (<NL>)*)*<EOF> )
+    { return schema; }
 }
 
 /**
  * Consumes a single item from within a root document node.
  *
- * @param search The search object to modify.
+ * @param schema the schema object to modify.
  * @return Null.
  */
-Object rootDocumentItem(Search search) : { }
+Object rootDocumentItem(Schema schema) : { }
 {
-    ( namedDocument(search) )
+    ( namedDocument(schema) )
     { return null; }
 }
 
 /**
  * Consumes a use-document statement. This currently does nothing.
  *
- * @param search the search object to modify.
+ * @param schema the schema object to modify.
  */
-void useDocument(Search search) : { }
+void useDocument(Schema schema) : { }
 {
     <USEDOCUMENT> <COLON> identifier()
 }
 
 /**
- * Consumes a document element. The name defaults to the search's name, but may be set.
+ * Consumes a document element. The name defaults to the schema's name, but may be set.
  *
- * @param search the search object to add content to.
+ * @param schema the schema object to add content to.
  */
-void document(Search search) :
+void document(Schema schema) :
 {
-    String name=search.getName();
+    String name = schema.getName();
     SDDocumentType document;
 }
 {
-    ( <DOCUMENT> (name = identifier())? (<NL>)* { document = new SDDocumentType(name, search); }
+    ( <DOCUMENT> (name = identifier())? (<NL>)* { document = new SDDocumentType(name, schema); }
       [ inheritsDocument(document) (<NL>)* ]
-      <LBRACE> (<NL>)* (documentBody(document, search) (<NL>)*)* <RBRACE> )
+      <LBRACE> (<NL>)* (documentBody(document, schema) (<NL>)*)* <RBRACE> )
     {
-        search.addDocument(document);
+        schema.addDocument(document);
     }
 }
 
 /**
  * Consumes a document element, explicitly named
  *
- * @param search the search object to add content to.
+ * @param schema the schema object to add content to
  */
-void namedDocument(Search search) :
+void namedDocument(Schema schema) :
 {
     String name;
     SDDocumentType document;
 }
 {
-    ( <DOCUMENT> name = identifier() (<NL>)* { document = new SDDocumentType(name, search); }
+    ( <DOCUMENT> name = identifier() (<NL>)* { document = new SDDocumentType(name, schema); }
       [ inheritsDocument(document) (<NL>)* ]
-      <LBRACE> (<NL>)* (documentBody(document, search) (<NL>)*)* <RBRACE> )
+      <LBRACE> (<NL>)* (documentBody(document, schema) (<NL>)*)* <RBRACE> )
     {
-        search.addDocument(document);
+        schema.addDocument(document);
     }
 }
 
 /**
  * Consumes a document body block
  *
- * @param document The document type to modify.
- * @param search   The search object to add content to.
+ * @param document the document type to modify.
+ * @param schema   the schema object to add content to
  * @return Null.
  */
-Object documentBody(SDDocumentType document, Search search) :
+Object documentBody(SDDocumentType document, Schema schema) :
 {
 }
 {
-    ( annotation(search, document)
+    ( annotation(schema, document)
       | compression(document, null)
       | headercfg(document)
       | bodycfg(document)
-      | structInside(document, search)
-      | field(document, search) )
+      | structInside(document, schema)
+      | field(document, schema) )
     { return null; }
 }
 
-void rawAsBase64(Search search) :
+void rawAsBase64(Schema schema) :
 {}
 {
-    <RAW_AS_BASE64_IN_SUMMARY> { search.enableRawAsBase64(); }
+    <RAW_AS_BASE64_IN_SUMMARY> { schema.enableRawAsBase64(); }
 }
 
 /**
@@ -651,10 +654,10 @@ void inheritsDocument(SDDocumentType document) :
 /**
  * Consumes a field block from within a document element.
  *
- * @param document The document type to modify.
- * @param search   The search object to add content to.
+ * @param document the document type to modify
+ * @param schema   the schema object to add content to
  */
-void field(SDDocumentType document, Search search) :
+void field(SDDocumentType document, Schema schema) :
 {
     String name;
     SDField field;
@@ -663,22 +666,22 @@ void field(SDDocumentType document, Search search) :
 {
     <FIELD> name = identifier() <TYPE> type = dataType()
     {
-        if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
+        if (name != null && Schema.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
         field = new TemporarySDField(name, type, document);
     }
-    lbrace() (fieldBody(field, search, document) (<NL>)*)* <RBRACE>
+    lbrace() (fieldBody(field, schema, document) (<NL>)*)* <RBRACE>
     {
         if (document != null) {
             document.addField(field);
         } else {
-            search.addExtraField(field);
+            schema.addExtraField(field);
         }
     }
 }
 
-void fieldSet(Search search) :
+void fieldSet(Schema schema) :
 {
   String setName;
   String field;
@@ -690,8 +693,8 @@ void fieldSet(Search search) :
 {
   <FIELDSET> setName = identifier() lbrace()
     ((
-      ( <FIELDS><COLON> field = identifier() { search.fieldSets().addUserFieldSetItem(setName, field); }
-      ( <COMMA> field = identifier() { search.fieldSets().addUserFieldSetItem(setName, field); } )* )
+      ( <FIELDS><COLON> field = identifier() { schema.fieldSets().addUserFieldSetItem(setName, field); }
+      ( <COMMA> field = identifier() { schema.fieldSets().addUserFieldSetItem(setName, field); } )* )
     |
       ( <QUERYCOMMAND> <COLON> (queryCommand = identifierWithDash() | queryCommand = quotedString())) { queryCommands.add(queryCommand); }
     |
@@ -702,21 +705,21 @@ void fieldSet(Search search) :
      // Apply settings after parsing since all user field items must be set first
 
      for (Object command : queryCommands)
-         search.fieldSets().userFieldSets().get(setName).queryCommands().add((String)command);
+         schema.fieldSets().userFieldSets().get(setName).queryCommands().add((String)command);
 
      for (Object setting : matchSettings) {
          ((SDField)setting).applyOperations();
-         search.fieldSets().userFieldSets().get(setName).setMatching(((SDField)setting).getMatching());
+         schema.fieldSets().userFieldSets().get(setName).setMatching(((SDField)setting).getMatching());
      }
   }
 }
 
 /**
- * This rule consumes a annotation block from within either a document element or a search element.
+ * This rule consumes a annotation block from within either a document element or a schema element.
 
- * @param search the search object to add content to.
+ * @param schema the schema object to add content to
  */
-void annotationOutside(Search search) :
+void annotationOutside(Schema schema) :
 {
     String name;
     SDAnnotationType type;
@@ -727,19 +730,19 @@ void annotationOutside(Search search) :
         type = new SDAnnotationType(name.trim());
     }
     [ inheritsAnnotation(type) (<NL>)* ]
-    lbrace() (type = annotationBody(search, type)) <RBRACE>
+    lbrace() (type = annotationBody(schema, type)) <RBRACE>
     {
-        if (search.getDocument()==null) throw new IllegalArgumentException("Can't add annotation '"+name+"' to a document type, define a document type first or declare the annotation inside of one.");
-        search.addAnnotation(type);
+        if (schema.getDocument()==null) throw new IllegalArgumentException("Can't add annotation '"+name+"' to a document type, define a document type first or declare the annotation inside of one.");
+        schema.addAnnotation(type);
     }
 }
 
 /**
- * This rule consumes a annotation block from within either a document element.
+ * Consumes a annotation block from within either a document element.
  *
- * @param document The document object to add content to.
+ * @param document the document object to add content to
  */
-void annotation(Search search, SDDocumentType document) :
+void annotation(Schema schema, SDDocumentType document) :
 {
     String name;
     SDAnnotationType type;
@@ -750,7 +753,7 @@ void annotation(Search search, SDDocumentType document) :
         type = new SDAnnotationType(name.trim());
     }
     [ inheritsAnnotation(type) (<NL>)* ]
-    lbrace() (type = annotationBody(search, type)) <RBRACE>
+    lbrace() (type = annotationBody(schema, type)) <RBRACE>
     {
         document.addAnnotation(type);
     }
@@ -758,15 +761,15 @@ void annotation(Search search, SDDocumentType document) :
 
 
 /**
- * This rule consumes a single element of an annotation body block.
+ * Consumes a single element of an annotation body block.
  *
- * @param search   The search object to add content to.
- * @param type     The type being built.
+ * @param schema   the schema object to add content to
+ * @param type     the type being built
  * @return a modified or new AnnotationType instance
  */
-SDAnnotationType annotationBody(Search search, SDAnnotationType type) :
+SDAnnotationType annotationBody(Schema schema, SDAnnotationType type) :
 {
-    SDDocumentType struct = new SDDocumentType("annotation." + type.getName(), search);
+    SDDocumentType struct = new SDDocumentType("annotation." + type.getName(), schema);
 }
 {
     (structFieldDefinition(struct) (<NL>)*)*
@@ -791,15 +794,15 @@ void inheritsAnnotation(SDAnnotationType annotation) :
 /**
  * This rule consumes a struct block from within a document element.
  *
- * @param search The search object to add content to.
+ * @param schema the schema object to add content to
  */
-void structInside(SDDocumentType document, Search search) :
+void structInside(SDDocumentType document, Schema schema) :
 {
     SDDocumentType struct;
 }
 {
     (
-        struct = structDefinition(search, document)
+        struct = structDefinition(schema, document)
     )
     {
         document.addType(struct);
@@ -809,27 +812,27 @@ void structInside(SDDocumentType document, Search search) :
 /**
  * This rule consumes a struct block from within a document element.
  *
- * @param search The search object to add content to.
+ * @param schema the schema object to add content to
  */
-void structOutside(Search search) :
+void structOutside(Schema schema) :
 {
     SDDocumentType struct;
 }
 {
     (
-        struct = structDefinition(search, search.getDocument())
+        struct = structDefinition(schema, schema.getDocument())
     )
     {
-        search.addType(struct);
+        schema.addType(struct);
     }
 }
 
 /**
  * This rule consumes a struct block from within a document element.
  *
- * @param search The search object to add content to.
+ * @param schema the schema object to add content to
  */
-SDDocumentType structDefinition(Search search, SDDocumentType repo) :
+SDDocumentType structDefinition(Schema schema, SDDocumentType repo) :
 {
     String name;
     SDDocumentType struct;
@@ -837,7 +840,7 @@ SDDocumentType structDefinition(Search search, SDDocumentType repo) :
 {
     <STRUCT> name = identifier()
     {
-        struct = new SDDocumentType(name, search);
+        struct = new SDDocumentType(name, schema);
     }
     lbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE>
     {
@@ -860,7 +863,7 @@ SDDocumentType structDefinition(Search search, SDDocumentType repo) :
 /**
  * This rule consumes a data type block from within a field element.
  *
- * @return The consumed data type.
+ * @return the consumed data type
  */
 DataType dataType() :
 {
@@ -957,7 +960,7 @@ void structFieldDefinition(SDDocumentType struct) :
 }
 {
     <FIELD> name = identifier() <TYPE> type = dataType() {
-        if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
+        if (name != null && Schema.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
         field = new TemporarySDField(name, type, struct);
@@ -971,36 +974,36 @@ void structFieldDefinition(SDDocumentType struct) :
  * This rule consumes a struct subfield from a document field body. This is not to be confused with a document
  * struct's fields, but rather this is a subfield of a document field of type struct.
  *
- * @param field    The field to modify.
- * @param search   The search object to add content to.
- * @param document The document type to modify.
+ * @param field    the field to modify
+ * @param schema   the schema object to add content to
+ * @param document the document type to modify
  */
-void structField(FieldOperationContainer field, Search search,SDDocumentType document) :
+void structField(FieldOperationContainer field, Schema schema, SDDocumentType document) :
 {
     String name;
     SDField structField;
 }
 {
     <STRUCTFIELD> name = identifier() {
-        if (name != null && com.yahoo.searchdefinition.Search.isReservedName(name.toLowerCase())) {
+        if (name != null && Schema.isReservedName(name.toLowerCase())) {
             throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
         }
         FieldOperationContainer structFieldOp = new StructFieldOperation(name);
         field.addOperation((StructFieldOperation) structFieldOp);
     }
-    lbrace() (structFieldBody(structFieldOp, search, document) (<NL>)*)* <RBRACE>
+    lbrace() (structFieldBody(structFieldOp, schema, document) (<NL>)*)* <RBRACE>
 }
 
 
 /**
  * This rule consumes a single element of a field body block.
  *
- * @param field    The field being built.
- * @param search   The search object to add content to.
- * @param document The owning document, or null if this is a search field.
- * @return Null.
+ * @param field    the field being built
+ * @param schema   the schema object to add content to
+ * @param document the owning document, or null if this is a search field
+ * @return Null
  */
-String fieldBody(SDField field, Search search, SDDocumentType document) : { }
+String fieldBody(SDField field, Schema schema, SDDocumentType document) : { }
 {
     ( alias(field) |
       attribute(field) |
@@ -1011,7 +1014,7 @@ String fieldBody(SDField field, Search search, SDDocumentType document) : { }
       header(field) |
       id(field, document) |
       summaryInField(field) |
-      index(search, field) |
+      index(schema, field) |
       indexing(field) |
       indexingRewrite(field) |
       match(field) |
@@ -1020,7 +1023,7 @@ String fieldBody(SDField field, Search search, SDDocumentType document) : { }
       rank(field) |
       rankType(field) |
       sorting(field, field.getName()) |
-      structField(field, search, document) |
+      structField(field, schema, document) |
       summaryTo(field) |
       weight(field) |
       weightedset(field) )
@@ -1029,21 +1032,21 @@ String fieldBody(SDField field, Search search, SDDocumentType document) : { }
 
 /**
  * This rule consumes a single element of a struct subfield body block.
- * Only elements that are supported in streaming search and indexed search (with complex attributes) are allowed.
+ * Only elements that are supported in streaming schema and indexed schema (with complex attributes) are allowed.
  *
- * @param field    The field being built.
- * @param search   The search object to add content to.
- * @param document The owning document, or null if this is a search field.
- * @return Null.
+ * @param field    the field being built
+ * @param schema   the schema object to add content to
+ * @param document the owning document, or null if this is a schema field
+ * @return Null
  */
-String structFieldBody(FieldOperationContainer field, Search search, SDDocumentType document) : { }
+String structFieldBody(FieldOperationContainer field, Schema schema, SDDocumentType document) : { }
 {
     ( summaryInField(field) |
       indexing(field) |
       attribute(field) |
       match(field) |
       queryCommand(field) |
-      structField(field, search, document) |
+      structField(field, schema, document) |
       summaryTo(field) )
     { return null; }
 }
@@ -1494,17 +1497,17 @@ void fieldStemming(FieldOperationContainer field) :
 }
 
 /**
- * This rule consumes a stemming statement for a search element.
+ * This rule consumes a stemming statement for a schema element.
  *
- * @param search The search to modify.
+ * @param schema the schema to modify
  */
-void searchStemming(Search search) :
+void searchStemming(Schema schema) :
 {
     String setting;
 }
 {
     <STEMMING> <COLON> setting = identifierWithDash()
-    { search.setStemming(Stemming.get(setting)); }
+    { schema.setStemming(Stemming.get(setting)); }
 }
 
 /**
@@ -1764,20 +1767,20 @@ void indexingRewrite(FieldOperationContainer field) : { }
 }
 
 /**
- * Consumes a document-summary block from within a search block.
+ * Consumes a document-summary block from within a schema block.
  *
- * @param search The search object to add content to.
- * @return Null.
+ * @param schema the schema object to add content to
+ * @return Null
  */
-Object documentSummary(Search search) :
+Object documentSummary(Schema schema) :
 {
     String name;
     DocumentSummary summary;
 }
 {
     ( <DOCUMENTSUMMARY>
-      name = identifierWithDash() { search.addSummary(summary = new DocumentSummary(name, search)); }
-      [inheritsDocumentSummary(summary, search)]
+      name = identifierWithDash() { schema.addSummary(summary = new DocumentSummary(name, schema)); }
+      [inheritsDocumentSummary(summary, schema)]
       lbrace()
          (
            <FROMDISK> { summary.setFromDisk(true); } |
@@ -1793,10 +1796,10 @@ Object documentSummary(Search search) :
 /**
  * This rule consumes an inherits statement of a document summary.
  *
- * @param documentSummary The document summary to modify.
- * @param search The search object documentSummary is being added to.
+ * @param documentSummary the document summary to modify
+ * @param schema the schema object documentSummary is being added to
  */
-void inheritsDocumentSummary(DocumentSummary documentSummary, Search search) :
+void inheritsDocumentSummary(DocumentSummary documentSummary, Schema schema) :
 {
     String name;
 }
@@ -1822,11 +1825,11 @@ Object documentSummaryItem(DocumentSummary summary) : { }
 /**
  * Consumes an index block for a field element.
  *
- * @param search The search object to add content to.
- * @param field  The field to modify.
- * @return Null.
+ * @param schema the schema object to add content to
+ * @param field  the field to modify
+ * @return Null
  */
-Object index(Search search, FieldOperationContainer field) :
+Object index(Schema schema, FieldOperationContainer field) :
 {
     IndexOperation op = new IndexOperation();
     String indexName = (field != null) ? field.getName() : null;
@@ -1846,7 +1849,7 @@ Object index(Search search, FieldOperationContainer field) :
 
             Index index = new Index(indexName);
             op.applyToIndex(index);
-            search.addIndex(index);
+            schema.addIndex(index);
         } else {
             field.addOperation(op);
         }
@@ -1906,11 +1909,11 @@ void hnswIndexBody(HnswIndexParams.Builder params) :
 }
 
 /**
- * Consumes a onnx-model block of a search element.
+ * Consumes a onnx-model block of a schema element.
  *
- * @param search The search object to add content to.
+ * @param schema the schema object to add content to.
  */
-void onnxModel(Search search) :
+void onnxModel(Schema schema) :
 {
     String name;
     OnnxModel onnxModel;
@@ -1923,7 +1926,7 @@ void onnxModel(Search search) :
       lbrace() (onnxModelItem(onnxModel) (<NL>)*)+ <RBRACE> )
     {
         if (documentsOnly) return;
-        search.onnxModels().add(onnxModel);
+        schema.onnxModels().add(onnxModel);
     }
 }
 
@@ -1960,11 +1963,11 @@ Object onnxModelItem(OnnxModel onnxModel) :
 }
 
 /**
- * Consumes a constant block of a search element.
+ * Consumes a constant block of a schema element.
  *
- * @param search The search object to add content to.
+ * @param schema the schema object to add content to
  */
-void rankingConstant(Search search) :
+void rankingConstant(Schema schema) :
 {
     String name;
     RankingConstant constant;
@@ -1977,7 +1980,7 @@ void rankingConstant(Search search) :
       lbrace() (rankingConstantItem(constant) (<NL>)*)+ <RBRACE> )
     {
         if (documentsOnly) return;
-        search.rankingConstants().add(constant);
+        schema.rankingConstants().add(constant);
     }
 }
 
@@ -2020,11 +2023,11 @@ String uriPath() : { }
 }
 
 /**
- * Consumes a rank-profile block of a search element.
+ * Consumes a rank-profile block of a schema element.
  *
- * @param search The search object to add content to.
+ * @param schema the schema object to add content to
  */
-void rankProfile(Search search) :
+void rankProfile(Schema schema) :
 {
     String name;
     RankProfile profile;
@@ -2033,12 +2036,12 @@ void rankProfile(Search search) :
     ( ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
         {
             if (documentsOnly) {
-                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry, search.rankingConstants());
+                profile = new DocumentsOnlyRankProfile(name, schema, rankProfileRegistry, schema.rankingConstants());
             }
             else if ("default".equals(name)) {
-                profile = rankProfileRegistry.get(search, "default");
+                profile = rankProfileRegistry.get(schema, "default");
             } else {
-                profile = new RankProfile(name, search, rankProfileRegistry, search.rankingConstants());
+                profile = new RankProfile(name, schema, rankProfileRegistry, schema.rankingConstants());
             }
         }
       [inheritsRankProfile(profile)]
@@ -2368,7 +2371,7 @@ void minHitsPerThread(RankProfile profile) :
 /**
  * This rule consumes a num-search-partitions statement for a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void numSearchPartitions(RankProfile profile) :
 {
@@ -2381,7 +2384,7 @@ void numSearchPartitions(RankProfile profile) :
 /**
  * This rule consumes a num-threads-per-search statement for a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void termwiseLimit(RankProfile profile) :
 {
@@ -2394,7 +2397,7 @@ void termwiseLimit(RankProfile profile) :
  * This rule consumes a rank-properties block of a rank profile. There is a little trick within this rule to allow the
  * final rank property to skip the terminating newline token.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void rankProperties(RankProfile profile) : { }
 {
@@ -2405,7 +2408,7 @@ void rankProperties(RankProfile profile) : { }
 /**
  * This rule consumes a single rank property pair for a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void rankProperty(RankProfile profile) :
 {
@@ -2630,7 +2633,7 @@ TensorType tensorType(String errorMessage) :
     }
 }
 
-void importField(Search search) :
+void importField(Schema schema) :
 {
     String fieldRefSpec;
     String aliasFieldName;
@@ -2646,9 +2649,9 @@ void importField(Search search) :
         int indexOfDot = fieldRefSpec.indexOf('.');
         String documentReferenceFieldName = fieldRefSpec.substring(0, indexOfDot);
         String foreignFieldName = fieldRefSpec.substring(indexOfDot + 1);
-        TemporaryImportedFields importedFields = search.temporaryImportedFields().get();
+        TemporaryImportedFields importedFields = schema.temporaryImportedFields().get();
         if (importedFields.hasField(aliasFieldName)) {
-            throw new IllegalArgumentException("For search '" + search.getName() + "', import field as '" + aliasFieldName + "': Field already imported");
+            throw new IllegalArgumentException("For schema '" + schema.getName() + "', import field as '" + aliasFieldName + "': Field already imported");
         }
         importedFields.add(new TemporaryImportedField(aliasFieldName, documentReferenceFieldName, foreignFieldName));
     }

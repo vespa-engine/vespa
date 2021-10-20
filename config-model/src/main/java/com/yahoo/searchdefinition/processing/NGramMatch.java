@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -22,21 +22,21 @@ public class NGramMatch extends Processor {
 
     public static final int DEFAULT_GRAM_SIZE = 2;
 
-    public NGramMatch(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public NGramMatch(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if (field.getMatching().getType().equals(Matching.Type.GRAM))
-                implementGramMatch(search, field, validate);
+                implementGramMatch(schema, field, validate);
             else if (validate && field.getMatching().getGramSize() >= 0)
                 throw new IllegalArgumentException("gram-size can only be set when the matching mode is 'gram'");
         }
     }
 
-    private void implementGramMatch(Search search, SDField field, boolean validate) {
+    private void implementGramMatch(Schema schema, SDField field, boolean validate) {
         if (validate && field.doesAttributing() && ! field.doesIndexing())
             throw new IllegalArgumentException("gram matching is not supported with attributes, use 'index' in indexing");
 
@@ -48,15 +48,15 @@ public class NGramMatch extends Processor {
         field.getNormalizing().inferCodepoint();
         field.setStemming(Stemming.NONE); // not compatible with stemming and normalizing
         field.addQueryCommand("ngram " + n);
-        field.setIndexingScript((ScriptExpression)new MyProvider(search, n).convert(field.getIndexingScript()));
+        field.setIndexingScript((ScriptExpression)new MyProvider(schema, n).convert(field.getIndexingScript()));
     }
 
     private static class MyProvider extends TypedTransformProvider {
 
         final int ngram;
 
-        MyProvider(Search search, int ngram) {
-            super(NGramExpression.class, search);
+        MyProvider(Schema schema, int ngram) {
+            super(NGramExpression.class, schema);
             this.ngram = ngram;
         }
 

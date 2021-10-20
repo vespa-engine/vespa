@@ -16,36 +16,36 @@ import static org.junit.Assert.assertNull;
  *
  * @author bratseth
  */
-public class StemmingSettingTestCase extends SchemaTestCase {
+public class StemmingSettingTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testStemmingSettings() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/stemmingsetting.sd");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/stemmingsetting.sd");
 
-        SDField artist = (SDField)search.getDocument().getField("artist");
-        assertEquals(Stemming.SHORTEST, artist.getStemming(search));
+        SDField artist = (SDField) schema.getDocument().getField("artist");
+        assertEquals(Stemming.SHORTEST, artist.getStemming(schema));
 
-        SDField title = (SDField)search.getDocument().getField("title");
-        assertEquals(Stemming.NONE, title.getStemming(search));
+        SDField title = (SDField) schema.getDocument().getField("title");
+        assertEquals(Stemming.NONE, title.getStemming(schema));
 
-        SDField song = (SDField)search.getDocument().getField("song");
-        assertEquals(Stemming.MULTIPLE, song.getStemming(search));
+        SDField song = (SDField) schema.getDocument().getField("song");
+        assertEquals(Stemming.MULTIPLE, song.getStemming(schema));
 
-        SDField track = (SDField)search.getDocument().getField("track");
-        assertEquals(Stemming.SHORTEST, track.getStemming(search));
+        SDField track = (SDField) schema.getDocument().getField("track");
+        assertEquals(Stemming.SHORTEST, track.getStemming(schema));
 
-        SDField backward = (SDField)search.getDocument().getField("backward");
-        assertEquals(Stemming.SHORTEST, backward.getStemming(search));
+        SDField backward = (SDField) schema.getDocument().getField("backward");
+        assertEquals(Stemming.SHORTEST, backward.getStemming(schema));
 
-        Index defaultIndex = search.getIndex("default");
+        Index defaultIndex = schema.getIndex("default");
         assertEquals(Stemming.SHORTEST, defaultIndex.getStemming());
     }
 
     @Test
     public void requireThatStemmingIsDefaultBest() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/stemmingdefault.sd");
-        assertNull(search.getConcreteField("my_str").getStemming());
-        assertEquals(Stemming.BEST, search.getConcreteField("my_str").getStemming(search));
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/stemmingdefault.sd");
+        assertNull(schema.getConcreteField("my_str").getStemming());
+        assertEquals(Stemming.BEST, schema.getConcreteField("my_str").getStemming(schema));
     }
 
 }

@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -16,20 +16,20 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class BoolAttributeValidator extends Processor {
 
-    public BoolAttributeValidator(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public BoolAttributeValidator(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (var field : search.allConcreteFields()) {
+        for (var field : schema.allConcreteFields()) {
             var attribute = field.getAttribute();
             if (attribute == null) {
                 continue;
             }
             if (attribute.getType().equals(Attribute.Type.BOOL) &&
                     !attribute.getCollectionType().equals(Attribute.CollectionType.SINGLE)) {
-                fail(search, field, "Only single value bool attribute fields are supported");
+                fail(schema, field, "Only single value bool attribute fields are supported");
             }
         }
     }

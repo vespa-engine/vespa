@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.IndexingScript;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
@@ -17,8 +17,8 @@ import static org.junit.Assert.fail;
  */
 public abstract class AssertIndexingScript {
 
-    public static void assertIndexing(List<String> expected, Search search) {
-        assertIndexing(expected, new IndexingScript(search).expressions());
+    public static void assertIndexing(List<String> expected, Schema schema) {
+        assertIndexing(expected, new IndexingScript(schema).expressions());
     }
 
     public static void assertIndexing(List<String> expected, IndexingScript script) {

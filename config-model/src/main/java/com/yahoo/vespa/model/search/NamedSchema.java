@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 
 import java.util.Collection;
 
@@ -11,22 +11,22 @@ import java.util.Collection;
 // TODO: This class is quite pointless
 public class NamedSchema {
 
-    private final Search search;
+    private final Schema schema;
     private final String name;
 
     public static final String fileNameSuffix = ".sd";
 
-    public Search getSearch() {
-        return search;
+    public Schema getSearch() {
+        return schema;
     }
 
     public String getName() {
         return name;
     }
 
-    public NamedSchema(String name, Search search) {
+    public NamedSchema(String name, Schema schema) {
         this.name = name;
-        this.search = search;
+        this.schema = schema;
     }
 
     //Find search definition from a collection with the name specified

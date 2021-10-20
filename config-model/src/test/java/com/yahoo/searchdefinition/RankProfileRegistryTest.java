@@ -33,24 +33,24 @@ public class RankProfileRegistryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testRankProfileDuplicateNameIsIllegal() {
-        Search search = new Search("foo");
-        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
-        RankProfile barRankProfile = new RankProfile("bar", search, rankProfileRegistry, search.rankingConstants());
+        Schema schema = new Schema("foo");
+        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
+        RankProfile barRankProfile = new RankProfile("bar", schema, rankProfileRegistry, schema.rankingConstants());
         rankProfileRegistry.add(barRankProfile);
         rankProfileRegistry.add(barRankProfile);
     }
 
     @Test
     public void testRankProfileDuplicateNameLegalForOverridableRankProfiles() {
-        Search search = new Search("foo");
-        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
+        Schema schema = new Schema("foo");
+        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {
-            assertNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
-            RankProfile rankProfileWithAddedFunction = new RankProfile(rankProfileName, search, rankProfileRegistry, search.rankingConstants());
+            assertNull(rankProfileRegistry.get(schema, rankProfileName).getFunctions().get("foo"));
+            RankProfile rankProfileWithAddedFunction = new RankProfile(rankProfileName, schema, rankProfileRegistry, schema.rankingConstants());
             rankProfileWithAddedFunction.addFunction(new ExpressionFunction("foo", RankingExpression.from("1+2")), true);
             rankProfileRegistry.add(rankProfileWithAddedFunction);
-            assertNotNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
+            assertNotNull(rankProfileRegistry.get(schema, rankProfileName).getFunctions().get("foo"));
         }
     }
 

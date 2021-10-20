@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -23,22 +23,22 @@ import java.util.Map;
  */
 public class ValidateFieldTypes extends Processor {
 
-    public ValidateFieldTypes(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public ValidateFieldTypes(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if (!validate) return;
 
-        String searchName = search.getName();
+        String searchName = schema.getName();
         Map<String, DataType> seenFields = new HashMap<>();
         verifySearchAndDocFields(searchName, seenFields);
         verifySummaryFields(searchName, seenFields);
     }
 
     final protected void verifySearchAndDocFields(String searchName, Map<String, DataType> seenFields) {
-        search.allFields().forEach(field -> {
+        schema.allFields().forEach(field -> {
             checkFieldType(searchName, "index field", field.getName(), field.getDataType(), seenFields);
             for (Map.Entry<String, Attribute> entry : field.getAttributes().entrySet()) {
                 checkFieldType(searchName, "attribute", entry.getKey(), entry.getValue().getDataType(), seenFields);
@@ -47,7 +47,7 @@ public class ValidateFieldTypes extends Processor {
 
     }
     final protected void verifySummaryFields(String searchName, Map<String, DataType> seenFields) {
-        for (DocumentSummary summary : search.getSummaries().values()) {
+        for (DocumentSummary summary : schema.getSummaries().values()) {
             for (SummaryField field : summary.getSummaryFields()) {
                 checkFieldType(searchName, "summary field", field.getName(), field.getDataType(), seenFields);
             }

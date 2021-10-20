@@ -22,7 +22,7 @@ public class IndexingValuesTestCase {
     @Test
     public void requireThatInputOtherFieldThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_input_other_field.sd",
-                         "For search 'indexing_input_other_field', field 'bar': Indexing expression 'input foo' " +
+                         "For schema 'indexing_input_other_field', field 'bar': Indexing expression 'input foo' " +
                          "attempts to modify the value of the document field 'bar'. " +
                          "Use a field outside the document block instead.");
     }

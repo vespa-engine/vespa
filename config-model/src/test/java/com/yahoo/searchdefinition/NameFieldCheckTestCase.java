@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
  *
  * @author Lars Christian Jensen
  */
-public class NameFieldCheckTestCase extends SchemaTestCase {
+public class NameFieldCheckTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testNameField() {
@@ -52,7 +52,8 @@ public class NameFieldCheckTestCase extends SchemaTestCase {
                     "}");
             fail("Should throw exception.");
         } catch (Exception e) {
-            assertEquals("For search 'duplicatenamesinsearch', field 'grpphotoids64': Incompatible types. Expected Array<long> for index field 'grpphotoids64', got string.", e.getMessage());
+            assertEquals("For schema 'duplicatenamesinsearch', field 'grpphotoids64': " +
+                         "Incompatible types. Expected Array<long> for index field 'grpphotoids64', got string.", e.getMessage());
         }
     }
 

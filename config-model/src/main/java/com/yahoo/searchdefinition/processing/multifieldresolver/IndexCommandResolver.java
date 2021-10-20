@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing.multifieldresolver;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,8 +28,8 @@ public class IndexCommandResolver extends MultiFieldResolver {
         harmonizedCommands.addAll(Arrays.asList(harmonize));
     }
 
-    public IndexCommandResolver(String indexName, List<SDField> fields, Search search, DeployLogger logger) {
-        super(indexName, fields, search, logger);
+    public IndexCommandResolver(String indexName, List<SDField> fields, Schema schema, DeployLogger logger) {
+        super(indexName, fields, schema, logger);
     }
 
     /**

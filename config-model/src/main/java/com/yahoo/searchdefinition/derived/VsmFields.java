@@ -12,7 +12,7 @@ import com.yahoo.document.datatypes.Raw;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.searchdefinition.FieldSets;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -30,20 +30,20 @@ public class VsmFields extends Derived implements VsmfieldsConfig.Producer {
     private final Map<String, StreamingField> fields=new LinkedHashMap<>();
     private final Map<String, StreamingDocumentType> doctypes=new LinkedHashMap<>();
 
-    public VsmFields(Search search) {
-        addSearchdefinition(search);
+    public VsmFields(Schema schema) {
+        addSearchdefinition(schema);
     }
 
-    private void addSearchdefinition(Search search) {
-        derive(search);
+    private void addSearchdefinition(Schema schema) {
+        derive(schema);
     }
 
     @Override
-    protected void derive(SDDocumentType document,Search search) {
-        super.derive(document, search);
+    protected void derive(SDDocumentType document, Schema schema) {
+        super.derive(document, schema);
         StreamingDocumentType docType=getDocumentType(document.getName());
         if (docType == null) {
-            docType = new StreamingDocumentType(document.getName(), search.fieldSets());
+            docType = new StreamingDocumentType(document.getName(), schema.fieldSets());
             doctypes.put(document.getName(), docType);
         }
         for (Object o : document.fieldSet()) {

@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableImportedComplexSDField;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -20,21 +20,21 @@ import java.util.stream.Stream;
  */
 public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
 
-    public AddAttributeTransformToSummaryOfImportedFields(Search search,
+    public AddAttributeTransformToSummaryOfImportedFields(Schema schema,
                                                           DeployLogger deployLogger,
                                                           RankProfileRegistry rankProfileRegistry,
                                                           QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        search.allImportedFields()
-                .forEach(field -> setTransform(field));
+        schema.allImportedFields()
+              .forEach(field -> setTransform(field));
     }
 
     private Stream<SummaryField> getSummaryFieldsForImportedField(ImmutableSDField importedField) {
-        return search.getSummaryFields(importedField).values().stream();
+        return schema.getSummaryFields(importedField).values().stream();
     }
 
     private void setTransform(ImmutableSDField field) {

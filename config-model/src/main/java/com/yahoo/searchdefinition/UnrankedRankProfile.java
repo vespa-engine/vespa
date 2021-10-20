@@ -11,8 +11,8 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
  */
 public class UnrankedRankProfile extends RankProfile {
 
-    public UnrankedRankProfile(Search search, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
-        super("unranked", search, rankProfileRegistry, rankingConstants);
+    public UnrankedRankProfile(Schema schema, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
+        super("unranked", schema, rankProfileRegistry, rankingConstants);
         try {
             RankingExpression exp = new RankingExpression("value(0)");
             this.setFirstPhaseRanking(exp);

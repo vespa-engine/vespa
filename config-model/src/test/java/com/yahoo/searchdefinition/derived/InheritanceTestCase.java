@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.DataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -143,20 +143,20 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void testIndexSettingInheritance() {
         SDDocumentType parent = new SDDocumentType("parent");
-        Search parentSearch = new Search("parent");
-        parentSearch.addDocument(parent);
+        Schema parentSchema = new Schema("parent");
+        parentSchema.addDocument(parent);
         SDField prefixed = parent.addField("prefixed", DataType.STRING);
         prefixed.parseIndexingScript("{ index }");
         prefixed.addIndex(new Index("prefixed", true));
 
         SDDocumentType child = new SDDocumentType("child");
         child.inherit(parent);
-        Search childSearch = new Search("child");
-        childSearch.addDocument(child);
+        Schema childSchema = new Schema("child");
+        childSchema.addDocument(child);
 
         prefixed = (SDField)child.getField("prefixed");
         assertNotNull(prefixed);
-        assertEquals(new Index("prefixed", true), childSearch.getIndex("prefixed"));
+        assertEquals(new Index("prefixed", true), childSchema.getIndex("prefixed"));
     }
 
 }

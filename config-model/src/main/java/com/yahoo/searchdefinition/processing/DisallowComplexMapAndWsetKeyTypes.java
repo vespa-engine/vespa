@@ -8,9 +8,9 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -20,8 +20,8 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class DisallowComplexMapAndWsetKeyTypes extends Processor {
 
-    public DisallowComplexMapAndWsetKeyTypes(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public DisallowComplexMapAndWsetKeyTypes(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -30,7 +30,7 @@ public class DisallowComplexMapAndWsetKeyTypes extends Processor {
 
     	// TODO also traverse struct types to search for bad map or wset types.
         // Do this after document manager is fixed, do not start using the static stuff on SDDocumentTypes any more.
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             checkFieldType(field, field.getDataType());
         }
     }
@@ -42,12 +42,12 @@ public class DisallowComplexMapAndWsetKeyTypes extends Processor {
         } else if (dataType instanceof WeightedSetDataType) {
             DataType nestedType = ((WeightedSetDataType) dataType).getNestedType();
             if ( ! (nestedType instanceof PrimitiveDataType)) {
-                fail(search, field, "Weighted set must have a primitive key type.");
+                fail(schema, field, "Weighted set must have a primitive key type.");
             }
         } else if (dataType instanceof MapDataType) {
             DataType keyType = ((MapDataType) dataType).getKeyType();
             if ( ! (keyType instanceof PrimitiveDataType)) {
-                fail(search, field, "Map key type must be a primitive type.");
+                fail(schema, field, "Map key type must be a primitive type.");
             }
             checkFieldType(field, ((MapDataType) dataType).getValueType());
         }

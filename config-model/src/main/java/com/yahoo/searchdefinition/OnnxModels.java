@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * ONNX models tied to a search definition or global.
@@ -16,11 +17,16 @@ import java.util.Map;
  */
 public class OnnxModels {
 
-    private final Map<String, OnnxModel> models = new HashMap<>();
     private final FileRegistry fileRegistry;
 
-    public OnnxModels(FileRegistry fileRegistry) {
+    /** The schema this belongs to, or empty if it is global */
+    private final Optional<Schema> owner;
+
+    private final Map<String, OnnxModel> models = new HashMap<>();
+
+    public OnnxModels(FileRegistry fileRegistry, Optional<Schema> owner) {
         this.fileRegistry = fileRegistry;
+        this.owner = owner;
     }
 
     public void add(OnnxModel model) {
@@ -35,20 +41,34 @@ public class OnnxModels {
     }
 
     public OnnxModel get(String name) {
-        return models.get(name);
+        var model = models.get(name);
+        if (model != null) return model;
+        if (owner.isPresent() && owner.get().inherited().isPresent())
+            return owner.get().inherited().get().onnxModels().get(name);
+        return null;
     }
 
     public boolean has(String name) {
-        return models.containsKey(name);
+        boolean has = models.containsKey(name);
+        if (has) return true;
+        if (owner.isPresent() && owner.get().inherited().isPresent())
+            return owner.get().inherited().get().onnxModels().has(name);
+        return false;
     }
 
     public Map<String, OnnxModel> asMap() {
-        return Collections.unmodifiableMap(models);
+        // Shortcuts
+        if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(models);
+        if (models.isEmpty()) return owner.get().inherited().get().onnxModels().asMap();
+
+        var allModels = new HashMap<>(owner.get().inherited().get().onnxModels().asMap());
+        allModels.putAll(models);
+        return Collections.unmodifiableMap(allModels);
     }
 
     /** Initiate sending of these models to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
-        models.values().forEach(model -> model.sendTo(services));
+        asMap().values().forEach(model -> model.sendTo(services));
     }
 
 }

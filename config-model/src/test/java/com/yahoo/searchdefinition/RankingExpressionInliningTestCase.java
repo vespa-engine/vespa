@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author bratseth
  */
-public class RankingExpressionInliningTestCase extends SchemaTestCase {
+public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {
@@ -66,7 +66,7 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7.0 < attribute(a), 1, 2) == 0))",
@@ -126,7 +126,7 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("17.0", parent.getFirstPhaseRanking().getRoot().toString());
@@ -182,7 +182,7 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
 
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("attribute(a) + C + (attribute(b) + 1)", test.getFirstPhaseRanking().getRoot().toString());
@@ -216,7 +216,7 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
                         "    }\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("foo(2)", test.getFirstPhaseRanking().getRoot().toString());
         assertTrue("Does not contain expected warning", deployLogger.contains("Function 'foo' replaces " +
@@ -246,9 +246,9 @@ public class RankingExpressionInliningTestCase extends SchemaTestCase {
         return b.toString();
     }
 
-    private String getRankingExpression(String name, RankProfile rankProfile, Search search) {
+    private String getRankingExpression(String name, RankProfile rankProfile, Schema schema) {
         Optional<String> rankExpression =
-                new RawRankProfile(rankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(search), new TestProperties())
+                new RawRankProfile(rankProfile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(schema), new TestProperties())
                         .configProperties()
                         .stream()
                         .filter(r -> r.getFirst().equals("rankingExpression(" + name + ").rankingScript"))

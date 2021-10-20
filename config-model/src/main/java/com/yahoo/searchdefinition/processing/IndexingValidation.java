@@ -8,7 +8,7 @@ import com.yahoo.document.MapDataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -33,16 +33,16 @@ import java.util.Set;
  */
 public class IndexingValidation extends Processor {
 
-    IndexingValidation(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    IndexingValidation(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        VerificationContext context = new VerificationContext(new MyAdapter(search));
-        for (SDField field : search.allConcreteFields()) {
+        VerificationContext context = new VerificationContext(new MyAdapter(schema));
+        for (SDField field : schema.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             try {
                 script.verify(context);
@@ -51,7 +51,7 @@ public class IndexingValidation extends Processor {
                     converter.convert(exp); // TODO: stop doing this explicitly when visiting a script does not branch
                 }
             } catch (VerificationException e) {
-                fail(search, field, "For expression '" + e.getExpression() + "': " + e.getMessage());
+                fail(schema, field, "For expression '" + e.getExpression() + "': " + e.getMessage());
             }
         }
     }
@@ -94,15 +94,15 @@ public class IndexingValidation extends Processor {
 
     private static class MyAdapter implements FieldTypeAdapter {
 
-        final Search search;
+        final Schema schema;
 
-        MyAdapter(Search search) {
-            this.search = search;
+        MyAdapter(Schema schema) {
+            this.schema = schema;
         }
 
         @Override
         public DataType getInputType(Expression exp, String fieldName) {
-            SDField field = search.getDocumentField(fieldName);
+            SDField field = schema.getDocumentField(fieldName);
             if (field == null) {
                 throw new VerificationException(exp, "Input field '" + fieldName + "' not found.");
             }
@@ -114,21 +114,21 @@ public class IndexingValidation extends Processor {
             String fieldDesc;
             DataType fieldType;
             if (exp instanceof AttributeExpression) {
-                Attribute attribute = search.getAttribute(fieldName);
+                Attribute attribute = schema.getAttribute(fieldName);
                 if (attribute == null) {
                     throw new VerificationException(exp, "Attribute '" + fieldName + "' not found.");
                 }
                 fieldDesc = "attribute";
                 fieldType = attribute.getDataType();
             } else if (exp instanceof IndexExpression) {
-                SDField field = search.getConcreteField(fieldName);
+                SDField field = schema.getConcreteField(fieldName);
                 if (field == null) {
                     throw new VerificationException(exp, "Index field '" + fieldName + "' not found.");
                 }
                 fieldDesc = "index field";
                 fieldType = field.getDataType();
             } else if (exp instanceof SummaryExpression) {
-                SummaryField field = search.getSummaryField(fieldName);
+                SummaryField field = schema.getSummaryField(fieldName);
                 if (field == null) {
                     throw new VerificationException(exp, "Summary field '" + fieldName + "' not found.");
                 }

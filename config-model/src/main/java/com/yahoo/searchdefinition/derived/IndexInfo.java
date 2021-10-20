@@ -10,7 +10,7 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.Case;
@@ -55,33 +55,33 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private final Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
     private final Map<String, String> aliases = new java.util.LinkedHashMap<>();
     private final Map<String, FieldSet> fieldSets;
-    private Search search;
+    private Schema schema;
 
-    public IndexInfo(Search search) {
-        this.fieldSets = search.fieldSets().userFieldSets();
+    public IndexInfo(Schema schema) {
+        this.fieldSets = schema.fieldSets().userFieldSets();
         addIndexCommand("sddocname", CMD_INDEX);
         addIndexCommand("sddocname", CMD_WORD);
-        derive(search);
+        derive(schema);
     }
 
     @Override
-    protected void derive(Search search) {
-        super.derive(search); // Derive per field
-        this.search = search;
+    protected void derive(Schema schema) {
+        super.derive(schema); // Derive per field
+        this.schema = schema;
         // Populate fieldsets with actual field objects, bit late to do that here but
         for (FieldSet fs : fieldSets.values()) {
             for (String fieldName : fs.getFieldNames()) {
-                fs.fields().add(search.getField(fieldName));
+                fs.fields().add(schema.getField(fieldName));
             }
         }
         // Must follow, because index settings overrides field settings
-        for (Index index : search.getExplicitIndices()) {
-            derive(index, search);
+        for (Index index : schema.getExplicitIndices()) {
+            derive(index, schema);
         }
 
         // Commands for summary fields
         // TODO: Move to fieldinfo and implement differently. This is not right
-        for (SummaryField summaryField : search.getUniqueNamedSummaryFields().values()) {
+        for (SummaryField summaryField : schema.getUniqueNamedSummaryFields().values()) {
             if (summaryField.getTransform().isTeaser()) {
                 addIndexCommand(summaryField.getName(), CMD_DYNTEASER);
             }
@@ -100,11 +100,11 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     @Override
-    protected void derive(ImmutableSDField field, Search search) {
-        derive(field, search, false);
+    protected void derive(ImmutableSDField field, Schema schema) {
+        derive(field, schema, false);
     }
 
-    protected void derive(ImmutableSDField field, Search search, boolean inPosition) {
+    protected void derive(ImmutableSDField field, Schema schema, boolean inPosition) {
         if (field.getDataType().equals(DataType.PREDICATE)) {
             addIndexCommand(field, CMD_PREDICATE);
             Index index = field.getIndex(field.getName());
@@ -127,7 +127,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         boolean isPosition = isPositionField(field);
         if (field.usesStructOrMap()) {
             for (ImmutableSDField structField : field.getStructFields()) {
-                derive(structField, search, isPosition); // Recursion
+                derive(structField, schema, isPosition); // Recursion
             }
         }
 
@@ -151,8 +151,8 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             if (attribute != null && attribute.isFastSearch())
                 addIndexCommand(field.getName(), CMD_FAST_SEARCH);
         } else if (field.doesIndexing()) {
-            if (stemSomehow(field, search)) {
-                addIndexCommand(field, stemCmd(field, search), new StemmingOverrider(this, search));
+            if (stemSomehow(field, schema)) {
+                addIndexCommand(field, stemCmd(field, schema), new StemmingOverrider(this, schema));
             }
             if (normalizeAccents(field)) {
                 addIndexCommand(field, CMD_NORMALIZE);
@@ -201,12 +201,12 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
                     && field.getMatching().getCase().equals(Case.UNCASED));
     }
 
-    static String stemCmd(ImmutableSDField field, Search search) {
-        return CMD_STEM + ":" + field.getStemming(search).toStemMode();
+    static String stemCmd(ImmutableSDField field, Schema schema) {
+        return CMD_STEM + ":" + field.getStemming(schema).toStemMode();
     }
 
-    private boolean stemSomehow(ImmutableSDField field, Search search) {
-        if (field.getStemming(search).equals(Stemming.NONE)) return false;
+    private boolean stemSomehow(ImmutableSDField field, Schema schema) {
+        if (field.getStemming(schema).equals(Stemming.NONE)) return false;
         return isTypeOrNested(field, DataType.STRING);
     }
 
@@ -456,7 +456,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     }
 
     private Stemming getEffectiveStemming(ImmutableSDField field) {
-        Stemming active = field.getStemming(search);
+        Stemming active = field.getStemming(schema);
         if (field.getIndex(field.getName()) != null) {
             if (field.getIndex(field.getName()).getStemming()!=null) {
                 active = field.getIndex(field.getName()).getStemming();
@@ -472,7 +472,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         if (field.getStemming() != null) {
             return !field.getStemming().equals(Stemming.NONE);
         }
-        if (search.getStemming()==Stemming.NONE) return false;
+        if (schema.getStemming() == Stemming.NONE) return false;
         if (field.isImportedField()) return false;
         if (field.getIndex(field.getName())==null) return true;
         if (field.getIndex(field.getName()).getStemming()==null) return true;
@@ -563,19 +563,19 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     private static class StemmingOverrider extends IndexOverrider {
 
-        private Search search;
+        private Schema schema;
 
-        public StemmingOverrider(IndexInfo owner, Search search) {
+        public StemmingOverrider(IndexInfo owner, Schema schema) {
             super(owner);
-            this.search = search;
+            this.schema = schema;
         }
 
         public boolean override(String indexName, String command, ImmutableSDField field) {
-            if (search == null) {
+            if (schema == null) {
                 return false;
             }
 
-            Index index = search.getIndex(indexName);
+            Index index = schema.getIndex(indexName);
             if (index == null) {
                 return false;
             }

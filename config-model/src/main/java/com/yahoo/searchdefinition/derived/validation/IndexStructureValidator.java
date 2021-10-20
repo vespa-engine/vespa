@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived.validation;
 
 import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.IndexingScript;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
@@ -14,14 +14,14 @@ import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
  */
 public class IndexStructureValidator extends Validator {
 
-    public IndexStructureValidator(DerivedConfiguration config, Search search) {
-        super(config, search);
+    public IndexStructureValidator(DerivedConfiguration config, Schema schema) {
+        super(config, schema);
     }
 
     public void validate() {
         IndexingScript script = config.getIndexingScript();
         for (Expression exp : script.expressions()) {
-            new OutputVisitor(search.getDocument(), exp).visit(exp);
+            new OutputVisitor(schema.getDocument(), exp).visit(exp);
         }
     }
 

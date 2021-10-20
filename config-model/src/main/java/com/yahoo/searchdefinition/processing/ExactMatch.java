@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -27,30 +27,30 @@ public class ExactMatch extends Processor {
 
     public static final String DEFAULT_EXACT_TERMINATOR = "@@";
 
-    ExactMatch(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    ExactMatch(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
-            processField(field, search);
+        for (SDField field : schema.allConcreteFields()) {
+            processField(field, schema);
         }
     }
 
-    private void processField(SDField field, Search search) {
+    private void processField(SDField field, Schema schema) {
         Matching.Type matching = field.getMatching().getType();
         if (matching.equals(Matching.Type.EXACT) || matching.equals(Matching.Type.WORD)) {
-            implementExactMatch(field, search);
+            implementExactMatch(field, schema);
         } else if (field.getMatching().getExactMatchTerminator() != null) {
-            warn(search, field, "exact-terminator requires 'exact' matching to have any effect.");
+            warn(schema, field, "exact-terminator requires 'exact' matching to have any effect.");
         }
         for (var structField : field.getStructFields()) {
-            processField(structField, search);
+            processField(structField, schema);
         }
     }
 
-    private void implementExactMatch(SDField field, Search search) {
+    private void implementExactMatch(SDField field, Schema schema) {
         field.setStemming(Stemming.NONE);
         field.getNormalizing().inferLowercase();
 
@@ -62,7 +62,7 @@ public class ExactMatch extends Processor {
                 && ! field.getMatching().getExactMatchTerminator().equals("")) {
                 exactTerminator = field.getMatching().getExactMatchTerminator();
             } else {
-                info(search, field,
+                info(schema, field,
                      "With 'exact' matching, an exact-terminator is needed," +
                      " using default value '" + exactTerminator +"' as terminator");
             }
@@ -75,7 +75,7 @@ public class ExactMatch extends Processor {
         }
         ScriptExpression script = field.getIndexingScript();
         if (new ExpressionSearcher<>(IndexExpression.class).containedIn(script)) {
-            field.setIndexingScript((ScriptExpression)new MyProvider(search).convert(field.getIndexingScript()));
+            field.setIndexingScript((ScriptExpression)new MyProvider(schema).convert(field.getIndexingScript()));
         }
     }
 
@@ -85,8 +85,8 @@ public class ExactMatch extends Processor {
 
     private static class MyProvider extends TypedTransformProvider {
 
-        MyProvider(Search search) {
-            super(ExactExpression.class, search);
+        MyProvider(Schema schema) {
+            super(ExactExpression.class, schema);
         }
 
         @Override

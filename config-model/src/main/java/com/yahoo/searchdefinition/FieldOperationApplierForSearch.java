@@ -14,8 +14,8 @@ public class FieldOperationApplierForSearch extends FieldOperationApplier {
         //Do nothing
     }
 
-    public void process(Search search) {
-        for (Field field : search.extraFieldList()) {
+    public void process(Schema schema) {
+        for (Field field : schema.extraFieldList()) {
             apply(field);
         }
     }

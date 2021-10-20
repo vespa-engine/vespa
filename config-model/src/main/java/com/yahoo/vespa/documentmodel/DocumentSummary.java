@@ -2,7 +2,7 @@
 package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,10 +21,10 @@ public class DocumentSummary extends FieldView {
     private boolean omitSummaryFeatures = false;
     private String inherited;
 
-    private final Search owner;
+    private final Schema owner;
 
     /** Creates a DocumentSummary with the given name. */
-    public DocumentSummary(String name, Search owner) {
+    public DocumentSummary(String name, Schema owner) {
         super(name);
         this.owner = owner;
     }
@@ -55,13 +55,13 @@ public class DocumentSummary extends FieldView {
     }
 
     public SummaryField getSummaryField(String name) {
-        var parent = getInherited();
-        if (parent != null) {
-            return parent.getSummaryField(name);
-        }
-        return (SummaryField) get(name);
+        var field = (SummaryField)get(name);
+        if (field != null) return field;
+        if (getInherited() == null)  return null;
+        return getInherited().getSummaryField(name);
     }
 
+    // TODO: This does not handle overriding in child summaries correctly
     public Collection<SummaryField> getSummaryFields() {
         var fields = new ArrayList<SummaryField>(getFields().size());
         var parent = getInherited();
@@ -107,11 +107,6 @@ public class DocumentSummary extends FieldView {
     /** Returns the parent of this, or null if none is inherited */
     public DocumentSummary getInherited() {
         return owner.getSummary(inherited);
-    }
-
-    /** Returns the name of the summary this was declared to inherit, or null if not sett to inherit anything */
-    public String getInheritedName() {
-        return inherited;
     }
 
     @Override

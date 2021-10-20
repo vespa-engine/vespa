@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Mapping from name to {@link RankProfile} as well as a reverse mapping of {@link RankProfile} to {@link Search}.
+ * Mapping from name to {@link RankProfile} as well as a reverse mapping of {@link RankProfile} to {@link Schema}.
  * Having both of these mappings consolidated here make it easier to remove dependencies on these mappings at
  * run time, since it is essentially only used when building rank profile config at deployment time.
  *
@@ -30,14 +30,18 @@ public class RankProfileRegistry {
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
 
-    public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Search search) {
+    public RankProfileRegistry() {
+
+    }
+
+    public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Schema schema) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry, search.rankingConstants()));
-        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry, search.rankingConstants()));
+        rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
+        rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
         return rankProfileRegistry;
     }
 
-    private String extractName(ImmutableSearch search) {
+    private String extractName(ImmutableSchema search) {
         return search != null ? search.getName() : MAGIC_GLOBAL_RANKPROFILES;
     }
 
@@ -69,17 +73,21 @@ public class RankProfileRegistry {
     /**
      * Returns a named rank profile, null if the search definition doesn't have one with the given name
      *
-     * @param search the {@link Search} that owns the rank profile.
+     * @param schema the {@link Schema} that owns the rank profile
      * @param name the name of the rank profile
      * @return the RankProfile to return.
      */
-    public RankProfile get(String search, String name) {
-        Map<String, RankProfile> profiles = rankProfiles.get(search);
+    public RankProfile get(String schema, String name) {
+        Map<String, RankProfile> profiles = rankProfiles.get(schema);
         if (profiles == null) return null;
         return profiles.get(name);
     }
-    public RankProfile get(ImmutableSearch search, String name) {
-        return get(search.getName(), name);
+
+    public RankProfile get(ImmutableSchema schema, String name) {
+        var profile = get(schema.getName(), name);
+        if (profile != null) return profile;
+        if (schema.inherited().isPresent()) return get(schema.inherited().get(), name);
+        return null;
     }
 
     public RankProfile getGlobal(String name) {
@@ -129,7 +137,7 @@ public class RankProfileRegistry {
      * @param search search definition to fetch rank profiles for, or null for the global ones
      * @return Collection of RankProfiles
      */
-    public Collection<RankProfile> rankProfilesOf(ImmutableSearch search) {
+    public Collection<RankProfile> rankProfilesOf(ImmutableSchema search) {
         return rankProfilesOf(extractName(search));
     }
 

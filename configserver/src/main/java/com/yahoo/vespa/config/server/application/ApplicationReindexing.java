@@ -2,29 +2,17 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.config.model.api.Reindexing;
-import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespa.model.search.DocumentDatabase;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
-import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * Pending reindexing: convergence to the stored config generation allows reindexing to start.

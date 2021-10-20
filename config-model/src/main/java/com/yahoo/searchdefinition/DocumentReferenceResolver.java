@@ -7,7 +7,6 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -24,9 +23,9 @@ import static java.util.stream.Collectors.toMap;
  */
 public class DocumentReferenceResolver {
 
-    private final Map<String, Search> searchMapping;
+    private final Map<String, Schema> searchMapping;
 
-    public DocumentReferenceResolver(List<Search> schemas) {
+    public DocumentReferenceResolver(Collection<Schema> schemas) {
         this.searchMapping = createDocumentNameToSearchMapping(schemas);
     }
 
@@ -64,13 +63,13 @@ public class DocumentReferenceResolver {
         }
         ReferenceDataType reference = (ReferenceDataType) field.getDataType();
         String targetDocumentName = getTargetDocumentName(reference);
-        Search search = searchMapping.get(targetDocumentName);
-        if (search == null) {
+        Schema schema = searchMapping.get(targetDocumentName);
+        if (schema == null) {
             throw new IllegalArgumentException(
                     String.format("Invalid document reference '%s': " +
                                   "Could not find document type '%s'", field.getName(), targetDocumentName));
         }
-        return new DocumentReference(field, search);
+        return new DocumentReference(field, schema);
     }
 
     private static boolean isAttribute(Field field) {
@@ -78,10 +77,10 @@ public class DocumentReferenceResolver {
         return sdField.doesAttributing();
     }
 
-    private static Map<String, Search> createDocumentNameToSearchMapping(List<Search> searchDefintions) {
-        return searchDefintions.stream()
-                .filter(search -> search.getDocument() != null)
-                .collect(toMap(search -> search.getDocument().getName(), identity()));
+    private static Map<String, Schema> createDocumentNameToSearchMapping(Collection<Schema> schemaDefintions) {
+        return schemaDefintions.stream()
+                               .filter(search -> search.getDocument() != null)
+                               .collect(toMap(search -> search.getDocument().getName(), identity()));
     }
 
     private static Stream<Field> fieldStream(SDDocumentType documentType) {

@@ -1,0 +1,15 @@
+schema importedschema {
+
+    document importedschema {
+
+        field importedfield1 type string {
+           indexing: attribute
+        }
+
+        field importedfield2 type string {
+           indexing: attribute
+        }
+
+    }
+
+}

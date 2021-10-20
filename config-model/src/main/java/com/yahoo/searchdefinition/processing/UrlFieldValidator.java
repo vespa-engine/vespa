@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -13,19 +13,19 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class UrlFieldValidator extends Processor {
 
-    public UrlFieldValidator(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public UrlFieldValidator(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        for (ImmutableSDField field : search.allConcreteFields()) {
+        for (ImmutableSDField field : schema.allConcreteFields()) {
             if  ( ! field.getDataType().equals(DataType.URI)) continue;
 
             if (field.doesAttributing())
-                throw new IllegalArgumentException("Error in " + field + " in " + search + ": " +
+                throw new IllegalArgumentException("Error in " + field + " in " + schema + ": " +
                                                    "uri type fields cannot be attributes");
         }
 

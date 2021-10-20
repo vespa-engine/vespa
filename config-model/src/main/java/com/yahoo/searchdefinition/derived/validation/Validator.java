@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived.validation;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 
 /**
@@ -10,11 +10,11 @@ import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 public abstract class Validator {
 
     protected DerivedConfiguration config;
-    protected Search search;
+    protected Schema schema;
 
-    protected Validator(DerivedConfiguration config, Search search) {
+    protected Validator(DerivedConfiguration config, Schema schema) {
         this.config = config;
-        this.search = search;
+        this.schema = schema;
     }
 
     public abstract void validate();
