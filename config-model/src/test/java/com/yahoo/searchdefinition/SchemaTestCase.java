@@ -134,6 +134,7 @@ public class SchemaTestCase {
                 "  import field parentschema_ref.name as child_imported {}" +
                 "}");
 
+        System.out.println(parentLines);
         SearchBuilder builder = new SearchBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere

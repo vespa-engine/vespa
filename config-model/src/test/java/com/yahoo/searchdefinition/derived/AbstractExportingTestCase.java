@@ -50,7 +50,8 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                                                properties,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry(),
-                                                               new ImportedMlModels(), new InThreadExecutorService());
+                                                               new ImportedMlModels(),
+                                                               new InThreadExecutorService());
         return export(dirName, builder, config);
     }
 

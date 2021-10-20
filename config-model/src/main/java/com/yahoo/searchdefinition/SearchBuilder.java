@@ -418,6 +418,7 @@ public class SearchBuilder {
         return builder;
     }
 
+
     public static SearchBuilder createFromDirectory(String dir, FileRegistry fileRegistry, DeployLogger logger, ModelContext.Properties properties) throws IOException, ParseException {
         return createFromDirectory(dir, fileRegistry, logger, properties, new RankProfileRegistry());
     }
@@ -434,7 +435,8 @@ public class SearchBuilder {
                                                      ModelContext.Properties properties,
                                                      RankProfileRegistry rankProfileRegistry,
                                                      QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
-        return createFromDirectory(dir, MockApplicationPackage.fromSearchDefinitionDirectory(dir), fileRegistry, logger, properties, rankProfileRegistry, queryProfileRegistry);
+        return createFromDirectory(dir, MockApplicationPackage.fromSearchDefinitionAndRootDirectory(dir), fileRegistry, logger, properties,
+                                   rankProfileRegistry, queryProfileRegistry);
     }
 
     private static SearchBuilder createFromDirectory(String dir,

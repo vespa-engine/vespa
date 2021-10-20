@@ -107,7 +107,7 @@ public class OnnxModelInfo {
                     unboundSizes.add(size);
                     if (unboundSizes.size() > 1) {
                         throw new IllegalArgumentException("Found conflicting sizes for unbound dimension " +
-                                "for type '" + onnxType + "'");
+                                                           "for type '" + onnxType + "'");
                     }
 
                 // Handle dimensions with symbolic names
@@ -115,7 +115,7 @@ public class OnnxModelInfo {
                     String symbolicName = onnxType.dimensions().get(i).getSymbolicName();
                     if (symbolicSizes.containsKey(symbolicName) && ! symbolicSizes.get(symbolicName).equals(size)) {
                         throw new IllegalArgumentException("Found conflicting sizes for symbolic dimension '" +
-                                symbolicName + "' for input '" + onnxName + "'");
+                                                           symbolicName + "' for input '" + onnxName + "'");
                     }
                     symbolicSizes.put(symbolicName, size);
                 }
@@ -131,7 +131,7 @@ public class OnnxModelInfo {
         if (app.getFile(generatedModelInfoPath(pathInApplicationPackage)).exists()) {
             return loadFromGeneratedInfo(pathInApplicationPackage, app);
         }
-        throw new IllegalArgumentException("Unable to find ONNX model file or generated ONNX info file");
+        throw new IllegalArgumentException("Unable to find ONNX model '" +  path + "'");
     }
 
     static public boolean modelExists(String path, ApplicationPackage app) {
