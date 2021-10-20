@@ -2,14 +2,15 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
 import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.attribute.UserPrincipalNotFoundException;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrincipalLookupService.ContainerUserPrincipal;
 import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrincipalLookupService.ContainerGroupPrincipal;
+import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrincipalLookupService.ContainerUserPrincipal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -18,9 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class ContainerUserPrincipalLookupServiceTest {
 
-    private final UserNamespace userNamespace = new UserNamespace(10_000, 11_000, "vespa", "users", 1000, 100);
+    private final UserNamespace userNamespace = new UserNamespace(10_000, 11_000);
+    private final VespaUser vespaUser = new VespaUser("vespa", "users", 1000, 100);
     private final ContainerUserPrincipalLookupService userPrincipalLookupService =
-            new ContainerUserPrincipalLookupService(TestFileSystem.create().getUserPrincipalLookupService(), userNamespace);
+            new ContainerUserPrincipalLookupService(TestFileSystem.create().getUserPrincipalLookupService(), userNamespace, vespaUser);
 
     @Test
     public void correctly_resolves_ids() throws IOException {
