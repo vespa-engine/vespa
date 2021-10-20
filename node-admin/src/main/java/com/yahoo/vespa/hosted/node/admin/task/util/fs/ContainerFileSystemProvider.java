@@ -44,17 +44,11 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 class ContainerFileSystemProvider extends FileSystemProvider {
     private final ContainerFileSystem containerFs;
     private final ContainerUserPrincipalLookupService userPrincipalLookupService;
-    private final Path containerRootOnHost;
 
     ContainerFileSystemProvider(Path containerRootOnHost, UserNamespace userNamespace, VespaUser vespaUser) {
-        this.containerFs = new ContainerFileSystem(this);
+        this.containerFs = new ContainerFileSystem(this, containerRootOnHost);
         this.userPrincipalLookupService = new ContainerUserPrincipalLookupService(
                 containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userNamespace, vespaUser);
-        this.containerRootOnHost = containerRootOnHost;
-    }
-
-    public Path containerRootOnHost() {
-        return containerRootOnHost;
     }
 
     public ContainerUserPrincipalLookupService userPrincipalLookupService() {
@@ -224,6 +218,16 @@ class ContainerFileSystemProvider extends FileSystemProvider {
             }
         } // else basic file attribute
         return value;
+    }
+
+    void createFileSystemRoot() {
+        ContainerPath root = containerFs.getPath("/");
+        if (!Files.exists(root)) {
+            uncheck(() -> {
+                Files.createDirectories(root.pathOnHost());
+                fixOwnerToContainerRoot(root);
+            });
+        }
     }
 
     private void fixOwnerToContainerRoot(ContainerPath path) throws IOException {
