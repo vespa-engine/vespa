@@ -136,7 +136,7 @@ public class DocumentV1ApiTest {
         access = new MockDocumentAccess(docConfig);
         metric = new NullMetric();
         metrics = new MetricReceiver.MockReceiver();
-        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig);
+        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig, 1);
     }
 
     @After
@@ -752,7 +752,7 @@ public class DocumentV1ApiTest {
     @Test
     public void testThroughput() throws InterruptedException {
         DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder().build();
-        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig);
+        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig, 1);
 
         int writers = 4;
         int queueFill = executorConfig.maxThrottled() - writers;
@@ -803,7 +803,7 @@ public class DocumentV1ApiTest {
             replier.schedule(() -> parameters.responseHandler().get().handleResponse(success), 10, TimeUnit.MILLISECONDS);
             return new Result(0);
         });
-        // Send the rest of the documents. Rely on resender to empty queue of throttled oppperations.
+        // Send the rest of the documents. Rely on resender to empty queue of throttled operations.
         for (int i = queueFill; i < docs; i++) {
             int j = i;
             writer.execute(() -> {
