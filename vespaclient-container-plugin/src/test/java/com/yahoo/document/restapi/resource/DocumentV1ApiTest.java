@@ -252,7 +252,7 @@ public class DocumentV1ApiTest {
         access.expect(parameters -> {
             assertEquals("content", parameters.getRoute().toString());
             assertEquals("default", parameters.getBucketSpace());
-            assertEquals(1024, parameters.getMaxTotalHits());
+            assertEquals(1025, parameters.getMaxTotalHits()); // Not bounded likewise for streaming responses.
             assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
