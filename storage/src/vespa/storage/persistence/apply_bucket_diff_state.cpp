@@ -1,64 +1,50 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "apply_bucket_diff_state.h"
-#include "apply_bucket_diff_entry_result.h"
 #include "mergehandler.h"
+#include <vespa/document/base/documentid.h>
+#include <vespa/persistence/spi/result.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
+using storage::spi::Result;
 
 namespace storage {
 
 ApplyBucketDiffState::ApplyBucketDiffState(const MergeBucketInfoSyncer& merge_bucket_info_syncer, const spi::Bucket& bucket)
-    : _async_results(),
-      _merge_bucket_info_syncer(merge_bucket_info_syncer),
+    : _merge_bucket_info_syncer(merge_bucket_info_syncer),
       _bucket(bucket),
-      _stale_bucket_info(false)
+      _fail_message(),
+      _failed_flag(),
+      _stale_bucket_info(false),
+      _promise()
 {
 }
 
 ApplyBucketDiffState::~ApplyBucketDiffState()
 {
-    wait();
     try {
         sync_bucket_info();
-    } catch (std::exception&) {
-    } 
-}
-
-bool
-ApplyBucketDiffState::empty() const
-{
-    return _async_results.empty();
-}
-
-void
-ApplyBucketDiffState::wait()
-{
-    if (!_async_results.empty()) {
-        _async_results.back().wait();
-    }
-    for (auto &result_to_check : _async_results) {
-        result_to_check.wait();
-    }
-}
-
-void
-ApplyBucketDiffState::check()
-{
-    wait();
-    try {
-        for (auto& result_to_check : _async_results) {
-            result_to_check.check_result();
+    } catch (std::exception& e) {
+        if (_fail_message.empty()) {
+            _fail_message = e.what();
         }
-    } catch (std::exception&) {
-        _async_results.clear();
-        throw;
     }
-    _async_results.clear();
+    if (_promise.has_value()) {
+        _promise.value().set_value(_fail_message);
+    }
 }
 
 void
-ApplyBucketDiffState::push_back(ApplyBucketDiffEntryResult&& result)
+ApplyBucketDiffState::on_entry_complete(std::unique_ptr<Result> result, const document::DocumentId &doc_id, const char *op)
 {
-    _async_results.push_back(std::move(result));
+    if (result->hasError() && !_failed_flag.test_and_set()) {
+        vespalib::asciistream ss;
+        ss << "Failed " << op
+           << " for " << doc_id.toString()
+           << " in " << _bucket
+           << ": " << result->toString();
+        _fail_message = ss.str();
+    }
 }
 
 void
@@ -74,6 +60,13 @@ ApplyBucketDiffState::sync_bucket_info()
         _merge_bucket_info_syncer.sync_bucket_info(_bucket);
         _stale_bucket_info = false;
     }
+}
+
+std::future<vespalib::string>
+ApplyBucketDiffState::get_future()
+{
+    _promise = std::promise<vespalib::string>();
+    return _promise.value().get_future();
 }
 
 }

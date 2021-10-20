@@ -3,7 +3,6 @@
 #include "mergehandler.h"
 #include "persistenceutil.h"
 #include "apply_bucket_diff_entry_complete.h"
-#include "apply_bucket_diff_entry_result.h"
 #include "apply_bucket_diff_state.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
@@ -95,6 +94,17 @@ struct DiffEntryTimestampPredicate {
         return e._entry._timestamp < timestamp;
     }
 };
+
+
+void check_apply_diff_sync(std::shared_ptr<ApplyBucketDiffState> async_results) {
+    auto future = async_results->get_future();
+    async_results.reset();
+    future.wait();
+    auto fail_message = future.get();
+    if (!fail_message.empty()) {
+        throw std::runtime_error(fail_message);
+    }
+}
 
 } // anonymous namespace
 
@@ -483,27 +493,24 @@ MergeHandler::deserializeDiffDocument(
     return doc;
 }
 
-ApplyBucketDiffEntryResult
-MergeHandler::applyDiffEntry(const spi::Bucket& bucket,
+void
+MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results,
+                             const spi::Bucket& bucket,
                              const api::ApplyBucketDiffCommand::Entry& e,
                              spi::Context& context,
                              const document::DocumentTypeRepo& repo) const
 {
-    std::promise<std::unique_ptr<spi::Result>> result_promise;
-    auto future_result = result_promise.get_future();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
         Document::SP doc(deserializeDiffDocument(e, repo));
         DocumentId docId = doc->getId();
-        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock, _env._metrics.merge_handler_metrics.put_latency);
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), std::move(docId), "put", _clock, _env._metrics.merge_handler_metrics.put_latency);
         _spi.putAsync(bucket, timestamp, std::move(doc), context, std::move(complete));
-        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "put");
     } else {
         DocumentId docId(e._docName);
-        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(result_promise), _clock, _env._metrics.merge_handler_metrics.remove_latency);
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), std::move(docId), "remove", _clock, _env._metrics.merge_handler_metrics.remove_latency);
         _spi.removeAsync(bucket, timestamp, docId, context, std::move(complete));
-        return ApplyBucketDiffEntryResult(std::move(future_result), bucket, std::move(docId), "remove");
     }
 }
 
@@ -516,7 +523,7 @@ MergeHandler::applyDiffLocally(
         std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
         uint8_t nodeIndex,
         spi::Context& context,
-        ApplyBucketDiffState& async_results) const
+        std::shared_ptr<ApplyBucketDiffState> async_results) const
 {
     // Sort the data to apply by which file they should be added to
     LOG(spam, "Merge(%s): Applying data locally. Diff has %zu entries",
@@ -527,7 +534,7 @@ MergeHandler::applyDiffLocally(
     uint32_t addedCount = 0;
     uint32_t notNeededByteCount = 0;
 
-    async_results.mark_stale_bucket_info();
+    async_results->mark_stale_bucket_info();
     std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
 
@@ -565,7 +572,7 @@ MergeHandler::applyDiffLocally(
             ++i;
             LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
                 bucket.toString().c_str(), e.toString().c_str());
-            async_results.push_back(applyDiffEntry(bucket, e, context, repo));
+            applyDiffEntry(async_results, bucket, e, context, repo);
         } else {
             assert(spi::Timestamp(e._entry._timestamp) == existing.getTimestamp());
             // Diffing for existing timestamp; should either both be put
@@ -578,7 +585,7 @@ MergeHandler::applyDiffLocally(
                     "timestamp in %s. Diff slot: %s. Existing slot: %s",
                     bucket.toString().c_str(), e.toString().c_str(),
                     existing.toString().c_str());
-                async_results.push_back(applyDiffEntry(bucket, e, context, repo));
+                applyDiffEntry(async_results, bucket, e, context, repo);
             } else {
                 // Duplicate put, just ignore it.
                 LOG(debug, "During diff apply, attempting to add slot "
@@ -610,7 +617,7 @@ MergeHandler::applyDiffLocally(
         LOG(spam, "ApplyBucketDiff(%s): Adding slot %s",
             bucket.toString().c_str(), e.toString().c_str());
 
-        async_results.push_back(applyDiffEntry(bucket, e, context, repo));
+        applyDiffEntry(async_results, bucket, e, context, repo);
         byteCount += e._headerBlob.size() + e._bodyBlob.size();
     }
     if (byteCount + notNeededByteCount != 0) {
@@ -1204,7 +1211,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     tracker->setMetric(_env._metrics.applyBucketDiff);
 
     spi::Bucket bucket(cmd.getBucket());
-    ApplyBucketDiffState async_results(*this, bucket);
+    auto async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket);
     LOG(debug, "%s", cmd.toString().c_str());
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
@@ -1229,8 +1236,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
        applyDiffLocally(bucket, cmd.getDiff(), index, tracker->context(), async_results);
         _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
-        async_results.check();
-        async_results.sync_bucket_info();
+        check_apply_diff_sync(std::move(async_results));
     } else {
         LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u).",
             bucket.toString().c_str(), _env._nodeIndex, index);
@@ -1289,7 +1295,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
     (void) tracker;
     _env._metrics.applyBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket());
-    ApplyBucketDiffState async_results(*this, bucket);
+    auto async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket);
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());
 
@@ -1325,8 +1331,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
                 framework::MilliSecTimer startTime(_clock);
                 applyDiffLocally(bucket, diff, index, s->context, async_results);
                 _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(startTime.getElapsedTimeAsDouble());
-                async_results.check();
-                async_results.sync_bucket_info();
+                check_apply_diff_sync(std::move(async_results));
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
                     bucket.toString().c_str(),
