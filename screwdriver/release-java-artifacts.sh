@@ -51,10 +51,10 @@ STG_REPO=$(cat $TMPFILE | grep 'Staging repository at http' | head -1 | awk -F/ 
 rm -f $TMPFILE
 
 # Deploy plugins
-mvn $COMMON_MAVEN_OPTS --file ./maven-plugins/pom.xml -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
+mvn $COMMON_MAVEN_OPTS --file ./maven-plugins/pom.xml -DskipLocalStaging=true -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
 
 # Deploy the rest of the artifacts
-mvn $COMMON_MAVEN_OPTS --threads 1C -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
+mvn $COMMON_MAVEN_OPTS --threads 1C -DskipLocalStaging=true -DskipStagingRepositoryClose=true -DstagingRepositoryId=$STG_REPO deploy
 
 # Close with checks
 mvn $COMMON_MAVEN_OPTS -N org.sonatype.plugins:nexus-staging-maven-plugin:rc-close -DnexusUrl=https://oss.sonatype.org/ -DserverId=ossrh -DstagingRepositoryId=$STG_REPO
