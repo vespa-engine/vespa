@@ -241,7 +241,7 @@ class QTest extends Specification {
             .build()
 
         expect:
-        q == """yql=select * from sd1 where weakAnd(f1, f1 contains "v1", f2 contains "v2") and ([{"scoreThreshold":0.13}]weakAnd(f3, f1 contains "v1", f2 contains "v2"));"""
+        q == """yql=select * from sd1 where weakAnd(f1 contains "v1", f2 contains "v2") and ([{"scoreThreshold":0.13}]weakAnd(f1 contains "v1", f2 contains "v2"));"""
     }
 
     def "geo location"() {
