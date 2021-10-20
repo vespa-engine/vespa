@@ -4,6 +4,7 @@ package com.yahoo.document.restapi.resource;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
+import com.yahoo.document.BucketId;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
@@ -37,6 +38,7 @@ import com.yahoo.documentapi.UpdateResponse;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorDestinationParameters;
 import com.yahoo.documentapi.VisitorDestinationSession;
+import com.yahoo.documentapi.VisitorIterator;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorResponse;
 import com.yahoo.documentapi.VisitorSession;
@@ -245,18 +247,82 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
+        // GET at root is a visit. Streaming mode can be specified with &streaming=true
+        access.expect(tokens);
+        access.expect(parameters -> {
+            assertEquals("content", parameters.getRoute().toString());
+            assertEquals("default", parameters.getBucketSpace());
+            assertEquals(1024, parameters.getMaxTotalHits());
+            assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
+            assertEquals("[id]", parameters.getFieldSet());
+            assertEquals("(all the things)", parameters.getDocumentSelection());
+            assertEquals(6000, parameters.getSessionTimeoutMs());
+            // Put some documents in the response
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
+            VisitorStatistics statistics = new VisitorStatistics();
+            statistics.setBucketsVisited(1);
+            statistics.setDocumentsVisited(3);
+            parameters.getControlHandler().onVisitorStatistics(statistics);
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
+        });
+        response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
+                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&streaming=true");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1\"," +
+                       "  \"documents\": [" +
+                       "    {" +
+                       "      \"id\": \"id:space:music::one\"," +
+                       "      \"fields\": {" +
+                       "        \"artist\": \"Tom Waits\"" +
+                       "      }" +
+                       "    }," +
+                       "    {" +
+                       "      \"id\": \"id:space:music:n=1:two\"," +
+                       "      \"fields\": {" +
+                       "        \"artist\": \"Asa-Chan & Jun-Ray\"" +
+                       "      }" +
+                       "    }," +
+                       "    {" +
+                       "     \"id\": \"id:space:music:g=a:three\"," +
+                       "     \"fields\": {}" +
+                       "    }" +
+                       "  ]," +
+                       "  \"documentCount\": 3" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
+
         // GET with namespace and document type is a restricted visit.
+        ProgressToken progress = new ProgressToken();
+        VisitorIterator.createFromExplicitBucketSet(Set.of(new BucketId(1), new BucketId(2)), 8, progress)
+                       .update(new BucketId(1), new BucketId(1));
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space')", parameters.getDocumentSelection());
-            assertEquals(new ProgressToken().serializeToString(), parameters.getResumeToken().serializeToString());
+            assertEquals(progress.serializeToString(), parameters.getResumeToken().serializeToString());
             throw new IllegalArgumentException("parse failure");
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?continuation=" + new ProgressToken().serializeToString());
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?continuation=" + progress.serializeToString());
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"," +
                        "  \"message\": \"parse failure\"" +
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
+
+        // GET when a streaming visit returns status code 200 also when errors occur.
+        access.expect(parameters -> {
+            assertEquals("(music) and (id.namespace=='space')", parameters.getDocumentSelection());
+            parameters.getControlHandler().onProgress(progress);
+            parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "failure?");
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?streaming=true");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid\"," +
+                       "  \"documents\": []," +
+                       //"  \"continuation\": \"" + progress.serializeToString() + "\"," +
+                       "  \"message\": \"failure?\"" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
 
         // POST with namespace and document type is a restricted visit with a required destination cluster ("destinationCluster")
         access.expect(parameters -> {
