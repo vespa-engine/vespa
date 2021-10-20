@@ -36,6 +36,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * This is the util class for the plugin's code.
+ * @author shahariel
+ */
 public class SdUtil {
     
     public static @NotNull HashMap<String, List<PsiElement>> createMacrosMap(SdFile file) {

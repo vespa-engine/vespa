@@ -33,7 +33,6 @@
         <elementDescriptionProvider implementation="org.intellij.sdk.language.psi.SdElementDescriptionProvider"/>
 
         <lang.psiStructureViewFactory language="Sd" implementationClass="org.intellij.sdk.language.structure.SdStructureViewFactory"/>
-        <lang.formatter language="Sd" implementationClass="org.intellij.sdk.language.SdFormattingModelBuilder"/>
         <codeStyleSettingsProvider implementation="org.intellij.sdk.language.SdCodeStyleSettingsProvider"/>
         <langCodeStyleSettingsProvider implementation="org.intellij.sdk.language.SdLanguageCodeStyleSettingsProvider"/>
         <lang.commenter language="Sd" implementationClass="org.intellij.sdk.language.SdCommenter"/>

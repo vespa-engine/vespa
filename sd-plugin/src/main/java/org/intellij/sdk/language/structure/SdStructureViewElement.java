@@ -20,6 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class is used for the presentation of an element in the "Structure View" window.
+ * @author shahariel
+ */
 public class SdStructureViewElement implements StructureViewTreeElement, SortableTreeElement {
     
     private final NavigatablePsiElement myElement;

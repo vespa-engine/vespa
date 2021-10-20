@@ -4,7 +4,9 @@ import com.intellij.lang.Commenter;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This class enables turning a line into a comment with "Code -> Comment with line comment"
+ * This class is used for the extension (in plugin.xml), to enable turning a line into a comment with 
+ * "Code -> Comment with line comment".
+ * @author shahariel
  */
 public class SdCommenter implements Commenter {
     

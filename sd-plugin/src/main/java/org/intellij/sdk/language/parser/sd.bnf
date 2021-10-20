@@ -1,3 +1,9 @@
+/**
+This file is the SD grammar. 
+NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats it like zero-to-many)
+@author: shahariel
+ */
+
 {
     parserClass="org.intellij.sdk.language.parser.SdParser" // Name and the location of the parser which will be generated.
 
@@ -33,8 +39,6 @@
         WORD_REG = 'regexp:\w+'
     ]
 }
-
-// NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats it like zero-to-many)
 
 SdFile ::= SchemaDefinition
 SchemaDefinition ::= (search | schema) IdentifierVal? '{' SchemaBody '}'
@@ -322,13 +326,13 @@ KeywordOrIdentifier ::= schema | search | document | struct | field | type | ind
                         function | macro | inline | text | exact | word | prefix | cased | uncased | substring | suffix | 
                         gram | paged | mutable | alias | sorting | strength | locale | uca | lowercase |
                         primary | secondary | tertiary | quaternary | identical | rank | filter | normal | none | full | dynamic | 
-                        source | to | strict | loose | //execute |
+                        source | to | strict | loose |
                         bolding | on | off | true | false | id | normalizing | stemming | arity | hnsw | dictionary | hash | btree |
                         fieldset | fields | constant | annotation
-                        // KeywordNotIdentifier ::= (not enforced in this version)
                         | attribute | body | header | index | 
                         reference | summary                         
 
+// Note- in this form, those keywords can't be use as identifier-with-dash!
 KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features | from-disk | rank-profile | rank-type |
                          num-threads-per-search | termwise-limit | ignore-default-rank-features | min-hits-per-thread | 
                          num-search-partition | match-phase | max-hits | second-phase | rerank-count | min-groups | 

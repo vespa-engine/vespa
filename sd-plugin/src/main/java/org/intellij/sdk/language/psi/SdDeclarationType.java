@@ -1,5 +1,9 @@
 package org.intellij.sdk.language.psi;
 
+/**
+ * This Enum describes the different declarations' types and their names.
+ * @author shahariel
+ */
 public enum SdDeclarationType {
     DOCUMENT("Document"),
     STRUCT("Struct"),

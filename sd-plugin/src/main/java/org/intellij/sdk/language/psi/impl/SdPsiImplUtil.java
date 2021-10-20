@@ -42,8 +42,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.Icon;
 
 /**
- * In this class there are implementations of methods from rules in the .bnf file. While generating the psi files
+ * In this class there are implementations of methods of rules in the .bnf file. While generating the psi files
  * (classes and interfaces) the implementations would be taken from here.
+ * @author shahariel
  */
 public class SdPsiImplUtil {
     

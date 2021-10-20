@@ -16,6 +16,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * This class is used for the extension (in plugin.xml) to enable "Go To Symbol" feature.
+ * @author shahariel
+ */
 public class SdChooseByNameContributor implements ChooseByNameContributor {
     
     @Override
