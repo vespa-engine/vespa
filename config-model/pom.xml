@@ -113,7 +113,7 @@
         </exclusion>
         <exclusion>
           <groupId>org.apache.velocity</groupId>
-          <artifactId>velocity</artifactId>
+          <artifactId>velocity-engine-core</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
