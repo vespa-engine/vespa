@@ -387,6 +387,8 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     // Called by executor thread during reconfig.
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     setFS4Compression(protonConfig);
+    _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
+    _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
 
     _queryLimiter.configure(protonConfig.search.memory.limiter.maxthreads,
                             protonConfig.search.memory.limiter.mincoverage,
