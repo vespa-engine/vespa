@@ -10,8 +10,10 @@ import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.indexing.FileBasedIndex;
+import org.intellij.sdk.language.psi.SdAnnotationFieldDefinition;
 import org.intellij.sdk.language.psi.SdArgumentDefinition;
 import org.intellij.sdk.language.psi.SdDeclaration;
+import org.intellij.sdk.language.psi.SdDocumentAnnotationDefinition;
 import org.intellij.sdk.language.psi.SdDocumentDefinition;
 import org.intellij.sdk.language.psi.SdDocumentFieldDefinition;
 import org.intellij.sdk.language.psi.SdDocumentStructDefinition;
@@ -23,6 +25,7 @@ import org.intellij.sdk.language.psi.SdFunctionDefinition;
 import org.intellij.sdk.language.psi.SdIdentifier;
 import org.intellij.sdk.language.psi.SdImportFieldDefinition;
 import org.intellij.sdk.language.psi.SdRankProfileDefinition;
+import org.intellij.sdk.language.psi.SdSchemaAnnotationDefinition;
 import org.intellij.sdk.language.psi.SdSchemaFieldDefinition;
 import org.intellij.sdk.language.psi.SdSummaryDefinition;
 import org.intellij.sdk.language.psi.SdTypes;
@@ -33,6 +36,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * This is the util class for the plugin's code.
+ * @author shahariel
+ */
 public class SdUtil {
     
     public static @NotNull HashMap<String, List<PsiElement>> createMacrosMap(SdFile file) {
@@ -110,12 +117,12 @@ public class SdUtil {
         if (element.getParent() instanceof SdImportFieldDefinition &&
             element.getNextSibling().getNextSibling().getText().equals("as")) {
             Project project = file.getProject();
-    
+            
             PsiReference docFieldRef = element.getPrevSibling().getPrevSibling().getReference();
             PsiElement docField = docFieldRef != null ? docFieldRef.resolve() : null;
             SdFieldTypeName fieldType = docField != null ? PsiTreeUtil.findChildOfType(docField, SdFieldTypeName.class) : null;
             SdIdentifier docIdentifier = fieldType != null ? PsiTreeUtil.findChildOfType(fieldType, SdIdentifier.class) : null;
-            String docName = docIdentifier != null ? docIdentifier.getName() : null;    
+            String docName = docIdentifier != null ? docIdentifier.getName() : null;
             if (docName == null) {
                 return result;
             }
@@ -165,8 +172,8 @@ public class SdUtil {
                 curRankProfile = getRankProfileParent((SdRankProfileDefinition) curRankProfile);
             }
         }
-
-        for (PsiElement declaration : PsiTreeUtil.collectElements(file, psiElement -> 
+        
+        for (PsiElement declaration : PsiTreeUtil.collectElements(file, psiElement ->
             psiElement instanceof SdDeclaration && !(psiElement instanceof SdArgumentDefinition))) {
             if (name.equals(((SdDeclaration) declaration).getName())) {
                 result.add((SdDeclaration) declaration);
@@ -183,30 +190,33 @@ public class SdUtil {
     
     public static List<PsiElement> findSchemaChildren(PsiElement element) {
         return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, new Class[]{SdDocumentDefinition.class,
-                                                                                   SdSchemaFieldDefinition.class,
-                                                                                   SdImportFieldDefinition.class,
-                                                                                   SdDocumentSummaryDefinition.class,
-                                                                                   SdRankProfileDefinition.class}));
+                                                                                      SdSchemaFieldDefinition.class,
+                                                                                      SdImportFieldDefinition.class,
+                                                                                      SdSchemaAnnotationDefinition.class,
+                                                                                      SdDocumentSummaryDefinition.class,
+                                                                                      SdRankProfileDefinition.class}));
+    }
+    
+    public static List<PsiElement> findAnnotationChildren(PsiElement element) {
+        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, SdAnnotationFieldDefinition.class));
     }
     
     public static List<PsiElement> findDocumentChildren(PsiElement element) {
-        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, new Class[]{SdDocumentStructDefinition.class, 
-                                                                                   SdDocumentFieldDefinition.class}));
+        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, new Class[]{SdDocumentStructDefinition.class,
+                                                                                      SdDocumentAnnotationDefinition.class,
+                                                                                      SdDocumentFieldDefinition.class}));
     }
     
     public static List<PsiElement> findDocumentStructChildren(PsiElement element) {
-        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element,
-                                                                 SdDocumentStructFieldDefinition.class));
+        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, SdDocumentStructFieldDefinition.class));
     }
     
     public static List<PsiElement> findRankProfileChildren(PsiElement element) {
-        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element,
-                                                                 SdFunctionDefinition.class));
+        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, SdFunctionDefinition.class));
     }
     
     public static List<PsiElement> findDocumentSummaryChildren(PsiElement element) {
-        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element,
-                                                                 SdSummaryDefinition.class));
+        return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, SdSummaryDefinition.class));
     }
     
     

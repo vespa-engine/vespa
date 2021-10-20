@@ -15,7 +15,10 @@ import org.intellij.sdk.language.psi.SdRankProfileDefinition;
 import java.util.Comparator;
 import java.util.HashSet;
 
-
+/**
+ * This class is util class to the Call Hierarchy feature.
+ * @author shahariel
+ */
 public class SdHierarchyUtil {
     
     private static final Comparator<NodeDescriptor<?>> NODE_DESCRIPTOR_COMPARATOR = Comparator.comparingInt(NodeDescriptor::getIndex);

@@ -12,6 +12,10 @@ import org.intellij.sdk.language.psi.SdDocumentSummaryDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class represent a Document Summary that groups elements in the "Find Usages" window.
+ * @author shahariel
+ */
 public class SdDocumentSummaryGroupingRule extends SingleParentUsageGroupingRule implements DumbAware {
     
     @Override

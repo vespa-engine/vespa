@@ -7,6 +7,9 @@ import com.intellij.ide.util.treeView.smartTree.Sorter;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This class represents the "Structure View" window.
+ */
 public class SdStructureViewModel extends StructureViewModelBase implements StructureViewModel.ElementInfoProvider {
     public SdStructureViewModel(PsiFile psiFile) {
         super(psiFile, new SdStructureViewElement(psiFile));

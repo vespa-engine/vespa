@@ -20,6 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * This class handles creating the "Find Usages" window.
+ * @author shahariel
+ */
 public class SdFindUsagesHandler extends FindUsagesHandler {
     
     protected HashMap<String, List<PsiElement>> macrosMap;

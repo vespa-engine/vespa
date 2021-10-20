@@ -1,12 +1,19 @@
 package org.intellij.sdk.language.lexer;
 
 import com.intellij.lexer.FlexLexer;
-import com.intellij.psi.tree.IElementType;import com.intellij.ui.components.MultiColumnList;import org.intellij.sdk.language.psi.SdTokenType;
+import com.intellij.psi.tree.IElementType;
+import com.intellij.ui.components.MultiColumnList;
+import org.intellij.sdk.language.psi.SdTokenType;
 
-import static com.intellij.psi.TokenType.BAD_CHARACTER; // Pre-defined bad character token.
-import static com.intellij.psi.TokenType.WHITE_SPACE; // Pre-defined whitespace character token.
 import static org.intellij.sdk.language.psi.SdTypes.*; // That is the class which is specified as `elementTypeHolderClass` in bnf 
                                                        // grammar file. This will contain all other tokens which we will use.
+import static com.intellij.psi.TokenType.BAD_CHARACTER; // Pre-defined bad character token.
+import static com.intellij.psi.TokenType.WHITE_SPACE; // Pre-defined whitespace character token.
+
+/*
+* This file is used for the generation of the lexer of the SD language.
+* @author shahariel
+*/
 
 %%
 
@@ -37,11 +44,19 @@ WORD = \w+
 %%
 
 <YYINITIAL> {
-  // In here, we match keywords. So if a keyword is found, this returns a token which corresponds to that keyword.
-  // These tokens are generated using the 'sd.bnf' file and located in the SdTypes class.
-  // These tokens are Parsed uses these return values to match token squence to a parser rule.
+  /**
+   In here, we match keywords. So if a keyword is found, this returns a token which corresponds to that keyword.
+   These tokens are generated using the 'sd.bnf' file and located in the SdTypes class.
+   These tokens are Parsed uses these return values to match token squence to a parser rule.
+   */
+   
+   /**
+    This list of keywords has to be synchronized with sd.bnf file. If you add a keyword here, you should add it to the 
+    sd.bnf file as well (to the rule KeywordOrIdentifier / KeywordNotIdentifier).
+    */
   
   "search"                   { return SEARCH; }
+  "schema"                   { return SCHEMA; }
   "document"                 { return DOCUMENT; }
   "inherits"                 { return INHERITS; }
   "struct"                   { return STRUCT; }
@@ -118,6 +133,10 @@ WORD = \w+
   "max-hits"                 { return MAX_HITS; }
   "diversity"                { return DIVERSITY; }
   "min-groups"               { return MIN_GROUPS; }
+  "cutoff-factor"            { return CUTOFF_FACTOR; }
+  "cutoff-strategy"          { return CUTOFF_STRATEGY; }
+  "loose"                    { return LOOSE; }
+  "strict"                   { return STRICT; }
   "rank-properties"          { return RANK_PROPERTIES; }
   
   "first-phase"              { return FIRST_PHASE; }
@@ -132,7 +151,6 @@ WORD = \w+
   "min-hits-per-thread"      { return MIN_HITS_PER_THREAD; }
   "num-search-partition"     { return NUM_SEARCH_PARTITION; }
   "constants"                { return CONSTANTS; }
-  "literal"                  { return LITERAL; }
   "second-phase"             { return SECOND_PHASE; }
   "rerank-count"             { return RERANK_COUNT; }
 
@@ -170,6 +188,9 @@ WORD = \w+
   "rank-type"                { return RANK_TYPE; }
   "onnx-model"               { return ONNX_MODEL; }
   "raw-as-base64-in-summary" { return RAW_AS_BASE64_IN_SUMMARY; }
+  "on-match"                 { return ON_MATCH; }
+  "on-rank"                  { return ON_RANK; }
+  "on-summary"               { return ON_SUMMARY; }
 
   "function"                 { return FUNCTION; }
   "macro"                    { return MACRO; }

@@ -6,6 +6,10 @@ import com.intellij.usages.rules.UsageGroupingRule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class is used for the extension (in plugin.xml) to the class SdRankProfileGroupingRule.
+ * @author shahariel
+ */
 public class SdRankProfileGroupingRuleProvider implements FileStructureGroupRuleProvider {
 
     @Override

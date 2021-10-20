@@ -7,6 +7,10 @@ import com.intellij.psi.PsiNamedElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class is used for the extension (in plugin.xml) to the class SdFindUsagesHandler.
+ * @author shahariel
+ */
 public class SdFindUsagesHandlerFactory extends FindUsagesHandlerFactory {
     
     @Override
