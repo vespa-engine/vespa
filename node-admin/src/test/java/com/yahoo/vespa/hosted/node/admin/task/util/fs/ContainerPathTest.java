@@ -2,10 +2,17 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
 import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath.fromPathInContainer;
 import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath.fromPathOnHost;
@@ -15,19 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-
 /**
  * @author valerijf
  */
 class ContainerPathTest {
 
     private final FileSystem baseFs = TestFileSystem.create();
-    private final ContainerFileSystem containerFs = ContainerFileSystem.create(baseFs.getPath("/data/storage/ctr1"), mock(UserNamespace.class));
+    private final ContainerFileSystem containerFs = ContainerFileSystem.create(baseFs.getPath("/data/storage/ctr1"), mock(UserNamespace.class), mock(VespaUser.class));
 
     @Test
     public void create_new_container_path() {

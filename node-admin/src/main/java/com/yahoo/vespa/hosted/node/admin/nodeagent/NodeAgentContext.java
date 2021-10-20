@@ -6,10 +6,10 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
@@ -42,7 +42,8 @@ public interface NodeAgentContext extends TaskContext {
 
     ZoneApi zone();
 
-    UserNamespace userNamespace();
+    /** @return information about the Vespa user inside the container */
+    VespaUser vespaUser();
 
     default boolean isDisabled(NodeAgentTask task) {
         return false;

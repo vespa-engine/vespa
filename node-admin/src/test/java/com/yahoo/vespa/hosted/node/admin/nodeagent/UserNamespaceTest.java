@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class UserNamespaceTest {
 
-    private final UserNamespace userNamespace = new UserNamespace(1000, 2000, "vespa", "users", 1000, 100);
+    private final UserNamespace userNamespace = new UserNamespace(1000, 2000);
 
     @Test
     public void translates_between_ids() {
