@@ -364,8 +364,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
-            VisitorParameters parameters = parseGetParameters(request, path);
             boolean streaming = getProperty(request, STREAMING, booleanParser).orElse(false);
+            VisitorParameters parameters = parseGetParameters(request, path, streaming);
             return () -> {
                 visitAndWrite(request, parameters, handler, streaming);
                 return true; // VisitorSession has its own throttle handling.
@@ -972,8 +972,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     // ------------------------------------------------- Visits ------------------------------------------------
 
-    private VisitorParameters parseGetParameters(HttpRequest request, DocumentPath path) {
-        int wantedDocumentCount = Math.min(1 << 10, getProperty(request, WANTED_DOCUMENT_COUNT, integerParser).orElse(1));
+    private VisitorParameters parseGetParameters(HttpRequest request, DocumentPath path, boolean streaming) {
+        int wantedDocumentCount = Math.min(streaming ? Integer.MAX_VALUE : 1 << 10,
+                                           getProperty(request, WANTED_DOCUMENT_COUNT, integerParser)
+                                                   .orElse(streaming ? Integer.MAX_VALUE : 1));
         if (wantedDocumentCount <= 0)
             throw new IllegalArgumentException("wantedDocumentCount must be positive");
 
