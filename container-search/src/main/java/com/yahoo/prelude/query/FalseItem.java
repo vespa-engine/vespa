@@ -15,7 +15,7 @@ public class FalseItem extends Item {
 
     @Override
     public ItemType getItemType() {
-        return ItemType.WORD; // Implemented as a non-matching word as the backend does not support FalseItem
+        return ItemType.FALSE;
     }
 
     @Override
@@ -30,12 +30,11 @@ public class FalseItem extends Item {
     @Override
     public int encode(ByteBuffer buffer) {
         super.encodeThis(buffer);
-        putString(" ", buffer); // searching for space will not match
         return 1;
     }
 
     @Override
-    public int getTermCount() { return 1; }
+    public int getTermCount() { return 0; }
 
     @Override
     protected void appendBodyString(StringBuilder buffer) { }
