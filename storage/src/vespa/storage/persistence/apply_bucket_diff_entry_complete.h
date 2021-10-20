@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/document/base/documentid.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/persistence/spi/operationcomplete.h>
 #include <vespa/storageframework/generic/clock/timer.h>
@@ -9,19 +10,22 @@
 
 namespace storage {
 
+class ApplyBucketDiffState;
+
 /*
  * Complete handler for a bucket diff entry spi operation (putAsync
  * or removeAsync)
  */
 class ApplyBucketDiffEntryComplete : public spi::OperationComplete
 {
-    using ResultPromise = std::promise<std::unique_ptr<spi::Result>>;
-    const spi::ResultHandler*     _result_handler;
-    ResultPromise                 _result_promise;
-    framework::MilliSecTimer      _start_time;
-    metrics::DoubleAverageMetric& _latency_metric;
+    const spi::ResultHandler*             _result_handler;
+    std::shared_ptr<ApplyBucketDiffState> _state;
+    document::DocumentId                  _doc_id;
+    const char*                           _op;
+    framework::MilliSecTimer              _start_time;
+    metrics::DoubleAverageMetric&         _latency_metric;
 public:
-    ApplyBucketDiffEntryComplete(ResultPromise result_promise, const framework::Clock& clock, metrics::DoubleAverageMetric& latency_metric);
+    ApplyBucketDiffEntryComplete(std::shared_ptr<ApplyBucketDiffState> state, document::DocumentId doc_id, const char *op, const framework::Clock& clock, metrics::DoubleAverageMetric& latency_metric);
     ~ApplyBucketDiffEntryComplete();
     void onComplete(std::unique_ptr<spi::Result> result) override;
     void addResultHandler(const spi::ResultHandler* resultHandler) override;
