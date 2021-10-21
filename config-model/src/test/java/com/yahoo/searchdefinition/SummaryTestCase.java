@@ -10,6 +10,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -176,8 +177,8 @@ public class SummaryTestCase {
                                                 .map(FieldBase::getName)
                                                 .collect(Collectors.toList());
             assertEquals(testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()),
-                         testValue.parent,
-                         testValue.summary.getInherited());
+                         Optional.ofNullable(testValue.parent),
+                         testValue.summary.inherited());
             assertEquals("Summary " + testValue.summary.getName() + " has expected fields", testValue.fields, actualFields);
         });
     }
