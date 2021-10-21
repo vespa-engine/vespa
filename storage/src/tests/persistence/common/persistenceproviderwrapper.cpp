@@ -5,6 +5,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <sstream>
+#include <iostream>
 
 #define LOG_SPI(ops) \
     { \
@@ -26,7 +27,7 @@
     { \
         Guard guard(_lock); \
         if (_result.getErrorCode() != spi::Result::ErrorType::NONE && (_failureMask & (failType))) { \
-            onError->onComplete(std::make_unique<className>(_result.getErrorCode(), _result.getErrorMessage())); \
+            async_callback<className>(*onError, _result); \
             return; \
         } \
     }
@@ -47,6 +48,19 @@ includedVersionsToString(spi::IncludedVersions versions)
         return "ALL_VERSIONS";
     }
     return "!!UNKNOWN!!";
+}
+
+template <typename ClassName>
+void
+async_callback(storage::spi::OperationComplete& on_error,
+               storage::spi::Result& error_code)
+{
+    try {
+        on_error.onComplete(std::make_unique<ClassName>(error_code.getErrorCode(), error_code.getErrorMessage()));
+    } catch (std::exception &e) {
+        std::cerr << "Unexpected exception from async callback: " << e.what() << std::endl;
+        std::terminate();
+    }
 }
 
 } // anon namespace
