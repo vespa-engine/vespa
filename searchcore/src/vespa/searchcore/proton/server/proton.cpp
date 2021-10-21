@@ -296,8 +296,10 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                  protonConfig.numthreadspersearch,
                                                  protonConfig.distributionkey,
                                                  protonConfig.search.async);
+    _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
     _distributionKey = protonConfig.distributionkey;
-    _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
+    _summaryEngine = std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
+    _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
     _docsumBySlime = std::make_unique<DocsumBySlime>(*_summaryEngine);
 
     IFlushStrategy::SP strategy;
@@ -385,6 +387,8 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     // Called by executor thread during reconfig.
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     setFS4Compression(protonConfig);
+    _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
+    _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
 
     _queryLimiter.configure(protonConfig.search.memory.limiter.maxthreads,
                             protonConfig.search.memory.limiter.mincoverage,
