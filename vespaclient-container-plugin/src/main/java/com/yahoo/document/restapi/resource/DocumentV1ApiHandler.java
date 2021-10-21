@@ -8,6 +8,7 @@ import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.container.core.HandlerMetricContextUtil;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.container.jdisc.MaxPendingContentChannelOutputStream;
 import com.yahoo.document.Document;
@@ -87,6 +88,7 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.ScheduledExecutorService;
@@ -178,11 +180,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final Map<VisitorControlHandler, VisitorSession> visits = new ConcurrentHashMap<>();
     private final ScheduledExecutorService dispatcher = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("document-api-handler-"));
     private final ScheduledExecutorService visitDispatcher = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("document-api-handler-visit-"));
-    private final ScheduledExecutorService visitRenderer;
+    private final Executor defaultExecutor;
     private final Map<String, Map<Method, Handler>> handlers = defineApi();
 
     @Inject
-    public DocumentV1ApiHandler(Metric metric,
+    public DocumentV1ApiHandler(ContainerThreadPool threadPool,
+                                Metric metric,
                                 MetricReceiver metricReceiver,
                                 VespaDocumentAccess documentAccess,
                                 DocumentmanagerConfig documentManagerConfig,
@@ -190,13 +193,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
         this(Clock.systemUTC(), Duration.ofSeconds(5), metric, metricReceiver, documentAccess,
-             documentManagerConfig, executorConfig, clusterListConfig, bucketSpacesConfig,
-             Math.max(2, Runtime.getRuntime().availableProcessors() / 4));
+             documentManagerConfig, executorConfig, clusterListConfig, bucketSpacesConfig, threadPool.executor());
     }
 
     DocumentV1ApiHandler(Clock clock, Duration handlerTimeout, Metric metric, MetricReceiver metricReceiver, DocumentAccess access,
                          DocumentmanagerConfig documentmanagerConfig, DocumentOperationExecutorConfig executorConfig,
-                         ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig bucketSpacesConfig, int visitorRendererThreads) {
+                         ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig bucketSpacesConfig, Executor defaultExecutor) {
         this.clock = clock;
         this.handlerTimeout = handlerTimeout;
         this.parser = new DocumentOperationParser(documentmanagerConfig);
@@ -215,7 +217,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                     executorConfig.resendDelayMillis(),
                                                     executorConfig.resendDelayMillis(),
                                                     TimeUnit.MILLISECONDS);
-        visitRenderer = Executors.newScheduledThreadPool(visitorRendererThreads, new DaemonThreadFactory("document-api-handler-renderer-"));
+        this.defaultExecutor = defaultExecutor;
     }
 
     // ------------------------------------------------ Requests -------------------------------------------------
@@ -275,7 +277,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         // Shut down both dispatchers, so only we empty the queues of outstanding operations, and can be sure they're empty.
         dispatcher.shutdown();
         visitDispatcher.shutdown();
-        visitRenderer.shutdown();
         while ( ! (operations.isEmpty() && visitOperations.isEmpty()) && clock.instant().isBefore(doom)) {
             dispatchEnqueued();
             dispatchVisitEnqueued();
@@ -296,9 +297,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
             if ( ! visitDispatcher.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), TimeUnit.MILLISECONDS))
                 visitDispatcher.shutdownNow();
-
-            if ( ! visitRenderer.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), TimeUnit.MILLISECONDS))
-                visitRenderer.shutdownNow();
         }
         catch (InterruptedException e) {
             log.log(WARNING, "Interrupted waiting for /document/v1 executor to shut down");
@@ -1099,34 +1097,39 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         });
     }
 
-    private void renderDocuments(Deque<Runnable> writes, JsonResponse response, AtomicBoolean done) {
-        synchronized (response) {
-            for (Runnable write; (write = writes.poll()) != null; write.run()) ;
-            if ( ! done.get())
-                visitRenderer.schedule(() -> renderDocuments(writes, response, done), 10, TimeUnit.MILLISECONDS);
-        }
-    }
-
     private void visitAndWrite(HttpRequest request, VisitorParameters parameters, ResponseHandler handler, boolean streaming) {
         visit(request, parameters, streaming, handler, new VisitCallback() {
             final Deque<Runnable> writes = new ConcurrentLinkedDeque<>();
-            final AtomicBoolean done = new AtomicBoolean(false);
+            final AtomicBoolean writing = new AtomicBoolean();
             @Override public void onStart(JsonResponse response) throws IOException {
                 if (streaming)
                     response.commit(Response.Status.OK);
 
                 response.writeDocumentsArrayStart();
-                visitRenderer.schedule(() -> renderDocuments(writes, response, done), 10, TimeUnit.MILLISECONDS);
             }
             @Override public void onDocument(JsonResponse response, Document document, Runnable ack, Consumer<String> onError) {
                 writes.add(() -> {
                     response.writeDocumentValue(document);
                     ack.run();
                 });
+                if (writing.compareAndSet(false, true)) // Occupy only a single thread for writing.
+                    defaultExecutor.execute(() -> {
+                        for (Runnable write; (write = writes.poll()) != null; write.run());
+                        writing.set(false);
+                    });
             }
             @Override public void onEnd(JsonResponse response) throws IOException {
-                done.set(true);
-                renderDocuments(writes, response, done);
+                // Wait for other writers to complete, then write what remains here.
+                while ( ! writing.compareAndSet(false, true)) {
+                    try {
+                        Thread.sleep(1);
+                    }
+                    catch (InterruptedException e) {
+                        log.log(WARNING, "Interrupted waiting for visited documents to be written; this should not happen");
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                for (Runnable write; (write = writes.poll()) != null; write.run());
                 response.writeArrayEnd();
             }
         });
@@ -1144,7 +1147,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             callback.onStart(response);
             VisitorControlHandler controller = new VisitorControlHandler() {
                 @Override public void onDone(CompletionCode code, String message) {
-                    visitRenderer.execute(() -> {
+                    defaultExecutor.execute(() -> {
                         super.onDone(code, message);
                         loggingException(() -> {
                             try (response) {
@@ -1180,10 +1183,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                     response.commit(status);
                             }
                         });
-                        visitDispatcher.execute(() -> {
-                            phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
-                            visits.remove(this).destroy();
-                        });
+                        phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
+                        visits.remove(this).destroy();
                     });
                 }
             };

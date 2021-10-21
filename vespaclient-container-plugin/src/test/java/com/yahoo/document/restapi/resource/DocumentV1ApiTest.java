@@ -136,7 +136,8 @@ public class DocumentV1ApiTest {
         access = new MockDocumentAccess(docConfig);
         metric = new NullMetric();
         metrics = new MetricReceiver.MockReceiver();
-        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig, 1);
+        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
+                                           executorConfig, clusterConfig, bucketConfig, Executors.newFixedThreadPool(2));
     }
 
     @After
@@ -752,7 +753,8 @@ public class DocumentV1ApiTest {
     @Test
     public void testThroughput() throws InterruptedException {
         DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder().build();
-        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig, executorConfig, clusterConfig, bucketConfig, 1);
+        handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
+                                           executorConfig, clusterConfig, bucketConfig, Executors.newFixedThreadPool(2));
 
         int writers = 4;
         int queueFill = executorConfig.maxThrottled() - writers;
