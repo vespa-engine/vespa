@@ -1605,6 +1605,24 @@
     ],
     "fields": []
   },
+  "com.yahoo.prelude.query.TrueItem": {
+    "superClass": "com.yahoo.prelude.query.Item",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void setIndexName(java.lang.String)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
+      "public int encode(java.nio.ByteBuffer)",
+      "public int getTermCount()",
+      "protected void appendBodyString(java.lang.StringBuilder)"
+    ],
+    "fields": []
+  },
   "com.yahoo.prelude.query.UriItem": {
     "superClass": "com.yahoo.prelude.query.PhraseItem",
     "interfaces": [],

@@ -62,6 +62,7 @@ import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
+import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.UriItem;
 import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.WeakAndItem;
@@ -450,10 +451,13 @@ public class YqlParser implements Parser {
 
     private Item buildLiteral(OperatorNode<ExpressionOperator> ast) {
         var literal = ast.getArgument(0);
+        if (Boolean.TRUE.equals(literal)) {
+            return new TrueItem();
+        }
         if (Boolean.FALSE.equals(literal)) {
             return new FalseItem();
         }
-        throw newUnexpectedArgumentException(literal, Boolean.FALSE);
+        throw newUnexpectedArgumentException(literal, Boolean.FALSE, Boolean.TRUE);
     }
 
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
