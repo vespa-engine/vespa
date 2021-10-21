@@ -232,6 +232,12 @@ TEST("require that config can be converted")
     }
     {
         CACA a;
+        EXPECT_EQUAL(130000u, CC::convert(a).getMaxUnCommittedMemory());
+        a.maxuncommittedmemory = 23523;
+        EXPECT_EQUAL(23523u, CC::convert(a).getMaxUnCommittedMemory());
+    }
+    {
+        CACA a;
         EXPECT_TRUE(!CC::convert(a).isMutable());
         a.ismutable = true;
         EXPECT_TRUE(CC::convert(a).isMutable());
