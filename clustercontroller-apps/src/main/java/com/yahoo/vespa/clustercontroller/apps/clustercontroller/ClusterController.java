@@ -53,7 +53,7 @@ public class ClusterController extends AbstractComponent
                 controllers.put(options.clusterName, controller);
                 status.put(options.clusterName, statusPageServer);
             } else {
-                controller.updateOptions(options, 0);
+                controller.updateOptions(options);
             }
         }
     }

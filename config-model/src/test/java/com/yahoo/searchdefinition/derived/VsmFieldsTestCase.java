@@ -6,7 +6,8 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Application;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.TemporarySDField;
@@ -22,13 +23,13 @@ public class VsmFieldsTestCase {
 
     @Test
     public void reference_type_field_is_unsearchable() {
-        Search search = new Search("test", MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
-        search.addDocument(new SDDocumentType("test"));
+        Schema schema = new Schema("test", new Application(MockApplicationPackage.createEmpty()), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+        schema.addDocument(new SDDocumentType("test"));
         SDField refField = new TemporarySDField("ref_field", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("parent_type")));
         refField.parseIndexingScript("{ summary }");
-        search.getDocument().addField(refField);
+        schema.getDocument().addField(refField);
 
-        VsmFields vsmFields = new VsmFields(search);
+        VsmFields vsmFields = new VsmFields(schema);
         VsmfieldsConfig.Builder cfgBuilder = new VsmfieldsConfig.Builder();
         vsmFields.getConfig(cfgBuilder);
         VsmfieldsConfig cfg = cfgBuilder.build();

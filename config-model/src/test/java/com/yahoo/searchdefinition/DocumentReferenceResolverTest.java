@@ -31,28 +31,28 @@ public class DocumentReferenceResolverTest {
     @Test
     public void reference_from_one_document_to_another_is_resolved() {
         // Create bar document with no fields
-        Search barSearch = new Search(BAR);
-        SDDocumentType barDocument = new SDDocumentType(BAR, barSearch);
-        barSearch.addDocument(barDocument);
+        Schema barSchema = new Schema(BAR);
+        SDDocumentType barDocument = new SDDocumentType(BAR, barSchema);
+        barSchema.addDocument(barDocument);
 
         // Create foo document with document reference to bar and add another field
         SDField fooRefToBarField = new SDField
                 ("bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
         AttributeUtils.addAttributeAspect(fooRefToBarField);
         SDField irrelevantField = new SDField("irrelevant_stuff", DataType.INT);
-        Search fooSearch = new Search(FOO);
-        SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
+        Schema fooSchema = new Schema(FOO);
+        SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         fooDocument.addField(fooRefToBarField);
         fooDocument.addField(irrelevantField);
-        fooSearch.addDocument(fooDocument);
+        fooSchema.addDocument(fooDocument);
 
-        DocumentReferenceResolver resolver = new DocumentReferenceResolver(asList(fooSearch, barSearch));
+        DocumentReferenceResolver resolver = new DocumentReferenceResolver(asList(fooSchema, barSchema));
         resolver.resolveReferences(fooDocument);
         assertTrue(fooDocument.getDocumentReferences().isPresent());
 
         Map<String, DocumentReference> fooReferenceMap = fooDocument.getDocumentReferences().get().referenceMap();
         assertEquals(1, fooReferenceMap.size());
-        assertSame(barSearch, fooReferenceMap.get("bar_ref").targetSearch());
+        assertSame(barSchema, fooReferenceMap.get("bar_ref").targetSearch());
         assertSame(fooRefToBarField, fooReferenceMap.get("bar_ref").referenceField());
     }
 
@@ -62,12 +62,12 @@ public class DocumentReferenceResolverTest {
         SDField fooRefToBarField = new SDField(
                 "bar_ref", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("bar")));
         AttributeUtils.addAttributeAspect(fooRefToBarField);
-        Search fooSearch = new Search(FOO);
-        SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
+        Schema fooSchema = new Schema(FOO);
+        SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         fooDocument.addField(fooRefToBarField);
-        fooSearch.addDocument(fooDocument);
+        fooSchema.addDocument(fooDocument);
 
-        DocumentReferenceResolver resolver = new DocumentReferenceResolver(singletonList(fooSearch));
+        DocumentReferenceResolver resolver = new DocumentReferenceResolver(singletonList(fooSchema));
 
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
@@ -78,19 +78,19 @@ public class DocumentReferenceResolverTest {
     @Test
     public void throws_exception_if_reference_is_not_an_attribute() {
         // Create bar document with no fields
-        Search barSearch = new Search(BAR);
-        SDDocumentType barDocument = new SDDocumentType("bar", barSearch);
-        barSearch.addDocument(barDocument);
+        Schema barSchema = new Schema(BAR);
+        SDDocumentType barDocument = new SDDocumentType("bar", barSchema);
+        barSchema.addDocument(barDocument);
 
         // Create foo document with document reference to bar
         SDField fooRefToBarField = new SDField
                 ("bar_ref", ReferenceDataType.createWithInferredId(barDocument.getDocumentType()));
-        Search fooSearch = new Search(FOO);
-        SDDocumentType fooDocument = new SDDocumentType("foo", fooSearch);
+        Schema fooSchema = new Schema(FOO);
+        SDDocumentType fooDocument = new SDDocumentType("foo", fooSchema);
         fooDocument.addField(fooRefToBarField);
-        fooSearch.addDocument(fooDocument);
+        fooSchema.addDocument(fooDocument);
 
-        DocumentReferenceResolver resolver = new DocumentReferenceResolver(asList(fooSearch, barSearch));
+        DocumentReferenceResolver resolver = new DocumentReferenceResolver(asList(fooSchema, barSchema));
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
                 "The field 'bar_ref' is an invalid document reference. The field must be an attribute.");

@@ -1,3 +1,4 @@
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 This directory holds the code for an IntteliJ plugin for reading SD files.
 
 NOTE: This is the source code, not the plugin itself. In order to be able to use the plugin you'll need to download it from JetBrains Marketplace or create a zip file and load it to IntelliJ (details later).

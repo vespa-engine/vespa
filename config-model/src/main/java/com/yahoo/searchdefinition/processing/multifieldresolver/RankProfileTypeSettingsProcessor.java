@@ -9,7 +9,7 @@ import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedField;
@@ -29,8 +29,8 @@ import java.util.Optional;
  */
 public class RankProfileTypeSettingsProcessor extends Processor {
 
-    public RankProfileTypeSettingsProcessor(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public RankProfileTypeSettingsProcessor(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -43,8 +43,8 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processAttributeFields() {
-        if (search == null) return; // we're processing global profiles
-        for (ImmutableSDField field : search.allConcreteFields()) {
+        if (schema == null) return; // we're processing global profiles
+        for (ImmutableSDField field : schema.allConcreteFields()) {
             Attribute attribute = field.getAttributes().get(field.getName());
             if (attribute != null && attribute.tensorType().isPresent()) {
                 addAttributeTypeToRankProfiles(attribute.getName(), attribute.tensorType().get().toString());
@@ -53,8 +53,8 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processImportedFields() {
-        if (search == null) return; // we're processing global profiles
-        Optional<ImportedFields> importedFields = search.importedFields();
+        if (schema == null) return; // we're processing global profiles
+        Optional<ImportedFields> importedFields = schema.importedFields();
         if (importedFields.isPresent()) {
             importedFields.get().fields().forEach((fieldName, field) -> processImportedField(field));
         }
@@ -69,7 +69,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void addAttributeTypeToRankProfiles(String attributeName, String attributeType) {
-        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             profile.addAttributeType(attributeName, attributeType);
         }
     }

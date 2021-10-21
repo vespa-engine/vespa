@@ -3,24 +3,24 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 public class MutableAttributes extends Processor {
 
-    public MutableAttributes(Search search, DeployLogger deployLogger,
+    public MutableAttributes(Schema schema, DeployLogger deployLogger,
                              RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles)
     {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if ( ! field.isExtraField() && field.getAttributes().containsKey(field.getName())) {
                 if (field.getAttributes().get(field.getName()).isMutable()) {
-                    throw new IllegalArgumentException("Field '" + field.getName() + "' in '" + search.getDocument().getName() +
+                    throw new IllegalArgumentException("Field '" + field.getName() + "' in '" + schema.getDocument().getName() +
                                                        "' can not be marked mutable as it is inside the document clause.");
                 }
             }

@@ -57,17 +57,17 @@ public class DocumentModelBuilder {
         return scratchInheritsMap.isEmpty();
     }
 
-    public void addToModel(Collection<Search> searchList) {
+    public void addToModel(Collection<Schema> schemaList) {
         List<SDDocumentType> docList = new LinkedList<>();
-        for (Search search : searchList) {
-            docList.add(search.getDocument());
+        for (Schema schema : schemaList) {
+            docList.add(schema.getDocument());
         }
         docList = sortDocumentTypes(docList);
         addDocumentTypes(docList);
-        for (Collection<Search> toAdd = tryAdd(searchList);
-             ! toAdd.isEmpty() && (toAdd.size() < searchList.size());
-             toAdd = tryAdd(searchList)) {
-            searchList = toAdd;
+        for (Collection<Schema> toAdd = tryAdd(schemaList);
+             ! toAdd.isEmpty() && (toAdd.size() < schemaList.size());
+             toAdd = tryAdd(schemaList)) {
+            schemaList = toAdd;
         }
     }
 
@@ -116,26 +116,26 @@ public class DocumentModelBuilder {
         return out.toString();
     }
 
-    private Collection<Search> tryAdd(Collection<Search> searchList) {
-        Collection<Search> left = new ArrayList<>();
-        for (Search search : searchList) {
+    private Collection<Schema> tryAdd(Collection<Schema> schemaList) {
+        Collection<Schema> left = new ArrayList<>();
+        for (Schema schema : schemaList) {
             try {
-                addToModel(search);
+                addToModel(schema);
             } catch (RetryLaterException e) {
-                left.add(search);
+                left.add(schema);
             }
         }
         return left;
     }
 
-    public void addToModel(Search search) {
+    public void addToModel(Schema schema) {
         // Then we add the search specific stuff
-        SearchDef searchDef = new SearchDef(search.getName());
-        addSearchFields(search.extraFieldList(), searchDef);
-        for (Field f : search.getDocument().fieldSet()) {
+        SearchDef searchDef = new SearchDef(schema.getName());
+        addSearchFields(schema.extraFieldList(), searchDef);
+        for (Field f : schema.getDocument().fieldSet()) {
             addSearchField((SDField) f, searchDef);
         }
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             for (Attribute attribute : field.getAttributes().values()) {
                 if ( ! searchDef.getFields().containsKey(attribute.getName())) {
                     searchDef.add(new SearchField(new Field(attribute.getName(), field), !field.getIndices().isEmpty(), true));
@@ -143,7 +143,7 @@ public class DocumentModelBuilder {
             }
         }
 
-        for (Field f : search.getDocument().fieldSet()) {
+        for (Field f : schema.getDocument().fieldSet()) {
             addAlias((SDField) f, searchDef);
         }
         model.getSearchManager().add(searchDef);
@@ -354,10 +354,10 @@ public class DocumentModelBuilder {
                 throw new IllegalArgumentException("Data type '" + sdoc.getName() + "' is not a struct => tostring='" + sdoc.toString() + "'.");
             }
         }
-        for (AnnotationType annotation : sdoc.getAnnotations()) {
+        for (AnnotationType annotation : sdoc.getAnnotations().values()) {
             dt.add(annotation);
         }
-        for (AnnotationType annotation : sdoc.getAnnotations()) {
+        for (AnnotationType annotation : sdoc.getAnnotations().values()) {
             SDAnnotationType sa = (SDAnnotationType) annotation;
             if (annotation.getInheritedTypes().isEmpty() && (sa.getInherits() != null) ) {
                 annotationInheritance.put(annotation, sa.getInherits());

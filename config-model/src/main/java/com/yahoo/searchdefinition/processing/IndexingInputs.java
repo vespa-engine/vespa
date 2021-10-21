@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
@@ -21,13 +21,13 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class IndexingInputs extends Processor {
 
-    public IndexingInputs(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public IndexingInputs(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;
 
@@ -35,7 +35,7 @@ public class IndexingInputs extends Processor {
             script = (ScriptExpression)new DefaultToCurrentField(fieldName).convert(script);
             script = (ScriptExpression)new EnsureInputExpression(fieldName).convert(script);
             if (validate)
-                new VerifyInputExpression(search, field).visit(script);
+                new VerifyInputExpression(schema, field).visit(script);
 
             field.setIndexingScript(script);
         }
@@ -85,11 +85,11 @@ public class IndexingInputs extends Processor {
 
     private class VerifyInputExpression extends ExpressionVisitor {
 
-        private final Search search;
+        private final Schema schema;
         private final SDField field;
 
-        public VerifyInputExpression(Search search, SDField field) {
-            this.search = search;
+        public VerifyInputExpression(Schema schema, SDField field) {
+            this.schema = schema;
             this.field = field;
         }
 
@@ -97,10 +97,10 @@ public class IndexingInputs extends Processor {
         protected void doVisit(Expression exp) {
             if ( ! (exp instanceof InputExpression)) return;
             String inputField = ((InputExpression)exp).getFieldName();
-            if (search.getField(inputField).hasFullIndexingDocprocRights()) return;
+            if (schema.getField(inputField).hasFullIndexingDocprocRights()) return;
 
-            fail(search, field, "Indexing script refers to field '" + inputField + "' which does not exist " +
-                                "in document type '" + search.getDocument().getName() + "', and is not a mutable attribute.");
+            fail(schema, field, "Indexing script refers to field '" + inputField + "' which does not exist " +
+                                "in document type '" + schema.getDocument().getName() + "', and is not a mutable attribute.");
         }
     }
 }

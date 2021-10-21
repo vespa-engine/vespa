@@ -3,10 +3,10 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -16,13 +16,13 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class AttributeProperties extends Processor {
 
-    public AttributeProperties(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public AttributeProperties(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (ImmutableSDField field : search.allConcreteFields()) {
+        for (ImmutableSDField field : schema.allConcreteFields()) {
             String fieldName = field.getName();
 
             // For each attribute, check if the attribute has been created
@@ -33,7 +33,7 @@ public class AttributeProperties extends Processor {
                 }
                 // Check other fields or statements that may have created this attribute.
                 boolean created = false;
-                for (SDField f : search.allConcreteFields()) {
+                for (SDField f : schema.allConcreteFields()) {
                     // Checking against the field we are looking at
                     if (!f.getName().equals(fieldName)) {
                         if (attributeCreated(f, attribute.getName())) {

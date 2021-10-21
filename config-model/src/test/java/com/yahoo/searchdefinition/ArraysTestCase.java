@@ -18,16 +18,16 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class ArraysTestCase extends SchemaTestCase {
+public class ArraysTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testArrayImporting() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/arrays.sd");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/arrays.sd");
 
-        SDField tags = (SDField)search.getDocument().getField("tags");
+        SDField tags = (SDField) schema.getDocument().getField("tags");
         assertEquals(DataType.STRING, ((CollectionDataType)tags.getDataType()).getNestedType());
 
-        SDField ratings = (SDField)search.getDocument().getField("ratings");
+        SDField ratings = (SDField) schema.getDocument().getField("ratings");
         assertTrue(ratings.getDataType() instanceof ArrayDataType);
         assertEquals(DataType.INT, ((ArrayDataType)ratings.getDataType()).getNestedType());
     }

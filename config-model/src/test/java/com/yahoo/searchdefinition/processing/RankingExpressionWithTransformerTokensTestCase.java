@@ -8,7 +8,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.expressiontransforms.TokenTransformer;
@@ -90,8 +90,8 @@ public class RankingExpressionWithTransformerTokensTestCase {
         SearchBuilder searchBuilder = new SearchBuilder(application, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
         searchBuilder.importString(sdContent);
         searchBuilder.build();
-        Search search = searchBuilder.getSearch();
-        RankProfile rp = rankProfileRegistry.get(search, "my_profile");
+        Schema schema = searchBuilder.getSearch();
+        RankProfile rp = rankProfileRegistry.get(schema, "my_profile");
         return new RankProfileTransformContext(rp, queryProfileRegistry, Collections.emptyMap(), null, Collections.emptyMap(), Collections.emptyMap());
     }
 

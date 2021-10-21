@@ -7,7 +7,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
@@ -31,9 +31,9 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
     private final Map<String, FieldCollection> collections = new LinkedHashMap<>();
     private final Map<String, FieldSet> fieldSets = new LinkedHashMap<>();
 
-    public IndexSchema(Search search) {
-        fieldSets.putAll(search.fieldSets().userFieldSets());
-        derive(search);
+    public IndexSchema(Schema schema) {
+        fieldSets.putAll(schema.fieldSets().userFieldSets());
+        derive(schema);
     }
 
     public boolean containsField(String fieldName) {
@@ -41,15 +41,15 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
     }
 
     @Override
-    protected void derive(Search search) {
-        super.derive(search);
+    protected void derive(Schema schema) {
+        super.derive(schema);
     }
 
     private boolean isTensorField(ImmutableSDField field) {
         return field.getDataType() instanceof TensorDataType;
     }
 
-    private void deriveIndexFields(ImmutableSDField field, Search search) {
+    private void deriveIndexFields(ImmutableSDField field, Schema schema) {
         // Note: Indexes for tensor fields are NOT part of the index schema for text fields.
         if ((!field.doesIndexing() && !field.isIndexStructureField()) ||
                 isTensorField(field))
@@ -62,7 +62,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         }
         String fieldName = field.getName();
         for (Field flatField : lst) {
-            deriveIndexFields(flatField, search);
+            deriveIndexFields(flatField, schema);
         }
         if (lst.size() > 1) {
             FieldSet fieldSet = new FieldSet(fieldName);
@@ -73,9 +73,9 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         }
     }
 
-    private void deriveIndexFields(Field field, Search search) {
+    private void deriveIndexFields(Field field, Schema schema) {
         IndexField toAdd = new IndexField(field.getName(), Index.convertType(field.getDataType()), field.getDataType());
-        com.yahoo.searchdefinition.Index definedIndex = search.getIndex(field.getName());
+        com.yahoo.searchdefinition.Index definedIndex = schema.getIndex(field.getName());
         if (definedIndex != null) {
             toAdd.setIndexSettings(definedIndex);
         }
@@ -98,11 +98,11 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
     }
 
     @Override
-    protected void derive(ImmutableSDField field, Search search) {
+    protected void derive(ImmutableSDField field, Schema schema) {
         if (field.usesStructOrMap()) {
             return; // unsupported
         }
-        deriveIndexFields(field, search);
+        deriveIndexFields(field, schema);
     }
 
     @Override

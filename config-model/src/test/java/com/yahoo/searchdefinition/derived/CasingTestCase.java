@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -16,21 +16,21 @@ import static org.junit.Assert.assertEquals;
  *
  * @author vegardh
  */
-public class CasingTestCase extends SchemaTestCase {
+public class CasingTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testCasing() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/casing.sd");
-        assertEquals(search.getIndex("color").getName(), "color");
-        assertEquals(search.getIndex("Foo").getName(), "Foo");
-        assertEquals(search.getIndex("Price").getName(), "Price");
-        assertEquals(search.getAttribute("artist").getName(), "artist");
-        assertEquals(search.getAttribute("Drummer").getName(), "Drummer");
-        assertEquals(search.getAttribute("guitarist").getName(), "guitarist");
-        assertEquals(search.getAttribute("title").getName(), "title");
-        assertEquals(search.getAttribute("Trumpetist").getName(), "Trumpetist");
-        assertEquals(search.getAttribute("Saxophonist").getName(), "Saxophonist");
-        assertEquals(search.getAttribute("TenorSaxophonist").getName(), "TenorSaxophonist");
-        assertEquals(search.getAttribute("Flutist").getName(), "Flutist");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/casing.sd");
+        assertEquals(schema.getIndex("color").getName(), "color");
+        assertEquals(schema.getIndex("Foo").getName(), "Foo");
+        assertEquals(schema.getIndex("Price").getName(), "Price");
+        assertEquals(schema.getAttribute("artist").getName(), "artist");
+        assertEquals(schema.getAttribute("Drummer").getName(), "Drummer");
+        assertEquals(schema.getAttribute("guitarist").getName(), "guitarist");
+        assertEquals(schema.getAttribute("title").getName(), "title");
+        assertEquals(schema.getAttribute("Trumpetist").getName(), "Trumpetist");
+        assertEquals(schema.getAttribute("Saxophonist").getName(), "Saxophonist");
+        assertEquals(schema.getAttribute("TenorSaxophonist").getName(), "TenorSaxophonist");
+        assertEquals(schema.getAttribute("Flutist").getName(), "Flutist");
     }
 }

@@ -7,7 +7,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.SDField;
@@ -34,30 +34,30 @@ import java.util.List;
  */
 public class PredicateProcessor extends Processor {
 
-    public PredicateProcessor(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public PredicateProcessor(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 if (validate && field.doesIndexing()) {
-                    fail(search, field, "Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
+                    fail(schema, field, "Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
                 }
                 if (field.doesAttributing()) {
                     Attribute attribute = field.getAttributes().get(field.getName());
                     for (Index index : field.getIndices().values()) {
                         BooleanIndexDefinition booleanDefinition = index.getBooleanIndexDefiniton();
                         if (validate && (booleanDefinition == null ||  ! booleanDefinition.hasArity())) {
-                            fail(search, field, "Missing arity value in predicate field.");
+                            fail(schema, field, "Missing arity value in predicate field.");
                         }
                         if (validate && (booleanDefinition.getArity() < 2)) {
-                            fail(search, field, "Invalid arity value in predicate field, must be greater than 1.");
+                            fail(schema, field, "Invalid arity value in predicate field, must be greater than 1.");
                         }
                         double threshold = booleanDefinition.getDensePostingListThreshold();
                         if (validate && (threshold <= 0 || threshold > 1)) {
-                            fail(search, field, "Invalid dense-posting-list-threshold value in predicate field. " +
+                            fail(schema, field, "Invalid dense-posting-list-threshold value in predicate field. " +
                                                 "Value must be in range (0..1].");
                         }
 
@@ -68,29 +68,29 @@ public class PredicateProcessor extends Processor {
                         attribute.setDensePostingListThreshold(threshold);
                         addPredicateOptimizationIlScript(field, booleanDefinition);
                     }
-                    DocumentSummary summary = search.getSummary("attributeprefetch");
+                    DocumentSummary summary = schema.getSummary("attributeprefetch");
                     if (summary != null) {
                         summary.remove(attribute.getName());
                     }
-                    for (SummaryField summaryField : search.getSummaryFields(field).values()) {
+                    for (SummaryField summaryField : schema.getSummaryFields(field).values()) {
                         summaryField.setTransform(SummaryTransform.NONE);
                     }
                 }
             } else if (validate && field.getDataType().getPrimitiveType() == DataType.PREDICATE) {
-                fail(search, field, "Collections of predicates are not allowed.");
+                fail(schema, field, "Collections of predicates are not allowed.");
             } else if (validate && field.getDataType() == DataType.RAW && field.doesIndexing()) {
-                fail(search, field, "Indexing of RAW fields is not supported.");
+                fail(schema, field, "Indexing of RAW fields is not supported.");
             } else if (validate) {
                 // if field is not a predicate, disallow predicate-related index parameters
                 for (Index index : field.getIndices().values()) {
                     if (index.getBooleanIndexDefiniton() != null) {
                         BooleanIndexDefinition def = index.getBooleanIndexDefiniton();
                         if (def.hasArity()) {
-                            fail(search, field, "Arity parameter is used only for predicate type fields.");
+                            fail(schema, field, "Arity parameter is used only for predicate type fields.");
                         } else if (def.hasLowerBound() || def.hasUpperBound()) {
-                            fail(search, field, "Parameters lower-bound and upper-bound are used only for predicate type fields.");
+                            fail(schema, field, "Parameters lower-bound and upper-bound are used only for predicate type fields.");
                         } else if (def.hasDensePostingListThreshold()) {
-                            fail(search, field, "Parameter dense-posting-list-threshold is used only for predicate type fields.");
+                            fail(schema, field, "Parameter dense-posting-list-threshold is used only for predicate type fields.");
                         }
                     }
                 }
@@ -104,7 +104,7 @@ public class PredicateProcessor extends Processor {
 
         script = new StatementExpression(makeSetPredicateVariablesScript(booleanIndexDefiniton), script);
 
-        ExpressionConverter converter = new PredicateOutputTransformer(search);
+        ExpressionConverter converter = new PredicateOutputTransformer(schema);
         field.setIndexingScript(new ScriptExpression((StatementExpression)converter.convert(script)));
     }
 
@@ -125,8 +125,8 @@ public class PredicateProcessor extends Processor {
 
     private static class PredicateOutputTransformer extends TypedTransformProvider {
 
-        PredicateOutputTransformer(Search search) {
-            super(OptimizePredicateExpression.class, search);
+        PredicateOutputTransformer(Schema schema) {
+            super(OptimizePredicateExpression.class, schema);
         }
 
         @Override

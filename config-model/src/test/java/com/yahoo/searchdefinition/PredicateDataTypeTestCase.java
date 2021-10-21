@@ -136,7 +136,7 @@ public class PredicateDataTypeTestCase {
         String sd = searchSd(predicateFieldSd("indexing: summary | index | attribute\nindex { arity: 2 }"));
 
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
+        exception.expectMessage("For schema 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
         SearchBuilder.createFromString(sd);
     }
 
@@ -145,7 +145,7 @@ public class PredicateDataTypeTestCase {
         String sd = searchSd(predicateFieldSd("indexing: summary | index \nindex { arity: 2 }"));
 
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("For search 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
+        exception.expectMessage("For schema 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
         SearchBuilder.createFromString(sd);
     }
 

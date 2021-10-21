@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.search.NamedSchema;
@@ -35,16 +36,16 @@ public class SearchDocumentModel {
 
     public static SearchDocumentModel fromBuilderAndNames(SearchBuilder builder, Map<String, String> names) {
         List<NamedSchema> ret = new ArrayList<>();
-        for (com.yahoo.searchdefinition.Search search : builder.getSearchList()) {
-            ret.add(new NamedSchema(names.get(search.getName()), search));
+        for (Schema schema : builder.getSearchList()) {
+            ret.add(new NamedSchema(names.get(schema.getName()), schema));
         }
         return new SearchDocumentModel(builder.getModel(), ret);
     }
 
     public static SearchDocumentModel fromBuilder(SearchBuilder builder) {
         List<NamedSchema> ret = new ArrayList<>();
-        for (com.yahoo.searchdefinition.Search search : builder.getSearchList()) {
-            ret.add(new NamedSchema(search.getName(), search));
+        for (Schema schema : builder.getSearchList()) {
+            ret.add(new NamedSchema(schema.getName(), schema));
         }
         return new SearchDocumentModel(builder.getModel(), ret);
     }

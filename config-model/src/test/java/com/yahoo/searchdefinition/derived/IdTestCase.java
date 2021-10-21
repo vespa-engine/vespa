@@ -4,12 +4,14 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
+
+import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -23,14 +25,15 @@ public class IdTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testExplicitUpperCaseIdField() {
-        Search search = new Search("test");
+        Schema schema = new Schema("test");
         SDDocumentType document = new SDDocumentType("test");
-        search.addDocument(document);
+        schema.addDocument(document);
         SDField uri = new SDField("URI", DataType.URI);
         uri.parseIndexingScript("{ summary | index }");
         document.addField(uri);
 
-        new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
+        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
+                                 true, false, Set.of());
 
         assertNull(document.getField("uri"));
         assertNull(document.getField("Uri"));

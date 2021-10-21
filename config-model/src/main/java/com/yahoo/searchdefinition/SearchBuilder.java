@@ -21,6 +21,7 @@ import com.yahoo.searchdefinition.parser.SDParser;
 import com.yahoo.searchdefinition.parser.SimpleCharStream;
 import com.yahoo.searchdefinition.parser.TokenMgrException;
 import com.yahoo.searchdefinition.processing.Processing;
+import com.yahoo.searchdefinition.processing.Processor;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.yolean.Exceptions;
@@ -32,22 +33,24 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
- * Helper class for importing {@link Search} objects in an unambiguous way. The pattern for using this is to 1) Import
+ * Helper class for importing {@link Schema} objects in an unambiguous way. The pattern for using this is to 1) Import
  * all available search definitions, using the importXXX() methods, 2) provide the available rank types and rank
  * expressions, using the setRankXXX() methods, 3) invoke the {@link #build()} method, and 4) retrieve the built
  * search objects using the {@link #getSearch(String)} method.
  */
+// Since this was created we have added Application, and much of the content in this should probably migrate there.
 public class SearchBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
     private final DocumentModel model = new DocumentModel();
-    private final ApplicationPackage app;
-    private final RankProfileRegistry rankProfileRegistry;
+    private final Application application;
     private final QueryProfileRegistry queryProfileRegistry;
     private final FileRegistry fileRegistry;
     private final DeployLogger deployLogger;
@@ -55,8 +58,10 @@ public class SearchBuilder {
     /** True to build the document aspect only, skipping instantiation of rank profiles */
     private final boolean documentsOnly;
 
-    private List<Search> searchList = new LinkedList<>();
+    private List<Schema> schemaList = new LinkedList<>();
     private boolean isBuilt = false;
+
+    private final Set<Class<? extends Processor>> processorsToSkip = new HashSet<>();
 
     /** For testing only */
     public SearchBuilder() {
@@ -109,15 +114,14 @@ public class SearchBuilder {
                          QueryProfileRegistry queryProfileRegistry) {
         this(app, fileRegistry, deployLogger, properties, rankProfileRegistry, queryProfileRegistry, false);
     }
-    private SearchBuilder(ApplicationPackage app,
+    private SearchBuilder(ApplicationPackage applicationPackage,
                           FileRegistry fileRegistry,
                           DeployLogger deployLogger,
                           ModelContext.Properties properties,
                           RankProfileRegistry rankProfileRegistry,
                           QueryProfileRegistry queryProfileRegistry,
                           boolean documentsOnly) {
-        this.app = app;
-        this.rankProfileRegistry = rankProfileRegistry;
+        this.application = new Application(applicationPackage, rankProfileRegistry);
         this.queryProfileRegistry = queryProfileRegistry;
         this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
@@ -169,8 +173,9 @@ public class SearchBuilder {
     private String importString(String str, String searchDefDir) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
-            return importRawSearch(new SDParser(stream, fileRegistry, deployLogger, properties, app, rankProfileRegistry, documentsOnly)
-                                           .search(docTypeMgr, searchDefDir));
+            return importRawSearch(new SDParser(stream, fileRegistry, deployLogger, properties, application,
+                                                application.rankProfileRegistry(), documentsOnly)
+                                           .schema(docTypeMgr, searchDefDir));
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
@@ -180,24 +185,19 @@ public class SearchBuilder {
 
     /**
      * Registers the given search object to the internal list of objects to be processed during {@link #build()}. A
-     * {@link Search} object is considered to be "raw" if it has not already been processed. This is the case for most
+     * {@link Schema} object is considered to be "raw" if it has not already been processed. This is the case for most
      * programmatically constructed search objects used in unit tests.
      *
-     * @param rawSearch the object to import.
+     * @param schema the object to import.
      * @return the name of the imported object.
      * @throws IllegalArgumentException if the given search object has already been processed.
      */
-    public String importRawSearch(Search rawSearch) {
-        if (rawSearch.getName() == null)
-            throw new IllegalArgumentException("Search has no name.");
-        String rawName = rawSearch.getName();
-        for (Search search : searchList) {
-            if (rawName.equals(search.getName())) {
-                throw new IllegalArgumentException("A search definition with a search section called '" + rawName +
-                                                   "' has already been added.");
-            }
-        }
-        searchList.add(rawSearch);
+    public String importRawSearch(Schema schema) {
+        if (schema.getName() == null)
+            throw new IllegalArgumentException("Schema has no name");
+        String rawName = schema.getName();
+        application.add(schema);
+        schemaList.add(schema);
         return rawName;
     }
 
@@ -223,14 +223,14 @@ public class SearchBuilder {
         if (isBuilt) throw new IllegalStateException("Model already built");
 
         if (validate)
-            searchList.forEach(search -> search.validate(deployLogger));
+            application.validate(deployLogger);
 
-        List<Search> built = new ArrayList<>();
+        List<Schema> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
-        for (Search search : searchList) {
-            if (search.hasDocument()) {
-                sdocs.add(search.getDocument());
+        for (Schema schema : schemaList) {
+            if (schema.hasDocument()) {
+                sdocs.add(schema.getDocument());
             }
         }
 
@@ -241,51 +241,56 @@ public class SearchBuilder {
             new FieldOperationApplier().process(sdoc);
         }
 
-        var resolver = new DocumentReferenceResolver(searchList);
+        var resolver = new DocumentReferenceResolver(schemaList);
         sdocs.forEach(resolver::resolveReferences);
         sdocs.forEach(resolver::resolveInheritedReferences);
-        var importedFieldsEnumerator = new ImportedFieldsEnumerator(searchList);
+        var importedFieldsEnumerator = new ImportedFieldsEnumerator(schemaList);
         sdocs.forEach(importedFieldsEnumerator::enumerateImportedFields);
 
         if (validate)
             new DocumentGraphValidator().validateDocumentGraph(sdocs);
 
         var builder = new DocumentModelBuilder(model);
-        for (Search search : new SearchOrderer().order(searchList)) {
-            new FieldOperationApplierForSearch().process(search); // TODO: Why is this not in the regular list?
-            process(search, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
-            built.add(search);
+        for (Schema schema : new SearchOrderer().order(schemaList)) {
+            new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
+            process(schema, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
+            built.add(schema);
         }
-        builder.addToModel(searchList);
+        builder.addToModel(schemaList);
 
         if ( validate && ! builder.valid() )
             throw new IllegalArgumentException("Impossible to build a correct model");
 
-        searchList = built;
+        schemaList = built;
         isBuilt = true;
     }
 
+    /** Returns a modifiable set of processors we should skip for these schemas. Useful for testing. */
+    public Set<Class<? extends Processor>> processorsToSkip() { return processorsToSkip; }
+
     /**
-     * Processes and returns the given {@link Search} object. This method has been factored out of the {@link
+     * Processes and returns the given {@link Schema} object. This method has been factored out of the {@link
      * #build()} method so that subclasses can choose not to build anything.
      */
-    private void process(Search search, QueryProfiles queryProfiles, boolean validate) {
-        new Processing().process(search, deployLogger, rankProfileRegistry, queryProfiles, validate, documentsOnly);
+    private void process(Schema schema, QueryProfiles queryProfiles, boolean validate) {
+        new Processing().process(schema, deployLogger, application.rankProfileRegistry(), queryProfiles, validate,
+                                 documentsOnly, processorsToSkip);
     }
 
     /**
-     * Convenience method to call {@link #getSearch(String)} when there is only a single {@link Search} object
+     * Convenience method to call {@link #getSearch(String)} when there is only a single {@link Schema} object
      * built. This method will never return null.
      *
      * @return the built object
      * @throws IllegalStateException if there is not exactly one search.
      */
-    public Search getSearch() {
+    public Schema getSearch() {
         if ( ! isBuilt)  throw new IllegalStateException("Searches not built.");
-        if (searchList.size() != 1)
-            throw new IllegalStateException("This call only works if we have 1 search definition. Search definitions: " + searchList);
+        if (application.schemas().size() != 1)
+            throw new IllegalStateException("This call only works if we have 1 schema. Schemas: " +
+                                            application.schemas().values());
 
-        return searchList.get(0);
+        return application.schemas().values().stream().findAny().get();
     }
 
     public DocumentModel getModel() {
@@ -293,7 +298,7 @@ public class SearchBuilder {
     }
 
     /**
-     * Returns the built {@link Search} object that has the given name. If the name is unknown, this method will simply
+     * Returns the built {@link Schema} object that has the given name. If the name is unknown, this method will simply
      * return null.
      *
      * @param name the name of the search definition to return,
@@ -301,26 +306,25 @@ public class SearchBuilder {
      * @return the built object, or null if none with this name
      * @throws IllegalStateException if {@link #build()} has not been called.
      */
-    public Search getSearch(String name) {
+    public Schema getSearch(String name) {
         if ( ! isBuilt)  throw new IllegalStateException("Searches not built.");
         if (name == null) return getSearch();
-
-        for (Search search : searchList)
-            if (search.getName().equals(name)) return search;
-        return null;
+        return application.schemas().get(name);
     }
 
+    public Application application() { return application; }
+
     /**
-     * Convenience method to return a list of all built {@link Search} objects.
+     * Convenience method to return a list of all built {@link Schema} objects.
      *
-     * @return The list of built searches.
+     * @return the list of built searches
      */
-    public List<Search> getSearchList() {
-        return new ArrayList<>(searchList);
+    public List<Schema> getSearchList() {
+        return new ArrayList<>(schemaList);
     }
 
     /**
-     * Convenience factory method to import and build a {@link Search} object from a string.
+     * Convenience factory method to import and build a {@link Schema} object from a string.
      *
      * @param sd   The string to build from.
      * @return The built {@link SearchBuilder} object.
@@ -346,7 +350,7 @@ public class SearchBuilder {
     }
 
     /**
-     * Convenience factory method to import and build a {@link Search} object from a file. Only for testing.
+     * Convenience factory method to import and build a {@link Schema} object from a file. Only for testing.
      *
      * @param fileName the file to build from
      * @return the built {@link SearchBuilder} object
@@ -373,7 +377,7 @@ public class SearchBuilder {
     }
 
     /**
-     * Convenience factory method to import and build a {@link Search} object from a file.
+     * Convenience factory method to import and build a {@link Schema} object from a file.
      *
      * @param fileName the file to build from.
      * @param deployLogger logger for deploy messages.
@@ -414,6 +418,7 @@ public class SearchBuilder {
         return builder;
     }
 
+
     public static SearchBuilder createFromDirectory(String dir, FileRegistry fileRegistry, DeployLogger logger, ModelContext.Properties properties) throws IOException, ParseException {
         return createFromDirectory(dir, fileRegistry, logger, properties, new RankProfileRegistry());
     }
@@ -430,7 +435,8 @@ public class SearchBuilder {
                                                      ModelContext.Properties properties,
                                                      RankProfileRegistry rankProfileRegistry,
                                                      QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
-        return createFromDirectory(dir, MockApplicationPackage.fromSearchDefinitionDirectory(dir), fileRegistry, logger, properties, rankProfileRegistry, queryProfileRegistry);
+        return createFromDirectory(dir, MockApplicationPackage.fromSearchDefinitionAndRootDirectory(dir), fileRegistry, logger, properties,
+                                   rankProfileRegistry, queryProfileRegistry);
     }
 
     private static SearchBuilder createFromDirectory(String dir,
@@ -462,27 +468,27 @@ public class SearchBuilder {
     // TODO: The build methods below just call the create methods above - remove
 
     /**
-     * Convenience factory method to import and build a {@link Search} object from a file. Only for testing.
+     * Convenience factory method to import and build a {@link Schema} object from a file. Only for testing.
      *
      * @param fileName The file to build from.
-     * @return The built {@link Search} object.
+     * @return The built {@link Schema} object.
      * @throws IOException    Thrown if there was a problem reading the file.
      * @throws ParseException Thrown if there was a problem parsing the file content.
      */
-    public static Search buildFromFile(String fileName) throws IOException, ParseException {
+    public static Schema buildFromFile(String fileName) throws IOException, ParseException {
         return buildFromFile(fileName, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /**
-     * Convenience factory method to import and build a {@link Search} object from a file.
+     * Convenience factory method to import and build a {@link Schema} object from a file.
      *
      * @param fileName The file to build from.
      * @param rankProfileRegistry Registry for rank profiles.
-     * @return The built {@link Search} object.
+     * @return The built {@link Schema} object.
      * @throws IOException    Thrown if there was a problem reading the file.
      * @throws ParseException Thrown if there was a problem parsing the file content.
      */
-    public static Search buildFromFile(String fileName,
+    public static Schema buildFromFile(String fileName,
                                        RankProfileRegistry rankProfileRegistry,
                                        QueryProfileRegistry queryProfileRegistry)
             throws IOException, ParseException {
@@ -490,16 +496,16 @@ public class SearchBuilder {
     }
 
     /**
-     * Convenience factory method to import and build a {@link Search} object from a file.
+     * Convenience factory method to import and build a {@link Schema} object from a file.
      *
      * @param fileName The file to build from.
      * @param deployLogger Logger for deploy messages.
      * @param rankProfileRegistry Registry for rank profiles.
-     * @return The built {@link Search} object.
+     * @return The built {@link Schema} object.
      * @throws IOException    Thrown if there was a problem reading the file.
      * @throws ParseException Thrown if there was a problem parsing the file content.
      */
-    public static Search buildFromFile(String fileName,
+    public static Schema buildFromFile(String fileName,
                                        DeployLogger deployLogger,
                                        RankProfileRegistry rankProfileRegistry,
                                        QueryProfileRegistry queryProfileRegistry)
@@ -508,36 +514,36 @@ public class SearchBuilder {
     }
 
     /**
-     * Convenience factory method to import and build a {@link Search} object from a raw object.
+     * Convenience factory method to import and build a {@link Schema} object from a raw object.
      *
-     * @param rawSearch the raw object to build from.
+     * @param rawSchema the raw object to build from.
      * @return the built {@link SearchBuilder} object.
-     * @see #importRawSearch(Search)
+     * @see #importRawSearch(Schema)
      */
-    public static SearchBuilder createFromRawSearch(Search rawSearch,
+    public static SearchBuilder createFromRawSearch(Schema rawSchema,
                                                     RankProfileRegistry rankProfileRegistry,
                                                     QueryProfileRegistry queryProfileRegistry) {
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry, queryProfileRegistry);
-        builder.importRawSearch(rawSearch);
+        builder.importRawSearch(rawSchema);
         builder.build();
         return builder;
     }
 
     /**
-     * Convenience factory method to import and build a {@link Search} object from a raw object.
+     * Convenience factory method to import and build a {@link Schema} object from a raw object.
      *
-     * @param rawSearch The raw object to build from.
-     * @return The built {@link Search} object.
-     * @see #importRawSearch(Search)
+     * @param rawSchema The raw object to build from.
+     * @return The built {@link Schema} object.
+     * @see #importRawSearch(Schema)
      */
-    public static Search buildFromRawSearch(Search rawSearch,
+    public static Schema buildFromRawSearch(Schema rawSchema,
                                             RankProfileRegistry rankProfileRegistry,
                                             QueryProfileRegistry queryProfileRegistry) {
-        return createFromRawSearch(rawSearch, rankProfileRegistry, queryProfileRegistry).getSearch();
+        return createFromRawSearch(rawSchema, rankProfileRegistry, queryProfileRegistry).getSearch();
     }
 
     public RankProfileRegistry getRankProfileRegistry() {
-        return rankProfileRegistry;
+        return application.rankProfileRegistry();
     }
 
     public QueryProfileRegistry getQueryProfileRegistry() {

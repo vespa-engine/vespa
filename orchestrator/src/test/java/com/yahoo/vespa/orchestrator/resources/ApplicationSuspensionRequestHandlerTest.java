@@ -1,4 +1,5 @@
-package com.yahoo.vespa.orchestrator.resources;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.orchestrator.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.yahoo.cloud.config.ConfigserverConfig;
@@ -34,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @author bjorncs
  */
 class ApplicationSuspensionRequestHandlerTest {
+
     private static final String RESOURCE_1 = "mediasearch:imagesearch:default";
     private static final String RESOURCE_2 = "test-tenant-id:application:instance";
     private static final String INVALID_RESOURCE_NAME = "something_without_colons";

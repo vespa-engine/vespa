@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -17,11 +17,11 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 public class PagedAttributeValidator extends Processor {
 
 
-    public PagedAttributeValidator(Search search,
+    public PagedAttributeValidator(Schema schema,
                                    DeployLogger deployLogger,
                                    RankProfileRegistry rankProfileRegistry,
                                    QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class PagedAttributeValidator extends Processor {
         if (!validate) {
             return;
         }
-        for (var field : search.allConcreteFields()) {
+        for (var field : schema.allConcreteFields()) {
             for (var attribute : field.getAttributes().values()) {
                 if (attribute.isPaged()) {
                     validatePagedSetting(field, attribute);
@@ -42,7 +42,7 @@ public class PagedAttributeValidator extends Processor {
         var tensorType = attribute.tensorType();
         if (!tensorType.isPresent() ||
                 !isDenseTensorType(tensorType.get())) {
-            fail(search, field, "The 'paged' attribute setting is only supported for dense tensor types");
+            fail(schema, field, "The 'paged' attribute setting is only supported for dense tensor types");
         }
     }
 

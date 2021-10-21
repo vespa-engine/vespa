@@ -7,6 +7,7 @@ package cmd
 import (
 	"archive/zip"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -96,7 +97,7 @@ func cloneApplication(source string, name string) {
 		}
 	}
 	if !found {
-		fatalErr(nil, "Could not find source application '", color.Cyan(source), "'")
+		fatalErrHint(fmt.Errorf("Could not find source application '%s'", color.Cyan(source)), "Use -f to ignore the cache")
 	} else {
 		log.Print("Created ", color.Cyan(name))
 	}

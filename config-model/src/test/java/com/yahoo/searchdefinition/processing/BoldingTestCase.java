@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -12,7 +12,7 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
-public class BoldingTestCase extends SchemaTestCase {
+public class BoldingTestCase extends AbstractSchemaTestCase {
 
     private final String boldonnonstring =
             "search boldnonstring {\n" +

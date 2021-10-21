@@ -17,7 +17,7 @@ import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -101,7 +101,7 @@ public class DocumentGenMojo extends AbstractMojo {
             required = true)
     private File outputDirectory;
 
-    private Map<String, Search> searches;
+    private Map<String, Schema> searches;
     private Map<String, String> docTypes;
     private Map<String, String> structTypes;
     private Map<String, String> annotationTypes;
@@ -149,8 +149,8 @@ public class DocumentGenMojo extends AbstractMojo {
             }
         }
         builder.build();
-        for (Search search : builder.getSearchList() ) {
-            this.searches.put(search.getName(), search);
+        for (Schema schema : builder.getSearchList() ) {
+            this.searches.put(schema.getName(), schema);
         }
         return builder;
     }
@@ -993,7 +993,7 @@ public class DocumentGenMojo extends AbstractMojo {
         execute(dir, this.outputDirectory, packageName);
     }
 
-    Map<String, Search> getSearches() {
+    Map<String, Schema> getSearches() {
         return searches;
     }
 

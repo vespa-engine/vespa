@@ -2,9 +2,9 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.document.PositionDataType;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.config.search.vsm.VsmsummaryConfig;
@@ -20,23 +20,23 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
 
     private Map<SummaryField, List<String>> summaryMap = new java.util.LinkedHashMap<>(1);
 
-    public VsmSummary(Search search) {
-        derive(search);
+    public VsmSummary(Schema schema) {
+        derive(schema);
     }
 
     @Override
-    protected void derive(Search search) {
+    protected void derive(Schema schema) {
         // Use the default class, as it is the superset
-        derive(search, search.getSummary("default"));
+        derive(schema, schema.getSummary("default"));
     }
 
-    private void derive(Search search, DocumentSummary documentSummary) {
+    private void derive(Schema schema, DocumentSummary documentSummary) {
         if (documentSummary==null) return;
         for (SummaryField summaryField : documentSummary.getSummaryFields()) {
             List<String> from = toStringList(summaryField.sourceIterator());
 
-            if (doMapField(search, summaryField)) {
-                SDField sdField = search.getConcreteField(summaryField.getName());
+            if (doMapField(schema, summaryField)) {
+                SDField sdField = schema.getConcreteField(summaryField.getName());
                 if (sdField != null && PositionDataType.INSTANCE.equals(sdField.getDataType())) {
                     summaryMap.put(summaryField, Collections.singletonList(summaryField.getName()));
                 } else {
@@ -52,9 +52,9 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
      * Don't map if not struct either.
      * @param summaryField a {@link SummaryField}
      */
-    private boolean doMapField(Search search, SummaryField summaryField) {
-        SDField sdField = search.getConcreteField(summaryField.getName());
-        SDDocumentType document = search.getDocument();
+    private boolean doMapField(Schema schema, SummaryField summaryField) {
+        SDField sdField = schema.getConcreteField(summaryField.getName());
+        SDDocumentType document = schema.getDocument();
         if (sdField==null || ((document != null) && (document.getField(summaryField.getName()) == sdField))) {
             return true;
         }
@@ -66,7 +66,7 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
         }
         if (summaryField.getSourceCount()==sdField.getStructFields().size()) {
             for (SummaryField.Source source : summaryField.getSources()) {
-                if (!sdField.getStructFields().contains(new SDField(search.getDocument(), source.getName(), sdField.getDataType()))) { // equals() uses just name
+                if (!sdField.getStructFields().contains(new SDField(schema.getDocument(), source.getName(), sdField.getDataType()))) { // equals() uses just name
                     return true;
                 }
                 if (sdField.getStructField(source.getName())!=null && !sdField.getStructField(source.getName()).doesSummarying()) {

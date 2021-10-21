@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 /**
  * @author bratseth
  */
-public class RankingExpressionConstantsTestCase extends SchemaTestCase {
+public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testConstants() throws ParseException {
@@ -67,7 +67,7 @@ public class RankingExpressionConstantsTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(queryProfileRegistry, new ImportedMlModels());
         assertEquals("0.0", parent.getFirstPhaseRanking().getRoot().toString());
 
@@ -111,7 +111,7 @@ public class RankingExpressionConstantsTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
         try {
             rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
             fail("Should have caused an exception");
@@ -142,7 +142,7 @@ public class RankingExpressionConstantsTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
     }
@@ -170,7 +170,7 @@ public class RankingExpressionConstantsTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)",
@@ -194,7 +194,7 @@ public class RankingExpressionConstantsTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("k1 + (k2 + k3) / 100000000.0",
                      profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
@@ -220,7 +220,7 @@ public class RankingExpressionConstantsTestCase extends SchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Search s = builder.getSearch();
+        Schema s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("0.5 + 50 * (attribute(rating_yelp) - 3)",
                      profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());

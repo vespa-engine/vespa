@@ -11,14 +11,14 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author bratseth
  */
-public class ReservedWordsAsFieldNamesTestCase extends SchemaTestCase {
+public class ReservedWordsAsFieldNamesTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testIt() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/reserved_words_as_field_names.sd");
-        assertNotNull(search.getDocument().getField("inline"));
-        assertNotNull(search.getDocument().getField("constants"));
-        assertNotNull(search.getDocument().getField("reference"));
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/reserved_words_as_field_names.sd");
+        assertNotNull(schema.getDocument().getField("inline"));
+        assertNotNull(schema.getDocument().getField("constants"));
+        assertNotNull(schema.getDocument().getField("reference"));
     }
 
 }

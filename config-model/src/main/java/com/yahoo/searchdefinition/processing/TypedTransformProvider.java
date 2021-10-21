@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.vespa.indexinglanguage.ValueTransformProvider;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
@@ -13,12 +13,12 @@ import com.yahoo.vespa.indexinglanguage.expressions.*;
  */
 public abstract class TypedTransformProvider extends ValueTransformProvider {
 
-    private final Search search;
+    private final Schema schema;
     private DataType fieldType;
 
-    TypedTransformProvider(Class<? extends Expression> transformClass, Search search) {
+    TypedTransformProvider(Class<? extends Expression> transformClass, Schema schema) {
         super(transformClass);
-        this.search = search;
+        this.schema = schema;
     }
 
     @Override
@@ -26,19 +26,19 @@ public abstract class TypedTransformProvider extends ValueTransformProvider {
         if (exp instanceof OutputExpression) {
             String fieldName = ((OutputExpression)exp).getFieldName();
             if (exp instanceof AttributeExpression) {
-                Attribute attribute = search.getAttribute(fieldName);
+                Attribute attribute = schema.getAttribute(fieldName);
                 if (attribute == null)
                     throw new IllegalArgumentException("Attribute '" + fieldName + "' not found.");
                 fieldType = attribute.getDataType();
             }
             else if (exp instanceof IndexExpression) {
-                Field field = search.getConcreteField(fieldName);
+                Field field = schema.getConcreteField(fieldName);
                 if (field == null)
                     throw new IllegalArgumentException("Index field '" + fieldName + "' not found.");
                 fieldType = field.getDataType();
             }
             else if (exp instanceof SummaryExpression) {
-                Field field = search.getSummaryField(fieldName);
+                Field field = schema.getSummaryField(fieldName);
                 if (field == null)
                     throw new IllegalArgumentException("Summary field '" + fieldName + "' not found.");
                 fieldType = field.getDataType();

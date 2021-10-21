@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 /**
  * @author Simon Thoresen Hult
@@ -441,12 +442,16 @@ public class SimpleFeeder implements ReplyHandler {
         }
     }
 
+    private static boolean containsFatalErrors(Stream<Error> errors) {
+        return errors.anyMatch(e -> e.getCode() != DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED);
+    }
+
     @Override
     public void handleReply(Reply reply) {
         if (failure.get() != null) {
             return;
         }
-        if (reply.hasErrors()) {
+        if (containsFatalErrors(reply.getErrors())) {
             failure.compareAndSet(null, new IOException(formatErrors(reply)));
             return;
         }

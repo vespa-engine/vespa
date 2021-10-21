@@ -26,7 +26,7 @@ public class TensorFieldTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'f1': A field with collection type of tensor is not supported. Use simple type 'tensor' instead.",
+            assertEquals("For schema 'test', field 'f1': A field with collection type of tensor is not supported. Use simple type 'tensor' instead.",
                          e.getMessage());
         }
     }
@@ -38,7 +38,7 @@ public class TensorFieldTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'f1': A tensor of type 'tensor(x{})' does not support having an 'index'. " +
+            assertEquals("For schema 'test', field 'f1': A tensor of type 'tensor(x{})' does not support having an 'index'. " +
                             "Currently, only tensors with 1 indexed dimension supports that.",
                          e.getMessage());
         }
@@ -51,7 +51,7 @@ public class TensorFieldTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 'f1': An attribute of type 'tensor' cannot be 'fast-search'.", e.getMessage());
+            assertEquals("For schema 'test', field 'f1': An attribute of type 'tensor' cannot be 'fast-search'.", e.getMessage());
         }
     }
 
@@ -98,7 +98,7 @@ public class TensorFieldTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 't1': A tensor that has an index must also be an attribute.", e.getMessage());
+            assertEquals("For schema 'test', field 't1': A tensor that has an index must also be an attribute.", e.getMessage());
         }
     }
 
@@ -115,7 +115,7 @@ public class TensorFieldTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For search 'test', field 't1': " +
+            assertEquals("For schema 'test', field 't1': " +
                     "A tensor that specifies hnsw index parameters must also specify 'index' in 'indexing'",
                     e.getMessage());
         }

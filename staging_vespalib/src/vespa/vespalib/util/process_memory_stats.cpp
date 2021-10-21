@@ -182,7 +182,7 @@ ProcessMemoryStats::toString() const
 ProcessMemoryStats
 ProcessMemoryStats::create(uint64_t sizeEpsilon)
 {
-    constexpr size_t NUM_TRIES = 10;
+    constexpr size_t NUM_TRIES = 3;
     std::vector<ProcessMemoryStats> samples;
     samples.reserve(NUM_TRIES);
     samples.push_back(createStatsFromSmaps());
@@ -195,7 +195,7 @@ ProcessMemoryStats::create(uint64_t sizeEpsilon)
             i, (samples.rbegin()+1)->toString().c_str(), samples.back().toString().c_str());
     }
     std::sort(samples.begin(), samples.end());
-    LOG(info, "We failed to find 2 consecutive samples that where similar with epsilon of %" PRIu64 ".\nSmallest is '%s',\n median is '%s',\n largest is '%s'",
+    LOG(debug, "We failed to find 2 consecutive samples that where similar with epsilon of %" PRIu64 ".\nSmallest is '%s',\n median is '%s',\n largest is '%s'",
                  sizeEpsilon, samples.front().toString().c_str(), samples[samples.size()/2].toString().c_str(), samples.back().toString().c_str());
     return samples[samples.size()/2];
 }

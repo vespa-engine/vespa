@@ -3,8 +3,8 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.HashSet;
@@ -23,18 +23,17 @@ public class ReservedDocumentNames extends Processor {
         }
     }
 
-    public ReservedDocumentNames(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public ReservedDocumentNames(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        String docName = search.getDocument().getName();
-        if (RESERVED_NAMES.contains(docName)) {
-            throw new IllegalArgumentException("For search '" + search.getName() + "': Document name '" + docName +
-                                               "' is reserved.");
-        }
+        String docName = schema.getDocument().getName();
+        if (RESERVED_NAMES.contains(docName))
+            throw new IllegalArgumentException("For " + schema + ": Document name '" + docName + "' is reserved.");
     }
+
 }

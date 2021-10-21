@@ -13,8 +13,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.document.DataType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
-import com.yahoo.searchdefinition.DocumentOnlySearch;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.DocumentOnlySchema;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
@@ -58,7 +58,7 @@ public class ApplicationDeployTest {
         List<NamedSchema> schemas = tester.getSchemas();
         assertEquals(schemas.size(), 5);
         for (NamedSchema searchDefinition : schemas) {
-            Search s = searchDefinition.getSearch();
+            Schema s = searchDefinition.getSearch();
             switch (s.getName()) {
                 case "music":
                 case "laptop":
@@ -66,7 +66,7 @@ public class ApplicationDeployTest {
                 case "sock":
                     break;
                 case "product":
-                    assertTrue(s instanceof DocumentOnlySearch);
+                    assertTrue(s instanceof DocumentOnlySchema);
                     assertEquals(DataType.STRING, s.getDocument().getField("title").getDataType());
                     break;
                 default:

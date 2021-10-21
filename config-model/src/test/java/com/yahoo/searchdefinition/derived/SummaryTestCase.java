@@ -2,9 +2,9 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import org.junit.Test;
@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class SummaryTestCase extends SchemaTestCase {
+public class SummaryTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void deriveRawAsBase64() throws ParseException {
@@ -35,8 +35,8 @@ public class SummaryTestCase extends SchemaTestCase {
                 "      }",
                 "  }",
                 "}");
-        Search search = SearchBuilder.createFromString(sd).getSearch();
-        SummaryClass summary = new SummaryClass(search, search.getSummary("default"), new BaseDeployLogger());
+        Schema schema = SearchBuilder.createFromString(sd).getSearch();
+        SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals(SummaryClassField.Type.RAW, summary.getField("raw_field").getType());
     }
 
@@ -50,15 +50,15 @@ public class SummaryTestCase extends SchemaTestCase {
                 "      }",
                 "  }",
                 "}");
-        Search search = SearchBuilder.createFromString(sd).getSearch();
-        SummaryClass summary = new SummaryClass(search, search.getSummary("default"), new BaseDeployLogger());
+        Schema schema = SearchBuilder.createFromString(sd).getSearch();
+        SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals(SummaryClassField.Type.DATA, summary.getField("raw_field").getType());
     }
 
     @Test
     public void testDeriving() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
-        SummaryClass summary = new SummaryClass(search, search.getSummary("default"), new BaseDeployLogger());
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
+        SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals("default", summary.getName());
 
         Iterator<SummaryClassField> fields = summary.fieldIterator();
@@ -122,18 +122,18 @@ public class SummaryTestCase extends SchemaTestCase {
 
     @Test
     public void reference_fields_can_be_part_of_summary_classes() throws ParseException {
-        Search adSearch = buildCampaignAdModel();
+        Schema adSchema = buildCampaignAdModel();
 
-        SummaryClass defaultClass = new SummaryClass(adSearch, adSearch.getSummary("default"), new BaseDeployLogger());
+        SummaryClass defaultClass = new SummaryClass(adSchema, adSchema.getSummary("default"), new BaseDeployLogger());
         assertEquals(SummaryClassField.Type.LONGSTRING, defaultClass.getField("campaign_ref").getType());
         assertEquals(SummaryClassField.Type.LONGSTRING, defaultClass.getField("other_campaign_ref").getType());
 
-        SummaryClass myClass = new SummaryClass(adSearch, adSearch.getSummary("my_summary"), new BaseDeployLogger());
+        SummaryClass myClass = new SummaryClass(adSchema, adSchema.getSummary("my_summary"), new BaseDeployLogger());
         assertNull(myClass.getField("campaign_ref"));
         assertEquals(SummaryClassField.Type.LONGSTRING, myClass.getField("other_campaign_ref").getType());
     }
 
-    private static Search buildCampaignAdModel() throws ParseException {
+    private static Schema buildCampaignAdModel() throws ParseException {
         SearchBuilder builder = new SearchBuilder();
         builder.importString("search campaign { document campaign {} }");
         builder.importString(joinLines("search ad {",
@@ -173,8 +173,8 @@ public class SummaryTestCase extends SchemaTestCase {
         assertOmitSummaryFeatures(false, search, "baz");
     }
 
-    private void assertOmitSummaryFeatures(boolean expected, Search search, String summaryName) {
-        var summary = new SummaryClass(search, search.getSummary(summaryName), new BaseDeployLogger());
+    private void assertOmitSummaryFeatures(boolean expected, Schema schema, String summaryName) {
+        var summary = new SummaryClass(schema, schema.getSummary(summaryName), new BaseDeployLogger());
         var config = new SummaryConfig.Classes(summary.getSummaryClassConfig());
         assertEquals(expected, config.omitsummaryfeatures());
     }

@@ -6,7 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Set;
 
 import static com.yahoo.searchdefinition.processing.AssertIndexingScript.assertIndexing;
 import static org.junit.Assert.assertTrue;
@@ -29,19 +30,20 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testLiteralBoost() {
-        Search search=new Search("literalboost");
-        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
-        SDDocumentType document=new SDDocumentType("literalboost");
-        search.addDocument(document);
-        SDField field1= document.addField("a", DataType.STRING);
+        Schema schema = new Schema("literalboost");
+        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
+        SDDocumentType document = new SDDocumentType("literalboost");
+        schema.addDocument(document);
+        SDField field1 = document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
         field1.setLiteralBoost(20);
-        RankProfile other=new RankProfile("other", search, rankProfileRegistry, search.rankingConstants());
+        RankProfile other = new RankProfile("other", schema, rankProfileRegistry, schema.rankingConstants());
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        new Processing().process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true, false);
-        DerivedConfiguration derived=new DerivedConfiguration(search, rankProfileRegistry);
+        new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
+                                 true, false, Set.of());
+        DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check attribute fields
         derived.getAttributeFields(); // TODO: assert content
@@ -49,11 +51,11 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         // Check il script addition
         assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
                                      "clear_state | guard { input a | tokenize | index a_literal; }"),
-                       search);
+                       schema);
 
         // Check index info addition
-        IndexInfo indexInfo=derived.getIndexInfo();
-        assertTrue(indexInfo.hasCommand("a","literal-boost"));
+        IndexInfo indexInfo = derived.getIndexInfo();
+        assertTrue(indexInfo.hasCommand("a", "literal-boost"));
     }
 
     /**
@@ -61,50 +63,50 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testNonDefaultRankLiteralBoost() {
-        Search search=new Search("literalboost");
-        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
-        SDDocumentType document=new SDDocumentType("literalboost");
-        search.addDocument(document);
-        SDField field1= document.addField("a", DataType.STRING);
+        Schema schema = new Schema("literalboost");
+        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
+        SDDocumentType document = new SDDocumentType("literalboost");
+        schema.addDocument(document);
+        SDField field1 = document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
-        RankProfile other=new RankProfile("other", search, rankProfileRegistry, search.rankingConstants());
+        RankProfile other = new RankProfile("other", schema, rankProfileRegistry, schema.rankingConstants());
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());
-        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry);
+        schema = SearchBuilder.buildFromRawSearch(schema, rankProfileRegistry, new QueryProfileRegistry());
+        DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check il script addition
         assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"BEST\" | index a; }",
                                      "clear_state | guard { input a | tokenize | index a_literal; }"),
-                       search);
+                       schema);
 
         // Check index info addition
-        IndexInfo indexInfo=derived.getIndexInfo();
+        IndexInfo indexInfo = derived.getIndexInfo();
         assertTrue(indexInfo.hasCommand("a","literal-boost"));
     }
 
     /** Tests literal boosts in two fields going to the same index */
     @Test
     public void testTwoLiteralBoostFields() {
-        Search search=new Search("msb");
-        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
-        SDDocumentType document=new SDDocumentType("msb");
-        search.addDocument(document);
-        SDField field1= document.addField("title", DataType.STRING);
+        Schema schema = new Schema("msb");
+        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
+        SDDocumentType document = new SDDocumentType("msb");
+        schema.addDocument(document);
+        SDField field1 = document.addField("title", DataType.STRING);
         field1.parseIndexingScript("{ summary | index }");
         field1.setLiteralBoost(20);
-        SDField field2= document.addField("body", DataType.STRING);
+        SDField field2 = document.addField("body", DataType.STRING);
         field2.parseIndexingScript("{ summary | index }");
         field2.setLiteralBoost(20);
 
-        search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());
-        new DerivedConfiguration(search, rankProfileRegistry);
+        schema = SearchBuilder.buildFromRawSearch(schema, rankProfileRegistry, new QueryProfileRegistry());
+        new DerivedConfiguration(schema, rankProfileRegistry);
         assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                                      "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",
                                      "clear_state | guard { input title | tokenize | index title_literal; }",
                                      "clear_state | guard { input body | tokenize | index body_literal; }"),
-                       search);
+                       schema);
     }
 
 }
