@@ -58,6 +58,7 @@ struct PersistenceProvider
     virtual ~PersistenceProvider();
 
     // TODO Move to utility class for use in tests only
+    Result createBucket(const Bucket&, Context&);
     Result deleteBucket(const Bucket&, Context&);
     Result put(const Bucket&, Timestamp, DocumentSP, Context&);
     Result setActiveState(const Bucket&, BucketInfo::ActiveState);
@@ -336,7 +337,7 @@ struct PersistenceProvider
      * Tells the provider that the given bucket has been created in the
      * service layer. There is no requirement to do anything here.
      */
-    virtual Result createBucket(const Bucket&, Context&) = 0;
+    virtual void createBucketAsync(const Bucket&, Context&, OperationComplete::UP) = 0;
 
     /**
      * Deletes the given bucket and all entries contained in that bucket.

@@ -114,7 +114,7 @@ public:
     IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
     Result destroyIterator(IteratorId, Context&) override;
 
-    Result createBucket(const Bucket &bucketId, Context &) override ;
+    void createBucketAsync(const Bucket &bucketId, Context &, OperationComplete::UP) override;
     void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) override;
     BucketIdListResult getModifiedBuckets(BucketSpace bucketSpace) const override;
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;

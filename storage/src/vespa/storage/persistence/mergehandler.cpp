@@ -12,7 +12,6 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
-#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mergehandler");
@@ -653,23 +652,24 @@ MergeHandler::sync_bucket_info(const spi::Bucket& bucket) const
 }
 
 namespace {
-    void findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHasMask, uint16_t hasMask,
-                        uint16_t newHasMask, api::ApplyBucketDiffCommand& cmd)
-    {
-        for (const auto& entry : status.diff) {
-            uint16_t entry_has_mask = (entry._hasMask & active_nodes_mask);
-            if ((entry_has_mask == 0u) ||
-                (constrictHasMask && (entry_has_mask != hasMask))) {
-                continue;
-            }
-            cmd.getDiff().emplace_back(entry);
-            if (constrictHasMask) {
-                cmd.getDiff().back()._entry._hasMask = newHasMask;
-            } else {
-                cmd.getDiff().back()._entry._hasMask = entry_has_mask;
-            }
+void
+findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHasMask, uint16_t hasMask,
+               uint16_t newHasMask, api::ApplyBucketDiffCommand& cmd)
+{
+    for (const auto& entry : status.diff) {
+        uint16_t entry_has_mask = (entry._hasMask & active_nodes_mask);
+        if ((entry_has_mask == 0u) ||
+            (constrictHasMask && (entry_has_mask != hasMask))) {
+            continue;
+        }
+        cmd.getDiff().emplace_back(entry);
+        if (constrictHasMask) {
+            cmd.getDiff().back()._entry._hasMask = newHasMask;
+        } else {
+            cmd.getDiff().back()._entry._hasMask = entry_has_mask;
         }
     }
+}
 }
 
 api::StorageReply::SP
@@ -923,141 +923,146 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
 
 namespace {
 
-    uint8_t findOwnIndex(
-            const std::vector<api::MergeBucketCommand::Node>& nodeList,
-            uint16_t us)
-    {
-        for (uint32_t i=0, n=nodeList.size(); i<n; ++i) {
-            if (nodeList[i].index == us) return i;
-        }
-        throw vespalib::IllegalStateException(
-                "Got GetBucketDiff cmd on node not in nodelist in command",
-                VESPA_STRLOC);
+uint8_t findOwnIndex(
+        const std::vector<api::MergeBucketCommand::Node>& nodeList,
+        uint16_t us)
+{
+    for (uint32_t i=0, n=nodeList.size(); i<n; ++i) {
+        if (nodeList[i].index == us) return i;
     }
+    throw vespalib::IllegalStateException(
+            "Got GetBucketDiff cmd on node not in nodelist in command",
+            VESPA_STRLOC);
+}
 
-    struct DiffEntryTimestampOrder
-        : public std::binary_function<api::GetBucketDiffCommand::Entry,
-                                      api::GetBucketDiffCommand::Entry, bool>
-    {
-        bool operator()(const api::GetBucketDiffCommand::Entry& x,
-                        const api::GetBucketDiffCommand::Entry& y) const {
-            return (x._timestamp < y._timestamp);
-        }
-    };
-
-    /**
-     * Merges list A and list B together and puts the result in result.
-     * Result is swapped in as last step to keep function exception safe. Thus
-     * result can be listA or listB if wanted.
-     *
-     * listA and listB are assumed to be in the order found in the slotfile, or
-     * in the order given by a previous call to this function. (In both cases
-     * this will be sorted by timestamp)
-     *
-     * @return false if any suspect entries was found.
-     */
-    bool mergeLists(
-            const std::vector<api::GetBucketDiffCommand::Entry>& listA,
-            const std::vector<api::GetBucketDiffCommand::Entry>& listB,
-            std::vector<api::GetBucketDiffCommand::Entry>& finalResult)
-    {
-        bool suspect = false;
-        std::vector<api::GetBucketDiffCommand::Entry> result;
-        uint32_t i = 0, j = 0;
-        while (i < listA.size() && j < listB.size()) {
-            const api::GetBucketDiffCommand::Entry& a(listA[i]);
-            const api::GetBucketDiffCommand::Entry& b(listB[j]);
-            if (a._timestamp < b._timestamp) {
-                result.push_back(a);
-                ++i;
-            } else if (a._timestamp > b._timestamp) {
-                result.push_back(b);
-                ++j;
-            } else {
-                // If we find equal timestamped entries that are not the
-                // same.. Flag an error. But there is nothing we can do
-                // about it. Note it as if it is the same entry so we
-                // dont try to merge them.
-                if (!(a == b)) {
-                    if (a._gid == b._gid && a._flags == b._flags) {
-                        if ((a._flags & getDeleteFlag()) != 0 &&
-                            (b._flags & getDeleteFlag()) != 0)
-                        {
-                            // Unfortunately this can happen, for instance
-                            // if a remove comes to a bucket out of sync
-                            // and reuses different headers in the two
-                            // versions.
-                            LOG(debug, "Found entries with equal timestamps of "
-                                       "the same gid who both are remove "
-                                       "entries: %s <-> %s.",
-                                a.toString(true).c_str(),
-                                b.toString(true).c_str());
-                        } else {
-                            LOG(error, "Found entries with equal timestamps of "
-                                       "the same gid. This is likely same "
-                                       "document where size of document varies:"
-                                       " %s <-> %s.",
-                                a.toString(true).c_str(),
-                                b.toString(true).c_str());
-                        }
-                        result.push_back(a);
-                        result.back()._hasMask |= b._hasMask;
-                        suspect = true;
-                    } else if ((a._flags & getDeleteFlag())
-                               != (b._flags & getDeleteFlag()))
+/**
+ * Merges list A and list B together and puts the result in result.
+ * Result is swapped in as last step to keep function exception safe. Thus
+ * result can be listA or listB if wanted.
+ *
+ * listA and listB are assumed to be in the order found in the slotfile, or
+ * in the order given by a previous call to this function. (In both cases
+ * this will be sorted by timestamp)
+ *
+ * @return false if any suspect entries was found.
+ */
+bool mergeLists(
+        const std::vector<api::GetBucketDiffCommand::Entry>& listA,
+        const std::vector<api::GetBucketDiffCommand::Entry>& listB,
+        std::vector<api::GetBucketDiffCommand::Entry>& finalResult)
+{
+    bool suspect = false;
+    std::vector<api::GetBucketDiffCommand::Entry> result;
+    uint32_t i = 0, j = 0;
+    while (i < listA.size() && j < listB.size()) {
+        const api::GetBucketDiffCommand::Entry& a(listA[i]);
+        const api::GetBucketDiffCommand::Entry& b(listB[j]);
+        if (a._timestamp < b._timestamp) {
+            result.push_back(a);
+            ++i;
+        } else if (a._timestamp > b._timestamp) {
+            result.push_back(b);
+            ++j;
+        } else {
+            // If we find equal timestamped entries that are not the
+            // same.. Flag an error. But there is nothing we can do
+            // about it. Note it as if it is the same entry so we
+            // dont try to merge them.
+            if (!(a == b)) {
+                if (a._gid == b._gid && a._flags == b._flags) {
+                    if ((a._flags & getDeleteFlag()) != 0 &&
+                        (b._flags & getDeleteFlag()) != 0)
                     {
-                        // If we find one remove and one put entry on the
-                        // same timestamp we are going to keep the remove
-                        // entry to make the copies consistent.
-                        const api::GetBucketDiffCommand::Entry& deletedEntry(
-                                (a._flags & getDeleteFlag()) != 0 ? a : b);
-                        result.push_back(deletedEntry);
-                        LOG(debug,
-                            "Found put and remove on same timestamp. Keeping"
-                            "remove as it is likely caused by remove with "
-                            "copies unavailable at the time: %s, %s.",
-                            a.toString().c_str(), b.toString().c_str());
+                        // Unfortunately this can happen, for instance
+                        // if a remove comes to a bucket out of sync
+                        // and reuses different headers in the two
+                        // versions.
+                        LOG(debug, "Found entries with equal timestamps of "
+                                   "the same gid who both are remove "
+                                   "entries: %s <-> %s.",
+                            a.toString(true).c_str(),
+                            b.toString(true).c_str());
                     } else {
-                        LOG(error, "Found entries with equal timestamps that "
-                                   "weren't the same entry: %s, %s.",
-                            a.toString().c_str(), b.toString().c_str());
-                        result.push_back(a);
-                        result.back()._hasMask |= b._hasMask;
-                        suspect = true;
+                        LOG(error, "Found entries with equal timestamps of "
+                                   "the same gid. This is likely same "
+                                   "document where size of document varies:"
+                                   " %s <-> %s.",
+                            a.toString(true).c_str(),
+                            b.toString(true).c_str());
                     }
-                } else {
                     result.push_back(a);
                     result.back()._hasMask |= b._hasMask;
+                    suspect = true;
+                } else if ((a._flags & getDeleteFlag())
+                           != (b._flags & getDeleteFlag()))
+                {
+                    // If we find one remove and one put entry on the
+                    // same timestamp we are going to keep the remove
+                    // entry to make the copies consistent.
+                    const api::GetBucketDiffCommand::Entry& deletedEntry(
+                            (a._flags & getDeleteFlag()) != 0 ? a : b);
+                    result.push_back(deletedEntry);
+                    LOG(debug,
+                        "Found put and remove on same timestamp. Keeping"
+                        "remove as it is likely caused by remove with "
+                        "copies unavailable at the time: %s, %s.",
+                        a.toString().c_str(), b.toString().c_str());
+                } else {
+                    LOG(error, "Found entries with equal timestamps that "
+                               "weren't the same entry: %s, %s.",
+                        a.toString().c_str(), b.toString().c_str());
+                    result.push_back(a);
+                    result.back()._hasMask |= b._hasMask;
+                    suspect = true;
                 }
-                ++i;
-                ++j;
+            } else {
+                result.push_back(a);
+                result.back()._hasMask |= b._hasMask;
             }
+            ++i;
+            ++j;
         }
-        if (i < listA.size()) {
-            assert(j >= listB.size());
-            for (uint32_t n = listA.size(); i<n; ++i) {
-                result.push_back(listA[i]);
-            }
-        } else if (j < listB.size()) {
-            assert(i >= listA.size());
-            for (uint32_t n = listB.size(); j<n; ++j) {
-                result.push_back(listB[j]);
-            }
-        }
-        result.swap(finalResult);
-        return !suspect;
     }
+    if (i < listA.size()) {
+        assert(j >= listB.size());
+        for (uint32_t n = listA.size(); i<n; ++i) {
+            result.push_back(listA[i]);
+        }
+    } else if (j < listB.size()) {
+        assert(i >= listA.size());
+        for (uint32_t n = listB.size(); j<n; ++j) {
+            result.push_back(listB[j]);
+        }
+    }
+    result.swap(finalResult);
+    return !suspect;
+}
+
+struct CheckResult : public spi::OperationComplete {
+    spi::Bucket  _bucket;
+    const char  *_msg;
+    CheckResult(spi::Bucket bucket, const char * msg) : _bucket(bucket), _msg(msg) { }
+    void onComplete(std::unique_ptr<spi::Result> result) override {
+        checkResult(*result, _bucket, _msg);
+    }
+    void addResultHandler(const spi::ResultHandler *) override { }
+};
 
 }
 
 MessageTracker::UP
-MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker) const
-{
+MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker) const {
     tracker->setMetric(_env._metrics.getBucketDiff);
     spi::Bucket bucket(cmd.getBucket());
     LOG(debug, "GetBucketDiff(%s)", bucket.toString().c_str());
-    checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
+    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<CheckResult>(bucket, "create bucket"));
+    return handleGetBucketDiffStage2(cmd, std::move(tracker));
+}
 
+MessageTracker::UP
+MergeHandler::handleGetBucketDiffStage2(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker) const
+{
+    spi::Bucket bucket(cmd.getBucket());
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
         tracker->fail(api::ReturnCode::BUSY, "A merge is already running on this bucket.");
         return tracker;

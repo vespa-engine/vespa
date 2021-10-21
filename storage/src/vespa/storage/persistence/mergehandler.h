@@ -80,6 +80,7 @@ private:
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;
     const bool                _async_apply_bucket_diff;
 
+    MessageTrackerUP handleGetBucketDiffStage2(api::GetBucketDiffCommand&, MessageTrackerUP) const;
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,
                                              MergeStatus& status,

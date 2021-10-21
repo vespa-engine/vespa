@@ -96,7 +96,7 @@ public:
     void setActiveStateAsync(const spi::Bucket &bucket, spi::BucketInfo::ActiveState state,
                              spi::OperationComplete::UP up) override;
 
-    spi::Result createBucket(const spi::Bucket&, spi::Context&) override;
+    void createBucketAsync(const spi::Bucket&, spi::Context&, spi::OperationComplete::UP) override;
     spi::BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
     void putAsync(const spi::Bucket&, spi::Timestamp, spi::DocumentSP, spi::Context&, spi::OperationComplete::UP) override;

@@ -44,7 +44,7 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     case api::MessageType::REVERT_ID:
         return _simpleHandler.handleRevert(static_cast<api::RevertCommand&>(msg), std::move(tracker));
     case api::MessageType::CREATEBUCKET_ID:
-        return _simpleHandler.handleCreateBucket(static_cast<api::CreateBucketCommand&>(msg), std::move(tracker));
+        return _asyncHandler.handleCreateBucket(static_cast<api::CreateBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::DELETEBUCKET_ID:
         return _asyncHandler.handleDeleteBucket(static_cast<api::DeleteBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::JOINBUCKETS_ID:

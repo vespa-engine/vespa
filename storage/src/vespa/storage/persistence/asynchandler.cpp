@@ -154,6 +154,34 @@ AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) cons
 }
 
 MessageTracker::UP
+AsyncHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker) const
+{
+    tracker->setMetric(_env._metrics.createBuckets);
+    LOG(debug, "CreateBucket(%s)", cmd.getBucketId().toString().c_str());
+    if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
+        LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
+    }
+    spi::Bucket bucket(cmd.getBucket());
+    auto task = makeResultTask([this, tracker = std::move(tracker), bucket, active=cmd.getActive()](spi::Result::UP ignored) mutable {
+        // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
+        (void) ignored;
+        if (active) {
+            auto nestedTask = makeResultTask([tracker = std::move(tracker)](spi::Result::UP nestedIgnored) {
+                // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
+                (void) nestedIgnored;
+                tracker->sendReply();
+            });
+            _spi.setActiveStateAsync(bucket, spi::BucketInfo::ACTIVE, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(nestedTask)));
+        } else {
+            tracker->sendReply();
+        }
+    });
+    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
+
+    return tracker;
+}
+
+MessageTracker::UP
 AsyncHandler::handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.deleteBuckets);
