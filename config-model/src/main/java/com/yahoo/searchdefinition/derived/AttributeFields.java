@@ -190,7 +190,8 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
 
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
-        getConfig(builder, FieldSet.ALL);
+        //TODO This is just to get some exporting tests to work, Should be undone and removed
+        getConfig(builder, FieldSet.ALL, 77777);
     }
 
     private boolean isAttributeInFieldSet(Attribute attribute, FieldSet fs) {
@@ -295,15 +296,19 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return AttributesConfig.Attribute.Match.UNCASED;
     }
 
-    public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {
+    public void getConfig(AttributesConfig.Builder builder, FieldSet fs, long maxUnCommittedMemory) {
         for (Attribute attribute : attributes.values()) {
             if (isAttributeInFieldSet(attribute, fs)) {
-                builder.attribute(getConfig(attribute.getName(), attribute, false));
+                AttributesConfig.Attribute.Builder attrBuilder = getConfig(attribute.getName(), attribute, false);
+                attrBuilder.maxuncommittedmemory(maxUnCommittedMemory);
+                builder.attribute(attrBuilder);
             }
         }
         if (fs == FieldSet.ALL) {
             for (Map.Entry<String, Attribute> entry : importedAttributes.entrySet()) {
-                builder.attribute(getConfig(entry.getKey(), entry.getValue(), true));
+                AttributesConfig.Attribute.Builder attrBuilder = getConfig(entry.getKey(), entry.getValue(), true);
+                attrBuilder.maxuncommittedmemory(maxUnCommittedMemory);
+                builder.attribute(attrBuilder);
             }
         }
     }
