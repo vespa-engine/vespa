@@ -173,7 +173,7 @@ public class SummaryTestCase {
                 new TestValue(everythingSummary, titleArtistSummary, List.of(List.of(titleField), implicitFields, List.of(artistField, albumField)))
         );
         tests.forEach(testValue -> {
-            var actualFields = testValue.summary.getSummaryFields().stream()
+            var actualFields = testValue.summary.getSummaryFields().values().stream()
                                                 .map(FieldBase::getName)
                                                 .collect(Collectors.toList());
             assertEquals(testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()),

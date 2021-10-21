@@ -26,7 +26,7 @@ public class SummaryFieldsMustHaveValidSource extends Processor {
         if ( ! validate) return;
 
         for (DocumentSummary summary : schema.getSummaries().values()) {
-            for (SummaryField summaryField : summary.getSummaryFields()) {
+            for (SummaryField summaryField : summary.getSummaryFields().values()) {
                 if (summaryField.getSources().isEmpty()) {
                     if ((summaryField.getTransform() != SummaryTransform.RANKFEATURES) &&
                         (summaryField.getTransform() != SummaryTransform.SUMMARYFEATURES))

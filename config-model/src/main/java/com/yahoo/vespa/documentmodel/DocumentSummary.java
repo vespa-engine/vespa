@@ -6,8 +6,11 @@ import com.yahoo.searchdefinition.Schema;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -62,12 +65,11 @@ public class DocumentSummary extends FieldView {
         return inherited().get().getSummaryField(name);
     }
 
-    // TODO: This does not handle overriding in child summaries correctly
-    public Collection<SummaryField> getSummaryFields() {
-        var fields = new ArrayList<SummaryField>(getFields().size());
-        inherited().ifPresent(inherited -> fields.addAll(inherited.getSummaryFields()));
+    public Map<String, SummaryField> getSummaryFields() {
+        var fields = new LinkedHashMap<String, SummaryField>(getFields().size());
+        inherited().ifPresent(inherited -> fields.putAll(inherited.getSummaryFields()));
         for (var field : getFields())
-            fields.add((SummaryField) field);
+            fields.put(field.getName(), (SummaryField) field);
         return fields;
     }
 
@@ -80,7 +82,7 @@ public class DocumentSummary extends FieldView {
      */
     public void purgeImplicits() {
         List<SummaryField> falseImplicits = new ArrayList<>();
-        for (SummaryField summaryField : getSummaryFields() ) {
+        for (SummaryField summaryField : getSummaryFields().values()) {
             if (summaryField.isImplicit()) continue;
             for (Iterator<SummaryField.Source> j = summaryField.sourceIterator(); j.hasNext(); ) {
                 String sourceName = j.next().getName();

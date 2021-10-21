@@ -33,8 +33,8 @@ public class MatchedElementsOnlyResolver extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         for (var entry : schema.getSummaries().entrySet()) {
             var summary = entry.getValue();
-            for (var field : summary.getSummaryFields()) {
-                if (field.getTransform().equals(SummaryTransform.MATCHED_ELEMENTS_FILTER)) {
+            for (var field : summary.getSummaryFields().values()) {
+                if (field.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER) {
                     processSummaryField(summary, field, validate);
                 }
             }

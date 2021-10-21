@@ -63,7 +63,7 @@ public class SummaryClass extends Derived {
     }
 
     private void deriveFields(Schema schema, DocumentSummary summary) {
-        for (SummaryField summaryField : summary.getSummaryFields()) {
+        for (SummaryField summaryField : summary.getSummaryFields().values()) {
             if (!accessingDiskSummary && schema.isAccessingDiskSummary(summaryField)) {
                 accessingDiskSummary = true;
             }
