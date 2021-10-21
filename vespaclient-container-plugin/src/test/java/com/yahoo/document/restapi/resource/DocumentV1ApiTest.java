@@ -248,12 +248,12 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
-        // GET at root is a visit. Streaming mode can be specified with &streaming=true
+        // GET at root is a visit. Streaming mode can be specified with &stream=true
         access.expect(tokens);
         access.expect(parameters -> {
             assertEquals("content", parameters.getRoute().toString());
             assertEquals("default", parameters.getBucketSpace());
-            assertEquals(1025, parameters.getMaxTotalHits()); // Not bounded likewise for streaming responses.
+            assertEquals(1025, parameters.getMaxTotalHits()); // Not bounded likewise for streamed responses.
             assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
@@ -269,7 +269,7 @@ public class DocumentV1ApiTest {
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
-                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&streaming=true");
+                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&stream=true");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1\"," +
                        "  \"documents\": [" +
@@ -310,13 +310,13 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
-        // GET when a streaming visit returns status code 200 also when errors occur.
+        // GET when a streamed visit returns status code 200 also when errors occur.
         access.expect(parameters -> {
             assertEquals("(music) and (id.namespace=='space')", parameters.getDocumentSelection());
             parameters.getControlHandler().onProgress(progress);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.FAILURE, "failure?");
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?streaming=true");
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid?stream=true");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid\"," +
                        "  \"documents\": []," +
