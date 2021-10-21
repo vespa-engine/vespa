@@ -104,6 +104,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
+    public UserNamespace userNamespace() {
+        return containerFs.getUserPrincipalLookupService().userNamespace();
+    }
+
+    @Override
     public boolean isDisabled(NodeAgentTask task) {
         return disabledNodeAgentTasks.contains(task);
     }
@@ -263,7 +268,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             Objects.requireNonNull(containerStorage, "Must set one of containerStorage or fileSystem");
 
             UserNamespace userNamespace = Optional.ofNullable(this.userNamespace)
-                    .orElseGet(() -> new UserNamespace(100000, 100000));
+                    .orElseGet(() -> new UserNamespace(100000, 100000, 100000));
             VespaUser vespaUser = Optional.ofNullable(this.vespaUser)
                     .orElseGet(() -> new VespaUser("vespa", "vespa", 1000, 100));
             ContainerFileSystem containerFs = ContainerFileSystem.create(containerStorage

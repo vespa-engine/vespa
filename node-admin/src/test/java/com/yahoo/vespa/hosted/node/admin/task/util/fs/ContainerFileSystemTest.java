@@ -25,7 +25,7 @@ class ContainerFileSystemTest {
 
     private final FileSystem fileSystem = TestFileSystem.create();
     private final UnixPath containerRootOnHost = new UnixPath(fileSystem.getPath("/data/storage/ctr1"));
-    private final UserNamespace userNamespace = new UserNamespace(10_000, 11_000);
+    private final UserNamespace userNamespace = new UserNamespace(10_000, 11_000, 10000);
     private final VespaUser vespaUser = new VespaUser("vespa", "users", 1000, 100);
     private final ContainerFileSystem containerFs = ContainerFileSystem.create(
             containerRootOnHost.createDirectories().toPath(), userNamespace, vespaUser);
