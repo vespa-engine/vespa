@@ -1,19 +1,10 @@
-<svg version="1.2" baseProfile="tiny-ps" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-	<title>pluginIcon</title>
+<svg version="1.2" baseProfile="tiny-ps" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+	<title>New Project</title>
 	<defs>
-		<image  width="40" height="40" id="img1" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoAQMAAAC2MCouAAAAAXNSR0IB2cksfwAAAANQTFRFAAAAp3o92gAAAAF0Uk5TAEDm2GYAAAAMSURBVHicY2AYWQAAAPAAAQaUif0AAAAASUVORK5CYII="/>
-		<image  width="36" height="36" id="img2" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkAQMAAADbzgrbAAAAAXNSR0IB2cksfwAAAANQTFRFuubnWfllrQAAAAxJREFUeJxjYBieAAAA2AABOXA/oAAAAABJRU5ErkJggg=="/>
-		<image  width="34" height="34" id="img3" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiAQMAAAAAiZmBAAAAAXNSR0IB2cksfwAAAAZQTFRFAAAAP5aZJJgdHgAAAAJ0Uk5TAP9bkSK1AAAAWUlEQVR4nI3Ouw2AMAxF0YcoXGYERsloyWiMwhgUiIsTKxESDS5O49+T7JRXpgm7tMAhreANg0tK3Q3uNghhVfno+In/lum4kKfjY3plsJ4qEkZaX6uuefMBOOp0ufGf8MYAAAAASUVORK5CYII="/>
+		<image  width="30" height="29" id="img1" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAdCAMAAACKeiw+AAAAAXNSR0IB2cksfwAAAUpQTFRFAAAAHKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0HKy0lOzY/wAAAG50Uk5TAA5Acarj/8dVMgdq1LgjXdzxzbAfO/iV1epHHGO/f9hcFZ3lQiR08oAPeL7CuWkIYKieoI8u9/n69en2/eAX6GY6rljt7MzmWv4ac5jwEO5RM7381k8skCnX3srvyDdB6/N8jNLnBfT7wXqSr7W47lQGAAABpElEQVR4nIVT6z8CQRS9+7qVNk3FKiqUIvJWbSLvjQh5hkgeef//X83s2rb6hfNhZvecmXvP3LkD8AOOF0QJKWyi3cFBO3ocThmbcDl7e1pVzk08Xp+9j333Cy6ieN2t8oA/IA42Iw4FQ+gPW2oIh0fa0o1GomjqnBujYx1mYvFxv9vIP+jFCejEaAi9vfpm0eOkexOTU8npmVmYm19YXEpRA6LCaHAQ4qDTUlrJqFkeJGU5t7KaBwiii/F29LEka+r6xmZ6C7Z3+uJaYZdG3UM7QFEMCCyHpwCQ2s9Tmf6sanQ4QLEIMRtJMTlbCh+yeYfJyhEdjtEWgzJqutUT9fTs3JRz24xCLDdlmCmkoxe/ywCXauQvGVQJDGuWXJGudGvXN9RR1ZAT8i1l7lCqNA+WVmoJtQRwX394fHrmzYM1BKMs2mlpLeMDkF+ymVeS18siNAD4gF5UOMnW3yj7/vGZ/KoBK6rMW1fSCfNKIEi6X6gR9L92AE7u1kwDFiNjZytiqGX1P40MXFAMYPRKoyBVJC2hzAV/PSKGRrFSpogVGxb3De/eO/7N6EMHAAAAAElFTkSuQmCC"/>
 	</defs>
 	<style>
 		tspan { white-space:pre }
-		.txt0 { font-size: 20px;fill: #efab00;font-weight: 400;font-family: "DejaVuSans", "DejaVu Sans" } 
 	</style>
-	<use id="Background" href="#img1" x="0" y="0" />
-	<use id="Layer 1" style="opacity: 0.42" href="#img2" x="2" y="2" />
-	<use id="Layer 2" style="opacity: 0.769" href="#img3" x="3" y="3" />
-	<text id="SD" style="transform: matrix(1,0,0,1,7,27);paint-order:stroke fill markers;stroke: #826c34;stroke-width: 2;stroke-linejoin: round;" >
-		<tspan x="0" y="0" class="txt0">S</tspan><tspan  y="0" class="txt0">D
-</tspan>
-	</text>
+	<use id="Layer 2" href="#img1" x="1" y="2" />
 </svg>
