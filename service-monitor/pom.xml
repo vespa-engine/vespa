@@ -16,6 +16,12 @@
     <description>Service monitor component for hosted vespa.</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>http-utils</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
 
         <!-- provided scope -->
         <dependency>
@@ -81,12 +87,6 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespa-athenz</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>vespajlib</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
