@@ -196,6 +196,7 @@ public class ModelContextImpl implements ModelContext {
         private final int docstoreCompressionLevel;
         private final double diskBloatFactor;
         private final boolean distributorEnhancedMaintenanceScheduling;
+        private final boolean forwardIssuesAsErrors;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -230,6 +231,7 @@ public class ModelContextImpl implements ModelContext {
             this.docstoreCompressionLevel = flagValue(source, appId, Flags.DOCSTORE_COMPRESSION_LEVEL);
             this.diskBloatFactor = flagValue(source, appId, Flags.DISK_BLOAT_FACTOR);
             this.distributorEnhancedMaintenanceScheduling = flagValue(source, appId, Flags.DISTRIBUTOR_ENHANCED_MAINTENANCE_SCHEDULING);
+            this.forwardIssuesAsErrors = flagValue(source, appId, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -266,6 +268,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double diskBloatFactor() { return diskBloatFactor; }
         @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
         @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
+        @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
