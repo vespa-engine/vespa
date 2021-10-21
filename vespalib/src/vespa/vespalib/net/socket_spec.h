@@ -44,6 +44,7 @@ public:
     const vespalib::string &path() const { return (_type == Type::PATH) ? _node : _empty; }
     const vespalib::string &name() const { return (_type == Type::NAME) ? _node : _empty; }
     const vespalib::string &host() const { return (_type == Type::HOST_PORT) ? _node : _empty; }
+    const vespalib::string &host_with_fallback() const;
     int port() const { return _port; }
     SocketAddress client_address() const { return address(false); }
     SocketAddress server_address() const { return address(true); }
