@@ -91,6 +91,11 @@ private:
     vespalib::ISequencedTaskExecutor::ExecutorId   _executorId;
 };
 
+struct Noop : public spi::OperationComplete {
+    void onComplete(std::unique_ptr<spi::Result>) override { }
+    void addResultHandler(const spi::ResultHandler *) override { }
+};
+
 bool
 bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo& b) {
     // Don't check document sizes, as background moving of documents in Proton
@@ -162,21 +167,18 @@ AsyncHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::
         LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
     }
     spi::Bucket bucket(cmd.getBucket());
-    auto task = makeResultTask([this, tracker = std::move(tracker), bucket, active=cmd.getActive()](spi::Result::UP ignored) mutable {
+    auto task = makeResultTask([tracker = std::move(tracker)](spi::Result::UP ignored) mutable {
         // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
         (void) ignored;
-        if (active) {
-            auto nestedTask = makeResultTask([tracker = std::move(tracker)](spi::Result::UP nestedIgnored) {
-                // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
-                (void) nestedIgnored;
-                tracker->sendReply();
-            });
-            _spi.setActiveStateAsync(bucket, spi::BucketInfo::ACTIVE, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(nestedTask)));
-        } else {
-            tracker->sendReply();
-        }
+        tracker->sendReply();
     });
-    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
+
+    if (cmd.getActive()) {
+        _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<Noop>());
+        _spi.setActiveStateAsync(bucket, spi::BucketInfo::ACTIVE, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
+    } else {
+        _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
+    }
 
     return tracker;
 }

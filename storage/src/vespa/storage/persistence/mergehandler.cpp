@@ -662,6 +662,7 @@ MergeHandler::sync_bucket_info(const spi::Bucket& bucket) const
 }
 
 namespace {
+
 void
 findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHasMask, uint16_t hasMask,
                uint16_t newHasMask, api::ApplyBucketDiffCommand& cmd)
@@ -680,6 +681,17 @@ findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHa
         }
     }
 }
+
+struct CheckResult : public spi::OperationComplete {
+    spi::Bucket  _bucket;
+    const char  *_msg;
+    CheckResult(spi::Bucket bucket, const char * msg) : _bucket(bucket), _msg(msg) { }
+    void onComplete(std::unique_ptr<spi::Result> result) override {
+        checkResult(*result, _bucket, _msg);
+    }
+    void addResultHandler(const spi::ResultHandler *) override { }
+};
+
 }
 
 api::StorageReply::SP
@@ -898,7 +910,8 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
         tracker->fail(api::ReturnCode::BUSY, err);
         return tracker;
     }
-    checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
+    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<CheckResult>(bucket, "create bucket"));
+
 
     MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
     auto s = std::make_shared<MergeStatus>(_clock, cmd.getPriority(), cmd.getTrace().getLevel());
@@ -1052,16 +1065,6 @@ bool mergeLists(
     result.swap(finalResult);
     return !suspect;
 }
-
-struct CheckResult : public spi::OperationComplete {
-    spi::Bucket  _bucket;
-    const char  *_msg;
-    CheckResult(spi::Bucket bucket, const char * msg) : _bucket(bucket), _msg(msg) { }
-    void onComplete(std::unique_ptr<spi::Result> result) override {
-        checkResult(*result, _bucket, _msg);
-    }
-    void addResultHandler(const spi::ResultHandler *) override { }
-};
 
 }
 
