@@ -22,7 +22,6 @@ public:
     SimpleMessageHandler(const PersistenceUtil&, spi::PersistenceProvider&);
     MessageTrackerUP handleGet(api::GetCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRevert(api::RevertCommand& cmd, MessageTrackerUP tracker) const;
-    MessageTrackerUP handleCreateBucket(api::CreateBucketCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateIterator(CreateIteratorCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleGetIter(GetIterCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleReadBucketList(ReadBucketList& cmd, MessageTrackerUP tracker) const;

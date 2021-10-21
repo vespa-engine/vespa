@@ -88,22 +88,6 @@ SimpleMessageHandler::handleRevert(api::RevertCommand& cmd, MessageTracker::UP t
 }
 
 MessageTracker::UP
-SimpleMessageHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker) const
-{
-    tracker->setMetric(_env._metrics.createBuckets);
-    LOG(debug, "CreateBucket(%s)", cmd.getBucketId().toString().c_str());
-    if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
-        LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
-    }
-    spi::Bucket spiBucket(cmd.getBucket());
-    _spi.createBucket(spiBucket, tracker->context());
-    if (cmd.getActive()) {
-        _spi.setActiveState(spiBucket, spi::BucketInfo::ACTIVE);
-    }
-    return tracker;
-}
-
-MessageTracker::UP
 SimpleMessageHandler::handleGetIter(GetIterCommand& cmd, MessageTracker::UP tracker) const
 {
     tracker->setMetric(_env._metrics.visit);

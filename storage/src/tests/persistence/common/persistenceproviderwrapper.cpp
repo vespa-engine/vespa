@@ -80,12 +80,12 @@ PersistenceProviderWrapper::listBuckets(BucketSpace bucketSpace) const
     return _spi.listBuckets(bucketSpace);
 }
 
-spi::Result
-PersistenceProviderWrapper::createBucket(const spi::Bucket& bucket, spi::Context& context)
+void
+PersistenceProviderWrapper::createBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete)
 {
     LOG_SPI("createBucket(" << bucket << ")");
-    CHECK_ERROR(spi::Result, FAIL_CREATE_BUCKET);
-    return _spi.createBucket(bucket, context);
+    CHECK_ERROR_ASYNC(spi::Result, FAIL_CREATE_BUCKET, onComplete);
+    return _spi.createBucketAsync(bucket, context, std::move(onComplete));
 }
 
 spi::BucketInfoResult

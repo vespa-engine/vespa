@@ -714,8 +714,8 @@ DummyPersistence::destroyIterator(IteratorId id, Context&)
     return Result();
 }
 
-Result
-DummyPersistence::createBucket(const Bucket& b, Context&)
+void
+DummyPersistence::createBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createBucket(%s)", b.toString().c_str());
@@ -727,7 +727,7 @@ DummyPersistence::createBucket(const Bucket& b, Context&)
         assert(!_content[b]->_inUse);
         LOG(debug, "%s already existed", b.toString().c_str());
     }
-    return Result();
+    onComplete->onComplete(std::make_unique<Result>());
 }
 
 void
