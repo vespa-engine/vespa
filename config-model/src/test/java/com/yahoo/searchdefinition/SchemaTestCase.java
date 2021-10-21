@@ -166,7 +166,7 @@ public class SchemaTestCase {
         assertTrue(child.onnxModels().asMap().containsKey("child_model"));
         assertNotNull(child.getSummary("parent_summary"));
         assertNotNull(child.getSummary("child_summary"));
-        assertEquals("parent_summary", child.getSummary("child_summary").getInherited().getName());
+        assertEquals("parent_summary", child.getSummary("child_summary").inherited().get().getName());
         assertTrue(child.getSummaries().containsKey("parent_summary"));
         assertTrue(child.getSummaries().containsKey("child_summary"));
         assertNotNull(child.getSummaryField("pf1"));

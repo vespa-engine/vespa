@@ -39,7 +39,7 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
     }
 
     private void derive(DocumentSummary documentSummary) {
-        for (SummaryField summaryField : documentSummary.getSummaryFields()) {
+        for (SummaryField summaryField : documentSummary.getSummaryFields().values()) {
             if (summaryField.getTransform()== SummaryTransform.NONE) continue;
 
             if (summaryField.getTransform()==SummaryTransform.ATTRIBUTE ||
