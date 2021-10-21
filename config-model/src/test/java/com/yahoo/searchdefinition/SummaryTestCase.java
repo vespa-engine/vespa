@@ -10,6 +10,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -172,12 +173,12 @@ public class SummaryTestCase {
                 new TestValue(everythingSummary, titleArtistSummary, List.of(List.of(titleField), implicitFields, List.of(artistField, albumField)))
         );
         tests.forEach(testValue -> {
-            var actualFields = testValue.summary.getSummaryFields().stream()
+            var actualFields = testValue.summary.getSummaryFields().values().stream()
                                                 .map(FieldBase::getName)
                                                 .collect(Collectors.toList());
             assertEquals(testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()),
-                         testValue.parent,
-                         testValue.summary.getInherited());
+                         Optional.ofNullable(testValue.parent),
+                         testValue.summary.inherited());
             assertEquals("Summary " + testValue.summary.getName() + " has expected fields", testValue.fields, actualFields);
         });
     }

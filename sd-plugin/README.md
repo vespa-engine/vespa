@@ -18,4 +18,8 @@ Now you should have a "gen" folder next to the "java" folder, and it contains al
 
 Important note! After any change in one of this 2 files (bnf, flex) you'll need to generate again. The proper way is to delete the "gen" folder and then do 1-2 again.
 
-Now, you can run the gradle task "runIde", open a project with some sd file and see how the plugin works on it.
+Now, you can run the gradle task "intellij/runIde", open a project with some sd file and see how the plugin works on it.
+
+In order to test the plugin locally (on you IDE, not by running the gradle task "runIde"), you can run the gradle task 
+"intellij/buildPlugin". It would create a zip file in the directory build\distributions. You can load it to IntelliJ by 
+clicking the "settings" in preferences/Plugins and click "Install Plugin from disk".

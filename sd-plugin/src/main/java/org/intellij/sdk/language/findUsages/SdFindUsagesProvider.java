@@ -28,7 +28,7 @@ public class SdFindUsagesProvider implements FindUsagesProvider {
                                        TokenSet.create(SdTypes.ID_REG, SdTypes.ID_WITH_DASH_REG, SdTypes.IDENTIFIER_VAL,
                                                        SdTypes.IDENTIFIER_WITH_DASH_VAL),
                                        TokenSet.create(SdTypes.COMMENT),
-                                       TokenSet.create(SdTypes.STRING, SdTypes.INTEGER_REG, SdTypes.FLOAT_REG));
+                                       TokenSet.create(SdTypes.STRING_REG, SdTypes.INTEGER_REG, SdTypes.FLOAT_REG));
     }
 
     @Override

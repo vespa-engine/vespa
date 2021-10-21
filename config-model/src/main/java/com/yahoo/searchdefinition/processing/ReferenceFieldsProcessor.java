@@ -35,7 +35,7 @@ public class ReferenceFieldsProcessor extends Processor {
 
     private void clearSummaryAttributeAspectForExplicitSummaryFields() {
         for (DocumentSummary docSum : schema.getSummaries().values()) {
-            docSum.getSummaryFields().stream()
+            docSum.getSummaryFields().values().stream()
                     .filter(summaryField  -> summaryField.getDataType() instanceof ReferenceDataType)
                     .forEach(summaryField -> summaryField.setTransform(SummaryTransform.NONE));
         }

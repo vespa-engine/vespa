@@ -33,7 +33,7 @@ public class SummaryConsistency extends Processor {
         for (DocumentSummary summary : schema.getSummaries().values()) {
             if (summary.getName().equals("default")) continue;
 
-            for (SummaryField summaryField : summary.getSummaryFields() ) {
+            for (SummaryField summaryField : summary.getSummaryFields().values()) {
                 assertConsistency(summaryField, schema, validate);
                 makeAttributeTransformIfAppropriate(summaryField, schema);
                 makeAttributeCombinerTransformIfAppropriate(summaryField, schema);

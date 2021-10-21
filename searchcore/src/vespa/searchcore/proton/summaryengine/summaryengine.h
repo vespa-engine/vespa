@@ -34,6 +34,7 @@ private:
     std::mutex                    _lock;
     bool                          _async;
     bool                          _closed;
+    std::atomic<bool>             _forward_issues;
     HandlerMap<ISearchHandler>    _handlers;
     vespalib::ThreadStackExecutor _executor;
     std::unique_ptr<metrics::MetricSet> _metrics;
@@ -126,6 +127,8 @@ public:
     DocsumReply::UP getDocsums(DocsumRequest::UP req) override;
 
     metrics::MetricSet & getMetrics() { return *_metrics; }
+
+    void set_issue_forwarding(bool enable) { _forward_issues = enable; }
 };
 
 } // namespace proton

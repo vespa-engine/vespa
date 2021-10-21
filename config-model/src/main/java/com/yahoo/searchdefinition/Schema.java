@@ -609,7 +609,7 @@ public class Schema implements ImmutableSchema {
         Map<String, SummaryField> summaryFields = inherited.isPresent() ? requireInherited().getSummaryFields(field)
                                                                         : new java.util.LinkedHashMap<>();
         for (DocumentSummary documentSummary : summaries.values()) {
-            for (SummaryField summaryField : documentSummary.getSummaryFields()) {
+            for (SummaryField summaryField : documentSummary.getSummaryFields().values()) {
                 if (summaryField.hasSource(field.getName())) {
                     summaryFields.put(summaryField.getName(), summaryField);
                 }
@@ -628,7 +628,7 @@ public class Schema implements ImmutableSchema {
         Map<String, SummaryField> summaryFields = inherited.isPresent() ? requireInherited().getUniqueNamedSummaryFields()
                                                                         : new java.util.LinkedHashMap<>();
         for (DocumentSummary documentSummary : summaries.values()) {
-            for (SummaryField summaryField : documentSummary.getSummaryFields()) {
+            for (SummaryField summaryField : documentSummary.getSummaryFields().values()) {
                 summaryFields.put(summaryField.getName(), summaryField);
             }
         }

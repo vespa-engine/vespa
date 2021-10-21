@@ -39,7 +39,7 @@ public class AddExtraFieldsToDocument extends Processor {
                 addSdField(schema, document, field, validate);
             }
             //TODO Vespa 8 or sooner we should avoid the dirty addition of fields from dirty 'default' summary to document at all
-            for (SummaryField field : schema.getSummary("default").getSummaryFields()) {
+            for (SummaryField field : schema.getSummary("default").getSummaryFields().values()) {
                 if (dirtyLegalFieldNameCheck(field.getName())) {
                     addSummaryField(schema, document, field, validate);
                 }

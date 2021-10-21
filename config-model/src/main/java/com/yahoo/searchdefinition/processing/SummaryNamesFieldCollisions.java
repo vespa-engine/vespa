@@ -32,7 +32,7 @@ public class SummaryNamesFieldCollisions extends Processor {
         Map<String, Pair<String, String>> fieldToClassAndSource = new HashMap<>();
         for (DocumentSummary summary : schema.getSummaries().values()) {
             if ("default".equals(summary.getName())) continue;
-            for (SummaryField summaryField : summary.getSummaryFields() ) {
+            for (SummaryField summaryField : summary.getSummaryFields().values()) {
                 if (summaryField.isImplicit()) continue;
                 Pair<String, String> prevClassAndSource = fieldToClassAndSource.get(summaryField.getName());
                 for (Source source : summaryField.getSources()) {

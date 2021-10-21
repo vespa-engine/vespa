@@ -514,3 +514,6 @@ bucketdb.checksumtype enum {LEGACY, XXHASH64} default = LEGACY restart
 ## FAST_VALUE uses the new and optimized FastValueBuilderFactory instead.
 ## TODO: Remove when default has been switched to FAST_VALUE.
 tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = FAST_VALUE
+
+## Whether to report issues back to the container via protobuf field
+forward_issues bool default = true

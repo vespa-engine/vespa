@@ -23,7 +23,7 @@ public class ImplicitSummaryFields extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (DocumentSummary docsum : schema.getSummariesInThis().values()) {
-            if (docsum.getInherited() != null) continue; // Implicit fields are added to inheriting summaries through their parent
+            if (docsum.inherited().isPresent()) continue; // Implicit fields are added to inheriting summaries through their parent
             addField(docsum, new SummaryField("rankfeatures", DataType.STRING, SummaryTransform.RANKFEATURES), validate);
             addField(docsum, new SummaryField("summaryfeatures", DataType.STRING, SummaryTransform.SUMMARYFEATURES), validate);
         }

@@ -68,6 +68,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final double defaultFeedConcurrency;
     private final double defaultDiskBloatFactor;
     private final int defaultDocStoreCompressionLevel;
+    private final boolean forwardIssuesToQrs;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
@@ -210,11 +211,12 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.syncTransactionLog = syncTransactionLog;
 
         this.combined = combined;
-        feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
-        feedTaskLimit = featureFlags.feedTaskLimit();
-        defaultFeedConcurrency = featureFlags.feedConcurrency();
-        defaultDocStoreCompressionLevel = featureFlags.docstoreCompressionLevel();
-        defaultDiskBloatFactor = featureFlags.diskBloatFactor();
+        this.feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
+        this.feedTaskLimit = featureFlags.feedTaskLimit();
+        this.defaultFeedConcurrency = featureFlags.feedConcurrency();
+        this.defaultDiskBloatFactor = featureFlags.diskBloatFactor();
+        this.defaultDocStoreCompressionLevel = featureFlags.docstoreCompressionLevel();
+        this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -411,6 +413,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         builder.flush.memory.each.diskbloatfactor(defaultDiskBloatFactor);
         builder.summary.log.chunk.compression.level(defaultDocStoreCompressionLevel);
         builder.summary.log.compact.compression.level(defaultDocStoreCompressionLevel);
+        builder.forward_issues(forwardIssuesToQrs);
 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));

@@ -46,6 +46,7 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _distributionKey(distributionKey),
       _async(async),
       _closed(false),
+      _forward_issues(true),
       _handlers(),
       _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256_Ki, match_engine_executor),
       _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
@@ -146,7 +147,13 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req)
         _threadBundlePool.release(std::move(threadBundle));
     }
     ret->request = req.release();
-    ret->my_issues = std::move(my_issues);
+    if (_forward_issues) {
+        ret->my_issues = std::move(my_issues);
+    } else {
+        my_issues->for_each_message([](const auto &msg){
+            LOG(warning, "unhandled issue: %s", msg.c_str());
+        });
+    }
     ret->setDistributionKey(_distributionKey);
     if ((ret->request->trace().getLevel() > 0) && ret->request->trace().hasTrace()) {
         ret->request->trace().getRoot().setLong("distribution-key", _distributionKey);

@@ -59,6 +59,7 @@ SummaryEngine::SummaryEngine(size_t numThreads, bool async)
     : _lock(),
       _async(async),
       _closed(false),
+      _forward_issues(true),
       _handlers(),
       _executor(numThreads, 128_Ki, summary_engine_executor),
       _metrics(std::make_unique<DocsumMetrics>())
@@ -145,7 +146,13 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
         reply = std::make_unique<DocsumReply>();
     }
     reply->setRequest(std::move(req));
-    reply->setIssues(std::move(my_issues));
+    if (_forward_issues) {
+        reply->setIssues(std::move(my_issues));
+    } else {
+        my_issues->for_each_message([](const auto &msg){
+            LOG(warning, "unhandled issue: %s", msg.c_str());
+        });
+    }
     return reply;
 }
 
