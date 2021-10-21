@@ -7,6 +7,7 @@ package cmd
 import (
 	"archive/zip"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
