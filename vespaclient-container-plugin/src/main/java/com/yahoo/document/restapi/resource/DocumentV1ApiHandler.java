@@ -162,7 +162,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String TIME_CHUNK = "timeChunk";
     private static final String TIMEOUT = "timeout";
     private static final String TRACELEVEL = "tracelevel";
-    private static final String STREAM = "stream";
+    private static final String STREAMING = "streaming";
 
     private final Clock clock;
     private final Duration handlerTimeout;
@@ -363,7 +363,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
-            boolean streaming = getProperty(request, STREAM, booleanParser).orElse(false);
+            boolean streaming = getProperty(request, STREAMING, booleanParser).orElse(false);
             VisitorParameters parameters = parseGetParameters(request, path, streaming);
             return () -> {
                 visitAndWrite(request, parameters, handler, streaming);
