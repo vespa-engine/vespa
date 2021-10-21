@@ -160,8 +160,8 @@ jobs:
           git archive HEAD --format tar | tar x -C docker/vespa-systemtests
           cp -a $LOCAL_MVN_REPO docker/repository
           cd docker
-          docker build --file Dockerfile.multistage \
-                       --build-arg BASE_IMAGE=centos:7 --build-arg VESPA_BASE_IMAGE=base \
+          docker build --file Dockerfile.systemtest \
+                       --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos7:latest \
                        --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=true \
                        --target systemtest \
                        --tag vespaengine/vespa-systemtest-centos7:$VESPA_VERSION \
