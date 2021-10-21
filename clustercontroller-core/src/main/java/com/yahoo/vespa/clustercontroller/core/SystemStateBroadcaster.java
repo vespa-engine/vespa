@@ -178,7 +178,7 @@ public class SystemStateBroadcaster {
         return nodeIsReachable(node);
     }
 
-    private List<NodeInfo> resolveStateVersionSendSet(DatabaseHandler.Context dbContext) {
+    private List<NodeInfo> resolveStateVersionSendSet(DatabaseHandler.DatabaseContext dbContext) {
         return dbContext.getCluster().getNodeInfo().stream()
                 .filter(this::nodeNeedsClusterStateBundle)
                 .filter(node -> !newestStateBundleAlreadySentToNode(node))
@@ -186,7 +186,7 @@ public class SystemStateBroadcaster {
     }
 
     // Precondition: no nodes in the cluster need to receive the current cluster state version bundle
-    private List<NodeInfo> resolveStateActivationSendSet(DatabaseHandler.Context dbContext) {
+    private List<NodeInfo> resolveStateActivationSendSet(DatabaseHandler.DatabaseContext dbContext) {
         return dbContext.getCluster().getNodeInfo().stream()
                 .filter(this::nodeNeedsClusterStateActivation)
                 .filter(node -> !newestStateActivationAlreadySentToNode(node))
@@ -207,7 +207,7 @@ public class SystemStateBroadcaster {
      * object and updates the broadcaster's last known in-sync cluster state version.
      */
     void checkIfClusterStateIsAckedByAllDistributors(DatabaseHandler database,
-                                                     DatabaseHandler.Context dbContext,
+                                                     DatabaseHandler.DatabaseContext dbContext,
                                                      FleetController fleetController) throws InterruptedException {
         if ((clusterStateBundle == null) || currentClusterStateIsConverged()) {
             return; // Nothing to do for the current state
@@ -248,7 +248,7 @@ public class SystemStateBroadcaster {
         lastStateVersionBundleAcked = clusterStateBundle.getVersion();
     }
 
-    private void markCurrentClusterStateAsConverged(DatabaseHandler database, DatabaseHandler.Context dbContext, FleetController fleetController) throws InterruptedException {
+    private void markCurrentClusterStateAsConverged(DatabaseHandler database, DatabaseHandler.DatabaseContext dbContext, FleetController fleetController) throws InterruptedException {
         log.log(Level.FINE, "All distributors have newest clusterstate, updating start timestamps in zookeeper and clearing them from cluster state");
         lastClusterStateVersionConverged = clusterStateBundle.getVersion();
         lastClusterStateBundleConverged = clusterStateBundle;
@@ -267,7 +267,7 @@ public class SystemStateBroadcaster {
         lastOfficialStateVersion = clusterStateBundle.getVersion();
     }
 
-    public boolean broadcastNewStateBundleIfRequired(DatabaseHandler.Context dbContext, Communicator communicator,
+    public boolean broadcastNewStateBundleIfRequired(DatabaseHandler.DatabaseContext dbContext, Communicator communicator,
                                                      int lastClusterStateVersionWrittenToZooKeeper) {
         if (clusterStateBundle == null || clusterStateBundle.getVersion() == 0) {
             return false;
@@ -302,7 +302,7 @@ public class SystemStateBroadcaster {
         return !recipients.isEmpty();
     }
 
-    public boolean broadcastStateActivationsIfRequired(DatabaseHandler.Context dbContext, Communicator communicator) {
+    public boolean broadcastStateActivationsIfRequired(DatabaseHandler.DatabaseContext dbContext, Communicator communicator) {
         if (clusterStateBundle == null || clusterStateBundle.getVersion() == 0 || !currentBundleVersionIsTaggedOfficial()) {
             return false;
         }
@@ -331,7 +331,7 @@ public class SystemStateBroadcaster {
         return node.getStartTimestamp() != 0 && node.getWentDownWithStartTime() == node.getStartTimestamp();
     }
 
-    private static ClusterState buildModifiedClusterState(ClusterState sourceState, DatabaseHandler.Context dbContext) {
+    private static ClusterState buildModifiedClusterState(ClusterState sourceState, DatabaseHandler.DatabaseContext dbContext) {
         ClusterState newState = sourceState.clone();
         for (NodeInfo n : dbContext.getCluster().getNodeInfo()) {
             NodeState ns = newState.getNodeState(n.getNode());

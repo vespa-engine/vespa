@@ -32,7 +32,7 @@ public class ContainerPath implements Path {
 
         if (!pathOnHost.isAbsolute())
             throw new IllegalArgumentException("Path host must be absolute: " + pathOnHost);
-        Path containerRootOnHost = containerFs.provider().containerRootOnHost();
+        Path containerRootOnHost = containerFs.containerRootOnHost();
         if (!pathOnHost.startsWith(containerRootOnHost))
             throw new IllegalArgumentException("Path on host (" + pathOnHost + ") must start with container root on host (" + containerRootOnHost + ")");
     }
@@ -173,7 +173,7 @@ public class ContainerPath implements Path {
 
     @Override
     public String toString() {
-        return containerFs.provider().containerRootOnHost().getFileName() + ":" + pathInContainer();
+        return containerFs.containerRootOnHost().getFileName() + ":" + pathInContainer();
     }
 
     private static ContainerPath resolve(ContainerFileSystem containerFs, String[] currentParts, Path other) {
@@ -189,7 +189,7 @@ public class ContainerPath implements Path {
         }
 
         return new ContainerPath(containerFs,
-                containerFs.provider().containerRootOnHost().resolve(String.join("/", parts)),
+                containerFs.containerRootOnHost().resolve(String.join("/", parts)),
                 parts.toArray(String[]::new));
     }
 
@@ -201,7 +201,7 @@ public class ContainerPath implements Path {
 
     public static ContainerPath fromPathOnHost(ContainerFileSystem containerFs, Path pathOnHost) {
         pathOnHost = pathOnHost.normalize();
-        Path containerRootOnHost = containerFs.provider().containerRootOnHost();
+        Path containerRootOnHost = containerFs.containerRootOnHost();
         Path pathUnderContainerStorage = containerRootOnHost.relativize(pathOnHost);
 
         if (pathUnderContainerStorage.getNameCount() == 0 || pathUnderContainerStorage.getName(0).toString().isEmpty())

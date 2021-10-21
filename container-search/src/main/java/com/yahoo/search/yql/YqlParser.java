@@ -33,6 +33,7 @@ import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.EquivItem;
+import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -151,12 +152,12 @@ public class YqlParser implements Parser {
     public static final String CONNECTION_WEIGHT = "weight";
     public static final String CONNECTIVITY = "connectivity";
     public static final String DISTANCE = "distance";
+    public static final String DISTANCE_THRESHOLD = "distanceThreshold";
     public static final String DOT_PRODUCT = "dotProduct";
     public static final String EQUIV = "equiv";
     public static final String FILTER = "filter";
     public static final String GEO_LOCATION = "geoLocation";
     public static final String HIT_LIMIT = "hitLimit";
-    public static final String DISTANCE_THRESHOLD = "distanceThreshold";
     public static final String HNSW_EXPLORE_ADDITIONAL_HITS = "hnsw.exploreAdditionalHits";
     public static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
     public static final String LABEL = "label";
@@ -164,16 +165,16 @@ public class YqlParser implements Parser {
     public static final String NEAREST_NEIGHBOR = "nearestNeighbor";
     public static final String NORMALIZE_CASE = "normalizeCase";
     public static final String ONEAR = "onear";
+    public static final String ORIGIN = "origin";
     public static final String ORIGIN_LENGTH = "length";
     public static final String ORIGIN_OFFSET = "offset";
-    public static final String ORIGIN = "origin";
     public static final String ORIGIN_ORIGINAL = "original";
     public static final String PHRASE = "phrase";
     public static final String PREDICATE = "predicate";
     public static final String PREFIX = "prefix";
     public static final String RANGE = "range";
-    public static final String RANKED = "ranked";
     public static final String RANK = "rank";
+    public static final String RANKED = "ranked";
     public static final String SAME_ELEMENT = "sameElement";
     public static final String SCORE_THRESHOLD = "scoreThreshold";
     public static final String SIGNIFICANCE = "significance";
@@ -184,12 +185,12 @@ public class YqlParser implements Parser {
     public static final String TARGET_NUM_HITS = "targetNumHits";
     public static final String THRESHOLD_BOOST_FACTOR = "thresholdBoostFactor";
     public static final String UNIQUE_ID = "id";
+    public static final String URI = "uri";
     public static final String USE_POSITION_DATA = "usePositionData";
     public static final String WAND = "wand";
     public static final String WEAK_AND = "weakAnd";
-    public static final String WEIGHTED_SET = "weightedSet";
     public static final String WEIGHT = "weight";
-    public static final String URI = "uri";
+    public static final String WEIGHTED_SET = "weightedSet";
 
     private final IndexFacts indexFacts;
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
@@ -352,6 +353,8 @@ public class YqlParser implements Parser {
                     return buildRegExpSearch(ast);
                 case CALL:
                     return buildFunctionCall(ast);
+                case LITERAL:
+                    return buildLiteral(ast);
                 default:
                     throw newUnexpectedArgumentException(ast.getOperator(),
                                                          ExpressionOperator.AND, ExpressionOperator.CALL,
@@ -443,6 +446,14 @@ public class YqlParser implements Parser {
             item.setLabel(label);
         }
         return item;
+    }
+
+    private Item buildLiteral(OperatorNode<ExpressionOperator> ast) {
+        var literal = ast.getArgument(0);
+        if (Boolean.FALSE.equals(literal)) {
+            return new FalseItem();
+        }
+        throw newUnexpectedArgumentException(literal, Boolean.FALSE);
     }
 
     private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {

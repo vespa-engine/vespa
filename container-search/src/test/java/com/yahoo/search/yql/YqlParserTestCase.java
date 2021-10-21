@@ -592,6 +592,11 @@ public class YqlParserTestCase {
     }
 
     @Test
+    public void testFalse() {
+        assertParse("select foo from bar where false;", "FALSE");
+    }
+
+    @Test
     public void testPredicate() {
         assertParse("select foo from bar where predicate(predicate_field, " +
                 "{\"gender\":\"male\", \"hobby\":[\"music\", \"hiking\"]}, {\"age\":23L});",

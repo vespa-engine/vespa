@@ -157,15 +157,16 @@ public abstract class FleetControllerTest implements Waiter {
 
     FleetController createFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
         Objects.requireNonNull(status, "status server cannot be null");
+        var context = new TestFleetControllerContext(options);
         Timer timer = useFakeTimer ? this.timer : new RealTimer();
-        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
-        EventLog log = new EventLog(timer, metricUpdater);
-        ContentCluster cluster = new ContentCluster(
+        var metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
+        var log = new EventLog(timer, metricUpdater);
+        var cluster = new ContentCluster(
                 options.clusterName,
                 options.nodes,
                 options.storageDistribution);
-        NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, log);
-        Communicator communicator = new RPCCommunicator(
+        var stateGatherer = new NodeStateGatherer(timer, timer, log);
+        var communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
                 timer,
                 options.fleetControllerIndex,
@@ -173,20 +174,20 @@ public abstract class FleetControllerTest implements Waiter {
                 options.nodeStateRequestTimeoutEarliestPercentage,
                 options.nodeStateRequestTimeoutLatestPercentage,
                 options.nodeStateRequestRoundTripTimeMaxSeconds);
-        SlobrokClient lookUp = new SlobrokClient(timer);
+        var lookUp = new SlobrokClient(timer);
         lookUp.setSlobrokConnectionSpecs(new String[0]);
-        RpcServer rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
-        DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
+        var rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
+        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, timer);
 
         // Setting this <1000 ms causes ECONNREFUSED on socket trying to connect to ZK server, in ZooKeeper,
         // after creating a new ZooKeeper (session).  This causes ~10s extra time to connect after connection loss.
         // Reasons unknown.  Larger values like the default 10_000 causes that much additional running time for some tests.
         database.setMinimumWaitBetweenFailedConnectionAttempts(2_000);
 
-        StateChangeHandler stateGenerator = new StateChangeHandler(timer, log);
-        SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
-        MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
-        FleetController controller = new FleetController(timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
+        var stateGenerator = new StateChangeHandler(timer, log);
+        var stateBroadcaster = new SystemStateBroadcaster(timer, timer);
+        var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
+        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
         if (startThread) {
             controller.start();
         }

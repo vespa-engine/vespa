@@ -64,7 +64,11 @@ public class FileDownloader implements AutoCloseable {
         this.sleepBetweenRetries = sleepBetweenRetries;
         // Needed to receive RPC receiveFile* calls from server after starting download of file reference
         new FileReceiver(supervisor, downloads, downloadDirectory);
-        this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool, downloads, timeout, sleepBetweenRetries);
+        this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool,
+                                                                   downloads,
+                                                                   timeout,
+                                                                   sleepBetweenRetries,
+                                                                   downloadDirectory);
     }
 
     public Optional<File> getFile(FileReference fileReference) {
@@ -86,9 +90,12 @@ public class FileDownloader implements AutoCloseable {
         FileReference fileReference = fileReferenceDownload.fileReference();
 
         Optional<File> file = getFileFromFileSystem(fileReference);
-        return (file.isPresent())
-                ? CompletableFuture.completedFuture(file)
-                : startDownload(fileReferenceDownload);
+        if (file.isPresent()) {
+            downloads.setDownloadStatus(fileReference, 1.0);
+            return CompletableFuture.completedFuture(file);
+        } else {
+            return startDownload(fileReferenceDownload);
+        }
     }
 
     public Map<FileReference, Double> downloadStatus() { return downloads.downloadStatus(); }
@@ -102,6 +109,10 @@ public class FileDownloader implements AutoCloseable {
     }
 
     private Optional<File> getFileFromFileSystem(FileReference fileReference) {
+        return getFileFromFileSystem(fileReference, downloadDirectory);
+    }
+
+    private static Optional<File> getFileFromFileSystem(FileReference fileReference, File downloadDirectory) {
         File[] files = new File(downloadDirectory, fileReference.value()).listFiles();
         if (files == null) return Optional.empty();
         if (files.length == 0) return Optional.empty();
@@ -114,13 +125,12 @@ public class FileDownloader implements AutoCloseable {
             throw new RuntimeException("File reference '" + fileReference.value() + "' exists, but unable to read it");
         } else {
             log.log(Level.FINE, () -> "File reference '" + fileReference.value() + "' found: " + file.getAbsolutePath());
-            downloads.setDownloadStatus(fileReference, 1.0);
             return Optional.of(file);
         }
     }
 
-    boolean fileReferenceExists(FileReference fileReference) {
-        return getFileFromFileSystem(fileReference).isPresent();
+    static boolean fileReferenceExists(FileReference fileReference, File downloadDirectory) {
+        return getFileFromFileSystem(fileReference, downloadDirectory).isPresent();
     }
 
     boolean isDownloading(FileReference fileReference) {
@@ -129,7 +139,7 @@ public class FileDownloader implements AutoCloseable {
 
     /** Start a download if needed, don't wait for result */
     public void downloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
-        if (fileReferenceExists(fileReferenceDownload.fileReference())) return;
+        if (fileReferenceExists(fileReferenceDownload.fileReference(), downloadDirectory)) return;
 
         startDownload(fileReferenceDownload);
     }

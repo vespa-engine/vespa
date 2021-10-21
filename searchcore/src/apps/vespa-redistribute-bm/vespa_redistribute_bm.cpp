@@ -466,6 +466,7 @@ App::usage()
         "USAGE:\n";
     std::cerr <<
         "vespa-redistribute-bm\n"
+        "[--async-apply-bucket-diff]\n"
         "[--bucket-db-stripe-bits bits]\n"
         "[--client-threads threads]\n"
         "[--distributor-merge-busy-wait distributor-merge-busy-wait]\n"
@@ -481,7 +482,7 @@ App::usage()
         "[--max-merge-queue-size max-merge-queue-size]\n"
         "[--max-pending max-pending]\n"
         "[--max-pending-idealstate-operations max-pending-idealstate-operations]\n"
-        "[--mbus-distributor-node-max-pending-count] count\n"
+        "[--mbus-distributor-node-max-pending-count count]\n"
         "[--mode [grow, shrink, perm-crash, temp-crash, replace]\n"
         "[--nodes-per-group nodes-per-group]\n"
         "[--redundancy redundancy]\n"
@@ -502,6 +503,7 @@ App::get_options()
     const char *opt_argument = nullptr;
     int long_opt_index = 0;
     static struct option long_opts[] = {
+        { "async-apply-bucket-diff", 0, nullptr, 0 },
         { "bucket-db-stripe-bits", 1, nullptr, 0 },
         { "client-threads", 1, nullptr, 0 },
         { "distributor-merge-busy-wait", 1, nullptr, 0 },
@@ -532,6 +534,7 @@ App::get_options()
         { nullptr, 0, nullptr, 0 }
     };
     enum longopts_enum {
+        LONGOPT_ASYNC_APPLY_BUCKET_DIFF,
         LONGOPT_BUCKET_DB_STRIPE_BITS,
         LONGOPT_CLIENT_THREADS,
         LONGOPT_DISTRIBUTOR_MERGE_BUSY_WAIT,
@@ -566,6 +569,9 @@ App::get_options()
         switch (c) {
         case 0:
             switch(long_opt_index) {
+            case LONGOPT_ASYNC_APPLY_BUCKET_DIFF:
+                _bm_params.set_async_apply_bucket_diff(true);
+                break;
             case LONGOPT_BUCKET_DB_STRIPE_BITS:
                 _bm_params.set_bucket_db_stripe_bits(atoi(opt_argument));
                 break;
