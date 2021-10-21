@@ -68,6 +68,7 @@ WORD = \w+
   "indexing"                 { return INDEXING; }
   "summary"                  { return SUMMARY; }
   "attribute"                { return ATTRIBUTE; }
+  "set_language"             { return SET_LANGUAGE; }
   
   "array"                    { return ARRAY; }
   "raw"                      { return RAW; }
@@ -214,7 +215,7 @@ WORD = \w+
   {ARITHMETIC_OPERATOR}      { return ARITHMETIC_OPERATOR; }
   {COMPARISON_OPERATOR}      { return COMPARISON_OPERATOR; }
   {WORD}                     { return WORD_REG; }
-  {STRING}                   { return STRING; }  
+  {STRING}                   { return STRING_REG; }  
 
 }
 

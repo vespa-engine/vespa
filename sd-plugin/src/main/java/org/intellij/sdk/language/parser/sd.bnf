@@ -35,7 +35,7 @@ NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats 
         ARITHMETIC_OPERATOR = 'regexp:[\-+*/]'
         INTEGER_REG = 'regexp:[0-9]+'
         FLOAT_REG = 'regexp:[0-9]+[.][0-9]+[e]?'
-        STRING = 'regexp:[\"][^\"]*[\"]'
+        STRING_REG = 'regexp:[\"][^\"]*[\"]'
         WORD_REG = 'regexp:\w+'
     ]
 }
@@ -95,7 +95,7 @@ private UriPath ::= ('H'|'h') ('T'|'t') ('T'|'t') ('P'|'p') ('S'|'s')? ':' ('//'
 OnnxModelDefinition ::= onnx-model IdentifierVal '{' OnnxModelBody '}'
 OnnxModelBody ::= OnnxModelBodyOptions*
 private OnnxModelBodyOptions ::= (file ':' FilePath) | (uri ':' UriPath) | 
-                                 ((input | output) (IdentifierVal | STRING) ':' ('.' | '/' | '(' | ')' | IdentifierWithDashVal | WORD_REG)) 
+                                 ((input | output) (IdentifierVal | STRING_REG) ':' ('.' | '/' | '(' | ')' | IdentifierWithDashVal | WORD_REG)) 
 
 SchemaAnnotationDefinition ::= AnnotationDefinition
                         { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
@@ -168,8 +168,8 @@ private SecondPhaseBodyOptions ::= (rerank-count ':' INTEGER_REG) | ExpressionDe
 
 RankPropertiesDefinition ::= rank-properties '{' RankPropertiesBody '}'
 RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue)+
-RankPropertiesKey ::= (IdentifierWithDashVal | STRING | '(' | ')' | '.' | ',')+ 
-RankPropertiesValue ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | WORD_REG | IdentifierVal | STRING
+RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | ',')+ 
+RankPropertiesValue ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | WORD_REG | IdentifierVal | STRING_REG
 
 FunctionDefinition ::= (function | macro) inline? IdentifierVal '(' (ArgumentDefinition (',' ArgumentDefinition)*)? ')'
                        '{' ExpressionDefinition '}'  
@@ -235,7 +235,7 @@ DocumentFieldBody ::= DocumentFieldBodyOptions* // Does not support zero-or-one 
 private DocumentFieldBodyOptions ::= StructFieldDefinition | MatchDefinition | IndexingDefinition | AttributeDefinition | 
                              AliasDef | RankDefinition | IndexingRewriteState | QueryCommandDefinition | SummaryDefinition |
                              BoldingDefinition | (id ':' INTEGER_REG) | IndexDefinition | (normalizing ':' IdentifierWithDashVal) | 
-                             SortingDefinition | StemmingDefinition | (weight ': INTEGER_REG') | WeightedSetDefinition |
+                             SortingDefinition | StemmingDefinition | (weight ':' INTEGER_REG) | WeightedSetDefinition |
                              RankTypeDefinition | DictionaryDefinition
 
 //***** Field's body elements ******//
@@ -256,7 +256,7 @@ MatchProperty ::= text | exact | exact-terminator | word | prefix | cased | unca
 IndexingDefinition ::= indexing (':' IndexingStatement) | ('{' IndexingStatement+ '}')
 IndexingStatement ::= IndexingStatementOptions (('|' IndexingStatementOptions)*) | ((';' IndexingStatementOptions)*)
                       // Does not support zero-or-one occurrences
-IndexingStatementOptions ::= summary | attribute | index | "set_language"
+IndexingStatementOptions ::= summary | attribute | index | set_language
 // Attribute
 AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (SimpleAttributeProperty | ComplexAttributeProperty)+ '}'))
 SimpleAttributeProperty ::= fast-search | fast-access | paged | mutable // Does not support zero-or-one occurrences
@@ -272,7 +272,7 @@ RankingSetting ::= filter | normal
 // Indexing Rewrite
 IndexingRewriteState ::= indexing-rewrite ':' none
 // Query Command
-QueryCommandDefinition ::= query-command ':' IdentifierVal | STRING
+QueryCommandDefinition ::= query-command ':' IdentifierVal | STRING_REG
 // Summary
 SummaryDefinition ::= summary ((':' SummaryBodyOptions) | (IdentifierWithDashVal? (type FieldTypeName)? '{' SummaryBody '}'))
                       { methods=[getName getPresentation] }
@@ -330,7 +330,7 @@ KeywordOrIdentifier ::= schema | search | document | struct | field | type | ind
                         bolding | on | off | true | false | id | normalizing | stemming | arity | hnsw | dictionary | hash | btree |
                         fieldset | fields | constant | annotation
                         | attribute | body | header | index | 
-                        reference | summary                         
+                        reference | summary | set_language                        
 
 // Note- in this form, those keywords can't be use as identifier-with-dash!
 KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features | from-disk | rank-profile | rank-type |
