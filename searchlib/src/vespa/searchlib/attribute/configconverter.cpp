@@ -109,6 +109,7 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     retval.setFastAccess(cfg.fastaccess);
     retval.setMutable(cfg.ismutable);
     retval.setPaged(cfg.paged);
+    retval.setMaxUnCommittedMemory(cfg.maxuncommittedmemory);
     predicateParams.setArity(cfg.arity);
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);

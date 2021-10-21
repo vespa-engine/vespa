@@ -16,10 +16,8 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.result.Group;
-import com.yahoo.search.grouping.result.GroupId;
 import com.yahoo.search.grouping.result.RootId;
 import com.yahoo.search.rendering.XmlRenderer;
-import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
@@ -44,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -57,7 +56,6 @@ public class SearchHandlerTest {
     private static final String selfHostname = HostName.getLocalhost();
 
     private static String tempDir = "";
-    private static String configId = null;
 
     @Rule
     public TemporaryFolder tempfolder = new TemporaryFolder();
@@ -71,7 +69,7 @@ public class SearchHandlerTest {
     public void startUp() throws IOException {
         File cfgDir = tempfolder.newFolder("SearchHandlerTestCase");
         tempDir = cfgDir.getAbsolutePath();
-        configId = "dir:" + tempDir;
+        String configId = "dir:" + tempDir;
 
         IOUtils.copyDirectory(new File(testDir), cfgDir, 1); // make configs active
         generateComponentsConfigForActive();
@@ -153,7 +151,7 @@ public class SearchHandlerTest {
         configurer.reloadConfig();
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
         RequestHandler newMockHandler = configurer.getRequestHandlerRegistry().getComponent("com.yahoo.search.handler.test.MockHandler");
-        assertTrue("Reconfiguration failed: Kept the existing instance of the search handler", searchHandler == newSearchHandler);
+        assertSame("Reconfiguration failed: Kept the existing instance of the search handler", searchHandler, newSearchHandler);
         assertNull("Reconfiguration failed: No mock handler", newMockHandler);
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(searchHandler)) {
             assertXmlResult(newDriver);
@@ -181,7 +179,7 @@ public class SearchHandlerTest {
         configurer.reloadConfig();
 
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertTrue("Have a new instance of the search handler", searchHandler != newSearchHandler);
+        assertNotSame("Have a new instance of the search handler", searchHandler, newSearchHandler);
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(
                     "http://localhost/search/?yql=select%20*%20from%20foo%20where%20bar%20%3E%201453501295%27%3B");
@@ -338,7 +336,7 @@ public class SearchHandlerTest {
             response.awaitResponse();
             assertEquals("Expected HTTP status", status, response.getStatus());
             if (responseData == null)
-                assertEquals("Connection closed with no data", null, response.read());
+                assertNull("Connection closed with no data", response.read());
             else
                 assertEquals(responseData, response.readAll());
         }
@@ -350,7 +348,7 @@ public class SearchHandlerTest {
         configurer.reloadConfig();
 
         SearchHandler newSearchHandler = fetchSearchHandler(configurer);
-        assertTrue("Should have a new instance of the search handler", searchHandler != newSearchHandler);
+        assertNotSame("Should have a new instance of the search handler", searchHandler, newSearchHandler);
         return new RequestHandlerTestDriver(newSearchHandler);
     }
 

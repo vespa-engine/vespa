@@ -275,6 +275,7 @@ private:
     void testReaderDuringLastUpdate();
 
     void testPendingCompaction();
+    void testConditionalCommit();
 
 public:
     AttributeTest();
@@ -402,13 +403,18 @@ void AttributeTest::populate(StringAttribute & v, unsigned seed)
     v.commit();
 }
 
-template <>
-void AttributeTest::populateSimple(IntegerAttribute & v, uint32_t docIdLow, uint32_t docIdHigh)
+void populateSimpleUncommitted(IntegerAttribute & v, uint32_t docIdLow, uint32_t docIdHigh)
 {
-    for(uint32_t docId(docIdLow); docId < docIdHigh; ++docId) {
+    for (uint32_t docId(docIdLow); docId < docIdHigh; ++docId) {
         v.clearDoc(docId);
         EXPECT_TRUE( v.update(docId, docId + 1) );
     }
+}
+
+template <>
+void AttributeTest::populateSimple(IntegerAttribute & v, uint32_t docIdLow, uint32_t docIdHigh)
+{
+    populateSimpleUncommitted(v, docIdLow, docIdHigh);
     v.commit();
 }
 
@@ -2233,6 +2239,34 @@ AttributeTest::testPendingCompaction()
     populateSimple(iv, 1, 2);  // should not trigger new compaction
 }
 
+void
+AttributeTest::testConditionalCommit() {
+    Config cfg(BasicType::INT32, CollectionType::SINGLE);
+    cfg.setFastSearch(true);
+    cfg.setMaxUnCommittedMemory(70000);
+    AttributePtr v = createAttribute("sfsint32_cc", cfg);
+    addClearedDocs(v, 1000);
+    auto &iv = static_cast<IntegerAttribute &>(*v.get());
+    EXPECT_EQUAL(0x8000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQUAL(0u, iv.getChangeVectorMemoryUsage().usedBytes());
+    AttributeGuard guard1(v);
+    populateSimpleUncommitted(iv, 1, 3);
+    EXPECT_EQUAL(0x8000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQUAL(128u, iv.getChangeVectorMemoryUsage().usedBytes());
+    populateSimpleUncommitted(iv, 1, 1000);
+    EXPECT_EQUAL(0x10000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQUAL(64064u, iv.getChangeVectorMemoryUsage().usedBytes());
+    EXPECT_FALSE(v->commitIfChangeVectorTooLarge());
+    EXPECT_EQUAL(0x10000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQUAL(64064u, iv.getChangeVectorMemoryUsage().usedBytes());
+    populateSimpleUncommitted(iv, 1, 200);
+    EXPECT_EQUAL(0x20000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQUAL(76800u, iv.getChangeVectorMemoryUsage().usedBytes());
+    EXPECT_TRUE(v->commitIfChangeVectorTooLarge());
+    EXPECT_EQUAL(0x2000u, iv.getChangeVectorMemoryUsage().allocatedBytes());
+    EXPECT_EQUAL(0u, iv.getChangeVectorMemoryUsage().usedBytes());
+}
+
 void testNamePrefix() {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     AttributeVector::SP vFlat = createAttribute("sfsint32_pc", cfg);
@@ -2312,6 +2346,7 @@ int AttributeTest::Main()
     TEST_DO(requireThatAddressSpaceUsageIsReported());
     testReaderDuringLastUpdate();
     TEST_DO(testPendingCompaction());
+    TEST_DO(testConditionalCommit());
     TEST_DO(testNamePrefix());
     test_multi_value_mapping_has_free_lists_enabled();
 

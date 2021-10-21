@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
@@ -35,7 +34,7 @@ public class DocumentDatabaseTestCase {
 
     private static final double SMALL = 0.00000000000001;
 
-    private String vespaHosts = "<?xml version='1.0' encoding='utf-8' ?>" +
+    private static final String vespaHosts = "<?xml version='1.0' encoding='utf-8' ?>" +
             "<hosts>  " +
             "  <host name='foo'>" +
             "    <alias>node0</alias>" +
@@ -194,7 +193,7 @@ public class DocumentDatabaseTestCase {
         assertEquals("c", proton.documentdb(2).inputdoctypename());
     }
 
-    private void verifyInitialDocumentCount(List<DocType> nameAndModes, String xmlTuning, long global, List<Long> local) {
+    private void verifyInitialDocumentCount(List<DocType> nameAndModes, String xmlTuning, List<Long> local) {
         assertEquals(nameAndModes.size(), local.size());
         VespaModel model = createModel(nameAndModes, xmlTuning);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
@@ -209,7 +208,7 @@ public class DocumentDatabaseTestCase {
     public void requireThatMixedModeInitialDocumentCountIsReflectedCorrectlyForDefault() {
         final long DEFAULT = 1024L;
         verifyInitialDocumentCount(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")),
-                "", DEFAULT, Arrays.asList(DEFAULT, DEFAULT));
+                "", Arrays.asList(DEFAULT, DEFAULT));
     }
     @Test
     public void requireThatMixedModeInitialDocumentCountIsReflected() {
@@ -218,7 +217,7 @@ public class DocumentDatabaseTestCase {
                 "  <initialdocumentcount>1000000000</initialdocumentcount>" +
                 "</resizing>\n";
         verifyInitialDocumentCount(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")),
-                feedTuning, INITIAL, Arrays.asList(INITIAL, INITIAL));
+                feedTuning, Arrays.asList(INITIAL, INITIAL));
     }
 
     private void assertDocTypeConfig(VespaModel model, String configId, String indexField, String attributeField) {
@@ -361,12 +360,20 @@ public class DocumentDatabaseTestCase {
         assertDocumentDBConfigAvailableForStreaming("streaming");
     }
 
+    private void assertAttributesConfigIndependentOfMode(String mode, List<String> sds,
+                                                         List<String> documentDBConfigIds,
+                                                         Map<String, List<String>> expectedAttributesMap)
+    {
+        assertAttributesConfigIndependentOfMode(mode, sds, documentDBConfigIds, expectedAttributesMap, new DeployState.Builder(), 123456);
+    }
 
     private void assertAttributesConfigIndependentOfMode(String mode, List<String> sds,
                                                          List<String> documentDBConfigIds,
-                                                         Map<String, List<String>> expectedAttributesMap) {
+                                                         Map<String, List<String>> expectedAttributesMap,
+                                                         DeployState.Builder builder,
+                                                         long expectedMaxUnCommittedMemory) {
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts,  createVespaServices(sds, mode),
-                ApplicationPackageUtils.generateSchemas(sds)).create();
+                ApplicationPackageUtils.generateSchemas(sds)).create(builder);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
 
         ProtonConfig proton = getProtonCfg(contentSearchCluster);
@@ -380,9 +387,18 @@ public class DocumentDatabaseTestCase {
                 assertEquals(expectedAttributes.size(), rac1.attribute().size());
                 for (int j = 0; j < expectedAttributes.size(); j++) {
                     assertEquals(expectedAttributes.get(j), rac1.attribute(j).name());
+                    assertEquals(expectedMaxUnCommittedMemory, rac1.attribute(j).maxuncommittedmemory());
                 }
             }
         }
+    }
+
+    @Test
+    public void testThatAttributesMaxUnCommittedMemoryIsControlledByFeatureFlag() {
+        assertAttributesConfigIndependentOfMode("index", Arrays.asList("type1"),
+                Arrays.asList("test/search/cluster.test/type1"),
+                ImmutableMap.of("type1", Arrays.asList("f2", "f2_nfa")),
+                new DeployState.Builder().properties(new TestProperties().maxUnCommittedMemory(193452)), 193452);
     }
 
     @Test
@@ -391,6 +407,7 @@ public class DocumentDatabaseTestCase {
                 Arrays.asList("test/search/cluster.test/type1"),
                 ImmutableMap.of("type1", Arrays.asList("f2", "f2_nfa")));
     }
+
     @Test
     public void testThatAttributesConfigIsProducedForStreamingForFastAccessFields() {
         assertAttributesConfigIndependentOfMode("streaming", Arrays.asList("type1"),

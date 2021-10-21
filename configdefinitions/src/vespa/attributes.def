@@ -35,6 +35,9 @@ attribute[].tensortype         string default=""
 # Whether this is an imported attribute (from parent document db) or not.
 attribute[].imported           bool default=false
 
+# Max amount of uncommitted memory during feed. (Default just shy of 128k) 
+attribute[].maxuncommittedmemory long default=130000
+
 # The distance metric to use for nearest neighbor search.
 # Is only used when the attribute is a 1-dimensional indexed tensor.
 attribute[].distancemetric enum { EUCLIDEAN, ANGULAR, GEODEGREES, INNERPRODUCT, HAMMING } default=EUCLIDEAN
