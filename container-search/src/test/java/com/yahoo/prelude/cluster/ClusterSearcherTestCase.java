@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
@@ -529,6 +530,7 @@ public class ClusterSearcherTestCase {
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
                                    dispatchers,
+                                   new QrConfig.Builder().build(),
                                    vipStatus,
                                    null);
     }
