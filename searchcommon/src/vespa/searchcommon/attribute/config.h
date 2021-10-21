@@ -129,9 +129,6 @@ public:
     bool operator!=(const Config &b) const { return !(operator==(b)); }
     bool operator==(const Config &b) const;
 
-    uint64_t getMaxUnCommittedMemory() const { return _maxUnCommittedMemory; }
-    Config & setMaxUnCommittedMemory(uint64_t value) { _maxUnCommittedMemory = value; return *this; }
-
 private:
     BasicType      _basicType;
     CollectionType _type;
@@ -143,7 +140,6 @@ private:
     bool           _fastAccess;
     bool           _mutable;
     bool           _paged;
-    uint64_t       _maxUnCommittedMemory;
     Match                          _match;
     DictionaryConfig               _dictionary;
     GrowStrategy                   _growStrategy;

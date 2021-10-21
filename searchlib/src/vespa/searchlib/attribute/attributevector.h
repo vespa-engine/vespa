@@ -359,7 +359,8 @@ protected:
 
     template <typename BaseType, typename ChangeData>
     static BaseType
-    applyArithmetic(const BaseType &value, const ChangeTemplate<ChangeData> & arithmetic)
+    applyArithmetic(const BaseType &value,
+                    const ChangeTemplate<ChangeData> & arithmetic)
     {
         typedef typename ChangeData::DataType LargeType;
         if (attribute::isUndefined(value)) {
@@ -370,10 +371,12 @@ protected:
             return value - static_cast<LargeType>(arithmetic._arithOperand);
         } else if (arithmetic._type == ChangeBase::MUL) {
             LargeType r;
-            return round((static_cast<double>(value) * arithmetic._arithOperand), r);
+            return round((static_cast<double>(value) *
+                          arithmetic._arithOperand), r);
         } else if (arithmetic._type == ChangeBase::DIV) {
             LargeType r;
-            return round(static_cast<double>(value) / arithmetic._arithOperand, r);
+            return round(static_cast<double>(value) /
+                         arithmetic._arithOperand, r);
         }
         return value;
     }
@@ -666,7 +669,6 @@ public:
     static bool isEnumerated(const vespalib::GenericHeader &header);
 
     virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const;
-    bool commitIfChangeVectorTooLarge();
 
     void drain_hold(uint64_t hold_limit);
 };

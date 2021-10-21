@@ -38,7 +38,7 @@ public class StreamingSearchCluster extends SearchCluster implements
         @Override
         public void getConfig(AttributesConfig.Builder builder) {
             if (getSdConfig() != null) {
-                getSdConfig().getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
+                getSdConfig().getAttributeFields().getConfig(builder, AttributeFields.FieldSet.FAST_ACCESS);
             }
         }
     }
@@ -111,7 +111,7 @@ public class StreamingSearchCluster extends SearchCluster implements
 
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getConfig(builder);
+        if (getSdConfig()!=null) getSdConfig().getAttributeFields().getConfig(builder);
     }
     
     @Override

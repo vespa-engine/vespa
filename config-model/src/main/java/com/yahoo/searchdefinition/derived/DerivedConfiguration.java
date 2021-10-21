@@ -16,7 +16,6 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.validation.Validation;
-import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.io.IOException;
@@ -29,7 +28,7 @@ import java.util.concurrent.ExecutorService;
  *
  * @author bratseth
  */
-public class DerivedConfiguration implements AttributesConfig.Producer {
+public class DerivedConfiguration {
 
     private final Schema schema;
     private Summaries summaries;
@@ -44,7 +43,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     private IndexSchema indexSchema;
     private ImportedFields importedFields;
     private final QueryProfileRegistry queryProfiles;
-    private final long maxUncommittedMemory;
 
     /**
      * Creates a complete derived configuration from a search definition.
@@ -84,7 +82,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
         Validator.ensureNotNull("Search definition", schema);
         this.schema = schema;
         this.queryProfiles = queryProfiles;
-        this.maxUncommittedMemory = deployProperties.featureFlags().maxUnCommittedMemory();
         if ( ! schema.isDocumentsOnly()) {
             streamingFields = new VsmFields(schema);
             streamingSummary = new VsmSummary(schema);
@@ -160,15 +157,6 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
 
     public AttributeFields getAttributeFields() {
         return attributeFields;
-    }
-
-    @Override
-    public void getConfig(AttributesConfig.Builder builder) {
-        getConfig(builder, AttributeFields.FieldSet.ALL);
-    }
-
-    public void getConfig(AttributesConfig.Builder builder, AttributeFields.FieldSet fs) {
-        attributeFields.getConfig(builder, fs, maxUncommittedMemory);
     }
 
     public IndexingScript getIndexingScript() {

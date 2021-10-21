@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
@@ -69,7 +68,7 @@ public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> i
 
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
-        derivedCfg.getConfig(builder);
+        derivedCfg.getAttributeFields().getConfig(builder);
     }
 
     @Override

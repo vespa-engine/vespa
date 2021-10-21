@@ -206,7 +206,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
         AttributeFields attributes = new AttributeFields(getSearchWithMutables());
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
-        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333);
+        attributes.getConfig(builder);
         AttributesConfig cfg = builder.build();
         assertEquals("a", cfg.attribute().get(0).name());
         assertFalse(cfg.attribute().get(0).ismutable());
@@ -216,23 +216,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
         assertEquals("m", cfg.attribute().get(2).name());
         assertTrue(cfg.attribute().get(2).ismutable());
-    }
 
-    @Test
-    public void requireMaxUnCommittedMemoryIsProperlyPropagated() throws ParseException {
-
-        AttributeFields attributes = new AttributeFields(getSearchWithMutables());
-        AttributesConfig.Builder builder = new AttributesConfig.Builder();
-        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333);
-        AttributesConfig cfg = builder.build();
-        assertEquals("a", cfg.attribute().get(0).name());
-        assertEquals(13333, cfg.attribute().get(0).maxuncommittedmemory());
-
-        assertEquals("f", cfg.attribute().get(1).name());
-        assertEquals(13333, cfg.attribute().get(1).maxuncommittedmemory());
-
-        assertEquals("m", cfg.attribute().get(2).name());
-        assertEquals(13333, cfg.attribute().get(2).maxuncommittedmemory());
     }
 
     @Test

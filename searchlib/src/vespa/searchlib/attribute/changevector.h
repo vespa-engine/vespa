@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/vespalib/stllike/allocator.h>
 #include <vector>
 
 namespace vespalib { class MemoryUsage; }
@@ -129,7 +130,7 @@ NumericChangeData<double>::operator<(const NumericChangeData<double> &rhs) const
 template <typename T>
 class ChangeVectorT {
 private:
-    using Vector = std::vector<T>;
+    using Vector = std::vector<T, vespalib::allocator_large<T>>;
 public:
     using const_iterator = typename Vector::const_iterator;
     ChangeVectorT();
@@ -151,7 +152,7 @@ public:
         const Vector &_v;
     };
     class DocIdInsertOrder {
-        using AdjacentDocIds = std::vector<uint64_t>;
+        using AdjacentDocIds = std::vector<uint64_t, vespalib::allocator_large<uint64_t>>;
     public:
         class const_iterator {
         public:
