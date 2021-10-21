@@ -2,17 +2,29 @@
 <idea-plugin>
     <id>org.intellij.sdk.language</id>
     <name>SdReader</name>
+    <version>1.0.0</version>
 
     <!-- Text to display as company information on Preferences/Settings | Plugin page -->
-    <vendor email="shahar.ariel@yahooinc.com">Yahoo</vendor>
+    <vendor>Vespa</vendor>
 
     <!-- Product and plugin compatibility requirements -->
     <depends>com.intellij.java</depends>
 
     <!-- Text to display as description on Preferences/Settings | Plugin page -->
     <description><![CDATA[
-    A plugin to recognize sd files and work with them through IntelliJ<br>
-    <em></em>
+    <p>Support for reading Vespa's SD files.</p>
+    <p>Features:</p>
+    <ul>
+    <li>Structure View</li>
+    <li>Find Usages</li>
+    <li>Call Hierarchy (for functions/macros)</li>
+    <li>Go To Declaration</li>
+    <li>Go to Symbol</li>
+    <li>Refactoring</li>
+    <li>Syntax Highlighting</li>
+    <li>Commenter- enable turning lines into a comment with "Code -> Comment with line comment"</li>
+    </ul>
+    <p>Find more information on Vespa's SD files <a href="https://docs.vespa.ai/en/reference/schema-reference.html">here</a>.</p>
     ]]></description>
 
     <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
@@ -20,6 +32,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
 
+    <!-- Extension points defined by the plugin -->
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Sd File" implementationClass="org.intellij.sdk.language.SdFileType" fieldName="INSTANCE"
                   language="Sd" extensions="sd"/>
@@ -41,8 +54,5 @@
         <gotoSymbolContributor implementation="org.intellij.sdk.language.SdChooseByNameContributor"/>
         <callHierarchyProvider language="Sd" implementationClass="org.intellij.sdk.language.hierarchy.SdCallHierarchyProvider"/>
     </extensions>
-
-    <actions>
-        <!-- Add your actions here -->
-    </actions>
+    
 </idea-plugin>
