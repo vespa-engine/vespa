@@ -105,7 +105,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertThat(injectedComponentIds, hasItem("threadpool@feedapi-handler"));
 
         ContainerThreadpoolConfig config = root.getConfig(
-                ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
+                ContainerThreadpoolConfig.class, "cluster1/component/threadpool@feedapi-handler");
         assertEquals(-4, config.maxThreads());
         assertEquals(-4, config.minThreads());
     }
@@ -128,7 +128,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         createModel(root, elem);
 
         ContainerThreadpoolConfig feedThreadpoolConfig = root.getConfig(
-                ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
+                ContainerThreadpoolConfig.class, "cluster1/component/threadpool@feedapi-handler");
         assertEquals(50, feedThreadpoolConfig.maxThreads());
         assertEquals(25, feedThreadpoolConfig.minThreads());
         assertEquals(1000, feedThreadpoolConfig.queueSize());
