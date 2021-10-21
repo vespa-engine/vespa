@@ -11,6 +11,8 @@
 
 using document::DocumentId;
 using document::test::makeDocumentBucket;
+using vespalib::MonitoredRefCount;
+using vespalib::RetainGuard;
 
 namespace storage {
 
@@ -72,6 +74,7 @@ class ApplyBucketDiffStateTestBase : public ::testing::Test
 public:
     uint32_t                   sync_count;
     DummyMergeBucketInfoSyncer syncer;
+    MonitoredRefCount          monitored_ref_count;
 
     ApplyBucketDiffStateTestBase()
         : ::testing::Test(),
@@ -83,7 +86,7 @@ public:
     ~ApplyBucketDiffStateTestBase();
 
     std::unique_ptr<ApplyBucketDiffState> make_state() {
-        return std::make_unique<ApplyBucketDiffState>(syncer, spi::Bucket(dummy_document_bucket));
+        return std::make_unique<ApplyBucketDiffState>(syncer, spi::Bucket(dummy_document_bucket), RetainGuard(monitored_ref_count));
     }
 };
 

@@ -17,6 +17,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mergehandler");
 
+using vespalib::MonitoredRefCount;
+using vespalib::RetainGuard;
+
 namespace storage {
 
 MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
@@ -28,11 +31,18 @@ MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
       _cluster_context(cluster_context),
       _env(env),
       _spi(spi),
+      _monitored_ref_count(std::make_unique<MonitoredRefCount>()),
       _maxChunkSize(maxChunkSize),
       _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize),
       _async_apply_bucket_diff(async_apply_bucket_diff)
 {
 }
+
+MergeHandler::~MergeHandler()
+{
+    drain_async_writes();
+}
+
 
 namespace {
 
@@ -674,7 +684,8 @@ namespace {
 
 api::StorageReply::SP
 MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
-                                 MessageSender& sender, spi::Context& context) const
+                                 MessageSender& sender, spi::Context& context,
+                                 std::shared_ptr<ApplyBucketDiffState>& async_results) const
 {
     // If last action failed, fail the whole merge
     if (status.reply->getResult().failed()) {
@@ -806,6 +817,10 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     }
     cmd->setPriority(status.context.getPriority());
     cmd->setTimeout(status.timeout);
+    if (async_results) {
+        // Check currently pending writes to local node before sending new command.
+        check_apply_diff_sync(std::move(async_results));
+    }
     if (applyDiffNeedLocalData(cmd->getDiff(), 0, true)) {
         framework::MilliSecTimer startTime(_clock);
         fetchLocalData(bucket, cmd->getDiff(), 0, context);
@@ -1171,7 +1186,8 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply, MessageSe
                               reply.getDiff().begin(),
                               reply.getDiff().end());
 
-                replyToSend = processBucketMerge(bucket, *s, sender, s->context);
+                std::shared_ptr<ApplyBucketDiffState> async_results;
+                replyToSend = processBucketMerge(bucket, *s, sender, s->context, async_results);
 
                 if (!replyToSend.get()) {
                     // We have sent something on, and shouldn't reply now.
@@ -1211,7 +1227,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     tracker->setMetric(_env._metrics.applyBucketDiff);
 
     spi::Bucket bucket(cmd.getBucket());
-    auto async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket);
+    std::shared_ptr<ApplyBucketDiffState> async_results;
     LOG(debug, "%s", cmd.toString().c_str());
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
@@ -1233,10 +1249,13 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     }
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
        framework::MilliSecTimer startTime(_clock);
+       async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket, RetainGuard(*_monitored_ref_count));
        applyDiffLocally(bucket, cmd.getDiff(), index, tracker->context(), async_results);
+        if (!_async_apply_bucket_diff) {
+            check_apply_diff_sync(std::move(async_results));
+        }
         _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
-        check_apply_diff_sync(std::move(async_results));
     } else {
         LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u).",
             bucket.toString().c_str(), _env._nodeIndex, index);
@@ -1260,10 +1279,14 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
             }
         }
 
-        tracker->setReply(std::make_shared<api::ApplyBucketDiffReply>(cmd));
+        auto reply = std::make_shared<api::ApplyBucketDiffReply>(cmd);
+        tracker->setReply(reply);
         static_cast<api::ApplyBucketDiffReply&>(tracker->getReply()).getDiff().swap(cmd.getDiff());
         LOG(spam, "Replying to ApplyBucketDiff for %s to node %d.",
             bucket.toString().c_str(), cmd.getNodes()[index - 1].index);
+        if (async_results) {
+            async_results->set_delayed_reply(std::move(tracker), std::move(reply));
+        }
     } else {
         // When not the last node in merge chain, we must save reply, and
         // send command on.
@@ -1280,6 +1303,10 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());
         s->pendingId = cmd2->getMsgId();
+        if (async_results) {
+            // Reply handler should check for delayed error.
+            s->set_delayed_error(async_results->get_future());
+        }
         _env._fileStorHandler.sendCommand(cmd2);
         // Everything went fine. Don't delete state but wait for reply
         stateGuard.deactivate();
@@ -1290,12 +1317,11 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
 }
 
 void
-MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,MessageSender& sender, MessageTracker::UP tracker) const
+MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, MessageSender& sender, MessageTracker::UP tracker) const
 {
-    (void) tracker;
     _env._metrics.applyBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket());
-    auto async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket);
+    std::shared_ptr<ApplyBucketDiffState> async_results;
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());
 
@@ -1316,6 +1342,8 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
     api::StorageReply::SP replyToSend;
     // Process apply bucket diff locally
     api::ReturnCode returnCode = reply.getResult();
+    // Check for delayed error from handleApplyBucketDiff
+    s->check_delayed_error(returnCode);
     try {
         if (reply.getResult().failed()) {
             LOG(debug, "Got failed apply bucket diff reply %s", reply.toString().c_str());
@@ -1329,9 +1357,12 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
             }
             if (applyDiffHasLocallyNeededData(diff, index)) {
                 framework::MilliSecTimer startTime(_clock);
+                async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket, RetainGuard(*_monitored_ref_count));
                 applyDiffLocally(bucket, diff, index, s->context, async_results);
+                if (!_async_apply_bucket_diff) {
+                    check_apply_diff_sync(std::move(async_results));
+                }
                 _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(startTime.getElapsedTimeAsDouble());
-                check_apply_diff_sync(std::move(async_results));
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
                     bucket.toString().c_str(),
@@ -1370,7 +1401,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
                 // Should reply now, since we failed.
                 replyToSend = s->reply;
             } else {
-                replyToSend = processBucketMerge(bucket, *s, sender, s->context);
+                replyToSend = processBucketMerge(bucket, *s, sender, s->context, async_results);
 
                 if (!replyToSend.get()) {
                     // We have sent something on and shouldn't reply now.
@@ -1392,6 +1423,10 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
         throw;
     }
 
+    if (async_results && replyToSend) {
+        replyToSend->setResult(returnCode);
+        async_results->set_delayed_reply(std::move(tracker), sender, std::move(replyToSend));
+    }
     if (clearState) {
         _env._fileStorHandler.clearMergeStatus(bucket.getBucket());
     }
@@ -1399,6 +1434,15 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
         // Send on
         replyToSend->setResult(returnCode);
         sender.sendReply(replyToSend);
+    }
+}
+
+void
+MergeHandler::drain_async_writes()
+{
+    if (_monitored_ref_count) {
+        // Wait for related ApplyBucketDiffState objects to be destroyed
+        _monitored_ref_count->waitForZeroRefCount();
     }
 }
 
