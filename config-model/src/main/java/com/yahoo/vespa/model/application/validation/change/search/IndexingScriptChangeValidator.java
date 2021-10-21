@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -25,20 +25,20 @@ import java.util.Optional;
 public class IndexingScriptChangeValidator {
 
     private final ClusterSpec.Id id;
-    private final Search currentSearch;
-    private final Search nextSearch;
+    private final Schema currentSchema;
+    private final Schema nextSchema;
 
-    public IndexingScriptChangeValidator(ClusterSpec.Id id, Search currentSearch, Search nextSearch) {
+    public IndexingScriptChangeValidator(ClusterSpec.Id id, Schema currentSchema, Schema nextSchema) {
         this.id = id;
-        this.currentSearch = currentSearch;
-        this.nextSearch = nextSearch;
+        this.currentSchema = currentSchema;
+        this.nextSchema = nextSchema;
     }
 
     public List<VespaConfigChangeAction> validate() {
         List<VespaConfigChangeAction> result = new ArrayList<>();
-        for (ImmutableSDField nextField : new LinkedHashSet<>(nextSearch.allConcreteFields())) {
+        for (ImmutableSDField nextField : new LinkedHashSet<>(nextSchema.allConcreteFields())) {
             String fieldName = nextField.getName();
-            ImmutableSDField currentField = currentSearch.getConcreteField(fieldName);
+            ImmutableSDField currentField = currentSchema.getConcreteField(fieldName);
             if (currentField != null) {
                 validateScripts(currentField, nextField).ifPresent(r -> result.add(r));
             }
@@ -57,7 +57,7 @@ public class IndexingScriptChangeValidator {
         ScriptExpression nextScript = nextField.getIndexingScript();
         if ( ! equalScripts(currentScript, nextScript)) {
             ChangeMessageBuilder messageBuilder = new ChangeMessageBuilder(nextField.getName());
-            new IndexingScriptChangeMessageBuilder(currentSearch, currentField, nextSearch, nextField).populate(messageBuilder);
+            new IndexingScriptChangeMessageBuilder(currentSchema, currentField, nextSchema, nextField).populate(messageBuilder);
             messageBuilder.addChange("indexing script", currentScript.toString(), nextScript.toString());
             return Optional.of(VespaReindexAction.of(id, ValidationId.indexingChange, messageBuilder.build()));
         }

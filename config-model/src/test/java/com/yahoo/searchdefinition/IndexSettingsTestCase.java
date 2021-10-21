@@ -17,23 +17,23 @@ import static org.junit.Assert.assertTrue;
  *
  * @author bratseth
  */
-public class IndexSettingsTestCase extends SchemaTestCase {
+public class IndexSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testStemmingSettings() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/indexsettings.sd");
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/indexsettings.sd");
 
-        SDField usingDefault=(SDField) search.getDocument().getField("usingdefault");
-        assertEquals(Stemming.SHORTEST,usingDefault.getStemming(search));
+        SDField usingDefault=(SDField) schema.getDocument().getField("usingdefault");
+        assertEquals(Stemming.SHORTEST,usingDefault.getStemming(schema));
 
-        SDField notStemmed=(SDField) search.getDocument().getField("notstemmed");
-        assertEquals(Stemming.NONE,notStemmed.getStemming(search));
+        SDField notStemmed=(SDField) schema.getDocument().getField("notstemmed");
+        assertEquals(Stemming.NONE,notStemmed.getStemming(schema));
 
-        SDField allStemmed=(SDField) search.getDocument().getField("allstemmed");
-        assertEquals(Stemming.SHORTEST,allStemmed.getStemming(search));
+        SDField allStemmed=(SDField) schema.getDocument().getField("allstemmed");
+        assertEquals(Stemming.SHORTEST,allStemmed.getStemming(schema));
 
-        SDField multiStemmed=(SDField) search.getDocument().getField("multiplestems");
-        assertEquals(Stemming.MULTIPLE, multiStemmed.getStemming(search));
+        SDField multiStemmed=(SDField) schema.getDocument().getField("multiplestems");
+        assertEquals(Stemming.MULTIPLE, multiStemmed.getStemming(schema));
     }
 
     @Test
@@ -52,10 +52,10 @@ public class IndexSettingsTestCase extends SchemaTestCase {
                 "  }",
                 "}"
         ));
-        Search search = builder.getSearch();
-        Index contentIndex = search.getIndex("content");
+        Schema schema = builder.getSearch();
+        Index contentIndex = schema.getIndex("content");
         assertTrue(contentIndex.useInterleavedFeatures());
-        Index extraIndex = search.getIndex("extra");
+        Index extraIndex = schema.getIndex("extra");
         assertTrue(extraIndex.useInterleavedFeatures());
     }
 

@@ -4,10 +4,10 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.DataType;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.document.NumericDataType;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -18,13 +18,13 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class AttributesImplicitWord extends Processor {
 
-    public AttributesImplicitWord(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public AttributesImplicitWord(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (ImmutableSDField field : search.allConcreteFields()) {
+        for (ImmutableSDField field : schema.allConcreteFields()) {
             processFieldRecursive(field);
         }
     }

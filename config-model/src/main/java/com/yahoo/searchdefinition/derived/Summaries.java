@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import java.util.List;
@@ -16,12 +16,12 @@ public class Summaries extends Derived implements SummaryConfig.Producer {
 
     private List<SummaryClass> summaries=new java.util.ArrayList<>(1);
 
-    public Summaries(Search search, DeployLogger deployLogger) {
+    public Summaries(Schema schema, DeployLogger deployLogger) {
         // Make sure the default is first
-        summaries.add(new SummaryClass(search,search.getSummary("default"), deployLogger));
-        for (DocumentSummary summary : search.getSummaries().values()) {
+        summaries.add(new SummaryClass(schema, schema.getSummary("default"), deployLogger));
+        for (DocumentSummary summary : schema.getSummaries().values()) {
             if (!summary.getName().equals("default"))
-                summaries.add(new SummaryClass(search,summary, deployLogger));
+                summaries.add(new SummaryClass(schema, summary, deployLogger));
         }
     }
 

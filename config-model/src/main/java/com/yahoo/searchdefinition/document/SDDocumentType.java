@@ -14,7 +14,7 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.FieldSets;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -66,17 +66,15 @@ public class SDDocumentType implements Cloneable, Serializable {
     /**
      * For adding structs defined in document scope
      *
-     * @param dt The struct to add.
+     * @param dt the struct to add
      * @return self, for chaining
      */
     public SDDocumentType addType(SDDocumentType dt) {
         NewDocumentType.Name name = new NewDocumentType.Name(dt.getName());
-        if (getType(name) != null) {
-            throw new IllegalArgumentException("Data type '" + name.toString() + "' has already been used.");
-        }
-        if (name.getName() == docType.getName()) {
-            throw new IllegalArgumentException("Data type '" + name.toString() + "' can not have same name as its defining document.");
-        }
+        if (getType(name) != null)
+            throw new IllegalArgumentException("Data type '" + name + "' has already been used.");
+        if (name.getName() == docType.getName())
+            throw new IllegalArgumentException("Data type '" + name + "' can not have same name as its defining document.");
         ownedTypes.put(name, dt);
         return this;
     }
@@ -113,12 +111,11 @@ public class SDDocumentType implements Cloneable, Serializable {
         return this;
     }
 
-    /**
-     * Access to all owned datatypes.
-     * @return all types
-     */
+    /** Returns all owned datatypes. */
     public Collection<SDDocumentType> getTypes() { return ownedTypes.values(); }
-    public Collection<AnnotationType> getAnnotations() { return annotationTypes.getTypes().values(); }
+
+    // TODO: Include inherited
+    public Map<String, AnnotationType> getAnnotations() { return annotationTypes.getTypes(); }
     public AnnotationType findAnnotation(String name) { return annotationTypes.getType(name); }
 
     public Collection<SDDocumentType> getAllTypes() {
@@ -149,13 +146,13 @@ public class SDDocumentType implements Cloneable, Serializable {
      * The document type id will be generated as a hash from the document type name.
      *
      * @param name The name of the new document type
-     * @param search check for type ID collisions in this search definition
+     * @param schema check for type ID collisions in this search definition
      */
     @SuppressWarnings("deprecation")
-    public SDDocumentType(String name, Search search) {
+    public SDDocumentType(String name, Schema schema) {
         docType = new DocumentType(name);
         docType.contentStruct().setCompressionConfig(new CompressionConfig());
-        validateId(search);
+        validateId(schema);
         inherit(VESPA_DOCUMENT);
     }
 
@@ -196,10 +193,12 @@ public class SDDocumentType implements Cloneable, Serializable {
 
     public Collection<SDDocumentType>  getInheritedTypes() { return inheritedTypes.values(); }
 
-    protected void validateId(Search search) {
-        if (search == null) return;
-        if (search.getDocument(getName()) == null) return;
-        SDDocumentType doc = search.getDocument();
+    public Map<DataTypeName, SDDocumentType>  inheritedTypes() { return inheritedTypes; }
+
+    protected void validateId(Schema schema) {
+        if (schema == null) return;
+        if (schema.getDocument(getName()) == null) return;
+        SDDocumentType doc = schema.getDocument();
         throw new IllegalArgumentException("Failed creating document type '" + getName() + "', " +
                 "document type '" + doc.getName() + "' already uses ID '" + doc.getName() + "'");
     }
@@ -249,7 +248,7 @@ public class SDDocumentType implements Cloneable, Serializable {
             for (Field pField : parent.fieldSet()) {
             	if (pField.getName().equals(field.getName())) {
             		if (!pField.getDataType().equals(field.getDataType())) {
-            			throw new IllegalArgumentException("For search '" + getName() + "', field '" + field.getName() +
+            			throw new IllegalArgumentException("For " + this + ", field '" + field.getName() +
                                                            "': Datatype can not be different from that of same field " +
                                                            "in the supertype '" + parent.getName() + "'");
             		}
@@ -300,7 +299,7 @@ public class SDDocumentType implements Cloneable, Serializable {
 
     @Override
     public String toString() {
-        return "SD document type '" + docType.getName() + "'";
+        return "document type '" + docType.getName() + "'";
     }
 
     private static SDDocumentType createSDDocumentType(StructDataType structType) {
@@ -312,7 +311,7 @@ public class SDDocumentType implements Cloneable, Serializable {
         return docType;
     }
     
-    /** The field sets defined for this type and its {@link Search} */
+    /** The field sets defined for this type and its {@link Schema} */
     public FieldSets getFieldSets() {
         return fieldSets;
     }

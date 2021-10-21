@@ -45,7 +45,8 @@ public:
     MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
                  const ClusterContext& cluster_context, const framework::Clock & clock,
                  uint32_t maxChunkSize = 4190208,
-                 uint32_t commonMergeChainOptimalizationMinimumSize = 64);
+                 uint32_t commonMergeChainOptimalizationMinimumSize = 64,
+                 bool async_apply_bucket_diff = false);
 
     bool buildBucketInfoList(
             const spi::Bucket& bucket,
@@ -61,7 +62,7 @@ public:
                           std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                           uint8_t nodeIndex,
                           spi::Context& context,
-                          ApplyBucketDiffState& async_results) const;
+                          std::shared_ptr<ApplyBucketDiffState> async_results) const;
     void sync_bucket_info(const spi::Bucket& bucket) const override;
 
     MessageTrackerUP handleMergeBucket(api::MergeBucketCommand&, MessageTrackerUP) const;
@@ -77,6 +78,7 @@ private:
     spi::PersistenceProvider &_spi;
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;
+    const bool                _async_apply_bucket_diff;
 
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,
@@ -88,10 +90,11 @@ private:
      * Invoke either put, remove or unrevertable remove on the SPI
      * depending on the flags in the diff entry.
      */
-    ApplyBucketDiffEntryResult applyDiffEntry(const spi::Bucket&,
-                                              const api::ApplyBucketDiffCommand::Entry&,
-                                              spi::Context& context,
-                                              const document::DocumentTypeRepo& repo) const;
+    void applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results,
+                        const spi::Bucket&,
+                        const api::ApplyBucketDiffCommand::Entry&,
+                        spi::Context& context,
+                        const document::DocumentTypeRepo& repo) const;
 
     /**
      * Fill entries-vector with metadata for bucket up to maxTimestamp,

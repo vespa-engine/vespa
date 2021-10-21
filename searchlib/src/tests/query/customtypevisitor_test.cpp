@@ -42,7 +42,11 @@ struct MyDotProduct : DotProduct { MyDotProduct() : DotProduct(0, "view", 0, Wei
 struct MyWandTerm : WandTerm { MyWandTerm() : WandTerm(0, "view", 0, Weight(42), 57, 67, 77.7) {} };
 struct MyPredicateQuery : InitTerm<PredicateQuery> {};
 struct MyRegExpTerm : InitTerm<RegExpTerm>  {};
-struct MyNearestNeighborTerm : NearestNeighborTerm {};
+struct MyNearestNeighborTerm : NearestNeighborTerm {
+    MyNearestNeighborTerm() : NearestNeighborTerm("qt", "fn", 0, Weight(42), 10, true, 666, 1234.5) {}
+};
+struct MyTrue : TrueQueryNode {};
+struct MyFalse : FalseQueryNode {};
 
 struct MyQueryNodeTypes {
     typedef MyAnd And;
@@ -68,6 +72,8 @@ struct MyQueryNodeTypes {
     typedef MyPredicateQuery PredicateQuery;
     typedef MyRegExpTerm RegExpTerm;
     typedef MyNearestNeighborTerm NearestNeighborTerm;
+    typedef MyFalse FalseQueryNode;
+    typedef MyTrue TrueQueryNode;
 };
 
 class MyCustomVisitor : public CustomTypeVisitor<MyQueryNodeTypes>
@@ -104,6 +110,8 @@ public:
     void visit(MyPredicateQuery &) override { setVisited<MyPredicateQuery>(); }
     void visit(MyRegExpTerm &) override { setVisited<MyRegExpTerm>(); }
     void visit(MyNearestNeighborTerm &) override { setVisited<MyNearestNeighborTerm>(); }
+    void visit(MyTrue &) override { setVisited<MyTrue>(); }
+    void visit(MyFalse &) override { setVisited<MyFalse>(); }
 };
 
 template <class T>
@@ -136,6 +144,10 @@ TEST("customtypevisitor_test") {
     requireThatNodeIsVisited<MyWandTerm>();
     requireThatNodeIsVisited<MyPredicateQuery>();
     requireThatNodeIsVisited<MyRegExpTerm>();
+    requireThatNodeIsVisited<MyLocationTerm>();
+    requireThatNodeIsVisited<MyNearestNeighborTerm>();
+    requireThatNodeIsVisited<MyTrue>();
+    requireThatNodeIsVisited<MyFalse>();
 }
 }  // namespace
 

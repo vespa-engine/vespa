@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing.multifieldresolver;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import java.util.List;
 
 /**
@@ -13,14 +13,14 @@ public abstract class MultiFieldResolver {
 
     protected String indexName;
     protected List<SDField> fields;
-    protected Search search;
+    protected Schema schema;
 
     protected DeployLogger deployLogger;
 
-    public MultiFieldResolver(String indexName, List<SDField> fields, Search search, DeployLogger logger) {
+    public MultiFieldResolver(String indexName, List<SDField> fields, Schema schema, DeployLogger logger) {
         this.indexName = indexName;
         this.fields = fields;
-        this.search = search;
+        this.schema = schema;
         this.deployLogger = logger;
     }
 

@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.FieldSet;
@@ -31,20 +31,20 @@ public class PositionTestCase {
                 "src/test/examples/position_base.sd",
                 "src/test/examples/position_inherited.sd"));
 
-        Search search = sb.getSearch("position_inherited");
-        FieldSet fieldSet = search.getDocument().getFieldSets().builtInFieldSets().get(DocumentType.DOCUMENT);
+        Schema schema = sb.getSearch("position_inherited");
+        FieldSet fieldSet = schema.getDocument().getFieldSets().builtInFieldSets().get(DocumentType.DOCUMENT);
         assertFalse(fieldSet.getFieldNames().contains(PositionDataType.getZCurveFieldName("pos")));
     }
 
     @Test
     public void requireThatPositionCanBeAttribute() throws Exception {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/position_attribute.sd");
-        assertNull(search.getAttribute("pos"));
-        assertNull(search.getAttribute("pos.x"));
-        assertNull(search.getAttribute("pos.y"));
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/position_attribute.sd");
+        assertNull(schema.getAttribute("pos"));
+        assertNull(schema.getAttribute("pos.x"));
+        assertNull(schema.getAttribute("pos.y"));
 
-        assertPositionAttribute(search, "pos", Attribute.CollectionType.SINGLE);
-        assertPositionSummary(search, "pos", false);
+        assertPositionAttribute(schema, "pos", Attribute.CollectionType.SINGLE);
+        assertPositionSummary(schema, "pos", false);
     }
 
     @Test
@@ -53,20 +53,20 @@ public class PositionTestCase {
             SearchBuilder.buildFromFile("src/test/examples/position_index.sd");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'position_index', field 'pos': Indexing of data type 'position' is not " +
+            assertEquals("For schema 'position_index', field 'pos': Indexing of data type 'position' is not " +
                          "supported, replace 'index' statement with 'attribute'.", e.getMessage());
         }
     }
 
     @Test
     public void requireThatSummaryAloneDoesNotCreateZCurve() throws Exception {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/position_summary.sd");
-        assertNull(search.getAttribute("pos"));
-        assertNull(search.getAttribute("pos.x"));
-        assertNull(search.getAttribute("pos.y"));
-        assertNull(search.getAttribute("pos.zcurve"));
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/position_summary.sd");
+        assertNull(schema.getAttribute("pos"));
+        assertNull(schema.getAttribute("pos.x"));
+        assertNull(schema.getAttribute("pos.y"));
+        assertNull(schema.getAttribute("pos.zcurve"));
 
-        SummaryField summary = search.getSummaryField("pos");
+        SummaryField summary = schema.getSummaryField("pos");
         assertNotNull(summary);
         assertEquals(2, summary.getSourceCount());
         Iterator<SummaryField.Source> it = summary.getSources().iterator();
@@ -74,61 +74,61 @@ public class PositionTestCase {
         assertEquals("pos.y", it.next().getName());
         assertEquals(SummaryTransform.NONE, summary.getTransform());
 
-        assertNull(search.getSummaryField("pos_ext.distance"));
+        assertNull(schema.getSummaryField("pos_ext.distance"));
     }
 
     @Test
     public void requireThatExtraFieldCanBePositionAttribute() throws Exception {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/position_extra.sd");
-        assertNull(search.getAttribute("pos_ext"));
-        assertNull(search.getAttribute("pos_ext.x"));
-        assertNull(search.getAttribute("pos_ext.y"));
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/position_extra.sd");
+        assertNull(schema.getAttribute("pos_ext"));
+        assertNull(schema.getAttribute("pos_ext.x"));
+        assertNull(schema.getAttribute("pos_ext.y"));
 
-        assertPositionAttribute(search, "pos_ext", Attribute.CollectionType.SINGLE);
-        assertPositionSummary(search, "pos_ext", false);
+        assertPositionAttribute(schema, "pos_ext", Attribute.CollectionType.SINGLE);
+        assertPositionSummary(schema, "pos_ext", false);
     }
 
     @Test
     public void requireThatPositionArrayIsSupported() throws Exception {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/position_array.sd");
-        assertNull(search.getAttribute("pos"));
-        assertNull(search.getAttribute("pos.x"));
-        assertNull(search.getAttribute("pos.y"));
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/position_array.sd");
+        assertNull(schema.getAttribute("pos"));
+        assertNull(schema.getAttribute("pos.x"));
+        assertNull(schema.getAttribute("pos.y"));
 
-        assertPositionAttribute(search, "pos", Attribute.CollectionType.ARRAY);
-        assertPositionSummary(search, "pos", true);
+        assertPositionAttribute(schema, "pos", Attribute.CollectionType.ARRAY);
+        assertPositionSummary(schema, "pos", true);
     }
 
-    private static void assertPositionAttribute(Search search, String fieldName, Attribute.CollectionType type) {
-        Attribute attribute = search.getAttribute(PositionDataType.getZCurveFieldName(fieldName));
+    private static void assertPositionAttribute(Schema schema, String fieldName, Attribute.CollectionType type) {
+        Attribute attribute = schema.getAttribute(PositionDataType.getZCurveFieldName(fieldName));
         assertNotNull(attribute);
         assertTrue(attribute.isPosition());
         assertEquals(attribute.getCollectionType(), type);
         assertEquals(attribute.getType(), Attribute.Type.LONG);
     }
 
-    private static void assertPositionSummary(Search search, String fieldName, boolean isArray) {
-        assertSummaryField(search,
+    private static void assertPositionSummary(Schema schema, String fieldName, boolean isArray) {
+        assertSummaryField(schema,
                            fieldName,
                            PositionDataType.getZCurveFieldName(fieldName),
                            (isArray ? DataType.getArray(PositionDataType.INSTANCE) : PositionDataType.INSTANCE),
                            SummaryTransform.GEOPOS);
-        assertSummaryField(search,
+        assertSummaryField(schema,
                            PositionDataType.getDistanceSummaryFieldName(fieldName),
                            PositionDataType.getZCurveFieldName(fieldName),
                            DataType.INT,
                            SummaryTransform.DISTANCE);
-        assertSummaryField(search,
+        assertSummaryField(schema,
                            PositionDataType.getPositionSummaryFieldName(fieldName),
                            PositionDataType.getZCurveFieldName(fieldName),
                            DataType.getArray(DataType.STRING),
                            SummaryTransform.POSITIONS);
     }
 
-    private static void assertSummaryField(Search search, String fieldName, String sourceName, DataType dataType,
+    private static void assertSummaryField(Schema schema, String fieldName, String sourceName, DataType dataType,
                                            SummaryTransform transform)
     {
-        SummaryField summary = search.getSummaryField(fieldName);
+        SummaryField summary = schema.getSummaryField(fieldName);
         assertNotNull(summary);
         assertEquals(1, summary.getSourceCount());
         assertEquals(sourceName, summary.getSingleSource());

@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.hierarchy;
 
 import com.intellij.ide.hierarchy.CallHierarchyBrowserBase;
@@ -21,6 +22,10 @@ import java.util.Map;
 
 import javax.swing.JTree;
 
+/**
+ * This class is a browser for the "Call Hierarchy" window.
+ * @author shahariel
+ */
 public class SdCallHierarchyBrowser extends CallHierarchyBrowserBase {
 
     public SdCallHierarchyBrowser(@NotNull Project project,

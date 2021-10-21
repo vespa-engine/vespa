@@ -158,13 +158,13 @@ SingleExecutor::wait_for_room(Lock & lock) {
     }
 }
 
-ThreadExecutor::Stats
+ExecutorStats
 SingleExecutor::getStats() {
     Lock lock(_mutex);
     uint64_t accepted = _wp.load(std::memory_order_relaxed);
-    Stats stats(_queueSize, (accepted - _lastAccepted), 0);
+    ExecutorStats stats(_queueSize, (accepted - _lastAccepted), 0);
     _lastAccepted = accepted;
-    _queueSize = Stats::QueueSizeT() ;
+    _queueSize = ExecutorStats::QueueSizeT() ;
     return stats;
 }
 

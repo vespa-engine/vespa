@@ -27,7 +27,7 @@ public class SummaryTestCase {
     @Test
     public void testMemorySummary() throws ParseException {
         String sd = joinLines(
-                "search memorysummary {",
+                "schema memorysummary {",
                 "  document memorysummary {",
                 "      field inmemory type string {",
                 "          indexing: attribute | summary",
@@ -45,7 +45,7 @@ public class SummaryTestCase {
     @Test
     public void testDiskSummary() throws ParseException {
         String sd = joinLines(
-                "search disksummary {",
+                "schema disksummary {",
                 "  document-summary foobar {",
                 "      summary foo1 type string { source: inmemory }",
                 "      summary foo2 type string { source: ondisk }",
@@ -72,7 +72,7 @@ public class SummaryTestCase {
     @Test
     public void testDiskSummaryExplicit() throws ParseException {
         String sd = joinLines(
-                "search disksummary {",
+                "schema disksummary {",
                 "  document disksummary {",
                 "      field inmemory type string {",
                 "          indexing: attribute | summary",
@@ -95,7 +95,7 @@ public class SummaryTestCase {
     @Test
     public void testStructMemorySummary() throws ParseException {
         String sd = joinLines(
-                "search structmemorysummary {",
+                "schema structmemorysummary {",
                 "  document structmemorysummary {",
                 "      struct elem {",
                 "        field name type string {}",
@@ -126,7 +126,7 @@ public class SummaryTestCase {
     @Test
     public void testInheritance() throws Exception {
         String sd = joinLines(
-                "search music {",
+                "schema music {",
                 "  document music {",
                 "    field title type string {",
                 "      indexing: summary | attribute | index",
@@ -185,7 +185,7 @@ public class SummaryTestCase {
     @Test
     public void testRedeclaringInheritedFieldFails() throws Exception {
         String sd = joinLines(
-                "search music {",
+                "schema music {",
                 "  document music {",
                 "    field title type string {",
                 "      indexing: summary | attribute | index",
@@ -210,7 +210,7 @@ public class SummaryTestCase {
             SearchBuilder.createFromString(sd, logger);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("For search 'music', summary class 'title2', summary field 'title': Can not use " +
+            assertEquals("For schema 'music', summary class 'title2', summary field 'title': Can not use " +
                          "source 'title_short' for this summary field, an equally named field in summary class 'title' " +
                          "uses a different source: 'title'.", e.getMessage());
         }
@@ -236,6 +236,36 @@ public class SummaryTestCase {
             // assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
             //             e.getMessage());
         }
+    }
+
+    @Test
+    public void testInheritingParentSummary() throws ParseException {
+        String parent = joinLines(
+                "schema parent {" +
+                "  document parent {" +
+                "    field pf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "  document-summary parent_summary {" +
+                "    summary pf1 type string {}" +
+                "  }" +
+                "}");
+        String child = joinLines(
+                "schema child inherits parent {" +
+                "  document child inherits parent {" +
+                "    field cf1 type string {" +
+                "      indexing: summary" +
+                "    }" +
+                "  }" +
+                "  document-summary child_summary inherits parent_summary {" +
+                "    summary cf1 type string {}" +
+                "  }" +
+                "}");
+        DeployLoggerStub logger = new DeployLoggerStub();
+        SearchBuilder.createFromStrings(logger, parent, child);
+        logger.entries.forEach(e -> System.out.println(e));
+        //assertTrue(logger.entries.isEmpty());
     }
 
     private static class TestValue {

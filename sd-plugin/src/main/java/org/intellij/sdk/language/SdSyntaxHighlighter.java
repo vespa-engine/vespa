@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language;
 
 import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
@@ -14,6 +15,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 
+/**
+ * This class defines the syntax highlighting of an SD file.
+ * @author shahariel
+ */
 public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
     
     private static final HashSet<IElementType> keyWordsSet = initKeyWordsSet();
@@ -52,9 +57,8 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
         return new SdLexerAdapter();
     }
     
-    @NotNull
     @Override
-    public TextAttributesKey[] getTokenHighlights(IElementType tokenType) {
+    public TextAttributesKey @NotNull [] getTokenHighlights(IElementType tokenType) {
         if (tokenType.equals(SdTypes.IDENTIFIER_VAL)) {
             return IDENTIFIER_KEYS;
 //        } else if (tokenType.equals(SdTypes.KEY)) {

@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.findUsages;
 
 import com.intellij.find.findUsages.FindUsagesHandler;
@@ -20,6 +21,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * This class handles creating the "Find Usages" window.
+ * @author shahariel
+ */
 public class SdFindUsagesHandler extends FindUsagesHandler {
     
     protected HashMap<String, List<PsiElement>> macrosMap;

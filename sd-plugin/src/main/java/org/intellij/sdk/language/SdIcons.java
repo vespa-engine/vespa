@@ -1,9 +1,14 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language;
 
 import com.intellij.openapi.util.IconLoader;
 
 import javax.swing.Icon;
 
+/**
+ * This class is used for defining Icons for the IDE.
+ * @author shahariel
+ */
 public class SdIcons {
     public static final Icon FILE = IconLoader.getIcon("icons/sd_icon.png", SdIcons.class);
     public static final Icon STRUCT_FIELD = IconLoader.getIcon("icons/struct_field_icon.png", SdIcons.class);

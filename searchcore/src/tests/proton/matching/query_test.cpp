@@ -120,6 +120,7 @@ class Test : public vespalib::TestApp {
     void requireThatSameElementTermsAreProperlyPrefixed();
     void requireThatSameElementDoesNotAllocateMatchData();
     void requireThatSameElementIteratorsCanBeBuilt();
+    void requireThatConstBoolBlueprintsAreCreatedCorrectly();
 
 public:
     ~Test() override;
@@ -1088,6 +1089,28 @@ Test::requireThatSameElementIteratorsCanBeBuilt() {
     EXPECT_TRUE(iterator->seek(8));
 }
 
+void Test::requireThatConstBoolBlueprintsAreCreatedCorrectly() {
+    using search::queryeval::AlwaysTrueBlueprint;
+    using search::queryeval::EmptyBlueprint;
+
+    ProtonTrue true_node;
+    ProtonFalse false_node;
+
+    FakeRequestContext requestContext;
+    FakeSearchContext context;
+    context.setLimit(1000);
+    context.addIdx(0).idx(0).getFake()
+        .addResult(field, "foo", FakeResult().doc(1).doc(3));
+
+    Blueprint::UP t_blueprint = BlueprintBuilder::build(requestContext, true_node, context);
+    auto *tbp = dynamic_cast<AlwaysTrueBlueprint*>(t_blueprint.get());
+    EXPECT_TRUE(tbp != nullptr);
+
+    Blueprint::UP f_blueprint = BlueprintBuilder::build(requestContext, false_node, context);
+    auto *fbp = dynamic_cast<EmptyBlueprint*>(f_blueprint.get());
+    EXPECT_TRUE(fbp != nullptr);
+}
+
 Test::~Test() = default;
 
 int
@@ -1126,6 +1149,7 @@ Test::Main()
     TEST_CALL(requireThatSameElementTermsAreProperlyPrefixed);
     TEST_CALL(requireThatSameElementDoesNotAllocateMatchData);
     TEST_CALL(requireThatSameElementIteratorsCanBeBuilt);
+    TEST_CALL(requireThatConstBoolBlueprintsAreCreatedCorrectly);
 
     TEST_DONE();
 }

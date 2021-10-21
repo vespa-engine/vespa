@@ -6,8 +6,9 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.DocumentReference;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
@@ -35,39 +36,43 @@ public class ValidateFieldTypesTest {
 
     @Test
     public void throws_exception_if_type_of_document_field_does_not_match_summary_field() {
-        Search search = createSearchWithDocument(DOCUMENT_NAME);
-        search.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME, DataType.INT));
-        search.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING, search));
+        Schema schema = createSearchWithDocument(DOCUMENT_NAME);
+        schema.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME, DataType.INT));
+        schema.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, DataType.STRING, schema));
 
-        ValidateFieldTypes validator = new ValidateFieldTypes(search, null, null, null);
+        ValidateFieldTypes validator = new ValidateFieldTypes(schema, null, null, null);
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
-                "For search '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
+                "For schema '" + DOCUMENT_NAME + "', field '" + IMPORTED_FIELD_NAME + "': Incompatible types. " +
                 "Expected int for summary field '" + IMPORTED_FIELD_NAME + "', got string.");
         validator.process(true, false);
     }
 
-    private static Search createSearch(String documentType) {
-        return new Search(documentType, MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+    private static Schema createSearch(String documentType) {
+        return new Schema(documentType,
+                          new Application(MockApplicationPackage.createEmpty()),
+                          new MockFileRegistry(),
+                          new TestableDeployLogger(),
+                          new TestProperties());
     }
 
-    private static Search createSearchWithDocument(String documentName) {
-        Search search = createSearch(documentName);
-        SDDocumentType document = new SDDocumentType(documentName, search);
-        search.addDocument(document);
-        return search;
+    private static Schema createSearchWithDocument(String documentName) {
+        Schema schema = createSearch(documentName);
+        SDDocumentType document = new SDDocumentType(documentName, schema);
+        schema.addDocument(document);
+        return schema;
     }
 
     private static ImportedFields createSingleImportedField(String fieldName, DataType dataType) {
-        Search targetSearch = createSearch("target_doc");
+        Schema targetSchema = createSearch("target_doc");
         SDField targetField = new SDField("target_field", dataType);
-        DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSearch);
+        DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSchema);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);
         return new ImportedFields(Collections.singletonMap(fieldName, importedField));
     }
 
-    private static DocumentSummary createDocumentSummary(String fieldName, DataType dataType, Search search) {
-        DocumentSummary summary = new DocumentSummary("mysummary", search);
+    private static DocumentSummary createDocumentSummary(String fieldName, DataType dataType, Schema schema) {
+        DocumentSummary summary = new DocumentSummary("mysummary", schema);
         summary.add(new SummaryField(fieldName, dataType));
         return summary;
     }

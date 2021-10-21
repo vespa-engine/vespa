@@ -6,7 +6,7 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
@@ -25,13 +25,13 @@ import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isS
  */
 public class MatchedElementsOnlyResolver extends Processor {
 
-    public MatchedElementsOnlyResolver(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public MatchedElementsOnlyResolver(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (var entry : search.getSummaries().entrySet()) {
+        for (var entry : schema.getSummaries().entrySet()) {
             var summary = entry.getValue();
             for (var field : summary.getSummaryFields()) {
                 if (field.getTransform().equals(SummaryTransform.MATCHED_ELEMENTS_FILTER)) {
@@ -42,7 +42,7 @@ public class MatchedElementsOnlyResolver extends Processor {
     }
 
     private void processSummaryField(DocumentSummary summary, SummaryField field, boolean validate) {
-        var sourceField = search.getField(field.getSingleSource());
+        var sourceField = schema.getField(field.getSingleSource());
         if (sourceField != null) {
             if (isSupportedComplexField(sourceField)) {
                 if (isComplexFieldWithOnlyStructFieldAttributes(sourceField)) {
@@ -84,12 +84,12 @@ public class MatchedElementsOnlyResolver extends Processor {
     }
 
     private void fail(DocumentSummary summary, SummaryField field, String msg) {
-        throw new IllegalArgumentException(formatError(search, summary, field, msg));
+        throw new IllegalArgumentException(formatError(schema, summary, field, msg));
     }
 
-    private String formatError(Search search, DocumentSummary summary, SummaryField field, String msg) {
-        return "For search '" + search.getName() + "', document summary '" + summary.getName()
-                + "', summary field '" + field.getName() + "': " + msg;
+    private String formatError(Schema schema, DocumentSummary summary, SummaryField field, String msg) {
+        return "For " + schema + ", document summary '" + summary.getName()
+               + "', summary field '" + field.getName() + "': " + msg;
     }
 
 }

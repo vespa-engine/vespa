@@ -3,9 +3,9 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.SchemaTestCase;
+import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -20,40 +20,40 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author baldersheim
  */
-public class IntegerIndex2AttributeTestCase extends SchemaTestCase {
+public class IntegerIndex2AttributeTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testIntegerIndex2Attribute() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/integerindex2attribute.sd");
-        new IntegerIndex2Attribute(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/integerindex2attribute.sd");
+        new IntegerIndex2Attribute(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
 
         SDField f;
-        f = search.getConcreteField("s1");
+        f = schema.getConcreteField("s1");
         assertTrue(f.getAttributes().isEmpty());
         assertTrue(f.existsIndex("s1"));
-        f = search.getConcreteField("s2");
+        f = schema.getConcreteField("s2");
         assertEquals(f.getAttributes().size(), 1);
         assertTrue(f.existsIndex("s2"));
 
-        f = search.getConcreteField("as1");
+        f = schema.getConcreteField("as1");
         assertTrue(f.getAttributes().isEmpty());
         assertTrue(f.existsIndex("as1"));
-        f = search.getConcreteField("as2");
+        f = schema.getConcreteField("as2");
         assertEquals(f.getAttributes().size(), 1);
         assertTrue(f.existsIndex("as2"));
 
-        f = search.getConcreteField("i1");
+        f = schema.getConcreteField("i1");
         assertEquals(f.getAttributes().size(), 1);
         assertFalse(f.existsIndex("i1"));
 
-        f = search.getConcreteField("i2");
+        f = schema.getConcreteField("i2");
         assertEquals(f.getAttributes().size(), 1);
         assertFalse(f.existsIndex("i2"));
 
-        f = search.getConcreteField("ai1");
-        assertEquals(search.getConcreteField("ai1").getAttributes().size(), 1);
-        assertFalse(search.getConcreteField("ai1").existsIndex("ai1"));
-        f = search.getConcreteField("ai2");
+        f = schema.getConcreteField("ai1");
+        assertEquals(schema.getConcreteField("ai1").getAttributes().size(), 1);
+        assertFalse(schema.getConcreteField("ai1").existsIndex("ai1"));
+        f = schema.getConcreteField("ai2");
         assertEquals(f.getAttributes().size(), 1);
         assertFalse(f.existsIndex("ai2"));
     }

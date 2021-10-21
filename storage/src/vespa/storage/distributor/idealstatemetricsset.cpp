@@ -39,13 +39,13 @@ MergeBucketMetricSet::MergeBucketMetricSet(const std::string& name, metrics::Met
     : OperationMetricSet(name, std::move(tags), description, owner),
       source_only_copy_changed("source_only_copy_changed",
                                {{"logdefault"},{"yamasdefault"}},
-                               "The number of merge operations where source-only copy changed"),
+                               "The number of merge operations where source-only copy changed", this),
       source_only_copy_delete_blocked("source_only_copy_delete_blocked",
                                       {{"logdefault"},{"yamasdefault"}},
-                                      "The number of merge operations where delete of unchanged source-only copies was blocked"),
+                                      "The number of merge operations where delete of unchanged source-only copies was blocked", this),
       source_only_copy_delete_failed("source_only_copy_delete_failed",
                                       {{"logdefault"},{"yamasdefault"}},
-                                      "The number of merge operations where delete of unchanged source-only copies failed")
+                                      "The number of merge operations where delete of unchanged source-only copies failed", this)
 {
 }
 

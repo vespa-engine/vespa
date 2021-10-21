@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language;
 
 import com.intellij.application.options.CodeStyleAbstractConfigurable;
@@ -10,6 +11,10 @@ import com.intellij.psi.codeStyle.CustomCodeStyleSettings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class is used for the extension (in plugin.xml) to the class SdCodeStyleSettings.
+ * @author shahariel
+ */
 public class SdCodeStyleSettingsProvider extends CodeStyleSettingsProvider {
     
     @Override

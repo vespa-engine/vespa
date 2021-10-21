@@ -7,11 +7,14 @@
 
 #pragma once
 
+#include "const_bool_nodes.h"
 #include "intermediatenodes.h"
 #include "termnodes.h"
 
 namespace search::query {
 
+struct SimpleTrue : TrueQueryNode {};
+struct SimpleFalse : FalseQueryNode {};
 struct SimpleAnd : And {};
 struct SimpleAndNot : AndNot {};
 struct SimpleNear : Near { SimpleNear(size_t dist) : Near(dist) {} };
@@ -119,6 +122,8 @@ struct SimpleQueryNodeTypes {
     using And = SimpleAnd;
     using AndNot = SimpleAndNot;
     using Equiv = SimpleEquiv;
+    using TrueQueryNode = SimpleTrue;
+    using FalseQueryNode = SimpleFalse;
     using NumberTerm = SimpleNumberTerm;
     using LocationTerm = SimpleLocationTerm;
     using Near = SimpleNear;

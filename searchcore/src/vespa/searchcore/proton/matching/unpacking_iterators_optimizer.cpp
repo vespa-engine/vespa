@@ -57,6 +57,9 @@ struct TermExpander : QueryVisitor {
     void visit(PredicateQuery &) override {}
     void visit(RegExpTerm &) override {}
     void visit(NearestNeighborTerm &) override {}
+    void visit(TrueQueryNode &) override {}
+    void visit(FalseQueryNode &) override {}
+
     void flush(Intermediate &parent) {
         for (Node::UP &term: terms) {
             parent.append(std::move(term));

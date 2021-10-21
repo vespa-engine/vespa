@@ -80,7 +80,7 @@ private:
     std::unique_ptr<FastOS_ThreadPool>   _pool;
     mutable std::mutex                   _lock;
     std::condition_variable              _cond;
-    Stats                                _stats;
+    ExecutorStats                        _stats;
     Gate                                 _executorCompletion;
     ArrayQueue<TaggedTask>               _tasks;
     ArrayQueue<Worker*>                  _workers;
@@ -188,7 +188,7 @@ public:
      **/
     size_t num_idle_workers() const;
 
-    Stats getStats() override;
+    ExecutorStats getStats() override;
 
     Task::UP execute(Task::UP task) override;
 

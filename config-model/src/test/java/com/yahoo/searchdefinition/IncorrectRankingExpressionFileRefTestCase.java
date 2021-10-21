@@ -15,16 +15,16 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
-public class IncorrectRankingExpressionFileRefTestCase extends SchemaTestCase {
+public class IncorrectRankingExpressionFileRefTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testIncorrectRef() throws IOException, ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            Search search = SearchBuilder.buildFromFile("src/test/examples/incorrectrankingexpressionfileref.sd",
+            Schema schema = SearchBuilder.buildFromFile("src/test/examples/incorrectrankingexpressionfileref.sd",
                                                         registry,
                                                         new QueryProfileRegistry());
-            new DerivedConfiguration(search, registry); // cause rank profile parsing
+            new DerivedConfiguration(schema, registry); // cause rank profile parsing
             fail("parsing should have failed");
         } catch (IllegalArgumentException e) {
             String message = Exceptions.toMessageString(e);

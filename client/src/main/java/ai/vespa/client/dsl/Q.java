@@ -162,12 +162,17 @@ public final class Q {
      * Weakand weak and.
      * https://docs.vespa.ai/en/reference/query-language-reference.html#weakand
      *
-     * @param field the field
      * @param query the query
      * @return the weak and query
      */
-    public static WeakAnd weakand(String field, Query query) {
-        return new WeakAnd(field, query);
+    public static WeakAnd weakand(Query query) {
+        return new WeakAnd(query);
+    }
+
+    /** @deprecated use weakand(query) */
+    @Deprecated // Remove on Vespa 8
+    public static WeakAnd weakand(String ignored, Query query) {
+        return new WeakAnd(query);
     }
 
     /**

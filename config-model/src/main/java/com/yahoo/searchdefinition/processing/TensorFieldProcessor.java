@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDField;
@@ -18,13 +18,13 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class TensorFieldProcessor extends Processor {
 
-    public TensorFieldProcessor(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public TensorFieldProcessor(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (var field : search.allConcreteFields()) {
+        for (var field : schema.allConcreteFields()) {
             if ( field.getDataType() instanceof TensorDataType ) {
                 if (validate) {
                     validateIndexingScripsForTensorField(field);
@@ -43,8 +43,8 @@ public class TensorFieldProcessor extends Processor {
 
     private void validateIndexingScripsForTensorField(SDField field) {
         if (field.doesIndexing() && !isTensorTypeThatSupportsHnswIndex(field)) {
-            fail(search, field, "A tensor of type '" + tensorTypeToString(field) + "' does not support having an 'index'. " +
-                    "Currently, only tensors with 1 indexed dimension supports that.");
+            fail(schema, field, "A tensor of type '" + tensorTypeToString(field) + "' does not support having an 'index'. " +
+                                "Currently, only tensors with 1 indexed dimension supports that.");
         }
     }
 
@@ -79,7 +79,7 @@ public class TensorFieldProcessor extends Processor {
             var attribute = field.getAttributes().get(field.getName());
             if (attribute != null && attribute.isFastSearch()) {
                 if (! isTensorTypeThatSupportsDirectStore(field)) {
-                    fail(search, field, "An attribute of type 'tensor' cannot be 'fast-search'.");
+                    fail(schema, field, "An attribute of type 'tensor' cannot be 'fast-search'.");
                 }
             }
         }
@@ -88,7 +88,7 @@ public class TensorFieldProcessor extends Processor {
     private void validateHnswIndexParametersRequiresIndexing(SDField field) {
         var index = field.getIndex(field.getName());
         if (index != null && index.getHnswIndexParams().isPresent() && !field.doesIndexing()) {
-            fail(search, field, "A tensor that specifies hnsw index parameters must also specify 'index' in 'indexing'");
+            fail(schema, field, "A tensor that specifies hnsw index parameters must also specify 'index' in 'indexing'");
         }
     }
 
@@ -98,7 +98,7 @@ public class TensorFieldProcessor extends Processor {
         }
         if (isTensorTypeThatSupportsHnswIndex(field)) {
             if (validate && !field.doesAttributing()) {
-                fail(search, field, "A tensor that has an index must also be an attribute.");
+                fail(schema, field, "A tensor that has an index must also be an attribute.");
             }
             var index = field.getIndex(field.getName());
             // TODO: Calculate default params based on tensor dimension size
@@ -112,7 +112,7 @@ public class TensorFieldProcessor extends Processor {
 
     private void validateDataTypeForCollectionField(SDField field) {
         if (((CollectionDataType)field.getDataType()).getNestedType() instanceof TensorDataType)
-            fail(search, field, "A field with collection type of tensor is not supported. Use simple type 'tensor' instead.");
+            fail(schema, field, "A field with collection type of tensor is not supported. Use simple type 'tensor' instead.");
     }
 
 }

@@ -14,9 +14,9 @@ import java.util.List;
  */
 public class DocumentsOnlyRankProfile extends RankProfile {
 
-    public DocumentsOnlyRankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry,
+    public DocumentsOnlyRankProfile(String name, Schema schema, RankProfileRegistry rankProfileRegistry,
                                     RankingConstants rankingConstants) {
-        super(name, search, rankProfileRegistry, rankingConstants);
+        super(name, schema, rankProfileRegistry, rankingConstants);
     }
 
     @Override

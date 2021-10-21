@@ -233,15 +233,15 @@ class QTest extends Specification {
         given:
         def q = Q.select("*")
             .from("sd1")
-            .where(Q.weakand("f1", Q.p("f1").contains("v1").and("f2").contains("v2")))
-            .and(Q.weakand("f3", Q.p("f1").contains("v1").and("f2").contains("v2"))
+            .where(Q.weakand(Q.p("f1").contains("v1").and("f2").contains("v2")))
+            .and(Q.weakand(Q.p("f1").contains("v1").and("f2").contains("v2"))
                 .annotate(A.a("scoreThreshold", 0.13))
             )
             .semicolon()
             .build()
 
         expect:
-        q == """yql=select * from sd1 where weakAnd(f1, f1 contains "v1", f2 contains "v2") and ([{"scoreThreshold":0.13}]weakAnd(f3, f1 contains "v1", f2 contains "v2"));"""
+        q == """yql=select * from sd1 where weakAnd(f1 contains "v1", f2 contains "v2") and ([{"scoreThreshold":0.13}]weakAnd(f1 contains "v1", f2 contains "v2"));"""
     }
 
     def "geo location"() {

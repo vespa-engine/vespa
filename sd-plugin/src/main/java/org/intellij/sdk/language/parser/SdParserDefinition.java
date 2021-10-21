@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.parser;
 
 import com.intellij.lang.ASTNode;
@@ -18,6 +19,10 @@ import org.intellij.sdk.language.psi.SdFile;
 import org.intellij.sdk.language.psi.SdTypes;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This class is used for the extension (in plugin.xml), to make the parsing process use the plugin code.
+ * @author shahariel
+ */
 public class SdParserDefinition implements ParserDefinition {
     public static final TokenSet WHITE_SPACES = TokenSet.create(TokenType.WHITE_SPACE);
     public static final TokenSet COMMENTS = TokenSet.create(SdTypes.COMMENT);

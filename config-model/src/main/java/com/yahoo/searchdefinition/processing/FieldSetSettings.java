@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
@@ -22,42 +22,42 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 // (this requires adding normalizing and stemming settings to FieldSet).
 public class FieldSetSettings extends Processor {
 
-    public FieldSetSettings(Search search,
+    public FieldSetSettings(Schema schema,
                             DeployLogger deployLogger,
                             RankProfileRegistry rankProfileRegistry,
                             QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (FieldSet fieldSet : search.fieldSets().userFieldSets().values()) {
+        for (FieldSet fieldSet : schema.fieldSets().userFieldSets().values()) {
             if (validate)
-                checkFieldNames(search, fieldSet);
-            checkMatching(search, fieldSet);
-            checkNormalization(search, fieldSet);
-            checkStemming(search, fieldSet);
+                checkFieldNames(schema, fieldSet);
+            checkMatching(schema, fieldSet);
+            checkNormalization(schema, fieldSet);
+            checkStemming(schema, fieldSet);
         }
     }
 
-    private void checkFieldNames(Search search, FieldSet fieldSet) {
+    private void checkFieldNames(Schema schema, FieldSet fieldSet) {
         for (String field : fieldSet.getFieldNames()) {
-            if (search.getField(field) == null)
-                throw new IllegalArgumentException("For search '" + search.getName() +
-                                                   "': Field '"+ field + "' in " + fieldSet + " does not exist.");
+            if (schema.getField(field) == null)
+                throw new IllegalArgumentException("For " + schema + ": Field '" + field + "' in " +
+                                                   fieldSet + " does not exist.");
         }
     }
 
-    private void checkMatching(Search search, FieldSet fieldSet) {
+    private void checkMatching(Schema schema, FieldSet fieldSet) {
         Matching matching = fieldSet.getMatching();
         for (String fieldName : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getField(fieldName);
+            ImmutableSDField field = schema.getField(fieldName);
             Matching fieldMatching = field.getMatching();
             if (matching == null) {
                 matching = fieldMatching;
             } else {
                 if ( ! matching.equals(fieldMatching)) {
-                    warn(search, field.asField(),
+                    warn(schema, field.asField(),
                             "The matching settings for the fields in " + fieldSet + " are inconsistent " +
                                     "(explicitly or because of field type). This may lead to recall and ranking issues.");
                     return;
@@ -67,16 +67,16 @@ public class FieldSetSettings extends Processor {
         fieldSet.setMatching(matching); // Assign the uniquely determined matching to the field set
     }
 
-    private void checkNormalization(Search search, FieldSet fieldSet) {
+    private void checkNormalization(Schema schema, FieldSet fieldSet) {
         NormalizeLevel.Level normalizing = null;
         for (String fieldName : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getField(fieldName);
+            ImmutableSDField field = schema.getField(fieldName);
             NormalizeLevel.Level fieldNorm = field.getNormalizing().getLevel();
             if (normalizing == null) {
                 normalizing = fieldNorm;
             } else {
                 if ( ! normalizing.equals(fieldNorm)) {
-                    warn(search, field.asField(),
+                    warn(schema, field.asField(),
                             "The normalization settings for the fields in " + fieldSet + " are inconsistent " +
                                     "(explicitly or because of field type). This may lead to recall and ranking issues.");
                     return;
@@ -85,16 +85,16 @@ public class FieldSetSettings extends Processor {
         }
     }
 
-    private void checkStemming(Search search, FieldSet fieldSet) {
+    private void checkStemming(Schema schema, FieldSet fieldSet) {
         Stemming stemming = null;
         for (String fieldName : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getField(fieldName);
+            ImmutableSDField field = schema.getField(fieldName);
             Stemming fieldStemming = field.getStemming();
             if (stemming == null) {
                 stemming = fieldStemming;
             } else {
                 if ( ! stemming.equals(fieldStemming)) {
-                    warn(search, field.asField(),
+                    warn(schema, field.asField(),
                             "The stemming settings for the fields in the fieldset '"+fieldSet.getName()+
                                     "' are inconsistent (explicitly or because of field type). " +
                                     "This may lead to recall and ranking issues.");

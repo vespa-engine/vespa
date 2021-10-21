@@ -1,3 +1,9 @@
+/**
+This file is the SD grammar. 
+NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats it like zero-to-many)
+@author: shahariel
+ */
+
 {
     parserClass="org.intellij.sdk.language.parser.SdParser" // Name and the location of the parser which will be generated.
 
@@ -34,19 +40,15 @@
     ]
 }
 
-// IMPORTANT NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats it like zero-to-many)
-
-SdFile ::= Schema
-Schema ::= search IdentifierVal? '{' SchemaBody '}'
+SdFile ::= SchemaDefinition
+SchemaDefinition ::= (search | schema) IdentifierVal? '{' SchemaBody '}'
 SchemaBody ::= SchemaBodyOptions* DocumentDefinition SchemaBodyOptions* // Does not support zero-or-one occurrences
 private SchemaBodyOptions ::= SchemaFieldDefinition | ImportFieldDefinition | DocumentSummaryDefinition | 
                               RankProfileDefinition | 
                               FieldSetDefinition | ConstantDefinition | OnnxModelDefinition | StemmingDefinition |
-                              raw-as-base64-in-summary | AnnotationDefinition
+                              raw-as-base64-in-summary | SchemaAnnotationDefinition
 
-           
-
-
+         
 SchemaFieldDefinition ::= field IdentifierVal type FieldTypeName '{' SchemaFieldBody '}'
                           { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
                             implements=["org.intellij.sdk.language.psi.SdDeclaration" "org.intellij.sdk.language.psi.SdNamedElement"]
@@ -95,18 +97,25 @@ OnnxModelBody ::= OnnxModelBodyOptions*
 private OnnxModelBodyOptions ::= (file ':' FilePath) | (uri ':' UriPath) | 
                                  ((input | output) (IdentifierVal | STRING) ':' ('.' | '/' | '(' | ')' | IdentifierWithDashVal | WORD_REG)) 
 
-AnnotationDefinition ::= annotation IdentifierVal '{' '}' // todo ask Vespa for syntax
+SchemaAnnotationDefinition ::= AnnotationDefinition
+                        { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
+                          implements=["org.intellij.sdk.language.psi.SdDeclaration" "org.intellij.sdk.language.psi.SdNamedElement"]
+                          methods=[getName setName getType getTypeName getNameIdentifier getPresentation] }
+                          
+private AnnotationDefinition ::= annotation IdentifierVal '{' AnnotationFieldDefinition* '}'
+AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
+                          { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
+                            implements=["org.intellij.sdk.language.psi.SdDeclaration" "org.intellij.sdk.language.psi.SdNamedElement"]
+                            methods=[getName setName getType getTypeName getNameIdentifier getPresentation] }
 
 //-------------------------
 //--- Expressions rules ---
 //-------------------------
 RankingExpression ::= ParenthesisedExpr | BooleanExpr |ArithmeticExpr | IfFunctionExpr | 
-                      QueryDefinitionExpr | FunctionCallExpr | PrimitiveExpr //ReduceExpr | 
+                      QueryDefinitionExpr | FunctionCallExpr | PrimitiveExpr
 
 IfFunctionExpr ::= "if" '(' (InListRankingExpression | RankingExpression) ',' RankingExpression ',' RankingExpression ')'
 InListRankingExpression ::= RankingExpression "in" '[' RankingExpression (',' RankingExpression)* ']'
-
-//ReduceExpr ::= reduce '(' RankingExpression ',' (avg|count|max|median|min|prod|sum) (',' RankingExpression)* ')'
 
 BooleanExpr ::= RankingExpression COMPARISON_OPERATOR RankingExpression
                 
@@ -132,14 +141,15 @@ private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition |
                            ignore-default-rank-features | RankPropertiesDefinition | FirstPhaseDefinition | 
                            SummaryFeaturesDefinition | RankFeaturesDefinition | SecondPhaseDefinition | ConstantsDefinition |
                            RankDefinition | RankTypeDefinition | MinHitsDefinition | NumSearchPartitionDefinition
-                           // | FieldWeightDefinition | ExecuteDefinition | RankDegradationDefinition // todo check with Vespa if need to add these
 
 MatchPhaseDefinition ::= match-phase '{' MatchPhaseBody '}'
-MatchPhaseBody ::= MatchPhaseBodyOptions+ // todo check with Vespa- are there more options?
+MatchPhaseBody ::= MatchPhaseBodyOptions+
 MatchPhaseBodyOptions ::= (attribute ':' IdentifierVal (order ':' (ascending | descending))?) | (max-hits ':' INTEGER_REG)
                           | DiversityDefinition // Does not support zero-or-one occurrences
-DiversityDefinition ::= diversity '{' (attribute ':' IdentifierVal min-groups ':' INTEGER_REG) |
-                                      (min-groups ':' INTEGER_REG attribute ':' IdentifierVal) '}'
+DiversityDefinition ::= diversity '{' DiversityBody '}'
+DiversityBody ::= DiversityBodyOptions*
+private DiversityBodyOptions ::= (attribute ':' IdentifierVal) | (min-groups ':' INTEGER_REG) | (cutoff-factor ':' FLOAT_REG) |
+                                 (cutoff-strategy ':' (strict | loose))
 
 private NumThreadsDefinition ::= num-threads-per-search ':' INTEGER_REG
 private TermwiseLimitDefinition ::= termwise-limit ':' (FLOAT_REG | INTEGER_REG)
@@ -177,9 +187,7 @@ RankFeaturesDefinition ::= rank-features (':' RankFeature+) | ('{' RankFeature* 
 
 ConstantsDefinition ::= constants '{' (IdentifierVal ':' RankPropertiesValue)* '}'
 
-//******** Rank features *********
 RankFeature ::= QueryDefinition | ItemRawScoreDefinition | FunctionCallExpr | (IdentifierWithDashVal ('.' IdentifierWithDashVal)* )
-
 QueryDefinition ::= "query" '(' IdentifierWithDashVal ')'
                     { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
                       implements=["org.intellij.sdk.language.psi.SdDeclaration" "org.intellij.sdk.language.psi.SdNamedElement"]
@@ -188,30 +196,7 @@ ItemRawScoreDefinition ::=  "itemRawScore" '(' IdentifierVal ')'
                             { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
                              implements=["org.intellij.sdk.language.psi.SdDeclaration" "org.intellij.sdk.language.psi.SdNamedElement"]
                              methods=[getName setName getType getTypeName getNameIdentifier getPresentation] }
-                             
-//                QueryFeature | DocumentFeature | QueryTermFieldMatchFeature | AttributeMatchFeature | RankScoreFeature |
-//                GlobalFeature | MatchOperatorScoreFeature | UtilityFeature | RankingExpressionMethod 
-                //todo add the rest (| FieldMatchFeature | QueryFieldSimilarityFeature | IdxMultiStrFieldFeature | MultiFieldsAttributesFeature)
-                
-// todo maybe not specify all of the rank features here? Maybe it would be better to write it more generally? like ID '(' ID ')' '.' ID.. so it could handle new features in the future
-//QueryFeature ::= QueryDefinition | (term '(' (FLOAT_REG | INTEGER_REG) ')' '.' (significant | weight | connectedness)) // todo add queryTermCount 
-//DocumentFeature ::= (fieldLength '(' IdentifierVal ')') | (attribute '(' IdentifierVal ')' ('.' count)?) |
-//                    (attribute '(' IdentifierVal ',' (INTEGER_REG | IdentifierVal) ')' ('.' (weight | contains))?) |
-//                    (tensorFromWeightedSet '(' ((attribute'('IdentifierVal')') | QueryDefinition | IdentifierVal) ',' IdentifierVal ')') |
-//                    (tensorFromLabels '(' ((attribute'('IdentifierVal')') | QueryDefinition | IdentifierVal) ',' IdentifierVal ')')
-//QueryTermFieldMatchFeature ::= (matchCount'('IdentifierVal')') | (matches'('IdentifierVal (',' INTEGER_REG)? ')') // todo add the rest
-//AttributeMatchFeature ::= (attributeMatch'('IdentifierVal')' ('.' (completeness | queryCompleteness | fieldCompleteness | 
-//                           normalizedWeight | normalizedWeightedWeight | matches | totalWeight | averageWeight | maxWeight))?) |
-//                          (distance'('IdentifierVal')' ('.' (index | latitude | longitude))?) |
-//                          (distanceToPath'('IdentifierVal')' ('.' (distance | traveled | product))?) | (age'('IdentifierVal')')  // todo add closeness and freshness
-//RankScoreFeature ::= (nativeDotProduct'('IdentifierVal')') // todo add the rest
-//GlobalFeature ::= (random'('IdentifierVal')' '.' match) | (random) // todo add the rest
-//MatchOperatorScoreFeature ::= (rawScore'('IdentifierVal')') | ItemRawScoreDefinition
-//UtilityFeature ::= (dotProduct'('IdentifierVal ',' IdentifierVal ')')  // todo add the rest
-//RankingExpressionMethod ::= "rankingExpression" '(' (RankFeature | IdentifierVal) ')'
-//***** End of Rank features *****
-
-
+                            
 //-------------------------
 //---- Document rules -----
 //-------------------------
@@ -221,7 +206,12 @@ DocumentDefinition ::= document (IdentifierVal (inherits IdentifierVal (',' Iden
                         methods=[getName setName getType getTypeName getNameIdentifier getPresentation] }
 
 DocumentBody ::= DocumentBodyOptions*
-DocumentBodyOptions ::= DocumentStructDefinition | DocumentFieldDefinition
+DocumentBodyOptions ::= DocumentStructDefinition | DocumentFieldDefinition | DocumentAnnotationDefinition
+
+DocumentAnnotationDefinition ::= AnnotationDefinition
+                        { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
+                          implements=["org.intellij.sdk.language.psi.SdDeclaration" "org.intellij.sdk.language.psi.SdNamedElement"]
+                          methods=[getName setName getType getTypeName getNameIdentifier getPresentation] }
 
 DocumentStructDefinition ::= struct IdentifierVal '{' DocumentStructBody '}'
                              { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
@@ -246,7 +236,7 @@ private DocumentFieldBodyOptions ::= StructFieldDefinition | MatchDefinition | I
                              AliasDef | RankDefinition | IndexingRewriteState | QueryCommandDefinition | SummaryDefinition |
                              BoldingDefinition | (id ':' INTEGER_REG) | IndexDefinition | (normalizing ':' IdentifierWithDashVal) | 
                              SortingDefinition | StemmingDefinition | (weight ': INTEGER_REG') | WeightedSetDefinition |
-                             RankTypeDefinition | DictionaryDefinition // todo check with Vespa- SummaryToDefinition is needed here? it's deprecated
+                             RankTypeDefinition | DictionaryDefinition
 
 //***** Field's body elements ******//
 // Struct
@@ -265,7 +255,7 @@ MatchProperty ::= text | exact | exact-terminator | word | prefix | cased | unca
 // Indexing
 IndexingDefinition ::= indexing (':' IndexingStatement) | ('{' IndexingStatement+ '}')
 IndexingStatement ::= IndexingStatementOptions (('|' IndexingStatementOptions)*) | ((';' IndexingStatementOptions)*)
-                      // Does not support zero-or-one occurrences // todo check with Vespa- Can "input" be here?
+                      // Does not support zero-or-one occurrences
 IndexingStatementOptions ::= summary | attribute | index | "set_language"
 // Attribute
 AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (SimpleAttributeProperty | ComplexAttributeProperty)+ '}'))
@@ -278,7 +268,7 @@ AliasDef ::= alias IdentifierVal? ':' IdentifierWithDashVal
 StemmingDefinition ::= stemming ':' IdentifierWithDashVal
 // Rank
 RankDefinition ::= rank ((IdentifierVal? ':' RankingSetting) | ('{' RankingSetting '}'))
-RankingSetting ::= filter | normal | literal // todo check with Vespa- is "literal" good here?
+RankingSetting ::= filter | normal
 // Indexing Rewrite
 IndexingRewriteState ::= indexing-rewrite ':' none
 // Query Command
@@ -330,19 +320,19 @@ IdentifierWithDashVal ::= ID_WITH_DASH_REG | IdentifierVal { implements=["org.in
                          
 // Those lists of keywords (KeywordOrIdentifier and KeywordNotIdentifier) have to be synchronized with sd.flex file.
 // If you add a keyword here, you should add it to the sd.flex file as well.
-KeywordOrIdentifier ::= search | document | struct | field | type | indexing | input | output | inherits | import | as |
-                        raw | uri | file | annotationreference | array | weightedset | map |
-                        order | ascending | descending | diversity | constants | literal | expression | weight | match |
+KeywordOrIdentifier ::= schema | search | document | struct | field | type | indexing | input | output | inherits | 
+                        import | as | raw | uri | file | annotationreference | array | weightedset | map |
+                        order | ascending | descending | diversity | constants | expression | weight | match |
                         function | macro | inline | text | exact | word | prefix | cased | uncased | substring | suffix | 
                         gram | paged | mutable | alias | sorting | strength | locale | uca | lowercase |
                         primary | secondary | tertiary | quaternary | identical | rank | filter | normal | none | full | dynamic | 
-                        source | to |
+                        source | to | strict | loose |
                         bolding | on | off | true | false | id | normalizing | stemming | arity | hnsw | dictionary | hash | btree |
                         fieldset | fields | constant | annotation
-                        // KeywordNotIdentifier ::= (not enforced in this version)
                         | attribute | body | header | index | 
                         reference | summary                         
 
+// Note- in this form, those keywords can't be use as identifier-with-dash!
 KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features | from-disk | rank-profile | rank-type |
                          num-threads-per-search | termwise-limit | ignore-default-rank-features | min-hits-per-thread | 
                          num-search-partition | match-phase | max-hits | second-phase | rerank-count | min-groups | 
@@ -351,5 +341,5 @@ KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features
                          indexing-rewrite | query-command | matched-elements-only | lower-bound | upper-bound | 
                          dense-posting-list-threshold | enable-bm25 | max-links-per-node | neighbors-to-explore-at-insert | 
                          multi-threaded-indexing | create-if-nonexistent | remove-if-zero | raw-as-base64-in-summary |
-                         onnx-model
+                         onnx-model | cutoff-factor | cutoff-strategy | on-match | on-rank | on-summary
                          

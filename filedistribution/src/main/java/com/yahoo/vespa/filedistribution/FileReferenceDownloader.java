@@ -36,15 +36,18 @@ public class FileReferenceDownloader {
     private final Duration downloadTimeout;
     private final Duration sleepBetweenRetries;
     private final Duration rpcTimeout;
+    private final File downloadDirectory;
 
     FileReferenceDownloader(ConnectionPool connectionPool,
                             Downloads downloads,
                             Duration timeout,
-                            Duration sleepBetweenRetries) {
+                            Duration sleepBetweenRetries,
+                            File downloadDirectory) {
         this.connectionPool = connectionPool;
         this.downloads = downloads;
         this.downloadTimeout = timeout;
         this.sleepBetweenRetries = sleepBetweenRetries;
+        this.downloadDirectory = downloadDirectory;
         String timeoutString = System.getenv("VESPA_CONFIGPROXY_FILEDOWNLOAD_RPC_TIMEOUT");
         this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
     }
@@ -53,6 +56,8 @@ public class FileReferenceDownloader {
         FileReference fileReference = fileReferenceDownload.fileReference();
         int retryCount = 0;
         do {
+            if (FileDownloader.fileReferenceExists(fileReference, downloadDirectory))
+                return;
             if (startDownloadRpc(fileReferenceDownload, retryCount))
                 return;
 

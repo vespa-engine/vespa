@@ -114,7 +114,8 @@ typedef search::query::SimpleOr          ProtonOr;
 typedef search::query::SimpleRank        ProtonRank;
 typedef search::query::SimpleWeakAnd     ProtonWeakAnd;
 typedef search::query::SimpleSameElement ProtonSameElement;
-
+typedef search::query::SimpleTrue        ProtonTrue;
+typedef search::query::SimpleFalse       ProtonFalse;
 
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     search::fef::MatchDataLayout children_mdl;
@@ -161,6 +162,8 @@ struct ProtonNodeTypes {
     typedef ProtonPredicateQuery  PredicateQuery;
     typedef ProtonRegExpTerm      RegExpTerm;
     typedef ProtonNearestNeighborTerm NearestNeighborTerm;
+    typedef ProtonTrue            TrueQueryNode;
+    typedef ProtonFalse           FalseQueryNode;
 };
 
 }

@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.hierarchy;
 
 import com.intellij.ide.hierarchy.HierarchyNodeDescriptor;
@@ -18,6 +19,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.Icon;
 
+/**
+ * This class represents a node descriptor to a node in a tree in the "Call Hierarchy" window.
+ * @author shahariel
+ */
 public class SdCallHierarchyNodeDescriptor extends HierarchyNodeDescriptor {
 
     public SdCallHierarchyNodeDescriptor(final NodeDescriptor parentDescriptor, @NotNull final PsiElement element, final boolean isBase) {

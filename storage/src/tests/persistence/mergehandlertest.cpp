@@ -1275,8 +1275,8 @@ TEST_F(MergeHandlerTest, partially_filled_apply_bucket_diff_reply)
         EXPECT_EQ(1, cmd2.getAddress()->getIndex());
         EXPECT_EQ(1234, cmd2.getSourceIndex());
         EXPECT_TRUE(getEnv()._fileStorHandler.isMerging(_bucket));
-        auto &s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
-        EXPECT_EQ((NodeList{{0, false}, {1, false}, {2, true}, {3, true}, {4, true}}), s.nodeList);
+        auto s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
+        EXPECT_EQ((NodeList{{0, false}, {1, false}, {2, true}, {3, true}, {4, true}}), s->nodeList);
         baseline_diff_size = cmd2.getDiff().size();
         auto reply = std::make_unique<api::GetBucketDiffReply>(cmd2);
         auto &diff = reply->getDiff();
@@ -1292,12 +1292,12 @@ TEST_F(MergeHandlerTest, partially_filled_apply_bucket_diff_reply)
     {
         LOG(debug, "checking first ApplyBucketDiff command");
         EXPECT_TRUE(getEnv()._fileStorHandler.isMerging(_bucket));
-        auto &s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
+        auto s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
         // Node 4 has been eliminated before the first ApplyBucketDiff command
-        EXPECT_EQ((NodeList{{0, false}, {1, false}, {2, true}, {3, true}}), s.nodeList);
-        EXPECT_EQ(baseline_diff_size + 2u, s.diff.size());
-        EXPECT_EQ(EntryCheck(20000, 24u), s.diff[baseline_diff_size]);
-        EXPECT_EQ(EntryCheck(20100, 24u), s.diff[baseline_diff_size + 1]);
+        EXPECT_EQ((NodeList{{0, false}, {1, false}, {2, true}, {3, true}}), s->nodeList);
+        EXPECT_EQ(baseline_diff_size + 2u, s->diff.size());
+        EXPECT_EQ(EntryCheck(20000, 24u), s->diff[baseline_diff_size]);
+        EXPECT_EQ(EntryCheck(20100, 24u), s->diff[baseline_diff_size + 1]);
         auto& cmd3 = dynamic_cast<api::ApplyBucketDiffCommand&>(*messageKeeper()._msgs[1]);
         // ApplyBucketDiffCommand has a shorter node list, node 2 is not present
         EXPECT_EQ((NodeList{{0, false}, {1, false}, {3, true}}), cmd3.getNodes());
@@ -1320,10 +1320,10 @@ TEST_F(MergeHandlerTest, partially_filled_apply_bucket_diff_reply)
     {
         LOG(debug, "checking second ApplyBucketDiff command");
         EXPECT_TRUE(getEnv()._fileStorHandler.isMerging(_bucket));
-        auto &s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
-        EXPECT_EQ((NodeList{{0, false}, {1, false}, {2, true}, {3, true}}), s.nodeList);
-        EXPECT_EQ(baseline_diff_size + 1u, s.diff.size());
-        EXPECT_EQ(EntryCheck(20100, 24u), s.diff[baseline_diff_size]);
+        auto s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
+        EXPECT_EQ((NodeList{{0, false}, {1, false}, {2, true}, {3, true}}), s->nodeList);
+        EXPECT_EQ(baseline_diff_size + 1u, s->diff.size());
+        EXPECT_EQ(EntryCheck(20100, 24u), s->diff[baseline_diff_size]);
         auto& cmd4 = dynamic_cast<api::ApplyBucketDiffCommand&>(*messageKeeper()._msgs[2]);
         EXPECT_EQ((NodeList{{0, false}, {1, false}, {3, true}}), cmd4.getNodes());
         auto reply = std::make_shared<api::ApplyBucketDiffReply>(cmd4);
@@ -1340,11 +1340,11 @@ TEST_F(MergeHandlerTest, partially_filled_apply_bucket_diff_reply)
     {
         LOG(debug, "checking third ApplyBucketDiff command");
         EXPECT_TRUE(getEnv()._fileStorHandler.isMerging(_bucket));
-        auto &s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
+        auto s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
         // Nodes 3 and 2 have been eliminated before the third ApplyBucketDiff command
-        EXPECT_EQ((NodeList{{0, false}, {1, false}}), s.nodeList);
-        EXPECT_EQ(baseline_diff_size + 1u, s.diff.size());
-        EXPECT_EQ(EntryCheck(20100, 16u), s.diff[baseline_diff_size]);
+        EXPECT_EQ((NodeList{{0, false}, {1, false}}), s->nodeList);
+        EXPECT_EQ(baseline_diff_size + 1u, s->diff.size());
+        EXPECT_EQ(EntryCheck(20100, 16u), s->diff[baseline_diff_size]);
         auto& cmd5 = dynamic_cast<api::ApplyBucketDiffCommand&>(*messageKeeper()._msgs[3]);
         EXPECT_EQ((NodeList{{0, false}, {1, false}}), cmd5.getNodes());
         auto reply = std::make_shared<api::ApplyBucketDiffReply>(cmd5);
@@ -1362,11 +1362,11 @@ TEST_F(MergeHandlerTest, partially_filled_apply_bucket_diff_reply)
     {
         LOG(debug, "checking fourth ApplyBucketDiff command");
         EXPECT_TRUE(getEnv()._fileStorHandler.isMerging(_bucket));
-        auto &s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
+        auto s = getEnv()._fileStorHandler.editMergeStatus(_bucket);
         // All nodes in use again due to failure to fill diff entry for doc2
-        EXPECT_EQ((NodeList{{0, false}, {1, false}, {2, true}, {3, true}, {4, true}}), s.nodeList);
-        EXPECT_EQ(1u, s.diff.size());
-        EXPECT_EQ(EntryCheck(20100, 16u), s.diff[0]);
+        EXPECT_EQ((NodeList{{0, false}, {1, false}, {2, true}, {3, true}, {4, true}}), s->nodeList);
+        EXPECT_EQ(1u, s->diff.size());
+        EXPECT_EQ(EntryCheck(20100, 16u), s->diff[0]);
         auto& cmd6 = dynamic_cast<api::ApplyBucketDiffCommand&>(*messageKeeper()._msgs[4]);
         EXPECT_EQ((NodeList{{0, false}, {1, false}, {4, true}}), cmd6.getNodes());
         auto reply = std::make_shared<api::ApplyBucketDiffReply>(cmd6);

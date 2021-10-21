@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language;
 
 import com.intellij.lang.Language;
@@ -5,6 +6,10 @@ import com.intellij.psi.codeStyle.CodeStyleSettingsCustomizable;
 import com.intellij.psi.codeStyle.LanguageCodeStyleSettingsProvider;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This class is used for the extension (in plugin.xml), to make the IDE use our plugin's code for coding style.
+ * @author shahariel
+ */
 public class SdLanguageCodeStyleSettingsProvider extends LanguageCodeStyleSettingsProvider {
     
     @NotNull

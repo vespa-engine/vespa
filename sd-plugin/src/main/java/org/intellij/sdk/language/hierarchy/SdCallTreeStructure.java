@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.hierarchy;
 
 import com.intellij.ide.hierarchy.HierarchyNodeDescriptor;
@@ -20,6 +21,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * This abstract class represents a general tree in the "Call Hierarchy" window.
+ * @author shahariel
+ */
 public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
     protected final String myScopeType;
     protected final SdFile myFile;

@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language;
 
 import com.intellij.codeInsight.completion.CompletionContributor;
@@ -11,6 +12,10 @@ import com.intellij.util.ProcessingContext;
 import org.intellij.sdk.language.psi.SdTypes;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This class is used for the extension (in plugin.xml) to enables Auto-Complete. Partially works for now.
+ * @author shahariel
+ */
 public class SdCompletionContributor extends CompletionContributor {
     
     

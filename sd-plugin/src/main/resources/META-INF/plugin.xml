@@ -1,9 +1,10 @@
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <idea-plugin>
     <id>org.intellij.sdk.language</id>
-    <name>SdPlugin</name>
-    
+    <name>SdReader</name>
+
     <!-- Text to display as company information on Preferences/Settings | Plugin page -->
-    <vendor email="shahar.ariel@verizonmedia.com">VerizonMedia</vendor>
+    <vendor email="shahar.ariel@yahooinc.com">Yahoo</vendor>
 
     <!-- Product and plugin compatibility requirements -->
     <depends>com.intellij.java</depends>
@@ -20,12 +21,12 @@
     <depends>com.intellij.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Sd File" implementationClass="org.intellij.sdk.language.SdFileType" fieldName="INSTANCE" 
+        <fileType name="Sd File" implementationClass="org.intellij.sdk.language.SdFileType" fieldName="INSTANCE"
                   language="Sd" extensions="sd"/>
         <lang.parserDefinition language="Sd" implementationClass="org.intellij.sdk.language.parser.SdParserDefinition"/>
         <lang.syntaxHighlighterFactory language="Sd" implementationClass="org.intellij.sdk.language.SdSyntaxHighlighterFactory"/>
         <completion.contributor language="Sd" implementationClass="org.intellij.sdk.language.SdCompletionContributor"/>
-        
+
         <lang.findUsagesProvider language="Sd" implementationClass="org.intellij.sdk.language.findUsages.SdFindUsagesProvider"/>
         <findUsagesHandlerFactory implementation="org.intellij.sdk.language.findUsages.SdFindUsagesHandlerFactory"/>
         <fileStructureGroupRuleProvider implementation="org.intellij.sdk.language.findUsages.SdRankProfileGroupingRuleProvider"/>
@@ -33,7 +34,6 @@
         <elementDescriptionProvider implementation="org.intellij.sdk.language.psi.SdElementDescriptionProvider"/>
 
         <lang.psiStructureViewFactory language="Sd" implementationClass="org.intellij.sdk.language.structure.SdStructureViewFactory"/>
-        <lang.formatter language="Sd" implementationClass="org.intellij.sdk.language.SdFormattingModelBuilder"/>
         <codeStyleSettingsProvider implementation="org.intellij.sdk.language.SdCodeStyleSettingsProvider"/>
         <langCodeStyleSettingsProvider implementation="org.intellij.sdk.language.SdLanguageCodeStyleSettingsProvider"/>
         <lang.commenter language="Sd" implementationClass="org.intellij.sdk.language.SdCommenter"/>

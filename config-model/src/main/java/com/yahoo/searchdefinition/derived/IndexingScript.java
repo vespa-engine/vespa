@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;
@@ -39,20 +39,20 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
     private final List<Expression> expressions = new ArrayList<>();
     private List<ImmutableSDField> fieldsSettingLanguage;
 
-    public IndexingScript(Search search) {
-        derive(search);
+    public IndexingScript(Schema schema) {
+        derive(schema);
     }
 
     @Override
-    protected void derive(Search search) {
-        fieldsSettingLanguage = fieldsSettingLanguage(search);
+    protected void derive(Schema schema) {
+        fieldsSettingLanguage = fieldsSettingLanguage(schema);
         if (fieldsSettingLanguage.size() == 1) // Assume this language should be used for all fields
             addExpression(fieldsSettingLanguage.get(0).getIndexingScript());
-        super.derive(search);
+        super.derive(schema);
     }
 
     @Override
-    protected void derive(ImmutableSDField field, Search search) {
+    protected void derive(ImmutableSDField field, Schema schema) {
         if (field.isImportedField()) return;
 
         if (field.hasFullIndexingDocprocRights())
@@ -75,11 +75,11 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         expressions.add(new StatementExpression(new ClearStateExpression(), new GuardExpression(expression)));
     }
 
-    private List<ImmutableSDField> fieldsSettingLanguage(Search search) {
-        return search.allFieldsList().stream()
-                                     .filter(field -> ! field.isImportedField())
-                                     .filter(field -> field.containsExpression(SetLanguageExpression.class))
-                                     .collect(Collectors.toList());
+    private List<ImmutableSDField> fieldsSettingLanguage(Schema schema) {
+        return schema.allFieldsList().stream()
+                     .filter(field -> ! field.isImportedField())
+                     .filter(field -> field.containsExpression(SetLanguageExpression.class))
+                     .collect(Collectors.toList());
     }
 
     public Iterable<Expression> expressions() {

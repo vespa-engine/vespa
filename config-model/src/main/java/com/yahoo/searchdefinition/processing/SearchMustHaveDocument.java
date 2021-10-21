@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -14,17 +14,17 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class SearchMustHaveDocument extends Processor {
 
-    public SearchMustHaveDocument(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public SearchMustHaveDocument(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        if (search.getDocument() == null)
-            throw new IllegalArgumentException("For search '" + search.getName() +
-                                               "': A search specification must have an equally named document inside of it.");
+        if (schema.getDocument() == null)
+            throw new IllegalArgumentException("For " + schema +
+                                               ": A search specification must have an equally named document inside of it.");
     }
 
 }

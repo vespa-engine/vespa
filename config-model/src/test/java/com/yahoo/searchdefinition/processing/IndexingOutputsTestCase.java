@@ -17,14 +17,14 @@ public class IndexingOutputsTestCase {
     @Test
     public void requireThatOutputOtherFieldThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_output_other_field.sd",
-                         "For search 'indexing_output_other_field', field 'foo': Indexing expression 'index bar' " +
+                         "For schema 'indexing_output_other_field', field 'foo': Indexing expression 'index bar' " +
                          "attempts to write to a field other than 'foo'.");
     }
 
     @Test
     public void requireThatOutputConflictThrows() throws IOException, ParseException {
         assertBuildFails("src/test/examples/indexing_output_conflict.sd",
-                         "For search 'indexing_output_confict', field 'bar': For expression 'index bar': Attempting " +
+                         "For schema 'indexing_output_confict', field 'bar': For expression 'index bar': Attempting " +
                          "to assign conflicting values to field 'bar'.");
     }
 }

@@ -18,7 +18,7 @@ setup(
   name="vespa_ann_benchmark",
   version="0.1.0",
   author="Tor Egge",
-  author_email="Tor.Egge@verizonmedia.com",
+  author_email="Tor.Egge@yahooinc.com",
   description="Python binding for the Vespa implementation of an HNSW index for nearest neighbor search",
   long_description="Python binding for the Vespa implementation of an HNSW index for nearest neighbor search used for low-level benchmarking",
   ext_modules=[Extension("vespa_ann_benchmark", sources=[])],

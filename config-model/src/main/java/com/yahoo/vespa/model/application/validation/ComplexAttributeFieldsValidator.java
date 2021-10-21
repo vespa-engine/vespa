@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.model.VespaModel;
@@ -39,18 +39,18 @@ public class ComplexAttributeFieldsValidator extends Validator {
         }
     }
 
-    private static void validateComplexFields(String clusterName, Search search) {
-        String unsupportedFields = search.allFields()
-                .filter(field -> isUnsupportedComplexField(field))
-                .map(ComplexAttributeFieldsValidator::toString)
-                .collect(Collectors.joining(", "));
+    private static void validateComplexFields(String clusterName, Schema schema) {
+        String unsupportedFields = schema.allFields()
+                                         .filter(field -> isUnsupportedComplexField(field))
+                                         .map(ComplexAttributeFieldsValidator::toString)
+                                         .collect(Collectors.joining(", "));
 
         if (!unsupportedFields.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format("For cluster '%s', search '%s': The following complex fields do not support using struct field attributes: %s. " +
                                   "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types. " +
                                   "The supported primitive types are: byte, int, long, float, double and string",
-                            clusterName, search.getName(), unsupportedFields));
+                                  clusterName, schema.getName(), unsupportedFields));
         }
     }
 

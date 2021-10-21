@@ -39,18 +39,18 @@ import static org.junit.Assert.fail;
  *
  * @author bratseth
  */
-public class RankProfileTestCase extends SchemaTestCase {
+public class RankProfileTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRankProfileInheritance() {
-        Search search = new Search("test");
-        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
+        Schema schema = new Schema("test");
+        RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("test");
         SDField a = document.addField("a", DataType.STRING);
         a.setRankType(RankType.IDENTITY);
         document.addField("b", DataType.STRING);
-        search.addDocument(document);
-        RankProfile child = new RankProfile("child", search, rankProfileRegistry, search.rankingConstants());
+        schema.addDocument(document);
+        RankProfile child = new RankProfile("child", schema, rankProfileRegistry, schema.rankingConstants());
         child.setInherited("default");
         rankProfileRegistry.add(child);
 
@@ -249,10 +249,10 @@ public class RankProfileTestCase extends SchemaTestCase {
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(sd);
         builder.build();
-        Search search = builder.getSearch();
-        AttributeFields attributeFields = new AttributeFields(search);
-        verifyRankProfile(rankProfileRegistry.get(search, "parent"), attributeFields, deployProperties, termwiseLimit);
-        verifyRankProfile(rankProfileRegistry.get(search, "child"), attributeFields, deployProperties, termwiseLimit);
+        Schema schema = builder.getSearch();
+        AttributeFields attributeFields = new AttributeFields(schema);
+        verifyRankProfile(rankProfileRegistry.get(schema, "parent"), attributeFields, deployProperties, termwiseLimit);
+        verifyRankProfile(rankProfileRegistry.get(schema, "child"), attributeFields, deployProperties, termwiseLimit);
     }
 
     private void verifyRankProfile(RankProfile rankProfile, AttributeFields attributeFields, ModelContext.Properties deployProperties,
@@ -291,13 +291,13 @@ public class RankProfileTestCase extends SchemaTestCase {
                 "  rank-profile p2 {}",
                 "}"));
         builder.build();
-        Search search = builder.getSearch();
+        Schema schema = builder.getSearch();
 
         assertEquals(4, registry.all().size());
-        assertAttributeTypeSettings(registry.get(search, "default"), search);
-        assertAttributeTypeSettings(registry.get(search, "unranked"), search);
-        assertAttributeTypeSettings(registry.get(search, "p1"), search);
-        assertAttributeTypeSettings(registry.get(search, "p2"), search);
+        assertAttributeTypeSettings(registry.get(schema, "default"), schema);
+        assertAttributeTypeSettings(registry.get(schema, "unranked"), schema);
+        assertAttributeTypeSettings(registry.get(schema, "p1"), schema);
+        assertAttributeTypeSettings(registry.get(schema, "p2"), schema);
     }
 
     @Test
@@ -318,12 +318,12 @@ public class RankProfileTestCase extends SchemaTestCase {
         }
     }
 
-    private static RawRankProfile createRawRankProfile(RankProfile profile, Search search) {
-        return new RawRankProfile(profile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(search), new TestProperties());
+    private static RawRankProfile createRawRankProfile(RankProfile profile, Schema schema) {
+        return new RawRankProfile(profile, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), new AttributeFields(schema), new TestProperties());
     }
 
-    private static void assertAttributeTypeSettings(RankProfile profile, Search search) {
-        RawRankProfile rawProfile = createRawRankProfile(profile, search);
+    private static void assertAttributeTypeSettings(RankProfile profile, Schema schema) {
+        RawRankProfile rawProfile = createRawRankProfile(profile, schema);
         assertEquals("tensor(x[10])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.a").get());
         assertEquals("tensor(y{})", findProperty(rawProfile.configProperties(), "vespa.type.attribute.b").get());
         assertEquals("tensor(x[5])", findProperty(rawProfile.configProperties(), "vespa.type.attribute.c").get());
@@ -340,13 +340,13 @@ public class RankProfileTestCase extends SchemaTestCase {
                 "  rank-profile p2 {}",
                 "}"));
         builder.build(true);
-        Search search = builder.getSearch();
+        Schema schema = builder.getSearch();
 
         assertEquals(4, registry.all().size());
-        assertQueryFeatureTypeSettings(registry.get(search, "default"), search);
-        assertQueryFeatureTypeSettings(registry.get(search, "unranked"), search);
-        assertQueryFeatureTypeSettings(registry.get(search, "p1"), search);
-        assertQueryFeatureTypeSettings(registry.get(search, "p2"), search);
+        assertQueryFeatureTypeSettings(registry.get(schema, "default"), schema);
+        assertQueryFeatureTypeSettings(registry.get(schema, "unranked"), schema);
+        assertQueryFeatureTypeSettings(registry.get(schema, "p1"), schema);
+        assertQueryFeatureTypeSettings(registry.get(schema, "p2"), schema);
     }
 
     private static QueryProfileRegistry setupQueryProfileTypes() {
@@ -365,8 +365,8 @@ public class RankProfileTestCase extends SchemaTestCase {
         return registry;
     }
 
-    private static void assertQueryFeatureTypeSettings(RankProfile profile, Search search) {
-        RawRankProfile rawProfile =createRawRankProfile(profile, search);
+    private static void assertQueryFeatureTypeSettings(RankProfile profile, Schema schema) {
+        RawRankProfile rawProfile =createRawRankProfile(profile, schema);
         assertEquals("tensor(x[10])", findProperty(rawProfile.configProperties(), "vespa.type.query.tensor1").get());
         assertEquals("tensor(y{})", findProperty(rawProfile.configProperties(), "vespa.type.query.tensor2").get());
         assertFalse(findProperty(rawProfile.configProperties(), "vespa.type.query.tensor3").isPresent());

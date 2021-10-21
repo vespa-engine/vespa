@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Set;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
@@ -25,11 +26,11 @@ import static org.junit.Assert.assertTrue;
  *
  * @author  bratseth
  */
-public class SummaryMapTestCase extends SchemaTestCase {
+public class SummaryMapTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDeriving() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
-        SummaryMap summaryMap=new SummaryMap(search);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
+        SummaryMap summaryMap=new SummaryMap(schema);
 
         Iterator transforms=summaryMap.resultTransformIterator();
         FieldResultTransform transform = (FieldResultTransform)transforms.next();
@@ -72,14 +73,15 @@ public class SummaryMapTestCase extends SchemaTestCase {
     }
     @Test
     public void testPositionDeriving() {
-        Search search = new Search("store");
+        Schema schema = new Schema("store");
         SDDocumentType document = new SDDocumentType("store");
-        search.addDocument(document);
+        schema.addDocument(document);
         String fieldName = "location";
         SDField field = document.addField(fieldName, PositionDataType.INSTANCE);
         field.parseIndexingScript("{ attribute | summary }");
-        new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
-        SummaryMap summaryMap = new SummaryMap(search);
+        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
+                                 true, false, Set.of());
+        SummaryMap summaryMap = new SummaryMap(schema);
 
         Iterator transforms = summaryMap.resultTransformIterator();
 
@@ -186,7 +188,7 @@ public class SummaryMapTestCase extends SchemaTestCase {
         assertEquals(expFieldName, override.arguments());
     }
 
-    private Search buildSearch(String field) throws ParseException {
+    private Schema buildSearch(String field) throws ParseException {
         var builder = new SearchBuilder(new RankProfileRegistry());
         builder.importString(joinLines("search test {",
                 "  document test {",

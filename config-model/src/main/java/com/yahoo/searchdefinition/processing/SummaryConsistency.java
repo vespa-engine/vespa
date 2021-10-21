@@ -5,9 +5,9 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -24,26 +24,26 @@ import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isC
  */
 public class SummaryConsistency extends Processor {
 
-    public SummaryConsistency(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public SummaryConsistency(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (DocumentSummary summary : search.getSummaries().values()) {
+        for (DocumentSummary summary : schema.getSummaries().values()) {
             if (summary.getName().equals("default")) continue;
 
             for (SummaryField summaryField : summary.getSummaryFields() ) {
-                assertConsistency(summaryField, search, validate);
-                makeAttributeTransformIfAppropriate(summaryField, search);
-                makeAttributeCombinerTransformIfAppropriate(summaryField, search);
+                assertConsistency(summaryField, schema, validate);
+                makeAttributeTransformIfAppropriate(summaryField, schema);
+                makeAttributeCombinerTransformIfAppropriate(summaryField, schema);
             }
         }
     }
 
-    private void assertConsistency(SummaryField summaryField, Search search, boolean validate) {
+    private void assertConsistency(SummaryField summaryField, Schema schema, boolean validate) {
         // Compare to default:
-        SummaryField existingDefault = search.getSummary("default").getSummaryField(summaryField.getName());
+        SummaryField existingDefault = schema.getSummary("default").getSummaryField(summaryField.getName());
         if (existingDefault != null) {
             if (validate)
                 assertConsistentTypes(existingDefault, summaryField);
@@ -51,27 +51,27 @@ public class SummaryConsistency extends Processor {
         }
         else {
             // If no default, compare to whichever definition of the field
-            SummaryField existing = search.getExplicitSummaryField(summaryField.getName());
+            SummaryField existing = schema.getExplicitSummaryField(summaryField.getName());
             if (existing == null) return;
             if (validate)
                 assertConsistentTypes(existing, summaryField);
-            makeConsistentOrThrow(existing, summaryField, search);
+            makeConsistentOrThrow(existing, summaryField, schema);
         }
     }
 
     /** If the source is an attribute, make this use the attribute transform */
-    private void makeAttributeTransformIfAppropriate(SummaryField summaryField,Search search) {
+    private void makeAttributeTransformIfAppropriate(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() != SummaryTransform.NONE) return;
-        Attribute attribute = search.getAttribute(summaryField.getSingleSource());
+        Attribute attribute = schema.getAttribute(summaryField.getSingleSource());
         if (attribute == null) return;
         summaryField.setTransform(SummaryTransform.ATTRIBUTE);
     }
 
     /** If the source is a complex field with only struct field attributes then make this use the attribute combiner transform */
-    private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField,Search search) {
+    private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {
             String source_field_name = summaryField.getSingleSource();
-            ImmutableSDField source = search.getField(source_field_name);
+            ImmutableSDField source = schema.getField(source_field_name);
             if (source != null && isComplexFieldWithOnlyStructFieldAttributes(source)) {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
             }
@@ -94,9 +94,9 @@ public class SummaryConsistency extends Processor {
         return summaryType.equals(existingType);
     }
 
-    private void makeConsistentOrThrow(SummaryField field1, SummaryField field2, Search search) {
+    private void makeConsistentOrThrow(SummaryField field1, SummaryField field2, Schema schema) {
         if (field2.getTransform() == SummaryTransform.ATTRIBUTE && field1.getTransform() == SummaryTransform.NONE) {
-            Attribute attribute = search.getAttribute(field1.getName());
+            Attribute attribute = schema.getAttribute(field1.getName());
             if (attribute != null) {
                 field1.setTransform(SummaryTransform.ATTRIBUTE);
             }

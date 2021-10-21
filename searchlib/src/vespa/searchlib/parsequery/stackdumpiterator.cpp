@@ -187,6 +187,10 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_NEAREST_NEIGHBOR:
         if ( ! readNN(p)) return false;
         break;
+    case ParseItem::ITEM_TRUE:
+    case ParseItem::ITEM_FALSE:
+        // no content
+        break;
     default:
         // Unknown item, so report that no more are available
         return false;

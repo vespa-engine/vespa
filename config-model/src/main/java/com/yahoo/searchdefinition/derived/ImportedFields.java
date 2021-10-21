@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
@@ -25,13 +25,13 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
 
     private Optional<com.yahoo.searchdefinition.document.ImportedFields> importedFields = Optional.empty();
 
-    public ImportedFields(Search search) {
-        derive(search);
+    public ImportedFields(Schema schema) {
+        derive(schema);
     }
 
     @Override
-    protected void derive(Search search) {
-        importedFields = search.importedFields();
+    protected void derive(Schema schema) {
+        importedFields = schema.importedFields();
     }
 
     @Override

@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.Field;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -17,15 +17,15 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class IndexingValues extends Processor {
 
-    public IndexingValues(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public IndexingValues(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        for (Field field : search.getDocument().fieldSet()) {
+        for (Field field : schema.getDocument().fieldSet()) {
             SDField sdField = (SDField)field;
             if ( ! sdField.isExtraField()) {
                 new RequireThatDocumentFieldsAreImmutable(field).convert(sdField.getIndexingScript());
@@ -50,7 +50,7 @@ public class IndexingValues extends Processor {
         @Override
         protected boolean shouldConvert(Expression exp) {
             if (exp instanceof OutputExpression && mutatedBy != null) {
-                throw newProcessException(search, field,
+                throw newProcessException(schema, field,
                                           "Indexing expression '" + mutatedBy + "' attempts to modify the value of the " +
                                           "document field '" + field.getName() + "'. Use a field outside the document " +
                                           "block instead.");

@@ -27,6 +27,8 @@ class PredicateQuery;
 class RegExpTerm;
 class SameElement;
 class NearestNeighborTerm;
+class TrueQueryNode;
+class FalseQueryNode;
 
 struct QueryVisitor {
     virtual ~QueryVisitor() {}
@@ -54,6 +56,8 @@ struct QueryVisitor {
     virtual void visit(PredicateQuery &) = 0;
     virtual void visit(RegExpTerm &) = 0;
     virtual void visit(NearestNeighborTerm &) = 0;
+    virtual void visit(TrueQueryNode &) = 0;
+    virtual void visit(FalseQueryNode &) = 0;
 };
 
 }

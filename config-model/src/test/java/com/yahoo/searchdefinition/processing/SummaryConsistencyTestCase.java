@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -39,7 +39,7 @@ public class SummaryConsistencyTestCase {
                 "",
                 "}"
         );
-        Search search = SearchBuilder.createFromString(sd).getSearch();
-        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, search.getSummaryField("elem_array_unfiltered").getTransform());
+        Schema schema = SearchBuilder.createFromString(sd).getSearch();
+        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, schema.getSummaryField("elem_array_unfiltered").getTransform());
     }
 }

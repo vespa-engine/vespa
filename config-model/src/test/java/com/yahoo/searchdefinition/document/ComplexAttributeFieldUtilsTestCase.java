@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -17,8 +17,8 @@ public class ComplexAttributeFieldUtilsTestCase {
         private final ImmutableSDField field;
 
         FixtureBase(String fieldName, String sdContent) throws ParseException {
-            Search search = SearchBuilder.createFromString(sdContent).getSearch();
-            field = search.getConcreteField(fieldName);
+            Schema schema = SearchBuilder.createFromString(sdContent).getSearch();
+            field = schema.getConcreteField(fieldName);
         }
 
         public ImmutableSDField field() {

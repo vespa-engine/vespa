@@ -12,9 +12,9 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
-import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerFileSystem;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
@@ -268,6 +268,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     .orElseGet(() -> new VespaUser("vespa", "vespa", 1000, 100));
             ContainerFileSystem containerFs = ContainerFileSystem.create(containerStorage
                     .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userNamespace, vespaUser);
+            containerFs.createRoot();
 
             return new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),

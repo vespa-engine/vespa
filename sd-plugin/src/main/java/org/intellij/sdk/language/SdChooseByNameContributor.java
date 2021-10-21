@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language;
 
 import com.intellij.navigation.ChooseByNameContributor;
@@ -16,6 +17,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * This class is used for the extension (in plugin.xml) to enable "Go To Symbol" feature.
+ * @author shahariel
+ */
 public class SdChooseByNameContributor implements ChooseByNameContributor {
     
     @Override

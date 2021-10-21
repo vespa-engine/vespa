@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.document;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
@@ -151,7 +151,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
-    public Stemming getStemming(Search search) {
+    public Stemming getStemming(Schema schema) {
         throw createUnsupportedException("stemming");
     }
 

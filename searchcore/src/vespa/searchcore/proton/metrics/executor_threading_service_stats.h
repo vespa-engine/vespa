@@ -11,10 +11,8 @@ namespace proton {
  * document db.
  */
 class ExecutorThreadingServiceStats {
-public:
-    using Stats = vespalib::ExecutorStats;
-
 private:
+    using Stats = vespalib::ExecutorStats;
     Stats _masterExecutorStats;
     Stats _indexExecutorStats;
     Stats _summaryExecutorStats;

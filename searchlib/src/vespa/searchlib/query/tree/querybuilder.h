@@ -21,6 +21,7 @@
 
 #include "predicate_query_term.h"
 #include "node.h"
+#include "const_bool_nodes.h"
 #include <vespa/searchlib/query/weight.h>
 #include <stack>
 
@@ -97,6 +98,12 @@ public:
 // These template functions create nodes based on a traits class.
 // You may specialize these functions for your own traits class to have full
 // control of the query node instantiation.
+
+template <class NodeTypes>
+typename NodeTypes::TrueQueryNode *create_true() { return new typename NodeTypes::TrueQueryNode; }
+
+template <class NodeTypes>
+typename NodeTypes::FalseQueryNode *create_false() { return new typename NodeTypes::FalseQueryNode; }
 
 // Intermediate nodes
 template <class NodeTypes>
@@ -327,6 +334,12 @@ public:
     {
         adjustWeight(weight);
         return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits, allow_approximate, explore_additional_hits, distance_threshold));
+    }
+    typename NodeTypes::TrueQueryNode &add_true_node() {
+        return addTerm(create_true<NodeTypes>());
+    }
+    typename NodeTypes::FalseQueryNode &add_false_node() {
+        return addTerm(create_false<NodeTypes>());
     }
 };
 

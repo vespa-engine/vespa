@@ -12,7 +12,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.searchdefinition.Index;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.fieldoperation.FieldOperation;
 import com.yahoo.searchdefinition.fieldoperation.FieldOperationContainer;
 import com.yahoo.tensor.TensorType;
@@ -672,11 +672,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * Whether this field should be stemmed in this search definition
      */
     @Override
-    public Stemming getStemming(Search search) {
+    public Stemming getStemming(Schema schema) {
         if (stemming != null)
             return stemming;
         else
-            return search.getStemming();
+            return schema.getStemming();
     }
 
     @Override

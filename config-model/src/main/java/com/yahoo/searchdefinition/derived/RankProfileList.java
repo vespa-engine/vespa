@@ -12,7 +12,7 @@ import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
@@ -23,13 +23,14 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 /**
- * The derived rank profiles of a search definition
+ * The derived rank profiles of a schema
  *
  * @author bratseth
  */
@@ -45,18 +46,18 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     public static RankProfileList empty = new RankProfileList();
 
     private RankProfileList() {
-        rankingConstants = new RankingConstants(null);
+        rankingConstants = new RankingConstants(null, Optional.empty());
         largeRankExpressions = new LargeRankExpressions(null);
-        onnxModels = new OnnxModels(null);
+        onnxModels = new OnnxModels(null, Optional.empty());
     }
 
     /**
      * Creates a rank profile
      *
-     * @param search the search definition this is a rank profile from
+     * @param schema the schema this is a rank profile from
      * @param attributeFields the attribute fields to create a ranking for
      */
-    public RankProfileList(Search search,
+    public RankProfileList(Schema schema,
                            RankingConstants rankingConstants,
                            LargeRankExpressions largeRankExpressions,
                            OnnxModels onnxModels,
@@ -66,11 +67,11 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                            ImportedMlModels importedModels,
                            ModelContext.Properties deployProperties,
                            ExecutorService executor) {
-        setName(search == null ? "default" : search.getName());
+        setName(schema == null ? "default" : schema.getName());
         this.rankingConstants = rankingConstants;
         this.largeRankExpressions = largeRankExpressions;
         this.onnxModels = onnxModels;  // as ONNX models come from parsing rank expressions
-        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties, executor);
+        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, schema, attributeFields, deployProperties, executor);
     }
 
     private boolean areDependenciesReady(RankProfile rank, RankProfileRegistry registry) {
@@ -82,38 +83,38 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
                                     QueryProfileRegistry queryProfiles,
                                     ImportedMlModels importedModels,
-                                    Search search,
+                                    Schema schema,
                                     AttributeFields attributeFields,
                                     ModelContext.Properties deployProperties,
                                     ExecutorService executor) {
-        if (search != null) { // profiles belonging to a search have a default profile
-            RawRankProfile rawRank = new RawRankProfile(rankProfileRegistry.get(search, "default"),
+        if (schema != null) { // profiles belonging to a search have a default profile
+            RawRankProfile rawRank = new RawRankProfile(rankProfileRegistry.get(schema, "default"),
                     largeRankExpressions, queryProfiles, importedModels, attributeFields, deployProperties);
             rankProfiles.put(rawRank.getName(), rawRank);
         }
 
         Map<String, RankProfile> remaining = new LinkedHashMap<>();
-        rankProfileRegistry.rankProfilesOf(search).forEach(rank -> remaining.put(rank.getName(), rank));
+        rankProfileRegistry.rankProfilesOf(schema).forEach(rank -> remaining.put(rank.getName(), rank));
         remaining.remove("default");
         while (!remaining.isEmpty()) {
             List<RankProfile> ready = new ArrayList<>();
             remaining.forEach((name, rank) -> {
                 if (areDependenciesReady(rank, rankProfileRegistry)) ready.add(rank);
             });
-            processRankProfiles(ready, queryProfiles, importedModels, search, attributeFields, deployProperties, executor);
+            processRankProfiles(ready, queryProfiles, importedModels, schema, attributeFields, deployProperties, executor);
             ready.forEach(rank -> remaining.remove(rank.getName()));
         }
     }
     private void processRankProfiles(List<RankProfile> ready,
                                      QueryProfileRegistry queryProfiles,
                                      ImportedMlModels importedModels,
-                                     Search search,
+                                     Schema schema,
                                      AttributeFields attributeFields,
                                      ModelContext.Properties deployProperties,
                                      ExecutorService executor) {
         Map<String, Future<RawRankProfile>> futureRawRankProfiles = new LinkedHashMap<>();
         for (RankProfile rank : ready) {
-            if (search == null) {
+            if (schema == null) {
                 onnxModels.add(rank.onnxModels());
             }
 

@@ -153,6 +153,10 @@ private:
             builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight,
                                               target_num_hits, allow_approximate, explore_additional_hits,
                                               distance_threshold);
+        } else if (type == ParseItem::ITEM_TRUE) {
+            builder.add_true_node();
+        } else if (type == ParseItem::ITEM_FALSE) {
+            builder.add_false_node();
         } else {
             vespalib::stringref term = queryStack.getTerm();
             vespalib::stringref view = queryStack.getIndexName();

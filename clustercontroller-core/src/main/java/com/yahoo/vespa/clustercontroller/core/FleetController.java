@@ -50,8 +50,9 @@ import java.util.stream.Stream;
 public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAddedOrRemovedListener, SystemStateListener,
                                         Runnable, RemoteClusterControllerTaskScheduler {
 
-    private static final Logger log = Logger.getLogger(FleetController.class.getName());
+    private static final Logger logger = Logger.getLogger(FleetController.class.getName());
 
+    private final FleetControllerContext context;
     private final Timer timer;
     private final Object monitor;
     private final EventLog eventLog;
@@ -70,7 +71,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final AtomicBoolean running = new AtomicBoolean(true);
     private FleetControllerOptions options;
     private FleetControllerOptions nextOptions;
-    private final int configuredIndex;
     private final List<SystemStateListener> systemStateListeners = new CopyOnWriteArrayList<>();
     private boolean processingCycle = false;
     private boolean wantedStateChanged = false;
@@ -83,8 +83,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final StatusPageServer.PatternRequestRouter statusRequestRouter = new StatusPageServer.PatternRequestRouter();
     private final List<ClusterStateBundle> newStates = new ArrayList<>();
     private final List<ClusterStateBundle> convergedStates = new ArrayList<>();
-    private long configGeneration = -1;
-    private long nextConfigGeneration = -1;
     private final Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
     private final MetricUpdater metricUpdater;
 
@@ -107,12 +105,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         @Override
         public FleetControllerOptions getOptions() { return options; }
         @Override
-        public long getConfigGeneration() { return configGeneration; }
-        @Override
         public ContentCluster getCluster() { return cluster; }
     };
 
-    public FleetController(Timer timer,
+    public FleetController(FleetControllerContext context,
+                           Timer timer,
                            EventLog eventLog,
                            ContentCluster cluster,
                            NodeStateGatherer nodeStateGatherer,
@@ -126,8 +123,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                            MasterElectionHandler masterElectionHandler,
                            MetricUpdater metricUpdater,
                            FleetControllerOptions options) {
-        log.info("Starting up cluster controller " + options.fleetControllerIndex + " for cluster " + cluster.getName());
-        this.configuredIndex = options.fleetControllerIndex;
+        context.log(logger, Level.INFO, "Created");
+        this.context = context;
         this.timer = timer;
         this.monitor = timer;
         this.eventLog = eventLog;
@@ -152,7 +149,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 new LegacyNodePageRequestHandler(timer, eventLog, cluster));
         this.statusRequestRouter.addHandler(
                 "^/state.*",
-                new NodeHealthRequestHandler(dataExtractor));
+                new NodeHealthRequestHandler());
         this.statusRequestRouter.addHandler(
                 "^/clusterstate",
                 new ClusterStateRequestHandler(stateVersionTracker));
@@ -169,15 +166,16 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public static FleetController create(FleetControllerOptions options,
                                          StatusPageServerInterface statusPageServer,
                                          MetricReporter metricReporter) throws Exception {
-        Timer timer = new RealTimer();
-        MetricUpdater metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex, options.clusterName);
-        EventLog log = new EventLog(timer, metricUpdater);
-        ContentCluster cluster = new ContentCluster(
+        var context = new FleetControllerContextImpl(options);
+        var timer = new RealTimer();
+        var metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex, options.clusterName);
+        var log = new EventLog(timer, metricUpdater);
+        var cluster = new ContentCluster(
                 options.clusterName,
                 options.nodes,
                 options.storageDistribution);
-        NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, log);
-        Communicator communicator = new RPCCommunicator(
+        var stateGatherer = new NodeStateGatherer(timer, timer, log);
+        var communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
                 timer,
                 options.fleetControllerIndex,
@@ -185,13 +183,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 options.nodeStateRequestTimeoutEarliestPercentage,
                 options.nodeStateRequestTimeoutLatestPercentage,
                 options.nodeStateRequestRoundTripTimeMaxSeconds);
-        DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
-        NodeLookup lookUp = new SlobrokClient(timer);
-        StateChangeHandler stateGenerator = new StateChangeHandler(timer, log);
-        SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
-        MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
-        FleetController controller = new FleetController(
-                timer, log, cluster, stateGatherer, communicator, statusPageServer, null, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
+        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, timer);
+        var lookUp = new SlobrokClient(timer);
+        var stateGenerator = new StateChangeHandler(timer, log);
+        var stateBroadcaster = new SystemStateBroadcaster(timer, timer);
+        var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
+        var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator,
+                                             statusPageServer, null, lookUp, database, stateGenerator,
+                                             stateBroadcaster, masterElectionHandler, metricUpdater, options);
         controller.start();
         return controller;
     }
@@ -227,7 +226,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     public void schedule(RemoteClusterControllerTask task) {
         synchronized (monitor) {
-            log.fine("Scheduled remote task " + task.getClass().getName() + " for execution");
+            context.log(logger, Level.FINE, "Scheduled remote task " + task.getClass().getName() + " for execution");
             remoteTasks.add(task);
         }
     }
@@ -280,12 +279,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     public void shutdown() throws InterruptedException, java.io.IOException {
         if (runner != null && isRunning()) {
-            log.log(Level.INFO,  "Joining event thread.");
+            context.log(logger, Level.INFO, "Joining event thread.");
             running.set(false);
             synchronized(monitor) { monitor.notifyAll(); }
             runner.join();
         }
-        log.log(Level.INFO,  "Fleetcontroller done shutting down event thread.");
+        context.log(logger, Level.INFO, "FleetController done shutting down event thread.");
         controllerThreadId = Thread.currentThread().getId();
         database.shutdown(databaseContext);
 
@@ -299,12 +298,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         nodeLookup.shutdown();
     }
 
-    public void updateOptions(FleetControllerOptions options, long configGeneration) {
+    public void updateOptions(FleetControllerOptions options) {
+        var newId = FleetControllerId.fromOptions(options);
         synchronized(monitor) {
-            assert(this.options.fleetControllerIndex == options.fleetControllerIndex);
-            log.log(Level.INFO, "Fleetcontroller " + options.fleetControllerIndex + " has new options");
+            assert newId.equals(context.id());
+            context.log(logger, Level.INFO, "FleetController has new options");
             nextOptions = options.clone();
-            nextConfigGeneration = configGeneration;
             monitor.notifyAll();
         }
     }
@@ -348,8 +347,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         var previouslyExhausted = calc.enumerateNodeResourceExhaustions(nodeInfo);
         var nowExhausted        = calc.resourceExhaustionsFromHostInfo(nodeInfo, newHostInfo);
         if (!previouslyExhausted.equals(nowExhausted)) {
-            log.fine(() -> String.format("Triggering state recomputation due to change in cluster feed block: %s -> %s",
-                                         previouslyExhausted, nowExhausted));
+            context.log(logger, Level.FINE, () -> String.format("Triggering state recomputation due to change in cluster feed block: %s -> %s",
+                                            previouslyExhausted, nowExhausted));
             stateChangeHandler.setStateChangedFlag();
         }
     }
@@ -421,7 +420,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     /**
      * This function gives data of the current state in master election.
-     * The keys in the given map are indexes of fleet controllers.
+     * The keys in the given map are indices of fleet controllers.
      * The values are what fleetcontroller that fleetcontroller wants to
      * become master.
      *
@@ -431,7 +430,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      */
     public void handleFleetData(Map<Integer, Integer> data) {
         verifyInControllerThread();
-        log.log(Level.FINEST, "Sending fleet data event on to master election handler");
+        context.log(logger, Level.FINEST, "Sending fleet data event on to master election handler");
         metricUpdater.updateMasterElectionMetrics(data);
         masterElectionHandler.handleFleetData(data);
     }
@@ -466,12 +465,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     /** Called when all distributors have acked newest cluster state version. */
-    public void handleAllDistributorsInSync(DatabaseHandler database, DatabaseHandler.Context context) throws InterruptedException {
+    public void handleAllDistributorsInSync(DatabaseHandler database, DatabaseHandler.DatabaseContext dbContext) throws InterruptedException {
         Set<ConfiguredNode> nodes = new HashSet<>(cluster.clusterInfo().getConfiguredNodes().values());
         // TODO wouldn't it be better to always get bundle information from the state broadcaster?
         var currentBundle = stateVersionTracker.getVersionedClusterStateBundle();
-        log.fine(() -> String.format("All distributors have ACKed cluster state version %d", currentBundle.getVersion()));
-        stateChangeHandler.handleAllDistributorsInSync(currentBundle.getBaselineClusterState(), nodes, database, context);
+        context.log(logger, Level.FINE, () -> String.format("All distributors have ACKed cluster state version %d", currentBundle.getVersion()));
+        stateChangeHandler.handleAllDistributorsInSync(currentBundle.getBaselineClusterState(), nodes, database, dbContext);
         convergedStates.add(currentBundle);
     }
 
@@ -531,9 +530,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             try{
                 rpcServer.setSlobrokConnectionSpecs(options.slobrokConnectionSpecs, options.rpcPort);
             } catch (ListenFailedException e) {
-                log.log(Level.WARNING, "Failed to bind RPC server to port " + options.rpcPort +". This may be natural if cluster has altered the services running on this node: " + e.getMessage());
+                context.log(logger, Level.WARNING, "Failed to bind RPC server to port " + options.rpcPort + ". This may be natural if cluster has altered the services running on this node: " + e.getMessage());
             } catch (Exception e) {
-                log.log(Level.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
+                context.log(logger, Level.WARNING, "Failed to initialize RPC server socket: " + e.getMessage());
             }
         }
 
@@ -541,21 +540,19 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             try{
                 statusPageServer.setPort(options.httpPort);
             } catch (Exception e) {
-                log.log(Level.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
+                context.log(logger, Level.WARNING, "Failed to initialize status server socket. This may be natural if cluster has altered the services running on this node: " + e.getMessage());
             }
         }
 
         long currentTime = timer.getCurrentTimeInMillis();
         nextStateSendTime = Math.min(currentTime + options.minTimeBetweenNewSystemStates, nextStateSendTime);
-        configGeneration = nextConfigGeneration;
-        nextConfigGeneration = -1;
     }
 
     private void selfTerminateIfConfiguredNodeIndexHasChanged() {
-        if (options.fleetControllerIndex != configuredIndex) {
-            log.warning(String.format("Got new configuration where CC index has changed from %d to %d. We do not support "+
-                                      "doing this live; immediately exiting now to force new configuration",
-                                      configuredIndex, options.fleetControllerIndex));
+        var newId = new FleetControllerId(options.clusterName, options.fleetControllerIndex);
+        if (!newId.equals(context.id())) {
+            context.log(logger, Level.WARNING, context.id() + " got new configuration for " + newId + ". We do not support doing this live; " +
+                               "immediately exiting now to force new configuration");
             prepareShutdownEdge();
             System.exit(1);
         }
@@ -565,7 +562,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         verifyInControllerThread();
         StatusPageResponse.ResponseCode responseCode;
         String message;
-        String hiddenMessage = "";
+        final String hiddenMessage;
         try {
             StatusPageServer.RequestHandler handler = statusRequestRouter.resolveHandler(httpRequest);
             if (handler == null) {
@@ -575,12 +572,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (FileNotFoundException e) {
             responseCode = StatusPageResponse.ResponseCode.NOT_FOUND;
             message = e.getMessage();
+            hiddenMessage = "";
         } catch (Exception e) {
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
             hiddenMessage = ExceptionUtils.getStackTraceAsString(e);
-            if (log.isLoggable(Level.FINE))
-                log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() + ": " + hiddenMessage);
+            context.log(logger, Level.FINE, () -> "Unknown exception thrown for request " + httpRequest.getRequest() + ": " + hiddenMessage);
         }
 
         TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -664,7 +661,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {
-            log.log(Level.WARNING, "Failed to watch master election: " + e.toString());
+            context.log(logger, Level.WARNING, "Failed to watch master election: " + e);
         }
         return false;
     }
@@ -683,7 +680,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         try {
             propagateOptions();
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to handle new fleet controller config", e);
+            context.log(logger, Level.SEVERE, "Failed to handle new fleet controller config", e);
         }
     }
 
@@ -702,7 +699,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // If there's a pending DB store we have not yet been able to store the
         // current state bundle to ZK and must therefore _not_ allow it to be published.
         if (database.hasPendingClusterStateMetaDataStore()) {
-            log.log(Level.FINE, "Can't publish current cluster state as it has one or more pending ZooKeeper stores");
+            context.log(logger, Level.FINE, "Can't publish current cluster state as it has one or more pending ZooKeeper stores");
             return false;
         }
         boolean sentAny = false;
@@ -713,7 +710,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             && currentTime >= nextStateSendTime)
         {
             if (inMasterMoratorium) {
-                log.info(currentTime < firstAllowedStateBroadcast ?
+                context.log(logger, Level.INFO, currentTime < firstAllowedStateBroadcast ?
                          "Master moratorium complete: all nodes have reported in" :
                          "Master moratorium complete: timed out waiting for all nodes to report in");
                 // Reset firstAllowedStateBroadcast to make sure all future times are after firstAllowedStateBroadcast
@@ -763,14 +760,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             return false;
         }
 
-        final RemoteClusterControllerTask.Context context = createRemoteTaskProcessingContext();
-        log.finest(() -> String.format("Processing remote task of type '%s'", task.getClass().getName()));
-        task.doRemoteFleetControllerTask(context);
+        final RemoteClusterControllerTask.Context taskContext = createRemoteTaskProcessingContext();
+        context.log(logger, Level.FINEST, () -> String.format("Processing remote task of type '%s'", task.getClass().getName()));
+        task.doRemoteFleetControllerTask(taskContext);
         if (taskMayBeCompletedImmediately(task)) {
-            log.finest(() -> String.format("Done processing remote task of type '%s'", task.getClass().getName()));
+            context.log(logger, Level.FINEST, () -> String.format("Done processing remote task of type '%s'", task.getClass().getName()));
             task.notifyCompleted();
         } else {
-            log.finest(() -> String.format("Remote task of type '%s' queued until state recomputation", task.getClass().getName()));
+            context.log(logger, Level.FINEST, () -> String.format("Remote task of type '%s' queued until state recomputation", task.getClass().getName()));
             tasksPendingStateRecompute.add(task);
         }
 
@@ -849,14 +846,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             VersionDependentTaskCompletion taskCompletion = taskCompletionQueue.peek();
             // TODO expose and use monotonic clock instead of system clock
             if (publishedVersion >= taskCompletion.getMinimumVersion()) {
-                log.fine(() -> String.format("Deferred task of type '%s' has minimum version %d, published is %d; completing",
-                        taskCompletion.getTask().getClass().getName(), taskCompletion.getMinimumVersion(), publishedVersion));
+                context.log(logger, Level.FINE, () -> String.format("Deferred task of type '%s' has minimum version %d, published is %d; completing",
+                                                    taskCompletion.getTask().getClass().getName(), taskCompletion.getMinimumVersion(), publishedVersion));
                 taskCompletion.getTask().notifyCompleted();
                 taskCompletionQueue.remove();
             } else if (taskCompletion.getDeadlineTimePointMs() <= now) {
                 var details = buildNodesNotYetConvergedMessage(taskCompletion.getMinimumVersion());
-                log.log(Level.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
-                        taskCompletion.getTask().getClass().getName(), details));
+                context.log(logger, Level.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
+                                                       taskCompletion.getTask().getClass().getName(), details));
                 taskCompletion.getTask().handleFailure(RemoteClusterControllerTask.Failure.of(
                         RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED, details));
                 taskCompletion.getTask().notifyCompleted();
@@ -1007,8 +1004,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // TODO expose and use monotonic clock instead of system clock
         final long maxDeadlineTimePointMs = timer.getCurrentTimeInMillis() + options.getMaxDeferredTaskVersionWaitTime().toMillis();
         for (RemoteClusterControllerTask task : tasksPendingStateRecompute) {
-            log.finest(() -> String.format("Adding task of type '%s' to be completed at version %d",
-                    task.getClass().getName(), completeAtVersion));
+            context.log(logger, Level.FINEST, () -> String.format("Adding task of type '%s' to be completed at version %d",
+                                                  task.getClass().getName(), completeAtVersion));
             taskCompletionQueue.add(new VersionDependentTaskCompletion(completeAtVersion, task, maxDeadlineTimePointMs));
         }
         tasksPendingStateRecompute.clear();
@@ -1085,7 +1082,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 database.loadWantedStates(databaseContext);
                 // TODO determine if we need any specialized handling here if feed block is set in the loaded bundle
 
-                log.info(() -> String.format("Loaded previous cluster state bundle from ZooKeeper: %s", previousBundle));
+                context.log(logger, Level.INFO, () -> String.format("Loaded previous cluster state bundle from ZooKeeper: %s", previousBundle));
                 stateVersionTracker.setClusterStateBundleRetrievedFromZooKeeper(previousBundle);
 
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became fleetcontroller master. Bumped version to "
@@ -1094,8 +1091,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 firstAllowedStateBroadcast = currentTime + options.minTimeBeforeFirstSystemStateBroadcast;
                 isMaster = true;
                 inMasterMoratorium = true;
-                log.log(Level.FINE, () -> "At time " + currentTime + " we set first system state broadcast time to be "
-                        + options.minTimeBeforeFirstSystemStateBroadcast + " ms after at time " + firstAllowedStateBroadcast + ".");
+                context.log(logger, Level.FINE, () -> "At time " + currentTime + " we set first system state broadcast time to be "
+                                      + options.minTimeBeforeFirstSystemStateBroadcast + " ms after at time " + firstAllowedStateBroadcast + ".");
                 didWork = true;
             }
             if (wantedStateChanged) {
@@ -1123,16 +1120,18 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     @Override
     public void run() {
         controllerThreadId = Thread.currentThread().getId();
+        context.log(logger, Level.INFO, "Starting tick loop");
         try {
             processingCycle = true;
             while (isRunning()) {
                 tick();
             }
+            context.log(logger, Level.INFO, "Tick loop stopped");
         } catch (InterruptedException e) {
-            log.log(Level.FINE, () -> "Event thread stopped by interrupt exception: " + e);
+            context.log(logger, Level.INFO, "Event thread stopped by interrupt exception: ", e);
         } catch (Throwable t) {
             t.printStackTrace();
-            log.log(Level.SEVERE, "Fatal error killed fleet controller", t);
+            context.log(logger, Level.SEVERE, "Fatal error killed fleet controller", t);
             synchronized (monitor) { running.set(false); }
             System.exit(1);
         } finally {
@@ -1146,7 +1145,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         synchronized (monitor) { monitor.notifyAll(); }
     }
 
-    public DatabaseHandler.Context databaseContext = new DatabaseHandler.Context() {
+    public DatabaseHandler.DatabaseContext databaseContext = new DatabaseHandler.DatabaseContext() {
         @Override
         public ContentCluster getCluster() { return cluster; }
         @Override
@@ -1191,7 +1190,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                     }
                 }
                 if (ackedNodes >= nodeCount) {
-                    log.log(Level.INFO, ackedNodes + " nodes now have acked system state " + version + " or higher.");
+                    context.log(logger, Level.INFO, ackedNodes + " nodes now have acked system state " + version + " or higher.");
                     return;
                 }
                 long remainingTime = maxTime - System.currentTimeMillis();
@@ -1239,5 +1238,4 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public EventLog getEventLog() {
         return eventLog;
     }
-
 }

@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.findUsages;
 
 import com.intellij.navigation.ItemPresentation;
@@ -15,6 +16,10 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
+/**
+ * This class represent a group of elements in the "Find Usages" window.
+ * @author shahariel
+ */
 public class SdUsageGroup implements UsageGroup {
     private final VirtualFile myFile;
     private final SmartPsiElementPointer<SdDeclaration> myElementPointer;

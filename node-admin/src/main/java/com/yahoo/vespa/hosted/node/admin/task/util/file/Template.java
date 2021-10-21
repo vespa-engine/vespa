@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.slf4j.helpers.NOPLogger;
 
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -19,7 +21,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class Template {
 
     static {
-        Velocity.addProperty(Velocity.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.NullLogSystem");
+        Velocity.addProperty(RuntimeConstants.RUNTIME_LOG_INSTANCE, NOPLogger.NOP_LOGGER);
         Velocity.init();
     }
 

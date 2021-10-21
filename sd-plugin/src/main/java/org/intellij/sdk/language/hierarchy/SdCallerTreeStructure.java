@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.hierarchy;
 
 import com.intellij.openapi.progress.ProgressManager;
@@ -17,6 +18,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * This class represents a Caller tree in the "Call Hierarchy" window.
+ * @author shahariel
+ */
 public class SdCallerTreeStructure extends SdCallTreeStructure {
     
     private HashMap<String, HashSet<PsiElement>> macroTreeChildren;

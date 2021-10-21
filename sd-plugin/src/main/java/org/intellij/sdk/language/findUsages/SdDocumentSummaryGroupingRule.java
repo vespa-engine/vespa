@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.findUsages;
 
 import com.intellij.openapi.project.DumbAware;
@@ -12,6 +13,10 @@ import org.intellij.sdk.language.psi.SdDocumentSummaryDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class represent a Document Summary that groups elements in the "Find Usages" window.
+ * @author shahariel
+ */
 public class SdDocumentSummaryGroupingRule extends SingleParentUsageGroupingRule implements DumbAware {
     
     @Override

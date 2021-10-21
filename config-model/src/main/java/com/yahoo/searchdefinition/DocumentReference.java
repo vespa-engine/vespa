@@ -11,18 +11,18 @@ import com.yahoo.document.Field;
 public class DocumentReference {
 
     private final Field referenceField;
-    private final Search targetSearch;
+    private final Schema targetSchema;
 
-    public DocumentReference(Field referenceField, Search targetSearch) {
+    public DocumentReference(Field referenceField, Schema targetSchema) {
         this.referenceField = referenceField;
-        this.targetSearch = targetSearch;
+        this.targetSchema = targetSchema;
     }
 
     public Field referenceField() {
         return referenceField;
     }
 
-    public Search targetSearch() {
-        return targetSearch;
+    public Schema targetSearch() {
+        return targetSchema;
     }
 }

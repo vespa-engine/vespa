@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing.multifieldresolver;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 
@@ -15,8 +15,8 @@ import java.util.logging.Level;
  */
 public class StemmingResolver extends MultiFieldResolver {
 
-    public StemmingResolver(String indexName, List<SDField> fields, Search search, DeployLogger logger) {
-        super(indexName, fields, search, logger);
+    public StemmingResolver(String indexName, List<SDField> fields, Schema schema, DeployLogger logger) {
+        super(indexName, fields, schema, logger);
     }
 
     @Override
@@ -29,13 +29,13 @@ public class StemmingResolver extends MultiFieldResolver {
         SDField stemmingField = null;
         for (SDField field : fields) {
             if (stemming == null && stemmingField==null) {
-                stemming = field.getStemming(search);
+                stemming = field.getStemming(schema);
                 stemmingField = field;
-            } else if (stemming != field.getStemming(search)) {
-                deployLogger.logApplicationPackage(Level.WARNING, "Field '" + field.getName() + "' has " + field.getStemming(search) +
-                        ", whereas field '" + stemmingField.getName() + "' has " + stemming +
-                        ". All fields indexing to the index '" + indexName  + "' must have the same stemming." +
-                        " This should be corrected as it will make indexing fail in a few cases.");
+            } else if (stemming != field.getStemming(schema)) {
+                deployLogger.logApplicationPackage(Level.WARNING, "Field '" + field.getName() + "' has " + field.getStemming(schema) +
+                                                                  ", whereas field '" + stemmingField.getName() + "' has " + stemming +
+                                                                  ". All fields indexing to the index '" + indexName + "' must have the same stemming." +
+                                                                  " This should be corrected as it will make indexing fail in a few cases.");
             }
         }
     }

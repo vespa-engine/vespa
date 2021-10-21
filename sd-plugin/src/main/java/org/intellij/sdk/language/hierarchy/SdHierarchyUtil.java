@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.hierarchy;
 
 import com.intellij.ide.hierarchy.HierarchyBrowserManager;
@@ -15,7 +16,10 @@ import org.intellij.sdk.language.psi.SdRankProfileDefinition;
 import java.util.Comparator;
 import java.util.HashSet;
 
-
+/**
+ * This class is util class to the Call Hierarchy feature.
+ * @author shahariel
+ */
 public class SdHierarchyUtil {
     
     private static final Comparator<NodeDescriptor<?>> NODE_DESCRIPTOR_COMPARATOR = Comparator.comparingInt(NodeDescriptor::getIndex);

@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -29,13 +29,13 @@ import java.util.TreeSet;
  */
 public class TextMatch extends Processor {
 
-    public TextMatch(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+    public TextMatch(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if (field.getMatching().getType() != Matching.Type.TEXT) continue;
 
             ScriptExpression script = field.getIndexingScript();
@@ -49,7 +49,7 @@ public class TextMatch extends Processor {
 
             Set<String> dynamicSummary = new TreeSet<>();
             Set<String> staticSummary = new TreeSet<>();
-            new IndexingOutputs(search, deployLogger, rankProfileRegistry, queryProfiles).findSummaryTo(search,
+            new IndexingOutputs(schema, deployLogger, rankProfileRegistry, queryProfiles).findSummaryTo(schema,
                                                                                                         field,
                                                                                                         dynamicSummary,
                                                                                                         staticSummary);
@@ -57,16 +57,16 @@ public class TextMatch extends Processor {
             visitor.visit(script);
             if ( ! visitor.requiresTokenize) continue;
 
-            ExpressionConverter converter = new MyStringTokenizer(search, findAnnotatorConfig(search, field));
+            ExpressionConverter converter = new MyStringTokenizer(schema, findAnnotatorConfig(schema, field));
             field.setIndexingScript((ScriptExpression)converter.convert(script));
         }
     }
 
-    private AnnotatorConfig findAnnotatorConfig(Search search, SDField field) {
+    private AnnotatorConfig findAnnotatorConfig(Schema schema, SDField field) {
         AnnotatorConfig ret = new AnnotatorConfig();
         Stemming activeStemming = field.getStemming();
         if (activeStemming == null) {
-            activeStemming = search.getStemming();
+            activeStemming = schema.getStemming();
         }
         ret.setStemMode(activeStemming.toStemMode());
         ret.setRemoveAccents(field.getNormalizing().doRemoveAccents());
@@ -103,8 +103,8 @@ public class TextMatch extends Processor {
 
         final AnnotatorConfig annotatorCfg;
 
-        MyStringTokenizer(Search search, AnnotatorConfig annotatorCfg) {
-            super(TokenizeExpression.class, search);
+        MyStringTokenizer(Schema schema, AnnotatorConfig annotatorCfg) {
+            super(TokenizeExpression.class, schema);
             this.annotatorCfg = annotatorCfg;
         }
 

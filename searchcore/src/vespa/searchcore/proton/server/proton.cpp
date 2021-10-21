@@ -737,8 +737,7 @@ Proton::prepareRestart()
 namespace {
 
 void
-updateExecutorMetrics(ExecutorMetrics &metrics,
-                      const vespalib::ThreadStackExecutor::Stats &stats)
+updateExecutorMetrics(ExecutorMetrics &metrics, const vespalib::ExecutorStats &stats)
 {
     metrics.update(stats);
 }

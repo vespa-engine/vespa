@@ -76,6 +76,7 @@ public class FileDownloaderTest {
             FileReference fileReference = new FileReference(fileReferenceString);
             File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
             writeFileReference(downloadDir, fileReferenceString, filename);
+            fileDownloader.downloads().completedDownloading(fileReference, fileReferenceFullPath);
 
             // Check that we get correct path and content when asking for file reference
             Optional<File> pathToFile = fileDownloader.getFile(fileReference);

@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.hierarchy;
 
 import com.intellij.openapi.project.Project;
@@ -15,6 +16,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * This class represents a Callee tree in the "Call Hierarchy" window.
+ * @author shahariel
+ */
 public class SdCalleeTreeStructure extends SdCallTreeStructure {
     
     public SdCalleeTreeStructure(Project project, PsiElement element, String currentScopeType) {

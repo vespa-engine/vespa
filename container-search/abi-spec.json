@@ -736,6 +736,8 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType WORD_ALTERNATIVES",
       "public static final enum com.yahoo.prelude.query.Item$ItemType NEAREST_NEIGHBOR",
       "public static final enum com.yahoo.prelude.query.Item$ItemType GEO_LOCATION_TERM",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType TRUE",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType FALSE",
       "public final int code"
     ]
   },

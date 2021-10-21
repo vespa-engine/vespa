@@ -185,6 +185,14 @@ private:
                                                            node.get_allow_approximate(), node.get_explore_additional_hits(),
                                                            node.get_distance_threshold()));
     }
+
+    void visit(TrueQueryNode &) override {
+        _builder.add_true_node();
+    }
+
+    void visit(FalseQueryNode &) override {
+        _builder.add_false_node();
+    }
 };
 
 }

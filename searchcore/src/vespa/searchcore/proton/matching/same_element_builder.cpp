@@ -51,7 +51,6 @@ public:
     void visit(ProtonRank &) override {}
     void visit(ProtonWeakAnd &) override {}
     void visit(ProtonSameElement &) override {}
-
     void visit(ProtonWeightedSetTerm &) override {}
     void visit(ProtonDotProduct &) override {}
     void visit(ProtonWandTerm &) override {}
@@ -68,6 +67,8 @@ public:
     void visit(ProtonPredicateQuery &) override {}
     void visit(ProtonRegExpTerm &n) override { visitTerm(n); }
     void visit(ProtonNearestNeighborTerm &) override {}
+    void visit(ProtonTrue &) override {}
+    void visit(ProtonFalse &) override {}
 };
 
 } // namespace proton::matching::<unnamed>

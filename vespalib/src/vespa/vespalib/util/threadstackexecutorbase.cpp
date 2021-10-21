@@ -203,12 +203,12 @@ ThreadStackExecutorBase::num_idle_workers() const
     return _workers.size();
 }
 
-ThreadStackExecutorBase::Stats
+ExecutorStats
 ThreadStackExecutorBase::getStats()
 {
     std::unique_lock guard(_lock);
-    Stats stats = _stats;
-    _stats = Stats();
+    ExecutorStats stats = _stats;
+    _stats = ExecutorStats();
     _stats.queueSize.add(_taskCount);
     return stats;
 }

@@ -6,7 +6,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -15,7 +15,6 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -36,11 +35,11 @@ public class RankingExpressionTypeResolver extends Processor {
 
     private final QueryProfileRegistry queryProfiles;
 
-    public RankingExpressionTypeResolver(Search search,
+    public RankingExpressionTypeResolver(Schema schema,
                                          DeployLogger deployLogger,
                                          RankProfileRegistry rankProfileRegistry,
                                          QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
         this.queryProfiles = queryProfiles.getRegistry();
     }
 
@@ -49,12 +48,12 @@ public class RankingExpressionTypeResolver extends Processor {
         if (documentsOnly) return;
 
         Set<Reference> warnedAbout = new HashSet<>();
-        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             try {
                 resolveTypesIn(profile, validate, warnedAbout);
             }
             catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("In " + (search != null ? search + ", " : "") + profile, e);
+                throw new IllegalArgumentException("In " + (schema != null ? schema + ", " : "") + profile, e);
             }
         }
     }

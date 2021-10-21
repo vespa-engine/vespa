@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.*;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -17,16 +17,16 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class TagType extends Processor {
 
-    public TagType(Search search,
+    public TagType(Schema schema,
                    DeployLogger deployLogger,
                    RankProfileRegistry rankProfileRegistry,
                    QueryProfiles queryProfiles) {
-        super(search, deployLogger, rankProfileRegistry, queryProfiles);
+        super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (SDField field : schema.allConcreteFields()) {
             if (field.getDataType() instanceof WeightedSetDataType && ((WeightedSetDataType)field.getDataType()).isTag())
                 implementTagType(field);
         }

@@ -6,8 +6,9 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.DocumentReference;
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.TestableDeployLogger;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
@@ -34,39 +35,39 @@ public class AddAttributeTransformToSummaryOfImportedFieldsTest {
 
     @Test
     public void attribute_summary_transform_applied_to_summary_field_of_imported_field() {
-        Search search = createSearchWithDocument(DOCUMENT_NAME);
-        search.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME));
-        search.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, search));
+        Schema schema = createSearchWithDocument(DOCUMENT_NAME);
+        schema.setImportedFields(createSingleImportedField(IMPORTED_FIELD_NAME));
+        schema.addSummary(createDocumentSummary(IMPORTED_FIELD_NAME, schema));
 
         AddAttributeTransformToSummaryOfImportedFields processor = new AddAttributeTransformToSummaryOfImportedFields(
-                search,null,null,null);
+                schema, null, null, null);
         processor.process(true, false);
-        SummaryField summaryField = search.getSummaries().get(SUMMARY_NAME).getSummaryField(IMPORTED_FIELD_NAME);
+        SummaryField summaryField = schema.getSummaries().get(SUMMARY_NAME).getSummaryField(IMPORTED_FIELD_NAME);
         SummaryTransform actualTransform = summaryField.getTransform();
         assertEquals(SummaryTransform.ATTRIBUTE, actualTransform);
     }
 
-    private static Search createSearch(String documentType) {
-        return new Search(documentType, MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+    private static Schema createSearch(String documentType) {
+        return new Schema(documentType, new Application(MockApplicationPackage.createEmpty()), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
     }
 
-    private static Search createSearchWithDocument(String documentName) {
-        Search search = createSearch(documentName);
-        SDDocumentType document = new SDDocumentType(documentName, search);
-        search.addDocument(document);
-        return search;
+    private static Schema createSearchWithDocument(String documentName) {
+        Schema schema = createSearch(documentName);
+        SDDocumentType document = new SDDocumentType(documentName, schema);
+        schema.addDocument(document);
+        return schema;
     }
 
     private static ImportedFields createSingleImportedField(String fieldName) {
-        Search targetSearch = createSearch("target_doc");
+        Schema targetSchema = createSearch("target_doc");
         SDField targetField = new SDField("target_field", DataType.INT);
-        DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSearch);
+        DocumentReference documentReference = new DocumentReference(new Field("reference_field"), targetSchema);
         ImportedField importedField = new ImportedSimpleField(fieldName, documentReference, targetField);
         return new ImportedFields(Collections.singletonMap(fieldName, importedField));
     }
 
-    private static DocumentSummary createDocumentSummary(String fieldName, Search search) {
-        DocumentSummary summary = new DocumentSummary("mysummary", search);
+    private static DocumentSummary createDocumentSummary(String fieldName, Schema schema) {
+        DocumentSummary summary = new DocumentSummary("mysummary", schema);
         summary.add(new SummaryField(fieldName, DataType.INT));
         return summary;
     }

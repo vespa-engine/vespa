@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -29,8 +29,8 @@ public class ImplicitSummariesTestCase {
         LogHandler log = new LogHandler();
         Logger.getLogger("").addHandler(log);
 
-        Search search = SearchBuilder.buildFromFile("src/test/examples/implicitsummaries_attribute.sd");
-        assertNotNull(search);
+        Schema schema = SearchBuilder.buildFromFile("src/test/examples/implicitsummaries_attribute.sd");
+        assertNotNull(schema);
         assertTrue(log.records.isEmpty());
     }
 
@@ -60,19 +60,19 @@ public class ImplicitSummariesTestCase {
 
     @Test
     public void attribute_combiner_transform_is_set_on_array_of_struct_with_only_struct_field_attributes() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
-        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, search.getSummaryField("elem_array").getTransform());
+        Schema schema = SearchBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
+        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, schema.getSummaryField("elem_array").getTransform());
     }
 
     @Test
     public void attribute_combiner_transform_is_set_on_map_of_struct_with_only_struct_field_attributes() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
-        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, search.getSummaryField("str_elem_map").getTransform());
+        Schema schema = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
+        assertEquals(SummaryTransform.ATTRIBUTECOMBINER, schema.getSummaryField("str_elem_map").getTransform());
     }
 
     @Test
     public void attribute_combiner_transform_is_not_set_when_map_of_struct_has_some_struct_field_attributes() throws IOException, ParseException {
-        Search search = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
-        assertEquals(SummaryTransform.NONE, search.getSummaryField("int_elem_map").getTransform());
+        Schema schema = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
+        assertEquals(SummaryTransform.NONE, schema.getSummaryField("int_elem_map").getTransform());
     }
 }

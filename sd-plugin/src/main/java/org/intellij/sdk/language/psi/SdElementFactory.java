@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package org.intellij.sdk.language.psi;
 
 import com.intellij.openapi.project.Project;
@@ -6,6 +7,10 @@ import com.intellij.psi.PsiFileFactory;
 import com.intellij.psi.util.PsiTreeUtil;
 import org.intellij.sdk.language.SdFileType;
 
+/**
+ * This class is a factory of psi elements in the SD PSI tree.
+ * @author shahariel
+ */
 public class SdElementFactory {
     
     private static final String GENERAL_FILE_TEXT = "search {document %s {} rank-profile %s {}}";
