@@ -151,6 +151,7 @@ applyPutToAttribute(SerialNum serialNum, const FieldValue::UP &fieldValue, Docum
     } else {
         attr.clearDoc(lid);
     }
+    attr.commitIfChangeVectorTooLarge();
 }
 
 void
@@ -184,6 +185,7 @@ applyUpdateToAttribute(SerialNum serialNum, const FieldUpdate &fieldUpd,
 {
     ensureLidSpace(serialNum, lid, attr);
     AttributeUpdater::handleUpdate(attr, lid, fieldUpd);
+    attr.commitIfChangeVectorTooLarge();
 }
 
 void

@@ -756,6 +756,15 @@ AttributeVector::getChangeVectorMemoryUsage() const
     return vespalib::MemoryUsage(0, 0, 0, 0);
 }
 
+bool
+AttributeVector::commitIfChangeVectorTooLarge() {
+    bool needCommit = getChangeVectorMemoryUsage().usedBytes() > getConfig().getMaxUnCommittedMemory();
+    if (needCommit) {
+        commit(false);
+    }
+    return needCommit;
+}
+
 void
 AttributeVector::logEnumStoreEvent(const char *reason, const char *stage)
 {
