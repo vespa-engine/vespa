@@ -149,6 +149,10 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req)
     ret->request = req.release();
     if (_forward_issues) {
         ret->my_issues = std::move(my_issues);
+    } else {
+        my_issues->for_each_message([](const auto &msg){
+            LOG(warning, "unhandled issue: %s", msg.c_str());
+        });
     }
     ret->setDistributionKey(_distributionKey);
     if ((ret->request->trace().getLevel() > 0) && ret->request->trace().hasTrace()) {

@@ -148,6 +148,10 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
     reply->setRequest(std::move(req));
     if (_forward_issues) {
         reply->setIssues(std::move(my_issues));
+    } else {
+        my_issues->for_each_message([](const auto &msg){
+            LOG(warning, "unhandled issue: %s", msg.c_str());
+        });
     }
     return reply;
 }
