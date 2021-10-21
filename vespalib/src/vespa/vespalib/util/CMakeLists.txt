@@ -23,6 +23,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     error.cpp
     exception.cpp
     exceptions.cpp
+    executor_idle_tracking.cpp
     file_area_freelist.cpp
     gencnt.cpp
     generationhandler.cpp
