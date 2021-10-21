@@ -20,6 +20,10 @@ using namespace ::testing;
 
 namespace storage {
 
+/*
+ * Class for testing merge handler taking async_apply_bucket_diff as
+ * parameter for the test.
+ */
 struct MergeHandlerTest : SingleDiskPersistenceTestUtils,
                           public testing::WithParamInterface<bool> {
     uint32_t _location; // Location used for all merge tests
