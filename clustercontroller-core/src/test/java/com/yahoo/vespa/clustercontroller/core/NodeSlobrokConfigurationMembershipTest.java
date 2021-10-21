@@ -46,7 +46,7 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         // cluster. If we do not re-fetch state from slobrok we risk racing
         nodeIndices.add(foreignNode);
         options.nodes = asConfiguredNodes(nodeIndices);
-        fleetController.updateOptions(options, 0);
+        fleetController.updateOptions(options);
         // Need to treat cluster as having 6 nodes due to ideal state algo semantics.
         // Note that we do not use subsetWaiter here since we want node 6 included.
         waitForState("version:\\d+ distributor:7 .4.s:d .5.s:d storage:7 .4.s:d .5.s:d");
@@ -65,13 +65,13 @@ public class NodeSlobrokConfigurationMembershipTest extends FleetControllerTest 
         assertTrue(configuredNodes.remove(new ConfiguredNode(0, false)));
         configuredNodes.add(new ConfiguredNode(0, true));
         options.nodes = configuredNodes;
-        fleetController.updateOptions(options, 0);
+        fleetController.updateOptions(options);
 
         waitForState("version:\\d+ distributor:4 storage:4 .0.s:r");
 
         // Now remove the retired node entirely from config
         assertTrue(configuredNodes.remove(new ConfiguredNode(0, true)));
-        fleetController.updateOptions(options, 0);
+        fleetController.updateOptions(options);
 
         // The previously retired node should now be marked as down, as it no longer
         // exists from the point of view of the content cluster. We have to use a subset

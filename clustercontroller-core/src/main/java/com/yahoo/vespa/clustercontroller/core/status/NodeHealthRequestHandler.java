@@ -9,26 +9,17 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer
 */
 public class NodeHealthRequestHandler implements StatusPageServer.RequestHandler {
 
-    private final RunDataExtractor data;
-
-    public NodeHealthRequestHandler(RunDataExtractor data) {
-        this.data = data;
-    }
+    public NodeHealthRequestHandler() {}
 
     @Override
     public StatusPageResponse handle(StatusPageServer.HttpRequest request) {
         StatusPageResponse response = new StatusPageResponse();
         response.setContentType("application/json");
         response.writeContent("{\n" +
-                          "  \"status\" : {\n" +
-                          "    \"code\" : \"up\"\n" +
-                          "  },\n" +
-                          "  \"config\" : {\n" +
-                          "    \"component\" : {\n" +
-                          "      \"generation\" : " + data.getConfigGeneration() + "\n" +
-                          "    }\n" +
-                          "  }\n" +
-                          "}");
+                              "  \"status\" : {\n" +
+                              "    \"code\" : \"up\"\n" +
+                              "  }\n" +
+                              "}");
         return response;
     }
 
