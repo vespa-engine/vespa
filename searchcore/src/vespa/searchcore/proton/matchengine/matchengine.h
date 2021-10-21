@@ -21,7 +21,7 @@ private:
     const uint32_t                     _distributionKey;
     bool                               _async;
     bool                               _closed;
-    bool                               _forward_issues;
+    std::atomic<bool>                  _forward_issues;
     HandlerMap<ISearchHandler>         _handlers;
     vespalib::ThreadStackExecutor      _executor;
     vespalib::SimpleThreadBundle::Pool _threadBundlePool;
