@@ -143,7 +143,8 @@ public class VespaSerializerTestCase {
     }
 
     @Test
-    public void testFalse() {
+    public void testTrueAndFalse() {
+        parseAndConfirm("true");
         parseAndConfirm("false");
     }
 
