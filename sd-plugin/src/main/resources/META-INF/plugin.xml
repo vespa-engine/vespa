@@ -4,7 +4,7 @@
     <name>SdReader</name>
 
     <!-- Text to display as company information on Preferences/Settings | Plugin page -->
-    <vendor email="shahar.ariel@verizonmedia.com">Yahoo</vendor>
+    <vendor email="shahar.ariel@yahooinc.com">Yahoo</vendor>
 
     <!-- Product and plugin compatibility requirements -->
     <depends>com.intellij.java</depends>
