@@ -275,8 +275,8 @@ public class RoutingPolicies {
         for (var policy : routingPolicies) {
             for (var endpoint : policy.endpoints()) {
                 var id = new RoutingId(policy.id().owner(), endpoint);
-                routingTable.putIfAbsent(id, new ArrayList<>());
-                routingTable.get(id).add(policy);
+                routingTable.computeIfAbsent(id, k -> new ArrayList<>())
+                            .add(policy);
             }
         }
         return Collections.unmodifiableMap(routingTable);
