@@ -23,7 +23,7 @@ class OperationComplete
 public:
     using UP = std::unique_ptr<OperationComplete>;
     virtual ~OperationComplete() = default;
-    virtual void onComplete(std::unique_ptr<Result> result) = 0;
+    virtual void onComplete(std::unique_ptr<Result> result) noexcept = 0;
     virtual void addResultHandler(const ResultHandler * resultHandler) = 0;
 };
 

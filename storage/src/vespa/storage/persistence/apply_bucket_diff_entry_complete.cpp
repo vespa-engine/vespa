@@ -20,7 +20,7 @@ ApplyBucketDiffEntryComplete::ApplyBucketDiffEntryComplete(std::shared_ptr<Apply
 ApplyBucketDiffEntryComplete::~ApplyBucketDiffEntryComplete() = default;
 
 void
-ApplyBucketDiffEntryComplete::onComplete(std::unique_ptr<spi::Result> result)
+ApplyBucketDiffEntryComplete::onComplete(std::unique_ptr<spi::Result> result) noexcept
 {
     if (_result_handler != nullptr) {
         _result_handler->handle(*result);

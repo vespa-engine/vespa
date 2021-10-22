@@ -27,7 +27,7 @@ class ApplyBucketDiffEntryComplete : public spi::OperationComplete
 public:
     ApplyBucketDiffEntryComplete(std::shared_ptr<ApplyBucketDiffState> state, document::DocumentId doc_id, const char *op, const framework::Clock& clock, metrics::DoubleAverageMetric& latency_metric);
     ~ApplyBucketDiffEntryComplete();
-    void onComplete(std::unique_ptr<spi::Result> result) override;
+    void onComplete(std::unique_ptr<spi::Result> result) noexcept override;
     void addResultHandler(const spi::ResultHandler* resultHandler) override;
 };
 

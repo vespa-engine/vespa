@@ -78,7 +78,7 @@ public:
           _executorId(executor.getExecutorId(bucketId.getId()))
     {
     }
-    void onComplete(spi::Result::UP result) override {
+    void onComplete(spi::Result::UP result) noexcept override {
         _task->setResult(std::move(result));
         _executor.executeTask(_executorId, std::move(_task));
     }
