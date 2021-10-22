@@ -45,6 +45,7 @@ ApplyBucketDiffState::~ApplyBucketDiffState()
         if (_sender) {
             _sender->sendReply(std::move(_delayed_reply));
         } else {
+            // _tracker->_reply and _delayed_reply points to the same reply.
             _tracker->sendReply();
         }
     }
