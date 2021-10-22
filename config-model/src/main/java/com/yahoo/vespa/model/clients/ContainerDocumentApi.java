@@ -23,24 +23,23 @@ public class ContainerDocumentApi {
     public static final String DOCUMENT_V1_PREFIX = "/document/v1";
 
     public ContainerDocumentApi(ContainerCluster<?> cluster, Options options) {
-        var executor = new Threadpool("feedapi-handler", cluster, options.feedApiThreadpoolOptions);
-        cluster.addComponent(executor);
-        addRestApiHandler(cluster, options, executor);
-        addFeedHandler(cluster, options, executor);
+        addRestApiHandler(cluster, options);
+        addFeedHandler(cluster, options);
     }
 
-    private static void addFeedHandler(ContainerCluster<?> cluster, Options options, Threadpool executor) {
+    private static void addFeedHandler(ContainerCluster<?> cluster, Options options) {
         String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
         var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
         cluster.addComponent(handler);
+        var executor = new Threadpool("feedapi-handler", cluster, options.feedApiThreadpoolOptions);
         handler.inject(executor);
+        handler.addComponent(executor);
     }
 
 
-    private static void addRestApiHandler(ContainerCluster<?> cluster, Options options, Threadpool executor) {
+    private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
         var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler", DOCUMENT_V1_PREFIX + "/*", options);
         cluster.addComponent(handler);
-        handler.inject(executor);
 
         // We need to include a dummy implementation of the previous restapi handler (using the same class name).
         // The internal legacy test framework requires that the name of the old handler is listed in /ApplicationStatus.
