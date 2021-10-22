@@ -53,25 +53,28 @@ private:
  * Struct representing stats for an executor.
  * Note that aggregation requires sample interval to be the same(similar) for all samples.
  **/
-struct ExecutorStats {
+class ExecutorStats {
+private:
+    size_t   _threadCount;
+    double   _absUtil;
+public:
     using QueueSizeT = AggregatedAverage<size_t>;
-    uint32_t   threadCount;
     QueueSizeT queueSize;
     size_t     acceptedTasks;
     size_t     rejectedTasks;
     size_t     wakeupCount; // Number of times a worker was woken up,
-    double     absUtil;
-    ExecutorStats() : ExecutorStats(1, QueueSizeT(), 0, 0, 0, 1.0) {}
-    ExecutorStats(uint32_t executorCount_in, QueueSizeT queueSize_in, size_t accepted, size_t rejected, size_t wakeupCount_in, double absUtil_in)
-        : threadCount(executorCount_in),
+
+    ExecutorStats() : ExecutorStats(QueueSizeT(), 0, 0, 0) {}
+    ExecutorStats(QueueSizeT queueSize_in, size_t accepted, size_t rejected, size_t wakeupCount_in)
+        : _threadCount(1),
+          _absUtil(1.0),
           queueSize(queueSize_in),
           acceptedTasks(accepted),
           rejectedTasks(rejected),
-          wakeupCount(wakeupCount_in),
-          absUtil(absUtil_in)
+          wakeupCount(wakeupCount_in)
     {}
     void aggregate(const ExecutorStats & rhs) {
-        threadCount += rhs.threadCount;
+        _threadCount += rhs._threadCount;
         queueSize = QueueSizeT(queueSize.count() + rhs.queueSize.count(),
                                queueSize.total() + rhs.queueSize.total(),
                                queueSize.min() + rhs.queueSize.min(),
@@ -79,9 +82,15 @@ struct ExecutorStats {
         acceptedTasks += rhs.acceptedTasks;
         rejectedTasks += rhs.rejectedTasks;
         wakeupCount += rhs.wakeupCount;
-        absUtil += rhs.absUtil;
+        _absUtil += rhs._absUtil;
     }
-    double getUtil() const { return absUtil / threadCount; }
+    ExecutorStats & setUtil(uint32_t threadCount, double idle) {
+        _threadCount = threadCount;
+        _absUtil = (1.0 - idle) * threadCount;
+        return *this;
+    }
+    double getUtil() const { return _absUtil / _threadCount; }
+    size_t getThreadCount() const { return _threadCount; }
 };
 
 }

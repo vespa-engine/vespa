@@ -334,12 +334,11 @@ AdaptiveSequencedExecutor::getStats()
 {
     auto guard = std::lock_guard(_mutex);
     ExecutorStats stats = _stats;
-    stats.threadCount = _cfg.num_threads;
     steady_time now = steady_clock::now();
     for (size_t i(0); i < _worker_stack.size(); i++) {
         _idleTracker.was_idle(_worker_stack.access(i)->idleTracker.reset(now));
     }
-    _stats.absUtil = _idleTracker.reset(now, 1);
+    stats.setUtil(_cfg.num_threads, _idleTracker.reset(now, _cfg.num_threads));
     _stats = ExecutorStats();
     _stats.queueSize.add(_self.pending_tasks);
     return stats;

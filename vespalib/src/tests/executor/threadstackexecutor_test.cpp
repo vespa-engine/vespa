@@ -4,7 +4,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <atomic>
+#include <thread>
 
 using namespace vespalib;
 
@@ -190,15 +190,15 @@ TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(
 
 TEST("require that stats can be accumulated") {
     EXPECT_TRUE(std::atomic<duration>::is_always_lock_free);
-    ExecutorStats stats(3, ExecutorStats::QueueSizeT(1) ,2,3,7, 0.6);
+    ExecutorStats stats(ExecutorStats::QueueSizeT(1) ,2,3,7);
+    stats.setUtil(3, 0.8);
     EXPECT_EQUAL(1u, stats.queueSize.max());
     EXPECT_EQUAL(2u, stats.acceptedTasks);
     EXPECT_EQUAL(3u, stats.rejectedTasks);
     EXPECT_EQUAL(7u, stats.wakeupCount);
-    EXPECT_EQUAL(3u, stats.threadCount);
-    EXPECT_EQUAL(0.6, stats.absUtil);
+    EXPECT_EQUAL(3u, stats.getThreadCount());
     EXPECT_EQUAL(0.2, stats.getUtil());
-    stats.aggregate(ExecutorStats(7, ExecutorStats::QueueSizeT(7),8,9,11, 1.9));
+    stats.aggregate(ExecutorStats(ExecutorStats::QueueSizeT(7),8,9,11).setUtil(7,0.5));
     EXPECT_EQUAL(2u, stats.queueSize.count());
     EXPECT_EQUAL(8u, stats.queueSize.total());
     EXPECT_EQUAL(8u, stats.queueSize.max());
@@ -206,18 +206,18 @@ TEST("require that stats can be accumulated") {
     EXPECT_EQUAL(8u, stats.queueSize.max());
     EXPECT_EQUAL(4.0, stats.queueSize.average());
 
-    EXPECT_EQUAL(10u, stats.threadCount);
+    EXPECT_EQUAL(10u, stats.getThreadCount());
     EXPECT_EQUAL(10u, stats.acceptedTasks);
     EXPECT_EQUAL(12u, stats.rejectedTasks);
     EXPECT_EQUAL(18u, stats.wakeupCount);
-    EXPECT_EQUAL(2.5, stats.absUtil);
-    EXPECT_EQUAL(0.25, stats.getUtil());
+    EXPECT_EQUAL(0.41, stats.getUtil());
 }
 
-TEST("Test that load is computed") {
+TEST("Test that utilization is computed") {
     ThreadStackExecutor executor(1, 128_Ki);
+    std::this_thread::sleep_for(1s);
     auto stats = executor.getStats();
-    EXPECT_EQUAL(0.0, stats.absUtil);
+    EXPECT_GREATER(0.01, stats.getUtil());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

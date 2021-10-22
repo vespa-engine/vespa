@@ -170,7 +170,8 @@ SingleExecutor::getStats() {
     uint64_t accepted = _wp.load(std::memory_order_relaxed);
     steady_time now = steady_clock::now();
     _idleTracker.was_idle(_threadIdleTracker.reset(now));
-    ExecutorStats stats(1, _queueSize, (accepted - _lastAccepted), 0, _wakeupCount, _idleTracker.reset(now, 1));
+    ExecutorStats stats(_queueSize, (accepted - _lastAccepted), 0, _wakeupCount);
+    stats.setUtil(1, _idleTracker.reset(now, 1));
     _wakeupCount = 0;
     _lastAccepted = accepted;
     _queueSize = ExecutorStats::QueueSizeT() ;
