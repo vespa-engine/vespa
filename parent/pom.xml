@@ -870,7 +870,7 @@
         <junit.version>5.7.0</junit.version>
         <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
         <!-- TODO: in order to upgrade above 4.1.0, we probably need to convert fat-model-deps to a jar artifact. -->
-        <maven-bundle-plugin.version>4.1.0</maven-bundle-plugin.version>
+        <maven-bundle-plugin.version>5.1.2</maven-bundle-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
         <maven-deploy-plugin.version>2.8.1</maven-deploy-plugin.version>
