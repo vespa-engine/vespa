@@ -8,7 +8,6 @@ import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.container.core.HandlerMetricContextUtil;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
-import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.container.jdisc.MaxPendingContentChannelOutputStream;
 import com.yahoo.document.Document;
@@ -184,7 +183,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final Map<String, Map<Method, Handler>> handlers = defineApi();
 
     @Inject
-    public DocumentV1ApiHandler(ContainerThreadPool threadPool,
+    public DocumentV1ApiHandler(Executor defaultExecutor,
                                 Metric metric,
                                 MetricReceiver metricReceiver,
                                 VespaDocumentAccess documentAccess,
@@ -193,7 +192,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                 AllClustersBucketSpacesConfig bucketSpacesConfig,
                                 DocumentOperationExecutorConfig executorConfig) {
         this(Clock.systemUTC(), Duration.ofSeconds(5), metric, metricReceiver, documentAccess,
-             documentManagerConfig, executorConfig, clusterListConfig, bucketSpacesConfig, threadPool.executor());
+             documentManagerConfig, executorConfig, clusterListConfig, bucketSpacesConfig, defaultExecutor);
     }
 
     DocumentV1ApiHandler(Clock clock, Duration handlerTimeout, Metric metric, MetricReceiver metricReceiver, DocumentAccess access,
