@@ -152,11 +152,11 @@ AdaptiveSequencedExecutor::obtain_strand(Worker &worker, std::unique_lock<std::m
     } else {
         worker.state = Worker::State::BLOCKED;
         _worker_stack.push(&worker);
+        worker.idleTracker.set_idle(steady_clock::now());
         while (worker.state == Worker::State::BLOCKED) {
-            worker.idleTracker.set_idle(steady_clock::now());
             worker.cond.wait(lock);
-            _idleTracker.was_idle(worker.idleTracker.set_active(steady_clock::now()));
         }
+        _idleTracker.was_idle(worker.idleTracker.set_active(steady_clock::now()));
         _stats.wakeupCount++;
     }
     return (worker.state == Worker::State::RUNNING);
