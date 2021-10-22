@@ -102,7 +102,7 @@ public class ApplicationPackageValidator {
                                                                                                    instant));
     }
 
-    /** Verify that compactable endpoint parts (instance aname nd endpoint ID) do not clash */
+    /** Verify that compactable endpoint parts (instance name and endpoint ID) do not clash */
     private void validateCompactedEndpoint(ApplicationPackage applicationPackage) {
         Map<List<String>, InstanceEndpoint> instanceEndpoints = new HashMap<>();
         for (var instanceSpec : applicationPackage.deploymentSpec().instances()) {

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -13,13 +14,15 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Represents an application's endpoint in hosted Vespa. This encapsulates all logic for building URLs and DNS names for
- * application endpoints.
+ * Represents an application or instance endpoint in hosted Vespa.
+ *
+ * This encapsulates the logic for building URLs and DNS names for applications in all hosted Vespa systems.
  *
  * @author mpolden
  */
@@ -50,7 +53,7 @@ public class Endpoint {
         if (scope == Scope.global) {
             if (id == null) throw new IllegalArgumentException("Endpoint ID must be set for global endpoints");
         } else {
-            if (id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
+            if (scope == Scope.zone && id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
             if (zones.size() != 1) throw new IllegalArgumentException("A single zone must be given for " + scope + " endpoints");
         }
         this.id = id;
@@ -63,12 +66,14 @@ public class Endpoint {
         this.tls = port.tls;
     }
 
-    private Endpoint(EndpointId id, ClusterSpec.Id cluster, ApplicationId application, List<ZoneId> zones, Scope scope, SystemName system,
-                     Port port, boolean legacy, RoutingMethod routingMethod) {
+    private Endpoint(EndpointId id, ClusterSpec.Id cluster, TenantAndApplicationId application,
+                     Optional<InstanceName> instance, List<ZoneId> zones, Scope scope, SystemName system, Port port,
+                     boolean legacy, RoutingMethod routingMethod) {
         this(id,
              cluster,
              createUrl(endpointOrClusterAsString(id, cluster),
                        Objects.requireNonNull(application, "application must be non-null"),
+                       Objects.requireNonNull(instance, "instance must be non-null"),
                        zones,
                        scope,
                        Objects.requireNonNull(system, "system must be non-null"),
@@ -164,15 +169,16 @@ public class Endpoint {
         return id == null ? cluster.value() : id.id();
     }
 
-    private static URI createUrl(String name, ApplicationId application, List<ZoneId> zones, Scope scope,
-                                 SystemName system, Port port, boolean legacy, RoutingMethod routingMethod) {
+    private static URI createUrl(String name, TenantAndApplicationId application, Optional<InstanceName> instance,
+                                 List<ZoneId> zones, Scope scope, SystemName system, Port port, boolean legacy,
+                                 RoutingMethod routingMethod) {
         String scheme = port.tls ? "https" : "http";
         String separator = separator(system, routingMethod, port.tls);
         String portPart = port.isDefault() ? "" : ":" + port.port;
         return URI.create(scheme + "://" +
                           sanitize(namePart(name, separator)) +
                           systemPart(system, separator, legacy) +
-                          sanitize(instancePart(application, separator)) +
+                          sanitize(instancePart(instance, separator)) +
                           sanitize(application.application().value()) +
                           separator +
                           sanitize(application.tenant().value()) +
@@ -216,9 +222,10 @@ public class Endpoint {
         return region + "." + zone.environment().value();
     }
 
-    private static String instancePart(ApplicationId application, String separator) {
-        if (application.instance().isDefault()) return ""; // Skip "default"
-        return application.instance().value() + separator;
+    private static String instancePart(Optional<InstanceName> instance, String separator) {
+        if (instance.isEmpty()) return "";
+        if (instance.get().isDefault()) return ""; // Skip "default"
+        return instance.get().value() + separator;
     }
 
     private static String systemPart(SystemName system, String separator, boolean legacy) {
@@ -246,7 +253,7 @@ public class Endpoint {
 
     private static String upstreamIdOf(String name, ApplicationId application, ZoneId zone) {
         return Stream.of(namePart(name, ""),
-                         instancePart(application, ""),
+                         instancePart(Optional.of(application.instance()), ""),
                          application.application().value(),
                          application.tenant().value(),
                          zone.region().value(),
@@ -338,9 +345,14 @@ public class Endpoint {
 
     }
 
+    /** Build an endpoint for given instance */
+    public static EndpointBuilder of(ApplicationId instance) {
+        return new EndpointBuilder(TenantAndApplicationId.from(instance), Optional.of(instance.instance()));
+    }
+
     /** Build an endpoint for given application */
-    public static EndpointBuilder of(ApplicationId application) {
-        return new EndpointBuilder(application);
+    public static EndpointBuilder of(TenantAndApplicationId application) {
+        return new EndpointBuilder(application, Optional.empty());
     }
 
     /** Create an endpoint for given system application */
@@ -353,7 +365,8 @@ public class Endpoint {
 
     public static class EndpointBuilder {
 
-        private final ApplicationId application;
+        private final TenantAndApplicationId application;
+        private final Optional<InstanceName> instance;
 
         private Scope scope;
         private List<ZoneId> zones;
@@ -363,8 +376,9 @@ public class Endpoint {
         private RoutingMethod routingMethod = RoutingMethod.shared;
         private boolean legacy = false;
 
-        private EndpointBuilder(ApplicationId application) {
-            this.application = application;
+        private EndpointBuilder(TenantAndApplicationId application, Optional<InstanceName> instance) {
+            this.application = Objects.requireNonNull(application);
+            this.instance = Objects.requireNonNull(instance);
         }
 
         /** Sets the zone target for this */
@@ -410,6 +424,12 @@ public class Endpoint {
             return this;
         }
 
+        /** Sets the region target for this by endpointId, deduced from given zone */
+        public EndpointBuilder targetRegion(EndpointId endpointId, ClusterSpec.Id cluster, ZoneId zone) {
+            this.endpointId = endpointId;
+            return targetRegion(cluster, zone);
+        }
+
         /** Sets the port of this */
         public EndpointBuilder on(Port port) {
             this.port = port;
@@ -436,7 +456,7 @@ public class Endpoint {
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            return new Endpoint(endpointId, cluster, application, zones, scope, system, port, legacy, routingMethod);
+            return new Endpoint(endpointId, cluster, application, instance, zones, scope, system, port, legacy, routingMethod);
         }
 
         private void checkScope() {
