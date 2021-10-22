@@ -111,7 +111,7 @@ public class RoutingPolicy {
 
     /** Returns the region endpoint of this */
     public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, boolean legacy) {
-        Endpoint.EndpointBuilder endpoint = endpoint(routingMethod).targetRegion(id.cluster(), id.zone());
+        Endpoint.EndpointBuilder endpoint = endpoint(routingMethod).targetRegionSplit(id.cluster(), id.zone());
         if (legacy) {
             endpoint = endpoint.legacy();
         }
