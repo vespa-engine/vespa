@@ -70,6 +70,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxUnCommittedMemory = 123456;
     private double diskBloatFactor = 0.2;
     private boolean distributorEnhancedMaintenanceScheduling = false;
+    private boolean asyncApplyBucketDiff = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -120,6 +121,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
     @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
+    @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -304,6 +306,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties distributorEnhancedMaintenanceScheduling(boolean enhancedScheduling) {
         distributorEnhancedMaintenanceScheduling = enhancedScheduling;
+        return this;
+    }
+
+    public TestProperties setAsyncApplyBucketDiff(boolean value) {
+        asyncApplyBucketDiff = value;
         return this;
     }
 
