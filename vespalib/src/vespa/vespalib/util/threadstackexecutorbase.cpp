@@ -178,7 +178,6 @@ void
 ThreadStackExecutorBase::start(uint32_t threads)
 {
     assert(threads > 0);
-    _idleTracker.reset(steady_clock::now(), threads);
     for (uint32_t i = 0; i < threads; ++i) {
         FastOS_ThreadInterface *thread = _pool->NewThread(_thread_init.get());
         assert(thread != nullptr);
