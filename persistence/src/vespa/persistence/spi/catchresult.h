@@ -12,7 +12,7 @@ public:
     std::future<std::unique_ptr<Result>> future_result() {
         return _promisedResult.get_future();
     }
-    void onComplete(std::unique_ptr<Result> result) override;
+    void onComplete(std::unique_ptr<Result> result) noexcept override;
     void addResultHandler(const ResultHandler * resultHandler) override;
 private:
     std::promise<std::unique_ptr<Result>>  _promisedResult;

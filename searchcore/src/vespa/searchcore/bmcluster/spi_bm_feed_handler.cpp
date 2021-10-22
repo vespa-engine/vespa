@@ -39,7 +39,7 @@ class MyOperationComplete : public storage::spi::OperationComplete
 public:
     MyOperationComplete(PersistenceProvider* provider, std::atomic<uint32_t> &errors, const Bucket& bucket, PendingTracker& tracker);
     ~MyOperationComplete() override;
-    void onComplete(std::unique_ptr<storage::spi::Result> result) override;
+    void onComplete(std::unique_ptr<storage::spi::Result> result) noexcept override;
     void addResultHandler(const storage::spi::ResultHandler* resultHandler) override;
 };
 
@@ -58,7 +58,7 @@ MyOperationComplete::~MyOperationComplete()
 }
 
 void
-MyOperationComplete::onComplete(std::unique_ptr<storage::spi::Result> result)
+MyOperationComplete::onComplete(std::unique_ptr<storage::spi::Result> result) noexcept
 {
     if (result->hasError()) {
         ++_errors;
