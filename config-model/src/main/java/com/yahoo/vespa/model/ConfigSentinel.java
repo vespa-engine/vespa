@@ -19,7 +19,6 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
 
     private final ApplicationId applicationId;
     private final Zone zone;
-    private final boolean requireConnectivityCheck;
 
     /**
      * Constructs a new ConfigSentinel for the given host.
@@ -32,7 +31,6 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         super(host, "sentinel");
         this.applicationId = applicationId;
         this.zone = zone;
-        this.requireConnectivityCheck = featureFlags.requireConnectivityCheck();
         portsMeta.on(0).tag("rpc").tag("admin");
         portsMeta.on(1).tag("telnet").tag("interactive").tag("http").tag("state");
         setProp("clustertype", "hosts");
@@ -80,16 +78,6 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
                 builder.service(getServiceConfig(s));
             }
         }
-        builder.connectivity(getConnectivityConfig(requireConnectivityCheck));
-    }
-
-    private SentinelConfig.Connectivity.Builder getConnectivityConfig(boolean enable) {
-        var builder = new SentinelConfig.Connectivity.Builder();
-        if (! enable) {
-            builder.minOkPercent(0);
-            builder.maxBadCount(Integer.MAX_VALUE);
-        }
-        return builder;
     }
 
     private SentinelConfig.Application.Builder getApplicationConfig() {
