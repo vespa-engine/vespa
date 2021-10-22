@@ -872,7 +872,7 @@
         <apache.httpclient.version>4.5.13</apache.httpclient.version>
         <apache.httpcore.version>4.4.13</apache.httpcore.version>
         <apache.httpclient5.version>5.1</apache.httpclient5.version>
-        <asm.version>9.1</asm.version>
+        <asm.version>9.2</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.10.14</athenz.version>
         <jjwt.version>0.11.2</jjwt.version>
