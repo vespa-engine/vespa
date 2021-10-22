@@ -195,7 +195,7 @@ TEST("require that stats can be accumulated") {
     EXPECT_EQUAL(2u, stats.acceptedTasks);
     EXPECT_EQUAL(3u, stats.rejectedTasks);
     EXPECT_EQUAL(7u, stats.wakeupCount);
-    EXPECT_EQUAL(3u, stats.executorCount);
+    EXPECT_EQUAL(3u, stats.threadCount);
     EXPECT_EQUAL(0.6, stats.absUtil);
     EXPECT_EQUAL(0.2, stats.getUtil());
     stats.aggregate(ExecutorStats(7, ExecutorStats::QueueSizeT(7),8,9,11, 1.9));
@@ -206,7 +206,7 @@ TEST("require that stats can be accumulated") {
     EXPECT_EQUAL(8u, stats.queueSize.max());
     EXPECT_EQUAL(4.0, stats.queueSize.average());
 
-    EXPECT_EQUAL(10u, stats.executorCount);
+    EXPECT_EQUAL(10u, stats.threadCount);
     EXPECT_EQUAL(10u, stats.acceptedTasks);
     EXPECT_EQUAL(12u, stats.rejectedTasks);
     EXPECT_EQUAL(18u, stats.wakeupCount);

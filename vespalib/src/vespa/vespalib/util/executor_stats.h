@@ -55,7 +55,7 @@ private:
  **/
 struct ExecutorStats {
     using QueueSizeT = AggregatedAverage<size_t>;
-    uint32_t   executorCount;
+    uint32_t   threadCount;
     QueueSizeT queueSize;
     size_t     acceptedTasks;
     size_t     rejectedTasks;
@@ -63,7 +63,7 @@ struct ExecutorStats {
     double     absUtil;
     ExecutorStats() : ExecutorStats(1, QueueSizeT(), 0, 0, 0, 1.0) {}
     ExecutorStats(uint32_t executorCount_in, QueueSizeT queueSize_in, size_t accepted, size_t rejected, size_t wakeupCount_in, double absUtil_in)
-        : executorCount(executorCount_in),
+        : threadCount(executorCount_in),
           queueSize(queueSize_in),
           acceptedTasks(accepted),
           rejectedTasks(rejected),
@@ -71,7 +71,7 @@ struct ExecutorStats {
           absUtil(absUtil_in)
     {}
     void aggregate(const ExecutorStats & rhs) {
-        executorCount += rhs.executorCount;
+        threadCount += rhs.threadCount;
         queueSize = QueueSizeT(queueSize.count() + rhs.queueSize.count(),
                                queueSize.total() + rhs.queueSize.total(),
                                queueSize.min() + rhs.queueSize.min(),
@@ -81,7 +81,7 @@ struct ExecutorStats {
         wakeupCount += rhs.wakeupCount;
         absUtil += rhs.absUtil;
     }
-    double getUtil() const { return absUtil / executorCount; }
+    double getUtil() const { return absUtil / threadCount; }
 };
 
 }

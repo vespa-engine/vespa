@@ -183,7 +183,7 @@ void
 ThreadStackExecutorBase::start(uint32_t threads)
 {
     assert(threads > 0);
-    _stats.executorCount = threads;
+    _stats.threadCount = threads;
     _idleTracker.reset(steady_clock::now(), threads);
     for (uint32_t i = 0; i < threads; ++i) {
         FastOS_ThreadInterface *thread = _pool->NewThread(_thread_init.get());
@@ -237,7 +237,7 @@ ThreadStackExecutorBase::getStats()
 {
     std::unique_lock guard(_lock);
     ExecutorStats stats = _stats;
-    stats.executorCount = getNumThreads();
+    stats.threadCount = getNumThreads();
     steady_time now = steady_clock::now();
     for (size_t i(0); i < _workers.size(); i++) {
         _idleTracker.was_idle(_workers.access(i)->idleTracker.reset(now));

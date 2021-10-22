@@ -334,7 +334,7 @@ AdaptiveSequencedExecutor::getStats()
 {
     auto guard = std::lock_guard(_mutex);
     ExecutorStats stats = _stats;
-    stats.executorCount = _cfg.num_threads;
+    stats.threadCount = _cfg.num_threads;
     steady_time now = steady_clock::now();
     for (size_t i(0); i < _worker_stack.size(); i++) {
         _idleTracker.was_idle(_worker_stack.access(i)->idleTracker.reset(now));
