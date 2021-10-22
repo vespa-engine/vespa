@@ -29,7 +29,12 @@
 #include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/config/config.h>
 
-namespace vespalib { class IDestructorCallback; }
+namespace vespalib {
+
+class IDestructorCallback;
+class Executor;
+
+}
 
 namespace storage {
 namespace api {
@@ -62,6 +67,7 @@ class FileStorManager : public StorageLinkQueued,
     DoneInitializeHandler                     & _init_handler;
     const document::BucketIdFactory           & _bucketIdFactory;
 
+    std::unique_ptr<vespalib::Executor>              _merge_executor;
     std::vector<std::unique_ptr<PersistenceHandler>> _persistenceHandlers;
     std::vector<std::unique_ptr<DiskThread>>         _threads;
     std::unique_ptr<BucketOwnershipNotifier>         _bucketOwnershipNotifier;

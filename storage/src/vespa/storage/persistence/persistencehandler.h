@@ -24,7 +24,7 @@ class BucketOwnershipNotifier;
 class PersistenceHandler : public Types
 {
 public:
-    PersistenceHandler(vespalib::ISequencedTaskExecutor &, const ServiceLayerComponent & component,
+    PersistenceHandler(vespalib::ISequencedTaskExecutor &, vespalib::Executor&, const ServiceLayerComponent & component,
                       const vespa::config::content::StorFilestorConfig &, spi::PersistenceProvider &,
                       FileStorHandler &, BucketOwnershipNotifier &, FileStorThreadMetrics&);
     ~PersistenceHandler();

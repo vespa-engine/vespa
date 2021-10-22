@@ -10,6 +10,8 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
@@ -137,6 +139,7 @@ TestServiceLayerApp::TestServiceLayerApp(vespalib::stringref configId)
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
       _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
+      _merge_executor(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki)),
       _host_info()
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());
@@ -150,6 +153,7 @@ TestServiceLayerApp::TestServiceLayerApp(NodeIndex index,
       _compReg(dynamic_cast<ServiceLayerComponentRegisterImpl&>(TestStorageApp::getComponentRegister())),
       _persistenceProvider(),
       _executor(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
+      _merge_executor(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki)),
       _host_info()
 {
     lib::NodeState ns(*_nodeStateUpdater.getReportedNodeState());

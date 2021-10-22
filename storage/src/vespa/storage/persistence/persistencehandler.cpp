@@ -8,6 +8,7 @@ LOG_SETUP(".persistence.persistencehandler");
 namespace storage {
 
 PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequencedExecutor,
+                                       vespalib::Executor& merge_executor,
                                       const ServiceLayerComponent & component,
                                       const vespa::config::content::StorFilestorConfig & cfg,
                                       spi::PersistenceProvider& provider,
@@ -18,6 +19,7 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
       _env(component, filestorHandler, metrics, provider),
       _processAllHandler(_env, provider),
       _mergeHandler(_env, provider, component.cluster_context(), _clock,
+                    merge_executor,
                     cfg.bucketMergeChunkSize,
                     cfg.commonMergeChainOptimalizationMinimumSize,
                     cfg.asyncApplyBucketDiff),

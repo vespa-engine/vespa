@@ -15,6 +15,8 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/config-stor-filestor.h>
 #include <thread>
 
@@ -76,7 +78,7 @@ PersistenceTestUtils::PersistenceTestUtils()
 {
     setupExecutor(1);
     vespa::config::content::StorFilestorConfig cfg;
-    _persistenceHandler = std::make_unique<PersistenceHandler>(*_sequenceTaskExecutor, _env->_component, cfg,
+    _persistenceHandler = std::make_unique<PersistenceHandler>(*_sequenceTaskExecutor, *_merge_executor, _env->_component, cfg,
                                                                getPersistenceProvider(), getEnv()._fileStorHandler,
                                                                _bucketOwnershipNotifier, getEnv()._metrics);
 }
@@ -92,6 +94,7 @@ VESPA_THREAD_STACK_TAG(test_executor)
 void
 PersistenceTestUtils::setupExecutor(uint32_t numThreads) {
     _sequenceTaskExecutor = vespalib::SequencedTaskExecutor::create(test_executor, numThreads, 1000, vespalib::Executor::OptimizeFor::ADAPTIVE);
+    _merge_executor = std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki);
 }
 
 document::Document::SP

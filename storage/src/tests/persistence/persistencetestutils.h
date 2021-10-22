@@ -71,6 +71,7 @@ public:
 
     std::unique_ptr<PersistenceTestEnvironment> _env;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequenceTaskExecutor;
+    std::unique_ptr<vespalib::Executor> _merge_executor;
     ReplySender _replySender;
     BucketOwnershipNotifier _bucketOwnershipNotifier;
     std::unique_ptr<PersistenceHandler> _persistenceHandler;

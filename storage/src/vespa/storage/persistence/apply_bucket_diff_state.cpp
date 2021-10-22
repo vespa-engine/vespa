@@ -12,6 +12,14 @@ using vespalib::RetainGuard;
 
 namespace storage {
 
+class ApplyBucketDiffState::Deleter {
+public:
+    void operator()(ApplyBucketDiffState *raw_state) const noexcept {
+        std::unique_ptr<ApplyBucketDiffState> state(raw_state);
+        raw_state->_merge_bucket_info_syncer.schedule_delayed_delete(std::move(state));
+    }
+};
+
 ApplyBucketDiffState::ApplyBucketDiffState(const MergeBucketInfoSyncer& merge_bucket_info_syncer, const spi::Bucket& bucket, RetainGuard&& retain_guard)
     : _merge_bucket_info_syncer(merge_bucket_info_syncer),
       _bucket(bucket),
@@ -99,6 +107,13 @@ ApplyBucketDiffState::set_delayed_reply(std::unique_ptr<MessageTracker>&& tracke
     _tracker = std::move(tracker);
     _sender = &sender;
     _delayed_reply = std::move(delayed_reply);
+}
+
+std::shared_ptr<ApplyBucketDiffState>
+ApplyBucketDiffState::create(const MergeBucketInfoSyncer& merge_bucket_info_syncer, const spi::Bucket& bucket, RetainGuard&& retain_guard)
+{
+    std::unique_ptr<ApplyBucketDiffState> state(new ApplyBucketDiffState(merge_bucket_info_syncer, bucket, std::move(retain_guard)));
+    return std::shared_ptr<ApplyBucketDiffState>(state.release(), Deleter());
 }
 
 }

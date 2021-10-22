@@ -296,7 +296,7 @@ struct PersistenceHandlerComponents : public FileStorHandlerComponents {
     {
         vespa::config::content::StorFilestorConfig cfg;
         persistenceHandler =
-                std::make_unique<PersistenceHandler>(test._node->executor(), component, cfg,
+                std::make_unique<PersistenceHandler>(test._node->executor(), test._node->merge_executor(), component, cfg,
                                                      test._node->getPersistenceProvider(),
                                                      *filestorHandler, bucketOwnershipNotifier,
                                                      *metrics.disk->threads[0]);
@@ -748,11 +748,11 @@ TEST_F(FileStorManagerTest, priority) {
     ServiceLayerComponent component(_node->getComponentRegister(), "test");
     BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     vespa::config::content::StorFilestorConfig cfg;
-    PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+    PersistenceHandler persistenceHandler(_node->executor(), _node->merge_executor(), component, cfg, _node->getPersistenceProvider(),
                                           filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
-    PersistenceHandler persistenceHandler2(_node->executor(), component, cfg, _node->getPersistenceProvider(),
+    PersistenceHandler persistenceHandler2(_node->executor(), _node->merge_executor(), component, cfg, _node->getPersistenceProvider(),
                                            filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[1]);
     std::unique_ptr<DiskThread> thread2(createThread(persistenceHandler2, filestorHandler, component));
 

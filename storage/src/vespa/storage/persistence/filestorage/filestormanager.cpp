@@ -23,6 +23,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <thread>
 
 #include <vespa/log/bufferedlogger.h>
@@ -66,6 +68,7 @@ FileStorManager(const config::ConfigUri & configUri, spi::PersistenceProvider& p
       _provider(std::make_unique<ProviderErrorWrapper>(provider)),
       _init_handler(init_handler),
       _bucketIdFactory(_component.getBucketIdFactory()),
+      _merge_executor(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki)),
       _persistenceHandlers(),
       _threads(),
       _bucketOwnershipNotifier(std::make_unique<BucketOwnershipNotifier>(_component, *this)),
@@ -166,7 +169,7 @@ FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component
     size_t index = _persistenceHandlers.size();
     assert(index < _metrics->disk->threads.size());
     _persistenceHandlers.push_back(
-            std::make_unique<PersistenceHandler>(*_sequencedExecutor, component,
+            std::make_unique<PersistenceHandler>(*_sequencedExecutor, *_merge_executor, component,
                                                  *_config, *_provider, *_filestorHandler,
                                                  *_bucketOwnershipNotifier, *_metrics->disk->threads[index]));
     return *_persistenceHandlers.back();

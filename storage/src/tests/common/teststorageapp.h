@@ -113,6 +113,7 @@ class TestServiceLayerApp : public TestStorageApp
     ServiceLayerComponentRegisterImpl& _compReg;
     PersistenceProviderUP _persistenceProvider;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _executor;
+    std::unique_ptr<vespalib::Executor> _merge_executor;
     HostInfo _host_info;
 
 public:
@@ -136,6 +137,7 @@ public:
         return _compReg.getBucketSpaceRepo().get(document::FixedBucketSpaces::default_space()).bucketDatabase();
     }
     vespalib::ISequencedTaskExecutor & executor() { return *_executor; }
+    vespalib::Executor& merge_executor() const noexcept { return *_merge_executor; }
 };
 
 class TestDistributorApp : public TestStorageApp,
