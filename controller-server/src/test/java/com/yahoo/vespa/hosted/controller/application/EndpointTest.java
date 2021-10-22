@@ -298,49 +298,66 @@ public class EndpointTest {
         var cluster = ClusterSpec.Id.from("default");
         var prodZone = ZoneId.from("prod", "us-north-2");
         Map<String, Endpoint> tests = Map.of(
-                "https://a1.t1.us-north-1-w.public.vespa.oath.cloud/",
-                Endpoint.of(instance1)
-                        .targetRegion(cluster, ZoneId.from("prod", "us-north-1a"))
-                        .routingMethod(RoutingMethod.exclusive)
-                        .on(Port.tls())
-                        .legacy()
-                        .in(SystemName.Public),
-                "https://a1.t1.us-north-2-w.public.vespa.oath.cloud/",
-                Endpoint.of(instance1)
-                        .targetRegion(cluster, prodZone)
-                        .routingMethod(RoutingMethod.exclusive)
-                        .on(Port.tls())
-                        .legacy()
-                        .in(SystemName.Public),
-                "https://a1.t1.us-north-2-w.test.public.vespa.oath.cloud/",
-                Endpoint.of(instance1)
-                        .targetRegion(cluster, ZoneId.from("test", "us-north-2"))
-                        .routingMethod(RoutingMethod.exclusive)
-                        .on(Port.tls())
-                        .legacy()
-                        .in(SystemName.Public),
-                "https://c1.a1.t1.us-north-2.r.vespa-app.cloud/",
-                Endpoint.of(instance1)
-                        .targetRegion(ClusterSpec.Id.from("c1"), prodZone)
-                        .routingMethod(RoutingMethod.exclusive)
-                        .on(Port.tls())
-                        .in(SystemName.Public),
-                "https://r0.a1.t1.us-north-2-w.vespa.oath.cloud/",
+                "https://r0.a1.t1.us-north-2-r.vespa.oath.cloud/",
                 Endpoint.of(app1)
                         .targetRegion(EndpointId.of("r0"), ClusterSpec.Id.from("c1"), prodZone)
                         .routingMethod(RoutingMethod.sharedLayer4)
                         .on(Port.tls())
                         .in(SystemName.main),
-                "https://r0.a2.t2.us-north-2.r.vespa-app.cloud/",
+                "https://r1.a2.t2.us-north-2.r.vespa-app.cloud/",
                 Endpoint.of(app2)
-                        .targetRegion(EndpointId.of("r0"), ClusterSpec.Id.from("c1"), prodZone)
+                        .targetRegion(EndpointId.of("r1"), ClusterSpec.Id.from("c1"), prodZone)
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
         Endpoint endpoint = Endpoint.of(instance1)
-                                    .targetRegion(cluster, ZoneId.from("prod", "us-north-1a"))
+                                    .targetRegionSplit(cluster, ZoneId.from("prod", "us-north-1a"))
+                                    .routingMethod(RoutingMethod.exclusive)
+                                    .on(Port.tls())
+                                    .in(SystemName.main);
+        assertEquals("Availability zone is removed from region",
+                     "us-north-1",
+                     endpoint.zones().get(0).region().value());
+    }
+
+    @Test
+    public void region_split_endpoints() {
+        var cluster = ClusterSpec.Id.from("default");
+        var prodZone = ZoneId.from("prod", "us-north-2");
+        Map<String, Endpoint> tests = Map.of(
+                "https://a1.t1.us-north-1-w.public.vespa.oath.cloud/",
+                Endpoint.of(instance1)
+                        .targetRegionSplit(cluster, ZoneId.from("prod", "us-north-1a"))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .legacy()
+                        .in(SystemName.Public),
+                "https://a1.t1.us-north-2-w.public.vespa.oath.cloud/",
+                Endpoint.of(instance1)
+                        .targetRegionSplit(cluster, prodZone)
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .legacy()
+                        .in(SystemName.Public),
+                "https://a1.t1.us-north-2-w.test.public.vespa.oath.cloud/",
+                Endpoint.of(instance1)
+                        .targetRegionSplit(cluster, ZoneId.from("test", "us-north-2"))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .legacy()
+                        .in(SystemName.Public),
+                "https://c1.a1.t1.us-north-2.w.vespa-app.cloud/",
+                Endpoint.of(instance1)
+                        .targetRegionSplit(ClusterSpec.Id.from("c1"), prodZone)
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.Public)
+        );
+        tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
+        Endpoint endpoint = Endpoint.of(instance1)
+                                    .targetRegionSplit(cluster, ZoneId.from("prod", "us-north-1a"))
                                     .routingMethod(RoutingMethod.exclusive)
                                     .on(Port.tls())
                                     .in(SystemName.main);

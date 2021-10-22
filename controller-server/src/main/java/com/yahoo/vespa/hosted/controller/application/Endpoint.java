@@ -183,7 +183,7 @@ public class Endpoint {
                           separator +
                           sanitize(application.tenant().value()) +
                           "." +
-                          scopePart(scope, zones, legacy, system) +
+                          scopePart(scope, zones, system, legacy) +
                           dnsSuffix(system, legacy) +
                           portPart +
                           "/");
@@ -205,21 +205,36 @@ public class Endpoint {
         return name + separator;
     }
 
-    private static String scopePart(Scope scope, List<ZoneId> zones, boolean legacy, SystemName system) {
+    private static String scopePart(Scope scope, List<ZoneId> zones, SystemName system, boolean legacy) {
+        String scopeSymbol = scopeSymbol(scope, system, legacy);
+        if (scope == Scope.global) return scopeSymbol;
+
+        ZoneId zone = zones.get(0);
+        String region = zone.region().value();
+        boolean skipEnvironment = zone.environment().isProduction() && (system.isPublic() || !legacy);
+        String environment = skipEnvironment ? "" : "." + zone.environment().value();
         if (system.isPublic() && !legacy) {
-            if (scope == Scope.global) return "g";
-            var zone = zones.get(0);
-            var region = zone.region().value();
-            char scopeSymbol = scope == Scope.region ? 'r' : 'z';
-            String environment = zone.environment().isProduction() ? "" : "." + zone.environment().value();
             return region + environment + "." + scopeSymbol;
         }
-        if (scope == Scope.global) return "global";
-        var zone = zones.get(0);
-        var region = zone.region().value();
-        if (scope == Scope.region) region += "-w";
-        if ((system.isPublic() || !legacy) && zone.environment().isProduction()) return region;
-        return region + "." + zone.environment().value();
+        return region + (scopeSymbol.isEmpty() ? "" : "-" + scopeSymbol) + environment;
+    }
+
+    private static String scopeSymbol(Scope scope, SystemName system, boolean legacy) {
+        if (system.isPublic() && !legacy) {
+            switch (scope) {
+                case zone: return "z";
+                case regionSplit: return "w";
+                case region: return "r";
+                case global: return "g";
+            }
+        }
+        switch (scope) {
+            case zone: return "";
+            case regionSplit: return "w";
+            case region: return "r";
+            case global: return "global";
+        }
+        throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system + " (legacy: " + legacy + ")");
     }
 
     private static String instancePart(Optional<InstanceName> instance, String separator) {
@@ -296,12 +311,21 @@ public class Endpoint {
         /** Endpoint points to one or more zones. Traffic is routed to the zone closest to the client */
         global,
 
-        /** Endpoint points to one more zones in the same geographical region. Traffic is routed equally across zones */
+        /**
+         * Endpoint points to one more zones in the same geographical region. Traffic is weighted according to
+         * configured weights.
+         */
         region,
 
         /** Endpoint points to a single zone */
         zone,
 
+        /**
+         * Endpoint points to one more zones in the same geographical region. Traffic is routed equally across zones.
+         *
+         * This is for internal use only. Endpoints with this scope are not exposed directly to tenants.
+         */
+        regionSplit,
     }
 
     /** Represents an endpoint's HTTP port */
@@ -416,18 +440,22 @@ public class Endpoint {
         }
 
         /** Sets the region target for this, deduced from given zone */
-        public EndpointBuilder targetRegion(ClusterSpec.Id cluster, ZoneId zone) {
+        public EndpointBuilder targetRegionSplit(ClusterSpec.Id cluster, ZoneId zone) {
             checkScope();
             this.cluster = cluster;
-            this.scope = Scope.region;
+            this.scope = Scope.regionSplit;
             this.zones = List.of(effectiveZone(zone));
             return this;
         }
 
         /** Sets the region target for this by endpointId, deduced from given zone */
         public EndpointBuilder targetRegion(EndpointId endpointId, ClusterSpec.Id cluster, ZoneId zone) {
+            checkScope();
             this.endpointId = endpointId;
-            return targetRegion(cluster, zone);
+            this.cluster = cluster;
+            this.scope = Scope.region;
+            this.zones = List.of(effectiveZone(zone));
+            return this;
         }
 
         /** Sets the port of this */
@@ -455,6 +483,9 @@ public class Endpoint {
             }
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
+            }
+            if (scope == Scope.region && instance.isPresent()) {
+                throw new IllegalArgumentException("Instance cannot be set for scope " + scope);
             }
             return new Endpoint(endpointId, cluster, application, instance, zones, scope, system, port, legacy, routingMethod);
         }
