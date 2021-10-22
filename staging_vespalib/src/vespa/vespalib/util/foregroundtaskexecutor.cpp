@@ -36,7 +36,7 @@ void ForegroundTaskExecutor::setTaskLimit(uint32_t) {
 }
 
 ExecutorStats ForegroundTaskExecutor::getStats() {
-    return ExecutorStats(ExecutorStats::QueueSizeT(0) , _accepted.load(std::memory_order_relaxed), 0, 1);
+    return ExecutorStats(ExecutorStats::QueueSizeT(0) , _accepted.load(std::memory_order_relaxed), 0, 0);
 }
 
 ISequencedTaskExecutor::ExecutorId
