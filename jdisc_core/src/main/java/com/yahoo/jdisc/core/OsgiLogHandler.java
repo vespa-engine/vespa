@@ -168,5 +168,8 @@ class OsgiLogHandler extends Handler {
             return new Hashtable<>();
         }
 
+        @Override
+        public <A> A adapt(Class<A> aClass) { return null; }
+
     }
 }
