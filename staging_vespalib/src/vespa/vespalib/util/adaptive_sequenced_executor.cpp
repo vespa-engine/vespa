@@ -21,6 +21,7 @@ AdaptiveSequencedExecutor::Strand::~Strand()
 
 AdaptiveSequencedExecutor::Worker::Worker()
     : cond(),
+      idleTracker(),
       state(State::RUNNING),
       strand(nullptr)
 {
@@ -151,9 +152,12 @@ AdaptiveSequencedExecutor::obtain_strand(Worker &worker, std::unique_lock<std::m
     } else {
         worker.state = Worker::State::BLOCKED;
         _worker_stack.push(&worker);
+        worker.idleTracker.set_idle(steady_clock::now());
         while (worker.state == Worker::State::BLOCKED) {
             worker.cond.wait(lock);
         }
+        _idleTracker.was_idle(worker.idleTracker.set_active(steady_clock::now()));
+        _stats.wakeupCount++;
     }
     return (worker.state == Worker::State::RUNNING);
 }
@@ -233,6 +237,7 @@ AdaptiveSequencedExecutor::AdaptiveSequencedExecutor(size_t num_strands, size_t 
       _worker_stack(num_threads),
       _self(),
       _stats(),
+      _idleTracker(steady_clock::now()),
       _cfg(num_threads, max_waiting, max_pending)
 {
     _stats.queueSize.add(_self.pending_tasks);
@@ -329,6 +334,11 @@ AdaptiveSequencedExecutor::getStats()
 {
     auto guard = std::lock_guard(_mutex);
     ExecutorStats stats = _stats;
+    steady_time now = steady_clock::now();
+    for (size_t i(0); i < _worker_stack.size(); i++) {
+        _idleTracker.was_idle(_worker_stack.access(i)->idleTracker.reset(now));
+    }
+    stats.setUtil(_cfg.num_threads, _idleTracker.reset(now, _cfg.num_threads));
     _stats = ExecutorStats();
     _stats.queueSize.add(_self.pending_tasks);
     return stats;

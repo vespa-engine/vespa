@@ -24,6 +24,25 @@ ThreadInit::Run(FastOS_ThreadInterface *, void *) {
 
 }
 
+ThreadStackExecutorBase::Worker::Worker()
+    : lock(),
+      cond(),
+      idleTracker(),
+      pre_guard(0xaaaaaaaa),
+      idle(true),
+      post_guard(0x55555555),
+      task()
+{}
+
+void
+ThreadStackExecutorBase::Worker::verify(bool expect_idle) const {
+    (void) expect_idle;
+    assert(pre_guard == 0xaaaaaaaa);
+    assert(post_guard == 0x55555555);
+    assert(idle == expect_idle);
+    assert(!task.task == expect_idle);
+}
+
 void
 ThreadStackExecutorBase::BlockedThread::wait() const
 {
@@ -103,6 +122,7 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
             return false;
         }
         _workers.push(&worker);
+        worker.idleTracker.set_idle(steady_clock::now());
     }
     {
         unique_lock guard(worker.lock);
@@ -141,6 +161,7 @@ ThreadStackExecutorBase::ThreadStackExecutorBase(uint32_t stackSize,
       _lock(),
       _cond(),
       _stats(),
+      _idleTracker(steady_clock::now()),
       _executorCompletion(),
       _tasks(),
       _workers(),
@@ -164,7 +185,8 @@ ThreadStackExecutorBase::start(uint32_t threads)
     }
 }
 
-size_t ThreadStackExecutorBase::getNumThreads() const {
+size_t
+ThreadStackExecutorBase::getNumThreads() const {
     return _pool->GetNumStartedThreads();
 }
 
@@ -208,6 +230,12 @@ ThreadStackExecutorBase::getStats()
 {
     std::unique_lock guard(_lock);
     ExecutorStats stats = _stats;
+    steady_time now = steady_clock::now();
+    for (size_t i(0); i < _workers.size(); i++) {
+        _idleTracker.was_idle(_workers.access(i)->idleTracker.reset(now));
+    }
+    size_t numThreads = getNumThreads();
+    stats.setUtil(numThreads, _idleTracker.reset(now, numThreads));
     _stats = ExecutorStats();
     _stats.queueSize.add(_taskCount);
     return stats;
@@ -225,6 +253,8 @@ ThreadStackExecutorBase::execute(Task::UP task)
         if (!_workers.empty()) {
             Worker *worker = _workers.back();
             _workers.popBack();
+            _idleTracker.was_idle(worker->idleTracker.set_active(steady_clock::now()));
+            _stats.wakeupCount++;
             guard.unlock(); // <- UNLOCK
             assignTask(std::move(taggedTask), *worker);
         } else {
