@@ -217,7 +217,7 @@ TEST("Test that utilization is computed") {
     ThreadStackExecutor executor(1, 128_Ki);
     std::this_thread::sleep_for(1s);
     auto stats = executor.getStats();
-    EXPECT_GREATER(0.01, stats.getUtil());
+    EXPECT_GREATER(0.50, stats.getUtil());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
