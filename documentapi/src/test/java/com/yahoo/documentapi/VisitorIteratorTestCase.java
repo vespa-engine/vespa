@@ -77,6 +77,119 @@ public class VisitorIteratorTestCase {
     }
 
     @Test
+    public void testInvalidSlicing() throws ParseException {
+        int distBits = 4;
+        BucketIdFactory idFactory = new BucketIdFactory();
+        ProgressToken progress = new ProgressToken();
+
+        try {
+            VisitorIterator.createFromDocumentSelection(
+                    "id.group != \"yahoo.com\"", idFactory, distBits, progress, 0, 0);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("slices must be positive, but was 0", e.getMessage());
+        }
+
+        try {
+            VisitorIterator.createFromDocumentSelection(
+                    "id.group != \"yahoo.com\"", idFactory, distBits, progress, 1, 1);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("sliceId must be in [0, 1), but was 1", e.getMessage());
+        }
+
+        try {
+            VisitorIterator.createFromDocumentSelection(
+                    "id.group != \"yahoo.com\"", idFactory, distBits, progress, 1, -1);
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("sliceId must be in [0, 1), but was -1", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIgnoredSlicing() throws ParseException {
+        int distBits = 1;
+        BucketIdFactory idFactory = new BucketIdFactory();
+        ProgressToken progress = new ProgressToken();
+
+        VisitorIterator iter = VisitorIterator.createFromDocumentSelection(
+                "id.group != \"yahoo.com\"", idFactory, distBits, progress, 3, 2);
+
+        // Iterator with a single distribution bit ignores slicing.
+        assertTrue(iter.hasNext());
+        assertEquals(new BucketId(ProgressToken.keyToBucketId(ProgressToken.makeNthBucketKey(0, 1))),
+                     iter.getNext().getSuperbucket());
+
+        assertEquals(new BucketId(ProgressToken.keyToBucketId(ProgressToken.makeNthBucketKey(1, 1))),
+                     iter.getNext().getSuperbucket());
+
+        assertFalse(iter.hasNext());
+    }
+
+    @Test
+    public void testValidSlicing() throws ParseException {
+        int distBits = 4;
+        BucketIdFactory idFactory = new BucketIdFactory();
+        for (int slices = 1; slices <= 1 << distBits + 1; slices++) {
+            long bucketsTotal = 0;
+            for (int sliceId = 0; sliceId < slices; sliceId++) {
+                ProgressToken progress = new ProgressToken();
+
+                // docsel will be unknown --> entire bucket range will be covered
+                VisitorIterator iter = VisitorIterator.createFromDocumentSelection(
+                        "id.group != \"yahoo.com\"", idFactory, distBits, progress, slices, sliceId);
+
+                String context = "slices: " + slices + ", sliceId: " + sliceId;
+                assertEquals(context, progress.getDistributionBitCount(), distBits);
+                assertTrue(context, iter.getBucketSource() instanceof VisitorIterator.DistributionRangeBucketSource);
+
+                assertEquals(context, progress.getFinishedBucketCount(), Math.min(1 << distBits, sliceId));
+                assertEquals(context, progress.getTotalBucketCount(), 1 << distBits);
+
+                // First, get+update half of the buckets, marking them as done
+                long bucketCount = 0;
+
+                // Do buckets in th first half.
+                while (iter.hasNext() && progress.getFinishedBucketCount() < 1 << distBits - 1) {
+                    VisitorIterator.BucketProgress ids = iter.getNext();
+                    iter.update(ids.getSuperbucket(), ProgressToken.FINISHED_BUCKET);
+                    ++bucketCount;
+                    ++bucketsTotal;
+                }
+
+                if (slices + sliceId < 1 << distBits) { // Otherwise, we're already done ...
+                    assertEquals(context, ((1L << distBits - 1) + slices - sliceId - 1) / slices, bucketCount);
+                    // Should be no buckets in limbo at this point
+                    assertFalse(context, progress.hasActive());
+                    assertFalse(context, progress.hasPending());
+                    assertFalse(context, iter.isDone());
+                    assertTrue(context, iter.hasNext());
+                    assertEquals(context, progress.getFinishedBucketCount(), bucketCount * slices + sliceId);
+                    assertFalse(context, progress.isFinished());
+                }
+
+                while (iter.hasNext()) {
+                    VisitorIterator.BucketProgress ids = iter.getNext();
+                    iter.update(ids.getSuperbucket(), ProgressToken.FINISHED_BUCKET);
+                    ++bucketCount;
+                    ++bucketsTotal;
+                }
+
+                assertEquals(context, ((1L << distBits) + slices - sliceId - 1) / slices, bucketCount);
+                // Should be no buckets in limbo at this point
+                assertFalse(context, progress.hasActive());
+                assertFalse(context, progress.hasPending());
+                assertTrue(context, iter.isDone());
+                assertFalse(context, iter.hasNext());
+                assertEquals(context, progress.getFinishedBucketCount(), 1 << distBits);
+                assertTrue(context, progress.isFinished());
+            }
+            assertEquals("slices: " + slices, 1 << distBits, bucketsTotal);
+        }
+    }
+
+    @Test
     public void testProgressSerializationRange() throws ParseException {
         int distBits = 4;
 
