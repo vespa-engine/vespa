@@ -22,7 +22,7 @@ ExecutorMetrics::ExecutorMetrics(const std::string &name, metrics::MetricSet *pa
       accepted("accepted", {}, "Number of accepted tasks", this),
       rejected("rejected", {}, "Number of rejected tasks", this),
       wakeupCount("wakeupCount", {}, "Number of times a worker thread has been woken up", this),
-      util("utilization", {}, "ratio of time the worker threads has been active", this),
+      util("utilization", {}, "Ratio of time the worker threads has been active", this),
       queueSize("queuesize", {}, "Size of task queue", this)
 {
 }
