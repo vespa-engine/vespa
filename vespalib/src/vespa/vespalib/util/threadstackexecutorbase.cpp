@@ -122,17 +122,12 @@ ThreadStackExecutorBase::obtainTask(Worker &worker)
             return false;
         }
         _workers.push(&worker);
-        //TODO Not entirely correct as this counts working days, not wakeUps.
-        //But it should be the same, and here it is thread safe.
-        _stats.wakeupCount++;
+        worker.idleTracker.set_idle(steady_clock::now());
     }
     {
         unique_lock guard(worker.lock);
         while (worker.idle) {
-            worker.idleTracker.set_idle(steady_clock::now());
             worker.cond.wait(guard);
-            //TODO: _idleTracker.was_idle is not thread safe !!!! Must find other solution. Atomic ?
-            _idleTracker.was_idle(worker.idleTracker.set_active(steady_clock::now()));
         }
     }
     worker.idle = !worker.task.task;
@@ -260,6 +255,8 @@ ThreadStackExecutorBase::execute(Task::UP task)
         if (!_workers.empty()) {
             Worker *worker = _workers.back();
             _workers.popBack();
+            _idleTracker.was_idle(worker->idleTracker.set_active(steady_clock::now()));
+            _stats.wakeupCount++;
             guard.unlock(); // <- UNLOCK
             assignTask(std::move(taggedTask), *worker);
         } else {
