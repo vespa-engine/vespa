@@ -1251,7 +1251,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
        framework::MilliSecTimer startTime(_clock);
        async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket, RetainGuard(*_monitored_ref_count));
        applyDiffLocally(bucket, cmd.getDiff(), index, tracker->context(), async_results);
-        if (!_async_apply_bucket_diff) {
+       if (!_async_apply_bucket_diff.load(std::memory_order_relaxed)) {
             check_apply_diff_sync(std::move(async_results));
         }
         _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
@@ -1359,7 +1359,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, Messa
                 framework::MilliSecTimer startTime(_clock);
                 async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket, RetainGuard(*_monitored_ref_count));
                 applyDiffLocally(bucket, diff, index, s->context, async_results);
-                if (!_async_apply_bucket_diff) {
+                if (!_async_apply_bucket_diff.load(std::memory_order_relaxed)) {
                     check_apply_diff_sync(std::move(async_results));
                 }
                 _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(startTime.getElapsedTimeAsDouble());
@@ -1444,6 +1444,12 @@ MergeHandler::drain_async_writes()
         // Wait for related ApplyBucketDiffState objects to be destroyed
         _monitored_ref_count->waitForZeroRefCount();
     }
+}
+
+void
+MergeHandler::configure(bool async_apply_bucket_diff) noexcept
+{
+    _async_apply_bucket_diff.store(async_apply_bucket_diff, std::memory_order_release);
 }
 
 } // storage
