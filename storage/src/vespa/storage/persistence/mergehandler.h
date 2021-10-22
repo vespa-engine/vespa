@@ -74,6 +74,7 @@ public:
     MessageTrackerUP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTrackerUP) const;
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&, MessageTrackerUP) const;
     void drain_async_writes();
+    void configure(bool async_apply_bucket_diff) noexcept;
 
 private:
     const framework::Clock   &_clock;
@@ -83,7 +84,7 @@ private:
     std::unique_ptr<vespalib::MonitoredRefCount> _monitored_ref_count;
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;
-    const bool                _async_apply_bucket_diff;
+    std::atomic<bool>         _async_apply_bucket_diff;
 
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,
