@@ -369,6 +369,13 @@ public class Flags {
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ASYNC_APPLY_BUCKET_DIFF = defineFeatureFlag(
+            "async-apply-bucket-diff", false,
+            List.of("geirst", "vekterli"), "2021-10-22", "2022-01-31",
+            "Whether portions of apply bucket diff handling will be performed asynchronously",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
