@@ -762,6 +762,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.MaxPendingContentChannelOutputStream": {
+    "superClass": "com.yahoo.container.jdisc.ContentChannelOutputStream",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.handler.ContentChannel, long)",
+      "public void send(java.nio.ByteBuffer)",
+      "public void flush()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.MetricConsumerFactory": {
     "superClass": "java.lang.Object",
     "interfaces": [],
