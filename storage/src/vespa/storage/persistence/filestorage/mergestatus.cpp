@@ -138,7 +138,9 @@ MergeStatus::check_delayed_error(api::ReturnCode &return_code)
         future_error.wait();
         vespalib::string fail_message = future_error.get();
         delayed_error.reset();
-        return_code = api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, std::move(fail_message));
+        if (!fail_message.empty()) {
+            return_code = api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, std::move(fail_message));
+        }
     }
 }
 
