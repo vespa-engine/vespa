@@ -119,6 +119,10 @@ public class VisitorIterator {
                     throw new IllegalArgumentException("Total bucket count in existing progress is not "
                             + "consistent with that of the current document selection");
                 }
+                if (slices > progressToken.getTotalBucketCount()) {
+                    throw new IllegalArgumentException("slices may not exceed number of super-buckets, but got " +
+                                                       slices + " > " + progressToken.getTotalBucketCount());
+                }
             }
 
             if (!progress.isFinished()) {

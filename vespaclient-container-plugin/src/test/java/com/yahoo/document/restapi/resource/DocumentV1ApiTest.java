@@ -258,6 +258,8 @@ public class DocumentV1ApiTest {
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
             assertEquals(6000, parameters.getSessionTimeoutMs());
+            assertEquals(4, parameters.getSlices());
+            assertEquals(1, parameters.getSliceId());
             // Put some documents in the response
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
@@ -269,7 +271,7 @@ public class DocumentV1ApiTest {
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
-                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&stream=true");
+                                      "&selection=all%20the%20things&fieldSet=[id]&timeout=6&stream=true&slices=4&sliceId=1");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1\"," +
                        "  \"documents\": [" +
