@@ -357,23 +357,22 @@ protected:
     static double round(double v, double & r) { return r = v; }
     static largeint_t round(double v, largeint_t &r) { return r = static_cast<largeint_t>(::floor(v+0.5)); }
 
-    template <typename BaseType, typename ChangeData>
+    template <typename BaseType, typename LargeType>
     static BaseType
-    applyArithmetic(const BaseType &value, const ChangeTemplate<ChangeData> & arithmetic)
+    applyArithmetic(const BaseType &value, double operand, ChangeBase::Type type)
     {
-        typedef typename ChangeData::DataType LargeType;
         if (attribute::isUndefined(value)) {
             return value;
-        } else if (arithmetic._type == ChangeBase::ADD) {
-            return value + static_cast<LargeType>(arithmetic._arithOperand);
-        } else if (arithmetic._type == ChangeBase::SUB) {
-            return value - static_cast<LargeType>(arithmetic._arithOperand);
-        } else if (arithmetic._type == ChangeBase::MUL) {
+        } else if (type == ChangeBase::ADD) {
+            return value + static_cast<LargeType>(operand);
+        } else if (type == ChangeBase::SUB) {
+            return value - static_cast<LargeType>(operand);
+        } else if (type == ChangeBase::MUL) {
             LargeType r;
-            return round((static_cast<double>(value) * arithmetic._arithOperand), r);
-        } else if (arithmetic._type == ChangeBase::DIV) {
+            return round((static_cast<double>(value) * operand), r);
+        } else if (type == ChangeBase::DIV) {
             LargeType r;
-            return round(static_cast<double>(value) / arithmetic._arithOperand, r);
+            return round(static_cast<double>(value) / operand, r);
         }
         return value;
     }
