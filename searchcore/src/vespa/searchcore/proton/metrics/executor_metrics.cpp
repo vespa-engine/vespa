@@ -21,7 +21,7 @@ ExecutorMetrics::ExecutorMetrics(const std::string &name, metrics::MetricSet *pa
       maxPending("maxpending", {}, "Maximum number of pending (active + queued) tasks", this),
       accepted("accepted", {}, "Number of accepted tasks", this),
       rejected("rejected", {}, "Number of rejected tasks", this),
-      wakeupCount("wakeupCount", {}, "Number of times a worker thread has been woken up", this),
+      wakeupCount("wakeups", {}, "Number of times a worker thread has been woken up", this),
       util("utilization", {}, "Ratio of time the worker threads has been active", this),
       queueSize("queuesize", {}, "Size of task queue", this)
 {

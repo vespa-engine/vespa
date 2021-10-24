@@ -371,6 +371,10 @@ public class VespaMetricSet {
         metrics.add(new Metric(prefix + ".queuesize.count"));
         metrics.add(new Metric(prefix + ".maxpending.last")); // TODO: Remove in Vespa 8
         metrics.add(new Metric(prefix + ".accepted.rate"));
+        metrics.add(new Metric(prefix + ".wakeups.rate"));
+        metrics.add(new Metric(prefix + ".utilization.max"));
+        metrics.add(new Metric(prefix + ".utilization.sum"));
+        metrics.add(new Metric(prefix + ".utilization.count"));
     }
 
     private static Set<Metric> getSearchNodeMetrics() {
