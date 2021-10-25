@@ -162,6 +162,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String TIMEOUT = "timeout";
     private static final String TRACELEVEL = "tracelevel";
     private static final String STREAM = "stream";
+    private static final String SLICES = "slices";
+    private static final String SLICE_ID = "sliceId";
 
     private final Clock clock;
     private final Duration handlerTimeout;
@@ -985,12 +987,19 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         if (cluster.isEmpty() && path.documentType().isEmpty())
             throw new IllegalArgumentException("Must set 'cluster' parameter to a valid content cluster id when visiting at a root /document/v1/ level");
 
+        Optional<Integer> slices = getProperty(request, SLICES, integerParser);
+        Optional<Integer> sliceId = getProperty(request, SLICE_ID, integerParser);
+
         VisitorParameters parameters = parseCommonParameters(request, path, cluster);
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(concurrency));
         parameters.visitInconsistentBuckets(true);
         parameters.setSessionTimeoutMs(Math.max(1, request.getTimeout(TimeUnit.MILLISECONDS) - handlerTimeout.toMillis()));
+        if (slices.isPresent() && sliceId.isPresent())
+            parameters.slice(slices.get(), sliceId.get());
+        else if (slices.isPresent() != sliceId.isPresent())
+            throw new IllegalArgumentException("None or both of '" + SLICES + "' and '" + SLICE_ID + "' must be set");
         return parameters;
     }
 

@@ -50,6 +50,8 @@ public class VisitorParameters extends Parameters {
     private int traceLevel = 0;
     private ThrottlePolicy throttlePolicy = null;
     private boolean skipBucketsOnFatalErrors = false;
+    private int slices = 1;
+    private int sliceId = 0;
 
     // Advanced parameter, only for internal use.
     Set<BucketId> bucketsToVisit = null;
@@ -101,6 +103,7 @@ public class VisitorParameters extends Parameters {
                 params.getDynamicMaxBucketsIncreaseFactor());
         setTraceLevel(params.getTraceLevel());
         skipBucketsOnFatalErrors(params.skipBucketsOnFatalErrors());
+        slice(params.getSlices(), getSliceId());
     }
 
     // Get functions
@@ -330,6 +333,15 @@ public class VisitorParameters extends Parameters {
     public boolean skipBucketsOnFatalErrors() { return skipBucketsOnFatalErrors; }
 
     public void skipBucketsOnFatalErrors(boolean skipBucketsOnFatalErrors) { this.skipBucketsOnFatalErrors = skipBucketsOnFatalErrors; }
+
+    public void slice(int slices, int sliceId) {
+        this.slices = slices;
+        this.sliceId = sliceId;
+    }
+
+    public int getSlices() { return slices; }
+
+    public int getSliceId() { return sliceId; }
 
     /**
      * Set whether or not max buckets per visitor value should be dynamically
