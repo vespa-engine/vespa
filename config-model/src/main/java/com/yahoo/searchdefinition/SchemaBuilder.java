@@ -58,7 +58,6 @@ public class SchemaBuilder {
     /** True to build the document aspect only, skipping instantiation of rank profiles */
     private final boolean documentsOnly;
 
-    private List<Schema> schemaList = new LinkedList<>();
     private boolean isBuilt = false;
 
     private final Set<Class<? extends Processor>> processorsToSkip = new HashSet<>();
@@ -197,7 +196,6 @@ public class SchemaBuilder {
             throw new IllegalArgumentException("Schema has no name");
         String rawName = schema.getName();
         application.add(schema);
-        schemaList.add(schema);
         return rawName;
     }
 
@@ -228,7 +226,7 @@ public class SchemaBuilder {
         List<Schema> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
-        for (Schema schema : schemaList) {
+        for (Schema schema : application.schemas().values()) {
             if (schema.hasDocument()) {
                 sdocs.add(schema.getDocument());
             }
@@ -241,27 +239,28 @@ public class SchemaBuilder {
             new FieldOperationApplier().process(sdoc);
         }
 
-        var resolver = new DocumentReferenceResolver(schemaList);
+        var resolver = new DocumentReferenceResolver(application.schemas().values());
         sdocs.forEach(resolver::resolveReferences);
         sdocs.forEach(resolver::resolveInheritedReferences);
-        var importedFieldsEnumerator = new ImportedFieldsEnumerator(schemaList);
+        var importedFieldsEnumerator = new ImportedFieldsEnumerator(application.schemas().values());
         sdocs.forEach(importedFieldsEnumerator::enumerateImportedFields);
 
         if (validate)
             new DocumentGraphValidator().validateDocumentGraph(sdocs);
 
         var builder = new DocumentModelBuilder(model);
-        for (Schema schema : new SearchOrderer().order(schemaList)) {
+        List<Schema> schemasSomewhatOrdered = new ArrayList<>(application.schemas().values());
+        for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
             new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
             process(schema, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
             built.add(schema);
         }
-        builder.addToModel(schemaList);
+        builder.addToModel(schemasSomewhatOrdered);
 
         if ( validate && ! builder.valid() )
             throw new IllegalArgumentException("Impossible to build a correct model");
 
-        schemaList = built;
+        application.replaceSchemasBy(built);
         isBuilt = true;
     }
 
@@ -320,7 +319,7 @@ public class SchemaBuilder {
      * @return the list of built searches
      */
     public List<Schema> getSearchList() {
-        return new ArrayList<>(schemaList);
+        return new ArrayList<>(application.schemas().values());
     }
 
     /**
