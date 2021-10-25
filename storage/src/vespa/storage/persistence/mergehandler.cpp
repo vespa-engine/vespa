@@ -7,7 +7,6 @@
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/spi/catchresult.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -50,20 +49,6 @@ constexpr int getDeleteFlag() {
     // Referred into old slotfile code before. Where should this number come from?
     return 2;
 }
-
-/**
- * Throws std::runtime_error if result has an error.
- */
-void
-checkResult(const spi::Result& result, const spi::Bucket& bucket, const char* op)
-{
-    if (result.hasError()) {
-        vespalib::asciistream ss;
-        ss << "Failed " << op << " in " << bucket << ": " << result.toString();
-        throw std::runtime_error(ss.str());
-    }
-}
-
 
 class IteratorGuard {
     spi::PersistenceProvider& _spi;
