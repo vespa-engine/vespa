@@ -674,25 +674,26 @@ public class RankProfile implements Cloneable {
         inputFeatures.put(ref, declaredType);
     }
 
-    public static class ExecuteOperation {
+    public static class MutateOperation {
         public enum Phase { onmatch, onrerank, onsummary}
         final Phase phase;
         final String attribute;
         final String operation;
-        ExecuteOperation(Phase phase, String attribute, String operation) {
+        MutateOperation(Phase phase, String attribute, String operation) {
             this.phase = phase;
             this.attribute = attribute;
             this.operation = operation;
         }
     }
-    private final List<ExecuteOperation> executeOperations = new ArrayList<>();
+    private final List<MutateOperation> mutateOperations = new ArrayList<>();
 
-    public void addExecuteOperation(ExecuteOperation.Phase phase, String attribute, String operation) {
-        executeOperations.add(new ExecuteOperation(phase, attribute, operation));
+    public void addMutateOperation(MutateOperation.Phase phase, String attribute, String operation) {
+        mutateOperations.add(new MutateOperation(phase, attribute, operation));
+        //TODO once query control of these are gone we should change these to 'vespa.mutate.'
         addRankProperty("vespa.execute." + phase + ".attribute", attribute);
         addRankProperty("vespa.execute." + phase + ".operation", operation);
     }
-    public List<ExecuteOperation> getExecuteOperations() { return executeOperations; }
+    public List<MutateOperation> getMutateOperations() { return mutateOperations; }
 
     public RankingExpressionFunction findFunction(String name) {
         RankingExpressionFunction function = functions.get(name);
