@@ -80,20 +80,24 @@ private:
         MessageType _msg;
         metrics::MetricTimer _startTimer;
         uint64_t _sequence;
+        bool _is_forwarded_merge;
 
-        StablePriorityOrderingWrapper(const MessageType& msg, uint64_t sequence)
-            : _msg(msg), _startTimer(), _sequence(sequence)
+        StablePriorityOrderingWrapper(const MessageType& msg,
+                                      uint64_t sequence,
+                                      bool is_forwarded_merge) noexcept
+            : _msg(msg),
+              _startTimer(),
+              _sequence(sequence),
+              _is_forwarded_merge(is_forwarded_merge)
         {
         }
 
-        bool operator==(const StablePriorityOrderingWrapper& other) const {
-            return (*_msg == *other._msg
-                    && _sequence == other._sequence);
-        }
-
-        bool operator<(const StablePriorityOrderingWrapper& other) const {
+        bool operator<(const StablePriorityOrderingWrapper& other) const noexcept {
             if (_msg->getPriority() < other._msg->getPriority()) {
                 return true;
+            }
+            if (_is_forwarded_merge != other._is_forwarded_merge) {
+                return _is_forwarded_merge; // Forwarded merges sort before non-forwarded merges.
             }
             return (_sequence < other._sequence);
         }

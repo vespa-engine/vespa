@@ -395,7 +395,8 @@ MergeThrottler::enqueueMerge(
     if (!validateNewMerge(mergeCmd, nodeSeq, msgGuard)) {
         return;
     }
-    _queue.emplace(msg, _queueSequence++);
+    const bool is_forwarded_merge = _disable_queue_limits_for_chained_merges && !mergeCmd.getChain().empty();
+    _queue.emplace(msg, _queueSequence++, is_forwarded_merge);
     _metrics->queueSize.set(_queue.size());
 }
 
