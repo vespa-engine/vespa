@@ -118,20 +118,17 @@ public class VisitorIteratorTestCase {
 
         // Iterator with a single distribution bit ignores slicing.
         assertTrue(iter.hasNext());
-        assertEquals(new BucketId(ProgressToken.keyToBucketId(ProgressToken.makeNthBucketKey(0, 1))),
-                     iter.getNext().getSuperbucket());
-
-        assertEquals(new BucketId(ProgressToken.keyToBucketId(ProgressToken.makeNthBucketKey(1, 1))),
-                     iter.getNext().getSuperbucket());
-
+        assertEquals(ProgressToken.toBucketId(0, 1), iter.getNext().getSuperbucket());
+        assertEquals(ProgressToken.toBucketId(1, 1), iter.getNext().getSuperbucket());
         assertFalse(iter.hasNext());
     }
 
     @Test
     public void testValidSlicing() throws ParseException {
         int distBits = 4;
+        long buckets = 1 << distBits;
         BucketIdFactory idFactory = new BucketIdFactory();
-        for (int slices = 1; slices <= 1 << distBits + 1; slices++) {
+        for (int slices = 1; slices <= 2 * buckets; slices++) {
             long bucketsTotal = 0;
             for (int sliceId = 0; sliceId < slices; sliceId++) {
                 ProgressToken progress = new ProgressToken();
@@ -144,22 +141,22 @@ public class VisitorIteratorTestCase {
                 assertEquals(context, progress.getDistributionBitCount(), distBits);
                 assertTrue(context, iter.getBucketSource() instanceof VisitorIterator.DistributionRangeBucketSource);
 
-                assertEquals(context, progress.getFinishedBucketCount(), Math.min(1 << distBits, sliceId));
-                assertEquals(context, progress.getTotalBucketCount(), 1 << distBits);
+                assertEquals(context, progress.getFinishedBucketCount(), Math.min(buckets, sliceId));
+                assertEquals(context, progress.getTotalBucketCount(), buckets);
 
                 // First, get+update half of the buckets, marking them as done
                 long bucketCount = 0;
 
-                // Do buckets in th first half.
-                while (iter.hasNext() && progress.getFinishedBucketCount() < 1 << distBits - 1) {
+                // Do buckets in the first half.
+                while (iter.hasNext() && progress.getFinishedBucketCount() < buckets / 2) {
                     VisitorIterator.BucketProgress ids = iter.getNext();
                     iter.update(ids.getSuperbucket(), ProgressToken.FINISHED_BUCKET);
                     ++bucketCount;
                     ++bucketsTotal;
                 }
 
-                if (slices + sliceId < 1 << distBits) { // Otherwise, we're already done ...
-                    assertEquals(context, ((1L << distBits - 1) + slices - sliceId - 1) / slices, bucketCount);
+                if (slices + sliceId < buckets) { // Otherwise, we're already done ...
+                    assertEquals(context, ((buckets / 2) + slices - sliceId - 1) / slices, bucketCount);
                     // Should be no buckets in limbo at this point
                     assertFalse(context, progress.hasActive());
                     assertFalse(context, progress.hasPending());
@@ -176,22 +173,23 @@ public class VisitorIteratorTestCase {
                     ++bucketsTotal;
                 }
 
-                assertEquals(context, ((1L << distBits) + slices - sliceId - 1) / slices, bucketCount);
+                assertEquals(context, (buckets + slices - sliceId - 1) / slices, bucketCount);
                 // Should be no buckets in limbo at this point
                 assertFalse(context, progress.hasActive());
                 assertFalse(context, progress.hasPending());
                 assertTrue(context, iter.isDone());
                 assertFalse(context, iter.hasNext());
-                assertEquals(context, progress.getFinishedBucketCount(), 1 << distBits);
+                assertEquals(context, progress.getFinishedBucketCount(), buckets);
                 assertTrue(context, progress.isFinished());
             }
-            assertEquals("slices: " + slices, 1 << distBits, bucketsTotal);
+            assertEquals("slices: " + slices, buckets, bucketsTotal);
         }
     }
 
     @Test
     public void testProgressSerializationRange() throws ParseException {
         int distBits = 4;
+        int buckets = 1 << distBits;
 
         BucketIdFactory idFactory = new BucketIdFactory();
         ProgressToken progress = new ProgressToken();
@@ -204,11 +202,11 @@ public class VisitorIteratorTestCase {
         assertTrue(iter.getBucketSource() instanceof VisitorIterator.DistributionRangeBucketSource);
 
         assertEquals(progress.getFinishedBucketCount(), 0);
-        assertEquals(progress.getTotalBucketCount(), 1 << distBits);
+        assertEquals(progress.getTotalBucketCount(), buckets);
 
         // First, get+update half of the buckets, marking them as done
         long bucketCount = 0;
-        long bucketStop = 1 << (distBits - 1);
+        long bucketStop = buckets / 2;
 
         while (iter.hasNext() && bucketCount != bucketStop) {
             VisitorIterator.BucketProgress ids = iter.getNext();
@@ -232,7 +230,7 @@ public class VisitorIteratorTestCase {
         desired.append('\n');
         desired.append(bucketCount);
         desired.append('\n');
-        desired.append(1 << distBits);
+        desired.append(buckets);
         desired.append('\n');
 
         assertEquals(desired.toString(), progress.toString());
@@ -245,7 +243,7 @@ public class VisitorIteratorTestCase {
             ProgressToken progDs = new ProgressToken(progress.toString());
 
             assertEquals(progDs.getDistributionBitCount(), distBits);
-            assertEquals(progDs.getTotalBucketCount(), 1 << distBits);
+            assertEquals(progDs.getTotalBucketCount(), buckets);
             assertEquals(progDs.getFinishedBucketCount(), bucketCount);
 
             VisitorIterator iterDs = VisitorIterator.createFromDocumentSelection(
@@ -267,21 +265,21 @@ public class VisitorIteratorTestCase {
 
         // Now fetch a subset of the remaining buckets without finishing them,
         // keeping some in the active set and some in pending
-        int pendingTotal = 1 << (distBits - 3);
-        int activeTotal = 1 << (distBits - 3);
-        Vector<VisitorIterator.BucketProgress> buckets = new Vector<VisitorIterator.BucketProgress>();
+        int pendingTotal = buckets / 8;
+        int activeTotal = buckets / 8;
+        Vector<VisitorIterator.BucketProgress> trackedBuckets = new Vector<VisitorIterator.BucketProgress>();
 
         // Pre-fetch, since otherwise we'd reuse pending buckets
         for (int i = 0; i < pendingTotal + activeTotal; ++i) {
-            buckets.add(iter.getNext());
+            trackedBuckets.add(iter.getNext());
         }
 
         for (int i = 0; i < pendingTotal + activeTotal; ++i) {
-            VisitorIterator.BucketProgress idTemp = buckets.get(i);
+            VisitorIterator.BucketProgress idTemp = trackedBuckets.get(i);
             if (i < activeTotal) {
                 // Make them 50% done
                 iter.update(idTemp.getSuperbucket(),
-                        new BucketId(distBits + 2, idTemp.getSuperbucket().getId() | (2 << distBits)));
+                        new BucketId(distBits + 2, idTemp.getSuperbucket().getId() | (2 * buckets)));
             }
             // else: leave hanging as active
         }
@@ -299,7 +297,7 @@ public class VisitorIteratorTestCase {
         desired.append('\n');
         desired.append(bucketCount);
         desired.append('\n');
-        desired.append(1 << distBits);
+        desired.append(buckets);
         desired.append('\n');
 
         assertEquals(progress.getBuckets().entrySet().size(), pendingTotal + activeTotal);
@@ -319,7 +317,7 @@ public class VisitorIteratorTestCase {
             ProgressToken progDs = new ProgressToken(progress.toString());
 
             assertEquals(progDs.getDistributionBitCount(), distBits);
-            assertEquals(progDs.getTotalBucketCount(), 1 << distBits);
+            assertEquals(progDs.getTotalBucketCount(), buckets);
             assertEquals(progDs.getFinishedBucketCount(), bucketCount);
 
             VisitorIterator iterDs = VisitorIterator.createFromDocumentSelection(
@@ -338,7 +336,7 @@ public class VisitorIteratorTestCase {
 
         // Finish all the active buckets
         for (int i = activeTotal; i < activeTotal + pendingTotal; ++i) {
-            iter.update(buckets.get(i).getSuperbucket(), ProgressToken.FINISHED_BUCKET);
+            iter.update(trackedBuckets.get(i).getSuperbucket(), ProgressToken.FINISHED_BUCKET);
             ++bucketCount;
         }
 
@@ -359,16 +357,16 @@ public class VisitorIteratorTestCase {
         assertFalse(iter.hasNext());
         assertTrue(progress.isFinished());
         // Cumulative number of finished buckets must match 2^distbits
-        assertEquals(bucketCount, 1 << distBits);
+        assertEquals(bucketCount, buckets);
         StringBuilder finished = new StringBuilder();
         finished.append("VDS bucket progress file (100.0% completed)\n");
         finished.append(distBits);
         finished.append('\n');
-        finished.append(1 << distBits); // Cursor
+        finished.append(buckets); // Cursor
         finished.append('\n');
-        finished.append(1 << distBits); // Finished
+        finished.append(buckets); // Finished
         finished.append('\n');
-        finished.append(1 << distBits); // Total
+        finished.append(buckets); // Total
         finished.append('\n');
 
         assertEquals(progress.toString(), finished.toString());

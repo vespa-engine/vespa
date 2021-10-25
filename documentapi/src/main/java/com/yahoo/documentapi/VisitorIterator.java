@@ -334,8 +334,7 @@ public class VisitorIterator {
             assert(hasNext()) : "getNext() called with hasNext() == false";
 
             // Create the progress to return for creating visitors, and advance bucket cursor.
-            BucketProgress progress = new BucketProgress(toBucketId(progressToken.getBucketCursor(), distributionBitCount),
-                                                         new BucketId());
+            BucketProgress progress = new BucketProgress(progressToken.getCurrentBucketId(), new BucketId());
             progressToken.setBucketCursor(progressToken.getBucketCursor() + 1);
 
             // Skip ahead to our next next slice, to ensure we also exhaust the bucket space when
@@ -351,17 +350,9 @@ public class VisitorIterator {
             if (distributionBitCount == 1)
                 return;
 
-            while (progressToken.getBucketCursor() < (1L << distributionBitCount) && (progressToken.getBucketCursor() - sliceId) % slices != 0) {
-                BucketId bucketId = toBucketId(progressToken.getBucketCursor(), distributionBitCount);
-                progressToken.addBucket(bucketId, ProgressToken.NULL_BUCKET, ProgressToken.BucketState.BUCKET_ACTIVE);
-                progressToken.updateProgress(toBucketId(progressToken.getBucketCursor(), distributionBitCount),
-                                             ProgressToken.FINISHED_BUCKET);
-                progressToken.setBucketCursor(progressToken.getBucketCursor() + 1);
+            while (progressToken.getBucketCursor() < getTotalBucketCount() && (progressToken.getBucketCursor() % slices) != sliceId) {
+                progressToken.skipCurrentBucket();
             }
-        }
-
-        private static BucketId toBucketId(long bucketCursor, int distributionBitCount) {
-            return new BucketId(ProgressToken.keyToBucketId(ProgressToken.makeNthBucketKey(bucketCursor, distributionBitCount)));
         }
 
         public int getDistributionBitCount() {
