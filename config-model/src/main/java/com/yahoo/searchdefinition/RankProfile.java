@@ -675,7 +675,7 @@ public class RankProfile implements Cloneable {
     }
 
     public static class MutateOperation {
-        public enum Phase { onmatch, onrerank, onsummary}
+        public enum Phase { onmatch, on_first_phase, on_second_phase, onsummary}
         final Phase phase;
         final String attribute;
         final String operation;
@@ -689,9 +689,9 @@ public class RankProfile implements Cloneable {
 
     public void addMutateOperation(MutateOperation.Phase phase, String attribute, String operation) {
         mutateOperations.add(new MutateOperation(phase, attribute, operation));
-        //TODO once query control of these are gone we should change these to 'vespa.mutate.'
-        addRankProperty("vespa.execute." + phase + ".attribute", attribute);
-        addRankProperty("vespa.execute." + phase + ".operation", operation);
+        String prefix = "vespa.mutate." + phase.toString().replace('-', '_');
+        addRankProperty(prefix + ".attribute", attribute);
+        addRankProperty(prefix + ".operation", operation);
     }
     public List<MutateOperation> getMutateOperations() { return mutateOperations; }
 

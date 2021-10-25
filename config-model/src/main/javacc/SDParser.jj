@@ -209,7 +209,8 @@ TOKEN :
 | < DOCUMENT: "document" >
 | < OPERATION: "operation" >
 | < ON_MATCH: "on-match" >
-| < ON_RERANK: "on-rerank" >
+| < ON_FIRST_PHASE: "on-first-phase" >
+| < ON_SECOND_PHASE: "on-second-phase" >
 | < ON_SUMMARY: "on-summary" >
 | < STRUCT: "struct" >
 | < INHERITS: "inherits" >
@@ -2115,7 +2116,8 @@ void mutate_operation(RankProfile profile) :
 }
 {
    ( <ON_MATCH> { phase = RankProfile.MutateOperation.Phase.onmatch; }
-   | <ON_RERANK> { phase = RankProfile.MutateOperation.Phase.onrerank; }
+   | <ON_FIRST_PHASE> { phase = RankProfile.MutateOperation.Phase.on_first_phase; }
+   | <ON_SECOND_PHASE> { phase = RankProfile.MutateOperation.Phase.on_second_phase; }
    | <ON_SUMMARY> { phase = RankProfile.MutateOperation.Phase.onsummary; }
    )
    lbrace() attribute = identifier() operation = mutate_expr() (<NL>)* <RBRACE>
