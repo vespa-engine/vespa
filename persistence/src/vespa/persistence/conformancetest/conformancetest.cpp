@@ -1444,14 +1444,17 @@ TEST_F(ConformanceTest, testIterateAlreadyCompleted)
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-TEST_F(ConformanceTest, testIterateEmptyBucket)
+void
+ConformanceTest::test_iterate_empty_or_missing_bucket(bool bucket_exists)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
     Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
-    spi->createBucket(b, context);
+    if (bucket_exists) {
+        spi->createBucket(b, context);
+    }
     Selection sel(createSelection(""));
 
     CreateIteratorResult iter(createIterator(*spi, b, sel));
@@ -1462,6 +1465,16 @@ TEST_F(ConformanceTest, testIterateEmptyBucket)
     EXPECT_TRUE(result.isCompleted());
 
     spi->destroyIterator(iter.getIteratorId(), context);
+}
+
+TEST_F(ConformanceTest, test_iterate_empty_bucket)
+{
+    test_iterate_empty_or_missing_bucket(true);
+}
+
+TEST_F(ConformanceTest, test_iterate_missing_bucket)
+{
+    test_iterate_empty_or_missing_bucket(false);
 }
 
 TEST_F(ConformanceTest, testDeleteBucket)
@@ -2267,6 +2280,36 @@ TEST_F(ConformanceTest, resource_usage)
     auto register_guard = spi->register_resource_usage_listener(resource_usage_listener);
     EXPECT_EQ(0.5, resource_usage_listener.get_usage().get_disk_usage());
     EXPECT_EQ(0.4, resource_usage_listener.get_usage().get_memory_usage());
+}
+
+void
+ConformanceTest::test_empty_bucket_info(bool bucket_exists)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
+    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    if (bucket_exists) {
+        spi->createBucket(bucket, context);
+    }
+    auto info_result = spi->getBucketInfo(bucket);
+    EXPECT_TRUE(!info_result.hasError());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getChecksum().getValue());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getEntryCount());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getDocumentCount());
+    EXPECT_TRUE(info_result.getBucketInfo().isReady());
+    EXPECT_FALSE(info_result.getBucketInfo().isActive());
+}
+
+TEST_F(ConformanceTest, test_empty_bucket_gives_empty_bucket_info)
+{
+    test_empty_bucket_info(true);
+}
+
+TEST_F(ConformanceTest, test_missing_bucket_gives_empty_bucket_info)
+{
+    test_empty_bucket_info(false);
 }
 
 TEST_F(ConformanceTest, detectAndTestOptionalBehavior)
