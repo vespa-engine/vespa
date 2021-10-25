@@ -2,6 +2,5 @@
 vespa_add_library(searchcore_summaryengine STATIC
     SOURCES
     summaryengine.cpp
-    docsum_by_slime.cpp
     DEPENDS
 )
