@@ -30,6 +30,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     generationholder.cpp
     hdr_abort.cpp
     host_name.cpp
+    intrusive_list.cpp
     issue.cpp
     joinable.cpp
     latch.cpp

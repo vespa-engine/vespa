@@ -142,6 +142,7 @@ vespa_define_module(
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
     src/tests/util/hamming
+    src/tests/util/intrusive_list
     src/tests/util/md5
     src/tests/util/mmap_file_allocator
     src/tests/util/mmap_file_allocator_factory
