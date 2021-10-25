@@ -39,7 +39,7 @@ public class SummaryConsistencyTestCase {
                 "",
                 "}"
         );
-        Schema schema = SchemaBuilder.createFromString(sd).getSearch();
+        Schema schema = SchemaBuilder.createFromString(sd).getSchema();
         assertEquals(SummaryTransform.ATTRIBUTECOMBINER, schema.getSummaryField("elem_array_unfiltered").getTransform());
     }
 }

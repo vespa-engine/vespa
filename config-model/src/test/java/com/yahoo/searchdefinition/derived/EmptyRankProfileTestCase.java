@@ -30,7 +30,7 @@ public class EmptyRankProfileTestCase extends AbstractSchemaTestCase {
         doc.addField(field);
         doc.addField(new SDField("c", DataType.STRING));
 
-        schema = SchemaBuilder.buildFromRawSearch(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = SchemaBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
     }
 

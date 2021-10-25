@@ -150,7 +150,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         builder.importFile(dir + "first.sd");
         builder.importFile(dir + "second.sd");
         builder.build();
-        derive("tensor2", builder, builder.getSearch("second"));
+        derive("tensor2", builder, builder.getSchema("second"));
         assertCorrectConfigFiles("tensor2");
     }
 

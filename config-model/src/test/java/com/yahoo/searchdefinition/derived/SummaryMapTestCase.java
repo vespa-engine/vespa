@@ -196,7 +196,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
                 "  }",
                 "}"));
         builder.build();
-        return builder.getSearch();
+        return builder.getSchema();
     }
 
 }

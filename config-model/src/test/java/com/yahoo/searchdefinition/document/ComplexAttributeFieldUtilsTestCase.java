@@ -17,7 +17,7 @@ public class ComplexAttributeFieldUtilsTestCase {
         private final ImmutableSDField field;
 
         FixtureBase(String fieldName, String sdContent) throws ParseException {
-            Schema schema = SchemaBuilder.createFromString(sdContent).getSearch();
+            Schema schema = SchemaBuilder.createFromString(sdContent).getSchema();
             field = schema.getConcreteField(fieldName);
         }
 

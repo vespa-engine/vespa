@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
 
     private static Schema createSearch(String dir, ModelContext.Properties deployProperties, RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
-        return SchemaBuilder.createFromDirectory(dir, new MockFileRegistry(), new TestableDeployLogger(), deployProperties, rankProfileRegistry).getSearch();
+        return SchemaBuilder.createFromDirectory(dir, new MockFileRegistry(), new TestableDeployLogger(), deployProperties, rankProfileRegistry).getSchema();
     }
 
     @Test

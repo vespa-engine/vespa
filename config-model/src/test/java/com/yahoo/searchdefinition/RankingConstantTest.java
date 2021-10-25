@@ -43,7 +43,7 @@ public class RankingConstantTest {
                 "}"
         ));
         schemaBuilder.build();
-        Schema schema = schemaBuilder.getSearch();
+        Schema schema = schemaBuilder.getSchema();
 
         Iterator<RankingConstant> constantIterator = schema.rankingConstants().asMap().values().iterator();
         RankingConstant constant = constantIterator.next();
@@ -101,7 +101,7 @@ public class RankingConstantTest {
                 "}"
         ));
         schemaBuilder.build();
-        Schema schema = schemaBuilder.getSearch();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals("simplename", constant.getFileName());
     }
@@ -120,7 +120,7 @@ public class RankingConstantTest {
                 "}"
         ));
         schemaBuilder.build();
-        Schema schema = schemaBuilder.getSearch();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http://somewhere.far.away/in/another-galaxy", constant.getUri());
@@ -140,7 +140,7 @@ public class RankingConstantTest {
                 "}"
         ));
         schemaBuilder.build();
-        Schema schema = schemaBuilder.getSearch();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("https://somewhere.far.away:4443/in/another-galaxy", constant.getUri());
@@ -160,7 +160,7 @@ public class RankingConstantTest {
                 "}"
         ));
         schemaBuilder.build();
-        Schema schema = schemaBuilder.getSearch();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http://somewhere.far.away:4080/in/another-galaxy", constant.getUri());
@@ -180,7 +180,7 @@ public class RankingConstantTest {
                 "}"
         ));
         schemaBuilder.build();
-        Schema schema = schemaBuilder.getSearch();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http:somewhere.far.away/in/another-galaxy", constant.getUri());

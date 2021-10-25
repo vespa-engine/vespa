@@ -35,7 +35,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "      }",
                 "  }",
                 "}");
-        Schema schema = SchemaBuilder.createFromString(sd).getSearch();
+        Schema schema = SchemaBuilder.createFromString(sd).getSchema();
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals(SummaryClassField.Type.RAW, summary.getField("raw_field").getType());
     }
@@ -50,7 +50,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "      }",
                 "  }",
                 "}");
-        Schema schema = SchemaBuilder.createFromString(sd).getSearch();
+        Schema schema = SchemaBuilder.createFromString(sd).getSchema();
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals(SummaryClassField.Type.DATA, summary.getField("raw_field").getType());
     }
@@ -150,7 +150,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "  }",
                 "}"));
         builder.build();
-        return builder.getSearch("ad");
+        return builder.getSchema("ad");
     }
 
     @Test
@@ -168,7 +168,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "    summary foo type string {}",
                 "  }",
                 "}");
-        var search = SchemaBuilder.createFromString(sd).getSearch();
+        var search = SchemaBuilder.createFromString(sd).getSchema();
         assertOmitSummaryFeatures(true, search, "bar");
         assertOmitSummaryFeatures(false, search, "baz");
     }

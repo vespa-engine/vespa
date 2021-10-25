@@ -73,7 +73,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        schema = SchemaBuilder.buildFromRawSearch(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = SchemaBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check il script addition
@@ -100,7 +100,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         field2.parseIndexingScript("{ summary | index }");
         field2.setLiteralBoost(20);
 
-        schema = SchemaBuilder.buildFromRawSearch(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = SchemaBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
         assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                                      "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",

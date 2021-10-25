@@ -45,7 +45,7 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                         TestProperties properties,
                                         SchemaBuilder builder,
                                         DeployLogger logger) throws IOException {
-        DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
+        DerivedConfiguration config = new DerivedConfiguration(builder.getSchema(searchDefinitionName),
                                                                logger,
                                                                properties,
                                                                builder.getRankProfileRegistry(),

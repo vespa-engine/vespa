@@ -31,7 +31,7 @@ public class DictionaryTestCase {
     }
     private Schema createSearch(String def) throws ParseException {
         SchemaBuilder sb = SchemaBuilder.createFromString(def);
-        return sb.getSearch();
+        return sb.getSchema();
     }
     @Test
     public void testDefaultDictionarySettings() throws ParseException {

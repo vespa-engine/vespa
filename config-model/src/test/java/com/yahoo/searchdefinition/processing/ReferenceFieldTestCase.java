@@ -50,7 +50,7 @@ public class ReferenceFieldTestCase {
         builder.importString(salespersonSdContent);
         builder.importString(adSdContent);
         builder.build();
-        Schema schema = builder.getSearch("ad");
+        Schema schema = builder.getSchema("ad");
         assertSearchContainsReferenceField("campaign_ref", "campaign", schema.getDocument());
         assertSearchContainsReferenceField("salesperson_ref", "salesperson", schema.getDocument());
     }

@@ -137,12 +137,12 @@ public class TensorFieldTestCase {
     }
 
     private Attribute getAttributeFromSd(String fieldSpec, String attrName) throws ParseException {
-        return createFromString(getSd(fieldSpec)).getSearch().getAttribute(attrName);
+        return createFromString(getSd(fieldSpec)).getSchema().getAttribute(attrName);
     }
 
     private void assertHnswIndexParams(String indexSpec, int maxLinksPerNode, int neighborsToExploreAtInsert) throws ParseException {
         var sd = getSdWithIndexSpec(indexSpec);
-        var search = createFromString(sd).getSearch();
+        var search = createFromString(sd).getSchema();
         var attr = search.getAttribute("t1");
         var params = attr.hnswIndexParams();
         assertTrue(params.isPresent());

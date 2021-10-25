@@ -79,7 +79,7 @@ class RankProfileSearchFixture {
                            "}";
         builder.importString(sdContent);
         builder.build();
-        schema = builder.getSearch();
+        schema = builder.getSchema();
     }
 
     public void assertFirstPhaseExpression(String expExpression, String rankProfile) {

@@ -156,7 +156,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         var logger = new DeployLoggerStub();
-        var search = SchemaBuilder.createFromString(sd, logger).getSearch();
+        var search = SchemaBuilder.createFromString(sd, logger).getSchema();
         assertEquals(List.of(), logger.entries);
 
         var titleField = "title";

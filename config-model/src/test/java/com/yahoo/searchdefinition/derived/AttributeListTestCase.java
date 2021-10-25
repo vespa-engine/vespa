@@ -108,7 +108,7 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
                           "      indexing: attribute",
                           "    }",
                           "  }",
-                          "}")).getSearch();
+                          "}")).getSchema();
         Iterator<Attribute> attributes = new AttributeFields(schema).attributeIterator();
 
         assertAttribute("pos_array_zcurve", Attribute.Type.LONG, Attribute.CollectionType.ARRAY, true, attributes.next());

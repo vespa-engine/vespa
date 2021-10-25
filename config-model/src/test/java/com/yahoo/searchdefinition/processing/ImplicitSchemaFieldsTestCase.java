@@ -85,8 +85,8 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
         SchemaBuilder sb = new SchemaBuilder();
         sb.importFile("src/test/examples/nextgen/simple.sd");
         sb.build();
-        assertNotNull(sb.getSearch());
-        new DerivedConfiguration(sb.getSearch(), sb.getRankProfileRegistry());
+        assertNotNull(sb.getSchema());
+        new DerivedConfiguration(sb.getSchema(), sb.getRankProfileRegistry());
     }
 
 }

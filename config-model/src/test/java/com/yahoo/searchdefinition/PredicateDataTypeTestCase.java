@@ -65,7 +65,7 @@ public class PredicateDataTypeTestCase {
                                             upperBoundParameter(upperBound))));
 
         SchemaBuilder sb = SchemaBuilder.createFromString(sd);
-        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
+        for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertTrue(index.getBooleanIndexDefiniton().hasArity());
@@ -92,7 +92,7 @@ public class PredicateDataTypeTestCase {
                                             upperBoundParameter(upperBound))));
 
         SchemaBuilder sb = SchemaBuilder.createFromString(sd);
-        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
+        for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertEquals(arity, index.getBooleanIndexDefiniton().getArity());
@@ -110,7 +110,7 @@ public class PredicateDataTypeTestCase {
                             attributeFieldSd(
                                     arityParameter(2))));
         SchemaBuilder sb = SchemaBuilder.createFromString(sd);
-        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
+        for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertTrue(index.getBooleanIndexDefiniton().hasArity());

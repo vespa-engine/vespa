@@ -149,7 +149,7 @@ public class DocumentGenMojo extends AbstractMojo {
             }
         }
         builder.build();
-        for (Schema schema : builder.getSearchList() ) {
+        for (Schema schema : builder.getSchemaList() ) {
             this.searches.put(schema.getName(), schema);
         }
         return builder;

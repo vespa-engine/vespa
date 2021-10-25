@@ -24,7 +24,7 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
         builder.importFile(expectedResultsDirName + "child.sd");
         builder.build();
 
-        Schema schema = builder.getSearch("child");
+        Schema schema = builder.getSchema("child");
 
         String toDirName = "temp/" + name;
         File toDir = new File(toDirName);

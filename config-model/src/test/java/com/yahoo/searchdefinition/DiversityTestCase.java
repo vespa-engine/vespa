@@ -43,7 +43,7 @@ public class DiversityTestCase {
                         "    }\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
         RankProfile.MatchPhaseSettings matchPhase = rankProfileRegistry.get(s, "parent").getMatchPhaseSettings();
         RankProfile.DiversitySettings diversity = matchPhase.getDiversity();
         assertEquals("b", diversity.getAttribute());

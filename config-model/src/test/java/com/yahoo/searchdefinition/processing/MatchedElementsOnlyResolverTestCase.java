@@ -186,6 +186,6 @@ public class MatchedElementsOnlyResolverTestCase {
                 summary,
                 "}"));
         builder.build();
-        return builder.getSearch();
+        return builder.getSchema();
     }
 }

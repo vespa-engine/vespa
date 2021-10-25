@@ -249,7 +249,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(sd);
         builder.build();
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
         AttributeFields attributeFields = new AttributeFields(schema);
         verifyRankProfile(rankProfileRegistry.get(schema, "parent"), attributeFields, deployProperties, termwiseLimit);
         verifyRankProfile(rankProfileRegistry.get(schema, "child"), attributeFields, deployProperties, termwiseLimit);
@@ -291,7 +291,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
                 "  rank-profile p2 {}",
                 "}"));
         builder.build();
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
 
         assertEquals(4, registry.all().size());
         assertAttributeTypeSettings(registry.get(schema, "default"), schema);
@@ -340,7 +340,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
                 "  rank-profile p2 {}",
                 "}"));
         builder.build(true);
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
 
         assertEquals(4, registry.all().size());
         assertQueryFeatureTypeSettings(registry.get(schema, "default"), schema);

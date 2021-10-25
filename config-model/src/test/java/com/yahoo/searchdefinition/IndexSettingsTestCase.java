@@ -52,7 +52,7 @@ public class IndexSettingsTestCase extends AbstractSchemaTestCase {
                 "  }",
                 "}"
         ));
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
         Index contentIndex = schema.getIndex("content");
         assertTrue(contentIndex.useInterleavedFeatures());
         Index extraIndex = schema.getIndex("extra");

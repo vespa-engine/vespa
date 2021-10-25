@@ -36,7 +36,7 @@ public class SearchDocumentModel {
 
     public static SearchDocumentModel fromBuilderAndNames(SchemaBuilder builder, Map<String, String> names) {
         List<NamedSchema> ret = new ArrayList<>();
-        for (Schema schema : builder.getSearchList()) {
+        for (Schema schema : builder.getSchemaList()) {
             ret.add(new NamedSchema(names.get(schema.getName()), schema));
         }
         return new SearchDocumentModel(builder.getModel(), ret);
@@ -44,7 +44,7 @@ public class SearchDocumentModel {
 
     public static SearchDocumentModel fromBuilder(SchemaBuilder builder) {
         List<NamedSchema> ret = new ArrayList<>();
-        for (Schema schema : builder.getSearchList()) {
+        for (Schema schema : builder.getSchemaList()) {
             ret.add(new NamedSchema(schema.getName(), schema));
         }
         return new SearchDocumentModel(builder.getModel(), ret);

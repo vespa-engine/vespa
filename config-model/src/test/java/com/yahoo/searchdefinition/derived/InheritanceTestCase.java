@@ -41,7 +41,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         builder.importFile(dir + "parent.sd");
         builder.importFile(dir + "child.sd");
         builder.build();
-        derive("inheritstruct", builder, builder.getSearch("child"));
+        derive("inheritstruct", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritstruct");
     }
 
@@ -111,7 +111,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         builder.importFile(dir + "parent.sd");
         builder.importFile(dir + "child.sd");
         builder.build();
-        derive("inheritfromparent", builder, builder.getSearch("child"));
+        derive("inheritfromparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromparent");
     }
 
@@ -123,7 +123,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         builder.importFile(dir + "parent.sd");
         builder.importFile(dir + "child.sd");
         builder.build();
-        derive("inheritfromgrandparent", builder, builder.getSearch("child"));
+        derive("inheritfromgrandparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromgrandparent");
     }
 
@@ -136,7 +136,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         builder.importFile(dir + "mother.sd");
         builder.importFile(dir + "child.sd");
         builder.build();
-        derive("inheritance", builder, builder.getSearch("child"));
+        derive("inheritance", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritance");
     }
 

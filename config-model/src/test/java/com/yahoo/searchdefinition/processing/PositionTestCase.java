@@ -31,7 +31,7 @@ public class PositionTestCase {
                 "src/test/examples/position_base.sd",
                 "src/test/examples/position_inherited.sd"));
 
-        Schema schema = sb.getSearch("position_inherited");
+        Schema schema = sb.getSchema("position_inherited");
         FieldSet fieldSet = schema.getDocument().getFieldSets().builtInFieldSets().get(DocumentType.DOCUMENT);
         assertFalse(fieldSet.getFieldNames().contains(PositionDataType.getZCurveFieldName("pos")));
     }

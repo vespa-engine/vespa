@@ -57,8 +57,8 @@ public class SchemaClusterTest {
         schema2.addDocument(sdt2);
 
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importRawSearch(schema1);
-        builder.importRawSearch(schema2);
+        builder.importRawSchema(schema1);
+        builder.importRawSchema(schema2);
         builder.build();
     }
 

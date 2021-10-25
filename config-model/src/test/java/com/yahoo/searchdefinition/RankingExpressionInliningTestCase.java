@@ -66,7 +66,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7.0 < attribute(a), 1, 2) == 0))",
@@ -126,7 +126,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("17.0", parent.getFirstPhaseRanking().getRoot().toString());
@@ -182,7 +182,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
 
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("attribute(a) + C + (attribute(b) + 1)", test.getFirstPhaseRanking().getRoot().toString());
@@ -216,7 +216,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("foo(2)", test.getFirstPhaseRanking().getRoot().toString());
         assertTrue("Does not contain expected warning", deployLogger.contains("Function 'foo' replaces " +

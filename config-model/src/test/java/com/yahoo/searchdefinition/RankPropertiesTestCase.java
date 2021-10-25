@@ -49,7 +49,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
                 "    }",
                 "}"));
         builder.build();
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
         AttributeFields attributeFields = new AttributeFields(schema);
 
         {
@@ -129,7 +129,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
                 "    }",
                 "}"));
         builder.build();
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
         RankProfile a = rankProfileRegistry.get(schema, "a");
         List<RankProfile.MutateOperation> operations = a.getMutateOperations();
         assertEquals(4, operations.size());

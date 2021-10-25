@@ -23,7 +23,7 @@ public class SchemaInheritanceTestCase extends AbstractExportingTestCase {
                                                                       new MockFileRegistry(),
                                                                       new TestableDeployLogger(),
                                                                       new TestProperties());
-            derive("schemainheritance", builder, builder.getSearch("child"));
+            derive("schemainheritance", builder, builder.getSchema("child"));
             assertCorrectConfigFiles("schemainheritance");
         }
         finally {

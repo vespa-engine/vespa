@@ -82,7 +82,7 @@ public class ImportedFieldsTestCase {
                 "}"));
         builder.importString(sdContent);
         builder.build();
-        return builder.getSearch("ad");
+        return builder.getSchema("ad");
     }
 
     private static void checkStructImport(AncestorStructSdBuilder parentBuilder) throws ParseException {
@@ -315,7 +315,7 @@ public class ImportedFieldsTestCase {
         builder.importString(parentSdContent);
         builder.importString(sdContent);
         builder.build();
-        return builder.getSearch("child");
+        return builder.getSchema("child");
     }
 
     private static Schema buildChildSearch(String grandParentSdContent, String parentSdContent, String sdContent) throws ParseException {
@@ -324,7 +324,7 @@ public class ImportedFieldsTestCase {
         builder.importString(parentSdContent);
         builder.importString(sdContent);
         builder.build();
-        return builder.getSearch("child");
+        return builder.getSchema("child");
     }
 
     private static class AncestorPosSdBuilder extends NamedSdBuilder {
@@ -468,10 +468,10 @@ public class ImportedFieldsTestCase {
     public void field_with_struct_field_attributes_can_be_imported_from_parents_that_use_inheritance() throws ParseException {
         var builder = buildParentsUsingInheritance();
 
-        assertParentContainsEntriesAttributes(builder.getSearch("parent_a"));
-        assertParentContainsEntriesAttributes(builder.getSearch("parent_b"));
+        assertParentContainsEntriesAttributes(builder.getSchema("parent_a"));
+        assertParentContainsEntriesAttributes(builder.getSchema("parent_b"));
 
-        var child = builder.getSearch("child");
+        var child = builder.getSchema("child");
         checkImportedField("entries_from_a", "ref_parent_a", "parent_a", "entries", child, true);
         checkImportedField("entries_from_a.key", "ref_parent_a", "parent_a", "entries.key", child, true);
         checkImportedField("entries_from_a.value", "ref_parent_a", "parent_a", "entries.value", child, true);

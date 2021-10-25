@@ -196,7 +196,7 @@ public class RankingExpressionTypeResolverTestCase {
         ));
         builder.build();
         RankProfile profile =
-                builder.getRankProfileRegistry().get(builder.getSearch(), "my_rank_profile");
+                builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[3])"),
                      summaryFeatures(profile).get("macro1(a)").type(profile.typeContext(builder.getQueryProfileRegistry())));
         assertEquals(TensorType.fromSpec("tensor(z[10])"),
@@ -238,7 +238,7 @@ public class RankingExpressionTypeResolverTestCase {
         ));
         builder.build();
         RankProfile profile =
-                builder.getRankProfileRegistry().get(builder.getSearch(), "my_rank_profile");
+                builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[1])"),
                      summaryFeatures(profile).get("return_a").type(profile.typeContext(builder.getQueryProfileRegistry())));
         assertEquals(TensorType.fromSpec("tensor(z[10])"),
@@ -281,7 +281,7 @@ public class RankingExpressionTypeResolverTestCase {
                                  "    }",
                                  "}"));
         builder.build();
-        RankProfile profile = builder.getRankProfileRegistry().get(builder.getSearch(), "eurank");
+        RankProfile profile = builder.getRankProfileRegistry().get(builder.getSchema(), "eurank");
     }
 
     @Test
@@ -322,7 +322,7 @@ public class RankingExpressionTypeResolverTestCase {
         ));
         builder.build();
         RankProfile profile =
-                builder.getRankProfileRegistry().get(builder.getSearch(), "my_rank_profile");
+                builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[1])"),
                      summaryFeatures(profile).get("return_a").type(profile.typeContext(builder.getQueryProfileRegistry())));
         assertEquals(TensorType.fromSpec("tensor(z[10])"),
@@ -346,7 +346,7 @@ public class RankingExpressionTypeResolverTestCase {
                                  "    }",
                                  "}"));
         builder.build();
-        RankProfile profile = builder.getRankProfileRegistry().get(builder.getSearch(), "test");
+        RankProfile profile = builder.getRankProfileRegistry().get(builder.getSchema(), "test");
         assertEquals(TensorType.fromSpec("tensor<float>(y{})"),
                      summaryFeatures(profile).get("test_func_via_func_with_expr").type(profile.typeContext(builder.getQueryProfileRegistry())));
     }
