@@ -25,7 +25,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfileRegistry = new QueryProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -91,7 +91,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNameCollision() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -125,7 +125,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNegativeLiteralArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -150,7 +150,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNegativeConstantArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -180,7 +180,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testConstantDivisorInFunction() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -203,7 +203,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void test3() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +

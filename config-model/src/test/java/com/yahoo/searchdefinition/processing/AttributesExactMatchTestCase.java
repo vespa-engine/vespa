@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertFalse;
 public class AttributesExactMatchTestCase extends AbstractSchemaTestCase {
     @Test
     public void testAttributesExactMatch() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/attributesexactmatch.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/attributesexactmatch.sd");
         assertEquals(schema.getConcreteField("color").getMatching().getType(), Matching.Type.EXACT);
         assertEquals(schema.getConcreteField("artist").getMatching().getType(), Matching.Type.WORD);
         assertEquals(schema.getConcreteField("drummer").getMatching().getType(), Matching.Type.WORD);

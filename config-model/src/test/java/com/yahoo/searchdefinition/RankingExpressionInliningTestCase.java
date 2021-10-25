@@ -28,7 +28,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                         "search test {\n" +
                         "    document test { \n" +
@@ -79,7 +79,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -150,7 +150,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNonTopLevelInlining() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -194,7 +194,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     public void testFunctionInliningWithReplacement() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         MockDeployLogger deployLogger = new MockDeployLogger();
-        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(),
+        SchemaBuilder builder = new SchemaBuilder(MockApplicationPackage.createEmpty(),
                                                   new MockFileRegistry(),
                                                   deployLogger,
                                                   new TestProperties(),

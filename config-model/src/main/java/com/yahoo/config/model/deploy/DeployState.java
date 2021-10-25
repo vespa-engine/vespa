@@ -30,7 +30,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
@@ -475,7 +475,7 @@ public class DeployState implements ConfigDefinitionStore {
                                                               ValidationParameters validationParameters) {
             Collection<NamedReader> readers = applicationPackage.getSchemas();
             Map<String, String> names = new LinkedHashMap<>();
-            SearchBuilder builder = new SearchBuilder(applicationPackage, fileRegistry, logger, properties, rankProfileRegistry, queryProfiles.getRegistry());
+            SchemaBuilder builder = new SchemaBuilder(applicationPackage, fileRegistry, logger, properties, rankProfileRegistry, queryProfiles.getRegistry());
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();

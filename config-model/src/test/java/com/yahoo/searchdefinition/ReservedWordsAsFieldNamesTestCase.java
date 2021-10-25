@@ -15,7 +15,7 @@ public class ReservedWordsAsFieldNamesTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testIt() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/reserved_words_as_field_names.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/reserved_words_as_field_names.sd");
         assertNotNull(schema.getDocument().getField("inline"));
         assertNotNull(schema.getDocument().getField("constants"));
         assertNotNull(schema.getDocument().getField("reference"));

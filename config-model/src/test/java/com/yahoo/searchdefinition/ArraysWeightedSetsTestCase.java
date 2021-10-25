@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 public class ArraysWeightedSetsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testArrayWeightedSetsImporting() throws java.io.IOException, com.yahoo.searchdefinition.parser.ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/arraysweightedsets.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/arraysweightedsets.sd");
 
         SDField tags = (SDField) schema.getDocument().getField("tags");
         assertTrue(tags.getDataType() instanceof ArrayDataType);

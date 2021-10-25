@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
@@ -67,7 +67,7 @@ public class ImportedFieldsTestCase {
     }
 
     private static Schema buildAdSearch(String sdContent) throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importString(joinLines(
                 "schema campaign {",
                 "  document campaign {",
@@ -311,7 +311,7 @@ public class ImportedFieldsTestCase {
     }
 
     private static Schema buildChildSearch(String parentSdContent, String sdContent) throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importString(parentSdContent);
         builder.importString(sdContent);
         builder.build();
@@ -319,7 +319,7 @@ public class ImportedFieldsTestCase {
     }
 
     private static Schema buildChildSearch(String grandParentSdContent, String parentSdContent, String sdContent) throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importString(grandParentSdContent);
         builder.importString(parentSdContent);
         builder.importString(sdContent);
@@ -487,8 +487,8 @@ public class ImportedFieldsTestCase {
         assertTrue(attrs.containsAttribute("entries.value"));
     }
 
-    private SearchBuilder buildParentsUsingInheritance() throws ParseException {
-        var builder = new SearchBuilder();
+    private SchemaBuilder buildParentsUsingInheritance() throws ParseException {
+        var builder = new SchemaBuilder();
         builder.importString(joinLines("schema parent_a {",
                 "document parent_a {",
                 "  struct Entry {",

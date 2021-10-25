@@ -1,7 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -27,7 +27,7 @@ public class DocumentModelBuilderImportedFieldsTestCase extends AbstractReferenc
     }
 
     private static class TestDocumentModelBuilder {
-        private final SearchBuilder builder = new SearchBuilder();
+        private final SchemaBuilder builder = new SchemaBuilder();
         public TestDocumentModelBuilder addCampaign() throws ParseException {
             builder.importString(joinLines("search campaign {",
                     "  document campaign {",
