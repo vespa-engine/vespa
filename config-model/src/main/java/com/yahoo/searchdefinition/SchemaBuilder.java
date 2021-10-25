@@ -254,10 +254,6 @@ public class SchemaBuilder {
             process(schema, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
         }
         builder.addToModel(schemasSomewhatOrdered);
-
-        if ( validate && ! builder.valid() )
-            throw new IllegalArgumentException("Impossible to build a correct model");
-
         isBuilt = true;
     }
 
