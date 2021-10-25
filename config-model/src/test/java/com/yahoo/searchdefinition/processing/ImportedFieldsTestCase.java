@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
@@ -67,7 +67,7 @@ public class ImportedFieldsTestCase {
     }
 
     private static Schema buildAdSearch(String sdContent) throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importString(joinLines(
                 "schema campaign {",
                 "  document campaign {",
@@ -82,7 +82,7 @@ public class ImportedFieldsTestCase {
                 "}"));
         builder.importString(sdContent);
         builder.build();
-        return builder.getSearch("ad");
+        return builder.getSchema("ad");
     }
 
     private static void checkStructImport(AncestorStructSdBuilder parentBuilder) throws ParseException {
@@ -311,20 +311,20 @@ public class ImportedFieldsTestCase {
     }
 
     private static Schema buildChildSearch(String parentSdContent, String sdContent) throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importString(parentSdContent);
         builder.importString(sdContent);
         builder.build();
-        return builder.getSearch("child");
+        return builder.getSchema("child");
     }
 
     private static Schema buildChildSearch(String grandParentSdContent, String parentSdContent, String sdContent) throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importString(grandParentSdContent);
         builder.importString(parentSdContent);
         builder.importString(sdContent);
         builder.build();
-        return builder.getSearch("child");
+        return builder.getSchema("child");
     }
 
     private static class AncestorPosSdBuilder extends NamedSdBuilder {
@@ -468,10 +468,10 @@ public class ImportedFieldsTestCase {
     public void field_with_struct_field_attributes_can_be_imported_from_parents_that_use_inheritance() throws ParseException {
         var builder = buildParentsUsingInheritance();
 
-        assertParentContainsEntriesAttributes(builder.getSearch("parent_a"));
-        assertParentContainsEntriesAttributes(builder.getSearch("parent_b"));
+        assertParentContainsEntriesAttributes(builder.getSchema("parent_a"));
+        assertParentContainsEntriesAttributes(builder.getSchema("parent_b"));
 
-        var child = builder.getSearch("child");
+        var child = builder.getSchema("child");
         checkImportedField("entries_from_a", "ref_parent_a", "parent_a", "entries", child, true);
         checkImportedField("entries_from_a.key", "ref_parent_a", "parent_a", "entries.key", child, true);
         checkImportedField("entries_from_a.value", "ref_parent_a", "parent_a", "entries.value", child, true);
@@ -487,8 +487,8 @@ public class ImportedFieldsTestCase {
         assertTrue(attrs.containsAttribute("entries.value"));
     }
 
-    private SearchBuilder buildParentsUsingInheritance() throws ParseException {
-        var builder = new SearchBuilder();
+    private SchemaBuilder buildParentsUsingInheritance() throws ParseException {
+        var builder = new SchemaBuilder();
         builder.importString(joinLines("schema parent_a {",
                 "document parent_a {",
                 "  struct Entry {",

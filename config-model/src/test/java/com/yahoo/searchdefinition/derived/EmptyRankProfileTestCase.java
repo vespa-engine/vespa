@@ -5,7 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -30,7 +30,7 @@ public class EmptyRankProfileTestCase extends AbstractSchemaTestCase {
         doc.addField(field);
         doc.addField(new SDField("c", DataType.STRING));
 
-        schema = SearchBuilder.buildFromRawSearch(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = SchemaBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
     }
 

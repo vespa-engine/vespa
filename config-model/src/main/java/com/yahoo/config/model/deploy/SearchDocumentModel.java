@@ -2,7 +2,7 @@
 package com.yahoo.config.model.deploy;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.search.NamedSchema;
 
@@ -34,17 +34,17 @@ public class SearchDocumentModel {
         return schemas;
     }
 
-    public static SearchDocumentModel fromBuilderAndNames(SearchBuilder builder, Map<String, String> names) {
+    public static SearchDocumentModel fromBuilderAndNames(SchemaBuilder builder, Map<String, String> names) {
         List<NamedSchema> ret = new ArrayList<>();
-        for (Schema schema : builder.getSearchList()) {
+        for (Schema schema : builder.getSchemaList()) {
             ret.add(new NamedSchema(names.get(schema.getName()), schema));
         }
         return new SearchDocumentModel(builder.getModel(), ret);
     }
 
-    public static SearchDocumentModel fromBuilder(SearchBuilder builder) {
+    public static SearchDocumentModel fromBuilder(SchemaBuilder builder) {
         List<NamedSchema> ret = new ArrayList<>();
-        for (Schema schema : builder.getSearchList()) {
+        for (Schema schema : builder.getSchemaList()) {
             ret.add(new NamedSchema(schema.getName(), schema));
         }
         return new SearchDocumentModel(builder.getModel(), ret);

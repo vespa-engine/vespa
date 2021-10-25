@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 public class SummaryMapTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDeriving() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/simple.sd");
         SummaryMap summaryMap=new SummaryMap(schema);
 
         Iterator transforms=summaryMap.resultTransformIterator();
@@ -147,7 +147,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     @Test
     public void testFailOnSummaryFieldSourceCollision() {
         try {
-            SearchBuilder.buildFromFile("src/test/examples/summaryfieldcollision.sd");
+            SchemaBuilder.buildFromFile("src/test/examples/summaryfieldcollision.sd");
         } catch (Exception e) {
             assertTrue(e.getMessage().matches(".*equally named field.*"));
         }
@@ -189,14 +189,14 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
 
     private Schema buildSearch(String field) throws ParseException {
-        var builder = new SearchBuilder(new RankProfileRegistry());
+        var builder = new SchemaBuilder(new RankProfileRegistry());
         builder.importString(joinLines("search test {",
                 "  document test {",
                 field,
                 "  }",
                 "}"));
         builder.build();
-        return builder.getSearch();
+        return builder.getSchema();
     }
 
 }

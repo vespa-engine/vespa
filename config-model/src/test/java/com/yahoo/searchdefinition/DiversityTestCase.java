@@ -15,7 +15,7 @@ public class DiversityTestCase {
     @Test
     public void testDiversity() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -43,7 +43,7 @@ public class DiversityTestCase {
                         "    }\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
         RankProfile.MatchPhaseSettings matchPhase = rankProfileRegistry.get(s, "parent").getMatchPhaseSettings();
         RankProfile.DiversitySettings diversity = matchPhase.getDiversity();
         assertEquals("b", diversity.getAttribute());
@@ -60,7 +60,7 @@ public class DiversityTestCase {
     }
     @Test
     public void requireSingleNumericOrString() throws ParseException {
-        SearchBuilder builder = getSearchBuilder("field b type predicate { indexing: attribute }");
+        SchemaBuilder builder = getSearchBuilder("field b type predicate { indexing: attribute }");
 
         try {
             builder.build();
@@ -72,7 +72,7 @@ public class DiversityTestCase {
 
     @Test
     public void requireSingle() throws ParseException {
-        SearchBuilder builder = getSearchBuilder("field b type array<int> { indexing: attribute }");
+        SchemaBuilder builder = getSearchBuilder("field b type array<int> { indexing: attribute }");
 
         try {
             builder.build();
@@ -81,9 +81,9 @@ public class DiversityTestCase {
             assertEquals(getMessagePrefix() + "must be single value numeric, or enumerated attribute, but it is 'Array<int>'", e.getMessage());
         }
     }
-    private SearchBuilder getSearchBuilder(String diversity) throws ParseException {
+    private SchemaBuilder getSearchBuilder(String diversity) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +

@@ -5,7 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -37,11 +37,11 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void requireThatIndexedStructFieldCanBeInherited() throws IOException, ParseException {
         String dir = "src/test/derived/inheritstruct/";
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importFile(dir + "parent.sd");
         builder.importFile(dir + "child.sd");
         builder.build();
-        derive("inheritstruct", builder, builder.getSearch("child"));
+        derive("inheritstruct", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritstruct");
     }
 
@@ -60,7 +60,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         List<String> files = Arrays.asList("grandparent.sd", "mother.sd", "father.sd", "child.sd");
         File outDir = tmpDir.newFolder("out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
-            SearchBuilder builder = new SearchBuilder();
+            SchemaBuilder builder = new SchemaBuilder();
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
                 builder.importFile(dir + fileName);
@@ -107,36 +107,36 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void requireThatStructTypesAreInheritedFromParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromparent/";
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importFile(dir + "parent.sd");
         builder.importFile(dir + "child.sd");
         builder.build();
-        derive("inheritfromparent", builder, builder.getSearch("child"));
+        derive("inheritfromparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromparent");
     }
 
     @Test
     public void requireThatStructTypesAreInheritedFromGrandParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromgrandparent/";
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importFile(dir + "grandparent.sd");
         builder.importFile(dir + "parent.sd");
         builder.importFile(dir + "child.sd");
         builder.build();
-        derive("inheritfromgrandparent", builder, builder.getSearch("child"));
+        derive("inheritfromgrandparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromgrandparent");
     }
 
     @Test
     public void testInheritance() throws IOException, ParseException {
         String dir = "src/test/derived/inheritance/";
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importFile(dir + "grandparent.sd");
         builder.importFile(dir + "father.sd");
         builder.importFile(dir + "mother.sd");
         builder.importFile(dir + "child.sd");
         builder.build();
-        derive("inheritance", builder, builder.getSearch("child"));
+        derive("inheritance", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritance");
     }
 

@@ -22,7 +22,7 @@ public class ArraysTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testArrayImporting() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/arrays.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/arrays.sd");
 
         SDField tags = (SDField) schema.getDocument().getField("tags");
         assertEquals(DataType.STRING, ((CollectionDataType)tags.getDataType()).getNestedType());

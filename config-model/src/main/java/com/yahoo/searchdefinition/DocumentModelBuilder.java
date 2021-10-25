@@ -45,16 +45,11 @@ import static java.util.stream.Collectors.toSet;
  */
 public class DocumentModelBuilder {
 
-    private DocumentModel model;
-    private final Map<NewDocumentType, List<SDDocumentType>> scratchInheritsMap = new HashMap<>();
+    private final DocumentModel model;
 
     public DocumentModelBuilder(DocumentModel model) {
         this.model = model;
         model.getDocumentManager().add(VespaDocumentType.INSTANCE);
-    }
-
-    public boolean valid() {
-        return scratchInheritsMap.isEmpty();
     }
 
     public void addToModel(Collection<Schema> schemaList) {

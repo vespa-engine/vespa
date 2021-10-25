@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -18,7 +18,7 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRequireThatExtraFieldsAreIncluded() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/extrafield.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/nextgen/extrafield.sd");
         assertNotNull(schema);
 
         SDDocumentType docType = schema.getDocument();
@@ -30,7 +30,7 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRequireThatSummaryFieldsAreIncluded() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/summaryfield.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/nextgen/summaryfield.sd");
         assertNotNull(schema);
 
         SDDocumentType docType = schema.getDocument();
@@ -43,7 +43,7 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRequireThatBoldedSummaryFieldsAreIncluded() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/boldedsummaryfields.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/nextgen/boldedsummaryfields.sd");
         assertNotNull(schema);
 
         SDDocumentType docType = schema.getDocument();
@@ -57,7 +57,7 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRequireThatUntransformedSummaryFieldsAreIgnored() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/untransformedsummaryfields.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/nextgen/untransformedsummaryfields.sd");
         assertNotNull(schema);
 
         SDDocumentType docType = schema.getDocument();
@@ -70,7 +70,7 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRequireThatDynamicSummaryFieldsAreIgnored() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/nextgen/dynamicsummaryfields.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/nextgen/dynamicsummaryfields.sd");
         assertNotNull(schema);
 
         SDDocumentType docType = schema.getDocument();
@@ -82,11 +82,11 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testRequireThatDerivedConfigurationWorks() throws IOException, ParseException {
-        SearchBuilder sb = new SearchBuilder();
+        SchemaBuilder sb = new SchemaBuilder();
         sb.importFile("src/test/examples/nextgen/simple.sd");
         sb.build();
-        assertNotNull(sb.getSearch());
-        new DerivedConfiguration(sb.getSearch(), sb.getRankProfileRegistry());
+        assertNotNull(sb.getSchema());
+        new DerivedConfiguration(sb.getSchema(), sb.getRankProfileRegistry());
     }
 
 }

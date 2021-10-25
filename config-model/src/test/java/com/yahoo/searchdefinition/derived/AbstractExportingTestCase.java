@@ -8,7 +8,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
@@ -36,16 +36,16 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
         toDir.mkdirs();
         deleteContent(toDir);
 
-        SearchBuilder builder = SearchBuilder.createFromDirectory(searchDefRoot + dirName + "/", new MockFileRegistry(), logger, properties);
+        SchemaBuilder builder = SchemaBuilder.createFromDirectory(searchDefRoot + dirName + "/", new MockFileRegistry(), logger, properties);
         return derive(dirName, searchDefinitionName, properties, builder, logger);
     }
 
     private DerivedConfiguration derive(String dirName,
                                         String searchDefinitionName,
                                         TestProperties properties,
-                                        SearchBuilder builder,
+                                        SchemaBuilder builder,
                                         DeployLogger logger) throws IOException {
-        DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
+        DerivedConfiguration config = new DerivedConfiguration(builder.getSchema(searchDefinitionName),
                                                                logger,
                                                                properties,
                                                                builder.getRankProfileRegistry(),
@@ -55,14 +55,14 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
         return export(dirName, builder, config);
     }
 
-    DerivedConfiguration derive(String dirName, SearchBuilder builder, Schema schema) throws IOException {
+    DerivedConfiguration derive(String dirName, SchemaBuilder builder, Schema schema) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(schema,
                                                                builder.getRankProfileRegistry(),
                                                                builder.getQueryProfileRegistry());
         return export(dirName, builder, config);
     }
 
-    private DerivedConfiguration export(String name, SearchBuilder builder, DerivedConfiguration config) throws IOException {
+    private DerivedConfiguration export(String name, SchemaBuilder builder, DerivedConfiguration config) throws IOException {
         String path = exportConfig(name, config);
         DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), new DocumentmanagerConfig.Builder()), path);
         DerivedConfiguration.exportDocuments(new DocumentTypes().produce(builder.getModel(), new DocumenttypesConfig.Builder()), path);
@@ -111,14 +111,14 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
      * Asserts config is correctly derived given a builder.
      * This will fail if the builder contains multiple search definitions.
      */
-    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, String dirName, DeployLogger logger) throws IOException {
+    protected DerivedConfiguration assertCorrectDeriving(SchemaBuilder builder, String dirName, DeployLogger logger) throws IOException {
         builder.build();
         DerivedConfiguration derived = derive(dirName, null, new TestProperties(), builder, logger);
         assertCorrectConfigFiles(dirName);
         return derived;
     }
 
-    protected DerivedConfiguration assertCorrectDeriving(SearchBuilder builder, Schema schema, String name) throws IOException {
+    protected DerivedConfiguration assertCorrectDeriving(SchemaBuilder builder, Schema schema, String name) throws IOException {
         DerivedConfiguration derived = derive(name, builder, schema);
         assertCorrectConfigFiles(name);
         return derived;

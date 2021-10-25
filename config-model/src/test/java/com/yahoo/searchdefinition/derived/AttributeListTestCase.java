@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -25,7 +25,7 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDeriving() throws IOException, ParseException {
         // Test attribute importing
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/simple.sd");
 
         // Test attribute deriving
         AttributeFields attributeFields = new AttributeFields(schema);
@@ -71,7 +71,7 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void fields_in_array_of_struct_are_derived_into_array_attributes() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/derived/array_of_struct_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(schema).attributeIterator();
 
         assertAttribute("elem_array.name", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
@@ -81,7 +81,7 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void fields_in_map_of_struct_are_derived_into_array_attributes() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/derived/map_of_struct_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(schema).attributeIterator();
 
         assertAttribute("str_elem_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());
@@ -101,14 +101,14 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void only_zcurve_attribute_is_derived_from_array_of_position_field() throws ParseException {
-        Schema schema = SearchBuilder.createFromString(
+        Schema schema = SchemaBuilder.createFromString(
                 joinLines("search test {",
                           "  document test {",
                           "    field pos_array type array<position> {",
                           "      indexing: attribute",
                           "    }",
                           "  }",
-                          "}")).getSearch();
+                          "}")).getSchema();
         Iterator<Attribute> attributes = new AttributeFields(schema).attributeIterator();
 
         assertAttribute("pos_array_zcurve", Attribute.Type.LONG, Attribute.CollectionType.ARRAY, true, attributes.next());
@@ -117,7 +117,7 @@ public class AttributeListTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void fields_in_map_of_primitive_are_derived_into_array_attributes() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/derived/map_attribute/test.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/derived/map_attribute/test.sd");
         Iterator<Attribute> attributes = new AttributeFields(schema).attributeIterator();
 
         assertAttribute("str_map.key", Attribute.Type.STRING, Attribute.CollectionType.ARRAY, true, attributes.next());

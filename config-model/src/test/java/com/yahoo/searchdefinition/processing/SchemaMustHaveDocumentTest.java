@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -17,7 +17,7 @@ public class SchemaMustHaveDocumentTest {
     @Test
     public void requireErrorWhenMissingDocument() throws IOException, ParseException {
         try {
-            SearchBuilder.buildFromFile("src/test/examples/invalid_sd_missing_document.sd");
+            SchemaBuilder.buildFromFile("src/test/examples/invalid_sd_missing_document.sd");
             fail("SD without document");
         } catch (IllegalArgumentException e) {
             if (!e.getMessage()

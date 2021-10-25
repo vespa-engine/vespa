@@ -6,7 +6,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.DocumentGraphValidator;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Rule;
@@ -28,7 +28,7 @@ public class ReferenceFieldTestCase {
 
     @Test
     public void reference_fields_are_parsed_from_search_definition() throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         String campaignSdContent =
                 "search campaign {\n" +
                 "  document campaign {\n" +
@@ -50,14 +50,14 @@ public class ReferenceFieldTestCase {
         builder.importString(salespersonSdContent);
         builder.importString(adSdContent);
         builder.build();
-        Schema schema = builder.getSearch("ad");
+        Schema schema = builder.getSchema("ad");
         assertSearchContainsReferenceField("campaign_ref", "campaign", schema.getDocument());
         assertSearchContainsReferenceField("salesperson_ref", "salesperson", schema.getDocument());
     }
 
     @Test
     public void cyclic_document_dependencies_are_detected() throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         String campaignSdContent =
                 "search campaign {\n" +
                         "  document campaign {\n" +

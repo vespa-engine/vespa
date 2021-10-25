@@ -13,7 +13,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
@@ -68,7 +68,7 @@ class RankProfileSearchFixture {
                              String rankProfiles, String constant, String field)
             throws ParseException {
         this.queryProfileRegistry = queryProfileRegistry;
-        SearchBuilder builder = new SearchBuilder(applicationpackage, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(applicationpackage, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
         String sdContent = "search test {\n" +
                            "  " + (constant != null ? constant : "") + "\n" +
                            "  document test {\n" +
@@ -79,7 +79,7 @@ class RankProfileSearchFixture {
                            "}";
         builder.importString(sdContent);
         builder.build();
-        schema = builder.getSearch();
+        schema = builder.getSchema();
     }
 
     public void assertFirstPhaseExpression(String expExpression, String rankProfile) {

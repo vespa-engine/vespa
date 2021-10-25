@@ -19,7 +19,7 @@ public class NameFieldCheckTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNameField() {
         try {
-            SearchBuilder.createFromString(
+            SchemaBuilder.createFromString(
                     "search simple {\n" +
                     "  document name-check {\n" +
                     "    field title type string {\n" +
@@ -40,7 +40,7 @@ public class NameFieldCheckTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDuplicateNamesInSearchDifferentType() {
         try {
-            SearchBuilder.createFromString(
+            SchemaBuilder.createFromString(
                     "search duplicatenamesinsearch {\n" +
                     "  document {\n" +
                     "    field grpphotoids64 type string { }\n" +
@@ -60,7 +60,7 @@ public class NameFieldCheckTestCase extends AbstractSchemaTestCase {
     @Test
     public void testDuplicateNamesInDoc() {
         try {
-            SearchBuilder.createFromString(
+            SchemaBuilder.createFromString(
                     "search duplicatenamesindoc {\n" +
                     "  document {\n" +
                     "    field foo type int {\n" +

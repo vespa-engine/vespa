@@ -35,18 +35,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Helper class for importing {@link Schema} objects in an unambiguous way. The pattern for using this is to 1) Import
+ * Helper class for building {@link Schema}s. The pattern for using this is to 1) Import
  * all available search definitions, using the importXXX() methods, 2) provide the available rank types and rank
  * expressions, using the setRankXXX() methods, 3) invoke the {@link #build()} method, and 4) retrieve the built
- * search objects using the {@link #getSearch(String)} method.
+ * search objects using the {@link #getSchema(String)} method.
  */
-// Since this was created we have added Application, and much of the content in this should probably migrate there.
-public class SearchBuilder {
+// NOTE: Since this was created we have added Application, and much of the content in this should migrate there.
+public class SchemaBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
     private final DocumentModel model = new DocumentModel();
@@ -58,55 +57,54 @@ public class SearchBuilder {
     /** True to build the document aspect only, skipping instantiation of rank profiles */
     private final boolean documentsOnly;
 
-    private List<Schema> schemaList = new LinkedList<>();
     private boolean isBuilt = false;
 
     private final Set<Class<? extends Processor>> processorsToSkip = new HashSet<>();
 
     /** For testing only */
-    public SearchBuilder() {
+    public SchemaBuilder() {
         this(new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /** For testing only */
-    public SearchBuilder(DeployLogger deployLogger) {
+    public SchemaBuilder(DeployLogger deployLogger) {
         this(MockApplicationPackage.createEmpty(), deployLogger);
     }
 
     /** For testing only */
-    public SearchBuilder(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
+    public SchemaBuilder(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
         this(MockApplicationPackage.createEmpty(), deployLogger, rankProfileRegistry);
     }
 
     /** Used for generating documents for typed access to document fields in Java */
-    public SearchBuilder(boolean documentsOnly) {
+    public SchemaBuilder(boolean documentsOnly) {
         this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry(), documentsOnly);
     }
 
     /** For testing only */
-    public SearchBuilder(ApplicationPackage app, DeployLogger deployLogger) {
+    public SchemaBuilder(ApplicationPackage app, DeployLogger deployLogger) {
         this(app, new MockFileRegistry(), deployLogger, new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /** For testing only */
-    public SearchBuilder(ApplicationPackage app, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
+    public SchemaBuilder(ApplicationPackage app, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
         this(app, new MockFileRegistry(), deployLogger, new TestProperties(), rankProfileRegistry, new QueryProfileRegistry());
     }
 
     /** For testing only */
-    public SearchBuilder(RankProfileRegistry rankProfileRegistry) {
+    public SchemaBuilder(RankProfileRegistry rankProfileRegistry) {
         this(rankProfileRegistry, new QueryProfileRegistry());
     }
 
     /** For testing only */
-    public SearchBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
+    public SchemaBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
         this(rankProfileRegistry, queryProfileRegistry, new TestProperties());
     }
-    public SearchBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry, ModelContext.Properties properties) {
+    public SchemaBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry, ModelContext.Properties properties) {
         this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), properties, rankProfileRegistry, queryProfileRegistry);
     }
 
-    public SearchBuilder(ApplicationPackage app,
+    public SchemaBuilder(ApplicationPackage app,
                          FileRegistry fileRegistry,
                          DeployLogger deployLogger,
                          ModelContext.Properties properties,
@@ -114,7 +112,7 @@ public class SearchBuilder {
                          QueryProfileRegistry queryProfileRegistry) {
         this(app, fileRegistry, deployLogger, properties, rankProfileRegistry, queryProfileRegistry, false);
     }
-    private SearchBuilder(ApplicationPackage applicationPackage,
+    private SchemaBuilder(ApplicationPackage applicationPackage,
                           FileRegistry fileRegistry,
                           DeployLogger deployLogger,
                           ModelContext.Properties properties,
@@ -162,9 +160,9 @@ public class SearchBuilder {
     /**
      * Import search definition.
      *
-     * @param str the string to parse.
-     * @return the name of the imported object.
-     * @throws ParseException thrown if the file does not contain a valid search definition.
+     * @param str the string to parse
+     * @return the name of the imported object
+     * @throws ParseException thrown if the file does not contain a valid search definition
      */
     public String importString(String str) throws ParseException {
         return importString(str, null);
@@ -173,7 +171,7 @@ public class SearchBuilder {
     private String importString(String str, String searchDefDir) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
-            return importRawSearch(new SDParser(stream, fileRegistry, deployLogger, properties, application,
+            return importRawSchema(new SDParser(stream, fileRegistry, deployLogger, properties, application,
                                                 application.rankProfileRegistry(), documentsOnly)
                                            .schema(docTypeMgr, searchDefDir));
         } catch (TokenMgrException e) {
@@ -184,28 +182,25 @@ public class SearchBuilder {
     }
 
     /**
-     * Registers the given search object to the internal list of objects to be processed during {@link #build()}. A
+     * Registers the given schema to the application to be built during {@link #build()}. A
      * {@link Schema} object is considered to be "raw" if it has not already been processed. This is the case for most
-     * programmatically constructed search objects used in unit tests.
+     * programmatically constructed schemas used in unit tests.
      *
-     * @param schema the object to import.
-     * @return the name of the imported object.
-     * @throws IllegalArgumentException if the given search object has already been processed.
+     * @param schema the object to import
+     * @return the name of the imported object
+     * @throws IllegalArgumentException if the given search object has already been processed
      */
-    public String importRawSearch(Schema schema) {
+    public String importRawSchema(Schema schema) {
         if (schema.getName() == null)
             throw new IllegalArgumentException("Schema has no name");
         String rawName = schema.getName();
         application.add(schema);
-        schemaList.add(schema);
         return rawName;
     }
 
     /**
+     * Processes and finalizes the schemas of this.
      * Only for testing.
-     *
-     * Processes and finalizes the imported search definitions so that they become available through the {@link
-     * #getSearch(String)} method.
      *
      * @throws IllegalStateException Thrown if this method has already been called.
      */
@@ -214,21 +209,19 @@ public class SearchBuilder {
     }
 
     /**
-     * Processes and finalizes the imported search definitions so that they become available through the {@link
-     * #getSearch(String)} method.
+     * Processes and finalizes the schemas of this.
      *
-     * @throws IllegalStateException Thrown if this method has already been called.
+     * @throws IllegalStateException thrown if this method has already been called
      */
     public void build(boolean validate) {
-        if (isBuilt) throw new IllegalStateException("Model already built");
+        if (isBuilt) throw new IllegalStateException("Application already built");
 
         if (validate)
             application.validate(deployLogger);
 
-        List<Schema> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
-        for (Schema schema : schemaList) {
+        for (Schema schema : application.schemas().values()) {
             if (schema.hasDocument()) {
                 sdocs.add(schema.getDocument());
             }
@@ -241,27 +234,22 @@ public class SearchBuilder {
             new FieldOperationApplier().process(sdoc);
         }
 
-        var resolver = new DocumentReferenceResolver(schemaList);
+        var resolver = new DocumentReferenceResolver(application.schemas().values());
         sdocs.forEach(resolver::resolveReferences);
         sdocs.forEach(resolver::resolveInheritedReferences);
-        var importedFieldsEnumerator = new ImportedFieldsEnumerator(schemaList);
+        var importedFieldsEnumerator = new ImportedFieldsEnumerator(application.schemas().values());
         sdocs.forEach(importedFieldsEnumerator::enumerateImportedFields);
 
         if (validate)
             new DocumentGraphValidator().validateDocumentGraph(sdocs);
 
         var builder = new DocumentModelBuilder(model);
-        for (Schema schema : new SearchOrderer().order(schemaList)) {
+        List<Schema> schemasSomewhatOrdered = new ArrayList<>(application.schemas().values());
+        for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
             new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
             process(schema, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
-            built.add(schema);
         }
-        builder.addToModel(schemaList);
-
-        if ( validate && ! builder.valid() )
-            throw new IllegalArgumentException("Impossible to build a correct model");
-
-        schemaList = built;
+        builder.addToModel(schemasSomewhatOrdered);
         isBuilt = true;
     }
 
@@ -278,14 +266,14 @@ public class SearchBuilder {
     }
 
     /**
-     * Convenience method to call {@link #getSearch(String)} when there is only a single {@link Schema} object
+     * Convenience method to call {@link #getSchema(String)} when there is only a single {@link Schema} object
      * built. This method will never return null.
      *
      * @return the built object
      * @throws IllegalStateException if there is not exactly one search.
      */
-    public Schema getSearch() {
-        if ( ! isBuilt)  throw new IllegalStateException("Searches not built.");
+    public Schema getSchema() {
+        if ( ! isBuilt)  throw new IllegalStateException("Application not built.");
         if (application.schemas().size() != 1)
             throw new IllegalStateException("This call only works if we have 1 schema. Schemas: " +
                                             application.schemas().values());
@@ -301,14 +289,14 @@ public class SearchBuilder {
      * Returns the built {@link Schema} object that has the given name. If the name is unknown, this method will simply
      * return null.
      *
-     * @param name the name of the search definition to return,
+     * @param name the name of the schema to return,
      *             or null to return the only one or throw an exception if there are multiple to choose from
      * @return the built object, or null if none with this name
      * @throws IllegalStateException if {@link #build()} has not been called.
      */
-    public Schema getSearch(String name) {
-        if ( ! isBuilt)  throw new IllegalStateException("Searches not built.");
-        if (name == null) return getSearch();
+    public Schema getSchema(String name) {
+        if ( ! isBuilt)  throw new IllegalStateException("Application not built.");
+        if (name == null) return getSchema();
         return application.schemas().get(name);
     }
 
@@ -319,30 +307,30 @@ public class SearchBuilder {
      *
      * @return the list of built searches
      */
-    public List<Schema> getSearchList() {
-        return new ArrayList<>(schemaList);
+    public List<Schema> getSchemaList() {
+        return new ArrayList<>(application.schemas().values());
     }
 
     /**
      * Convenience factory method to import and build a {@link Schema} object from a string.
      *
-     * @param sd   The string to build from.
-     * @return The built {@link SearchBuilder} object.
-     * @throws ParseException Thrown if there was a problem parsing the string.
+     * @param sd the string to build from
+     * @return the built {@link SchemaBuilder} object
+     * @throws ParseException thrown if there is a problem parsing the string
      */
-    public static SearchBuilder createFromString(String sd) throws ParseException {
+    public static SchemaBuilder createFromString(String sd) throws ParseException {
         return createFromString(sd, new BaseDeployLogger());
     }
 
-    public static SearchBuilder createFromString(String sd, DeployLogger logger) throws ParseException {
-        SearchBuilder builder = new SearchBuilder(logger);
+    public static SchemaBuilder createFromString(String sd, DeployLogger logger) throws ParseException {
+        SchemaBuilder builder = new SchemaBuilder(logger);
         builder.importString(sd);
         builder.build(true);
         return builder;
     }
 
-    public static SearchBuilder createFromStrings(DeployLogger logger, String ... schemas) throws ParseException {
-        SearchBuilder builder = new SearchBuilder(logger);
+    public static SchemaBuilder createFromStrings(DeployLogger logger, String ... schemas) throws ParseException {
+        SchemaBuilder builder = new SchemaBuilder(logger);
         for (var schema : schemas)
             builder.importString(schema);
         builder.build(true);
@@ -353,26 +341,26 @@ public class SearchBuilder {
      * Convenience factory method to import and build a {@link Schema} object from a file. Only for testing.
      *
      * @param fileName the file to build from
-     * @return the built {@link SearchBuilder} object
+     * @return the built {@link SchemaBuilder} object
      * @throws IOException    if there was a problem reading the file.
      * @throws ParseException if there was a problem parsing the file content.
      */
-    public static SearchBuilder createFromFile(String fileName) throws IOException, ParseException {
+    public static SchemaBuilder createFromFile(String fileName) throws IOException, ParseException {
         return createFromFile(fileName, new BaseDeployLogger());
     }
 
     /**
      * Convenience factory methdd to create a SearchBuilder from multiple SD files. Only for testing.
      */
-    public static SearchBuilder createFromFiles(Collection<String> fileNames) throws IOException, ParseException {
+    public static SchemaBuilder createFromFiles(Collection<String> fileNames) throws IOException, ParseException {
         return createFromFiles(fileNames, new BaseDeployLogger());
     }
 
-    public static SearchBuilder createFromFile(String fileName, DeployLogger logger) throws IOException, ParseException {
+    public static SchemaBuilder createFromFile(String fileName, DeployLogger logger) throws IOException, ParseException {
         return createFromFile(fileName, logger, new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
-    private static SearchBuilder createFromFiles(Collection<String> fileNames, DeployLogger logger) throws IOException, ParseException {
+    private static SchemaBuilder createFromFiles(Collection<String> fileNames, DeployLogger logger) throws IOException, ParseException {
         return createFromFiles(fileNames, new MockFileRegistry(), logger, new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
@@ -382,14 +370,14 @@ public class SearchBuilder {
      * @param fileName the file to build from.
      * @param deployLogger logger for deploy messages.
      * @param rankProfileRegistry registry for rank profiles.
-     * @return the built {@link SearchBuilder} object.
+     * @return the built {@link SchemaBuilder} object.
      * @throws IOException    if there was a problem reading the file.
      * @throws ParseException if there was a problem parsing the file content.
      */
-    private static SearchBuilder createFromFile(String fileName,
-                                               DeployLogger deployLogger,
-                                               RankProfileRegistry rankProfileRegistry,
-                                               QueryProfileRegistry queryprofileRegistry)
+    private static SchemaBuilder createFromFile(String fileName,
+                                                DeployLogger deployLogger,
+                                                RankProfileRegistry rankProfileRegistry,
+                                                QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
         return createFromFiles(Collections.singletonList(fileName), new MockFileRegistry(), deployLogger, new TestProperties(),
                                rankProfileRegistry, queryprofileRegistry);
@@ -398,14 +386,14 @@ public class SearchBuilder {
     /**
      * Convenience factory methdd to create a SearchBuilder from multiple SD files..
      */
-    private static SearchBuilder createFromFiles(Collection<String> fileNames,
-                                                FileRegistry fileRegistry,
-                                                DeployLogger deployLogger,
-                                                ModelContext.Properties properties,
-                                                RankProfileRegistry rankProfileRegistry,
-                                                QueryProfileRegistry queryprofileRegistry)
+    private static SchemaBuilder createFromFiles(Collection<String> fileNames,
+                                                 FileRegistry fileRegistry,
+                                                 DeployLogger deployLogger,
+                                                 ModelContext.Properties properties,
+                                                 RankProfileRegistry rankProfileRegistry,
+                                                 QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
-        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(),
+        SchemaBuilder builder = new SchemaBuilder(MockApplicationPackage.createEmpty(),
                                                   fileRegistry,
                                                   deployLogger,
                                                   properties,
@@ -419,17 +407,17 @@ public class SearchBuilder {
     }
 
 
-    public static SearchBuilder createFromDirectory(String dir, FileRegistry fileRegistry, DeployLogger logger, ModelContext.Properties properties) throws IOException, ParseException {
+    public static SchemaBuilder createFromDirectory(String dir, FileRegistry fileRegistry, DeployLogger logger, ModelContext.Properties properties) throws IOException, ParseException {
         return createFromDirectory(dir, fileRegistry, logger, properties, new RankProfileRegistry());
     }
-    public static SearchBuilder createFromDirectory(String dir,
+    public static SchemaBuilder createFromDirectory(String dir,
                                                     FileRegistry fileRegistry,
                                                     DeployLogger logger,
                                                     ModelContext.Properties properties,
                                                     RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
         return createFromDirectory(dir, fileRegistry, logger, properties, rankProfileRegistry, createQueryProfileRegistryFromDirectory(dir));
     }
-    private static SearchBuilder createFromDirectory(String dir,
+    private static SchemaBuilder createFromDirectory(String dir,
                                                      FileRegistry fileRegistry,
                                                      DeployLogger logger,
                                                      ModelContext.Properties properties,
@@ -439,14 +427,14 @@ public class SearchBuilder {
                                    rankProfileRegistry, queryProfileRegistry);
     }
 
-    private static SearchBuilder createFromDirectory(String dir,
+    private static SchemaBuilder createFromDirectory(String dir,
                                                      ApplicationPackage applicationPackage,
                                                      FileRegistry fileRegistry,
                                                      DeployLogger deployLogger,
                                                      ModelContext.Properties properties,
                                                      RankProfileRegistry rankProfileRegistry,
                                                      QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
-        SearchBuilder builder = new SearchBuilder(applicationPackage,
+        SchemaBuilder builder = new SchemaBuilder(applicationPackage,
                                                   fileRegistry,
                                                   deployLogger,
                                                   properties,
@@ -470,10 +458,10 @@ public class SearchBuilder {
     /**
      * Convenience factory method to import and build a {@link Schema} object from a file. Only for testing.
      *
-     * @param fileName The file to build from.
-     * @return The built {@link Schema} object.
-     * @throws IOException    Thrown if there was a problem reading the file.
-     * @throws ParseException Thrown if there was a problem parsing the file content.
+     * @param fileName the file to build from
+     * @return the built {@link Schema} object
+     * @throws IOException    thrown if there was a problem reading the file
+     * @throws ParseException thrown if there was a problem parsing the file content
      */
     public static Schema buildFromFile(String fileName) throws IOException, ParseException {
         return buildFromFile(fileName, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfileRegistry());
@@ -482,11 +470,11 @@ public class SearchBuilder {
     /**
      * Convenience factory method to import and build a {@link Schema} object from a file.
      *
-     * @param fileName The file to build from.
-     * @param rankProfileRegistry Registry for rank profiles.
-     * @return The built {@link Schema} object.
-     * @throws IOException    Thrown if there was a problem reading the file.
-     * @throws ParseException Thrown if there was a problem parsing the file content.
+     * @param fileName the file to build from
+     * @param rankProfileRegistry registry for rank profiles
+     * @return the built {@link Schema} object
+     * @throws IOException    thrown if there was a problem reading the file
+     * @throws ParseException thrown if there was a problem parsing the file content
      */
     public static Schema buildFromFile(String fileName,
                                        RankProfileRegistry rankProfileRegistry,
@@ -496,35 +484,35 @@ public class SearchBuilder {
     }
 
     /**
-     * Convenience factory method to import and build a {@link Schema} object from a file.
+     * Convenience factory method to import and build a {@link Schema} from a file.
      *
-     * @param fileName The file to build from.
-     * @param deployLogger Logger for deploy messages.
-     * @param rankProfileRegistry Registry for rank profiles.
-     * @return The built {@link Schema} object.
-     * @throws IOException    Thrown if there was a problem reading the file.
-     * @throws ParseException Thrown if there was a problem parsing the file content.
+     * @param fileName the file to build from
+     * @param deployLogger logger for deploy messages
+     * @param rankProfileRegistry registry for rank profiles
+     * @return the built {@link Schema} object
+     * @throws IOException    thrown if there was a problem reading the file
+     * @throws ParseException thrown if there was a problem parsing the file content
      */
     public static Schema buildFromFile(String fileName,
                                        DeployLogger deployLogger,
                                        RankProfileRegistry rankProfileRegistry,
                                        QueryProfileRegistry queryProfileRegistry)
             throws IOException, ParseException {
-        return createFromFile(fileName, deployLogger, rankProfileRegistry, queryProfileRegistry).getSearch();
+        return createFromFile(fileName, deployLogger, rankProfileRegistry, queryProfileRegistry).getSchema();
     }
 
     /**
      * Convenience factory method to import and build a {@link Schema} object from a raw object.
      *
-     * @param rawSchema the raw object to build from.
-     * @return the built {@link SearchBuilder} object.
-     * @see #importRawSearch(Schema)
+     * @param rawSchema the raw object to build from
+     * @return the built {@link SchemaBuilder} object
+     * @see #importRawSchema(Schema)
      */
-    public static SearchBuilder createFromRawSearch(Schema rawSchema,
+    public static SchemaBuilder createFromRawSchema(Schema rawSchema,
                                                     RankProfileRegistry rankProfileRegistry,
                                                     QueryProfileRegistry queryProfileRegistry) {
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry, queryProfileRegistry);
-        builder.importRawSearch(rawSchema);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry, queryProfileRegistry);
+        builder.importRawSchema(rawSchema);
         builder.build();
         return builder;
     }
@@ -532,14 +520,14 @@ public class SearchBuilder {
     /**
      * Convenience factory method to import and build a {@link Schema} object from a raw object.
      *
-     * @param rawSchema The raw object to build from.
-     * @return The built {@link Schema} object.
-     * @see #importRawSearch(Schema)
+     * @param rawSchema the raw object to build from
+     * @return the built {@link Schema} object
+     * @see #importRawSchema(Schema)
      */
-    public static Schema buildFromRawSearch(Schema rawSchema,
+    public static Schema buildFromRawSchema(Schema rawSchema,
                                             RankProfileRegistry rankProfileRegistry,
                                             QueryProfileRegistry queryProfileRegistry) {
-        return createFromRawSearch(rawSchema, rankProfileRegistry, queryProfileRegistry).getSearch();
+        return createFromRawSchema(rawSchema, rankProfileRegistry, queryProfileRegistry).getSchema();
     }
 
     public RankProfileRegistry getRankProfileRegistry() {

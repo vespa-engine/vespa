@@ -28,7 +28,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                         "search test {\n" +
                         "    document test { \n" +
@@ -66,7 +66,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7.0 < attribute(a), 1, 2) == 0))",
@@ -79,7 +79,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -126,7 +126,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("17.0", parent.getFirstPhaseRanking().getRoot().toString());
@@ -150,7 +150,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNonTopLevelInlining() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(
                 "search test {\n" +
                         "    document test { \n" +
@@ -182,7 +182,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
 
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("attribute(a) + C + (attribute(b) + 1)", test.getFirstPhaseRanking().getRoot().toString());
@@ -194,7 +194,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     public void testFunctionInliningWithReplacement() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         MockDeployLogger deployLogger = new MockDeployLogger();
-        SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty(),
+        SchemaBuilder builder = new SchemaBuilder(MockApplicationPackage.createEmpty(),
                                                   new MockFileRegistry(),
                                                   deployLogger,
                                                   new TestProperties(),
@@ -216,7 +216,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "}\n");
         builder.build();
-        Schema s = builder.getSearch();
+        Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("foo(2)", test.getFirstPhaseRanking().getRoot().toString());
         assertTrue("Does not contain expected warning", deployLogger.contains("Function 'foo' replaces " +

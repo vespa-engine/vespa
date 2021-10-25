@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -24,7 +24,7 @@ public class IntegerIndex2AttributeTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testIntegerIndex2Attribute() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/integerindex2attribute.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/integerindex2attribute.sd");
         new IntegerIndex2Attribute(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
 
         SDField f;

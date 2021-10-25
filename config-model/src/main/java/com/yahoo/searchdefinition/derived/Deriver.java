@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
@@ -17,8 +17,8 @@ import java.util.List;
  */
 public class Deriver {
 
-    public static SearchBuilder getSearchBuilder(List<String> sds) {
-        SearchBuilder builder = new SearchBuilder();
+    public static SchemaBuilder getSearchBuilder(List<String> sds) {
+        SchemaBuilder builder = new SchemaBuilder();
         try {
             for (String s : sds) {
                 builder.importFile(s);

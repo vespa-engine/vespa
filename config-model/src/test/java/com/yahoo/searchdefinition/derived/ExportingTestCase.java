@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -146,11 +146,11 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testTensor2() throws IOException, ParseException {
         String dir = "src/test/derived/tensor2/";
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importFile(dir + "first.sd");
         builder.importFile(dir + "second.sd");
         builder.build();
-        derive("tensor2", builder, builder.getSearch("second"));
+        derive("tensor2", builder, builder.getSchema("second"));
         assertCorrectConfigFiles("tensor2");
     }
 

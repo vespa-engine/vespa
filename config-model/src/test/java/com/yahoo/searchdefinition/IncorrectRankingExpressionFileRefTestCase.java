@@ -21,7 +21,7 @@ public class IncorrectRankingExpressionFileRefTestCase extends AbstractSchemaTes
     public void testIncorrectRef() throws IOException, ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            Schema schema = SearchBuilder.buildFromFile("src/test/examples/incorrectrankingexpressionfileref.sd",
+            Schema schema = SchemaBuilder.buildFromFile("src/test/examples/incorrectrankingexpressionfileref.sd",
                                                         registry,
                                                         new QueryProfileRegistry());
             new DerivedConfiguration(schema, registry); // cause rank profile parsing

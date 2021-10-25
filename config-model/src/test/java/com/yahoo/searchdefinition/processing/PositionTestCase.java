@@ -5,7 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -27,18 +27,18 @@ public class PositionTestCase {
 
     @Test
     public void inherited_position_zcurve_field_is_not_added_to_document_fieldset() throws Exception {
-        SearchBuilder sb = SearchBuilder.createFromFiles(Arrays.asList(
+        SchemaBuilder sb = SchemaBuilder.createFromFiles(Arrays.asList(
                 "src/test/examples/position_base.sd",
                 "src/test/examples/position_inherited.sd"));
 
-        Schema schema = sb.getSearch("position_inherited");
+        Schema schema = sb.getSchema("position_inherited");
         FieldSet fieldSet = schema.getDocument().getFieldSets().builtInFieldSets().get(DocumentType.DOCUMENT);
         assertFalse(fieldSet.getFieldNames().contains(PositionDataType.getZCurveFieldName("pos")));
     }
 
     @Test
     public void requireThatPositionCanBeAttribute() throws Exception {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/position_attribute.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/position_attribute.sd");
         assertNull(schema.getAttribute("pos"));
         assertNull(schema.getAttribute("pos.x"));
         assertNull(schema.getAttribute("pos.y"));
@@ -50,7 +50,7 @@ public class PositionTestCase {
     @Test
     public void requireThatPositionCanNotBeIndex() throws Exception {
         try {
-            SearchBuilder.buildFromFile("src/test/examples/position_index.sd");
+            SchemaBuilder.buildFromFile("src/test/examples/position_index.sd");
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'position_index', field 'pos': Indexing of data type 'position' is not " +
@@ -60,7 +60,7 @@ public class PositionTestCase {
 
     @Test
     public void requireThatSummaryAloneDoesNotCreateZCurve() throws Exception {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/position_summary.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/position_summary.sd");
         assertNull(schema.getAttribute("pos"));
         assertNull(schema.getAttribute("pos.x"));
         assertNull(schema.getAttribute("pos.y"));
@@ -79,7 +79,7 @@ public class PositionTestCase {
 
     @Test
     public void requireThatExtraFieldCanBePositionAttribute() throws Exception {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/position_extra.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/position_extra.sd");
         assertNull(schema.getAttribute("pos_ext"));
         assertNull(schema.getAttribute("pos_ext.x"));
         assertNull(schema.getAttribute("pos_ext.y"));
@@ -90,7 +90,7 @@ public class PositionTestCase {
 
     @Test
     public void requireThatPositionArrayIsSupported() throws Exception {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/position_array.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/position_array.sd");
         assertNull(schema.getAttribute("pos"));
         assertNull(schema.getAttribute("pos.x"));
         assertNull(schema.getAttribute("pos.y"));
