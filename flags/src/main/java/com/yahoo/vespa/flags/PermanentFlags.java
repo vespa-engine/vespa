@@ -218,7 +218,6 @@ public class PermanentFlags {
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
-
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
