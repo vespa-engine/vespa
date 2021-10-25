@@ -5,6 +5,7 @@
 #include "testandsethelper.h"
 #include "bucketownershipnotifier.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/catchresult.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
@@ -91,11 +92,6 @@ private:
     vespalib::ISequencedTaskExecutor::ExecutorId   _executorId;
 };
 
-struct Noop : public spi::OperationComplete {
-    void onComplete(std::unique_ptr<spi::Result>) override { }
-    void addResultHandler(const spi::ResultHandler *) override { }
-};
-
 bool
 bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo& b) {
     // Don't check document sizes, as background moving of documents in Proton
@@ -174,7 +170,7 @@ AsyncHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::
     });
 
     if (cmd.getActive()) {
-        _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<Noop>());
+        _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<spi::NoopOperationComplete>());
         _spi.setActiveStateAsync(bucket, spi::BucketInfo::ACTIVE, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
     } else {
         _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));

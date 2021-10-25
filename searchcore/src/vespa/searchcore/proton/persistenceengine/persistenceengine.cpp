@@ -549,7 +549,7 @@ PersistenceEngine::destroyIterator(IteratorId id, Context&)
 
 
 void
-PersistenceEngine::createBucketAsync(const Bucket &b, Context &, OperationComplete::UP onComplete)
+PersistenceEngine::createBucketAsync(const Bucket &b, Context &, OperationComplete::UP onComplete) noexcept
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "createBucket(%s)", b.toString().c_str());
@@ -569,7 +569,7 @@ PersistenceEngine::createBucketAsync(const Bucket &b, Context &, OperationComple
 
 
 void
-PersistenceEngine::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete)
+PersistenceEngine::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "deleteBucket(%s)", b.toString().c_str());

@@ -27,109 +27,108 @@ using document::FixedBucketSpaces;
 
 namespace storage::spi::dummy {
 
-BucketContent::BucketContent()
-    : _entries(),
-      _gidMap(),
-      _info(),
-      _inUse(false),
-      _outdatedInfo(true),
-      _active(false)
-{ }
-BucketContent::~BucketContent() = default;
+    BucketContent::BucketContent()
+            : _entries(),
+              _gidMap(),
+              _info(),
+              _inUse(false),
+              _outdatedInfo(true),
+              _active(false) {}
 
-uint32_t
-BucketContent::computeEntryChecksum(const BucketEntry& e) const
-{
-    vespalib::crc_32_type checksummer;
+    BucketContent::~BucketContent() = default;
 
-    uint64_t ts(e.entry->getTimestamp());
-    checksummer.process_bytes(&e.gid, sizeof(GlobalId));
-    checksummer.process_bytes(&ts, sizeof(uint64_t));
-    return checksummer.checksum();
-}
+    uint32_t
+    BucketContent::computeEntryChecksum(const BucketEntry &e) const {
+        vespalib::crc_32_type checksummer;
 
-BucketChecksum
-BucketContent::updateRollingChecksum(uint32_t entryChecksum)
-{
-    uint32_t checksum = _info.getChecksum();
-    checksum ^= entryChecksum;
-    if (checksum == 0) {
-        checksum = 1;
+        uint64_t ts(e.entry->getTimestamp());
+        checksummer.process_bytes(&e.gid, sizeof(GlobalId));
+        checksummer.process_bytes(&ts, sizeof(uint64_t));
+        return checksummer.checksum();
     }
-    return BucketChecksum(checksum);
-}
 
-const BucketInfo&
-BucketContent::getBucketInfo() const
-{
-    if (!_outdatedInfo) {
+    BucketChecksum
+    BucketContent::updateRollingChecksum(uint32_t entryChecksum) {
+        uint32_t checksum = _info.getChecksum();
+        checksum ^= entryChecksum;
+        if (checksum == 0) {
+            checksum = 1;
+        }
+        return BucketChecksum(checksum);
+    }
+
+    const BucketInfo &
+    BucketContent::getBucketInfo() const {
+        if (!_outdatedInfo) {
+            return _info;
+        }
+
+        // Checksum should only depend on the newest entry for each document that
+        // has not been removed.
+        uint32_t unique = 0;
+        uint32_t uniqueSize = 0;
+        uint32_t totalSize = 0;
+        uint32_t checksum = 0;
+
+        for (const BucketEntry &bucketEntry: _entries) {
+            const DocEntry &entry(*bucketEntry.entry);
+            const GlobalId &gid(bucketEntry.gid);
+
+            GidMapType::const_iterator gidIt(_gidMap.find(gid));
+            assert(gidIt != _gidMap.end());
+
+            totalSize += entry.getSize();
+            if (entry.isRemove()) {
+                continue;
+            }
+            // Only include if we're newest entry for the particular GID
+            if (gidIt->second.get() != &entry) {
+                continue;
+            }
+            ++unique;
+            uniqueSize += entry.getSize();
+
+            checksum ^= computeEntryChecksum(bucketEntry);
+        }
+        if (!unique) {
+            checksum = 0;
+        } else if (checksum == 0) {
+            checksum = 1;
+        }
+
+        _info = BucketInfo(BucketChecksum(checksum),
+                           unique,
+                           uniqueSize,
+                           _entries.size(),
+                           totalSize,
+                           BucketInfo::READY,
+                           _active ? BucketInfo::ACTIVE : BucketInfo::NOT_ACTIVE);
+
+        _outdatedInfo = false;
         return _info;
     }
 
-    // Checksum should only depend on the newest entry for each document that
-    // has not been removed.
-    uint32_t unique = 0;
-    uint32_t uniqueSize = 0;
-    uint32_t totalSize = 0;
-    uint32_t checksum = 0;
+    namespace {
 
-    for (const BucketEntry & bucketEntry : _entries) {
-        const DocEntry& entry(*bucketEntry.entry);
-        const GlobalId& gid(bucketEntry.gid);
+        struct TimestampLess {
+            bool operator()(const BucketEntry &bucketEntry, Timestamp t) {
+                return bucketEntry.entry->getTimestamp() < t;
+            }
 
-        GidMapType::const_iterator gidIt(_gidMap.find(gid));
-        assert(gidIt != _gidMap.end());
+            bool operator()(Timestamp t, const BucketEntry &bucketEntry) {
+                return t < bucketEntry.entry->getTimestamp();
+            }
+        };
 
-        totalSize += entry.getSize();
-        if (entry.isRemove()) {
-            continue;
+    }  // namespace
+
+    bool
+    BucketContent::hasTimestamp(Timestamp t) const {
+        if (!_entries.empty() && _entries.back().entry->getTimestamp() < t) {
+            return false;
         }
-        // Only include if we're newest entry for the particular GID
-        if (gidIt->second.get() != &entry) {
-            continue;
-        }
-        ++unique;
-        uniqueSize += entry.getSize();
-
-        checksum ^= computeEntryChecksum(bucketEntry);
+        return binary_search(_entries.begin(), _entries.end(), t, TimestampLess());
     }
-    if (!unique) {
-        checksum = 0;
-    } else if (checksum == 0) {
-        checksum = 1;
-    }
-
-    _info = BucketInfo(BucketChecksum(checksum),
-                       unique,
-                       uniqueSize,
-                       _entries.size(),
-                       totalSize,
-                       BucketInfo::READY,
-                       _active ? BucketInfo::ACTIVE : BucketInfo::NOT_ACTIVE);
-
-    _outdatedInfo = false;
-    return _info;
-}
-
-namespace {
-
-struct TimestampLess {
-    bool operator()(const BucketEntry &bucketEntry, Timestamp t)
-    { return bucketEntry.entry->getTimestamp() < t; }
-    bool operator()(Timestamp t, const BucketEntry &bucketEntry)
-    { return t < bucketEntry.entry->getTimestamp(); }
-};
-
-}  // namespace
-
-bool
-BucketContent::hasTimestamp(Timestamp t) const
-{
-    if (!_entries.empty() && _entries.back().entry->getTimestamp() < t) {
-        return false;
-    }
-    return binary_search(_entries.begin(), _entries.end(), t, TimestampLess());
-}
 
 /**
  * GID map semantics:
@@ -147,181 +146,174 @@ BucketContent::hasTimestamp(Timestamp t) const
  * document), we can remove the mapping entirely.
  */
 
-void
-BucketContent::insert(DocEntry::SP e)
-{
-    LOG(spam, "insert(%s)", e->toString().c_str());
-    const DocumentId* docId(e->getDocumentId());
-    assert(docId != 0);
-    GlobalId gid(docId->getGlobalId());
-    GidMapType::iterator gidIt(_gidMap.find(gid));
+    void
+    BucketContent::insert(DocEntry::SP e) {
+        LOG(spam, "insert(%s)", e->toString().c_str());
+        const DocumentId *docId(e->getDocumentId());
+        assert(docId != 0);
+        GlobalId gid(docId->getGlobalId());
+        GidMapType::iterator gidIt(_gidMap.find(gid));
 
-    if (!_entries.empty() &&
-        _entries.back().entry->getTimestamp() < e->getTimestamp()) {
-        _entries.push_back(BucketEntry(e, gid));
-    } else {
-        std::vector<BucketEntry>::iterator it =
-            lower_bound(_entries.begin(),
-                        _entries.end(),
-                        e->getTimestamp(),
-                        TimestampLess());
-        if (it != _entries.end()) {
-            if (it->entry->getTimestamp() == e->getTimestamp()) {
-                if (*it->entry.get() == *e) {
-                    LOG(debug, "Ignoring duplicate put entry %s",
-                        e->toString().c_str());
-                    return;
-                } else {
-                    LOG(error, "Entry %s was already present."
-                        "Was trying to insert %s.",
-                        it->entry->toString().c_str(),
-                        e->toString().c_str());
-                    LOG_ABORT("should not reach here");
+        if (!_entries.empty() &&
+            _entries.back().entry->getTimestamp() < e->getTimestamp()) {
+            _entries.push_back(BucketEntry(e, gid));
+        } else {
+            std::vector<BucketEntry>::iterator it =
+                    lower_bound(_entries.begin(),
+                                _entries.end(),
+                                e->getTimestamp(),
+                                TimestampLess());
+            if (it != _entries.end()) {
+                if (it->entry->getTimestamp() == e->getTimestamp()) {
+                    if (*it->entry.get() == *e) {
+                        LOG(debug, "Ignoring duplicate put entry %s",
+                            e->toString().c_str());
+                        return;
+                    } else {
+                        LOG(error, "Entry %s was already present."
+                                   "Was trying to insert %s.",
+                            it->entry->toString().c_str(),
+                            e->toString().c_str());
+                        LOG_ABORT("should not reach here");
+                    }
                 }
             }
+            _entries.insert(it, BucketEntry(e, gid));
         }
-        _entries.insert(it, BucketEntry(e, gid));
-    }
 
-    // GID map points to newest entry for that particular GID
-    if (gidIt != _gidMap.end()) {
-        if (gidIt->second->getTimestamp() < e->getTimestamp()) {
-            // TODO(vekterli): add support for cheap info updates for putting
-            // newer versions of a document etc. by XORing away old checksum.
-            gidIt->second = e;
-        } else {
-            LOG(spam,
-                "Newly inserted entry %s was older than existing entry %s; "
-                "not updating GID mapping",
-                e->toString().c_str(),
-                gidIt->second->toString().c_str());
-        }
-        _outdatedInfo = true;
-    } else {
-        _gidMap.insert(GidMapType::value_type(gid, e));
-        // Since GID didn't exist before, it means we can do a running
-        // update of the bucket info. Bucket checksum is XOR of all entry
-        // checksums, which is commutative.
-        // Only bother to update if we don't have to re-do it all afterwards
-        // anyway.
-        // Updating bucketinfo before we update entries since we assume rest
-        // of function is nothrow.
-        if (!_outdatedInfo) {
-            if (!e->isRemove()) {
-                _info = BucketInfo(updateRollingChecksum(
-                                           computeEntryChecksum(BucketEntry(e, gid))),
-                                   _info.getDocumentCount() + 1,
-                                   _info.getDocumentSize() + e->getSize(),
-                                   _info.getEntryCount() + 1,
-                                   _info.getUsedSize() + e->getSize(),
-                                   _info.getReady(),
-                                   _info.getActive());
+        // GID map points to newest entry for that particular GID
+        if (gidIt != _gidMap.end()) {
+            if (gidIt->second->getTimestamp() < e->getTimestamp()) {
+                // TODO(vekterli): add support for cheap info updates for putting
+                // newer versions of a document etc. by XORing away old checksum.
+                gidIt->second = e;
             } else {
-                _info = BucketInfo(_info.getChecksum(),
-                                   _info.getDocumentCount(),
-                                   _info.getDocumentSize(),
-                                   _info.getEntryCount() + 1,
-                                   _info.getUsedSize() + e->getSize(),
-                                   _info.getReady(),
-                                   _info.getActive());
+                LOG(spam,
+                    "Newly inserted entry %s was older than existing entry %s; "
+                    "not updating GID mapping",
+                    e->toString().c_str(),
+                    gidIt->second->toString().c_str());
             }
+            _outdatedInfo = true;
+        } else {
+            _gidMap.insert(GidMapType::value_type(gid, e));
+            // Since GID didn't exist before, it means we can do a running
+            // update of the bucket info. Bucket checksum is XOR of all entry
+            // checksums, which is commutative.
+            // Only bother to update if we don't have to re-do it all afterwards
+            // anyway.
+            // Updating bucketinfo before we update entries since we assume rest
+            // of function is nothrow.
+            if (!_outdatedInfo) {
+                if (!e->isRemove()) {
+                    _info = BucketInfo(updateRollingChecksum(
+                                               computeEntryChecksum(BucketEntry(e, gid))),
+                                       _info.getDocumentCount() + 1,
+                                       _info.getDocumentSize() + e->getSize(),
+                                       _info.getEntryCount() + 1,
+                                       _info.getUsedSize() + e->getSize(),
+                                       _info.getReady(),
+                                       _info.getActive());
+                } else {
+                    _info = BucketInfo(_info.getChecksum(),
+                                       _info.getDocumentCount(),
+                                       _info.getDocumentSize(),
+                                       _info.getEntryCount() + 1,
+                                       _info.getUsedSize() + e->getSize(),
+                                       _info.getReady(),
+                                       _info.getActive());
+                }
 
-            LOG(spam,
-                "After cheap bucketinfo update, state is %s (inserted %s)",
-                _info.toString().c_str(),
-                e->toString().c_str());
+                LOG(spam,
+                    "After cheap bucketinfo update, state is %s (inserted %s)",
+                    _info.toString().c_str(),
+                    e->toString().c_str());
+            }
+        }
+
+        assert(_outdatedInfo || _info.getEntryCount() == _entries.size());
+    }
+
+    DocEntry::SP
+    BucketContent::getEntry(const DocumentId &did) const {
+        GidMapType::const_iterator it(_gidMap.find(did.getGlobalId()));
+        if (it != _gidMap.end()) {
+            return it->second;
+        }
+        return DocEntry::SP();
+    }
+
+    DocEntry::SP
+    BucketContent::getEntry(Timestamp t) const {
+        std::vector<BucketEntry>::const_iterator iter =
+                lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
+
+        if (iter == _entries.end() || iter->entry->getTimestamp() != t) {
+            return DocEntry::SP();
+        } else {
+            return iter->entry;
         }
     }
 
-    assert(_outdatedInfo || _info.getEntryCount() == _entries.size());
-}
+    void
+    BucketContent::eraseEntry(Timestamp t) {
+        std::vector<BucketEntry>::iterator iter =
+                lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
 
-DocEntry::SP
-BucketContent::getEntry(const DocumentId& did) const
-{
-    GidMapType::const_iterator it(_gidMap.find(did.getGlobalId()));
-    if (it != _gidMap.end()) {
-        return it->second;
+        if (iter != _entries.end() && iter->entry->getTimestamp() == t) {
+            assert(iter->entry->getDocumentId() != 0);
+            GidMapType::iterator gidIt(
+                    _gidMap.find(iter->entry->getDocumentId()->getGlobalId()));
+            assert(gidIt != _gidMap.end());
+            _entries.erase(iter);
+            if (gidIt->second->getTimestamp() == t) {
+                LOG(debug, "erasing timestamp %" PRIu64 " from GID map", t.getValue());
+                // TODO(vekterli): O(1) bucket info update for this case
+                // FIXME: is this correct? seems like it could cause wrong behavior!
+                _gidMap.erase(gidIt);
+            } // else: not erasing newest entry, cannot erase from GID map
+            _outdatedInfo = true;
+        }
     }
-    return DocEntry::SP();
-}
 
-DocEntry::SP
-BucketContent::getEntry(Timestamp t) const
-{
-    std::vector<BucketEntry>::const_iterator iter =
-        lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
+    DummyPersistence::DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo> &repo)
+            : _initialized(false),
+              _repo(repo),
+              _content(),
+              _nextIterator(1),
+              _iterators(),
+              _monitor(),
+              _clusterState() {}
 
-    if (iter == _entries.end() || iter->entry->getTimestamp() != t) {
-        return DocEntry::SP();
-    } else {
-        return iter->entry;
+    DummyPersistence::~DummyPersistence() = default;
+
+    document::select::Node::UP
+    DummyPersistence::parseDocumentSelection(const string &documentSelection, bool allowLeaf) {
+        document::select::Node::UP ret;
+        try {
+            document::select::Parser parser(*_repo, document::BucketIdFactory());
+            ret = parser.parse(documentSelection);
+        } catch (document::select::ParsingFailedException &e) {
+            return document::select::Node::UP();
+        }
+        if (ret->isLeafNode() && !allowLeaf) {
+            return document::select::Node::UP();
+        }
+        return ret;
     }
-}
 
-void
-BucketContent::eraseEntry(Timestamp t)
-{
-    std::vector<BucketEntry>::iterator iter =
-        lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
-
-    if (iter != _entries.end() && iter->entry->getTimestamp() == t) {
-        assert(iter->entry->getDocumentId() != 0);
-        GidMapType::iterator gidIt(
-                _gidMap.find(iter->entry->getDocumentId()->getGlobalId()));
-        assert(gidIt != _gidMap.end());
-        _entries.erase(iter);
-        if (gidIt->second->getTimestamp() == t) {
-            LOG(debug, "erasing timestamp %" PRIu64 " from GID map", t.getValue());
-            // TODO(vekterli): O(1) bucket info update for this case
-            // FIXME: is this correct? seems like it could cause wrong behavior!
-            _gidMap.erase(gidIt);
-        } // else: not erasing newest entry, cannot erase from GID map
-        _outdatedInfo = true;
+    Result
+    DummyPersistence::initialize() {
+        assert(!_initialized);
+        _initialized = true;
+        return Result();
     }
-}
-
-DummyPersistence::DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
-    : _initialized(false),
-      _repo(repo),
-      _content(),
-      _nextIterator(1),
-      _iterators(),
-      _monitor(),
-      _clusterState()
-{}
-
-DummyPersistence::~DummyPersistence() = default;
-
-document::select::Node::UP
-DummyPersistence::parseDocumentSelection(const string& documentSelection, bool allowLeaf)
-{
-    document::select::Node::UP ret;
-    try {
-        document::select::Parser parser(*_repo, document::BucketIdFactory());
-        ret = parser.parse(documentSelection);
-    } catch (document::select::ParsingFailedException& e) {
-        return document::select::Node::UP();
-    }
-    if (ret->isLeafNode() && !allowLeaf) {
-        return document::select::Node::UP();
-    }
-    return ret;
-}
-
-Result
-DummyPersistence::initialize()
-{
-    assert(!_initialized);
-    _initialized = true;
-    return Result();
-}
 
 #define DUMMYPERSISTENCE_VERIFY_INITIALIZED \
-    if (!_initialized) throw vespalib::IllegalStateException( \
-            "initialize() must always be called first in order to " \
-            "trigger lazy initialization.", VESPA_STRLOC)
-
+    if (!_initialized) {                    \
+        LOG(error, "initialize() must always be called first in order to trigger lazy initialization."); \
+        abort(); \
+    }
 
 BucketIdListResult
 DummyPersistence::listBuckets(BucketSpace bucketSpace) const
@@ -715,7 +707,7 @@ DummyPersistence::destroyIterator(IteratorId id, Context&)
 }
 
 void
-DummyPersistence::createBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete)
+DummyPersistence::createBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createBucket(%s)", b.toString().c_str());
@@ -731,7 +723,7 @@ DummyPersistence::createBucketAsync(const Bucket& b, Context&, OperationComplete
 }
 
 void
-DummyPersistence::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete)
+DummyPersistence::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "deleteBucket(%s)", b.toString().c_str());

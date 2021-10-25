@@ -100,14 +100,14 @@ ProviderErrorWrapper::destroyIterator(spi::IteratorId iteratorId, spi::Context& 
 }
 
 void
-ProviderErrorWrapper::deleteBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete)
+ProviderErrorWrapper::deleteBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete) noexcept
 {
     onComplete->addResultHandler(this);
     _impl.deleteBucketAsync(bucket, context, std::move(onComplete));
 }
 
 void
-ProviderErrorWrapper::createBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete)
+ProviderErrorWrapper::createBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete) noexcept
 {
     onComplete->addResultHandler(this);
     _impl.createBucketAsync(bucket, context, std::move(onComplete));

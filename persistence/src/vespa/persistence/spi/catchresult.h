@@ -19,4 +19,9 @@ private:
     const ResultHandler                   *_resulthandler;
 };
 
+class NoopOperationComplete : public OperationComplete {
+    void onComplete(std::unique_ptr<spi::Result>) noexcept override { }
+    void addResultHandler(const spi::ResultHandler *) override { }
+};
+
 }

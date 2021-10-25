@@ -6,6 +6,7 @@
 #include "apply_bucket_diff_state.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/catchresult.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
@@ -682,16 +683,6 @@ findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHa
     }
 }
 
-struct CheckResult : public spi::OperationComplete {
-    spi::Bucket  _bucket;
-    const char  *_msg;
-    CheckResult(spi::Bucket bucket, const char * msg) : _bucket(bucket), _msg(msg) { }
-    void onComplete(std::unique_ptr<spi::Result> result) override {
-        checkResult(*result, _bucket, _msg);
-    }
-    void addResultHandler(const spi::ResultHandler *) override { }
-};
-
 }
 
 api::StorageReply::SP
@@ -910,7 +901,7 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
         tracker->fail(api::ReturnCode::BUSY, err);
         return tracker;
     }
-    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<CheckResult>(bucket, "create bucket"));
+    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<spi::NoopOperationComplete>());
 
 
     MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
@@ -1073,7 +1064,7 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
     tracker->setMetric(_env._metrics.getBucketDiff);
     spi::Bucket bucket(cmd.getBucket());
     LOG(debug, "GetBucketDiff(%s)", bucket.toString().c_str());
-    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<CheckResult>(bucket, "create bucket"));
+    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<spi::NoopOperationComplete>());
     return handleGetBucketDiffStage2(cmd, std::move(tracker));
 }
 
