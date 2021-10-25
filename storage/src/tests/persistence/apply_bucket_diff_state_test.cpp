@@ -43,6 +43,7 @@ public:
             throw std::runtime_error(_fail);
         }
     }
+    void schedule_delayed_delete(std::unique_ptr<ApplyBucketDiffState>) const override { }
     void set_fail(vespalib::string fail) { _fail = std::move(fail); }
 };
 
@@ -85,8 +86,8 @@ public:
 
     ~ApplyBucketDiffStateTestBase();
 
-    std::unique_ptr<ApplyBucketDiffState> make_state() {
-        return std::make_unique<ApplyBucketDiffState>(syncer, spi::Bucket(dummy_document_bucket), RetainGuard(monitored_ref_count));
+    std::shared_ptr<ApplyBucketDiffState> make_state() {
+        return ApplyBucketDiffState::create(syncer, spi::Bucket(dummy_document_bucket), RetainGuard(monitored_ref_count));
     }
 };
 

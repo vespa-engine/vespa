@@ -24,6 +24,7 @@ class MergeBucketInfoSyncer;
  * for one or more ApplyBucketDiffCommand / ApplyBucketDiffReply.
  */
 class ApplyBucketDiffState {
+    class Deleter;
     const MergeBucketInfoSyncer&            _merge_bucket_info_syncer;
     spi::Bucket                             _bucket;
     vespalib::string                        _fail_message;
@@ -35,8 +36,9 @@ class ApplyBucketDiffState {
     MessageSender*                          _sender;
     vespalib::RetainGuard                   _retain_guard;
 
-public:
     ApplyBucketDiffState(const MergeBucketInfoSyncer &merge_bucket_info_syncer, const spi::Bucket& bucket, vespalib::RetainGuard&& retain_guard);
+public:
+    static std::shared_ptr<ApplyBucketDiffState> create(const MergeBucketInfoSyncer &merge_bucket_info_syncer, const spi::Bucket& bucket, vespalib::RetainGuard&& retain_guard);
     ~ApplyBucketDiffState();
     void on_entry_complete(std::unique_ptr<storage::spi::Result> result, const document::DocumentId &doc_id, const char *op);
     void wait();
@@ -46,6 +48,7 @@ public:
     std::future<vespalib::string> get_future();
     void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, std::shared_ptr<api::StorageReply>&& delayed_reply);
     void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, MessageSender& sender, std::shared_ptr<api::StorageReply>&& delayed_reply);
+    const spi::Bucket& get_bucket() const noexcept { return _bucket; }
 };
 
 }
