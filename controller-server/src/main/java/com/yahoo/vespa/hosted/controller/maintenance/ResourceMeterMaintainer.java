@@ -122,12 +122,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     private void reportResourceSnapshots(Collection<ResourceSnapshot> resourceSnapshots) {
         meteringClient.consume(resourceSnapshots);
 
-        metric.set(METERING_LAST_REPORTED, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
-        // total metered resource usage, for alerting on drastic changes
-        metric.set(METERING_TOTAL_REPORTED,
-                   resourceSnapshots.stream()
-                           .mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()).sum(),
-                   metric.createContext(Collections.emptyMap()));
+        updateMetrics(resourceSnapshots);
 
         try (var lock = curator.lockMeteringRefreshTime()) {
             if (needsRefresh(curator.readMeteringRefreshTime())) {
@@ -194,4 +189,25 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         double cost = new NodeResources(allocation.getCpuCores(), allocation.getMemoryGb(), allocation.getDiskGb(), 0).cost();
         return Math.round(cost * 100.0 / costDivisor) / 100.0;
     }
+
+    private void updateMetrics(Collection<ResourceSnapshot> resourceSnapshots) {
+        metric.set(METERING_LAST_REPORTED, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
+        // total metered resource usage, for alerting on drastic changes
+        metric.set(METERING_TOTAL_REPORTED,
+                resourceSnapshots.stream()
+                        .mapToDouble(r -> r.getCpuCores() + r.getMemoryGb() + r.getDiskGb()).sum(),
+                metric.createContext(Collections.emptyMap()));
+
+        resourceSnapshots.forEach(snapshot -> {
+            var context = metric.createContext(Map.of(
+                    "tenant", snapshot.getApplicationId().tenant().value(),
+                    "applicationId", snapshot.getApplicationId().toFullString(),
+                    "zoneId", snapshot.getZoneId()
+            ));
+            metric.set("metering.vcpu", snapshot.getCpuCores(), context);
+            metric.set("metering.memoryGB", snapshot.getMemoryGb(), context);
+            metric.set("metering.diskGB", snapshot.getDiskGb(), context);
+        });
+    }
+
 }
