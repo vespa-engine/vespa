@@ -139,6 +139,66 @@ namespace execute::onsummary {
     };
 }
 
+namespace mutate::on_match {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+}
+
+namespace mutate::on_first_phase {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+}
+
+namespace mutate::on_second_phase {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+}
+
+namespace mutate::on_summary {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+}
+
 namespace matching {
 
     /**
