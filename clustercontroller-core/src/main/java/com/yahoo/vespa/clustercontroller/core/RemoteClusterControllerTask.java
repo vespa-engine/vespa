@@ -123,4 +123,6 @@ public abstract class RemoteClusterControllerTask {
         }
     }
 
+    @Override
+    public String toString() { return RemoteClusterControllerTask.class.getSimpleName(); }
 }
