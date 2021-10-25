@@ -215,7 +215,7 @@ public class SchemaBuilder {
      * Processes and finalizes the imported search definitions so that they become available through the {@link
      * #getSearch(String)} method.
      *
-     * @throws IllegalStateException Thrown if this method has already been called.
+     * @throws IllegalStateException thrown if this method has already been called
      */
     public void build(boolean validate) {
         if (isBuilt) throw new IllegalStateException("Model already built");
@@ -223,7 +223,6 @@ public class SchemaBuilder {
         if (validate)
             application.validate(deployLogger);
 
-        List<Schema> built = new ArrayList<>();
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
         for (Schema schema : application.schemas().values()) {
@@ -253,14 +252,12 @@ public class SchemaBuilder {
         for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
             new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
             process(schema, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
-            built.add(schema);
         }
         builder.addToModel(schemasSomewhatOrdered);
 
         if ( validate && ! builder.valid() )
             throw new IllegalArgumentException("Impossible to build a correct model");
 
-        application.replaceSchemasBy(built);
         isBuilt = true;
     }
 

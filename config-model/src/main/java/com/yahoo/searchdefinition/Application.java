@@ -45,13 +45,6 @@ public class Application {
     /** Returns an unmodifiable list of the schemas of this application */
     public Map<String, Schema> schemas() { return Collections.unmodifiableMap(schemas); }
 
-    /** Used by SearchBuilder, for now */
-    void replaceSchemasBy(List<Schema> schemas) {
-        this.schemas.clear();
-        for (var schema : schemas)
-            this.schemas.put(schema.getName(), schema);
-    }
-
     /** Validates this. Must be called after all content is added to it. */
     public void validate(DeployLogger logger) {
         schemas.values().forEach(schema -> schema.validate(logger));
