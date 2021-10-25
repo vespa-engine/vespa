@@ -31,16 +31,14 @@ struct ChangeBase {
         _type(NOOP),
         _doc(0),
         _weight(1),
-        _enumScratchPad(UNSET_ENUM),
-        _arithOperand(0)
+        _enumScratchPad(UNSET_ENUM)
     { }
 
     ChangeBase(Type type, uint32_t d, int32_t w = 1) :
         _type(type),
         _doc(d),
         _weight(w),
-        _enumScratchPad(UNSET_ENUM),
-        _arithOperand(0)
+        _enumScratchPad(UNSET_ENUM)
     { }
 
     int cmp(const ChangeBase &b) const { int diff(_doc - b._doc); return diff; }
@@ -53,19 +51,21 @@ struct ChangeBase {
     uint32_t           _doc;
     int32_t            _weight;
     mutable uint32_t   _enumScratchPad;
-    double             _arithOperand;
 };
 
 template <typename T>
 class NumericChangeData {
 private:
-    T _v;
+    double  _arithOperand;
+    T       _v;
 public:
     typedef T DataType;
 
-    NumericChangeData(T v) : _v(v) { }
-    NumericChangeData() : _v(T()) { }
+    NumericChangeData(T v) : _arithOperand(0), _v(v) { }
+    NumericChangeData() : _arithOperand(0), _v(T()) { }
 
+    double getArithOperand() const { return _arithOperand; }
+    void setArithOperand(double operand)  { _arithOperand = operand; }
     T get() const { return _v; }
     T raw() const { return _v; }
     operator T() const { return _v; }

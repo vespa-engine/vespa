@@ -433,7 +433,8 @@ public class SessionRepository {
 
     private Optional<RemoteSession> loadSessionIfActive(RemoteSession session) {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
-            if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
+            Optional<Long> activeSession = applicationRepo.activeSessionOf(applicationId);
+            if (activeSession.isPresent() && activeSession.get() == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
                 applicationRepo.activateApplication(ensureApplicationLoaded(session), session.getSessionId());
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");

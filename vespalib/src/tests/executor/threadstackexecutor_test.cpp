@@ -4,7 +4,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <atomic>
+#include <thread>
 
 using namespace vespalib;
 
@@ -74,9 +74,9 @@ struct MyState {
         ExecutorStats stats = executor.getStats();
         EXPECT_EQUAL(expect_running + expect_deleted, MyTask::runCnt);
         EXPECT_EQUAL(expect_rejected + expect_deleted, MyTask::deleteCnt);
-        EXPECT_EQUAL(expect_queue + expect_running + expect_deleted,
-                     stats.acceptedTasks);
+        EXPECT_EQUAL(expect_queue + expect_running + expect_deleted,stats.acceptedTasks);
         EXPECT_EQUAL(expect_rejected, stats.rejectedTasks);
+        EXPECT_TRUE(stats.wakeupCount <= (NUM_THREADS + stats.acceptedTasks));
         EXPECT_TRUE(!(gate.getCount() == 1) || (expect_deleted == 0));
         if (expect_deleted == 0) {
             EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
@@ -85,6 +85,7 @@ struct MyState {
         EXPECT_EQUAL(expect_queue + expect_running, stats.queueSize.max());
         EXPECT_EQUAL(0u, stats.acceptedTasks);
         EXPECT_EQUAL(0u, stats.rejectedTasks);
+        EXPECT_EQUAL(0u, stats.wakeupCount);
         return *this;
     }
 };
@@ -188,11 +189,16 @@ TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(
 }
 
 TEST("require that stats can be accumulated") {
-    ExecutorStats stats(ExecutorStats::QueueSizeT(1) ,2,3);
+    EXPECT_TRUE(std::atomic<duration>::is_always_lock_free);
+    ExecutorStats stats(ExecutorStats::QueueSizeT(1) ,2,3,7);
+    stats.setUtil(3, 0.8);
     EXPECT_EQUAL(1u, stats.queueSize.max());
     EXPECT_EQUAL(2u, stats.acceptedTasks);
     EXPECT_EQUAL(3u, stats.rejectedTasks);
-    stats += ExecutorStats(ExecutorStats::QueueSizeT(7),8,9);
+    EXPECT_EQUAL(7u, stats.wakeupCount);
+    EXPECT_EQUAL(3u, stats.getThreadCount());
+    EXPECT_EQUAL(0.2, stats.getUtil());
+    stats.aggregate(ExecutorStats(ExecutorStats::QueueSizeT(7),8,9,11).setUtil(7,0.5));
     EXPECT_EQUAL(2u, stats.queueSize.count());
     EXPECT_EQUAL(8u, stats.queueSize.total());
     EXPECT_EQUAL(8u, stats.queueSize.max());
@@ -200,9 +206,18 @@ TEST("require that stats can be accumulated") {
     EXPECT_EQUAL(8u, stats.queueSize.max());
     EXPECT_EQUAL(4.0, stats.queueSize.average());
 
+    EXPECT_EQUAL(10u, stats.getThreadCount());
     EXPECT_EQUAL(10u, stats.acceptedTasks);
     EXPECT_EQUAL(12u, stats.rejectedTasks);
+    EXPECT_EQUAL(18u, stats.wakeupCount);
+    EXPECT_EQUAL(0.41, stats.getUtil());
+}
 
+TEST("Test that utilization is computed") {
+    ThreadStackExecutor executor(1, 128_Ki);
+    std::this_thread::sleep_for(1s);
+    auto stats = executor.getStats();
+    EXPECT_GREATER(0.50, stats.getUtil());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

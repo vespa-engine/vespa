@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/executor_idle_tracking.h>
 #include <thread>
 #include <atomic>
 
@@ -18,7 +19,7 @@ namespace vespalib {
  */
 class SingleExecutor final : public vespalib::SyncableThreadExecutor, vespalib::Runnable {
 public:
-    explicit SingleExecutor(init_fun_t func, uint32_t taskLimit);
+    SingleExecutor(init_fun_t func, uint32_t taskLimit);
     SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t watermark, duration reactionTime);
     ~SingleExecutor() override;
     Task::UP execute(Task::UP task) override;
@@ -54,6 +55,9 @@ private:
     std::condition_variable     _consumerCondition;
     std::condition_variable     _producerCondition;
     vespalib::Thread            _thread;
+    ExecutorIdleTracker         _idleTracker;
+    ThreadIdleTracker           _threadIdleTracker;
+    uint64_t                    _wakeupCount;
     uint64_t                    _lastAccepted;
     ExecutorStats::QueueSizeT   _queueSize;
     std::atomic<uint64_t>       _wakeupConsumerAt;

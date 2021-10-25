@@ -20,6 +20,7 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/vespalib/util/monitored_refcount.h>
 
 namespace storage {
 
@@ -48,6 +49,8 @@ public:
                  uint32_t commonMergeChainOptimalizationMinimumSize = 64,
                  bool async_apply_bucket_diff = false);
 
+    ~MergeHandler();
+
     bool buildBucketInfoList(
             const spi::Bucket& bucket,
             Timestamp maxTimestamp,
@@ -70,21 +73,25 @@ public:
     void handleGetBucketDiffReply(api::GetBucketDiffReply&, MessageSender&) const;
     MessageTrackerUP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTrackerUP) const;
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&, MessageTrackerUP) const;
+    void drain_async_writes();
+    void configure(bool async_apply_bucket_diff) noexcept;
 
 private:
     const framework::Clock   &_clock;
     const ClusterContext &_cluster_context;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
+    std::unique_ptr<vespalib::MonitoredRefCount> _monitored_ref_count;
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;
-    const bool                _async_apply_bucket_diff;
+    std::atomic<bool>         _async_apply_bucket_diff;
 
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket,
                                              MergeStatus& status,
                                              MessageSender& sender,
-                                             spi::Context& context) const;
+                                             spi::Context& context,
+                                             std::shared_ptr<ApplyBucketDiffState>& async_results) const;
 
     /**
      * Invoke either put, remove or unrevertable remove on the SPI

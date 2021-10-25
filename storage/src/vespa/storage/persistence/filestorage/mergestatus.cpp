@@ -14,6 +14,7 @@ MergeStatus::MergeStatus(const framework::Clock& clock,
                          uint32_t traceLevel)
     : reply(), full_node_list(), nodeList(), maxTimestamp(0), diff(), pendingId(0),
       pendingGetDiff(), pendingApplyDiff(), timeout(0), startTime(clock),
+      delayed_error(),
       context(priority, traceLevel)
 {}
 
@@ -119,6 +120,27 @@ MergeStatus::print(std::ostream& out, bool verbose,
         out << "MergeStatus(Middle node awaiting GetBucketDiffReply)\n";
     } else if (pendingApplyDiff.get() != 0) {
         out << "MergeStatus(Middle node awaiting ApplyBucketDiffReply)\n";
+    }
+}
+
+void
+MergeStatus::set_delayed_error(std::future<vespalib::string>&& delayed_error_in)
+{
+    delayed_error = std::move(delayed_error_in);
+}
+
+void
+MergeStatus::check_delayed_error(api::ReturnCode &return_code)
+{
+    if (!return_code.failed() && delayed_error.has_value()) {
+        // Wait for pending writes to local node to complete and check error
+        auto& future_error = delayed_error.value();
+        future_error.wait();
+        vespalib::string fail_message = future_error.get();
+        delayed_error.reset();
+        if (!fail_message.empty()) {
+            return_code = api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, std::move(fail_message));
+        }
     }
 }
 

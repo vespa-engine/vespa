@@ -66,7 +66,7 @@ SingleBoolAttribute::onCommit() {
                 setBit(change._doc, change._data != 0);
             } else if ((change._type >= ChangeBase::ADD) && (change._type <= ChangeBase::DIV)) {
                 std::atomic_thread_fence(std::memory_order_release);
-                int8_t val = applyArithmetic(getFast(change._doc), change);
+                int8_t val = applyArithmetic<int8_t, largeint_t>(getFast(change._doc), change._data.getArithOperand(), change._type);
                 setBit(change._doc, val != 0);
             } else if (change._type == ChangeBase::CLEARDOC) {
                 std::atomic_thread_fence(std::memory_order_release);

@@ -156,7 +156,7 @@ MergeBucketReply::print(std::ostream& out, bool verbose,
 {
     out << "MergeBucketReply(" << getBucketId() << ", to time "
         << _maxTimestamp << ", cluster state version: "
-        << _clusterStateVersion << ", nodes: ";
+        << _clusterStateVersion << ", nodes: [";
     for (uint32_t i=0; i<_nodes.size(); ++i) {
         if (i != 0) out << ", ";
         out << _nodes[i];
@@ -220,15 +220,16 @@ GetBucketDiffCommand::print(std::ostream& out, bool verbose,
                             const std::string& indent) const
 {
     out << "GetBucketDiffCommand(" << getBucketId() << ", to time "
-        << _maxTimestamp << ", nodes: ";
+        << _maxTimestamp << ", nodes: [";
     for (uint32_t i=0; i<_nodes.size(); ++i) {
         if (i != 0) out << ", ";
         out << _nodes[i];
     }
+    
     if (_diff.empty()) {
-        out << ", no entries";
+        out << "], no entries";
     } else if (verbose) {
-        out << ",";
+        out << "],";
         for (uint32_t i=0; i<_diff.size(); ++i) {
             out << "\n" << indent << "  ";
             _diff[i].print(out, verbose, indent + "  ");
@@ -258,15 +259,15 @@ GetBucketDiffReply::print(std::ostream& out, bool verbose,
                           const std::string& indent) const
 {
     out << "GetBucketDiffReply(" << getBucketId() << ", to time "
-        << _maxTimestamp << ", nodes: ";
+        << _maxTimestamp << ", nodes: [";
     for (uint32_t i=0; i<_nodes.size(); ++i) {
         if (i != 0) out << ", ";
         out << _nodes[i];
     }
     if (_diff.empty()) {
-        out << ", no entries";
+        out << "], no entries";
     } else if (verbose) {
-        out << ",";
+        out << "],";
         for (uint32_t i=0; i<_diff.size(); ++i) {
             out << "\n" << indent << "  ";
             _diff[i].print(out, verbose, indent + "  ");
@@ -363,12 +364,12 @@ ApplyBucketDiffCommand::print(std::ostream& out, bool verbose,
         totalSize += it->_bodyBlob.size();
         if (it->filled()) ++filled;
     }
-    out << "ApplyBucketDiffCommand(" << getBucketId() << ", nodes: ";
+    out << "ApplyBucketDiffCommand(" << getBucketId() << ", nodes: [";
     for (uint32_t i=0; i<_nodes.size(); ++i) {
         if (i != 0) out << ", ";
         out << _nodes[i];
     }
-    out << _diff.size() << " entries of " << totalSize << " bytes, "
+    out << "], " << _diff.size() << " entries of " << totalSize << " bytes, "
         << (100.0 * filled / _diff.size()) << " \% filled)";
     if (_diff.empty()) {
         out << ", no entries";
@@ -408,12 +409,12 @@ ApplyBucketDiffReply::print(std::ostream& out, bool verbose,
         totalSize += entry._bodyBlob.size();
         if (entry.filled()) ++filled;
     }
-    out << "ApplyBucketDiffReply(" << getBucketId() << ", nodes: ";
+    out << "ApplyBucketDiffReply(" << getBucketId() << ", nodes: [";
     for (uint32_t i=0; i<_nodes.size(); ++i) {
         if (i != 0) out << ", ";
         out << _nodes[i];
     }
-    out << _diff.size() << " entries of " << totalSize << " bytes, "
+    out << "], " << _diff.size() << " entries of " << totalSize << " bytes, "
         << (100.0 * filled / _diff.size()) << " \% filled)";
     if (_diff.empty()) {
         out << ", no entries";

@@ -7,6 +7,7 @@
 #include "arrayqueue.hpp"
 #include "gate.h"
 #include "runnable.h"
+#include "executor_idle_tracking.h"
 #include <vector>
 #include <functional>
 
@@ -47,18 +48,13 @@ private:
     struct Worker {
         std::mutex              lock;
         std::condition_variable cond;
-        uint32_t   pre_guard;
-        bool       idle;
-        uint32_t   post_guard;
-        TaggedTask task;
-        Worker() : lock(), cond(), pre_guard(0xaaaaaaaa), idle(true), post_guard(0x55555555), task() {}
-        void verify(bool expect_idle) const {
-            (void) expect_idle;
-            assert(pre_guard == 0xaaaaaaaa);
-            assert(post_guard == 0x55555555);
-            assert(idle == expect_idle);
-            assert(!task.task == expect_idle);
-        }
+        ThreadIdleTracker       idleTracker;
+        uint32_t                pre_guard;
+        bool                    idle;
+        uint32_t                post_guard;
+        TaggedTask              task;
+        Worker();
+        void verify(bool expect_idle) const;
     };
 
     struct BarrierCompletion {
@@ -81,6 +77,7 @@ private:
     mutable std::mutex                   _lock;
     std::condition_variable              _cond;
     ExecutorStats                        _stats;
+    ExecutorIdleTracker                  _idleTracker;
     Gate                                 _executorCompletion;
     ArrayQueue<TaggedTask>               _tasks;
     ArrayQueue<Worker*>                  _workers;

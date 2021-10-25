@@ -150,4 +150,10 @@ PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) co
     }
 }
 
+void
+PersistenceHandler::configure(vespa::config::content::StorFilestorConfig& config) noexcept
+{
+    _mergeHandler.configure(config.asyncApplyBucketDiff);
+}
+
 }

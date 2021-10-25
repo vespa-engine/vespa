@@ -3,6 +3,7 @@
 #pragma once
 
 #include "isequencedtaskexecutor.h"
+#include <vespa/vespalib/util/executor_idle_tracking.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/eventbarrier.hpp>
@@ -70,7 +71,7 @@ private:
     struct Strand {
         enum class State { IDLE, WAITING, ACTIVE };
         State state;
-        vespalib::ArrayQueue<TaggedTask> queue;
+        ArrayQueue<TaggedTask> queue;
         Strand();
         ~Strand();
     };
@@ -81,6 +82,7 @@ private:
     struct Worker {
         enum class State { RUNNING, BLOCKED, DONE };
         std::condition_variable cond;
+        ThreadIdleTracker   idleTracker;
         State state;
         Strand *strand;
         Worker();
@@ -107,7 +109,7 @@ private:
         static constexpr size_t STACK_SIZE = (256 * 1024);
         AdaptiveSequencedExecutor &parent;
         std::unique_ptr<FastOS_ThreadPool> pool;
-        vespalib::Gate allow_worker_exit;
+        Gate allow_worker_exit;
         ThreadTools(AdaptiveSequencedExecutor &parent_in);
         ~ThreadTools();
         void Run(FastOS_ThreadInterface *, void *) override;
@@ -123,11 +125,12 @@ private:
     std::unique_ptr<ThreadTools>       _thread_tools;
     mutable std::mutex                 _mutex;
     std::vector<Strand>                _strands;
-    vespalib::ArrayQueue<Strand*>      _wait_queue;
-    vespalib::ArrayQueue<Worker*>      _worker_stack;
+    ArrayQueue<Strand*>                _wait_queue;
+    ArrayQueue<Worker*>                _worker_stack;
     EventBarrier<BarrierCompletion>    _barrier;
     Self                               _self;
     ExecutorStats                      _stats;
+    ExecutorIdleTracker                _idleTracker;
     Config                             _cfg;
 
     void maybe_block_self(std::unique_lock<std::mutex> &lock);

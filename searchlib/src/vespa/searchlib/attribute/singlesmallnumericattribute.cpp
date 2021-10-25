@@ -60,7 +60,7 @@ SingleValueSmallNumericAttribute::onCommit()
                 set(change._doc, change._data);
             } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
                 std::atomic_thread_fence(std::memory_order_release);
-                set(change._doc, applyArithmetic(getFast(change._doc), change));
+                set(change._doc, applyArithmetic<T, typename Change::DataType>(getFast(change._doc), change._data.getArithOperand(), change._type));
             } else if (change._type == ChangeBase::CLEARDOC) {
                 std::atomic_thread_fence(std::memory_order_release);
                 set(change._doc, 0u);
