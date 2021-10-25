@@ -376,6 +376,13 @@ public class Flags {
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
+            "jdk-version", "11",
+            List.of("hmusum"), "2021-10-25", "2021-11-25",
+            "JDK version to use inside containers",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
