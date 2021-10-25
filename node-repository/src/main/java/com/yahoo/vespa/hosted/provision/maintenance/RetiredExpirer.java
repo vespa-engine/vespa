@@ -88,7 +88,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
             if (nodeRepository().nodes().list().childrenOf(node).asList().stream()
                                 .allMatch(child -> child.state() == Node.State.parked ||
                                                    child.state() == Node.State.failed)) {
-                log.info("Host " + node + " has no non-parked/failed children");
+                log.info("Allowing removal of " + node + ": host has no non-parked/failed children");
                 return true;
             }
 

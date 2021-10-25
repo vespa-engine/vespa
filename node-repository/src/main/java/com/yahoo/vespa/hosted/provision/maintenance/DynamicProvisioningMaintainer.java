@@ -100,8 +100,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 verifyDns(updatedNodes);
                 nodeRepository().nodes().write(updatedNodes, lock);
             } catch (IllegalArgumentException | IllegalStateException e) {
-                log.log(Level.INFO, "Failed to provision " + host.hostname() + " with " + children.size() + " children: " +
-                                    Exceptions.toMessageString(e));
+                log.log(Level.INFO, "Could not provision " + host.hostname() + " with " + children.size() + " children, will retry in " +
+                                    interval() + ": " + Exceptions.toMessageString(e));
             } catch (FatalProvisioningException e) {
                 log.log(Level.SEVERE, "Failed to provision " + host.hostname() + " with " + children.size()  +
                                       " children, failing out the host recursively", e);
@@ -110,7 +110,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                         host.hostname(), Agent.operator, "Failed by HostProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
                 if (e.getCause() instanceof NameNotFoundException)
-                    log.log(Level.INFO, "Failed to provision " + host.hostname() + ", will retry in " + interval() + ": " + e.getMessage());
+                    log.log(Level.INFO, "Could not provision " + host.hostname() + ", will retry in " + interval() + ": " + Exceptions.toMessageString(e));
                 else
                     log.log(Level.WARNING, "Failed to provision " + host.hostname() + ", will retry in " + interval(), e);
             }
