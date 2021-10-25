@@ -22,6 +22,8 @@
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
 
+namespace vespalib { class ISequencedTaskExecutor; }
+
 namespace storage {
 
 namespace spi {
@@ -45,6 +47,7 @@ public:
 
     MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
                  const ClusterContext& cluster_context, const framework::Clock & clock,
+                 vespalib::ISequencedTaskExecutor& executor,
                  uint32_t maxChunkSize = 4190208,
                  uint32_t commonMergeChainOptimalizationMinimumSize = 64,
                  bool async_apply_bucket_diff = false);
@@ -67,6 +70,7 @@ public:
                           spi::Context& context,
                           std::shared_ptr<ApplyBucketDiffState> async_results) const;
     void sync_bucket_info(const spi::Bucket& bucket) const override;
+    void schedule_delayed_delete(std::unique_ptr<ApplyBucketDiffState>) const override;
 
     MessageTrackerUP handleMergeBucket(api::MergeBucketCommand&, MessageTrackerUP) const;
     MessageTrackerUP handleGetBucketDiff(api::GetBucketDiffCommand&, MessageTrackerUP) const;
@@ -85,6 +89,7 @@ private:
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;
     std::atomic<bool>         _async_apply_bucket_diff;
+    vespalib::ISequencedTaskExecutor& _executor;
 
     MessageTrackerUP handleGetBucketDiffStage2(api::GetBucketDiffCommand&, MessageTrackerUP) const;
     /** Returns a reply if merge is complete */
