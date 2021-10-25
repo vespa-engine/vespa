@@ -218,6 +218,11 @@ public class PermanentFlags {
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
+            "jdk-version", "11",
+            "JDK version to use inside containers",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID);
 
     private PermanentFlags() {}
 
