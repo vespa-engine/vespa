@@ -84,10 +84,10 @@ TEST_F(SanityCheckedDeleteTest, differing_document_sizes_not_considered_out_of_s
 
     c.top.sendDown(delete_cmd);
     c.top.waitForMessages(1, MSG_WAIT_TIME);
-    // Bucket should now well and truly be gone. Will trigger a getBucketInfo error response.
-    spi::BucketInfoResult info_post_delete(
-            _node->getPersistenceProvider().getBucketInfo(spiBucket));
-    ASSERT_TRUE(info_post_delete.hasError()) << info_post_delete.getErrorMessage();
+    auto reply = c.top.getAndRemoveMessage(api::MessageType::DELETEBUCKET_REPLY);
+    auto delete_reply = std::dynamic_pointer_cast<api::DeleteBucketReply>(reply);
+    ASSERT_TRUE(delete_reply);
+    ASSERT_TRUE(delete_reply->getResult().success());
 }
 
 } // namespace storage

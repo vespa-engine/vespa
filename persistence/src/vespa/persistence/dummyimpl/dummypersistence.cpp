@@ -393,7 +393,8 @@ DummyPersistence::getBucketInfo(const Bucket& b) const
     if (!bc.get()) {
         LOG(debug, "getBucketInfo(%s) : (bucket not found)",
             b.toString().c_str());
-        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
+        BucketInfo info(BucketChecksum(0), 0, 0, 0, 0);
+        return BucketInfoResult(info);
     }
 
     BucketInfo info((*bc)->getBucketInfo());
@@ -538,9 +539,6 @@ DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection
         }
     }
     BucketContentGuard::UP bc(acquireBucketWithLock(b, LockMode::Shared));
-    if (!bc.get()) {
-        return CreateIteratorResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
-    }
 
     Iterator* it;
     IteratorId id;
@@ -556,6 +554,10 @@ DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection
     }
     // Memory pointed to by 'it' should now be valid from here on out
 
+    if (!bc.get()) {
+        // Bucket not found.
+        return CreateIteratorResult(id);
+    }
     it->_fieldSet = std::move(fs);
     const BucketContent::GidMapType& gidMap((*bc)->_gidMap);
 
@@ -627,7 +629,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
     BucketContentGuard::UP bc(acquireBucketWithLock(it->_bucket, LockMode::Shared));
     if (!bc.get()) {
         ctx.trace(9, "finished iterate(); bucket not found");
-        return IterateResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
+        return IterateResult(std::vector<DocEntry::UP>(), true);
     }
     LOG(debug, "Iterator %" PRIu64 " acquired bucket lock", uint64_t(id));
 
