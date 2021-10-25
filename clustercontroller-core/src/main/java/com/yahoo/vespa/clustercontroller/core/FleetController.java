@@ -1004,8 +1004,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // TODO expose and use monotonic clock instead of system clock
         final long maxDeadlineTimePointMs = timer.getCurrentTimeInMillis() + options.getMaxDeferredTaskVersionWaitTime().toMillis();
         for (RemoteClusterControllerTask task : tasksPendingStateRecompute) {
-            context.log(logger, Level.FINEST, () -> String.format("Adding task of type '%s' to be completed at version %d",
-                                                  task.getClass().getName(), completeAtVersion));
+            context.log(logger, Level.INFO, task + " will be completed at version " + completeAtVersion);
             taskCompletionQueue.add(new VersionDependentTaskCompletion(completeAtVersion, task, maxDeadlineTimePointMs));
         }
         tasksPendingStateRecompute.clear();
