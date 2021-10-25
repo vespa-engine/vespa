@@ -5,6 +5,7 @@
 #include "testandsethelper.h"
 #include "bucketownershipnotifier.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/catchresult.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
@@ -151,6 +152,31 @@ AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) cons
                   std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
 
     return trackerUP;
+}
+
+MessageTracker::UP
+AsyncHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker) const
+{
+    tracker->setMetric(_env._metrics.createBuckets);
+    LOG(debug, "CreateBucket(%s)", cmd.getBucketId().toString().c_str());
+    if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
+        LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
+    }
+    spi::Bucket bucket(cmd.getBucket());
+    auto task = makeResultTask([tracker = std::move(tracker)](spi::Result::UP ignored) mutable {
+        // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
+        (void) ignored;
+        tracker->sendReply();
+    });
+
+    if (cmd.getActive()) {
+        _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<spi::NoopOperationComplete>());
+        _spi.setActiveStateAsync(bucket, spi::BucketInfo::ACTIVE, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
+    } else {
+        _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
+    }
+
+    return tracker;
 }
 
 MessageTracker::UP

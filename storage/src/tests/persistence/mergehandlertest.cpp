@@ -872,7 +872,6 @@ TEST_P(MergeHandlerTest, merge_bucket_spi_failures) {
     setUpChain(MIDDLE);
 
     ExpectedExceptionSpec exceptions[] = {
-        { PersistenceProviderWrapper::FAIL_CREATE_BUCKET, "create bucket" },
         { PersistenceProviderWrapper::FAIL_BUCKET_INFO, "get bucket info" },
         { PersistenceProviderWrapper::FAIL_CREATE_ITERATOR, "create iterator" },
         { PersistenceProviderWrapper::FAIL_ITERATE, "iterate" },
@@ -903,7 +902,6 @@ TEST_P(MergeHandlerTest, get_bucket_diff_spi_failures) {
     setUpChain(MIDDLE);
 
     ExpectedExceptionSpec exceptions[] = {
-        { PersistenceProviderWrapper::FAIL_CREATE_BUCKET, "create bucket" },
         { PersistenceProviderWrapper::FAIL_BUCKET_INFO, "get bucket info" },
         { PersistenceProviderWrapper::FAIL_CREATE_ITERATOR, "create iterator" },
         { PersistenceProviderWrapper::FAIL_ITERATE, "iterate" },

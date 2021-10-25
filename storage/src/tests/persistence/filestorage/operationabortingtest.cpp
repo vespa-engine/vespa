@@ -62,13 +62,13 @@ public:
         return PersistenceProviderWrapper::getBucketInfo(bucket);
     }
 
-    spi::Result createBucket(const spi::Bucket& bucket, spi::Context& ctx) override {
+    void createBucketAsync(const spi::Bucket& bucket, spi::Context& ctx, spi::OperationComplete::UP onComplete) noexcept override {
         ++_createBucketInvocations;
-        return PersistenceProviderWrapper::createBucket(bucket, ctx);
+        PersistenceProviderWrapper::createBucketAsync(bucket, ctx, std::move(onComplete));
     }
 
     void
-    deleteBucketAsync(const spi::Bucket& bucket, spi::Context& ctx, spi::OperationComplete::UP onComplete) override {
+    deleteBucketAsync(const spi::Bucket& bucket, spi::Context& ctx, spi::OperationComplete::UP onComplete) noexcept override {
         ++_deleteBucketInvocations;
         PersistenceProviderWrapper::deleteBucketAsync(bucket, ctx, std::move(onComplete));
     }

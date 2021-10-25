@@ -168,8 +168,8 @@ public:
     IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
     Result destroyIterator(IteratorId, Context&) override;
 
-    Result createBucket(const Bucket&, Context&) override;
-    void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) override;
+    void createBucketAsync(const Bucket&, Context&, OperationComplete::UP) noexcept override;
+    void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) noexcept override;
 
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
 

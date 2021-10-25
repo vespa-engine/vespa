@@ -548,24 +548,28 @@ PersistenceEngine::destroyIterator(IteratorId id, Context&)
 }
 
 
-Result
-PersistenceEngine::createBucket(const Bucket &b, Context &)
+void
+PersistenceEngine::createBucketAsync(const Bucket &b, Context &, OperationComplete::UP onComplete) noexcept
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "createBucket(%s)", b.toString().c_str());
     HandlerSnapshot snap = getHandlerSnapshot(rguard, b.getBucketSpace());
-    TransportLatch latch(snap.size());
-    for (; snap.handlers().valid(); snap.handlers().next()) {
+
+    auto transportContext = std::make_shared<AsyncTranportContext>(snap.size(), std::move(onComplete));
+    while (snap.handlers().valid()) {
         IPersistenceHandler *handler = snap.handlers().get();
-        handler->handleCreateBucket(feedtoken::make(latch), b);
+        snap.handlers().next();
+        if (snap.handlers().valid()) {
+            handler->handleCreateBucket(feedtoken::make(transportContext), b);
+        } else {
+            handler->handleCreateBucket(feedtoken::make(std::move(transportContext)), b);
+        }
     }
-    latch.await();
-    return latch.getResult();
 }
 
 
 void
-PersistenceEngine::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete)
+PersistenceEngine::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
 {
     ReadGuard rguard(_rwMutex);
     LOG(spam, "deleteBucket(%s)", b.toString().c_str());
