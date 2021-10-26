@@ -28,9 +28,6 @@ struct IntrusiveListNode
         prev = this;
         next = this;
     }
-
-    //static T* as_t(IntrusiveListNode *p) { return static_cast<T*>(p); }
-    //static const T* as_t(const IntrusiveListNode *p) { return static_cast<const T*>(p); }
 };
 
 
@@ -56,17 +53,14 @@ public:
     intrusive_list_node_iterator operator-- (int) { intrusive_list_node_iterator old = *this; operator--(); return old; }
 
     bool operator== (const intrusive_list_node_iterator& other) const {
-        fprintf(stderr, "%p equal? %p ?\n", _current, other._current);
         return _current == other._current;
     }
     bool operator!= (const intrusive_list_node_iterator& other) const {
-        fprintf(stderr, "%p not equal %p ?\n", _current, other._current);
         return _current != other._current;
     }
     intrusive_list_node_iterator() : _current(nullptr) {}
-    explicit intrusive_list_node_iterator(Node* current) : _current(current) {
-        fprintf(stderr, "new iterator at %p\n", _current);
-    }
+
+    explicit intrusive_list_node_iterator(Node* current) : _current(current) {}
 
     // conversion iterator -> const_iterator
     template<bool maybe = is_const, typename = std::enable_if<maybe>::type>
@@ -86,24 +80,17 @@ class IntrusiveList
 {
 public:
     using Node = NodeBase;
-private:
-    static T* as_t(Node *p) { return static_cast<T*>(p); }
-public:
-    IntrusiveList() : _terminator() {
-        fprintf(stderr, "terminator at %p : prev %p, next %p\n", &_terminator, _terminator.prev, _terminator.next);
-    }
+
+    IntrusiveList() : _terminator() {}
     
     void push_back(T &node) {
         Node &n = node;
-        fprintf(stderr, "node at %p : prev %p, next %p\n", &n, n.prev, n.next);
         assert(n.is_free());
         auto old_last = _terminator.prev;
         n.prev = old_last;
         n.next = &_terminator;
         old_last->next = &n;
         _terminator.prev = &n;
-        fprintf(stderr, "terminator at %p : prev %p, next %p\n", &_terminator, _terminator.prev, _terminator.next);
-        fprintf(stderr, "node at %p : prev %p, next %p\n", &n, n.prev, n.next);
     }
 
     using iterator = intrusive_list_node_iterator<T, false>;
@@ -114,6 +101,8 @@ public:
 
     const_iterator cbegin() const { return const_iterator(_terminator.next); }
     const_iterator cend() const { return const_iterator(&_terminator); }
+
+    bool empty() const { return (_terminator.next == &_terminator); }
 
 private:
     Node _terminator;

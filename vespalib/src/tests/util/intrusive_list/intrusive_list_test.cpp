@@ -49,14 +49,14 @@ public:
 
 TEST(IntrusiveListTest, simple_usage) {
     IntrusiveList<ListNode> my_list;
-
+    EXPECT_TRUE(my_list.empty());
     EXPECT_EQ(my_list.begin(), my_list.end());
     EXPECT_EQ(my_list.begin(), my_list.cbegin());
     EXPECT_EQ(my_list.begin(), my_list.cend());
-
     ListNode a{3,3}, b{5,5}, c{2,2}, d{20,25};
     d.y(42);
     my_list.push_back(a);
+    EXPECT_FALSE(my_list.empty());
     my_list.push_back(b);
     my_list.push_back(c);
     int sum = 0;
@@ -72,6 +72,7 @@ TEST(IntrusiveListTest, simple_usage) {
     a.remove_from_list();
     my_list.push_back(d);
     b.remove_from_list();
+    EXPECT_FALSE(my_list.empty());
     auto iter = my_list.begin();
     EXPECT_NE(iter, my_list.end());
     auto first = iter++;
@@ -80,6 +81,8 @@ TEST(IntrusiveListTest, simple_usage) {
     EXPECT_EQ(first->x(), 20);
     EXPECT_EQ(first->y(), 42);
     EXPECT_EQ(first->z(), 25);
+    d.remove_from_list();
+    EXPECT_TRUE(my_list.empty());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
