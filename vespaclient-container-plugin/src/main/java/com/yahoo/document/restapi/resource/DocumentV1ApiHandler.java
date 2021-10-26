@@ -1122,11 +1122,13 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 });
                 if (writing.compareAndSet(false, true)) // Occupy only a single thread for writing.
                     defaultExecutor.execute(() -> {
-                        try {
-                            for (Runnable write; (write = writes.poll()) != null; write.run());
-                        }
-                        finally {
-                            writing.set(false);
+                        while (writing.get()) {
+                            try {
+                                for (Runnable write; (write = writes.poll()) != null; write.run()) ;
+                            }
+                            finally {
+                                writing.set( ! writes.isEmpty());
+                            }
                         }
                     });
             }
