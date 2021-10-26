@@ -165,12 +165,10 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePATCH(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/node/{hostname}")) {
-            try (NodePatcher patcher = new NodePatcher(nodeFlavors, request.getData(), nodeFromHostname(path.get("hostname")), nodeRepository)) {
-                var patchedNodes = patcher.apply();
-                nodeRepository.nodes().write(patchedNodes, patcher.nodeMutexOfHost());
-
-                return new MessageResponse("Updated " + patcher.nodeMutexOfHost().node().hostname());
-            }
+            NodePatcher patcher = new NodePatcher(nodeFlavors, nodeRepository);
+            String hostname = path.get("hostname");
+            patcher.patch(hostname, request.getData());
+            return new MessageResponse("Updated " + hostname);
         }
         else if (path.matches("/nodes/v2/application/{applicationId}")) {
             try (ApplicationPatcher patcher = new ApplicationPatcher(request.getData(),
@@ -237,11 +235,6 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                 return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
             }
         }
-    }
-
-    private Node nodeFromHostname(String hostname) {
-        return nodeRepository.nodes().node(hostname).orElseThrow(() ->
-                new NotFoundException("No node found with hostname " + hostname));
     }
 
     public int addNodes(Inspector inspector) {

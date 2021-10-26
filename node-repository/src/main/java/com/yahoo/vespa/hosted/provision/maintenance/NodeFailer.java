@@ -209,22 +209,6 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         return reasonsToFailParentHost(hostNode).size() > 0;
     }
 
-    private boolean expectConfigRequests(Node node) {
-        return !node.type().isHost();
-    }
-
-    private boolean hasNodeRequestedConfigAfter(Node node, Instant instant) {
-        return !wasMadeReadyBefore(node, instant) || hasRecordedRequestAfter(node, instant);
-    }
-
-    private boolean wasMadeReadyBefore(Node node, Instant instant) {
-        return node.history().hasEventBefore(History.Event.Type.readied, instant);
-    }
-
-    private boolean hasRecordedRequestAfter(Node node, Instant instant) {
-        return node.history().hasEventAfter(History.Event.Type.requested, instant);
-    }
-
     private boolean applicationSuspended(Node node) {
         try {
             return orchestrator.getApplicationInstanceStatus(node.allocation().get().owner())
