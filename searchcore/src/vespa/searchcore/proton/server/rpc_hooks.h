@@ -15,7 +15,6 @@ class FNET_Transport;
 namespace proton {
 
 class Proton;
-class DocsumByRPC;
 
 class RPCHooksBase : public FRT_Invokable
 {
@@ -59,7 +58,6 @@ private:
     };
 
     Proton                         & _proton;
-    std::unique_ptr<DocsumByRPC>     _docsumByRPC;
     std::unique_ptr<FNET_Transport>  _transport;
     std::unique_ptr<FRT_Supervisor>  _orb;
     std::unique_ptr<ProtoRpcAdapter> _proto_rpc_adapter;
@@ -76,7 +74,6 @@ private:
     void checkState(std::unique_ptr<StateArg> arg);
     void reportState(Session & session, FRT_RPCRequest * req) __attribute__((noinline));
     void getProtonStatus(FRT_RPCRequest * req);
-    void getDocsums(FRT_RPCRequest *req);
 
     static const Session::SP & getSession(FRT_RPCRequest *req);
 public:
@@ -87,12 +84,9 @@ public:
         vespalib::string  identity;
         uint32_t          rtcPort;
         uint32_t          numTranportThreads;
-        // TODO: This can be eliminated and reduced to a fixed low number once old rpc has been removed from the qrs.
-        //       Or even use the shared executor
-        uint32_t          numDocsumRpcThreads;
 
         Params(Proton &parent, uint32_t port, const vespalib::string &ident,
-               uint32_t numTransportThreads, uint32_t numDocsumRpcThreads);
+               uint32_t numTransportThreads);
         ~Params();
     };
     RPCHooksBase(const RPCHooksBase &) = delete;
@@ -110,7 +104,6 @@ public:
     void rpc_die(FRT_RPCRequest *req);
     void rpc_triggerFlush(FRT_RPCRequest *req);
     void rpc_prepareRestart(FRT_RPCRequest *req);
-    void rpc_getDocSums(FRT_RPCRequest *req);
 
     void initSession(FRT_RPCRequest *req);
     void finiSession(FRT_RPCRequest *req);
