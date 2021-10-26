@@ -1122,8 +1122,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 });
                 if (writing.compareAndSet(false, true)) // Occupy only a single thread for writing.
                     defaultExecutor.execute(() -> {
-                        for (Runnable write; (write = writes.poll()) != null; write.run());
-                        writing.set(false);
+                        try {
+                            for (Runnable write; (write = writes.poll()) != null; write.run());
+                        }
+                        finally {
+                            writing.set(false);
+                        }
                     });
             }
             @Override public void onEnd(JsonResponse response) throws IOException {
