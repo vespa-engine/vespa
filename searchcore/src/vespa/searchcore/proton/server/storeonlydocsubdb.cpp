@@ -31,11 +31,7 @@ LOG_SETUP(".proton.server.storeonlydocsubdb");
 
 using search::CompactionStrategy;
 using search::GrowStrategy;
-using search::AttributeGuard;
-using search::AttributeVector;
-using search::IndexMetaInfo;
 using vespalib::makeLambdaTask;
-using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::SerialNum;
 using vespalib::IllegalStateException;

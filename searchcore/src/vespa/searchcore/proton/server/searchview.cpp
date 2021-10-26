@@ -10,9 +10,6 @@
 LOG_SETUP(".proton.server.searchview");
 
 using proton::matching::MatchContext;
-using search::AttributeGuard;
-using search::AttributeVector;
-using search::attribute::IAttributeContext;
 using search::docsummary::IDocsumStore;
 using search::docsummary::ResultConfig;
 using search::engine::DocsumReply;
