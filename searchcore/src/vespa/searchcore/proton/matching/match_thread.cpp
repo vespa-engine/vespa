@@ -315,7 +315,7 @@ MatchThread::findMatches(MatchTools &tools)
         complete_second_phase_timer.done();
         hits.setReRankedHits(std::move(kept_hits));
         hits.setRanges(ranges);
-        if (auto onReRankTask = matchToolsFactory.createOnReRankTask()) {
+        if (auto onReRankTask = matchToolsFactory.createOnSecondPhaseTask()) {
             onReRankTask->run(hits.getReRankedHits());
         }
     }

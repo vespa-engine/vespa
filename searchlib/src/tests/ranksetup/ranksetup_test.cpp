@@ -522,12 +522,14 @@ void RankSetupTest::testRankSetup()
     env.getProperties().add(hitcollector::EstimatePoint::NAME, "70");
     env.getProperties().add(hitcollector::EstimateLimit::NAME, "80");
     env.getProperties().add(hitcollector::RankScoreDropLimit::NAME, "90.5");
-    env.getProperties().add(execute::onmatch::Attribute::NAME, "a");
-    env.getProperties().add(execute::onmatch::Operation::NAME, "++");
-    env.getProperties().add(execute::onrerank::Attribute::NAME, "b");
-    env.getProperties().add(execute::onrerank::Operation::NAME, "=7");
-    env.getProperties().add(execute::onsummary::Attribute::NAME, "c");
-    env.getProperties().add(execute::onsummary::Operation::NAME, "--");
+    env.getProperties().add(mutate::on_match::Attribute::NAME, "a");
+    env.getProperties().add(mutate::on_match::Operation::NAME, "+=3");
+    env.getProperties().add(mutate::on_first_phase::Attribute::NAME, "b");
+    env.getProperties().add(mutate::on_first_phase::Operation::NAME, "=3");
+    env.getProperties().add(mutate::on_second_phase::Attribute::NAME, "b");
+    env.getProperties().add(mutate::on_second_phase::Operation::NAME, "=7");
+    env.getProperties().add(mutate::on_summary::Attribute::NAME, "c");
+    env.getProperties().add(mutate::on_summary::Operation::NAME, "-=2");
 
     RankSetup rs(_factory, env);
     rs.configure();
@@ -553,12 +555,14 @@ void RankSetupTest::testRankSetup()
     EXPECT_EQUAL(rs.getEstimatePoint(), 70u);
     EXPECT_EQUAL(rs.getEstimateLimit(), 80u);
     EXPECT_EQUAL(rs.getRankScoreDropLimit(), 90.5);
-    EXPECT_EQUAL(rs.getExecuteOnMatch()._attribute, "a");
-    EXPECT_EQUAL(rs.getExecuteOnMatch()._operation, "++");
-    EXPECT_EQUAL(rs.getExecuteOnReRank()._attribute, "b");
-    EXPECT_EQUAL(rs.getExecuteOnReRank()._operation, "=7");
-    EXPECT_EQUAL(rs.getExecuteOnSummary()._attribute, "c");
-    EXPECT_EQUAL(rs.getExecuteOnSummary()._operation, "--");
+    EXPECT_EQUAL(rs.getMutateOnMatch()._attribute, "a");
+    EXPECT_EQUAL(rs.getMutateOnMatch()._operation, "+=3");
+    EXPECT_EQUAL(rs.getMutateOnFirstPhase()._attribute, "b");
+    EXPECT_EQUAL(rs.getMutateOnFirstPhase()._operation, "=3");
+    EXPECT_EQUAL(rs.getMutateOnSecondPhase()._attribute, "b");
+    EXPECT_EQUAL(rs.getMutateOnSecondPhase()._operation, "=7");
+    EXPECT_EQUAL(rs.getMutateOnSummary()._attribute, "c");
+    EXPECT_EQUAL(rs.getMutateOnSummary()._operation, "-=2");
 
 }
 
