@@ -195,6 +195,8 @@
                 bcprov-jdk15on-${bouncycastle.version}.jar,
 
                <!-- Jetty -->
+                <!-- TODO Vespa 8: embed these in container-core/disc, saving a lot of dep management. -->
+                <!--               Check if those listed in container-dep-versions are not used by hosted apps! -->
                 alpn-api-${jetty-alpn.version}.jar,
                 http2-server-${jetty.version}.jar,
                 http2-common-${jetty.version}.jar,
@@ -214,6 +216,7 @@
                 javax.servlet-api-3.1.0.jar,
 
                 <!-- Spifly (required for OSGi service loader used by Jetty)  -->
+                <!-- TODO: embed these in container-core/disc, not used across bundles -->
                 org.apache.aries.spifly.dynamic.bundle-${spifly.version}.jar,
                 asm-${asm.version}.jar,
                 asm-analysis-${asm.version}.jar,
