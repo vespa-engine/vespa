@@ -1133,16 +1133,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                     });
             }
             @Override public void onEnd(JsonResponse response) throws IOException {
-                // Wait for other writers to complete, then write what remains here.
-                while ( ! writing.compareAndSet(false, true)) {
-                    try {
-                        Thread.sleep(1);
-                    }
-                    catch (InterruptedException e) {
-                        log.log(WARNING, "Interrupted waiting for visited documents to be written; this should not happen");
-                        Thread.currentThread().interrupt();
-                    }
-                }
                 for (Runnable write; (write = writes.poll()) != null; write.run());
                 response.writeArrayEnd();
             }
@@ -1161,45 +1151,43 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             callback.onStart(response);
             VisitorControlHandler controller = new VisitorControlHandler() {
                 @Override public void onDone(CompletionCode code, String message) {
-                    defaultExecutor.execute(() -> {
-                        super.onDone(code, message);
-                        loggingException(() -> {
-                            try (response) {
-                                callback.onEnd(response);
+                    super.onDone(code, message);
+                    loggingException(() -> {
+                        try (response) {
+                            callback.onEnd(response);
 
-                                if (getVisitorStatistics() != null)
-                                    response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
+                            if (getVisitorStatistics() != null)
+                                response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
 
-                                int status = Response.Status.BAD_GATEWAY;
-                                switch (code) {
-                                    case TIMEOUT:
-                                        if ( ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
-                                            response.writeMessage("No buckets visited within timeout of " +
-                                                                  parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
-                                            status = Response.Status.GATEWAY_TIMEOUT;
-                                            break;
-                                        }
-                                        // TODO jonmv: always supply and document continuation?
-                                    case SUCCESS: // Intentional fallthrough.
-                                    case ABORTED: // Intentional fallthrough.
-                                        if (error.get() == null) {
-                                            ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
-                                            if (progress != null && ! progress.isFinished())
-                                                response.writeContinuation(progress.serializeToString());
+                            int status = Response.Status.BAD_GATEWAY;
+                            switch (code) {
+                                case TIMEOUT:
+                                    if ( ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
+                                        response.writeMessage("No buckets visited within timeout of " +
+                                                              parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
+                                        status = Response.Status.GATEWAY_TIMEOUT;
+                                        break;
+                                    }
+                                    // TODO jonmv: always supply and document continuation?
+                                case SUCCESS: // Intentional fallthrough.
+                                case ABORTED: // Intentional fallthrough.
+                                    if (error.get() == null) {
+                                        ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
+                                        if (progress != null && ! progress.isFinished())
+                                            response.writeContinuation(progress.serializeToString());
 
-                                            status = Response.Status.OK;
-                                            break;
-                                        }
-                                    default:
-                                        response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed");
-                                }
-                                if ( ! streaming)
-                                    response.commit(status);
+                                        status = Response.Status.OK;
+                                        break;
+                                    }
+                                default:
+                                    response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed");
                             }
-                        });
-                        phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
-                        visits.remove(this).destroy();
+                            if ( ! streaming)
+                                response.commit(status);
+                        }
                     });
+                    phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
+                    visits.remove(this).destroy();
                 }
             };
             if (parameters.getRemoteDataHandler() == null) {
