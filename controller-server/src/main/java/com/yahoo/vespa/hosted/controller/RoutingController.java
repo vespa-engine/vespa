@@ -72,6 +72,7 @@ public class RoutingController {
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
     private final BooleanFlag hideSharedRoutingEndpoint;
+    private final BooleanFlag legacyEndpointInCertificate;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -80,6 +81,7 @@ public class RoutingController {
                                                          controller.applications(),
                                                          controller.curator());
         this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
+        this.legacyEndpointInCertificate = Flags.LEGACY_ENDPOINT_IN_CERTIFICATE.bindTo(controller.flagSource());
     }
 
     public RoutingPolicies policies() {
@@ -179,7 +181,7 @@ public class RoutingController {
             builder = builder.routingMethod(RoutingMethod.exclusive)
                              .on(Port.tls());
             Endpoint endpoint = builder.in(controller.system());
-            if (controller.system().isPublic()) {
+            if (includeLegacyEndpoint(deployment.applicationId(), controller.system())) {
                 Endpoint legacyEndpoint = builder.legacy().in(controller.system());
                 endpointDnsNames.add(legacyEndpoint.dnsName());
             }
@@ -389,10 +391,16 @@ public class RoutingController {
     }
 
     /** Create a common name based on a hash of given application. This must be less than 64 characters long. */
-    private static String commonNameHashOf(ApplicationId application, SystemName system) {
+    private String commonNameHashOf(ApplicationId application, SystemName system) {
         HashCode sha1 = Hashing.sha1().hashString(application.serializedForm(), StandardCharsets.UTF_8);
         String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
-        return 'v' + base32 + Endpoint.dnsSuffix(system, system.isPublic());
+        return 'v' + base32 + Endpoint.dnsSuffix(system, includeLegacyEndpoint(application, system));
+    }
+
+    private boolean includeLegacyEndpoint(ApplicationId application, SystemName system) {
+        return system.isPublic() && legacyEndpointInCertificate.with(FetchVector.Dimension.APPLICATION_ID,
+                                                                     application.serializedForm())
+                                                               .value();
     }
 
     /** Returns direct routing endpoints if any exist and feature flag is set for given application */
