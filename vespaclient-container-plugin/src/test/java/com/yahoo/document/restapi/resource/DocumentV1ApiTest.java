@@ -137,7 +137,7 @@ public class DocumentV1ApiTest {
         metric = new NullMetric();
         metrics = new MetricReceiver.MockReceiver();
         handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
-                                           executorConfig, clusterConfig, bucketConfig, Executors.newFixedThreadPool(2));
+                                           executorConfig, clusterConfig, bucketConfig);
     }
 
     @After
@@ -183,7 +183,7 @@ public class DocumentV1ApiTest {
     }
 
     @Test
-    public void testResponses() throws InterruptedException {
+    public void testResponses() {
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
         List<AckToken> tokens = List.of(new AckToken(null), new AckToken(null), new AckToken(null));
         // GET at non-existent path returns 404 with available paths
@@ -756,7 +756,7 @@ public class DocumentV1ApiTest {
     public void testThroughput() throws InterruptedException {
         DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder().build();
         handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
-                                           executorConfig, clusterConfig, bucketConfig, Executors.newFixedThreadPool(2));
+                                           executorConfig, clusterConfig, bucketConfig);
 
         int writers = 4;
         int queueFill = executorConfig.maxThrottled() - writers;
