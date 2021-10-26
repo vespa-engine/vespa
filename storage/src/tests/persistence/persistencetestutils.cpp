@@ -68,10 +68,46 @@ PersistenceTestEnvironment::~PersistenceTestEnvironment() {
     }
 }
 
+PersistenceTestUtils::MockBucketLocks::MockBucketLocks()
+    : _mutex(),
+      _cv(),
+      _locked_buckets()
+{
+}
+
+PersistenceTestUtils::MockBucketLocks::~MockBucketLocks()
+{
+    std::unique_lock<std::mutex> guard(_mutex);
+    while (!_locked_buckets.empty()) {
+        _cv.wait(guard);
+    }
+}
+
+void
+PersistenceTestUtils::MockBucketLocks::lock(document::Bucket bucket)
+{
+    std::unique_lock<std::mutex> guard(_mutex);
+    while (_locked_buckets.count(bucket) != 0) {
+        _cv.wait(guard);
+    }
+    _locked_buckets.insert(bucket);
+}
+
+void
+PersistenceTestUtils::MockBucketLocks::unlock(document::Bucket bucket)
+{
+    std::unique_lock<std::mutex> guard(_mutex);
+    auto itr = _locked_buckets.find(bucket);
+    assert(itr != _locked_buckets.end());
+    _locked_buckets.erase(itr);
+    _cv.notify_all();
+}
+
 PersistenceTestUtils::PersistenceTestUtils()
     : _env(std::make_unique<PersistenceTestEnvironment>("todo-make-unique-persistencetestutils")),
       _replySender(),
       _bucketOwnershipNotifier(getEnv()._component, getEnv()._fileStorHandler),
+      _mock_bucket_locks(),
       _persistenceHandler()
 {
     setupExecutor(1);

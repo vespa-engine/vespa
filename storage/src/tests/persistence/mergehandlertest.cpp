@@ -56,6 +56,11 @@ struct MergeHandlerTest : SingleDiskPersistenceTestUtils,
     createDummyGetBucketDiff(int timestampOffset,
                              uint16_t hasMask);
 
+    MessageTracker::UP
+    createTracker(api::StorageMessage::SP cmd, document::Bucket bucket) {
+        return createLockedTracker(cmd, bucket);
+    }
+
     struct ExpectedExceptionSpec // Try saying this out loud 3 times in a row.
     {
         uint32_t mask;
@@ -308,6 +313,7 @@ MergeHandlerTest::testApplyBucketDiffChain(bool midChain)
     auto cmd = std::make_shared<api::ApplyBucketDiffCommand>(_bucket, _nodes);
     MessageTracker::UP tracker1 = handler.handleApplyBucketDiff(*cmd, createTracker(cmd, _bucket));
     api::StorageMessage::SP replySent = std::move(*tracker1).stealReplySP();
+    tracker1.reset();
 
     if (midChain) {
         LOG(debug, "Check state");
@@ -1219,6 +1225,7 @@ TEST_P(MergeHandlerTest, remove_put_on_existing_timestamp) {
         auto applyBucketDiffReply = std::dynamic_pointer_cast<api::ApplyBucketDiffReply>(std::move(*tracker).stealReplySP());
         ASSERT_TRUE(applyBucketDiffReply.get());
     }
+    tracker.reset();
 
     auto cmd = std::make_shared<api::MergeBucketCommand>(_bucket, _nodes, _maxTimestamp);
     handler.handleMergeBucket(*cmd, createTracker(cmd, _bucket));
@@ -1326,6 +1333,7 @@ TEST_P(MergeHandlerTest, partially_filled_apply_bucket_diff_reply)
     auto cmd = std::make_shared<api::MergeBucketCommand>(_bucket, _nodes, _maxTimestamp);
     cmd->setSourceIndex(1234);
     MessageTracker::UP tracker = handler.handleMergeBucket(*cmd, createTracker(cmd, _bucket));
+    tracker.reset();
     ASSERT_EQ(1u, messageKeeper()._msgs.size());
     ASSERT_EQ(api::MessageType::GETBUCKETDIFF, messageKeeper()._msgs[0]->getType());
     size_t baseline_diff_size = 0;

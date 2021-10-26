@@ -846,6 +846,28 @@ public:
     void deactivate() { _active = false; }
 };
 
+class TrackerHandoverGuard {
+    std::shared_ptr<ApplyBucketDiffState>& _async_results;
+    std::unique_ptr<MessageTracker>&       _tracker;
+public:
+    TrackerHandoverGuard(std::shared_ptr<ApplyBucketDiffState>& async_results,
+                         std::unique_ptr<MessageTracker>& tracker)
+        : _async_results(async_results),
+          _tracker(tracker)
+    {
+    }
+    ~TrackerHandoverGuard() { handover(); }
+    void handover();
+};
+
+void
+TrackerHandoverGuard::handover()
+{
+    if (_async_results && _tracker) {
+        _async_results->set_tracker(std::move(_tracker));
+    }
+}
+
 MessageTracker::UP
 MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP tracker) const
 {
@@ -1215,6 +1237,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
 
     spi::Bucket bucket(cmd.getBucket());
     std::shared_ptr<ApplyBucketDiffState> async_results;
+    TrackerHandoverGuard tracker_handover_guard(async_results, tracker);
     LOG(debug, "%s", cmd.toString().c_str());
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
@@ -1300,6 +1323,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
         tracker->dontReply();
     }
 
+    tracker_handover_guard.handover();
     return tracker;
 }
 
@@ -1309,6 +1333,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, Messa
     _env._metrics.applyBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket());
     std::shared_ptr<ApplyBucketDiffState> async_results;
+    TrackerHandoverGuard tracker_handover_guard(async_results, tracker);
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());
 

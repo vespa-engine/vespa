@@ -109,6 +109,12 @@ ApplyBucketDiffState::set_delayed_reply(std::unique_ptr<MessageTracker>&& tracke
     _delayed_reply = std::move(delayed_reply);
 }
 
+void
+ApplyBucketDiffState::set_tracker(std::unique_ptr<MessageTracker>&& tracker)
+{
+    _tracker = std::move(tracker);
+}
+
 std::shared_ptr<ApplyBucketDiffState>
 ApplyBucketDiffState::create(const MergeBucketInfoSyncer& merge_bucket_info_syncer, const spi::Bucket& bucket, RetainGuard&& retain_guard)
 {
