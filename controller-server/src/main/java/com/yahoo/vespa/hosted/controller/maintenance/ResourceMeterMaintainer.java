@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
@@ -111,6 +112,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                                     ResourceSnapshot::getZoneId,
                                     snapshot -> cost(snapshot.allocation(), systemName)));
                     locked = locked.with(instanceName, i -> i.withDeploymentCosts(deploymentCosts));
+                    updateCostMetrics(tenantAndApplication.instance(instanceName), deploymentCosts);
                 }
                 applications.store(locked);
             });
@@ -122,7 +124,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     private void reportResourceSnapshots(Collection<ResourceSnapshot> resourceSnapshots) {
         meteringClient.consume(resourceSnapshots);
 
-        updateMetrics(resourceSnapshots);
+        updateMeteringMetrics(resourceSnapshots);
 
         try (var lock = curator.lockMeteringRefreshTime()) {
             if (needsRefresh(curator.readMeteringRefreshTime())) {
@@ -190,7 +192,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         return Math.round(cost * 100.0 / costDivisor) / 100.0;
     }
 
-    private void updateMetrics(Collection<ResourceSnapshot> resourceSnapshots) {
+    private void updateMeteringMetrics(Collection<ResourceSnapshot> resourceSnapshots) {
         metric.set(METERING_LAST_REPORTED, clock.millis() / 1000, metric.createContext(Collections.emptyMap()));
         // total metered resource usage, for alerting on drastic changes
         metric.set(METERING_TOTAL_REPORTED,
@@ -199,15 +201,25 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 metric.createContext(Collections.emptyMap()));
 
         resourceSnapshots.forEach(snapshot -> {
-            var context = metric.createContext(Map.of(
-                    "tenant", snapshot.getApplicationId().tenant().value(),
-                    "applicationId", snapshot.getApplicationId().toFullString(),
-                    "zoneId", snapshot.getZoneId()
-            ));
+            var context = getMetricContext(snapshot.getApplicationId(), snapshot.getZoneId());
             metric.set("metering.vcpu", snapshot.getCpuCores(), context);
             metric.set("metering.memoryGB", snapshot.getMemoryGb(), context);
             metric.set("metering.diskGB", snapshot.getDiskGb(), context);
         });
     }
 
+    private void updateCostMetrics(ApplicationId applicationId, Map<ZoneId, Double> deploymentCost) {
+        deploymentCost.forEach((zoneId, cost) -> {
+            var context = getMetricContext(applicationId, zoneId);
+            metric.set("metering.cost.hourly", cost, context);
+        });
+    }
+
+    private Metric.Context getMetricContext(ApplicationId applicationId, ZoneId zoneId) {
+        return metric.createContext(Map.of(
+                "tenant", applicationId.tenant().value(),
+                "applicationId", applicationId.toFullString(),
+                "zoneId", zoneId.value()
+        ));
+    }
 }

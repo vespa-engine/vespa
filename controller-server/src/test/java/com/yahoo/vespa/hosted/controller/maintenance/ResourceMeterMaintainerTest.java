@@ -73,6 +73,12 @@ public class ResourceMeterMaintainerTest {
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z2, 2.50));
         assertCost.accept(app2, Map.of(z1, 3.59, z2, 4.68));
+        assertEquals(1.4,
+                (Double) metrics.getMetric(context ->
+                                z1.value().equals(context.get("zoneId")) &&
+                                app1.tenant().value().equals(context.get("tenant")),
+                        "metering.cost.hourly").get(),
+                Double.MIN_VALUE);
     }
 
     @Test
