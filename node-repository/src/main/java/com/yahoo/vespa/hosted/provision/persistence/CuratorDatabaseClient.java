@@ -66,7 +66,7 @@ public class CuratorDatabaseClient {
     private static final Path inactiveJobsPath = root.append("inactiveJobs");
     private static final Path infrastructureVersionsPath = root.append("infrastructureVersions");
     private static final Path osVersionsPath = root.append("osVersions");
-    private static final Path containerImagesPath = root.append("dockerImages"); // TODO(mpolden): Delete this path from ZK after 2021-11-01
+    private static final Path containerImagesPath = root.append("dockerImages");
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
     private static final Path archiveUrisPath = root.append("archiveUris");
 
@@ -83,6 +83,7 @@ public class CuratorDatabaseClient {
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
         initZK();
+        curator.delete(containerImagesPath); // TODO(mpolden): Remove after 2021-11-08
     }
 
     public List<String> cluster() {
