@@ -1117,18 +1117,14 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
             @Override public void onDocument(JsonResponse response, Document document, Runnable ack, Consumer<String> onError) {
                 writes.add(() -> {
-                    response.writeDocumentValue(document);
+                    loggingException(() -> response.writeDocumentValue(document));
                     ack.run();
                 });
                 if (writing.compareAndSet(false, true)) // Occupy only a single thread for writing.
                     defaultExecutor.execute(() -> {
                         while (writing.get()) {
-                            try {
-                                for (Runnable write; (write = writes.poll()) != null; write.run()) ;
-                            }
-                            finally {
-                                writing.set( ! writes.isEmpty());
-                            }
+                            for (Runnable write; (write = writes.poll()) != null; write.run());
+                            writing.set( ! writes.isEmpty());
                         }
                     });
             }
