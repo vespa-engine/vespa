@@ -216,7 +216,6 @@ public class VisitorIterator {
                 assert(p.getActiveBucketCount() == 0);
                 p.clearAllBuckets();
                 p.setBucketCursor(0);
-                skipToSlice();
                 return;
             }
 
@@ -409,6 +408,7 @@ public class VisitorIterator {
 
                 correctTruncatedBucketCursor();
                 progressToken.setInconsistentState(false);
+                skipToSlice();
             }
         }
 

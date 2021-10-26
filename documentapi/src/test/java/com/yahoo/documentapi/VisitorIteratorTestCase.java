@@ -118,8 +118,28 @@ public class VisitorIteratorTestCase {
 
         // Iterator with a single distribution bit ignores slicing.
         assertTrue(iter.hasNext());
-        assertEquals(ProgressToken.toBucketId(0, 1), iter.getNext().getSuperbucket());
-        assertEquals(ProgressToken.toBucketId(1, 1), iter.getNext().getSuperbucket());
+
+        VisitorIterator.BucketProgress first = iter.getNext();
+        assertEquals(ProgressToken.toBucketId(0, 1), first.getSuperbucket());
+
+        VisitorIterator.BucketProgress second = iter.getNext();
+        assertEquals(ProgressToken.toBucketId(1, 1), second.getSuperbucket());
+
+        assertFalse(iter.hasNext());
+
+        // Handling wrong distributino reply, but inconsistent state due to the other, active bucket.
+        iter.update(first.getSuperbucket(), first.getProgress());
+        iter.setDistributionBitCount(2);
+        assertEquals(2, iter.getDistributionBitCount());
+        assertEquals(1, progress.getDistributionBitCount());
+
+        // All buckets returned, now the actual distribution bit count change occurs.
+        iter.update(second.getSuperbucket(), second.getProgress());
+        assertEquals(2, iter.getDistributionBitCount());
+        assertEquals(2, progress.getDistributionBitCount());
+
+        assertTrue(iter.hasNext());
+        assertEquals(ProgressToken.toBucketId(2, 2), iter.getNext().getSuperbucket());
         assertFalse(iter.hasNext());
     }
 
