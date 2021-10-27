@@ -354,6 +354,22 @@ StoreOnlyFeedView::removeSummary(SerialNum serialNum, Lid lid, OnWriteDoneType o
                 _summaryAdapter->remove(serialNum, lid);
             }));
 }
+void
+StoreOnlyFeedView::removeSummaries(SerialNum serialNum, const LidVector & lids, OnWriteDoneType onDone) {
+    std::vector<IPendingLidTracker::Token> trackerTokens;
+    trackerTokens.reserve(lids.size());
+    std::for_each(lids.begin(), lids.end(), [this, &trackerTokens](Lid lid) {
+        trackerTokens.emplace_back(_pendingLidsForDocStore.produce(lid));
+    });
+    summaryExecutor().execute(
+            makeLambdaTask([serialNum, lids = std::move(lids), onDone, trackerTokens = std::move(trackerTokens), this] {
+                (void) onDone;
+                (void) trackerTokens;
+                std::for_each(lids.begin(), lids.end(), [this, serialNum](Lid lid) {
+                    _summaryAdapter->remove(serialNum, lid);
+                });
+            }));
+}
 
 void
 StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
@@ -646,9 +662,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         removeAttributes(serialNum, lidsToRemove, onWriteDone);
     }
     if (useDocumentStore(serialNum + 1)) {
-        for (const auto &lid : lidsToRemove) {
-            removeSummary(serialNum, lid, onWriteDone);
-        }
+        removeSummaries(serialNum, lidsToRemove, onWriteDone);
     }
     return lidsToRemove.size();
 }
