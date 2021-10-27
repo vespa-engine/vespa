@@ -187,11 +187,13 @@ public:
         ++_changes;
     }
 
-    void notifyRemove(IDestructorCallbackSP, document::GlobalId gid, SerialNum) override {
-        _changeGid = gid;
-        _changeLid = 0;
-        _gidToLid[gid] = 0;
-        ++_changes;
+    void notifyRemove(IDestructorCallbackSP, const std::vector<document::GlobalId> & gids, SerialNum) override {
+        for (const auto & gid : gids) {
+            _changeGid = gid;
+            _changeLid = 0;
+            _gidToLid[gid] = 0;
+            ++_changes;
+        }
     }
 
     void assertChanges(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {

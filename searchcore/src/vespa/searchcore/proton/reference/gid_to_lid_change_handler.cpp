@@ -71,23 +71,26 @@ GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid
 }
 
 void
-GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum)
+GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum)
 {
     lock_guard guard(_lock);
-    auto insRes = _pendingRemove.insert(std::make_pair(gid, PendingRemoveEntry(serialNum)));
-    if (!insRes.second) {
-        auto &entry = insRes.first->second;
-        assert(entry.removeSerialNum < serialNum);
-        assert(entry.putSerialNum < serialNum);
-        if (entry.removeSerialNum < entry.putSerialNum) {
+    _pending_changes.reserve(_pending_changes.size() + gids.size());
+    for (const GlobalId & gid : gids) {
+        auto insRes = _pendingRemove.insert(std::make_pair(gid, PendingRemoveEntry(serialNum)));
+        if (!insRes.second) {
+            auto &entry = insRes.first->second;
+            assert(entry.removeSerialNum < serialNum);
+            assert(entry.putSerialNum < serialNum);
+            if (entry.removeSerialNum < entry.putSerialNum) {
+                notifyRemove(std::move(context), gid);
+            }
+            entry.removeSerialNum = serialNum;
+            ++entry.refCount;
+        } else {
             notifyRemove(std::move(context), gid);
         }
-        entry.removeSerialNum = serialNum;
-        ++entry.refCount;
-    } else {
-        notifyRemove(std::move(context), gid);
+        _pending_changes.emplace_back(IDestructorCallbackSP(), gid, 0, serialNum, true);
     }
-    _pending_changes.emplace_back(IDestructorCallbackSP(), gid, 0, serialNum, true);
 }
 
 void

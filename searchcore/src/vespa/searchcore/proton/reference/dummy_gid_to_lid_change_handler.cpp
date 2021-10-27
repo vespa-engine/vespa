@@ -15,7 +15,7 @@ DummyGidToLidChangeHandler::notifyPut(IDestructorCallbackSP, GlobalId, uint32_t,
 }
 
 void
-DummyGidToLidChangeHandler::notifyRemove(IDestructorCallbackSP , GlobalId, SerialNum)
+DummyGidToLidChangeHandler::notifyRemove(IDestructorCallbackSP, const std::vector<GlobalId> &, SerialNum)
 {
 }
 
