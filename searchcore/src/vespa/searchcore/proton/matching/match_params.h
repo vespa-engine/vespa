@@ -28,6 +28,7 @@ struct MatchParams {
                 bool              hasFinalRank,
                 bool              needRanking=true);
     bool save_rank_scores() const { return ((heapSize + arraySize) != 0); }
+    bool has_rank_drop_limit() const;
 };
 
 }

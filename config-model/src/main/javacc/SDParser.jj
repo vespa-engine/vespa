@@ -2115,10 +2115,10 @@ void mutate_operation(RankProfile profile) :
     RankProfile.MutateOperation.Phase phase;
 }
 {
-   ( <ON_MATCH> { phase = RankProfile.MutateOperation.Phase.onmatch; }
+   ( <ON_MATCH> { phase = RankProfile.MutateOperation.Phase.on_match; }
    | <ON_FIRST_PHASE> { phase = RankProfile.MutateOperation.Phase.on_first_phase; }
    | <ON_SECOND_PHASE> { phase = RankProfile.MutateOperation.Phase.on_second_phase; }
-   | <ON_SUMMARY> { phase = RankProfile.MutateOperation.Phase.onsummary; }
+   | <ON_SUMMARY> { phase = RankProfile.MutateOperation.Phase.on_summary; }
    )
    lbrace() attribute = identifier() operation = mutate_expr() (<NL>)* <RBRACE>
    { profile.addMutateOperation(phase, attribute, operation); }

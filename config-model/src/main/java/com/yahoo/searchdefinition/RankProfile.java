@@ -675,7 +675,7 @@ public class RankProfile implements Cloneable {
     }
 
     public static class MutateOperation {
-        public enum Phase { onmatch, on_first_phase, on_second_phase, onsummary}
+        public enum Phase { on_match, on_first_phase, on_second_phase, on_summary}
         final Phase phase;
         final String attribute;
         final String operation;

@@ -103,6 +103,12 @@ ResultSet::sort(FastS_IResultSorter & sorter, unsigned int ntop) {
 }
 
 std::pair<std::unique_ptr<BitVector>, vespalib::Array<RankedHit>>
+ResultSet::copyResult() const {
+    std::unique_ptr<BitVector> copy = _bitOverflow ? BitVector::create(*_bitOverflow) : std::unique_ptr<BitVector>();
+    return std::make_pair(std::move(copy), _rankedHitsArray);
+}
+
+std::pair<std::unique_ptr<BitVector>, vespalib::Array<RankedHit>>
 ResultSet::stealResult(ResultSet && rhs) {
     return std::make_pair(std::move(rhs._bitOverflow), std::move(rhs._rankedHitsArray));
 }

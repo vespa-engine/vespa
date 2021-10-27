@@ -36,6 +36,7 @@ public:
     unsigned int getNumHits() const;
     void mergeWithBitOverflow(HitRank default_value = default_rank_value);
     void sort(FastS_IResultSorter & sorter, unsigned int ntop);
+    std::pair<std::unique_ptr<BitVector>, vespalib::Array<RankedHit>> copyResult() const;
     static std::pair<std::unique_ptr<BitVector>, vespalib::Array<RankedHit>>
     stealResult(ResultSet && rhs);
 };
