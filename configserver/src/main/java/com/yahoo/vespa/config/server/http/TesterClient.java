@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.net.URI;
@@ -48,7 +48,7 @@ public class TesterClient {
     public HttpResponse startTests(String testerHostname, int port, String suite, byte[] config) {
         URI testerUri = createURI(testerHostname, port, "/tester/v1/run/" + suite);
         HttpPost request = new HttpPost(testerUri);
-        request.setEntity(new ByteArrayEntity(config));
+        request.setEntity(new ByteArrayEntity(config, ContentType.DEFAULT_BINARY));
 
         return execute(request, "Failed to start tests");
     }
@@ -65,7 +65,7 @@ public class TesterClient {
     }
 
     private HttpResponse execute(HttpUriRequest request, String messageIfRequestFails) {
-        logger.log(Level.FINE, () -> "Sending request to tester container " + request.getURI().toString());
+        logger.log(Level.FINE, () -> "Sending request to tester container " + request.getRequestUri());
         try {
             return new ProxyResponse(httpClient.execute(request));
         } catch (IOException e) {

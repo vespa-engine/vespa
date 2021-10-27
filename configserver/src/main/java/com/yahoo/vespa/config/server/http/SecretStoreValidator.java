@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -12,10 +12,10 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
 
 import java.io.IOException;
 import java.net.URI;
@@ -61,7 +61,7 @@ public class SecretStoreValidator {
     private HttpResponse postRequest(URI uri, Slime slime) {
         var postRequest = new HttpPost(uri);
         var data = uncheck(() -> SlimeUtils.toJsonBytes(slime));
-        var entity = new ByteArrayEntity(data);
+        var entity = new ByteArrayEntity(data, ContentType.DEFAULT_BINARY);
         postRequest.setEntity(entity);
         try {
             return new ProxyResponse(httpClient.execute(postRequest));

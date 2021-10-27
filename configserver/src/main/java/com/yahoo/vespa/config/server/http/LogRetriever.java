@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 
 import java.io.IOException;
 
