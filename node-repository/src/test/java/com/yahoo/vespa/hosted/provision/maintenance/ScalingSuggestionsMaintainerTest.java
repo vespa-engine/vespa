@@ -85,7 +85,7 @@ public class ScalingSuggestionsMaintainerTest {
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Peak suggestion has been  outdated",
-                     "5 nodes with [vcpu: 1.8, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps]",
+                     "7 nodes with [vcpu: 1.2, memory: 2.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
         assertTrue(shouldSuggest(app1, cluster1, tester));
 
