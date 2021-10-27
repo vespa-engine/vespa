@@ -1,4 +1,4 @@
-package org.intellij.sdk.language.lexer;
+package org.intellij.sdk.language;
 
 import com.intellij.lexer.FlexLexer;
 import com.intellij.psi.tree.IElementType;
