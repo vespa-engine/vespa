@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/retain_guard.h>
 #include <future>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace document { class DocumentId; }
