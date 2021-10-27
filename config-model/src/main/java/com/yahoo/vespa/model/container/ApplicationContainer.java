@@ -20,7 +20,7 @@ public final class ApplicationContainer extends Container implements
         QrStartConfig.Producer,
         ZookeeperServerConfig.Producer {
 
-    private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
+    private static final String defaultHostedJVMArgs = "-XX:+SuppressFatalErrorMessage";
 
     private final boolean isHostedVespa;
 
