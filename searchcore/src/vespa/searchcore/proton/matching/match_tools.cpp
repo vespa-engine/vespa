@@ -253,13 +253,15 @@ MatchToolsFactory::createTask(vespalib::stringref attribute, vespalib::stringref
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnMatchTask() const {
     const auto & op = _rankSetup.getMutateOnMatch();
-    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
-                      execute::onmatch::Operation::lookup(_queryEnv.getProperties(), op._operation));
+    return createTask(op._attribute, op._operation);
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnFirstPhaseTask() const {
     const auto & op = _rankSetup.getMutateOnFirstPhase();
-    return createTask(op._attribute, op._operation);
+    // Note that combining onmatch in query with first-phase is not a bug.
+    // It is intentional, as the semantics of onmatch in query are identical to on-first-phase.
+    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
+                      execute::onmatch::Operation::lookup(_queryEnv.getProperties(), op._operation));
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnSecondPhaseTask() const {

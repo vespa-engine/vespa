@@ -785,7 +785,20 @@ TEST("require that match params are set up straight with ranking on") {
     ASSERT_EQUAL(0.7, p.rankDropLimit);
     ASSERT_EQUAL(0u, p.offset);
     ASSERT_EQUAL(1u, p.hits);
+    ASSERT_TRUE(p.has_rank_drop_limit());
 }
+
+TEST("require that match params can turn off rank-drop-limit") {
+    MatchParams p(1, 2, 4, -std::numeric_limits<feature_t>::quiet_NaN(), 0, 1, true, true);
+    ASSERT_EQUAL(1u, p.numDocs);
+    ASSERT_EQUAL(2u, p.heapSize);
+    ASSERT_EQUAL(4u, p.arraySize);
+    ASSERT_TRUE(std::isnan(p.rankDropLimit));
+    ASSERT_EQUAL(0u, p.offset);
+    ASSERT_EQUAL(1u, p.hits);
+    ASSERT_FALSE(p.has_rank_drop_limit());
+}
+
 
 TEST("require that match params are set up straight with ranking on arraySize is atleast the size of heapSize") {
     MatchParams p(1, 6, 4, 0.7, 1, 1, true, true);

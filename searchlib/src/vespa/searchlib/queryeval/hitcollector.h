@@ -80,7 +80,6 @@ private:
         typedef std::unique_ptr<Collector> UP;
         virtual ~Collector() {}
         virtual void collect(uint32_t docId, feature_t score) = 0;
-        virtual bool isRankedHitCollector() const { return false; }
         virtual bool isDocIdCollector() const { return false; }
     };
 
@@ -104,7 +103,6 @@ private:
         RankedHitCollector(HitCollector &hc) : CollectorBase(hc) { }
         void collect(uint32_t docId, feature_t score) override;
         void collectAndChangeCollector(uint32_t docId, feature_t score) __attribute__((noinline));
-        bool isRankedHitCollector() const override { return true; }
     };
 
     template <bool CollectRankedHit>
