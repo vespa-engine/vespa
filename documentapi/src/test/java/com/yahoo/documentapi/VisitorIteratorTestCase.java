@@ -127,7 +127,7 @@ public class VisitorIteratorTestCase {
 
         assertFalse(iter.hasNext());
 
-        // Handling wrong distributino reply, but inconsistent state due to the other, active bucket.
+        // Handling wrong distribution reply, but inconsistent state due to the other, active bucket.
         iter.update(first.getSuperbucket(), first.getProgress());
         iter.setDistributionBitCount(2);
         assertEquals(2, iter.getDistributionBitCount());
