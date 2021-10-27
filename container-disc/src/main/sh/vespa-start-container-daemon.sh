@@ -195,7 +195,6 @@ exec $numactlcmd $envcmd java \
         -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
         -XX:ErrorFile="${VESPA_HOME}/var/crash/hs_err_pid%p.log" \
         -XX:+ExitOnOutOfMemoryError \
-        --illegal-access=warn \
         --add-opens=java.base/java.io=ALL-UNNAMED \
         --add-opens=java.base/java.lang=ALL-UNNAMED \
         --add-opens=java.base/java.net=ALL-UNNAMED \
