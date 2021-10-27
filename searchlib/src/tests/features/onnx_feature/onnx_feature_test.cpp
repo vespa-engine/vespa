@@ -56,6 +56,7 @@ struct OnnxFeatureTest : ::testing::Test {
         factory.addPrototype(std::make_shared<RankingExpressionBlueprint>());
         factory.addPrototype(std::make_shared<OnnxBlueprint>());
     }
+    ~OnnxFeatureTest();
     void add_expr(const vespalib::string &name, const vespalib::string &expr) {
         vespalib::string feature_name = expr_feature(name);
         vespalib::string expr_name = feature_name + ".rankingScript";
@@ -93,6 +94,8 @@ struct OnnxFeatureTest : ::testing::Test {
         return TensorSpec::from_value(result.resolve(0).as_object(docid));
     }
 };
+
+OnnxFeatureTest::~OnnxFeatureTest() = default;
 
 TEST_F(OnnxFeatureTest, simple_onnx_model_can_be_calculated) {
     add_expr("query_tensor", "tensor<float>(a[1],b[4]):[[docid,2,3,4]]");
