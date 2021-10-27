@@ -58,11 +58,12 @@ public class Flags {
             "Takes effect on next container restart.",
             APPLICATION_ID, NODE_TYPE, HOSTNAME);
 
-    public static final UnboundBooleanFlag FAIL_ON_UNKNOWN_IDS = defineFeatureFlag(
-            "fail-on-unknown-ids", true,
-            List.of("freva"), "2021-10-18", "2021-12-01",
-            "Whether host-admin should fail if it finds UID/GIDs outside of the mapped range inside the container storage.",
-            "Takes effect on next container restart.");
+    public static final UnboundBooleanFlag USE_CGROUPS_V2 = defineFeatureFlag(
+            "use-cgroups-v2", true,
+            List.of("freva"), "2021-10-27", "2021-12-01",
+            "Whether a host should use CGroups v2",
+            "Will attempt to switch on next host admin tick (requires reboot).",
+            NODE_TYPE, HOSTNAME);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
