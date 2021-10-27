@@ -363,16 +363,11 @@ public class RoutingPoliciesTest {
                              ClusterSpec.Id.from("default"), 0,
                              Map.of(zone1, 1L, zone2, 1L), true);
         assertEquals("Registers expected DNS names",
-                     Set.of("app1.tenant1.aws-eu-west-1-w.public.vespa.oath.cloud",
-                            "app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
-                            "app1.tenant1.aws-eu-west-1a.public.vespa.oath.cloud",
+                     Set.of("app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
                             "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
-                            "app1.tenant1.aws-us-east-1-w.public.vespa.oath.cloud",
                             "app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
-                            "app1.tenant1.aws-us-east-1c.public.vespa.oath.cloud",
                             "app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
-                            "app1.tenant1.g.vespa-app.cloud",
-                            "app1.tenant1.global.public.vespa.oath.cloud"),
+                            "app1.tenant1.g.vespa-app.cloud"),
                      tester.recordNames());
     }
 

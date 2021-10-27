@@ -350,14 +350,6 @@ public class RoutingController {
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
-            if (controller.system().isPublic()) {
-                endpoints.add(Endpoint.of(routingId.application())
-                                      .target(routingId.endpointId(), cluster, zones)
-                                      .on(Port.fromRoutingMethod(method))
-                                      .routingMethod(method)
-                                      .legacy()
-                                      .in(controller.system()));
-            }
             // Add legacy endpoints
             if (legacyNamesAvailable && method == RoutingMethod.shared) {
                 endpoints.add(Endpoint.of(routingId.application())

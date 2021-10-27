@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -80,11 +79,8 @@ public class RoutingPolicy {
         if (infraEndpoint.isPresent()) {
             return List.of(infraEndpoint.get());
         }
-        List<Endpoint> endpoints = new ArrayList<>(3);
+        List<Endpoint> endpoints = new ArrayList<>();
         endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone()).in(system));
-        if (system.isPublic()) {
-            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone()).legacy().in(system));
-        }
         // Add legacy endpoints
         if (routingMethod == RoutingMethod.shared) {
             endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
@@ -101,12 +97,7 @@ public class RoutingPolicy {
 
     /** Returns all region endpoints of this */
     public List<Endpoint> regionEndpointsIn(SystemName system, RoutingMethod routingMethod) {
-        List<Endpoint> endpoints = new ArrayList<>(2);
-        endpoints.add(regionEndpointIn(system, routingMethod, false));
-        if (system.isPublic()) {
-            endpoints.add(regionEndpointIn(system, routingMethod, true));
-        }
-        return Collections.unmodifiableList(endpoints);
+        return List.of(regionEndpointIn(system, routingMethod, false));
     }
 
     /** Returns the region endpoint of this */
