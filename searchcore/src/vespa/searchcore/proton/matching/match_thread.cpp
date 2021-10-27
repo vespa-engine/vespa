@@ -378,7 +378,7 @@ MatchThread::processResult(const Doom & doom,
 
     if (auto task = matchToolsFactory.createOnMatchTask()) {
         // This is not correct, as it should use the results before rank-drop-limit
-        // But keeping like this for now as on-first-phase should be a subset of -on-match
+        // But keeping like this for now as on-first-phase should be a subset of on-match
         task->run(result->copyResult());
     }
     if (auto task = matchToolsFactory.createOnFirstPhaseTask()) {
