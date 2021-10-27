@@ -2,19 +2,21 @@
 package org.intellij.sdk.language.psi;
 
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiReference;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.psi.util.PsiTreeUtil;
 
 /**
  * This interface represents an identifier in the SD language (regular identifiers and identifiers with dash).
  * @author shahariel
  */
 public interface SdIdentifier extends PsiElement {
-    
-    String getName();
-    
-    boolean isFunctionName(PsiElement file);
-    
-    @NotNull PsiReference getReference();
+
+    default boolean isFunctionName(PsiElement file, String name) {
+        for (SdFunctionDefinition macro : PsiTreeUtil.collectElementsOfType(file, SdFunctionDefinition.class)) {
+            if (name.equals(macro.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
     
 }

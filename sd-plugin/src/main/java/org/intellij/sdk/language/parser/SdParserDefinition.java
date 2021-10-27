@@ -14,7 +14,6 @@ import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
 import org.intellij.sdk.language.SdLanguage;
 import org.intellij.sdk.language.SdLexerAdapter;
-import org.intellij.sdk.language.parser.SdParser;
 import org.intellij.sdk.language.psi.SdFile;
 import org.intellij.sdk.language.psi.SdTypes;
 import org.jetbrains.annotations.NotNull;

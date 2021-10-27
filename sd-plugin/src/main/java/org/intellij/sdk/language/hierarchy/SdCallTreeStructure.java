@@ -11,9 +11,7 @@ import com.intellij.util.ArrayUtilRt;
 import org.intellij.sdk.language.SdUtil;
 import org.intellij.sdk.language.psi.SdFile;
 import org.intellij.sdk.language.psi.SdFunctionDefinition;
-import org.intellij.sdk.language.psi.SdIdentifierVal;
 import org.intellij.sdk.language.psi.SdRankProfileDefinition;
-import org.intellij.sdk.language.psi.impl.SdPsiImplUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
