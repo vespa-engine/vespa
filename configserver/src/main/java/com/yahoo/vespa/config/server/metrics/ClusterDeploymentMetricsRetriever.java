@@ -1,7 +1,7 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.metrics;
 
-import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -9,16 +9,17 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.util.TimeValue;
+import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.net.URI;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,16 +55,19 @@ public class ClusterDeploymentMetricsRetriever {
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
 
-    private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
-                                                            .create(registry ->
-                                                                    new PoolingHttpClientConnectionManager(registry, null, null, null, 1, TimeUnit.MINUTES))
-                                                            .setDefaultRequestConfig(
-                                                                    RequestConfig.custom()
-                                                                            .setConnectionRequestTimeout((int)Duration.ofSeconds(60).toMillis())
-                                                                            .setConnectTimeout((int)Duration.ofSeconds(10).toMillis())
-                                                                            .setSocketTimeout((int)Duration.ofSeconds(10).toMillis())
-                                                                            .build())
-                                                            .build();
+    private static final CloseableHttpClient httpClient =
+            VespaHttpClientBuilder
+                    .create(registry -> new PoolingHttpClientConnectionManager(registry,
+                                                                               null,
+                                                                               null,
+                                                                               TimeValue.ofMinutes(1)))
+                    .setDefaultRequestConfig(
+                            RequestConfig.custom()
+                                         .setConnectionRequestTimeout(Timeout.ofSeconds(60))
+                                         .setConnectTimeout(Timeout.ofSeconds(10))
+                                         .setResponseTimeout(Timeout.ofSeconds(10))
+                                         .build())
+                    .build();
 
     /**
      * Call the metrics API on each host and aggregate the metrics
