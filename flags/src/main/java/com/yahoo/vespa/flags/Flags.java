@@ -346,13 +346,6 @@ public class Flags {
             "Takes effect on restart of Docker container",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag LEGACY_ENDPOINT_IN_CERTIFICATE = defineFeatureFlag(
-            "legacy-endpoint-in-certificate", false,
-            List.of("mpolden"), "2021-10-26", "2021-12-01",
-            "Whether to include legacy endpoint names in issued certificates",
-            "Takes effect on deployment through controller",
-            APPLICATION_ID);
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

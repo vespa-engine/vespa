@@ -250,7 +250,7 @@ public class Endpoint {
     }
 
     /** Returns the DNS suffix used for endpoints in given system */
-    public static String dnsSuffix(SystemName system, boolean legacy) {
+    private static String dnsSuffix(SystemName system, boolean legacy) {
         switch (system) {
             case cd:
             case main:
@@ -267,10 +267,9 @@ public class Endpoint {
     }
 
     /** Returns the DNS suffix used for internal names (i.e. names not exposed to tenants) in given system */
-    public static String internalDnsSuffix(SystemName system, boolean legacy) {
-        // TODO(mpolden): Stop exposing legacy parameter after legacy endpoints in public are completely removed
-        String suffix = dnsSuffix(system, legacy);
-        if (system.isPublic() && !legacy) {
+    public static String internalDnsSuffix(SystemName system) {
+        String suffix = dnsSuffix(system, false);
+        if (system.isPublic()) {
             // Certificate provider requires special approval for three-level DNS names, e.g. foo.vespa-app.cloud.
             // To avoid this in public we always add an extra level.
             return ".internal" + suffix;
