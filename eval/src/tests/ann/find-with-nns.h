@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 TopK find_with_nns(uint32_t sk, NNS_API &nns, uint32_t qid) {
     TopK result;
