@@ -16,7 +16,7 @@ namespace storage::spi { class Result; }
 namespace storage {
 
 class ApplyBucketDiffEntryResult;
-class MessageSender;
+struct MessageSender;
 class MessageTracker;
 class MergeBucketInfoSyncer;
 
