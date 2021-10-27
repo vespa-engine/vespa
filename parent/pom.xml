@@ -814,7 +814,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>3.1.0</version>
+                <version>${mockito.version}</version>
                 <scope>test</scope> <!-- TODO: remove scope from parent pom -->
             </dependency>
             <dependency>
@@ -902,6 +902,7 @@
         <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+        <mockito.version>3.1.0</mockito.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>
         <onnxruntime.version>1.8.0</onnxruntime.version>
         <protobuf.version>3.11.4</protobuf.version>
