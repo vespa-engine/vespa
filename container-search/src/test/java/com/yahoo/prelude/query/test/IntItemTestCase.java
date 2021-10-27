@@ -19,7 +19,9 @@ public class IntItemTestCase {
         Query q2 = new Query("/?query=123%20456");
 
         AndItem andItem = (AndItem) q2.getModel().getQueryTree().getRoot();
-        andItem.addItem(new IntItem(789l, ""));
+        var item = new IntItem(789L, "");
+        item.setFromQuery(true);
+        andItem.addItem(item);
 
         assertEquals(q1, q2);
     }

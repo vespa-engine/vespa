@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -16,9 +17,7 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  */
 public class Highlight implements Cloneable {
 
-    /**
-     * The name of the property map which contains extra highlight terms
-     */
+    /** The name of the property map which contains extra highlight terms */
     public static final String HIGHLIGHTTERMS = "highlightterms";
 
     private Map<String, AndItem> highlightItems = new LinkedHashMap<>();
@@ -39,8 +38,8 @@ public class Highlight implements Cloneable {
     /**
      * Add custom highlight term
      *
-     * @param field Field name
-     * @param item  Term to be highlighted
+     * @param field the field name
+     * @param item the term to be highlighted
      */
     public void addHighlightTerm(String field, String item) {
         addHighlightItem(field, new WordItem(toLowerCase(item), field, true));
@@ -49,23 +48,18 @@ public class Highlight implements Cloneable {
     /**
      * Add custom highlight phrase
      *
-     * @param field Field name
-     * @param phrase List of terms to be highlighted as a phrase
+     * @param field the field name
+     * @param phrase the list of terms to be highlighted as a phrase
      */
     public void addHighlightPhrase(String field, List<String> phrase) {
         PhraseItem pi = new PhraseItem();
         pi.setIndexName(field);
-        for (String s : phrase) {
+        for (String s : phrase)
             pi.addItem(new WordItem(toLowerCase(s), field, true));
-        }
         addHighlightItem(field, pi);
     }
 
-    /**
-     * Returns the modifiable map of highlight items (never null)
-     *
-     * @return Map of highlight items
-     */
+    /** Returns the modifiable map of highlight items (never null) */
     public Map<String, AndItem> getHighlightItems() {
         return highlightItems;
     }

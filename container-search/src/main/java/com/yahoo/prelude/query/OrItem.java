@@ -9,10 +9,12 @@ package com.yahoo.prelude.query;
  */
 public class OrItem extends CompositeItem {
 
+    @Override
     public ItemType getItemType() {
         return ItemType.OR;
     }
 
+    @Override
     public String getName() {
         return "OR";
     }

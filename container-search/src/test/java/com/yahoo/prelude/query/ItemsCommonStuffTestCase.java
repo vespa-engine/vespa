@@ -232,27 +232,24 @@ public class ItemsCommonStuffTestCase {
         as.setFromUser(true);
         assertTrue(as.isFromUser());
         as.lock();
-        boolean caught = false;
         try {
             as.removeItem(firstItem);
-        } catch (IllegalArgumentException e) {
-            caught = true;
+            fail("Excpected exception");
+        } catch (IllegalStateException e) {
+            // success
         }
-        assertTrue(caught);
-        caught = false;
         try {
             as.addItem(new WordItem("puppy"));
-        } catch (IllegalArgumentException e) {
-            caught= true;
+            fail("Excpected exception");
+        } catch (IllegalStateException e) {
+            // success
         }
-        assertTrue(caught);
-        caught = false;
         try {
             as.addItem(1, new WordItem("kvalp"));
-        } catch (IllegalArgumentException e) {
-            caught = true;
+            fail("Excpected exception");
+        } catch (IllegalStateException e) {
+            // success
         }
-        assertTrue(caught);
     }
 
     @Test

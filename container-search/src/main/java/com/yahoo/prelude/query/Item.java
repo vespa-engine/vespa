@@ -15,15 +15,10 @@ import java.util.Optional;
 
 
 /**
- * <p>A term of the query language. As "term" is also the common term (sorry)
- * for a literal to be found (or not) in a search index, the term <i>item</i>
- * is used for <i>query language</i> terms.</p>
- *
- * <p>The query is represented as a composite tree of
- * Item subclasses. This allow arbitrary complex combinations of ands,
- * nots, phrases and so on.</p>
- *
- * <p>Items are in general mutable and not thread safe.</p>
+ * An item in the tree which defines which documents will match a query.
+ * Item subclasses can be composed freely to create arbitrary complex matching trees.
+ * Items are in general mutable and not thread safe. Their identity is defined by their content
+ * (i.e the field value of two items decide if they are equal).
  *
  * @author bratseth
  * @author havardpe
@@ -73,11 +68,6 @@ public abstract class Item implements Cloneable {
 
     }
 
-    public static final int DEFAULT_WEIGHT = 100;
-
-    /** The relative importance of this term in the query. Default is 100 */
-    private int weight = DEFAULT_WEIGHT;
-
     /**
      * The definitions in Item.ItemCreator must match the ones in
      * searchlib/src/searchlib/parsequery/parse.h
@@ -94,6 +84,11 @@ public abstract class Item implements Cloneable {
         }
 
     }
+
+    public static final int DEFAULT_WEIGHT = 100;
+
+    /** The relative importance of this term in the query. Default is 100 */
+    private int weight = DEFAULT_WEIGHT;
 
     private boolean fromSpecialToken = false;
 
@@ -390,34 +385,32 @@ public abstract class Item implements Cloneable {
         }
     }
 
-    /**
-     * Returns whether this item is of the same class and
-     * contains the same state as the given item
-     */
+    /** Returns whether this item is of the same class and contains the same state as the given item. */
     @Override
-    public boolean equals(Object object) {
-        if (object == null) {
-            return false;
-        }
-        if (object.getClass() != this.getClass()) {
-            return false;
-        } // Fails on different c.l.'s
-
-        Item other = (Item) object;
-
-        if (this.creator != other.creator) {
-            return false;
-        }
-        if (this.weight != other.weight) {
-            return false;
-        }
-
+    public boolean equals(Object o) {
+        if (o == null) return false;
+        if (o == this) return true;
+        if (o.getClass() != this.getClass()) return false;
+        Item other = (Item)o;
+        if (this.weight != other.weight) return false;
+        if (this.fromSpecialToken != other.fromSpecialToken) return false;
+        if (this.creator != other.creator) return false;
+        if ( ! Objects.equals(this.annotations, other.annotations)) return false;
+        if (this.isRanked != other.isRanked) return false;
+        if (this.usePositionData != other.usePositionData) return false;
+        if ( ! Objects.equals(this.label, other.label)) return false;
+        if (this.uniqueID != other.uniqueID) return false;
+        if ( ! Objects.equals(this.connectedItem, other.connectedItem)) return false;
+        if (this.connectivity != other.connectivity) return false;
+        if (this.significance != other.significance) return false;
+        if (this.language != other.language) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return weight * 29 + creator.code;
+        return Objects.hash(weight, fromSpecialToken, creator, annotations, isRanked, usePositionData, label,
+                            uniqueID, connectedItem, connectivity, significance, language);
     }
 
     protected boolean hasUniqueID() {

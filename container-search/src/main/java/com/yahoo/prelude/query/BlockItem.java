@@ -16,21 +16,20 @@ public interface BlockItem extends HasIndexItem {
     String getRawWord();
 
     /** Returns the substring which is the origin of this item, or null if none */
-    public Substring getOrigin();
+    Substring getOrigin();
 
     /** Returns the value of this term as a string */
-    public abstract String stringValue();
+    String stringValue();
 
     /**
-     * Is this block of text conceptually from the user query?
+     * Returns whether this block of text is originates from a user and should therefore
+     * receive the normal processing applied to raw text (such as stemming).
      */
     boolean isFromQuery();
 
     boolean isStemmed();
 
-    /**
-     * Does this item represent "usual words"?
-     */
+    /** Returns whether this item represents normal text */
     boolean isWords();
 
     /**

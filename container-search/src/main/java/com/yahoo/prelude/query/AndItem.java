@@ -17,4 +17,8 @@ public class AndItem extends CompositeItem {
         return "AND";
     }
 
+    public boolean equals(Object p) {
+        return super.equals(p);
+    }
+
 }

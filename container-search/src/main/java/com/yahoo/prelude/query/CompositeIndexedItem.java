@@ -37,9 +37,8 @@ public abstract class CompositeIndexedItem extends CompositeTaggableItem impleme
 
     /** Sets the name of the index to search */
     public void setIndexName(String index) {
-        if (index == null) {
+        if (index == null)
             index = "";
-        }
         this.index = index;
     }
 
@@ -51,17 +50,15 @@ public abstract class CompositeIndexedItem extends CompositeTaggableItem impleme
         }
     }
 
+    @Override
     public boolean equals(Object object) {
-        if (!super.equals(object)) {
-            return false;
-        }
+        if (!super.equals(object)) return false;
         IndexedItem other = (IndexedItem) object; // Ensured by superclass
-        if (!this.index.equals(other.getIndexName())) {
-            return false;
-        }
+        if (!this.index.equals(other.getIndexName())) return false;
         return true;
     }
 
+    @Override
     public int hashCode() {
         return super.hashCode() + 31 * index.hashCode();
     }

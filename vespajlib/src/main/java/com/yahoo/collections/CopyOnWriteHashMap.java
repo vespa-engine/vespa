@@ -91,6 +91,17 @@ public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneab
         return map.remove(key);
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if ( ! (other instanceof CopyOnWriteHashMap)) return false;
+        return this.map.equals(((CopyOnWriteHashMap)other).map);
+    }
+
+    @Override
+    public int hashCode() {
+        return map.hashCode();
+    }
+
     private final class EntrySet extends AbstractSet<Map.Entry<K,V>> {
 
         public Iterator<Map.Entry<K,V>> iterator() {

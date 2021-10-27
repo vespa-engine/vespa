@@ -10,19 +10,19 @@ package com.yahoo.prelude.query;
  */
 public class TermType {
 
-    public static TermType RANK = new TermType("rank", RankItem.class, null, "$");
+    public static final TermType RANK = new TermType("rank", RankItem.class, null, "$");
 
-    public static TermType AND = new TermType("and", AndItem.class, null, "+");
+    public static final TermType AND = new TermType("and", AndItem.class, null, "+");
 
-    public static TermType OR = new TermType("or", OrItem.class, null, "?");
+    public static final TermType OR = new TermType("or", OrItem.class, null, "?");
 
-    public static TermType NOT = new TermType("not", NotItem.class, null, "-");
+    public static final TermType NOT = new TermType("not", NotItem.class, null, "-");
 
-    public static TermType PHRASE = new TermType("phrase", PhraseItem.class, null, "\"");
+    public static final TermType PHRASE = new TermType("phrase", PhraseItem.class, null, "\"");
 
-    public static TermType EQUIV = new TermType("equiv", EquivItem.class, null, "");
+    public static final TermType EQUIV = new TermType("equiv", EquivItem.class, null, "");
 
-    public static TermType DEFAULT = new TermType("", CompositeItem.class, AndItem.class, "");
+    public static final TermType DEFAULT = new TermType("", CompositeItem.class, AndItem.class, "");
 
     public final String name;
 

@@ -6,6 +6,7 @@ import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * Represent a query item matching the K nearest neighbors in a multi-dimensional vector space.
@@ -33,7 +34,7 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     /** Returns the K number of hits to produce */
     public int getTargetNumHits() { return targetNumHits; }
 
-    /** Returns the field name */
+    /** Returns the name of the index (field) to be searched */
     public String getIndexName() { return field; }
 
     /** Returns the distance threshold for nearest-neighbor hits */
@@ -104,6 +105,25 @@ public class NearestNeighborItem extends SimpleTaggableItem {
         discloser.addProperty("distanceThreshold", distanceThreshold);
         discloser.addProperty("approximate", approximate);
         discloser.addProperty("targetHits", targetNumHits);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if ( ! super.equals(o)) return false;
+        NearestNeighborItem other = (NearestNeighborItem)o;
+        if (this.targetNumHits != other.targetNumHits) return false;
+        if (this.hnswExploreAdditionalHits != other.hnswExploreAdditionalHits) return false;
+        if (this.distanceThreshold != other.distanceThreshold) return false;
+        if (this.approximate != other.approximate) return false;
+        if ( ! this.field.equals(other.field)) return false;
+        if ( ! this.queryTensorName.equals(other.queryTensorName)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), targetNumHits, hnswExploreAdditionalHits,
+                            distanceThreshold, approximate, field, queryTensorName);
     }
 
 }

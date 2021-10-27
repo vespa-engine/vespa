@@ -30,7 +30,7 @@ public class QueryCanonicalizer {
     }
 
     /**
-     * Canonicalize this query
+     * Canonicalizes this query
      * 
      * @return null if the query is valid, an error message if it is invalid
      */

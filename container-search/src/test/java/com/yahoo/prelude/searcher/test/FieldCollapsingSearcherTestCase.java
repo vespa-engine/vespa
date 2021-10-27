@@ -273,7 +273,7 @@ public class FieldCollapsingSearcherTestCase {
 
         // Caveat: Collapse is set to false, because that's what the collapser asks for
         Query q = new Query("?query=%22test%20collapse%22+b&collapsefield=amid");
-        System.out.println(q);
+
         // The searcher turns off collapsing further on in the chain
         q.properties().set("collapse", "0");
         Result r = new Result(q);
@@ -477,7 +477,10 @@ public class FieldCollapsingSearcherTestCase {
         public Result search(com.yahoo.search.Query query, Execution execution) {
             AndItem a = new AndItem();
             a.addItem(query.getModel().getQueryTree().getRoot());
-            a.addItem(new WordItem("b"));
+            WordItem item = new WordItem("b");
+            item.setFromQuery(true);
+            a.addItem(item);
+
             query.getModel().getQueryTree().setRoot(a);
 
             return execution.search(query);

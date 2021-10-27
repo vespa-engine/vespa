@@ -4,6 +4,8 @@ package com.yahoo.prelude.query;
 import com.yahoo.net.UrlTokenizer;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
+import java.util.Objects;
+
 
 /**
  * Special words known by the index used for marking things.
@@ -35,21 +37,14 @@ public class MarkerWordItem extends WordItem {
 
     @Override
     public boolean equals(Object o) {
-        if (!super.equals(o)) {
-            return false;
-        }
-        if (!(o instanceof MarkerWordItem)) {
-            return false;
-        }
-
+        if (!super.equals(o)) return false;
         MarkerWordItem other = (MarkerWordItem) o;
-
         return markerWord.equals(other.markerWord);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + 499 * markerWord.hashCode();
+        return Objects.hash(super.hashCode(), markerWord);
     }
 
     @Override

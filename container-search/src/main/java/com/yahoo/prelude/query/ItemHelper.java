@@ -11,38 +11,6 @@ import java.util.List;
  */
 public class ItemHelper {
 
-        /*
-        We could have exchanged the following 3 functions with this
-        But this introspection is a bit too much of a hack, so we'll leave it with this.
-
-
-        public static <T extends CompositeItem> T ensureIsItem(Item unknown,Class<T> tClass) {
-
-            if(unknown != null &&  tClass.isInstance(unknown)) {
-                return (T) unknown;
-            }
-            T item;
-
-            try {
-                Constructor<T> n = tClass.getConstructor();
-                item = n.newInstance();
-            } catch (NoSuchMethodException e) {
-                return null;
-            } catch (InvocationTargetException e) {
-                return null;
-            } catch (IllegalAccessException e) {
-                return null;
-            } catch (InstantiationException e) {
-                return null;
-            }
-            if(item != null) {
-                item.addItem(unknown);
-            }
-            return item;
-
-        }
-        */
-
     /** Traverse the query tree and return total number of terms */
     int getNumTerms(Item rootNode) {
         int numTerms = 0;

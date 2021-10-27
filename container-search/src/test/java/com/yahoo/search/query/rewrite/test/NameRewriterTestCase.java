@@ -124,13 +124,7 @@ public class NameRewriterTestCase {
                                    "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV +
                                    "=true",
-                                   "query 'OR obama \"obama nobel peace prize\" " +
-                                   "\"obama wiki\" \"obama nobel prize\" " +
-                                   "\"obama wears mom jeans\" " +
-                                   "\"obama sucks\" \"obama news\" \"malia obama\" " +
-                                   "\"obama speech\" \"obama nobel\" \"obama wikipedia\" " +
-                                   "\"barack obama biography\" \"obama snl\" " +
-                                   "\"obama peace prize\" \"michelle obama\" \"barack obama\"'");
+                                   "query 'OR obama \"obama nobel peace prize\" \"obama wiki\" \"obama nobel prize\" \"obama nobel peace prize\" \"obama wears mom jeans\" \"obama sucks\" \"obama news\" \"malia obama\" \"obama speech\" \"obama nobel\" \"obama wikipedia\" \"barack obama biography\" \"obama snl\" \"obama peace prize\" \"michelle obama\" \"barack obama\"'");
     }
 
     /**

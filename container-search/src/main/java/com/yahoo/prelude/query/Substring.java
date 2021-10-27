@@ -1,12 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import java.util.Objects;
 
 /**
  * An substring which also provides access to the full (query) string it is a substring of.
- * This is immutable.
+ * This is a value object.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class Substring {
 
@@ -64,6 +65,21 @@ public class Substring {
     @Override
     public String toString() {
         return "(" + start + ' ' + end + ')';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if ( ! (o instanceof Substring)) return false;
+        var other = (Substring)o;
+        if (this.start != other.start) return false;
+        if (this.end != other.end) return false;
+        if (! Objects.equals(this.string, other.string)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(start, end, string);
     }
 
 }

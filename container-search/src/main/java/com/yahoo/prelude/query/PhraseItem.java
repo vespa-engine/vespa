@@ -43,6 +43,7 @@ public class PhraseItem extends CompositeIndexedItem {
         return "PHRASE";
     }
 
+    @Override
     public void setIndexName(String index) {
         super.setIndexName(index);
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
@@ -73,6 +74,7 @@ public class PhraseItem extends CompositeIndexedItem {
      *
      * @throws IllegalArgumentException if the given item is not a WordItem or PhraseItem
      */
+    @Override
     public void addItem(Item item) {
         if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
             addIndexedItem((IndexedItem) item);
@@ -233,6 +235,7 @@ public class PhraseItem extends CompositeIndexedItem {
         buffer.append("\"");
     }
 
+    @Override
     public String getIndexedString() {
         StringBuilder buf = new StringBuilder();
 
@@ -251,6 +254,7 @@ public class PhraseItem extends CompositeIndexedItem {
         return getNumWords();
     }
 
+    @Override
     public int getNumWords() {
         int numWords = 0;
         for (Iterator<Item> j = getItemIterator(); j.hasNext();) {

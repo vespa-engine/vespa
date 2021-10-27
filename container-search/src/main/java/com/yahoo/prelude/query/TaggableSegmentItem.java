@@ -20,16 +20,19 @@ public abstract class TaggableSegmentItem extends SegmentItem implements Taggabl
         super(rawWord, current, isFromQuery, stemmed, origin);
     }
 
+    @Override
     public int getUniqueID() {
         return uniqueID;
     }
 
+    @Override
     public void setUniqueID(int id) {
         setHasUniqueID(true);
         uniqueID = id;
     }
 
     /** See {@link TaggableItem#setConnectivity} */
+    @Override
     public void setConnectivity(Item item, double connectivity) {
         if (!(item instanceof TaggableItem)) {
             throw new IllegalArgumentException("setConnectivity item must be taggable, was: "
@@ -46,34 +49,42 @@ public abstract class TaggableSegmentItem extends SegmentItem implements Taggabl
         connectedItem.connectedBacklink = this;
     }
 
+    @Override
     public Item getConnectedItem() {
         return connectedItem;
     }
 
+    @Override
     public double getConnectivity() {
         return connectivity;
     }
 
+    @Override
     public void setSignificance(double significance) {
         setHasUniqueID(true);
         setExplicitSignificance(true);
         this.significance = significance;
     }
 
+    @Override
     public void setExplicitSignificance(boolean explicitSignificance) {
         this.explicitSignificance = explicitSignificance;
     }
 
+    @Override
     public boolean hasExplicitSignificance() {
         return explicitSignificance;
     }
 
+    @Override
     public double getSignificance() {
         return significance;
     }
 
     //Change access privilege from protected to public.
+    @Override
     public boolean hasUniqueID() {
         return super.hasUniqueID();
     }
+
 }

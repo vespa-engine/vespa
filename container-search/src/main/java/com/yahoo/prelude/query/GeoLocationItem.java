@@ -2,7 +2,6 @@
 
 package com.yahoo.prelude.query;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.prelude.Location;
 import java.nio.ByteBuffer;
 
@@ -11,14 +10,13 @@ import java.nio.ByteBuffer;
  * Used for closeness(fieldname) and distance(fieldname) rank features.
  * @author arnej
  */
-@Beta
 public class GeoLocationItem extends TermItem {
 
-    private Location location;
+    private final Location location;
 
     /**
      * Construct from a Location, which must be geo circle with an attribute set.
-     **/
+     */
     public GeoLocationItem(Location location) {
         this(location, location.getAttribute());
         if (! location.hasAttribute()) {
@@ -30,7 +28,7 @@ public class GeoLocationItem extends TermItem {
      * Construct from a Location and a field name.
      * The Location must be a geo circle.
      * If the Location has an attribute set, it must match the field name.
-     **/
+     */
     public GeoLocationItem(Location location, String fieldName) {
         super(fieldName, false);
         if (location.hasAttribute() && ! location.getAttribute().equals(fieldName)) {
