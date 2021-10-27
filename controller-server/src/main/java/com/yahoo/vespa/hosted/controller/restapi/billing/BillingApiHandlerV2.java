@@ -16,9 +16,9 @@ import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.Invoice;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
@@ -139,7 +139,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var tenant = tenants.require(tenantName, CloudTenant.class);
 
         var slime = new Slime();
-        invoicesSummaryToSlime(slime.setObject().setArray("invoices"), billing.getInvoicesForTenant(tenant.name()));
+        invoicesSummaryToSlime(slime.setObject().setArray("invoices"), billing.getBillsForTenant(tenant.name()));
         return slime;
     }
 
@@ -149,7 +149,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var invoiceId = requestContext.pathParameters().getStringOrThrow("invoice");
         var format = requestContext.queryParameters().getString("format").orElse("json");
 
-        var invoice = billing.getInvoicesForTenant(tenant.name()).stream()
+        var invoice = billing.getBillsForTenant(tenant.name()).stream()
                 .filter(inv -> inv.id().value().equals(invoiceId))
                 .findAny()
                 .orElseThrow(RestApiException.NotFound::new);
@@ -179,7 +179,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
         var untilAt = untilParameter(requestContext);
-        var usage = billing.createUncommittedInvoice(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
+        var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var slime = new Slime();
         usageToSlime(slime.setObject(), usage);
@@ -190,7 +190,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     private Slime accountant(RestApi.RequestContext requestContext) {
         var untilAt = untilParameter(requestContext);
-        var usagePerTenant = billing.createUncommittedInvoices(untilAt.atZone(ZoneOffset.UTC).toLocalDate());
+        var usagePerTenant = billing.createUncommittedBills(untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var response = new Slime();
         var tenantsResponse = response.setObject().setArray("tenants");
@@ -200,8 +200,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
             tenantResponse.setString("tenant", tenant.name().value());
             tenantResponse.setString("plan", billing.getPlan(tenant.name()).value());
             tenantResponse.setString("collection", billing.getCollectionMethod(tenant.name()).name());
-            tenantResponse.setString("lastBill", usage.map(Invoice::getStartTime).map(DateTimeFormatter.ISO_DATE::format).orElse(null));
-            tenantResponse.setString("unbilled", usage.map(Invoice::sum).map(BigDecimal::toPlainString).orElse("0.00"));
+            tenantResponse.setString("lastBill", usage.map(Bill::getStartTime).map(DateTimeFormatter.ISO_DATE::format).orElse(null));
+            tenantResponse.setString("unbilled", usage.map(Bill::sum).map(BigDecimal::toPlainString).orElse("0.00"));
         });
 
         return response;
@@ -212,7 +212,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var tenant = tenants.require(tenantName, CloudTenant.class);
         var untilAt = untilParameter(requestContext);
 
-        var usage = billing.createUncommittedInvoice(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
+        var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var slime = new Slime();
         toSlime(slime.setObject(), usage);
@@ -231,7 +231,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var startAt = LocalDate.parse(getInspectorFieldOrThrow(body, "from")).atStartOfDay(ZoneOffset.UTC);
         var endAt = LocalDate.parse(getInspectorFieldOrThrow(body, "to")).atStartOfDay(ZoneOffset.UTC);
 
-        var invoiceId = billing.createInvoiceForPeriod(tenant.name(), startAt, endAt, security.principal().getName());
+        var invoiceId = billing.createBillForPeriod(tenant.name(), startAt, endAt, security.principal().getName());
 
         // TODO: Make a redirect to the bill itself
         return new MessageResponse("Created bill " + invoiceId.value());
@@ -240,36 +240,36 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     // --------- INVOICE RENDERING ----------
 
-    private void invoicesSummaryToSlime(Cursor slime, List<Invoice> invoices) {
-        invoices.forEach(invoice -> invoiceSummaryToSlime(slime.addObject(), invoice));
+    private void invoicesSummaryToSlime(Cursor slime, List<Bill> bills) {
+        bills.forEach(invoice -> invoiceSummaryToSlime(slime.addObject(), invoice));
     }
 
-    private void invoiceSummaryToSlime(Cursor slime, Invoice invoice) {
-        slime.setString("id", invoice.id().value());
-        slime.setString("from", invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("to", invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("total", invoice.sum().toString());
-        slime.setString("status", invoice.status());
+    private void invoiceSummaryToSlime(Cursor slime, Bill bill) {
+        slime.setString("id", bill.id().value());
+        slime.setString("from", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("to", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("total", bill.sum().toString());
+        slime.setString("status", bill.status());
     }
 
-    private void usageToSlime(Cursor slime, Invoice invoice) {
-        slime.setString("from", invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("to", invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("total", invoice.sum().toString());
-        toSlime(slime.setArray("items"), invoice.lineItems());
+    private void usageToSlime(Cursor slime, Bill bill) {
+        slime.setString("from", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("to", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("total", bill.sum().toString());
+        toSlime(slime.setArray("items"), bill.lineItems());
     }
 
-    private void toSlime(Cursor slime, Invoice invoice) {
-        slime.setString("id", invoice.id().value());
-        slime.setString("from", invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("to", invoice.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("total", invoice.sum().toString());
-        slime.setString("status", invoice.status());
-        toSlime(slime.setArray("statusHistory"), invoice.statusHistory());
-        toSlime(slime.setArray("items"), invoice.lineItems());
+    private void toSlime(Cursor slime, Bill bill) {
+        slime.setString("id", bill.id().value());
+        slime.setString("from", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("to", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("total", bill.sum().toString());
+        slime.setString("status", bill.status());
+        toSlime(slime.setArray("statusHistory"), bill.statusHistory());
+        toSlime(slime.setArray("items"), bill.lineItems());
     }
 
-    private void toSlime(Cursor slime, Invoice.StatusHistory history) {
+    private void toSlime(Cursor slime, Bill.StatusHistory history) {
         history.getHistory().forEach((key, value) -> {
             var c = slime.addObject();
             c.setString("at", key.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
@@ -277,11 +277,11 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         });
     }
 
-    private void toSlime(Cursor slime, List<Invoice.LineItem> items) {
+    private void toSlime(Cursor slime, List<Bill.LineItem> items) {
         items.forEach(item -> toSlime(slime.addObject(), item));
     }
 
-    private void toSlime(Cursor slime, Invoice.LineItem item) {
+    private void toSlime(Cursor slime, Bill.LineItem item) {
         slime.setString("id", item.id());
         slime.setString("description", item.description());
         slime.setString("amount",item.amount().toString());
@@ -305,14 +305,14 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         cost.ifPresent(c -> slime.setString("cost", c.toString()));
     }
 
-    private List<Object[]> toCsv(Invoice invoice) {
+    private List<Object[]> toCsv(Bill bill) {
         return List.<Object[]>of(new Object[]{
-                invoice.id().value(), invoice.tenant().value(),
-                invoice.getStartTime().format(DateTimeFormatter.ISO_DATE),
-                invoice.getEndTime().format(DateTimeFormatter.ISO_DATE),
-                invoice.sumCpuHours(), invoice.sumMemoryHours(), invoice.sumDiskHours(),
-                invoice.sumCpuCost(), invoice.sumMemoryCost(), invoice.sumDiskCost(),
-                invoice.sumAdditionalCost()
+                bill.id().value(), bill.tenant().value(),
+                bill.getStartTime().format(DateTimeFormatter.ISO_DATE),
+                bill.getEndTime().format(DateTimeFormatter.ISO_DATE),
+                bill.sumCpuHours(), bill.sumMemoryHours(), bill.sumDiskHours(),
+                bill.sumCpuCost(), bill.sumMemoryCost(), bill.sumDiskCost(),
+                bill.sumAdditionalCost()
         });
     }
 

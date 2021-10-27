@@ -31,6 +31,10 @@ public class ResourceSnapshot {
         this.zoneId = zoneId;
     }
 
+    public static ResourceSnapshot from(ApplicationId applicationId, int nodes, double cpuCores, double memoryGb, double diskGb, Instant timestamp, ZoneId zoneId) {
+        return new ResourceSnapshot(applicationId, cpuCores * nodes, memoryGb * nodes, diskGb * nodes, timestamp, zoneId);
+    }
+
     public static ResourceSnapshot from(List<Node> nodes, Instant timestamp, ZoneId zoneId) {
         Set<ApplicationId> applicationIds = nodes.stream()
                                                  .filter(node -> node.owner().isPresent())
