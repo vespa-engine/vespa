@@ -203,6 +203,7 @@ private:
     // Const since funcs only alter mutable field in BucketContent
     BucketContentGuard::UP acquireBucketWithLock(const Bucket& b, LockMode lock_mode = LockMode::Exclusive) const;
     void releaseBucketNoLock(const BucketContent& bc, LockMode lock_mode = LockMode::Exclusive) const noexcept;
+    void internal_create_bucket(const Bucket &b);
 
     mutable bool _initialized;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
