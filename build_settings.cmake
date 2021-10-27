@@ -87,6 +87,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility-inlines-hidden ")
 endif()
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGOOGLE_PROTOBUF_NO_RDTSC")
+endif()
 
 # Linker flags
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
