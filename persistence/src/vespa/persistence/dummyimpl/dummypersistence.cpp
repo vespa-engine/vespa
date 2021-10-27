@@ -376,6 +376,10 @@ DummyPersistence::setActiveStateAsync(const Bucket& b, BucketInfo::ActiveState n
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
+    if (!bc) {
+        internal_create_bucket(b);
+        bc = acquireBucketWithLock(b);
+    }
     if ( ! bc ) {
         onComplete->onComplete(std::make_unique<BucketInfoResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
     } else {
@@ -412,26 +416,25 @@ DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, Conte
         b.toString().c_str(), uint64_t(t), doc->getId().toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
-    if (!bc.get()) {
+    while (!bc) {
+        internal_create_bucket(b);
+        bc = acquireBucketWithLock(b);
+    }
+    DocEntry::SP existing = (*bc)->getEntry(t);
+    if (existing) {
         bc.reset();
-        onComplete->onComplete(std::make_unique<BucketInfoResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
-    } else {
-        DocEntry::SP existing = (*bc)->getEntry(t);
-        if (existing) {
-            bc.reset();
-            if (doc->getId() == *existing->getDocumentId()) {
-                onComplete->onComplete(std::make_unique<Result>());
-            } else {
-                onComplete->onComplete(std::make_unique<Result>(Result::ErrorType::TIMESTAMP_EXISTS,
-                                                                "Timestamp already existed"));
-            }
-        } else {
-            LOG(spam, "Inserting document %s", doc->toString(true).c_str());
-            auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
-            (*bc)->insert(std::move(entry));
-            bc.reset();
+        if (doc->getId() == *existing->getDocumentId()) {
             onComplete->onComplete(std::make_unique<Result>());
+        } else {
+            onComplete->onComplete(std::make_unique<Result>(Result::ErrorType::TIMESTAMP_EXISTS,
+                                                            "Timestamp already existed"));
         }
+    } else {
+        LOG(spam, "Inserting document %s", doc->toString(true).c_str());
+        auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
+        (*bc)->insert(std::move(entry));
+        bc.reset();
+        onComplete->onComplete(std::make_unique<Result>());
     }
 }
 
@@ -478,21 +481,20 @@ DummyPersistence::removeAsync(const Bucket& b, Timestamp t, const DocumentId& di
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
-    if ( ! bc ) {
-        bc.reset();
-        onComplete->onComplete(std::make_unique<RemoveResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
-    } else {
-        DocEntry::SP entry((*bc)->getEntry(did));
-        bool foundPut(entry.get() && !entry->isRemove());
-        auto remEntry = std::make_unique<DocEntry>(t, REMOVE_ENTRY, did);
-
-        if ((*bc)->hasTimestamp(t)) {
-            (*bc)->eraseEntry(t);
-        }
-        (*bc)->insert(std::move(remEntry));
-        bc.reset();
-        onComplete->onComplete(std::make_unique<RemoveResult>(foundPut));
+    while (!bc) {
+        internal_create_bucket(b);
+        bc = acquireBucketWithLock(b);
     }
+    DocEntry::SP entry((*bc)->getEntry(did));
+    bool foundPut(entry.get() && !entry->isRemove());
+    auto remEntry = std::make_unique<DocEntry>(t, REMOVE_ENTRY, did);
+    
+    if ((*bc)->hasTimestamp(t)) {
+        (*bc)->eraseEntry(t);
+    }
+    (*bc)->insert(std::move(remEntry));
+    bc.reset();
+    onComplete->onComplete(std::make_unique<RemoveResult>(foundPut));
 }
 
 GetResult
@@ -925,6 +927,15 @@ DummyPersistence::releaseBucketNoLock(const BucketContent& bc, LockMode lock_mod
         bool bucketInUse(bc._inUse.compare_exchange_strong(my_true, false));
         assert(bucketInUse);
         (void) bucketInUse;
+    }
+}
+
+void
+DummyPersistence::internal_create_bucket(const Bucket& b)
+{
+    std::lock_guard lock(_monitor);
+    if (_content.find(b) == _content.end()) {
+        _content[b] = std::make_shared<BucketContent>();
     }
 }
 

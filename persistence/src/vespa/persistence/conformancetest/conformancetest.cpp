@@ -2283,15 +2283,19 @@ TEST_F(ConformanceTest, resource_usage)
 }
 
 void
-ConformanceTest::test_empty_bucket_info(bool bucket_exists)
+ConformanceTest::test_empty_bucket_info(bool bucket_exists, bool active)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
     Context context(Priority(0), Trace::TraceLevel(0));
     Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    spi->setClusterState(makeBucketSpace(), createClusterState());
     if (bucket_exists) {
         spi->createBucket(bucket, context);
+    }
+    if (active) {
+        spi->setActiveState(bucket, BucketInfo::ACTIVE);
     }
     auto info_result = spi->getBucketInfo(bucket);
     EXPECT_TRUE(!info_result.hasError());
@@ -2299,17 +2303,61 @@ ConformanceTest::test_empty_bucket_info(bool bucket_exists)
     EXPECT_EQ(0u, info_result.getBucketInfo().getEntryCount());
     EXPECT_EQ(0u, info_result.getBucketInfo().getDocumentCount());
     EXPECT_TRUE(info_result.getBucketInfo().isReady());
-    EXPECT_FALSE(info_result.getBucketInfo().isActive());
+    EXPECT_EQ(active, info_result.getBucketInfo().isActive());
 }
 
 TEST_F(ConformanceTest, test_empty_bucket_gives_empty_bucket_info)
 {
-    test_empty_bucket_info(true);
+    test_empty_bucket_info(true, false);
 }
 
 TEST_F(ConformanceTest, test_missing_bucket_gives_empty_bucket_info)
 {
-    test_empty_bucket_info(false);
+    test_empty_bucket_info(false, false);
+}
+
+TEST_F(ConformanceTest, test_empty_bucket_can_be_activated)
+{
+    test_empty_bucket_info(true, true);
+}
+
+TEST_F(ConformanceTest, test_missing_bucket_can_be_activated)
+{
+    test_empty_bucket_info(false, true);
+}
+
+TEST_F(ConformanceTest, test_put_to_missing_bucket)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
+    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    std::shared_ptr<Document> doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
+    auto put_result = spi->put(bucket, Timestamp(1), doc1, context);
+    EXPECT_TRUE(!put_result.hasError());
+    auto info_result = spi->getBucketInfo(bucket);
+    EXPECT_TRUE(!info_result.hasError());
+    EXPECT_NE(0u, info_result.getBucketInfo().getChecksum().getValue());
+    EXPECT_EQ(1u, info_result.getBucketInfo().getEntryCount());
+    EXPECT_EQ(1u, info_result.getBucketInfo().getDocumentCount());
+}
+
+TEST_F(ConformanceTest, test_remove_to_missing_bucket)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
+    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    std::shared_ptr<Document> doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
+    auto remove_result = spi->remove(bucket, Timestamp(1), doc1->getId(), context);
+    EXPECT_TRUE(!remove_result.hasError());
+    auto info_result = spi->getBucketInfo(bucket);
+    EXPECT_TRUE(!info_result.hasError());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getChecksum().getValue());
+    EXPECT_EQ(1u, info_result.getBucketInfo().getEntryCount());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getDocumentCount());
 }
 
 TEST_F(ConformanceTest, detectAndTestOptionalBehavior)
