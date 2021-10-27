@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
@@ -118,7 +118,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     }
 
     public Map<Node, List<MetricsPacket>> getMetrics(ConsumerId consumer) {
-        log.log(Level.INFO, () -> "Retrieving metrics from " + clients.size() + " nodes.");
+        log.log(Level.FINE, () -> "Retrieving metrics from " + clients.size() + " nodes.");
         synchronized (pollThread) {
             if (consumerSet.add(consumer)) {
                 // Wakeup poll thread first time we see a new consumer
