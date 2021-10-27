@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Deployer;
@@ -39,6 +39,7 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
 
         if (nodeRepository().zone().getCloud().dynamicProvisioning()) return 1.0; // Rebalancing not necessary
         if (nodeRepository().zone().environment().isTest()) return 1.0; // Short lived deployments; no need to rebalance
+        if (nodeRepository().zone().system().isCd()) return 1.0; // CD tests assert on # of nodes, avoid rebalnacing as it make tests unstable
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
         NodesAndHosts<NodeList> allNodes = NodesAndHosts.create(nodeRepository().nodes().list());
