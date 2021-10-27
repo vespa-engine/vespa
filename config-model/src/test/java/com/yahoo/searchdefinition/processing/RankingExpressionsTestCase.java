@@ -11,7 +11,7 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
 
     private static Schema createSearch(String dir, ModelContext.Properties deployProperties, RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
-        return SearchBuilder.createFromDirectory(dir, new MockFileRegistry(), new TestableDeployLogger(), deployProperties, rankProfileRegistry).getSearch();
+        return SchemaBuilder.createFromDirectory(dir, new MockFileRegistry(), new TestableDeployLogger(), deployProperties, rankProfileRegistry).getSchema();
     }
 
     @Test

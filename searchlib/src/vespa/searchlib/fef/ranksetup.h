@@ -22,10 +22,10 @@ namespace search::fef {
 class RankSetup
 {
 public:
-    struct ExecuteOperation {
+    struct MutateOperation {
     public:
-        ExecuteOperation() : ExecuteOperation("", "") {}
-        ExecuteOperation(vespalib::stringref attribute, vespalib::stringref operation)
+        MutateOperation() : MutateOperation("", "") {}
+        MutateOperation(vespalib::stringref attribute, vespalib::stringref operation)
             : _attribute(attribute),
               _operation(operation)
         {}
@@ -73,9 +73,10 @@ private:
     double                   _nearest_neighbor_brute_force_limit;
     double                   _global_filter_lower_limit;
     double                   _global_filter_upper_limit;
-    ExecuteOperation         _executeOnMatch;
-    ExecuteOperation         _executeOnReRank;
-    ExecuteOperation         _executeOnSummary;
+    MutateOperation          _mutateOnMatch;
+    MutateOperation          _mutateOnFirstPhase;
+    MutateOperation          _mutateOnSecondPhase;
+    MutateOperation          _mutateOnSummary;
 public:
     RankSetup(const RankSetup &) = delete;
     RankSetup &operator=(const RankSetup &) = delete;
@@ -432,9 +433,10 @@ public:
      */
     void prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const;
 
-    const ExecuteOperation & getExecuteOnMatch() const { return _executeOnMatch; }
-    const ExecuteOperation & getExecuteOnReRank() const { return _executeOnReRank; }
-    const ExecuteOperation & getExecuteOnSummary() const { return _executeOnSummary; }
+    const MutateOperation & getMutateOnMatch() const { return _mutateOnMatch; }
+    const MutateOperation & getMutateOnFirstPhase() const { return _mutateOnFirstPhase; }
+    const MutateOperation & getMutateOnSecondPhase() const { return _mutateOnSecondPhase; }
+    const MutateOperation & getMutateOnSummary() const { return _mutateOnSummary; }
 };
 
 }

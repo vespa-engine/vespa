@@ -64,8 +64,8 @@ public class PredicateDataTypeTestCase {
                                             lowerBoundParameter(lowerBound) +
                                             upperBoundParameter(upperBound))));
 
-        SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
+        SchemaBuilder sb = SchemaBuilder.createFromString(sd);
+        for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertTrue(index.getBooleanIndexDefiniton().hasArity());
@@ -91,8 +91,8 @@ public class PredicateDataTypeTestCase {
                                             "lower-bound: -100000000000000000L\n" + // +'L'
                                             upperBoundParameter(upperBound))));
 
-        SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
+        SchemaBuilder sb = SchemaBuilder.createFromString(sd);
+        for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertEquals(arity, index.getBooleanIndexDefiniton().getArity());
@@ -109,8 +109,8 @@ public class PredicateDataTypeTestCase {
                         predicateFieldSd(
                             attributeFieldSd(
                                     arityParameter(2))));
-        SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
+        SchemaBuilder sb = SchemaBuilder.createFromString(sd);
+        for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertTrue(index.getBooleanIndexDefiniton().hasArity());
@@ -127,7 +127,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Missing arity value in predicate field.");
-        SearchBuilder.createFromString(sd);
+        SchemaBuilder.createFromString(sd);
         fail();
     }
 
@@ -137,7 +137,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For schema 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
-        SearchBuilder.createFromString(sd);
+        SchemaBuilder.createFromString(sd);
     }
 
     @Test
@@ -146,7 +146,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For schema 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
-        SearchBuilder.createFromString(sd);
+        SchemaBuilder.createFromString(sd);
     }
 
 
@@ -156,7 +156,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid arity value in predicate field, must be greater than 1.");
-        SearchBuilder.createFromString(sd);
+        SchemaBuilder.createFromString(sd);
     }
 
     @Test
@@ -165,7 +165,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Arity parameter is used only for predicate type fields.");
-        SearchBuilder.createFromString(sd);
+        SchemaBuilder.createFromString(sd);
     }
 
     @Test
@@ -177,7 +177,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Parameters lower-bound and upper-bound are used only for predicate type fields.");
-        SearchBuilder.createFromString(sd);
+        SchemaBuilder.createFromString(sd);
     }
 
     @Test
@@ -189,7 +189,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Collections of predicates are not allowed.");
-        SearchBuilder.createFromString(sd);
+        SchemaBuilder.createFromString(sd);
     }
 
 }

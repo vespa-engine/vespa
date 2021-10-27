@@ -117,7 +117,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration autoscalingInterval;
         private final Duration scalingSuggestionsInterval;
         private final Duration switchRebalancerInterval;
-        private final Duration hostEncrypterInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -144,7 +143,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             scalingSuggestionsInterval = Duration.ofMinutes(31);
             spareCapacityMaintenanceInterval = Duration.ofMinutes(30);
             switchRebalancerInterval = Duration.ofHours(1);
-            hostEncrypterInterval = Duration.ofMinutes(5);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             inactiveConfigServerExpiry = Duration.ofMinutes(5);
             inactiveControllerExpiry = Duration.ofMinutes(5);

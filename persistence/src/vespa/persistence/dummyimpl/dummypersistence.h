@@ -168,8 +168,8 @@ public:
     IterateResult iterate(IteratorId, uint64_t maxByteSize, Context&) const override;
     Result destroyIterator(IteratorId, Context&) override;
 
-    Result createBucket(const Bucket&, Context&) override;
-    void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) override;
+    void createBucketAsync(const Bucket&, Context&, OperationComplete::UP) noexcept override;
+    void deleteBucketAsync(const Bucket&, Context&, OperationComplete::UP) noexcept override;
 
     Result split(const Bucket& source, const Bucket& target1, const Bucket& target2, Context&) override;
 
@@ -203,6 +203,7 @@ private:
     // Const since funcs only alter mutable field in BucketContent
     BucketContentGuard::UP acquireBucketWithLock(const Bucket& b, LockMode lock_mode = LockMode::Exclusive) const;
     void releaseBucketNoLock(const BucketContent& bc, LockMode lock_mode = LockMode::Exclusive) const noexcept;
+    void internal_create_bucket(const Bucket &b);
 
     mutable bool _initialized;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;

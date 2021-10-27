@@ -73,6 +73,12 @@ public class ResourceMeterMaintainerTest {
         maintainer.updateDeploymentCost(resourceSnapshots);
         assertCost.accept(app1, Map.of(z2, 2.50));
         assertCost.accept(app2, Map.of(z1, 3.59, z2, 4.68));
+        assertEquals(1.4,
+                (Double) metrics.getMetric(context ->
+                                z1.value().equals(context.get("zoneId")) &&
+                                app1.tenant().value().equals(context.get("tenant")),
+                        "metering.cost.hourly").get(),
+                Double.MIN_VALUE);
     }
 
     @Test
@@ -98,6 +104,8 @@ public class ResourceMeterMaintainerTest {
 
         assertEquals(tester.clock().millis()/1000, metrics.getMetric("metering_last_reported"));
         assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), Double.MIN_VALUE);
+        assertEquals(24d, (Double) metrics.getMetric(context -> "tenant1".equals(context.get("tenant")), "metering.vcpu").get(), Double.MIN_VALUE);
+        assertEquals(40d, (Double) metrics.getMetric(context -> "tenant2".equals(context.get("tenant")), "metering.vcpu").get(), Double.MIN_VALUE);
 
         // Metering is not refreshed
         assertFalse(snapshotConsumer.isRefreshed());

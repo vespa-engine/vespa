@@ -2,7 +2,6 @@
 
 #include "rpc_hooks.h"
 #include "proton.h"
-#include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -165,33 +164,21 @@ RPCHooksBase::initRPC()
     rb.MethodDesc("Tell the node to prepare for a restart by flushing components "
             "such that TLS replay time + time spent flushing components is as low as possible");
     rb.ReturnDesc("success", "Whether or not prepare for restart was triggered.");
-    //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.getDocsums", "bix", "bix", FRT_METHOD(RPCHooksBase::rpc_getDocSums), this);
-    rb.MethodDesc("Get list of document summaries");
-    rb.ParamDesc("encoding", "0=raw, 6=lz4");
-    rb.ParamDesc("uncompressedBlobSize", "Uncompressed blob size");
-    rb.ParamDesc("getDocsumX", "The request blob in slime");
-    rb.ReturnDesc("encoding",  "0=raw, 6=lz4");
-    rb.ReturnDesc("uncompressedBlobSize", "Uncompressed blob size");
-    rb.ReturnDesc("docsums", "Blob with slime encoded summaries.");
-    
 }
 
 RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident,
-                             uint32_t transportThreads, uint32_t executorThreads)
+                             uint32_t transportThreads)
     : proton(parent),
       slobrok_config(config::ConfigUri("client")),
       identity(ident),
       rtcPort(port),
-      numTranportThreads(transportThreads),
-      numDocsumRpcThreads(executorThreads)
+      numTranportThreads(transportThreads)
 { }
 
 RPCHooksBase::Params::~Params() = default;
 
 RPCHooksBase::RPCHooksBase(Params &params)
     : _proton(params.proton),
-      _docsumByRPC(std::make_unique<DocsumByRPC>(_proton.getDocsumBySlime())),
       _transport(std::make_unique<FNET_Transport>(params.numTranportThreads)),
       _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _proto_rpc_adapter(std::make_unique<ProtoRpcAdapter>(
@@ -201,7 +188,7 @@ RPCHooksBase::RPCHooksBase(Params &params)
       _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config)),
       _stateLock(),
       _stateCond(),
-      _executor(params.numDocsumRpcThreads, 128_Ki, proton_rpc_executor)
+      _executor(1u, 128_Ki, proton_rpc_executor)
 { }
 
 void
@@ -388,21 +375,6 @@ RPCHooksBase::rpc_prepareRestart(FRT_RPCRequest *req)
     LOG(info, "RPCHooksBase::rpc_prepareRestart started");
     req->Detach();
     letProtonDo(makeLambdaTask([this, req]() { prepareRestart(req); }));
-}
-
-void
-RPCHooksBase::rpc_getDocSums(FRT_RPCRequest *req)
-{
-    LOG(debug, "proton.getDocsums()");
-    req->Detach();
-    _executor.execute(makeLambdaTask([this, req]() { getDocsums(req); }));
-}
-
-void
-RPCHooksBase::getDocsums(FRT_RPCRequest *req)
-{
-    _docsumByRPC->getDocsums(*req);
-    req->Return();
 }
 
 const RPCHooksBase::Session::SP &

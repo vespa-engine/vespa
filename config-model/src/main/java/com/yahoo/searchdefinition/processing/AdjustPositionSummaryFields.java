@@ -33,26 +33,26 @@ public class AdjustPositionSummaryFields extends Processor {
     }
 
     private void scanSummary(DocumentSummary summary) {
-        for (SummaryField summaryField : summary.getSummaryFields()) {
-            if (isPositionDataType(summaryField.getDataType())) {
-                String originalSource = summaryField.getSingleSource();
-                if (originalSource.indexOf('.') == -1) { // Eliminate summary fields with pos.x or pos.y as source
-                    ImmutableSDField sourceField = schema.getField(originalSource);
-                    if (sourceField != null) {
-                        String zCurve = null;
-                        if (sourceField.getDataType().equals(summaryField.getDataType())) {
-                            zCurve = PositionDataType.getZCurveFieldName(originalSource);
-                        } else if (sourceField.getDataType().equals(makeZCurveDataType(summaryField.getDataType())) &&
-                            hasZCurveSuffix(originalSource)) {
-                            zCurve = originalSource;
-                        }
-                        if (zCurve != null) {
-                            if (hasPositionAttribute(zCurve)) {
-                                Source source = new Source(zCurve);
-                                adjustPositionField(summary, summaryField, source);
-                            } else if (sourceField.isImportedField() || !summaryField.getName().equals(originalSource)) {
-                                fail(summaryField, "No position attribute '" + zCurve + "'");
-                            }
+        for (SummaryField summaryField : summary.getSummaryFields().values()) {
+            if ( ! isPositionDataType(summaryField.getDataType())) continue;
+
+            String originalSource = summaryField.getSingleSource();
+            if (originalSource.indexOf('.') == -1) { // Eliminate summary fields with pos.x or pos.y as source
+                ImmutableSDField sourceField = schema.getField(originalSource);
+                if (sourceField != null) {
+                    String zCurve = null;
+                    if (sourceField.getDataType().equals(summaryField.getDataType())) {
+                        zCurve = PositionDataType.getZCurveFieldName(originalSource);
+                    } else if (sourceField.getDataType().equals(makeZCurveDataType(summaryField.getDataType())) &&
+                               hasZCurveSuffix(originalSource)) {
+                        zCurve = originalSource;
+                    }
+                    if (zCurve != null) {
+                        if (hasPositionAttribute(zCurve)) {
+                            Source source = new Source(zCurve);
+                            adjustPositionField(summary, summaryField, source);
+                        } else if (sourceField.isImportedField() || !summaryField.getName().equals(originalSource)) {
+                            fail(summaryField, "No position attribute '" + zCurve + "'");
                         }
                     }
                 }

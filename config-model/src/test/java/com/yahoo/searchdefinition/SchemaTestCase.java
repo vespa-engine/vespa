@@ -30,7 +30,7 @@ public class SchemaTestCase {
                     "  }" +
                     "}");
             DeployLoggerStub logger = new DeployLoggerStub();
-            SearchBuilder.createFromStrings(logger, schema);
+            SchemaBuilder.createFromStrings(logger, schema);
             assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist",
                          logger.entries.get(0).message);
             fail("Expected failure");
@@ -59,7 +59,7 @@ public class SchemaTestCase {
                     "    }" +
                     "  }" +
                     "}");
-            SearchBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
+            SchemaBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'child' inherits 'parent', " +
@@ -135,7 +135,7 @@ public class SchemaTestCase {
                 "}");
 
         System.out.println(parentLines);
-        SearchBuilder builder = new SearchBuilder(new DeployLoggerStub());
+        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
         builder.importString(parentLines);
@@ -166,7 +166,7 @@ public class SchemaTestCase {
         assertTrue(child.onnxModels().asMap().containsKey("child_model"));
         assertNotNull(child.getSummary("parent_summary"));
         assertNotNull(child.getSummary("child_summary"));
-        assertEquals("parent_summary", child.getSummary("child_summary").getInherited().getName());
+        assertEquals("parent_summary", child.getSummary("child_summary").inherited().get().getName());
         assertTrue(child.getSummaries().containsKey("parent_summary"));
         assertTrue(child.getSummaries().containsKey("child_summary"));
         assertNotNull(child.getSummaryField("pf1"));
@@ -230,7 +230,7 @@ public class SchemaTestCase {
                 "  }" +
                 "}");
 
-        SearchBuilder builder = new SearchBuilder(new DeployLoggerStub());
+        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
         builder.importString(parentLines);

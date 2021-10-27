@@ -104,7 +104,7 @@ SequencedTaskExecutor::getStats()
 {
     ExecutorStats accumulatedStats;
     for (auto &executor :* _executors) {
-        accumulatedStats += executor->getStats();
+        accumulatedStats.aggregate(executor->getStats());
     }
     return accumulatedStats;
 }

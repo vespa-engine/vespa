@@ -9,7 +9,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.expressiontransforms.TokenTransformer;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -87,10 +87,10 @@ public class RankingExpressionWithTransformerTokensTestCase {
                 "  document test {}\n" +
                 "  rank-profile my_profile inherits default {}\n" +
                 "}";
-        SearchBuilder searchBuilder = new SearchBuilder(application, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
-        searchBuilder.importString(sdContent);
-        searchBuilder.build();
-        Schema schema = searchBuilder.getSearch();
+        SchemaBuilder schemaBuilder = new SchemaBuilder(application, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
+        schemaBuilder.importString(sdContent);
+        schemaBuilder.build();
+        Schema schema = schemaBuilder.getSchema();
         RankProfile rp = rankProfileRegistry.get(schema, "my_profile");
         return new RankProfileTransformContext(rp, queryProfileRegistry, Collections.emptyMap(), null, Collections.emptyMap(), Collections.emptyMap());
     }

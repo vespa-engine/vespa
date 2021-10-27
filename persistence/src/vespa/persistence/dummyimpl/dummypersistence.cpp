@@ -34,12 +34,12 @@ BucketContent::BucketContent()
       _inUse(false),
       _outdatedInfo(true),
       _active(false)
-{ }
+{}
+
 BucketContent::~BucketContent() = default;
 
 uint32_t
-BucketContent::computeEntryChecksum(const BucketEntry& e) const
-{
+BucketContent::computeEntryChecksum(const BucketEntry &e) const {
     vespalib::crc_32_type checksummer;
 
     uint64_t ts(e.entry->getTimestamp());
@@ -49,8 +49,7 @@ BucketContent::computeEntryChecksum(const BucketEntry& e) const
 }
 
 BucketChecksum
-BucketContent::updateRollingChecksum(uint32_t entryChecksum)
-{
+BucketContent::updateRollingChecksum(uint32_t entryChecksum) {
     uint32_t checksum = _info.getChecksum();
     checksum ^= entryChecksum;
     if (checksum == 0) {
@@ -59,9 +58,8 @@ BucketContent::updateRollingChecksum(uint32_t entryChecksum)
     return BucketChecksum(checksum);
 }
 
-const BucketInfo&
-BucketContent::getBucketInfo() const
-{
+const BucketInfo &
+BucketContent::getBucketInfo() const {
     if (!_outdatedInfo) {
         return _info;
     }
@@ -73,9 +71,9 @@ BucketContent::getBucketInfo() const
     uint32_t totalSize = 0;
     uint32_t checksum = 0;
 
-    for (const BucketEntry & bucketEntry : _entries) {
-        const DocEntry& entry(*bucketEntry.entry);
-        const GlobalId& gid(bucketEntry.gid);
+    for (const BucketEntry &bucketEntry: _entries) {
+        const DocEntry &entry(*bucketEntry.entry);
+        const GlobalId &gid(bucketEntry.gid);
 
         GidMapType::const_iterator gidIt(_gidMap.find(gid));
         assert(gidIt != _gidMap.end());
@@ -114,17 +112,19 @@ BucketContent::getBucketInfo() const
 namespace {
 
 struct TimestampLess {
-    bool operator()(const BucketEntry &bucketEntry, Timestamp t)
-    { return bucketEntry.entry->getTimestamp() < t; }
-    bool operator()(Timestamp t, const BucketEntry &bucketEntry)
-    { return t < bucketEntry.entry->getTimestamp(); }
+    bool operator()(const BucketEntry &bucketEntry, Timestamp t) {
+        return bucketEntry.entry->getTimestamp() < t;
+    }
+
+    bool operator()(Timestamp t, const BucketEntry &bucketEntry) {
+        return t < bucketEntry.entry->getTimestamp();
+    }
 };
 
 }  // namespace
 
 bool
-BucketContent::hasTimestamp(Timestamp t) const
-{
+BucketContent::hasTimestamp(Timestamp t) const {
     if (!_entries.empty() && _entries.back().entry->getTimestamp() < t) {
         return false;
     }
@@ -148,10 +148,9 @@ BucketContent::hasTimestamp(Timestamp t) const
  */
 
 void
-BucketContent::insert(DocEntry::SP e)
-{
+BucketContent::insert(DocEntry::SP e) {
     LOG(spam, "insert(%s)", e->toString().c_str());
-    const DocumentId* docId(e->getDocumentId());
+    const DocumentId *docId(e->getDocumentId());
     assert(docId != 0);
     GlobalId gid(docId->getGlobalId());
     GidMapType::iterator gidIt(_gidMap.find(gid));
@@ -160,22 +159,15 @@ BucketContent::insert(DocEntry::SP e)
         _entries.back().entry->getTimestamp() < e->getTimestamp()) {
         _entries.push_back(BucketEntry(e, gid));
     } else {
-        std::vector<BucketEntry>::iterator it =
-            lower_bound(_entries.begin(),
-                        _entries.end(),
-                        e->getTimestamp(),
-                        TimestampLess());
+        auto it = lower_bound(_entries.begin(), _entries.end(), e->getTimestamp(), TimestampLess());
         if (it != _entries.end()) {
             if (it->entry->getTimestamp() == e->getTimestamp()) {
                 if (*it->entry.get() == *e) {
-                    LOG(debug, "Ignoring duplicate put entry %s",
-                        e->toString().c_str());
+                    LOG(debug, "Ignoring duplicate put entry %s", e->toString().c_str());
                     return;
                 } else {
-                    LOG(error, "Entry %s was already present."
-                        "Was trying to insert %s.",
-                        it->entry->toString().c_str(),
-                        e->toString().c_str());
+                    LOG(error, "Entry %s was already present. Was trying to insert %s.",
+                        it->entry->toString().c_str(), e->toString().c_str());
                     LOG_ABORT("should not reach here");
                 }
             }
@@ -190,11 +182,8 @@ BucketContent::insert(DocEntry::SP e)
             // newer versions of a document etc. by XORing away old checksum.
             gidIt->second = e;
         } else {
-            LOG(spam,
-                "Newly inserted entry %s was older than existing entry %s; "
-                "not updating GID mapping",
-                e->toString().c_str(),
-                gidIt->second->toString().c_str());
+            LOG(spam, "Newly inserted entry %s was older than existing entry %s; not updating GID mapping",
+                e->toString().c_str(), gidIt->second->toString().c_str());
         }
         _outdatedInfo = true;
     } else {
@@ -226,10 +215,8 @@ BucketContent::insert(DocEntry::SP e)
                                    _info.getActive());
             }
 
-            LOG(spam,
-                "After cheap bucketinfo update, state is %s (inserted %s)",
-                _info.toString().c_str(),
-                e->toString().c_str());
+            LOG(spam, "After cheap bucketinfo update, state is %s (inserted %s)",
+                _info.toString().c_str(), e->toString().c_str());
         }
     }
 
@@ -237,9 +224,8 @@ BucketContent::insert(DocEntry::SP e)
 }
 
 DocEntry::SP
-BucketContent::getEntry(const DocumentId& did) const
-{
-    GidMapType::const_iterator it(_gidMap.find(did.getGlobalId()));
+BucketContent::getEntry(const DocumentId &did) const {
+    auto it(_gidMap.find(did.getGlobalId()));
     if (it != _gidMap.end()) {
         return it->second;
     }
@@ -247,10 +233,8 @@ BucketContent::getEntry(const DocumentId& did) const
 }
 
 DocEntry::SP
-BucketContent::getEntry(Timestamp t) const
-{
-    std::vector<BucketEntry>::const_iterator iter =
-        lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
+BucketContent::getEntry(Timestamp t) const {
+    auto iter = lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
 
     if (iter == _entries.end() || iter->entry->getTimestamp() != t) {
         return DocEntry::SP();
@@ -260,15 +244,12 @@ BucketContent::getEntry(Timestamp t) const
 }
 
 void
-BucketContent::eraseEntry(Timestamp t)
-{
-    std::vector<BucketEntry>::iterator iter =
-        lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
+BucketContent::eraseEntry(Timestamp t) {
+    auto iter = lower_bound(_entries.begin(), _entries.end(), t, TimestampLess());
 
     if (iter != _entries.end() && iter->entry->getTimestamp() == t) {
         assert(iter->entry->getDocumentId() != 0);
-        GidMapType::iterator gidIt(
-                _gidMap.find(iter->entry->getDocumentId()->getGlobalId()));
+        GidMapType::iterator gidIt = _gidMap.find(iter->entry->getDocumentId()->getGlobalId());
         assert(gidIt != _gidMap.end());
         _entries.erase(iter);
         if (gidIt->second->getTimestamp() == t) {
@@ -281,7 +262,7 @@ BucketContent::eraseEntry(Timestamp t)
     }
 }
 
-DummyPersistence::DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo)
+DummyPersistence::DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo> &repo)
     : _initialized(false),
       _repo(repo),
       _content(),
@@ -294,13 +275,12 @@ DummyPersistence::DummyPersistence(const std::shared_ptr<const document::Documen
 DummyPersistence::~DummyPersistence() = default;
 
 document::select::Node::UP
-DummyPersistence::parseDocumentSelection(const string& documentSelection, bool allowLeaf)
-{
+DummyPersistence::parseDocumentSelection(const string &documentSelection, bool allowLeaf) {
     document::select::Node::UP ret;
     try {
         document::select::Parser parser(*_repo, document::BucketIdFactory());
         ret = parser.parse(documentSelection);
-    } catch (document::select::ParsingFailedException& e) {
+    } catch (document::select::ParsingFailedException &e) {
         return document::select::Node::UP();
     }
     if (ret->isLeafNode() && !allowLeaf) {
@@ -310,18 +290,17 @@ DummyPersistence::parseDocumentSelection(const string& documentSelection, bool a
 }
 
 Result
-DummyPersistence::initialize()
-{
+DummyPersistence::initialize() {
     assert(!_initialized);
     _initialized = true;
     return Result();
 }
 
 #define DUMMYPERSISTENCE_VERIFY_INITIALIZED \
-    if (!_initialized) throw vespalib::IllegalStateException( \
-            "initialize() must always be called first in order to " \
-            "trigger lazy initialization.", VESPA_STRLOC)
-
+    if (!_initialized) {                    \
+        LOG(error, "initialize() must always be called first in order to trigger lazy initialization."); \
+        abort(); \
+    }
 
 BucketIdListResult
 DummyPersistence::listBuckets(BucketSpace bucketSpace) const
@@ -397,6 +376,10 @@ DummyPersistence::setActiveStateAsync(const Bucket& b, BucketInfo::ActiveState n
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
+    if (!bc) {
+        internal_create_bucket(b);
+        bc = acquireBucketWithLock(b);
+    }
     if ( ! bc ) {
         onComplete->onComplete(std::make_unique<BucketInfoResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
     } else {
@@ -414,7 +397,8 @@ DummyPersistence::getBucketInfo(const Bucket& b) const
     if (!bc.get()) {
         LOG(debug, "getBucketInfo(%s) : (bucket not found)",
             b.toString().c_str());
-        return BucketInfoResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
+        BucketInfo info(BucketChecksum(0), 0, 0, 0, 0);
+        return BucketInfoResult(info);
     }
 
     BucketInfo info((*bc)->getBucketInfo());
@@ -432,26 +416,25 @@ DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, Conte
         b.toString().c_str(), uint64_t(t), doc->getId().toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
-    if (!bc.get()) {
+    while (!bc) {
+        internal_create_bucket(b);
+        bc = acquireBucketWithLock(b);
+    }
+    DocEntry::SP existing = (*bc)->getEntry(t);
+    if (existing) {
         bc.reset();
-        onComplete->onComplete(std::make_unique<BucketInfoResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
-    } else {
-        DocEntry::SP existing = (*bc)->getEntry(t);
-        if (existing) {
-            bc.reset();
-            if (doc->getId() == *existing->getDocumentId()) {
-                onComplete->onComplete(std::make_unique<Result>());
-            } else {
-                onComplete->onComplete(std::make_unique<Result>(Result::ErrorType::TIMESTAMP_EXISTS,
-                                                                "Timestamp already existed"));
-            }
-        } else {
-            LOG(spam, "Inserting document %s", doc->toString(true).c_str());
-            auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
-            (*bc)->insert(std::move(entry));
-            bc.reset();
+        if (doc->getId() == *existing->getDocumentId()) {
             onComplete->onComplete(std::make_unique<Result>());
+        } else {
+            onComplete->onComplete(std::make_unique<Result>(Result::ErrorType::TIMESTAMP_EXISTS,
+                                                            "Timestamp already existed"));
         }
+    } else {
+        LOG(spam, "Inserting document %s", doc->toString(true).c_str());
+        auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
+        (*bc)->insert(std::move(entry));
+        bc.reset();
+        onComplete->onComplete(std::make_unique<Result>());
     }
 }
 
@@ -498,21 +481,20 @@ DummyPersistence::removeAsync(const Bucket& b, Timestamp t, const DocumentId& di
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
 
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
-    if ( ! bc ) {
-        bc.reset();
-        onComplete->onComplete(std::make_unique<RemoveResult>(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found"));
-    } else {
-        DocEntry::SP entry((*bc)->getEntry(did));
-        bool foundPut(entry.get() && !entry->isRemove());
-        auto remEntry = std::make_unique<DocEntry>(t, REMOVE_ENTRY, did);
-
-        if ((*bc)->hasTimestamp(t)) {
-            (*bc)->eraseEntry(t);
-        }
-        (*bc)->insert(std::move(remEntry));
-        bc.reset();
-        onComplete->onComplete(std::make_unique<RemoveResult>(foundPut));
+    while (!bc) {
+        internal_create_bucket(b);
+        bc = acquireBucketWithLock(b);
     }
+    DocEntry::SP entry((*bc)->getEntry(did));
+    bool foundPut(entry.get() && !entry->isRemove());
+    auto remEntry = std::make_unique<DocEntry>(t, REMOVE_ENTRY, did);
+    
+    if ((*bc)->hasTimestamp(t)) {
+        (*bc)->eraseEntry(t);
+    }
+    (*bc)->insert(std::move(remEntry));
+    bc.reset();
+    onComplete->onComplete(std::make_unique<RemoveResult>(foundPut));
 }
 
 GetResult
@@ -559,9 +541,6 @@ DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection
         }
     }
     BucketContentGuard::UP bc(acquireBucketWithLock(b, LockMode::Shared));
-    if (!bc.get()) {
-        return CreateIteratorResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
-    }
 
     Iterator* it;
     IteratorId id;
@@ -577,6 +556,10 @@ DummyPersistence::createIterator(const Bucket &b, FieldSetSP fs, const Selection
     }
     // Memory pointed to by 'it' should now be valid from here on out
 
+    if (!bc.get()) {
+        // Bucket not found.
+        return CreateIteratorResult(id);
+    }
     it->_fieldSet = std::move(fs);
     const BucketContent::GidMapType& gidMap((*bc)->_gidMap);
 
@@ -648,7 +631,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
     BucketContentGuard::UP bc(acquireBucketWithLock(it->_bucket, LockMode::Shared));
     if (!bc.get()) {
         ctx.trace(9, "finished iterate(); bucket not found");
-        return IterateResult(Result::ErrorType::TRANSIENT_ERROR, "Bucket not found");
+        return IterateResult(std::vector<DocEntry::UP>(), true);
     }
     LOG(debug, "Iterator %" PRIu64 " acquired bucket lock", uint64_t(id));
 
@@ -714,8 +697,8 @@ DummyPersistence::destroyIterator(IteratorId id, Context&)
     return Result();
 }
 
-Result
-DummyPersistence::createBucket(const Bucket& b, Context&)
+void
+DummyPersistence::createBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "createBucket(%s)", b.toString().c_str());
@@ -727,11 +710,11 @@ DummyPersistence::createBucket(const Bucket& b, Context&)
         assert(!_content[b]->_inUse);
         LOG(debug, "%s already existed", b.toString().c_str());
     }
-    return Result();
+    onComplete->onComplete(std::make_unique<Result>());
 }
 
 void
-DummyPersistence::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete)
+DummyPersistence::deleteBucketAsync(const Bucket& b, Context&, OperationComplete::UP onComplete) noexcept
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "deleteBucket(%s)", b.toString().c_str());
@@ -944,6 +927,15 @@ DummyPersistence::releaseBucketNoLock(const BucketContent& bc, LockMode lock_mod
         bool bucketInUse(bc._inUse.compare_exchange_strong(my_true, false));
         assert(bucketInUse);
         (void) bucketInUse;
+    }
+}
+
+void
+DummyPersistence::internal_create_bucket(const Bucket& b)
+{
+    std::lock_guard lock(_monitor);
+    if (_content.find(b) == _content.end()) {
+        _content[b] = std::make_shared<BucketContent>();
     }
 }
 

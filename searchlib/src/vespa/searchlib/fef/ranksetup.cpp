@@ -65,9 +65,10 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _nearest_neighbor_brute_force_limit(0.05),
       _global_filter_lower_limit(0.0),
       _global_filter_upper_limit(1.0),
-      _executeOnMatch(),
-      _executeOnReRank(),
-      _executeOnSummary()
+      _mutateOnMatch(),
+      _mutateOnFirstPhase(),
+      _mutateOnSecondPhase(),
+      _mutateOnSummary()
 { }
 
 RankSetup::~RankSetup() = default;
@@ -113,12 +114,14 @@ RankSetup::configure()
     set_nearest_neighbor_brute_force_limit(matching::NearestNeighborBruteForceLimit::lookup(_indexEnv.getProperties()));
     set_global_filter_lower_limit(matching::GlobalFilterLowerLimit::lookup(_indexEnv.getProperties()));
     set_global_filter_upper_limit(matching::GlobalFilterUpperLimit::lookup(_indexEnv.getProperties()));
-    _executeOnMatch._attribute = execute::onmatch::Attribute::lookup(_indexEnv.getProperties());
-    _executeOnMatch._operation = execute::onmatch::Operation::lookup(_indexEnv.getProperties());
-    _executeOnReRank._attribute = execute::onrerank::Attribute::lookup(_indexEnv.getProperties());
-    _executeOnReRank._operation = execute::onrerank::Operation::lookup(_indexEnv.getProperties());
-    _executeOnSummary._attribute = execute::onsummary::Attribute::lookup(_indexEnv.getProperties());
-    _executeOnSummary._operation = execute::onsummary::Operation::lookup(_indexEnv.getProperties());
+    _mutateOnMatch._attribute = mutate::on_match::Attribute::lookup(_indexEnv.getProperties());
+    _mutateOnMatch._operation = mutate::on_match::Operation::lookup(_indexEnv.getProperties());
+    _mutateOnFirstPhase._attribute = mutate::on_first_phase::Attribute::lookup(_indexEnv.getProperties());
+    _mutateOnFirstPhase._operation = mutate::on_first_phase::Operation::lookup(_indexEnv.getProperties());
+    _mutateOnSecondPhase._attribute = mutate::on_second_phase::Attribute::lookup(_indexEnv.getProperties());
+    _mutateOnSecondPhase._operation = mutate::on_second_phase::Operation::lookup(_indexEnv.getProperties());
+    _mutateOnSummary._attribute = mutate::on_summary::Attribute::lookup(_indexEnv.getProperties());
+    _mutateOnSummary._operation = mutate::on_summary::Operation::lookup(_indexEnv.getProperties());
 }
 
 void

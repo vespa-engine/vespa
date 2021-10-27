@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.SummaryConfig;
@@ -35,7 +35,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "      }",
                 "  }",
                 "}");
-        Schema schema = SearchBuilder.createFromString(sd).getSearch();
+        Schema schema = SchemaBuilder.createFromString(sd).getSchema();
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals(SummaryClassField.Type.RAW, summary.getField("raw_field").getType());
     }
@@ -50,14 +50,14 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "      }",
                 "  }",
                 "}");
-        Schema schema = SearchBuilder.createFromString(sd).getSearch();
+        Schema schema = SchemaBuilder.createFromString(sd).getSchema();
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals(SummaryClassField.Type.DATA, summary.getField("raw_field").getType());
     }
 
     @Test
     public void testDeriving() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/simple.sd");
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals("default", summary.getName());
 
@@ -134,7 +134,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     }
 
     private static Schema buildCampaignAdModel() throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importString("search campaign { document campaign {} }");
         builder.importString(joinLines("search ad {",
                 "  document ad {",
@@ -150,7 +150,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "  }",
                 "}"));
         builder.build();
-        return builder.getSearch("ad");
+        return builder.getSchema("ad");
     }
 
     @Test
@@ -168,7 +168,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "    summary foo type string {}",
                 "  }",
                 "}");
-        var search = SearchBuilder.createFromString(sd).getSearch();
+        var search = SchemaBuilder.createFromString(sd).getSchema();
         assertOmitSummaryFeatures(true, search, "bar");
         assertOmitSummaryFeatures(false, search, "baz");
     }

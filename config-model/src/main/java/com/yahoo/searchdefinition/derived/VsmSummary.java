@@ -18,7 +18,7 @@ import java.util.*;
  */
 public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
 
-    private Map<SummaryField, List<String>> summaryMap = new java.util.LinkedHashMap<>(1);
+    private final Map<SummaryField, List<String>> summaryMap = new java.util.LinkedHashMap<>(1);
 
     public VsmSummary(Schema schema) {
         derive(schema);
@@ -31,8 +31,8 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
     }
 
     private void derive(Schema schema, DocumentSummary documentSummary) {
-        if (documentSummary==null) return;
-        for (SummaryField summaryField : documentSummary.getSummaryFields()) {
+        if (documentSummary == null) return;
+        for (SummaryField summaryField : documentSummary.getSummaryFields().values()) {
             List<String> from = toStringList(summaryField.sourceIterator());
 
             if (doMapField(schema, summaryField)) {

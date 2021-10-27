@@ -22,7 +22,7 @@
         <aopalliance.version>1.0</aopalliance.version>
         <athenz.version>1.10.14</athenz.version>
         <bouncycastle.version>1.68</bouncycastle.version>
-        <felix.version>6.0.3</felix.version>
+        <felix.version>7.0.1</felix.version>
         <felix.log.version>1.0.1</felix.log.version>
         <findbugs.version>1.3.9</findbugs.version>
         <guava.version>20.0</guava.version>
@@ -35,9 +35,9 @@
         <junit5.version>5.7.0</junit5.version>
         <junit5.platform.version>1.7.0</junit5.platform.version>
         <onnxruntime.version>1.8.0</onnxruntime.version>
-        <org.lz4.version>1.7.1</org.lz4.version>
-        <org.json.version>20090211</org.json.version><!-- TODO Vespa 8: remove as provided dependency -->
-        <slf4j.version>1.7.30</slf4j.version>
+        <org.lz4.version>1.8.0</org.lz4.version>
+        <org.json.version>20090211</org.json.version>
+        <slf4j.version>1.7.32</slf4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
         <hk2.version>2.5.0-b32</hk2.version>
@@ -159,6 +159,7 @@
                                         <include>com.yahoo.vespa:fileacquirer:*:jar:provided</include>
                                         <include>com.yahoo.vespa:fsa:*:jar:provided</include>
                                         <include>com.yahoo.vespa:hosted-zone-api:*:jar:provided</include>
+                                        <include>com.yahoo.vespa:http-utils:*:jar:provided</include>
                                         <include>com.yahoo.vespa:jdisc_core:*:jar:provided</include>
                                         <include>com.yahoo.vespa:jrt:*:jar:provided</include>
                                         <include>com.yahoo.vespa:linguistics:*:jar:provided</include>

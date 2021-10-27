@@ -17,7 +17,7 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
     : _clock(component.getClock()),
       _env(component, filestorHandler, metrics, provider),
       _processAllHandler(_env, provider),
-      _mergeHandler(_env, provider, component.cluster_context(), _clock,
+      _mergeHandler(_env, provider, component.cluster_context(), _clock, sequencedExecutor,
                     cfg.bucketMergeChunkSize,
                     cfg.commonMergeChainOptimalizationMinimumSize,
                     cfg.asyncApplyBucketDiff),
@@ -44,7 +44,7 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     case api::MessageType::REVERT_ID:
         return _simpleHandler.handleRevert(static_cast<api::RevertCommand&>(msg), std::move(tracker));
     case api::MessageType::CREATEBUCKET_ID:
-        return _simpleHandler.handleCreateBucket(static_cast<api::CreateBucketCommand&>(msg), std::move(tracker));
+        return _asyncHandler.handleCreateBucket(static_cast<api::CreateBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::DELETEBUCKET_ID:
         return _asyncHandler.handleDeleteBucket(static_cast<api::DeleteBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::JOINBUCKETS_ID:
@@ -148,6 +148,12 @@ PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) co
     if (tracker) {
         tracker->sendReply();
     }
+}
+
+void
+PersistenceHandler::configure(vespa::config::content::StorFilestorConfig& config) noexcept
+{
+    _mergeHandler.configure(config.asyncApplyBucketDiff);
 }
 
 }

@@ -86,6 +86,7 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.ScheduledExecutorService;
@@ -158,6 +159,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static final String TIME_CHUNK = "timeChunk";
     private static final String TIMEOUT = "timeout";
     private static final String TRACELEVEL = "tracelevel";
+    private static final String STREAM = "stream";
+    private static final String SLICES = "slices";
+    private static final String SLICE_ID = "sliceId";
 
     private final Clock clock;
     private final Duration handlerTimeout;
@@ -355,9 +359,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private ContentChannel getDocuments(HttpRequest request, DocumentPath path, ResponseHandler handler) {
         enqueueAndDispatch(request, handler, () -> {
-            VisitorParameters parameters = parseGetParameters(request, path);
+            boolean streaming = getProperty(request, STREAM, booleanParser).orElse(false);
+            VisitorParameters parameters = parseGetParameters(request, path, streaming);
             return () -> {
-                visitAndWrite(request, parameters, handler);
+                visitAndWrite(request, parameters, handler, streaming);
                 return true; // VisitorSession has its own throttle handling.
             };
         });
@@ -572,14 +577,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     /** Class for writing and returning JSON responses to document operations in a thread safe manner. */
     private static class JsonResponse implements AutoCloseable {
 
+        private static final ByteBuffer emptyBuffer = ByteBuffer.wrap(new byte[0]);
+
         private final BufferedContentChannel buffer = new BufferedContentChannel();
         private final OutputStream out = new ContentChannelOutputStream(buffer);
-        private final JsonGenerator json = jsonFactory.createGenerator(out);
+        private final JsonGenerator json;
         private final ResponseHandler handler;
         private ContentChannel channel;
 
         private JsonResponse(ResponseHandler handler) throws IOException {
             this.handler = handler;
+            json = jsonFactory.createGenerator(out);
             json.writeStartObject();
         }
 
@@ -600,8 +608,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         /** Creates a new JsonResponse with path and message fields written. */
         static JsonResponse create(HttpRequest request, String message, ResponseHandler handler) throws IOException {
-            JsonResponse response = new JsonResponse(handler);
-            response.writePathId(request.getUri().getRawPath());
+            JsonResponse response = create(request, handler);
             response.writeMessage(message);
             return response;
         }
@@ -687,8 +694,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             json.writeArrayFieldStart("documents");
         }
 
-        synchronized void writeDocumentValue(Document document) {
+        synchronized void writeDocumentValue(Document document, CompletionHandler completionHandler) {
             new JsonWriter(json).write(document);
+            if (completionHandler != null)
+                buffer.write(emptyBuffer, completionHandler);
         }
 
         synchronized void writeArrayEnd() throws IOException {
@@ -955,8 +964,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     // ------------------------------------------------- Visits ------------------------------------------------
 
-    private VisitorParameters parseGetParameters(HttpRequest request, DocumentPath path) {
-        int wantedDocumentCount = Math.min(1 << 10, getProperty(request, WANTED_DOCUMENT_COUNT, integerParser).orElse(1));
+    private VisitorParameters parseGetParameters(HttpRequest request, DocumentPath path, boolean streaming) {
+        int wantedDocumentCount = Math.min(streaming ? Integer.MAX_VALUE : 1 << 10,
+                                           getProperty(request, WANTED_DOCUMENT_COUNT, integerParser)
+                                                   .orElse(streaming ? Integer.MAX_VALUE : 1));
         if (wantedDocumentCount <= 0)
             throw new IllegalArgumentException("wantedDocumentCount must be positive");
 
@@ -968,12 +979,19 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         if (cluster.isEmpty() && path.documentType().isEmpty())
             throw new IllegalArgumentException("Must set 'cluster' parameter to a valid content cluster id when visiting at a root /document/v1/ level");
 
+        Optional<Integer> slices = getProperty(request, SLICES, integerParser);
+        Optional<Integer> sliceId = getProperty(request, SLICE_ID, integerParser);
+
         VisitorParameters parameters = parseCommonParameters(request, path, cluster);
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.setThrottlePolicy(new StaticThrottlePolicy().setMaxPendingCount(concurrency));
         parameters.visitInconsistentBuckets(true);
         parameters.setSessionTimeoutMs(Math.max(1, request.getTimeout(TimeUnit.MILLISECONDS) - handlerTimeout.toMillis()));
+        if (slices.isPresent() && sliceId.isPresent())
+            parameters.slice(slices.get(), sliceId.get());
+        else if (slices.isPresent() != sliceId.isPresent())
+            throw new IllegalArgumentException("None or both of '" + SLICES + "' and '" + SLICE_ID + "' must be set");
         return parameters;
     }
 
@@ -1015,10 +1033,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         /** Called at the start of response rendering. */
         default void onStart(JsonResponse response) throws IOException { }
 
-        /** Called for every document received from backend visitors — must call the ack for these to proceed. */
+        /** Called for every document received from backend visitors—must call the ack for these to proceed. */
         default void onDocument(JsonResponse response, Document document, Runnable ack, Consumer<String> onError) { }
 
-        /** Called at the end of response rendering, before generic status data is written. */
+        /** Called at the end of response rendering, before generic status data is written. Called from a dedicated thread pool. */
         default void onEnd(JsonResponse response) throws IOException { }
     }
 
@@ -1042,7 +1060,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private void visitAndProcess(HttpRequest request, VisitorParameters parameters, ResponseHandler handler,
                                  String route, BiFunction<DocumentId, DocumentOperationParameters, Result> operation) {
-        visit(request, parameters, handler, new VisitCallback() {
+        visit(request, parameters, false, handler, new VisitCallback() {
             @Override public void onDocument(JsonResponse response, Document document, Runnable ack, Consumer<String> onError) {
                 DocumentOperationParameters operationParameters = parameters().withRoute(route)
                         .withResponseHandler(operationResponse -> {
@@ -1079,14 +1097,24 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         });
     }
 
-    private void visitAndWrite(HttpRequest request, VisitorParameters parameters, ResponseHandler handler) {
-        visit(request, parameters, handler, new VisitCallback() {
+    private void visitAndWrite(HttpRequest request, VisitorParameters parameters, ResponseHandler handler, boolean streaming) {
+        visit(request, parameters, streaming, handler, new VisitCallback() {
             @Override public void onStart(JsonResponse response) throws IOException {
+                if (streaming)
+                    response.commit(Response.Status.OK);
+
                 response.writeDocumentsArrayStart();
             }
             @Override public void onDocument(JsonResponse response, Document document, Runnable ack, Consumer<String> onError) {
-                response.writeDocumentValue(document);
-                ack.run();
+                if (streaming)
+                    response.writeDocumentValue(document, new CompletionHandler() {
+                        @Override public void completed() { ack.run();}
+                        @Override public void failed(Throwable t) { ack.run(); onError.accept(t.getMessage()); }
+                    });
+                else {
+                    response.writeDocumentValue(document, null);
+                    ack.run();
+                }
             }
             @Override public void onEnd(JsonResponse response) throws IOException {
                 response.writeArrayEnd();
@@ -1095,10 +1123,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private void visitWithRemote(HttpRequest request, VisitorParameters parameters, ResponseHandler handler) {
-        visit(request, parameters, handler, new VisitCallback() { });
+        visit(request, parameters, false, handler, new VisitCallback() { });
     }
 
-    private void visit(HttpRequest request, VisitorParameters parameters, ResponseHandler handler, VisitCallback callback) {
+    private void visit(HttpRequest request, VisitorParameters parameters, boolean streaming, ResponseHandler handler, VisitCallback callback) {
         try {
             JsonResponse response = JsonResponse.create(request, handler);
             Phaser phaser = new Phaser(2); // Synchronize this thread (dispatch) with the visitor callback thread.
@@ -1108,34 +1136,36 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 @Override public void onDone(CompletionCode code, String message) {
                     super.onDone(code, message);
                     loggingException(() -> {
-                        callback.onEnd(response);
-                        switch (code) {
-                            case TIMEOUT:
-                                if ( ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
-                                    response.writeMessage("No buckets visited within timeout of " +
-                                                          parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
-                                    response.respond(Response.Status.GATEWAY_TIMEOUT);
-                                    break;
-                                }
-                            case SUCCESS: // Intentional fallthrough.
-                            case ABORTED: // Intentional fallthrough.
-                                if (error.get() == null) {
-                                    ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
-                                    if (progress != null && ! progress.isFinished())
-                                        response.writeContinuation(progress.serializeToString());
+                        try (response) {
+                            callback.onEnd(response);
 
-                                    if (getVisitorStatistics() != null)
-                                        response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
+                            if (getVisitorStatistics() != null)
+                                response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
 
-                                    response.respond(Response.Status.OK);
-                                    break;
-                                }
-                            default:
-                                response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed");
-                                if (getVisitorStatistics() != null)
-                                    response.writeDocumentCount(getVisitorStatistics().getDocumentsVisited());
+                            int status = Response.Status.BAD_GATEWAY;
+                            switch (code) {
+                                case TIMEOUT:
+                                    if ( ! hasVisitedAnyBuckets() && parameters.getVisitInconsistentBuckets()) {
+                                        response.writeMessage("No buckets visited within timeout of " +
+                                                              parameters.getSessionTimeoutMs() + "ms (request timeout -5s)");
+                                        status = Response.Status.GATEWAY_TIMEOUT;
+                                        break;
+                                    }
+                                case SUCCESS: // Intentional fallthrough.
+                                case ABORTED: // Intentional fallthrough.
+                                    if (error.get() == null) {
+                                        ProgressToken progress = getProgress() != null ? getProgress() : parameters.getResumeToken();
+                                        if (progress != null && ! progress.isFinished())
+                                            response.writeContinuation(progress.serializeToString());
 
-                                response.respond(Response.Status.BAD_GATEWAY);
+                                        status = Response.Status.OK;
+                                        break;
+                                    }
+                                default:
+                                    response.writeMessage(error.get() != null ? error.get() : message != null ? message : "Visiting failed");
+                            }
+                            if ( ! streaming)
+                                response.commit(status);
                         }
                     });
                     visitDispatcher.execute(() -> {

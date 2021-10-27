@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
-import com.google.common.base.Suppliers;
+import com.google.common.collect.Maps;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
@@ -9,14 +9,13 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
@@ -26,10 +25,9 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
+import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -52,67 +50,92 @@ import static com.yahoo.config.provision.NodeResources.StorageType.remote;
  *
  * @author bratseth
  */
-public class NodePatcher implements AutoCloseable {
+public class NodePatcher {
 
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
     private static final String WANT_TO_REBUILD = "wantToRebuild";
     private static final Set<String> RECURSIVE_FIELDS = Set.of(WANT_TO_RETIRE);
+    private static final Set<String> IP_CONFIG_FIELDS = Set.of("ipAddresses",
+                                                               "additionalIpAddresses",
+                                                               "additionalHostnames");
 
     private final NodeRepository nodeRepository;
-    private final com.google.common.base.Supplier<LockedNodeList> memoizedNodes;
-    private final PatchedNodes patchedNodes;
     private final NodeFlavors nodeFlavors;
-    private final Inspector inspector;
     private final Clock clock;
 
-    public NodePatcher(NodeFlavors nodeFlavors, InputStream json, Node node, NodeRepository nodeRepository) {
+    public NodePatcher(NodeFlavors nodeFlavors, NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
         this.nodeFlavors = nodeFlavors;
         this.clock = nodeRepository.clock();
-        try {
-            this.inspector = SlimeUtils.jsonToSlime(IOUtils.readBytes(json, 1000 * 1000)).get();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Error reading request body", e);
-        }
-
-        this.patchedNodes = new PatchedNodes(nodeRepository.nodes().lockAndGetRequired(node));
-        try {
-            this.memoizedNodes = Suppliers.memoize(() -> nodeRepository.nodes().list(patchedNodes.nodeMutex()));
-        } catch (RuntimeException e) {
-            patchedNodes.close();
-            throw e;
-        }
     }
 
     /**
-     * Apply the json to the node and return all nodes affected by the patch.
-     * More than 1 node may be affected if e.g. the node is a Docker host, which may have
-     * children that must be updated in a consistent manner.
+     * Apply given JSON to the node identified by hostname. Any patched node(s) are written to the node repository.
+     *
+     * Note: This may patch more than one node if the field being patched must be applied recursively to host and node.
      */
-    public List<Node> apply() {
-        inspector.traverse((String name, Inspector value) -> {
-            try {
-                patchedNodes.update(applyField(patchedNodes.node(), name, value, inspector, false));
+    public void patch(String hostname, InputStream json) {
+        Inspector root = Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(json.readAllBytes())).get();
+        Map<String, Inspector> fields = new HashMap<>();
+        root.traverse(fields::put);
 
-                if (RECURSIVE_FIELDS.contains(name)) {
-                    for (Node child: patchedNodes.children()) {
-                        patchedNodes.update(applyField(child, name, value, inspector, true));
-                    }
-                }
-            } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Could not set field '" + name + "'", e);
-            }
-        });
+        // Create views grouping fields by their locking requirements
+        Map<String, Inspector> regularFields = Maps.filterKeys(fields, k -> !IP_CONFIG_FIELDS.contains(k));
+        Map<String, Inspector> ipConfigFields = Maps.filterKeys(fields, IP_CONFIG_FIELDS::contains);
+        Map<String, Inspector> recursiveFields = Maps.filterKeys(fields, RECURSIVE_FIELDS::contains);
 
-        return patchedNodes.nodes();
+        // Patch
+        NodeMutex nodeMutex = nodeRepository.nodes().lockAndGetRequired(hostname);
+        patch(nodeMutex, regularFields, root, false);
+        patchIpConfig(hostname, ipConfigFields);
+        if (nodeMutex.node().type().isHost()) {
+            patchChildrenOf(hostname, recursiveFields, root);
+        }
     }
 
-    public NodeMutex nodeMutexOfHost() { return patchedNodes.nodeMutex(); }
+    private void patch(NodeMutex nodeMutex, Map<String, Inspector> fields, Inspector root, boolean applyingAsChild) {
+        try (var lock = nodeMutex) {
+            Node node = nodeMutex.node();
+            for (var kv : fields.entrySet()) {
+                String name = kv.getKey();
+                Inspector value = kv.getValue();
+                try {
+                    node = applyField(node, name, value, root, applyingAsChild);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Could not set field '" + name + "'", e);
+                }
+            }
+            nodeRepository.nodes().write(node, lock);
+        }
+    }
 
-    @Override
-    public void close() {
-        patchedNodes.close();
+    private void patchIpConfig(String hostname, Map<String, Inspector> ipConfigFields) {
+        if (ipConfigFields.isEmpty()) return; // Nothing to patch
+        try (var allocationLock = nodeRepository.nodes().lockUnallocated()) {
+            LockedNodeList nodes = nodeRepository.nodes().list(allocationLock);
+            Node node = nodes.node(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
+            for (var kv : ipConfigFields.entrySet()) {
+                String name = kv.getKey();
+                Inspector value = kv.getValue();
+                try {
+                    node = applyIpconfigField(node, name, value, nodes);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Could not set field '" + name + "'", e);
+                }
+            }
+            nodeRepository.nodes().write(node, allocationLock);
+        }
+    }
+
+    private void patchChildrenOf(String hostname, Map<String, Inspector> recursiveFields, Inspector root) {
+        if (recursiveFields.isEmpty()) return;
+        NodeList children = nodeRepository.nodes().list().childrenOf(hostname);
+        for (var child : children) {
+            Optional<NodeMutex> childNodeMutex = nodeRepository.nodes().lockAndGet(child.hostname());
+            if (childNodeMutex.isEmpty()) continue;  // Node disappeared after locking
+            patch(childNodeMutex.get(), recursiveFields, root, true);
+        }
     }
 
     private Node applyField(Node node, String name, Inspector value, Inspector root, boolean applyingAsChild) {
@@ -138,12 +161,6 @@ public class NodePatcher implements AutoCloseable {
                 return node.with(nodeFlavors.getFlavorOrThrow(asString(value)), Agent.operator, clock.instant());
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
-            case "ipAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().withPrimary(asStringSet(value))), memoizedNodes.get());
-            case "additionalIpAddresses" :
-                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringSet(value)))), memoizedNodes.get());
-            case "additionalHostnames" :
-                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withAddresses(asAddressList(value)))), memoizedNodes.get());
             case WANT_TO_RETIRE:
             case WANT_TO_DEPROVISION:
             case WANT_TO_REBUILD:
@@ -192,6 +209,18 @@ public class NodePatcher implements AutoCloseable {
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
+    }
+
+    private Node applyIpconfigField(Node node, String name, Inspector value, LockedNodeList nodes) {
+        switch (name) {
+            case "ipAddresses":
+                return IP.Config.verify(node.with(node.ipConfig().withPrimary(asStringSet(value))), nodes);
+            case "additionalIpAddresses":
+                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringSet(value)))), nodes);
+            case "additionalHostnames":
+                return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withAddresses(asAddressList(value)))), nodes);
+        }
+        throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
     }
 
     private Node nodeWithPatchedReports(Node node, Inspector reportsInspector) {
@@ -311,55 +340,4 @@ public class NodePatcher implements AutoCloseable {
         return Optional.of(field).filter(Inspector::valid).map(this::asBoolean);
     }
 
-    private class PatchedNodes implements Mutex {
-        private final Map<String, NodeMutex> nodes = new HashMap<>();
-        private final String hostname;
-        private boolean fetchedChildren;
-
-        private PatchedNodes(NodeMutex nodeMutex) {
-            this.hostname = nodeMutex.node().hostname();
-            nodes.put(hostname, nodeMutex);
-            fetchedChildren = !nodeMutex.node().type().isHost();
-        }
-
-        public NodeMutex nodeMutex() {
-            return nodes.get(hostname);
-        }
-
-        public Node node() {
-            return nodeMutex().node();
-        }
-
-        public List<Node> children() {
-            if (!fetchedChildren) {
-                memoizedNodes.get()
-                        .childrenOf(hostname)
-                        .forEach(node -> nodeRepository.nodes().lockAndGet(node)
-                                .ifPresent(nodeMutex -> nodes.put(nodeMutex.node().hostname(), nodeMutex)));
-                fetchedChildren = true;
-            }
-            return nodes.values().stream()
-                    .map(NodeMutex::node)
-                    .filter(node -> !node.type().isHost())
-                    .collect(Collectors.toList());
-        }
-
-        public void update(Node node) {
-            NodeMutex currentNodeMutex = nodes.get(node.hostname());
-            if (currentNodeMutex == null) {
-                throw new IllegalStateException("unable to update non-existing child: " + node.hostname());
-            }
-
-            nodes.put(node.hostname(), currentNodeMutex.with(node));
-        }
-
-        public List<Node> nodes() {
-            return nodes.values().stream().map(NodeMutex::node).collect(Collectors.toList());
-        }
-
-        @Override
-        public void close() {
-            nodes.values().forEach(NodeMutex::close);
-        }
-    }
 }

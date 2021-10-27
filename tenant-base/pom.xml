@@ -144,7 +144,7 @@
                         <!-- dependencies, see (3) above -->
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
-                        <version>3.1.1</version>
+                        <version>3.2.0</version>
                         <executions>
                             <execution>
                                 <!-- JAR-like dependencies -->
@@ -155,6 +155,8 @@
                                 </goals>
                                 <configuration>
                                     <includeTypes>jar,test-jar</includeTypes>
+                                    <!-- felix is not needed in the fat jar, and felix-main:7.0.1 fails upon unpacking because of bogus timestamps -->
+                                    <excludeGroupIds>org.apache.felix</excludeGroupIds>
                                     <outputDirectory>target/fat-test-classes</outputDirectory>
                                     <!-- WARNING(2018-06-27): bcpkix-jdk15on-1.58.jar and
                                          bcprov-jdk15on-1.58.jar are pulled in via

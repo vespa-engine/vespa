@@ -674,25 +674,26 @@ public class RankProfile implements Cloneable {
         inputFeatures.put(ref, declaredType);
     }
 
-    public static class ExecuteOperation {
-        public enum Phase { onmatch, onrerank, onsummary}
+    public static class MutateOperation {
+        public enum Phase { on_match, on_first_phase, on_second_phase, on_summary}
         final Phase phase;
         final String attribute;
         final String operation;
-        ExecuteOperation(Phase phase, String attribute, String operation) {
+        MutateOperation(Phase phase, String attribute, String operation) {
             this.phase = phase;
             this.attribute = attribute;
             this.operation = operation;
         }
     }
-    private final List<ExecuteOperation> executeOperations = new ArrayList<>();
+    private final List<MutateOperation> mutateOperations = new ArrayList<>();
 
-    public void addExecuteOperation(ExecuteOperation.Phase phase, String attribute, String operation) {
-        executeOperations.add(new ExecuteOperation(phase, attribute, operation));
-        addRankProperty("vespa.execute." + phase + ".attribute", attribute);
-        addRankProperty("vespa.execute." + phase + ".operation", operation);
+    public void addMutateOperation(MutateOperation.Phase phase, String attribute, String operation) {
+        mutateOperations.add(new MutateOperation(phase, attribute, operation));
+        String prefix = "vespa.mutate." + phase.toString().replace('-', '_');
+        addRankProperty(prefix + ".attribute", attribute);
+        addRankProperty(prefix + ".operation", operation);
     }
-    public List<ExecuteOperation> getExecuteOperations() { return executeOperations; }
+    public List<MutateOperation> getMutateOperations() { return mutateOperations; }
 
     public RankingExpressionFunction findFunction(String name) {
         RankingExpressionFunction function = functions.get(name);

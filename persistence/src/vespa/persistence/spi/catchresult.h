@@ -12,11 +12,16 @@ public:
     std::future<std::unique_ptr<Result>> future_result() {
         return _promisedResult.get_future();
     }
-    void onComplete(std::unique_ptr<Result> result) override;
+    void onComplete(std::unique_ptr<Result> result) noexcept override;
     void addResultHandler(const ResultHandler * resultHandler) override;
 private:
     std::promise<std::unique_ptr<Result>>  _promisedResult;
     const ResultHandler                   *_resulthandler;
+};
+
+class NoopOperationComplete : public OperationComplete {
+    void onComplete(std::unique_ptr<spi::Result>) noexcept override { }
+    void addResultHandler(const spi::ResultHandler *) override { }
 };
 
 }

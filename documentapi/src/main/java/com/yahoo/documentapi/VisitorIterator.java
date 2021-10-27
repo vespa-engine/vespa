@@ -81,12 +81,24 @@ public class VisitorIterator {
     protected static class DistributionRangeBucketSource implements BucketSource {
         private boolean flushActive = false;
         private int distributionBitCount;
+        private final int slices;
+        private final int sliceId;
         // Wouldn't need this if this were a non-static class, but do it for
         // the sake of keeping things identical in Java and C++
         private ProgressToken progressToken;
 
         public DistributionRangeBucketSource(int distributionBitCount,
-                                             ProgressToken progress) {
+                                             ProgressToken progress,
+                                             int slices, int sliceId) {
+            if (slices < 1) {
+                throw new IllegalArgumentException("slices must be positive, but was " + slices);
+            }
+            if (sliceId < 0 || sliceId >= slices) {
+                throw new IllegalArgumentException("sliceId must be in [0, " + slices + "), but was " + sliceId);
+            }
+
+            this.slices = slices;
+            this.sliceId = sliceId;
             progressToken = progress;
 
             // New progress token (could also be empty, in which this is a
@@ -148,6 +160,7 @@ public class VisitorIterator {
             }
             // Should be all fixed up and good to go
             progressToken.setInconsistentState(false);
+            skipToSlice();
         }
 
         protected boolean isLosslessResetPossible() {
@@ -292,7 +305,14 @@ public class VisitorIterator {
         }
 
         public boolean hasNext() {
-            return progressToken.getBucketCursor() < (1L << distributionBitCount);
+            // There is a next bucket iff. there is a bucket no earlier than the cursor which
+            // is contained in the bucket space, and is also 0 modulo our sliceId; or if we're
+            // not yet properly initialised, with a real distribution bit count, we ignore this.
+            long nextBucket = progressToken.getBucketCursor();
+            if (distributionBitCount != 1) {
+                nextBucket += Math.floorMod(sliceId - nextBucket, slices);
+            }
+            return nextBucket < (1L << distributionBitCount);
         }
 
         public boolean shouldYield() {
@@ -311,13 +331,27 @@ public class VisitorIterator {
 
         public BucketProgress getNext() {
             assert(hasNext()) : "getNext() called with hasNext() == false";
-            long currentPosition = progressToken.getBucketCursor();
-            long key = ProgressToken.makeNthBucketKey(currentPosition, distributionBitCount);
-            ++currentPosition;
-            progressToken.setBucketCursor(currentPosition);
-            return new BucketProgress(
-                    new BucketId(ProgressToken.keyToBucketId(key)),
-                    new BucketId());
+
+            // Create the progress to return for creating visitors, and advance bucket cursor.
+            BucketProgress progress = new BucketProgress(progressToken.getCurrentBucketId(), new BucketId());
+            progressToken.setBucketCursor(progressToken.getBucketCursor() + 1);
+
+            // Skip ahead to our next next slice, to ensure we also exhaust the bucket space when
+            // hasNext() turns false, but there are still super buckets left after the current.
+            skipToSlice();
+
+            return progress;
+        }
+
+        // Advances the wrapped progress token's bucket cursor to our next slice, marking any skipped
+        // buckets as complete, but only if we've been initialised with a proper distribution bit count.
+        private void skipToSlice() {
+            if (distributionBitCount == 1)
+                return;
+
+            while (progressToken.getBucketCursor() < getTotalBucketCount() && (progressToken.getBucketCursor() % slices) != sliceId) {
+                progressToken.skipCurrentBucket();
+            }
         }
 
         public int getDistributionBitCount() {
@@ -374,6 +408,7 @@ public class VisitorIterator {
 
                 correctTruncatedBucketCursor();
                 progressToken.setInconsistentState(false);
+                skipToSlice();
             }
         }
 
@@ -732,6 +767,13 @@ public class VisitorIterator {
         return bucketSource.visitsAllBuckets();
     }
 
+    public static VisitorIterator createFromDocumentSelection(
+            String documentSelection,
+            BucketIdFactory idFactory,
+            int distributionBitCount,
+            ProgressToken progress) throws ParseException {
+        return createFromDocumentSelection(documentSelection, idFactory, distributionBitCount, progress, 1, 0);
+    }
     /**
      * Create a new <code>VisitorIterator</code> instance based on the given document
      * selection string.
@@ -753,7 +795,9 @@ public class VisitorIterator {
             String documentSelection,
             BucketIdFactory idFactory,
             int distributionBitCount,
-            ProgressToken progress) throws ParseException {
+            ProgressToken progress,
+            int slices,
+            int sliceId) throws ParseException {
         BucketSelector bucketSel = new BucketSelector(idFactory);
         Set<BucketId> rawBuckets = bucketSel.getBucketList(documentSelection);
         BucketSource src;
@@ -763,7 +807,7 @@ public class VisitorIterator {
         // bit-based range source
         if (rawBuckets == null) {
             // Range source
-            src = new DistributionRangeBucketSource(distributionBitCount, progress);
+            src = new DistributionRangeBucketSource(distributionBitCount, progress, slices, sliceId);
         } else {
             // Explicit source
             src = new ExplicitBucketSource(rawBuckets, distributionBitCount, progress);

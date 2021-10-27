@@ -49,6 +49,7 @@ public:
         _issues = std::move(issues);
     }
 
+    // only used by unit test:
     std::unique_ptr<vespalib::Slime> releaseSlime();
 
     vespalib::slime::Inspector & root() const;

@@ -10,7 +10,6 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
-#include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
@@ -234,10 +233,10 @@ template <bool do_rank, bool do_limit, bool do_share>
 void
 MatchThread::match_loop_helper_rank_limit_share(MatchTools &tools, HitCollector &hits)
 {
-    if (std::isnan(matchParams.rankDropLimit)) {
-        match_loop_helper_rank_limit_share_drop<do_rank, do_limit, do_share, false>(tools, hits);
-    } else {
+    if (matchParams.has_rank_drop_limit()) {
         match_loop_helper_rank_limit_share_drop<do_rank, do_limit, do_share, true>(tools, hits);
+    } else {
+        match_loop_helper_rank_limit_share_drop<do_rank, do_limit, do_share, false>(tools, hits);
     }
 }
 
@@ -315,7 +314,7 @@ MatchThread::findMatches(MatchTools &tools)
         complete_second_phase_timer.done();
         hits.setReRankedHits(std::move(kept_hits));
         hits.setRanges(ranges);
-        if (auto onReRankTask = matchToolsFactory.createOnReRankTask()) {
+        if (auto onReRankTask = matchToolsFactory.createOnSecondPhaseTask()) {
             onReRankTask->run(hits.getReRankedHits());
         }
     }
@@ -376,8 +375,14 @@ MatchThread::processResult(const Doom & doom,
             }
         }
     }
-    if (auto onMatchTask = matchToolsFactory.createOnMatchTask()) {
-        onMatchTask->run(search::ResultSet::stealResult(std::move(*result)));
+
+    if (auto task = matchToolsFactory.createOnMatchTask()) {
+        // This is not correct, as it should use the results before rank-drop-limit
+        // But keeping like this for now as on-first-phase should be a subset of on-match
+        task->run(result->copyResult());
+    }
+    if (auto task = matchToolsFactory.createOnFirstPhaseTask()) {
+        task->run(search::ResultSet::stealResult(std::move(*result)));
     }
     if (hasGrouping) {
         context.grouping->setDistributionKey(_distributionKey);

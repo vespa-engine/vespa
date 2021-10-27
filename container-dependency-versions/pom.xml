@@ -403,7 +403,7 @@
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
         <bouncycastle.version>1.68</bouncycastle.version>
-        <felix.version>6.0.3</felix.version>
+        <felix.version>7.0.1</felix.version>
         <felix.log.version>1.0.1</felix.log.version>
         <findbugs.version>1.3.9</findbugs.version>
         <guava.version>20.0</guava.version>
@@ -413,9 +413,9 @@
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.44.v20210927</jetty.version>
         <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
-        <org.lz4.version>1.7.1</org.lz4.version>
+        <org.lz4.version>1.8.0</org.lz4.version>
         <org.json.version>20090211</org.json.version>
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j.version>1.7.32</slf4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->
@@ -434,7 +434,7 @@
         <mimepull.version>1.9.6</mimepull.version>
 
         <!-- Not a dependency. Only included to allow the versions-maven-plugin to check for updates of itself  -->
-        <versions-maven-plugin.version>2.7</versions-maven-plugin.version>
+        <versions-maven-plugin.version>2.8.1</versions-maven-plugin.version>
     </properties>
 
 </project>

@@ -24,7 +24,7 @@
 
 #define CHECK_ERROR_ASYNC(className, failType, onError) \
     { \
-        Guard guard(_lock); \
+        Guard guard(_lock);                             \
         if (_result.getErrorCode() != spi::Result::ErrorType::NONE && (_failureMask & (failType))) { \
             onError->onComplete(std::make_unique<className>(_result.getErrorCode(), _result.getErrorMessage())); \
             return; \
@@ -80,12 +80,12 @@ PersistenceProviderWrapper::listBuckets(BucketSpace bucketSpace) const
     return _spi.listBuckets(bucketSpace);
 }
 
-spi::Result
-PersistenceProviderWrapper::createBucket(const spi::Bucket& bucket, spi::Context& context)
+void
+PersistenceProviderWrapper::createBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete) noexcept
 {
     LOG_SPI("createBucket(" << bucket << ")");
-    CHECK_ERROR(spi::Result, FAIL_CREATE_BUCKET);
-    return _spi.createBucket(bucket, context);
+    CHECK_ERROR_ASYNC(spi::Result, FAIL_CREATE_BUCKET, onComplete);
+    return _spi.createBucketAsync(bucket, context, std::move(onComplete));
 }
 
 spi::BucketInfoResult
@@ -177,7 +177,7 @@ PersistenceProviderWrapper::destroyIterator(spi::IteratorId iterId,
 
 void
 PersistenceProviderWrapper::deleteBucketAsync(const spi::Bucket& bucket, spi::Context& context,
-                                              spi::OperationComplete::UP operationComplete)
+                                              spi::OperationComplete::UP operationComplete) noexcept
 {
     LOG_SPI("deleteBucket(" << bucket << ")");
     CHECK_ERROR_ASYNC(spi::Result, FAIL_DELETE_BUCKET, operationComplete);

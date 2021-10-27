@@ -142,6 +142,16 @@ public class StorageClusterTest {
         return new StorServerConfig(builder);
     }
 
+    private StorFilestorConfig filestorConfigFromProducer(StorFilestorConfig.Producer producer) {
+        var builder = new StorFilestorConfig.Builder();
+        producer.getConfig(builder);
+        return new StorFilestorConfig(builder);
+    }
+
+    private StorFilestorConfig filestorConfigFromProperties(TestProperties properties) {
+        return filestorConfigFromProducer(parse(cluster("foo", ""), properties));
+    }
+
     @Test
     public void testMergeFeatureFlags() {
         var config = configFromProperties(new TestProperties().setMaxMergeQueueSize(1919).setMaxConcurrentMergesPerNode(37));
@@ -156,6 +166,15 @@ public class StorageClusterTest {
 
         config = configFromProperties(new TestProperties().setIgnoreMergeQueueLimit(false));
         assertFalse(config.disable_queue_limits_for_chained_merges());
+    }
+
+    @Test
+    public void async_apply_bucket_diff_can_be_controlled_by_feature_flag() {
+        var config = filestorConfigFromProperties(new TestProperties());
+        assertFalse(config.async_apply_bucket_diff());
+
+        config = filestorConfigFromProperties(new TestProperties().setAsyncApplyBucketDiff(true));
+        assertTrue(config.async_apply_bucket_diff());
     }
 
     @Test
@@ -188,9 +207,7 @@ public class StorageClusterTest {
         );
 
         {
-            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-            stc.getConfig(builder);
-            StorFilestorConfig config = new StorFilestorConfig(builder);
+            var config = filestorConfigFromProducer(stc);
 
             assertEquals(7, config.num_threads());
             assertFalse(config.enable_multibit_split_optimalization());
@@ -199,9 +216,7 @@ public class StorageClusterTest {
         {
             assertEquals(1, stc.getChildren().size());
             StorageNode sn = stc.getChildren().values().iterator().next();
-            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-            sn.getConfig(builder);
-            StorFilestorConfig config = new StorFilestorConfig(builder);
+            var config = filestorConfigFromProducer(sn);
             assertEquals(7, config.num_threads());
         }
     }
@@ -215,9 +230,7 @@ public class StorageClusterTest {
                 "</tuning>")),
                 new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build())
         );
-        StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-        stc.getConfig(builder);
-        StorFilestorConfig config = new StorFilestorConfig(builder);
+        var config = filestorConfigFromProducer(stc);
         assertEquals(2, config.num_response_threads());
         assertEquals(StorFilestorConfig.Response_sequencer_type.ADAPTIVE, config.response_sequencer_type());
         assertEquals(7, config.num_threads());
@@ -238,9 +251,7 @@ public class StorageClusterTest {
         );
 
         {
-            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-            stc.getConfig(builder);
-            StorFilestorConfig config = new StorFilestorConfig(builder);
+            var config = filestorConfigFromProducer(stc);
 
             assertEquals(4, config.num_threads());
             assertFalse(config.enable_multibit_split_optimalization());
@@ -248,9 +259,7 @@ public class StorageClusterTest {
         {
             assertEquals(1, stc.getChildren().size());
             StorageNode sn = stc.getChildren().values().iterator().next();
-            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-            sn.getConfig(builder);
-            StorFilestorConfig config = new StorFilestorConfig(builder);
+            var config = filestorConfigFromProducer(sn);
             assertEquals(4, config.num_threads());
         }
     }
@@ -262,17 +271,13 @@ public class StorageClusterTest {
         );
 
         {
-            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-            stc.getConfig(builder);
-            StorFilestorConfig config = new StorFilestorConfig(builder);
+            var config = filestorConfigFromProducer(stc);
             assertEquals(8, config.num_threads());
         }
         {
             assertEquals(1, stc.getChildren().size());
             StorageNode sn = stc.getChildren().values().iterator().next();
-            StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-            sn.getConfig(builder);
-            StorFilestorConfig config = new StorFilestorConfig(builder);
+            var config = filestorConfigFromProducer(sn);
             assertEquals(9, config.num_threads());
         }
     }
@@ -285,17 +290,13 @@ public class StorageClusterTest {
 
     @Test
     public void testFeatureFlagControlOfResponseSequencer() {
-        StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-        simpleCluster(new TestProperties().setResponseNumThreads(13).setResponseSequencerType("THROUGHPUT")).getConfig(builder);
-        StorFilestorConfig config = new StorFilestorConfig(builder);
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties().setResponseNumThreads(13).setResponseSequencerType("THROUGHPUT")));
         assertEquals(13, config.num_response_threads());
         assertEquals(StorFilestorConfig.Response_sequencer_type.THROUGHPUT, config.response_sequencer_type());
     }
 
     private void verifyAsyncMessageHandlingOnSchedule(boolean expected, boolean value) {
-        StorFilestorConfig.Builder builder = new StorFilestorConfig.Builder();
-        simpleCluster(new TestProperties().setAsyncMessageHandlingOnSchedule(value)).getConfig(builder);
-        StorFilestorConfig config = new StorFilestorConfig(builder);
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties().setAsyncMessageHandlingOnSchedule(value)));
         assertEquals(expected, config.use_async_message_handling_on_schedule());
     }
     @Test

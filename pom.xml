@@ -83,6 +83,7 @@
         <module>hosted-api</module>
         <module>hosted-tenant-base</module>
         <module>hosted-zone-api</module>
+        <module>http-utils</module>
         <module>indexinglanguage</module>
         <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>

@@ -99,17 +99,18 @@ ProviderErrorWrapper::destroyIterator(spi::IteratorId iteratorId, spi::Context& 
     return checkResult(_impl.destroyIterator(iteratorId, context));
 }
 
-spi::Result
-ProviderErrorWrapper::createBucket(const spi::Bucket& bucket, spi::Context& context)
-{
-    return checkResult(_impl.createBucket(bucket, context));
-}
-
 void
-ProviderErrorWrapper::deleteBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete)
+ProviderErrorWrapper::deleteBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete) noexcept
 {
     onComplete->addResultHandler(this);
     _impl.deleteBucketAsync(bucket, context, std::move(onComplete));
+}
+
+void
+ProviderErrorWrapper::createBucketAsync(const spi::Bucket& bucket, spi::Context& context, spi::OperationComplete::UP onComplete) noexcept
+{
+    onComplete->addResultHandler(this);
+    _impl.createBucketAsync(bucket, context, std::move(onComplete));
 }
 
 spi::BucketIdListResult

@@ -34,7 +34,7 @@ SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Chan
         oldValue = get(c._doc);
     }
 
-    T newValue = this->applyArithmetic(oldValue, c);
+    T newValue = this->template applyArithmetic<T, typename Change::DataType>(oldValue, c._data.getArithOperand(), c._type);
 
     EnumIndex idx;
     if (!this->_enumStore.find_index(newValue, idx)) {
@@ -52,7 +52,7 @@ SingleValueNumericEnumAttribute<B>::applyArithmeticValueChange(const Change& c, 
 {
     EnumIndex oldIdx = this->_enumIndices[c._doc];
     EnumIndex newIdx;
-    T newValue = this->applyArithmetic(get(c._doc), c);
+    T newValue = this->template applyArithmetic<T, typename Change::DataType>(get(c._doc), c._data.getArithOperand(), c._type);
     this->_enumStore.find_index(newValue, newIdx);
 
     this->updateEnumRefCounts(c, newIdx, oldIdx, updater);

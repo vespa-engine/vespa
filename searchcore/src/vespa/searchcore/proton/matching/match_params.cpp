@@ -2,6 +2,7 @@
 
 #include "match_params.h"
 #include <algorithm>
+#include <cmath>
 
 namespace proton::matching {
 
@@ -31,5 +32,9 @@ MatchParams::MatchParams(uint32_t          numDocs_in,
       hits(hits_in),
       rankDropLimit(rankDropLimit_in)
 { }
+
+bool MatchParams::has_rank_drop_limit() const {
+    return ! std::isnan(rankDropLimit);
+}
 
 }

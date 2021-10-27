@@ -799,7 +799,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(int, com.yahoo.documentapi.ProgressToken)",
+      "public void <init>(int, com.yahoo.documentapi.ProgressToken, int, int)",
       "protected boolean isLosslessResetPossible()",
       "public boolean hasNext()",
       "public boolean shouldYield()",
@@ -851,6 +851,7 @@
       "public void setDistributionBitCount(int)",
       "public boolean visitsAllBuckets()",
       "public static com.yahoo.documentapi.VisitorIterator createFromDocumentSelection(java.lang.String, com.yahoo.document.BucketIdFactory, int, com.yahoo.documentapi.ProgressToken)",
+      "public static com.yahoo.documentapi.VisitorIterator createFromDocumentSelection(java.lang.String, com.yahoo.document.BucketIdFactory, int, com.yahoo.documentapi.ProgressToken, int, int)",
       "public static com.yahoo.documentapi.VisitorIterator createFromExplicitBucketSet(java.util.Set, int, com.yahoo.documentapi.ProgressToken)"
     ],
     "fields": []
@@ -931,6 +932,9 @@
       "public com.yahoo.documentapi.messagebus.loadtypes.LoadType getLoadType()",
       "public boolean skipBucketsOnFatalErrors()",
       "public void skipBucketsOnFatalErrors(boolean)",
+      "public void slice(int, int)",
+      "public int getSlices()",
+      "public int getSliceId()",
       "public void setDynamicallyIncreaseMaxBucketsPerVisitor(boolean)",
       "public void setDynamicMaxBucketsIncreaseFactor(float)",
       "public java.lang.String toString()"

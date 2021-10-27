@@ -26,7 +26,6 @@
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
-#include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
@@ -226,7 +225,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _documentDBMap(),
       _matchEngine(),
       _summaryEngine(),
-      _docsumBySlime(),
       _memoryFlushConfigUpdater(),
       _flushEngine(),
       _prepareRestartHandler(),
@@ -296,9 +294,10 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                  protonConfig.numthreadspersearch,
                                                  protonConfig.distributionkey,
                                                  protonConfig.search.async);
+    _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
     _distributionKey = protonConfig.distributionkey;
-    _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
-    _docsumBySlime = std::make_unique<DocsumBySlime>(*_summaryEngine);
+    _summaryEngine = std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
+    _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
 
     IFlushStrategy::SP strategy;
     const ProtonConfig::Flush & flush(protonConfig.flush);
@@ -349,8 +348,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     _prepareRestartHandler = std::make_unique<PrepareRestartHandler>(*_flushEngine);
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId(),
-                               std::max(2u, computeRpcTransportThreads(protonConfig, hwInfo.cpu())),
-                               std::max(2u, hwInfo.cpu().cores()/4));
+                               std::max(2u, computeRpcTransportThreads(protonConfig, hwInfo.cpu())));
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks = std::make_unique<RPCHooks>(rpcParams);
     _metricsEngine->addExternalMetrics(_rpcHooks->proto_rpc_adapter_metrics());
@@ -385,6 +383,8 @@ Proton::applyConfig(const BootstrapConfig::SP & configSnapshot)
     // Called by executor thread during reconfig.
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     setFS4Compression(protonConfig);
+    _matchEngine->set_issue_forwarding(protonConfig.forwardIssues);
+    _summaryEngine->set_issue_forwarding(protonConfig.forwardIssues);
 
     _queryLimiter.configure(protonConfig.search.memory.limiter.maxthreads,
                             protonConfig.search.memory.limiter.mincoverage,

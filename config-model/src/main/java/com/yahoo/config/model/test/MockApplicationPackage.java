@@ -19,7 +19,7 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -118,7 +118,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     @Override
     public List<NamedReader> getSchemas() {
         ArrayList<NamedReader> readers = new ArrayList<>();
-        SearchBuilder searchBuilder = new SearchBuilder(this,
+        SchemaBuilder schemaBuilder = new SchemaBuilder(this,
                                                         new MockFileRegistry(),
                                                         new BaseDeployLogger(),
                                                         new TestProperties(),
@@ -126,7 +126,7 @@ public class MockApplicationPackage implements ApplicationPackage {
                                                         queryProfileRegistry);
         for (String sd : schemas) {
             try  {
-                String name = searchBuilder.importString(sd);
+                String name = schemaBuilder.importString(sd);
                 readers.add(new NamedReader(name + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
             } catch (ParseException e) {
                 throw new RuntimeException(e);

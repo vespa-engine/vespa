@@ -572,7 +572,9 @@ public class MessageBusVisitorSession implements VisitorSession {
                     params.getDocumentSelection(),
                     bucketIdFactory,
                     1,
-                    progressToken);
+                    progressToken,
+                    params.getSlices(),
+                    params.getSliceId());
         } else {
             if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "parameters specify explicit bucket set " +

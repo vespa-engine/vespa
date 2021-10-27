@@ -43,7 +43,7 @@ SingleValueNumericAttribute<B>::onCommit()
                 _data[change._doc] = change._data;
             } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
                 std::atomic_thread_fence(std::memory_order_release);
-                _data[change._doc] = this->applyArithmetic(_data[change._doc], change);
+                _data[change._doc] = this->template applyArithmetic<T, typename B::Change::DataType>(_data[change._doc], change._data.getArithOperand(), change._type);
             } else if (change._type == ChangeBase::CLEARDOC) {
                 std::atomic_thread_fence(std::memory_order_release);
                 _data[change._doc] = this->_defaultValue._data;

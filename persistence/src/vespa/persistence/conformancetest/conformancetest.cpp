@@ -1444,14 +1444,17 @@ TEST_F(ConformanceTest, testIterateAlreadyCompleted)
     spi->destroyIterator(iter.getIteratorId(), context);
 }
 
-TEST_F(ConformanceTest, testIterateEmptyBucket)
+void
+ConformanceTest::test_iterate_empty_or_missing_bucket(bool bucket_exists)
 {
     document::TestDocMan testDocMan;
     _factory->clear();
     PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
     Context context(Priority(0), Trace::TraceLevel(0));
     Bucket b(makeSpiBucket(BucketId(8, 0x1)));
-    spi->createBucket(b, context);
+    if (bucket_exists) {
+        spi->createBucket(b, context);
+    }
     Selection sel(createSelection(""));
 
     CreateIteratorResult iter(createIterator(*spi, b, sel));
@@ -1462,6 +1465,16 @@ TEST_F(ConformanceTest, testIterateEmptyBucket)
     EXPECT_TRUE(result.isCompleted());
 
     spi->destroyIterator(iter.getIteratorId(), context);
+}
+
+TEST_F(ConformanceTest, test_iterate_empty_bucket)
+{
+    test_iterate_empty_or_missing_bucket(true);
+}
+
+TEST_F(ConformanceTest, test_iterate_missing_bucket)
+{
+    test_iterate_empty_or_missing_bucket(false);
 }
 
 TEST_F(ConformanceTest, testDeleteBucket)
@@ -2267,6 +2280,84 @@ TEST_F(ConformanceTest, resource_usage)
     auto register_guard = spi->register_resource_usage_listener(resource_usage_listener);
     EXPECT_EQ(0.5, resource_usage_listener.get_usage().get_disk_usage());
     EXPECT_EQ(0.4, resource_usage_listener.get_usage().get_memory_usage());
+}
+
+void
+ConformanceTest::test_empty_bucket_info(bool bucket_exists, bool active)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
+    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    spi->setClusterState(makeBucketSpace(), createClusterState());
+    if (bucket_exists) {
+        spi->createBucket(bucket, context);
+    }
+    if (active) {
+        spi->setActiveState(bucket, BucketInfo::ACTIVE);
+    }
+    auto info_result = spi->getBucketInfo(bucket);
+    EXPECT_TRUE(!info_result.hasError());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getChecksum().getValue());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getEntryCount());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getDocumentCount());
+    EXPECT_TRUE(info_result.getBucketInfo().isReady());
+    EXPECT_EQ(active, info_result.getBucketInfo().isActive());
+}
+
+TEST_F(ConformanceTest, test_empty_bucket_gives_empty_bucket_info)
+{
+    test_empty_bucket_info(true, false);
+}
+
+TEST_F(ConformanceTest, test_missing_bucket_gives_empty_bucket_info)
+{
+    test_empty_bucket_info(false, false);
+}
+
+TEST_F(ConformanceTest, test_empty_bucket_can_be_activated)
+{
+    test_empty_bucket_info(true, true);
+}
+
+TEST_F(ConformanceTest, test_missing_bucket_can_be_activated)
+{
+    test_empty_bucket_info(false, true);
+}
+
+TEST_F(ConformanceTest, test_put_to_missing_bucket)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
+    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    std::shared_ptr<Document> doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
+    auto put_result = spi->put(bucket, Timestamp(1), doc1, context);
+    EXPECT_TRUE(!put_result.hasError());
+    auto info_result = spi->getBucketInfo(bucket);
+    EXPECT_TRUE(!info_result.hasError());
+    EXPECT_NE(0u, info_result.getBucketInfo().getChecksum().getValue());
+    EXPECT_EQ(1u, info_result.getBucketInfo().getEntryCount());
+    EXPECT_EQ(1u, info_result.getBucketInfo().getDocumentCount());
+}
+
+TEST_F(ConformanceTest, test_remove_to_missing_bucket)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+    Context context(Priority(0), Trace::TraceLevel(0));
+    Bucket bucket(makeSpiBucket(BucketId(8, 0x01)));
+    std::shared_ptr<Document> doc1 = testDocMan.createRandomDocumentAtLocation(0x01, 1);
+    auto remove_result = spi->remove(bucket, Timestamp(1), doc1->getId(), context);
+    EXPECT_TRUE(!remove_result.hasError());
+    auto info_result = spi->getBucketInfo(bucket);
+    EXPECT_TRUE(!info_result.hasError());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getChecksum().getValue());
+    EXPECT_EQ(1u, info_result.getBucketInfo().getEntryCount());
+    EXPECT_EQ(0u, info_result.getBucketInfo().getDocumentCount());
 }
 
 TEST_F(ConformanceTest, detectAndTestOptionalBehavior)

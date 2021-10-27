@@ -98,6 +98,15 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         return super.isFailed() || (resultSet && !result.getWasModified());
     }
 
+    @Override
+    public String toString() {
+        return "SetNodeStateRequest{" +
+               "node=" + id + "," +
+               "newState=" + newStates.get("user") + "," +
+               (probe ? "probe=" + probe + "," : "") +
+               "}";
+    }
+
     static SetResponse setWantedState(
             ContentCluster cluster,
             SetUnitStateRequest.Condition condition,

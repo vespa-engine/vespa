@@ -3,7 +3,7 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
@@ -35,7 +35,7 @@ public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testDocumentTypesWithDocumentField()  throws IOException, ParseException {
-        SearchBuilder search = new SearchBuilder();
+        SchemaBuilder search = new SchemaBuilder();
         search.importFile("src/test/configmodel/types/other_doc.sd");
         search.importFile("src/test/configmodel/types/type_with_doc_field.sd");
         search.build();
@@ -48,7 +48,7 @@ public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testMultipleInheritanceArray() throws IOException, ParseException {
-        SearchBuilder search = new SearchBuilder();
+        SchemaBuilder search = new SchemaBuilder();
         search.importFile("src/test/cfg/search/data/travel/schemas/TTData.sd");
         search.importFile("src/test/cfg/search/data/travel/schemas/TTEdge.sd");
         search.importFile("src/test/cfg/search/data/travel/schemas/TTPOI.sd");
@@ -56,7 +56,7 @@ public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
     }
 
     private DocumentModel createAndTestModel(String sd) throws IOException, ParseException {
-        SearchBuilder search = SearchBuilder.createFromFile(sd);
+        SchemaBuilder search = SchemaBuilder.createFromFile(sd);
         DocumentModel model = search.getModel();
 
         assertEquals(2, model.getDocumentManager().getTypes().size());

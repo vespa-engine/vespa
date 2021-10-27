@@ -9,7 +9,9 @@
 
 #include <vector>
 #include <deque>
+#include <future>
 #include <memory>
+#include <optional>
 
 namespace storage {
 
@@ -25,6 +27,7 @@ public:
     std::shared_ptr<api::ApplyBucketDiffReply> pendingApplyDiff;
     vespalib::duration timeout;
     framework::MilliSecTimer startTime;
+    std::optional<std::future<vespalib::string>> delayed_error;
     spi::Context context;
  	
     MergeStatus(const framework::Clock&, api::StorageMessage::Priority, uint32_t traceLevel);
@@ -40,6 +43,8 @@ public:
     bool removeFromDiff(const std::vector<api::ApplyBucketDiffCommand::Entry>& part, uint16_t hasMask, const std::vector<api::MergeBucketCommand::Node> &nodes);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool isFirstNode() const { return static_cast<bool>(reply); }
+    void set_delayed_error(std::future<vespalib::string>&& delayed_error_in);
+    void check_delayed_error(api::ReturnCode &return_code);
 };
 
 } // storage

@@ -252,18 +252,28 @@ MatchToolsFactory::createTask(vespalib::stringref attribute, vespalib::stringref
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnMatchTask() const {
-    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnMatch()._attribute),
-                      execute::onmatch::Operation::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnMatch()._operation));
+    const auto & op = _rankSetup.getMutateOnMatch();
+    return createTask(op._attribute, op._operation);
 }
 std::unique_ptr<AttributeOperationTask>
-MatchToolsFactory::createOnReRankTask() const {
-    return createTask(execute::onrerank::Attribute::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnReRank()._attribute),
-                      execute::onrerank::Operation::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnReRank()._operation));
+MatchToolsFactory::createOnFirstPhaseTask() const {
+    const auto & op = _rankSetup.getMutateOnFirstPhase();
+    // Note that combining onmatch in query with first-phase is not a bug.
+    // It is intentional, as the semantics of onmatch in query are identical to on-first-phase.
+    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
+                      execute::onmatch::Operation::lookup(_queryEnv.getProperties(), op._operation));
+}
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createOnSecondPhaseTask() const {
+    const auto & op = _rankSetup.getMutateOnSecondPhase();
+    return createTask(execute::onrerank::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
+                      execute::onrerank::Operation::lookup(_queryEnv.getProperties(), op._operation));
 }
 std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnSummaryTask() const {
-    return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnSummary()._attribute),
-                      execute::onsummary::Operation::lookup(_queryEnv.getProperties(), _rankSetup.getExecuteOnSummary()._operation));
+    const auto & op = _rankSetup.getMutateOnSummary();
+    return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties(), op._attribute),
+                      execute::onsummary::Operation::lookup(_queryEnv.getProperties(), op._operation));
 }
 
 bool

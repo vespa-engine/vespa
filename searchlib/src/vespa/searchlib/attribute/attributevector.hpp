@@ -116,7 +116,7 @@ AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, D
     _status.incNonIdempotentUpdates(diff);
     _status.incUpdates(diff);
     if (diff > 0) {
-        changes.back()._arithOperand = aop;
+        changes.back()._data.setArithOperand(aop);
     }
     return true;
 }

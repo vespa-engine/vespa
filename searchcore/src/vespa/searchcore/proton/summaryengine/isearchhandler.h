@@ -7,7 +7,7 @@ namespace search::engine {
     class SearchRequest;
     class SearchReply;
     class DocsumRequest;
-    struct DocsumReply;
+    class DocsumReply;
 }
 
 namespace proton {

@@ -151,6 +151,10 @@ protected:
             const Bucket& target,
             document::TestDocMan& testDocMan);
 
+    void test_iterate_empty_or_missing_bucket(bool bucket_exists);
+
+    void test_empty_bucket_info(bool bucket_exists, bool active);
+
     ConformanceTest();
     ConformanceTest(const std::string &docType);
 };

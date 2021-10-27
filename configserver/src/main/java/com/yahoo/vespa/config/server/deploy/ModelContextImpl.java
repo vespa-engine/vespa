@@ -179,7 +179,6 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> allowedAthenzProxyIdentities;
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
-        private final boolean requireConnectivityCheck;
         private final int maxConcurrentMergesPerContentNode;
         private final int maxMergeQueueSize;
         private final boolean ignoreMergeQueueLimit;
@@ -196,6 +195,9 @@ public class ModelContextImpl implements ModelContext {
         private final int docstoreCompressionLevel;
         private final double diskBloatFactor;
         private final boolean distributorEnhancedMaintenanceScheduling;
+        private final int maxUnCommittedMemory;
+        private final boolean forwardIssuesAsErrors;
+        private final boolean asyncApplyBucketDiff;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -214,7 +216,6 @@ public class ModelContextImpl implements ModelContext {
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
             this.largeRankExpressionLimit = flagValue(source, appId, Flags.LARGE_RANK_EXPRESSION_LIMIT);
-            this.requireConnectivityCheck = flagValue(source, appId, Flags.REQUIRE_CONNECTIVITY_CHECK);
             this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
             this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
             this.ignoreMergeQueueLimit = flagValue(source, appId, Flags.IGNORE_MERGE_QUEUE_LIMIT);
@@ -230,6 +231,9 @@ public class ModelContextImpl implements ModelContext {
             this.docstoreCompressionLevel = flagValue(source, appId, Flags.DOCSTORE_COMPRESSION_LEVEL);
             this.diskBloatFactor = flagValue(source, appId, Flags.DISK_BLOAT_FACTOR);
             this.distributorEnhancedMaintenanceScheduling = flagValue(source, appId, Flags.DISTRIBUTOR_ENHANCED_MAINTENANCE_SCHEDULING);
+            this.maxUnCommittedMemory = flagValue(source, appId, Flags.MAX_UNCOMMITTED_MEMORY);;
+            this.forwardIssuesAsErrors = flagValue(source, appId, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
+            this.asyncApplyBucketDiff = flagValue(source, appId, Flags.ASYNC_APPLY_BUCKET_DIFF);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -250,7 +254,6 @@ public class ModelContextImpl implements ModelContext {
             return translateJvmOmitStackTraceInFastThrowIntToString(jvmOmitStackTraceInFastThrow, type);
         }
         @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
-        @Override public boolean requireConnectivityCheck() { return requireConnectivityCheck; }
         @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
         @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
         @Override public boolean ignoreMergeQueueLimit() { return ignoreMergeQueueLimit; }
@@ -266,6 +269,9 @@ public class ModelContextImpl implements ModelContext {
         @Override public double diskBloatFactor() { return diskBloatFactor; }
         @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
         @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
+        @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
+        @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
+        @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

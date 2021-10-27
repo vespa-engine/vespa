@@ -47,6 +47,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final int reponseNumThreads;
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
     private final boolean useAsyncMessageHandlingOnSchedule;
+    private final boolean asyncApplyBucketDiff;
 
     private static StorFilestorConfig.Response_sequencer_type.Enum convertResponseSequencerType(String sequencerType) {
         try {
@@ -62,6 +63,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         this.reponseNumThreads = featureFlags.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
         useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
+        asyncApplyBucketDiff = featureFlags.asyncApplyBucketDiff();
     }
 
     @Override
@@ -73,6 +75,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.num_response_threads(reponseNumThreads);
         builder.response_sequencer_type(responseSequencerType);
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
+        builder.async_apply_bucket_diff(asyncApplyBucketDiff);
     }
 
 }

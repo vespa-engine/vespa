@@ -32,7 +32,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testAttributeSettings() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/attributesettings.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/attributesettings.sd");
 
         SDField f1=(SDField) schema.getDocument().getField("f1");
         assertEquals(1, f1.getAttributes().size());
@@ -93,7 +93,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void requireThatFastAccessCanBeSet() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/attributesettings.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/attributesettings.sd");
         SDField field = (SDField) schema.getDocument().getField("fast_access");
         assertEquals(1, field.getAttributes().size());
         Attribute attr = field.getAttributes().get(field.getName());
@@ -101,10 +101,10 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     private Schema getSearch(String sd) throws ParseException {
-        SearchBuilder builder = new SearchBuilder();
+        SchemaBuilder builder = new SchemaBuilder();
         builder.importString(sd);
         builder.build();
-        return builder.getSearch();
+        return builder.getSchema();
     }
 
     private Attribute getAttributeF(String sd) throws ParseException {
@@ -206,7 +206,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
         AttributeFields attributes = new AttributeFields(getSearchWithMutables());
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
-        attributes.getConfig(builder);
+        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333);
         AttributesConfig cfg = builder.build();
         assertEquals("a", cfg.attribute().get(0).name());
         assertFalse(cfg.attribute().get(0).ismutable());
@@ -216,7 +216,23 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
         assertEquals("m", cfg.attribute().get(2).name());
         assertTrue(cfg.attribute().get(2).ismutable());
+    }
 
+    @Test
+    public void requireMaxUnCommittedMemoryIsProperlyPropagated() throws ParseException {
+
+        AttributeFields attributes = new AttributeFields(getSearchWithMutables());
+        AttributesConfig.Builder builder = new AttributesConfig.Builder();
+        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 13333);
+        AttributesConfig cfg = builder.build();
+        assertEquals("a", cfg.attribute().get(0).name());
+        assertEquals(13333, cfg.attribute().get(0).maxuncommittedmemory());
+
+        assertEquals("f", cfg.attribute().get(1).name());
+        assertEquals(13333, cfg.attribute().get(1).maxuncommittedmemory());
+
+        assertEquals("m", cfg.attribute().get(2).name());
+        assertEquals(13333, cfg.attribute().get(2).maxuncommittedmemory());
     }
 
     @Test

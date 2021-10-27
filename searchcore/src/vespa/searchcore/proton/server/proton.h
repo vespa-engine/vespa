@@ -40,7 +40,6 @@ class IDocumentDBReferenceRegistry;
 class IProtonDiskLayout;
 class PrepareRestartHandler;
 class SummaryEngine;
-class DocsumBySlime;
 class FlushEngine;
 class MatchEngine;
 class PersistenceEngine;
@@ -89,7 +88,6 @@ private:
     DocumentDBMap                          _documentDBMap;
     std::unique_ptr<MatchEngine>           _matchEngine;
     std::unique_ptr<SummaryEngine>         _summaryEngine;
-    std::unique_ptr<DocsumBySlime>         _docsumBySlime;
     MemoryFlushConfigUpdater::UP           _memoryFlushConfigUpdater;
     std::unique_ptr<FlushEngine>           _flushEngine;
     std::unique_ptr<PrepareRestartHandler> _prepareRestartHandler;
@@ -192,7 +190,6 @@ public:
 
     size_t getNumDocs() const;
     size_t getNumActiveDocs() const;
-    DocsumBySlime & getDocsumBySlime() { return *_docsumBySlime; }
 
     search::engine::SearchServer &get_search_server();
     search::engine::DocsumServer &get_docsum_server();

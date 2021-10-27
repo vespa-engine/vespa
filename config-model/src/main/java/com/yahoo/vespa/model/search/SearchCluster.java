@@ -55,7 +55,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
 
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
-        if (getSdConfig()!=null) getSdConfig().getAttributeFields().getConfig(builder);
+        if (getSdConfig()!=null) getSdConfig().getConfig(builder);
     }
 
     @Override

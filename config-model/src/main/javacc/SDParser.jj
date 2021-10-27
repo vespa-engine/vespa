@@ -207,10 +207,10 @@ TOKEN :
 | < LOOSE: "loose" >
 | < STRICT: "strict" >
 | < DOCUMENT: "document" >
-| < EXECUTE: "execute" >
 | < OPERATION: "operation" >
 | < ON_MATCH: "on-match" >
-| < ON_RERANK: "on-rerank" >
+| < ON_FIRST_PHASE: "on-first-phase" >
+| < ON_SECOND_PHASE: "on-second-phase" >
 | < ON_SUMMARY: "on-summary" >
 | < STRUCT: "struct" >
 | < INHERITS: "inherits" >
@@ -239,6 +239,7 @@ TOKEN :
 | < CONSTANT: "constant">
 | < ONNXMODEL: "onnx-model">
 | < MODEL: "model" >
+| < MUTATE: "mutate" >
 | < RANKPROFILE: "rank-profile" >
 | < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
 | < RANKDEGRADATION: "rank-degradation" >
@@ -2066,7 +2067,7 @@ Object rankProfileItem(RankProfile profile) : { }
       | firstPhase(profile)
       | matchPhase(profile)
       | function(profile)
-      | execute(profile)
+      | mutate(profile)
       | ignoreRankFeatures(profile)
       | numThreadsPerSearch(profile)
       | minHitsPerThread(profile)
@@ -2096,39 +2097,40 @@ void inheritsRankProfile(RankProfile profile) :
 }
 
 /**
- * This rule consumes an execute statement of a rank-profile.
+ * This rule consumes an mutate statement of a rank-profile.
  *
  * @param profile The profile to modify.
  */
-void execute(RankProfile profile) :
+void mutate(RankProfile profile) :
 {
 }
 {
-    <EXECUTE> lbrace() (execute_operation(profile) <NL>)+ <RBRACE>
+    <MUTATE> lbrace() (mutate_operation(profile) <NL>)+ <RBRACE>
     {  }
 }
 
-void execute_operation(RankProfile profile) :
+void mutate_operation(RankProfile profile) :
 {
     String attribute, operation;
-    RankProfile.ExecuteOperation.Phase phase;
+    RankProfile.MutateOperation.Phase phase;
 }
 {
-   ( <ON_MATCH> { phase = RankProfile.ExecuteOperation.Phase.onmatch; }
-   | <ON_RERANK> { phase = RankProfile.ExecuteOperation.Phase.onrerank; }
-   | <ON_SUMMARY> { phase = RankProfile.ExecuteOperation.Phase.onsummary; }
+   ( <ON_MATCH> { phase = RankProfile.MutateOperation.Phase.on_match; }
+   | <ON_FIRST_PHASE> { phase = RankProfile.MutateOperation.Phase.on_first_phase; }
+   | <ON_SECOND_PHASE> { phase = RankProfile.MutateOperation.Phase.on_second_phase; }
+   | <ON_SUMMARY> { phase = RankProfile.MutateOperation.Phase.on_summary; }
    )
-   lbrace() attribute = identifier() operation = execute_expr() (<NL>)* <RBRACE>
-   { profile.addExecuteOperation(phase, attribute, operation); }
+   lbrace() attribute = identifier() operation = mutate_expr() (<NL>)* <RBRACE>
+   { profile.addMutateOperation(phase, attribute, operation); }
 }
 
-String execute_expr() :
+String mutate_expr() :
 {
      String op;
      Number constant = null;
 }
 {
-    (("++" | "--") { op = token.image; } | ("+=" | "-=" | "*=" | "/=" | "%=" | "=") { op = token.image; } constant = consumeNumber())
+    (("+=" | "-=" | "=") { op = token.image; } constant = consumeNumber())
     { return constant != null ? (op + constant) : op; }
 }
 

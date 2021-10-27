@@ -23,10 +23,10 @@ import static java.util.stream.Collectors.toMap;
  */
 public class DocumentReferenceResolver {
 
-    private final Map<String, Schema> searchMapping;
+    private final Map<String, Schema> schemaMapping;
 
     public DocumentReferenceResolver(Collection<Schema> schemas) {
-        this.searchMapping = createDocumentNameToSearchMapping(schemas);
+        this.schemaMapping = createDocumentNameToSearchMapping(schemas);
     }
 
     public void resolveReferences(SDDocumentType documentType) {
@@ -63,7 +63,7 @@ public class DocumentReferenceResolver {
         }
         ReferenceDataType reference = (ReferenceDataType) field.getDataType();
         String targetDocumentName = getTargetDocumentName(reference);
-        Schema schema = searchMapping.get(targetDocumentName);
+        Schema schema = schemaMapping.get(targetDocumentName);
         if (schema == null) {
             throw new IllegalArgumentException(
                     String.format("Invalid document reference '%s': " +

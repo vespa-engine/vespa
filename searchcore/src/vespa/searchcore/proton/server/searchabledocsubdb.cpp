@@ -21,13 +21,9 @@
 using vespa::config::search::RankProfilesConfig;
 using proton::matching::MatchingStats;
 using proton::matching::SessionManager;
-using search::AttributeGuard;
-using search::AttributeVector;
 using search::GrowStrategy;
-using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::SerialNum;
-using vespalib::ThreadStackExecutorBase;
 using vespalib::eval::FastValueBuilderFactory;
 using namespace searchcorespi;
 

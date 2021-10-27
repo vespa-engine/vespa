@@ -37,7 +37,7 @@ public class SummaryDiskAccessValidator extends Processor {
         if (documentsOnly) return;
 
         for (DocumentSummary summary : schema.getSummaries().values()) {
-            for (SummaryField summaryField : summary.getSummaryFields()) {
+            for (SummaryField summaryField : summary.getSummaryFields().values()) {
                 for (SummaryField.Source source : summaryField.getSources()) {
                     ImmutableSDField field = schema.getField(source.getName());
                     if (field == null)
@@ -47,9 +47,9 @@ public class SummaryDiskAccessValidator extends Processor {
                                                            source + ", but this field does not exist");
                     if ( ! isInMemory(field, summaryField) && ! summary.isFromDisk()) {
                         deployLogger.logApplicationPackage(Level.WARNING, summaryField + " in " + summary + " references " +
-                                                        source + ", which is not an attribute: Using this " +
-                                                        "summary will cause disk accesses. " +
-                                                        "Set 'from-disk' on this summary class to silence this warning.");
+                                                                          source + ", which is not an attribute: Using this " +
+                                                                          "summary will cause disk accesses. " +
+                                                                          "Set 'from-disk' on this summary class to silence this warning.");
                     }
                 }
             }

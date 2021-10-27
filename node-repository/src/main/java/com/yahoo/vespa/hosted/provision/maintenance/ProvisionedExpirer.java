@@ -4,13 +4,11 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 
 /**
@@ -28,8 +26,8 @@ public class ProvisionedExpirer extends Expirer {
     private final NodeRepository nodeRepository;
     private static final int MAXIMUM_ALLOWED_EXPIRED_HOSTS = 20;
 
-    ProvisionedExpirer(NodeRepository nodeRepository, Duration dirtyTimeout, Metric metric) {
-        super(Node.State.provisioned, History.Event.Type.provisioned, nodeRepository, dirtyTimeout, metric);
+    ProvisionedExpirer(NodeRepository nodeRepository, Duration timeout, Metric metric) {
+        super(Node.State.provisioned, History.Event.Type.provisioned, nodeRepository, timeout, metric);
         this.nodeRepository = nodeRepository;
     }
 

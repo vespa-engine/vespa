@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.documentapi.VespaDocumentAccess;
 import com.yahoo.container.handler.VipStatus;
@@ -34,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
@@ -75,7 +75,6 @@ public class ClusterSearcher extends Searcher {
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
                            ComponentRegistry<Dispatcher> dispatchers,
-                           QrConfig qrConfig,
                            VipStatus vipStatus,
                            VespaDocumentAccess access) {
         super(id);
@@ -101,12 +100,13 @@ public class ClusterSearcher extends Searcher {
             }
         }
 
+        String uniqueServerId = UUID.randomUUID().toString();
         if (searchClusterConfig.indexingmode() == STREAMING) {
-            server = vdsCluster(qrConfig.discriminator(), searchClusterIndex,
+            server = vdsCluster(uniqueServerId, searchClusterIndex,
                                                        searchClusterConfig, docSumParams, documentDbConfig, access);
             vipStatus.addToRotation(server.getName());
         } else {
-            server = searchDispatch(searchClusterIndex, searchClusterName, qrConfig.discriminator(),
+            server = searchDispatch(searchClusterIndex, searchClusterName, uniqueServerId,
                                                    docSumParams, documentDbConfig, dispatchers);
         }
     }

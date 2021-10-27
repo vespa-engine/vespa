@@ -258,7 +258,7 @@ void OpenSslCryptoCodecImpl::enable_hostname_validation_if_requested() {
     if (_peer_spec.valid() && !_ctx->transport_security_options().disable_hostname_validation()) {
         auto* verify_param = SSL_get0_param(_ssl.get()); // Internal ptr, no refcount bump or alloc. We must not free.
         LOG_ASSERT(verify_param != nullptr);
-        vespalib::string host = _peer_spec.host();
+        vespalib::string host = _peer_spec.host_with_fallback();
         if (X509_VERIFY_PARAM_set1_host(verify_param, host.c_str(), host.size()) != 1) {
             throw CryptoException("X509_VERIFY_PARAM_set1_host() failed");
         }
@@ -268,7 +268,7 @@ void OpenSslCryptoCodecImpl::enable_hostname_validation_if_requested() {
 
 void OpenSslCryptoCodecImpl::set_server_name_indication_extension() {
     if (_peer_spec.valid()) {
-        vespalib::string host = _peer_spec.host();
+        vespalib::string host = _peer_spec.host_with_fallback();
         // OpenSSL tries to cast const char* to void* in a macro, even on 1.1.1. GCC is not overly impressed,
         // so to satiate OpenSSL's quirks we pre-cast away the constness.
         auto* host_cstr_that_trusts_openssl_not_to_mess_up = const_cast<char*>(host.c_str());

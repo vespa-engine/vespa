@@ -13,7 +13,7 @@ CatchResult::CatchResult()
 CatchResult::~CatchResult() = default;
 
 void
-CatchResult::onComplete(std::unique_ptr<Result> result) {
+CatchResult::onComplete(std::unique_ptr<Result> result) noexcept {
     _promisedResult.set_value(std::move(result));
 }
 void

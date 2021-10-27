@@ -10,6 +10,7 @@ namespace {
 const vespalib::string tcp_prefix("tcp/");
 const vespalib::string ipc_path_prefix("ipc/file:");
 const vespalib::string ipc_name_prefix("ipc/name:");
+const vespalib::string fallback_host("localhost");
 
 SocketAddress make_address(const char *node, int port, bool server) {
     if (server) {
@@ -20,7 +21,7 @@ SocketAddress make_address(const char *node, int port, bool server) {
 }
 
 SocketAddress make_address(int port, bool server) {
-    const char *node = server ? nullptr : "localhost";
+    const char *node = server ? nullptr : fallback_host.c_str();
     return make_address(node, port, server);
 }
 
@@ -108,6 +109,12 @@ SocketSpec::replace_host(const vespalib::string &new_host) const
         return from_host_port(new_host, _port);
     }
     return SocketSpec();
+}
+
+const vespalib::string &
+SocketSpec::host_with_fallback() const
+{
+    return (_type == Type::PORT) ? fallback_host : host();
 }
 
 } // namespace vespalib

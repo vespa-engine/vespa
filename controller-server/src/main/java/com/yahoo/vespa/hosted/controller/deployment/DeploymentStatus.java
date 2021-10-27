@@ -573,7 +573,7 @@ public class DeploymentStatus {
         public Optional<Instant> coolingDownUntil(Change change) {
             if (job.lastTriggered().isEmpty()) return Optional.empty();
             if (job.lastCompleted().isEmpty()) return Optional.empty();
-            if (job.firstFailing().isEmpty()) return Optional.empty();
+            if (job.firstFailing().isEmpty() || ! job.firstFailing().get().hasEnded()) return Optional.empty();
             Versions lastVersions = job.lastCompleted().get().versions();
             if (change.platform().isPresent() && ! change.platform().get().equals(lastVersions.targetPlatform())) return Optional.empty();
             if (change.application().isPresent() && ! change.application().get().equals(lastVersions.targetApplication())) return Optional.empty();

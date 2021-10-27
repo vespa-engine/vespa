@@ -27,8 +27,8 @@ public class RankingConstantTest {
         final String TENSOR_FILE = "path/my-tensor-file.json";
         final String TENSOR_TYPE = "tensor(x{})";
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        searchBuilder.importString(joinLines(
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
+        schemaBuilder.importString(joinLines(
                 "search test {",
                 "  document test { }",
                 "  rank-profile my_rank_profile {",
@@ -42,8 +42,8 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        searchBuilder.build();
-        Schema schema = searchBuilder.getSearch();
+        schemaBuilder.build();
+        Schema schema = schemaBuilder.getSchema();
 
         Iterator<RankingConstant> constantIterator = schema.rankingConstants().asMap().values().iterator();
         RankingConstant constant = constantIterator.next();
@@ -58,10 +58,10 @@ public class RankingConstantTest {
     @Test
     public void tensor_constant_must_have_a_type() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("must have a type");
-        searchBuilder.importString(joinLines(
+        schemaBuilder.importString(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -74,10 +74,10 @@ public class RankingConstantTest {
     @Test
     public void tensor_constant_must_have_a_file() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("must have a file");
-        searchBuilder.importString(joinLines(
+        schemaBuilder.importString(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -90,8 +90,8 @@ public class RankingConstantTest {
     @Test
     public void constant_file_does_not_need_path_or_ending() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        searchBuilder.importString(joinLines(
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
+        schemaBuilder.importString(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -100,8 +100,8 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        searchBuilder.build();
-        Schema schema = searchBuilder.getSearch();
+        schemaBuilder.build();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals("simplename", constant.getFileName());
     }
@@ -109,8 +109,8 @@ public class RankingConstantTest {
     @Test
     public void constant_uri_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        searchBuilder.importString(joinLines(
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
+        schemaBuilder.importString(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -119,8 +119,8 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        searchBuilder.build();
-        Schema schema = searchBuilder.getSearch();
+        schemaBuilder.build();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http://somewhere.far.away/in/another-galaxy", constant.getUri());
@@ -129,8 +129,8 @@ public class RankingConstantTest {
     @Test
     public void constant_https_uri_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        searchBuilder.importString(joinLines(
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
+        schemaBuilder.importString(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -139,8 +139,8 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        searchBuilder.build();
-        Schema schema = searchBuilder.getSearch();
+        schemaBuilder.build();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("https://somewhere.far.away:4443/in/another-galaxy", constant.getUri());
@@ -149,8 +149,8 @@ public class RankingConstantTest {
     @Test
     public void constant_uri_with_port_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        searchBuilder.importString(joinLines(
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
+        schemaBuilder.importString(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -159,8 +159,8 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        searchBuilder.build();
-        Schema schema = searchBuilder.getSearch();
+        schemaBuilder.build();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http://somewhere.far.away:4080/in/another-galaxy", constant.getUri());
@@ -169,8 +169,8 @@ public class RankingConstantTest {
     @Test
     public void constant_uri_no_dual_slashes_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
-        searchBuilder.importString(joinLines(
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
+        schemaBuilder.importString(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -179,8 +179,8 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        searchBuilder.build();
-        Schema schema = searchBuilder.getSearch();
+        schemaBuilder.build();
+        Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http:somewhere.far.away/in/another-galaxy", constant.getUri());
@@ -189,12 +189,12 @@ public class RankingConstantTest {
     @Test
     public void constant_uri_only_supports_http_and_https() {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
         String expectedMessage = "Encountered \" <IDENTIFIER> \"ftp\"\" at line 5, column 10.\n\n" +
                 "Was expecting:\n\n" +
                 "<URI_PATH> ...";
         try {
-            searchBuilder.importString(joinLines(
+            schemaBuilder.importString(joinLines(
                     "search test {",
                     "  document test { }",
                     "  constant foo {",

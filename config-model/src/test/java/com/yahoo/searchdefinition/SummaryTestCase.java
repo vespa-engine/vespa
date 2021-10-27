@@ -10,6 +10,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -38,7 +39,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SearchBuilder.createFromString(sd, logger);
+        SchemaBuilder.createFromString(sd, logger);
         assertTrue(logger.entries.isEmpty());
     }
 
@@ -60,7 +61,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SearchBuilder.createFromString(sd, logger);
+        SchemaBuilder.createFromString(sd, logger);
         assertEquals(1, logger.entries.size());
         assertEquals(Level.WARNING, logger.entries.get(0).level);
         assertEquals("summary field 'foo2' in document summary 'foobar' references source field 'ondisk', " +
@@ -88,7 +89,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SearchBuilder.createFromString(sd, logger);
+        SchemaBuilder.createFromString(sd, logger);
         assertTrue(logger.entries.isEmpty());
     }
 
@@ -119,7 +120,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SearchBuilder.createFromString(sd, logger);
+        SchemaBuilder.createFromString(sd, logger);
         assertTrue(logger.entries.isEmpty());
     }
 
@@ -155,7 +156,7 @@ public class SummaryTestCase {
                 "  }",
                 "}");
         var logger = new DeployLoggerStub();
-        var search = SearchBuilder.createFromString(sd, logger).getSearch();
+        var search = SchemaBuilder.createFromString(sd, logger).getSchema();
         assertEquals(List.of(), logger.entries);
 
         var titleField = "title";
@@ -172,12 +173,12 @@ public class SummaryTestCase {
                 new TestValue(everythingSummary, titleArtistSummary, List.of(List.of(titleField), implicitFields, List.of(artistField, albumField)))
         );
         tests.forEach(testValue -> {
-            var actualFields = testValue.summary.getSummaryFields().stream()
+            var actualFields = testValue.summary.getSummaryFields().values().stream()
                                                 .map(FieldBase::getName)
                                                 .collect(Collectors.toList());
             assertEquals(testValue.summary.getName() + (testValue.parent == null ? " does not inherit anything" : " inherits " + testValue.parent.getName()),
-                         testValue.parent,
-                         testValue.summary.getInherited());
+                         Optional.ofNullable(testValue.parent),
+                         testValue.summary.inherited());
             assertEquals("Summary " + testValue.summary.getName() + " has expected fields", testValue.fields, actualFields);
         });
     }
@@ -207,7 +208,7 @@ public class SummaryTestCase {
                 "}");
         var logger = new DeployLoggerStub();
         try {
-            SearchBuilder.createFromString(sd, logger);
+            SchemaBuilder.createFromString(sd, logger);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("For schema 'music', summary class 'title2', summary field 'title': Can not use " +
@@ -227,7 +228,7 @@ public class SummaryTestCase {
                     "  }" +
                     "}");
             DeployLoggerStub logger = new DeployLoggerStub();
-            SearchBuilder.createFromStrings(logger, schema);
+            SchemaBuilder.createFromStrings(logger, schema);
             assertEquals("document summary 'test_summary' inherits nonesuch but this is not present in schema 'test'",
                          logger.entries.get(0).message);
             // fail("Expected failure");
@@ -263,7 +264,7 @@ public class SummaryTestCase {
                 "  }" +
                 "}");
         DeployLoggerStub logger = new DeployLoggerStub();
-        SearchBuilder.createFromStrings(logger, parent, child);
+        SchemaBuilder.createFromStrings(logger, parent, child);
         logger.entries.forEach(e -> System.out.println(e));
         //assertTrue(logger.entries.isEmpty());
     }

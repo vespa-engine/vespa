@@ -22,10 +22,10 @@ public:
     ~ForegroundTaskExecutor() override;
 
     ExecutorId getExecutorId(uint64_t componentId) const override;
-    void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
+    void executeTask(ExecutorId id, Executor::Task::UP task) override;
     void sync() override;
     void setTaskLimit(uint32_t taskLimit) override;
-    vespalib::ExecutorStats getStats() override;
+    ExecutorStats getStats() override;
 private:
     std::atomic<uint64_t> _accepted;
 };

@@ -6,21 +6,25 @@
 #include "apply_bucket_diff_state.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/persistence/spi/catchresult.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <algorithm>
-#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.mergehandler");
+
+using vespalib::MonitoredRefCount;
+using vespalib::RetainGuard;
 
 namespace storage {
 
 MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
                            const ClusterContext& cluster_context, const framework::Clock & clock,
+                           vespalib::ISequencedTaskExecutor& executor,
                            uint32_t maxChunkSize,
                            uint32_t commonMergeChainOptimalizationMinimumSize,
                            bool async_apply_bucket_diff)
@@ -28,11 +32,19 @@ MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
       _cluster_context(cluster_context),
       _env(env),
       _spi(spi),
+      _monitored_ref_count(std::make_unique<MonitoredRefCount>()),
       _maxChunkSize(maxChunkSize),
       _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize),
-      _async_apply_bucket_diff(async_apply_bucket_diff)
+      _async_apply_bucket_diff(async_apply_bucket_diff),
+      _executor(executor)
 {
 }
+
+MergeHandler::~MergeHandler()
+{
+    drain_async_writes();
+}
+
 
 namespace {
 
@@ -40,20 +52,6 @@ constexpr int getDeleteFlag() {
     // Referred into old slotfile code before. Where should this number come from?
     return 2;
 }
-
-/**
- * Throws std::runtime_error if result has an error.
- */
-void
-checkResult(const spi::Result& result, const spi::Bucket& bucket, const char* op)
-{
-    if (result.hasError()) {
-        vespalib::asciistream ss;
-        ss << "Failed " << op << " in " << bucket << ": " << result.toString();
-        throw std::runtime_error(ss.str());
-    }
-}
-
 
 class IteratorGuard {
     spi::PersistenceProvider& _spi;
@@ -653,28 +651,32 @@ MergeHandler::sync_bucket_info(const spi::Bucket& bucket) const
 }
 
 namespace {
-    void findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHasMask, uint16_t hasMask,
-                        uint16_t newHasMask, api::ApplyBucketDiffCommand& cmd)
-    {
-        for (const auto& entry : status.diff) {
-            uint16_t entry_has_mask = (entry._hasMask & active_nodes_mask);
-            if ((entry_has_mask == 0u) ||
-                (constrictHasMask && (entry_has_mask != hasMask))) {
-                continue;
-            }
-            cmd.getDiff().emplace_back(entry);
-            if (constrictHasMask) {
-                cmd.getDiff().back()._entry._hasMask = newHasMask;
-            } else {
-                cmd.getDiff().back()._entry._hasMask = entry_has_mask;
-            }
+
+void
+findCandidates(MergeStatus& status, uint16_t active_nodes_mask, bool constrictHasMask, uint16_t hasMask,
+               uint16_t newHasMask, api::ApplyBucketDiffCommand& cmd)
+{
+    for (const auto& entry : status.diff) {
+        uint16_t entry_has_mask = (entry._hasMask & active_nodes_mask);
+        if ((entry_has_mask == 0u) ||
+            (constrictHasMask && (entry_has_mask != hasMask))) {
+            continue;
+        }
+        cmd.getDiff().emplace_back(entry);
+        if (constrictHasMask) {
+            cmd.getDiff().back()._entry._hasMask = newHasMask;
+        } else {
+            cmd.getDiff().back()._entry._hasMask = entry_has_mask;
         }
     }
 }
 
+}
+
 api::StorageReply::SP
 MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
-                                 MessageSender& sender, spi::Context& context) const
+                                 MessageSender& sender, spi::Context& context,
+                                 std::shared_ptr<ApplyBucketDiffState>& async_results) const
 {
     // If last action failed, fail the whole merge
     if (status.reply->getResult().failed()) {
@@ -806,6 +808,10 @@ MergeHandler::processBucketMerge(const spi::Bucket& bucket, MergeStatus& status,
     }
     cmd->setPriority(status.context.getPriority());
     cmd->setTimeout(status.timeout);
+    if (async_results) {
+        // Check currently pending writes to local node before sending new command.
+        check_apply_diff_sync(std::move(async_results));
+    }
     if (applyDiffNeedLocalData(cmd->getDiff(), 0, true)) {
         framework::MilliSecTimer startTime(_clock);
         fetchLocalData(bucket, cmd->getDiff(), 0, context);
@@ -883,7 +889,8 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
         tracker->fail(api::ReturnCode::BUSY, err);
         return tracker;
     }
-    checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
+    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<spi::NoopOperationComplete>());
+
 
     MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
     auto s = std::make_shared<MergeStatus>(_clock, cmd.getPriority(), cmd.getTrace().getLevel());
@@ -923,141 +930,136 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
 
 namespace {
 
-    uint8_t findOwnIndex(
-            const std::vector<api::MergeBucketCommand::Node>& nodeList,
-            uint16_t us)
-    {
-        for (uint32_t i=0, n=nodeList.size(); i<n; ++i) {
-            if (nodeList[i].index == us) return i;
-        }
-        throw vespalib::IllegalStateException(
-                "Got GetBucketDiff cmd on node not in nodelist in command",
-                VESPA_STRLOC);
+uint8_t findOwnIndex(
+        const std::vector<api::MergeBucketCommand::Node>& nodeList,
+        uint16_t us)
+{
+    for (uint32_t i=0, n=nodeList.size(); i<n; ++i) {
+        if (nodeList[i].index == us) return i;
     }
+    throw vespalib::IllegalStateException(
+            "Got GetBucketDiff cmd on node not in nodelist in command",
+            VESPA_STRLOC);
+}
 
-    struct DiffEntryTimestampOrder
-        : public std::binary_function<api::GetBucketDiffCommand::Entry,
-                                      api::GetBucketDiffCommand::Entry, bool>
-    {
-        bool operator()(const api::GetBucketDiffCommand::Entry& x,
-                        const api::GetBucketDiffCommand::Entry& y) const {
-            return (x._timestamp < y._timestamp);
-        }
-    };
-
-    /**
-     * Merges list A and list B together and puts the result in result.
-     * Result is swapped in as last step to keep function exception safe. Thus
-     * result can be listA or listB if wanted.
-     *
-     * listA and listB are assumed to be in the order found in the slotfile, or
-     * in the order given by a previous call to this function. (In both cases
-     * this will be sorted by timestamp)
-     *
-     * @return false if any suspect entries was found.
-     */
-    bool mergeLists(
-            const std::vector<api::GetBucketDiffCommand::Entry>& listA,
-            const std::vector<api::GetBucketDiffCommand::Entry>& listB,
-            std::vector<api::GetBucketDiffCommand::Entry>& finalResult)
-    {
-        bool suspect = false;
-        std::vector<api::GetBucketDiffCommand::Entry> result;
-        uint32_t i = 0, j = 0;
-        while (i < listA.size() && j < listB.size()) {
-            const api::GetBucketDiffCommand::Entry& a(listA[i]);
-            const api::GetBucketDiffCommand::Entry& b(listB[j]);
-            if (a._timestamp < b._timestamp) {
-                result.push_back(a);
-                ++i;
-            } else if (a._timestamp > b._timestamp) {
-                result.push_back(b);
-                ++j;
-            } else {
-                // If we find equal timestamped entries that are not the
-                // same.. Flag an error. But there is nothing we can do
-                // about it. Note it as if it is the same entry so we
-                // dont try to merge them.
-                if (!(a == b)) {
-                    if (a._gid == b._gid && a._flags == b._flags) {
-                        if ((a._flags & getDeleteFlag()) != 0 &&
-                            (b._flags & getDeleteFlag()) != 0)
-                        {
-                            // Unfortunately this can happen, for instance
-                            // if a remove comes to a bucket out of sync
-                            // and reuses different headers in the two
-                            // versions.
-                            LOG(debug, "Found entries with equal timestamps of "
-                                       "the same gid who both are remove "
-                                       "entries: %s <-> %s.",
-                                a.toString(true).c_str(),
-                                b.toString(true).c_str());
-                        } else {
-                            LOG(error, "Found entries with equal timestamps of "
-                                       "the same gid. This is likely same "
-                                       "document where size of document varies:"
-                                       " %s <-> %s.",
-                                a.toString(true).c_str(),
-                                b.toString(true).c_str());
-                        }
-                        result.push_back(a);
-                        result.back()._hasMask |= b._hasMask;
-                        suspect = true;
-                    } else if ((a._flags & getDeleteFlag())
-                               != (b._flags & getDeleteFlag()))
+/**
+ * Merges list A and list B together and puts the result in result.
+ * Result is swapped in as last step to keep function exception safe. Thus
+ * result can be listA or listB if wanted.
+ *
+ * listA and listB are assumed to be in the order found in the slotfile, or
+ * in the order given by a previous call to this function. (In both cases
+ * this will be sorted by timestamp)
+ *
+ * @return false if any suspect entries was found.
+ */
+bool mergeLists(
+        const std::vector<api::GetBucketDiffCommand::Entry>& listA,
+        const std::vector<api::GetBucketDiffCommand::Entry>& listB,
+        std::vector<api::GetBucketDiffCommand::Entry>& finalResult)
+{
+    bool suspect = false;
+    std::vector<api::GetBucketDiffCommand::Entry> result;
+    uint32_t i = 0, j = 0;
+    while (i < listA.size() && j < listB.size()) {
+        const api::GetBucketDiffCommand::Entry& a(listA[i]);
+        const api::GetBucketDiffCommand::Entry& b(listB[j]);
+        if (a._timestamp < b._timestamp) {
+            result.push_back(a);
+            ++i;
+        } else if (a._timestamp > b._timestamp) {
+            result.push_back(b);
+            ++j;
+        } else {
+            // If we find equal timestamped entries that are not the
+            // same.. Flag an error. But there is nothing we can do
+            // about it. Note it as if it is the same entry so we
+            // dont try to merge them.
+            if (!(a == b)) {
+                if (a._gid == b._gid && a._flags == b._flags) {
+                    if ((a._flags & getDeleteFlag()) != 0 &&
+                        (b._flags & getDeleteFlag()) != 0)
                     {
-                        // If we find one remove and one put entry on the
-                        // same timestamp we are going to keep the remove
-                        // entry to make the copies consistent.
-                        const api::GetBucketDiffCommand::Entry& deletedEntry(
-                                (a._flags & getDeleteFlag()) != 0 ? a : b);
-                        result.push_back(deletedEntry);
-                        LOG(debug,
-                            "Found put and remove on same timestamp. Keeping"
-                            "remove as it is likely caused by remove with "
-                            "copies unavailable at the time: %s, %s.",
-                            a.toString().c_str(), b.toString().c_str());
+                        // Unfortunately this can happen, for instance
+                        // if a remove comes to a bucket out of sync
+                        // and reuses different headers in the two
+                        // versions.
+                        LOG(debug, "Found entries with equal timestamps of "
+                                   "the same gid who both are remove "
+                                   "entries: %s <-> %s.",
+                            a.toString(true).c_str(),
+                            b.toString(true).c_str());
                     } else {
-                        LOG(error, "Found entries with equal timestamps that "
-                                   "weren't the same entry: %s, %s.",
-                            a.toString().c_str(), b.toString().c_str());
-                        result.push_back(a);
-                        result.back()._hasMask |= b._hasMask;
-                        suspect = true;
+                        LOG(error, "Found entries with equal timestamps of "
+                                   "the same gid. This is likely same "
+                                   "document where size of document varies:"
+                                   " %s <-> %s.",
+                            a.toString(true).c_str(),
+                            b.toString(true).c_str());
                     }
-                } else {
                     result.push_back(a);
                     result.back()._hasMask |= b._hasMask;
+                    suspect = true;
+                } else if ((a._flags & getDeleteFlag())
+                           != (b._flags & getDeleteFlag()))
+                {
+                    // If we find one remove and one put entry on the
+                    // same timestamp we are going to keep the remove
+                    // entry to make the copies consistent.
+                    const api::GetBucketDiffCommand::Entry& deletedEntry(
+                            (a._flags & getDeleteFlag()) != 0 ? a : b);
+                    result.push_back(deletedEntry);
+                    LOG(debug,
+                        "Found put and remove on same timestamp. Keeping"
+                        "remove as it is likely caused by remove with "
+                        "copies unavailable at the time: %s, %s.",
+                        a.toString().c_str(), b.toString().c_str());
+                } else {
+                    LOG(error, "Found entries with equal timestamps that "
+                               "weren't the same entry: %s, %s.",
+                        a.toString().c_str(), b.toString().c_str());
+                    result.push_back(a);
+                    result.back()._hasMask |= b._hasMask;
+                    suspect = true;
                 }
-                ++i;
-                ++j;
+            } else {
+                result.push_back(a);
+                result.back()._hasMask |= b._hasMask;
             }
+            ++i;
+            ++j;
         }
-        if (i < listA.size()) {
-            assert(j >= listB.size());
-            for (uint32_t n = listA.size(); i<n; ++i) {
-                result.push_back(listA[i]);
-            }
-        } else if (j < listB.size()) {
-            assert(i >= listA.size());
-            for (uint32_t n = listB.size(); j<n; ++j) {
-                result.push_back(listB[j]);
-            }
-        }
-        result.swap(finalResult);
-        return !suspect;
     }
+    if (i < listA.size()) {
+        assert(j >= listB.size());
+        for (uint32_t n = listA.size(); i<n; ++i) {
+            result.push_back(listA[i]);
+        }
+    } else if (j < listB.size()) {
+        assert(i >= listA.size());
+        for (uint32_t n = listB.size(); j<n; ++j) {
+            result.push_back(listB[j]);
+        }
+    }
+    result.swap(finalResult);
+    return !suspect;
+}
 
 }
 
 MessageTracker::UP
-MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker) const
-{
+MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker) const {
     tracker->setMetric(_env._metrics.getBucketDiff);
     spi::Bucket bucket(cmd.getBucket());
     LOG(debug, "GetBucketDiff(%s)", bucket.toString().c_str());
-    checkResult(_spi.createBucket(bucket, tracker->context()), bucket, "create bucket");
+    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<spi::NoopOperationComplete>());
+    return handleGetBucketDiffStage2(cmd, std::move(tracker));
+}
 
+MessageTracker::UP
+MergeHandler::handleGetBucketDiffStage2(api::GetBucketDiffCommand& cmd, MessageTracker::UP tracker) const
+{
+    spi::Bucket bucket(cmd.getBucket());
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
         tracker->fail(api::ReturnCode::BUSY, "A merge is already running on this bucket.");
         return tracker;
@@ -1171,7 +1173,8 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply, MessageSe
                               reply.getDiff().begin(),
                               reply.getDiff().end());
 
-                replyToSend = processBucketMerge(bucket, *s, sender, s->context);
+                std::shared_ptr<ApplyBucketDiffState> async_results;
+                replyToSend = processBucketMerge(bucket, *s, sender, s->context, async_results);
 
                 if (!replyToSend.get()) {
                     // We have sent something on, and shouldn't reply now.
@@ -1211,7 +1214,7 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     tracker->setMetric(_env._metrics.applyBucketDiff);
 
     spi::Bucket bucket(cmd.getBucket());
-    auto async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket);
+    std::shared_ptr<ApplyBucketDiffState> async_results;
     LOG(debug, "%s", cmd.toString().c_str());
 
     if (_env._fileStorHandler.isMerging(bucket.getBucket())) {
@@ -1233,10 +1236,13 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     }
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
        framework::MilliSecTimer startTime(_clock);
+       async_results = ApplyBucketDiffState::create(*this, bucket, RetainGuard(*_monitored_ref_count));
        applyDiffLocally(bucket, cmd.getDiff(), index, tracker->context(), async_results);
+       if (!_async_apply_bucket_diff.load(std::memory_order_relaxed)) {
+            check_apply_diff_sync(std::move(async_results));
+        }
         _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
                 startTime.getElapsedTimeAsDouble());
-        check_apply_diff_sync(std::move(async_results));
     } else {
         LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u).",
             bucket.toString().c_str(), _env._nodeIndex, index);
@@ -1260,10 +1266,14 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
             }
         }
 
-        tracker->setReply(std::make_shared<api::ApplyBucketDiffReply>(cmd));
+        auto reply = std::make_shared<api::ApplyBucketDiffReply>(cmd);
+        tracker->setReply(reply);
         static_cast<api::ApplyBucketDiffReply&>(tracker->getReply()).getDiff().swap(cmd.getDiff());
         LOG(spam, "Replying to ApplyBucketDiff for %s to node %d.",
             bucket.toString().c_str(), cmd.getNodes()[index - 1].index);
+        if (async_results) {
+            async_results->set_delayed_reply(std::move(tracker), std::move(reply));
+        }
     } else {
         // When not the last node in merge chain, we must save reply, and
         // send command on.
@@ -1280,6 +1290,10 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
         cmd2->setPriority(cmd.getPriority());
         cmd2->setTimeout(cmd.getTimeout());
         s->pendingId = cmd2->getMsgId();
+        if (async_results) {
+            // Reply handler should check for delayed error.
+            s->set_delayed_error(async_results->get_future());
+        }
         _env._fileStorHandler.sendCommand(cmd2);
         // Everything went fine. Don't delete state but wait for reply
         stateGuard.deactivate();
@@ -1290,12 +1304,11 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
 }
 
 void
-MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,MessageSender& sender, MessageTracker::UP tracker) const
+MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, MessageSender& sender, MessageTracker::UP tracker) const
 {
-    (void) tracker;
     _env._metrics.applyBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket());
-    auto async_results = std::make_shared<ApplyBucketDiffState>(*this, bucket);
+    std::shared_ptr<ApplyBucketDiffState> async_results;
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());
 
@@ -1316,6 +1329,8 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
     api::StorageReply::SP replyToSend;
     // Process apply bucket diff locally
     api::ReturnCode returnCode = reply.getResult();
+    // Check for delayed error from handleApplyBucketDiff
+    s->check_delayed_error(returnCode);
     try {
         if (reply.getResult().failed()) {
             LOG(debug, "Got failed apply bucket diff reply %s", reply.toString().c_str());
@@ -1329,9 +1344,12 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
             }
             if (applyDiffHasLocallyNeededData(diff, index)) {
                 framework::MilliSecTimer startTime(_clock);
+                async_results = ApplyBucketDiffState::create(*this, bucket, RetainGuard(*_monitored_ref_count));
                 applyDiffLocally(bucket, diff, index, s->context, async_results);
+                if (!_async_apply_bucket_diff.load(std::memory_order_relaxed)) {
+                    check_apply_diff_sync(std::move(async_results));
+                }
                 _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(startTime.getElapsedTimeAsDouble());
-                check_apply_diff_sync(std::move(async_results));
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
                     bucket.toString().c_str(),
@@ -1370,7 +1388,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
                 // Should reply now, since we failed.
                 replyToSend = s->reply;
             } else {
-                replyToSend = processBucketMerge(bucket, *s, sender, s->context);
+                replyToSend = processBucketMerge(bucket, *s, sender, s->context, async_results);
 
                 if (!replyToSend.get()) {
                     // We have sent something on and shouldn't reply now.
@@ -1392,6 +1410,10 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
         throw;
     }
 
+    if (async_results && replyToSend) {
+        replyToSend->setResult(returnCode);
+        async_results->set_delayed_reply(std::move(tracker), sender, std::move(replyToSend));
+    }
     if (clearState) {
         _env._fileStorHandler.clearMergeStatus(bucket.getBucket());
     }
@@ -1400,6 +1422,28 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,Messag
         replyToSend->setResult(returnCode);
         sender.sendReply(replyToSend);
     }
+}
+
+void
+MergeHandler::drain_async_writes()
+{
+    if (_monitored_ref_count) {
+        // Wait for related ApplyBucketDiffState objects to be destroyed
+        _monitored_ref_count->waitForZeroRefCount();
+    }
+}
+
+void
+MergeHandler::configure(bool async_apply_bucket_diff) noexcept
+{
+    _async_apply_bucket_diff.store(async_apply_bucket_diff, std::memory_order_release);
+}
+
+void
+MergeHandler::schedule_delayed_delete(std::unique_ptr<ApplyBucketDiffState> state) const
+{
+    auto bucket_id = state->get_bucket().getBucketId();
+    _executor.execute(bucket_id.getId(), [state = std::move(state)]() { });
 }
 
 } // storage

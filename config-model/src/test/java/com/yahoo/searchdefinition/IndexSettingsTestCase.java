@@ -21,7 +21,7 @@ public class IndexSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testStemmingSettings() throws IOException, ParseException {
-        Schema schema = SearchBuilder.buildFromFile("src/test/examples/indexsettings.sd");
+        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/indexsettings.sd");
 
         SDField usingDefault=(SDField) schema.getDocument().getField("usingdefault");
         assertEquals(Stemming.SHORTEST,usingDefault.getStemming(schema));
@@ -38,7 +38,7 @@ public class IndexSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void requireThatInterlavedFeaturesAreSetOnExtraField() throws ParseException {
-        SearchBuilder builder = SearchBuilder.createFromString(joinLines(
+        SchemaBuilder builder = SchemaBuilder.createFromString(joinLines(
                 "search test {",
                 "  document test {",
                 "    field content type string {",
@@ -52,7 +52,7 @@ public class IndexSettingsTestCase extends AbstractSchemaTestCase {
                 "  }",
                 "}"
         ));
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
         Index contentIndex = schema.getIndex("content");
         assertTrue(contentIndex.useInterleavedFeatures());
         Index extraIndex = schema.getIndex("extra");

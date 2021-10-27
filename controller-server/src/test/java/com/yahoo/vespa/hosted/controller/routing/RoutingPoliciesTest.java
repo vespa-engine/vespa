@@ -364,11 +364,11 @@ public class RoutingPoliciesTest {
                              Map.of(zone1, 1L, zone2, 1L), true);
         assertEquals("Registers expected DNS names",
                      Set.of("app1.tenant1.aws-eu-west-1-w.public.vespa.oath.cloud",
-                            "app1.tenant1.aws-eu-west-1.r.vespa-app.cloud",
+                            "app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
                             "app1.tenant1.aws-eu-west-1a.public.vespa.oath.cloud",
                             "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
                             "app1.tenant1.aws-us-east-1-w.public.vespa.oath.cloud",
-                            "app1.tenant1.aws-us-east-1.r.vespa-app.cloud",
+                            "app1.tenant1.aws-us-east-1.w.vespa-app.cloud",
                             "app1.tenant1.aws-us-east-1c.public.vespa.oath.cloud",
                             "app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
                             "app1.tenant1.g.vespa-app.cloud",
@@ -837,7 +837,7 @@ public class RoutingPoliciesTest {
                 DeploymentId deployment = new DeploymentId(application, zone);
                 EndpointList regionEndpoints = tester.controller().routing().endpointsOf(deployment)
                                                     .cluster(cluster)
-                                                    .scope(Endpoint.Scope.region);
+                                                    .scope(Endpoint.Scope.regionSplit);
                 if (!legacy) {
                     regionEndpoints = regionEndpoints.not().legacy();
                 }

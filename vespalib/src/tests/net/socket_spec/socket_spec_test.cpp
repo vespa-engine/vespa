@@ -6,33 +6,35 @@ using namespace vespalib;
 
 void verify(const SocketSpec &spec, bool valid,
             const vespalib::string &path, const vespalib::string &name,
-            const vespalib::string &host, int port)
+            const vespalib::string &host, const vespalib::string &host_with_fallback,
+            int port)
 {
     EXPECT_EQUAL(spec.valid(), valid);
     EXPECT_EQUAL(spec.path(), path);
     EXPECT_EQUAL(spec.name(), name);
     EXPECT_EQUAL(spec.host(), host);
+    EXPECT_EQUAL(spec.host_with_fallback(), host_with_fallback);
     EXPECT_EQUAL(spec.port(), port);
 }
 
 void verify_path(const SocketSpec &spec, const vespalib::string &path) {
-    TEST_DO(verify(spec, true, path, "", "", -1));
+    TEST_DO(verify(spec, true, path, "", "", "", -1));
 }
 
 void verify_name(const SocketSpec &spec, const vespalib::string &name) {
-    TEST_DO(verify(spec, true, "", name, "", -1));
+    TEST_DO(verify(spec, true, "", name, "", "", -1));
 }
 
 void verify_host_port(const SocketSpec &spec, const vespalib::string &host, int port) {
-    TEST_DO(verify(spec, true, "", "", host, port));
+    TEST_DO(verify(spec, true, "", "", host, host, port));
 }
 
 void verify_port(const SocketSpec &spec, int port) {
-    TEST_DO(verify(spec, true, "", "", "", port));
+    TEST_DO(verify(spec, true, "", "", "", "localhost", port));
 }
 
 void verify_invalid(const SocketSpec &spec) {
-    TEST_DO(verify(spec, false, "", "", "", -1));
+    TEST_DO(verify(spec, false, "", "", "", "", -1));
 }
 
 void verify_spec(const vespalib::string &str, const vespalib::string &expect) {

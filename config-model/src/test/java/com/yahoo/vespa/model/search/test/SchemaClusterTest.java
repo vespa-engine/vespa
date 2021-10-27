@@ -6,7 +6,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.document.DataType;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -56,9 +56,9 @@ public class SchemaClusterTest {
         sdt2.addField(f2);
         schema2.addDocument(sdt2);
 
-        SearchBuilder builder = new SearchBuilder();
-        builder.importRawSearch(schema1);
-        builder.importRawSearch(schema2);
+        SchemaBuilder builder = new SchemaBuilder();
+        builder.importRawSchema(schema1);
+        builder.importRawSchema(schema2);
         builder.build();
     }
 

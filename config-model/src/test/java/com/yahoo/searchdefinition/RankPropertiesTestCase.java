@@ -23,7 +23,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testRankPropertyInheritance() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(joinLines(
                 "search test {",
                 "    document test {",
@@ -49,7 +49,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
                 "    }",
                 "}"));
         builder.build();
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
         AttributeFields attributeFields = new AttributeFields(schema);
 
         {
@@ -78,9 +78,9 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
         }
     }
     @Test
-    public void testRankProfileExecute() throws ParseException {
+    public void testRankProfileMutate() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
         builder.importString(joinLines(
                 "search test {",
                 "    document test {",
@@ -101,15 +101,18 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
                 "        attribute: mutable",
                 "    }",
                 "    rank-profile a {",
-                "        execute {",
+                "        mutate {",
                 "          on-match {",
-                "            synthetic_attribute_a ++",
+                "            synthetic_attribute_a += 7",
                 "          }",
-                "          on-rerank {",
+                "          on-first-phase {",
+                "            synthetic_attribute_b +=1",
+                "          }",
+                "          on-second-phase {",
                 "            synthetic_attribute_b = 1.01",
                 "          }",
                 "          on-summary {",
-                "            synthetic_attribute_c --",
+                "            synthetic_attribute_c -= 1",
                 "          }",
                 "        }",
                 "        first-phase {",
@@ -126,30 +129,35 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
                 "    }",
                 "}"));
         builder.build();
-        Schema schema = builder.getSearch();
+        Schema schema = builder.getSchema();
         RankProfile a = rankProfileRegistry.get(schema, "a");
-        List<RankProfile.ExecuteOperation> operations = a.getExecuteOperations();
-        assertEquals(3, operations.size());
-        assertEquals(RankProfile.ExecuteOperation.Phase.onmatch, operations.get(0).phase);
+        List<RankProfile.MutateOperation> operations = a.getMutateOperations();
+        assertEquals(4, operations.size());
+        assertEquals(RankProfile.MutateOperation.Phase.on_match, operations.get(0).phase);
         assertEquals("synthetic_attribute_a", operations.get(0).attribute);
-        assertEquals("++", operations.get(0).operation);
-        assertEquals(RankProfile.ExecuteOperation.Phase.onrerank, operations.get(1).phase);
+        assertEquals("+=7", operations.get(0).operation);
+        assertEquals(RankProfile.MutateOperation.Phase.on_first_phase, operations.get(1).phase);
         assertEquals("synthetic_attribute_b", operations.get(1).attribute);
-        assertEquals("=1.01", operations.get(1).operation);
-        assertEquals(RankProfile.ExecuteOperation.Phase.onsummary, operations.get(2).phase);
-        assertEquals("synthetic_attribute_c", operations.get(2).attribute);
-        assertEquals("--", operations.get(2).operation);
+        assertEquals("+=1", operations.get(1).operation);
+        assertEquals(RankProfile.MutateOperation.Phase.on_second_phase, operations.get(2).phase);
+        assertEquals("synthetic_attribute_b", operations.get(2).attribute);
+        assertEquals("=1.01", operations.get(2).operation);
+        assertEquals(RankProfile.MutateOperation.Phase.on_summary, operations.get(3).phase);
+        assertEquals("synthetic_attribute_c", operations.get(3).attribute);
+        assertEquals("-=1", operations.get(3).operation);
 
         AttributeFields attributeFields = new AttributeFields(schema);
         RawRankProfile raw = new RawRankProfile(a, new LargeRankExpressions(new MockFileRegistry()), new QueryProfileRegistry(), new ImportedMlModels(), attributeFields, new TestProperties());
-        assertEquals(7, raw.configProperties().size());
-        assertEquals("(vespa.execute.onmatch.attribute, synthetic_attribute_a)", raw.configProperties().get(0).toString());
-        assertEquals("(vespa.execute.onmatch.operation, ++)", raw.configProperties().get(1).toString());
-        assertEquals("(vespa.execute.onrerank.attribute, synthetic_attribute_b)", raw.configProperties().get(2).toString());
-        assertEquals("(vespa.execute.onrerank.operation, =1.01)", raw.configProperties().get(3).toString());
-        assertEquals("(vespa.execute.onsummary.attribute, synthetic_attribute_c)", raw.configProperties().get(4).toString());
-        assertEquals("(vespa.execute.onsummary.operation, --)", raw.configProperties().get(5).toString());
-        assertEquals("(vespa.rank.firstphase, a)", raw.configProperties().get(6).toString());
+        assertEquals(9, raw.configProperties().size());
+        assertEquals("(vespa.mutate.on_match.attribute, synthetic_attribute_a)", raw.configProperties().get(0).toString());
+        assertEquals("(vespa.mutate.on_match.operation, +=7)", raw.configProperties().get(1).toString());
+        assertEquals("(vespa.mutate.on_first_phase.attribute, synthetic_attribute_b)", raw.configProperties().get(2).toString());
+        assertEquals("(vespa.mutate.on_first_phase.operation, +=1)", raw.configProperties().get(3).toString());
+        assertEquals("(vespa.mutate.on_second_phase.attribute, synthetic_attribute_b)", raw.configProperties().get(4).toString());
+        assertEquals("(vespa.mutate.on_second_phase.operation, =1.01)", raw.configProperties().get(5).toString());
+        assertEquals("(vespa.mutate.on_summary.attribute, synthetic_attribute_c)", raw.configProperties().get(6).toString());
+        assertEquals("(vespa.mutate.on_summary.operation, -=1)", raw.configProperties().get(7).toString());
+        assertEquals("(vespa.rank.firstphase, a)", raw.configProperties().get(8).toString());
     }
 
 }

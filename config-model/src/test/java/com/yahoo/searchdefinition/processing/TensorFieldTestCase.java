@@ -1,13 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
-import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
 
-import static com.yahoo.searchdefinition.SearchBuilder.createFromString;
+import static com.yahoo.searchdefinition.SchemaBuilder.createFromString;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -138,12 +137,12 @@ public class TensorFieldTestCase {
     }
 
     private Attribute getAttributeFromSd(String fieldSpec, String attrName) throws ParseException {
-        return createFromString(getSd(fieldSpec)).getSearch().getAttribute(attrName);
+        return createFromString(getSd(fieldSpec)).getSchema().getAttribute(attrName);
     }
 
     private void assertHnswIndexParams(String indexSpec, int maxLinksPerNode, int neighborsToExploreAtInsert) throws ParseException {
         var sd = getSdWithIndexSpec(indexSpec);
-        var search = createFromString(sd).getSearch();
+        var search = createFromString(sd).getSchema();
         var attr = search.getAttribute("t1");
         var params = attr.hnswIndexParams();
         assertTrue(params.isPresent());

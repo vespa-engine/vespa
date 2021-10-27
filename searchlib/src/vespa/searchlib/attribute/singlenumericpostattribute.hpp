@@ -102,7 +102,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
             if (oldIdx.valid()) {
                 T oldValue = enumStore.get_value(oldIdx);
-                T newValue = this->applyArithmetic(oldValue, change);
+                T newValue = this->template applyArithmetic<T, typename Change::DataType>(oldValue, change._data.getArithOperand(), change._type);
                 EnumIndex newIdx;
                 (void) dictionary.find_index(enumStore.make_comparator(newValue), newIdx);
                 currEnumIndices[change._doc] = newIdx;
