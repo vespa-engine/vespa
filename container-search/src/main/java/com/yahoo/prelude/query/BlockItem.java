@@ -9,10 +9,7 @@ package com.yahoo.prelude.query;
  */
 public interface BlockItem extends HasIndexItem {
 
-    /**
-     * The untransformed raw text from the user serving as base for
-     * this item.
-     */
+    /** The untransformed raw text from the user serving as base for this item. */
     String getRawWord();
 
     /** Returns the substring which is the origin of this item, or null if none */

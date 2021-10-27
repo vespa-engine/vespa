@@ -141,6 +141,13 @@ public class WordAlternativesItem extends TermItem {
     }
 
     @Override
+    public WordAlternativesItem clone() {
+        var clone = (WordAlternativesItem)super.clone();
+        clone.alternatives = new ArrayList(this.alternatives);
+        return clone;
+    }
+
+    @Override
     public boolean equals(Object other) {
         if ( ! super.equals(other)) return false;
         return this.alternatives.equals(((WordAlternativesItem)other).alternatives);

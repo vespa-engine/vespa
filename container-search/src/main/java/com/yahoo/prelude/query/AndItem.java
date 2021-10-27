@@ -9,16 +9,14 @@ package com.yahoo.prelude.query;
  */
 public class AndItem extends CompositeItem {
 
+    @Override
     public ItemType getItemType() {
         return ItemType.AND;
     }
 
+    @Override
     public String getName() {
         return "AND";
-    }
-
-    public boolean equals(Object p) {
-        return super.equals(p);
     }
 
 }

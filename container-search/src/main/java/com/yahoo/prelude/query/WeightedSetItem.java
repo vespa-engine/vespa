@@ -38,6 +38,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
         }
         set = new CopyOnWriteHashMap<>(1000);
     }
+
     public WeightedSetItem(String indexName, Map<Object, Integer> map) {
         if (indexName == null) {
             this.indexName = "";

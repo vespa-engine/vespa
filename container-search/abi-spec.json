@@ -320,8 +320,7 @@
     "methods": [
       "public void <init>()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
-      "public java.lang.String getName()",
-      "public boolean equals(java.lang.Object)"
+      "public java.lang.String getName()"
     ],
     "fields": []
   },
@@ -558,11 +557,14 @@
       "public void setValue(java.lang.String)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
+      "public com.yahoo.prelude.query.GeoLocationItem clone()",
       "public java.lang.String getIndexedString()",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public int getNumWords()",
       "public boolean isStemmed()",
-      "public boolean isWords()"
+      "public boolean isWords()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
   },
@@ -1093,7 +1095,6 @@
       "public void <init>(java.lang.String, long)",
       "public java.lang.String getKey()",
       "public long getSubQueryBitmap()",
-      "public void setSubQueryBitmap(long)",
       "public abstract void encode(java.nio.ByteBuffer)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
@@ -1792,8 +1793,11 @@
       "public java.util.List getAlternatives()",
       "public void encodeThis(java.nio.ByteBuffer)",
       "public void addTerm(java.lang.String, double)",
+      "public com.yahoo.prelude.query.WordAlternativesItem clone()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
   },

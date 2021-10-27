@@ -17,7 +17,9 @@ import java.util.Optional;
 /**
  * An item in the tree which defines which documents will match a query.
  * Item subclasses can be composed freely to create arbitrary complex matching trees.
- * Items are in general mutable and not thread safe. Their identity is defined by their content
+ * Items are in general mutable and not thread safe.
+ * They can be deeply cloned by calling clone().
+ * Their identity is defined by their content
  * (i.e the field value of two items decide if they are equal).
  *
  * @author bratseth

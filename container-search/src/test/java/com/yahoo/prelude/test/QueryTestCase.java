@@ -8,6 +8,7 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Sorting;
@@ -30,6 +31,14 @@ import static org.junit.Assert.*;
  * @author Bjorn Borud
  */
 public class QueryTestCase {
+
+    @Test
+    public void testBoolItem() {
+        var original = new BoolItem(false);
+        var cloned = original.clone();
+        assertNotSame(original, cloned);
+        assertEquals(original, cloned);
+    }
 
     @Test
     public void testSimpleQueryParsing () {

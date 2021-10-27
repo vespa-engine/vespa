@@ -8,11 +8,12 @@ import java.util.StringTokenizer;
 
 /**
  * Location data for a geographical query.
+ * This is mutable and clonable. It's identifty is decided by its content.
  *
  * @author Steinar Knutsen
  * @author arnej27959
  */
-public class Location {
+public class Location implements Cloneable {
 
     // 1 or 2
     private int dimensions = 0;
@@ -34,67 +35,46 @@ public class Location {
 
     private String attribute;
 
-    public boolean equals(Object other) {
-        if (! (other instanceof Location)) return false;
-        Location l = (Location)other;
-        return dimensions == l.dimensions
-            && renderCircle == l.renderCircle
-            && renderRectangle == l.renderRectangle
-            && this.aspect == l.aspect
-            && this.x1 == l.x1
-            && this.x2 == l.x2
-            && this.y1 == l.y1
-            && this.y2 == l.y2
-            && this.x == l.x
-            && this.y == l.y
-            && this.r == l.r;
-    }
-
     public boolean hasDimensions() {
         return dimensions != 0;
     }
+
     public void setDimensions(int d) {
-        if (hasDimensions() && dimensions != d) {
-            throw new IllegalArgumentException("already has dimensions="+dimensions+", cannot change it to "+d);
-        }
-        if (d == 2) {
+        if (hasDimensions() && dimensions != d)
+            throw new IllegalStateException("already has dimensions " + dimensions + ", cannot change to " + d);
+        if (d == 2)
             dimensions = d;
-        } else {
-            throw new IllegalArgumentException("Illegal location, dimensions must be 2, but was: "+d);
-        }
+        else
+            throw new IllegalArgumentException("Illegal location, dimensions must be 2, but was: " + d);
     }
+
     public int getDimensions() {
         return dimensions;
     }
 
     // input data are degrees n/e (if positive) or s/w (if negative)
-    public void setBoundingBox(double n, double s,
-                               double e, double w)
-    {
+    public void setBoundingBox(double n, double s, double e, double w) {
         setDimensions(2);
-        if (hasBoundingBox()) {
-            throw new IllegalArgumentException("can only set bounding box once");
-        }
+        if (hasBoundingBox())
+            throw new IllegalStateException("Can only set bounding box once");
         int px1 = (int) (Math.round(w * 1000000));
         int px2 = (int) (Math.round(e * 1000000));
         int py1 = (int) (Math.round(s * 1000000));
         int py2 = (int) (Math.round(n * 1000000));
-        if (px1 > px2) {
-            throw new IllegalArgumentException("cannot have w > e");
-        }
+        if (px1 > px2)
+            throw new IllegalArgumentException("Cannot have w > e");
         this.x1 = px1;
         this.x2 = px2;
-        if (py1 > py2) {
-            throw new IllegalArgumentException("cannot have s > n");
-        }
+        if (py1 > py2)
+            throw new IllegalArgumentException("Cannot have s > n");
         this.y1 = py1;
         this.y2 = py2;
         renderRectangle = true;
     }
 
     private void adjustAspect() {
-        //calculate aspect based on latitude (elevation angle)
-        //no need to "optimize" for special cases, exactly 0, 30, 45, 60, or 90 degrees won't be input anyway
+        // calculate aspect based on latitude (elevation angle)
+        // no need to "optimize" for special cases, exactly 0, 30, 45, 60, or 90 degrees won't be input anyway
         double degrees = (double) y / 1000000d;
         if (degrees <= -90.0 || degrees >= +90.0) {
             this.aspect = 0;
@@ -107,21 +87,17 @@ public class Location {
 
     public void setGeoCircle(double ns, double ew, double radius_in_degrees) {
         setDimensions(2);
-        if (isGeoCircle()) {
-            throw new IllegalArgumentException("can only set geo circle once");
-        }
+        if (isGeoCircle())
+            throw new IllegalStateException("Can only set geo circle once");
         int px = (int) (ew * 1000000);
         int py = (int) (ns * 1000000);
         int pr = (int) (radius_in_degrees * 1000000);
-        if (ew < -180.1 || ew > +180.1) {
+        if (ew < -180.1 || ew > +180.1)
             throw new IllegalArgumentException("e/w location must be in range [-180,+180]");
-        }
-        if (ns < -90.1 || ns > +90.1) {
+        if (ns < -90.1 || ns > +90.1)
             throw new IllegalArgumentException("n/s location must be in range [-90,+90]");
-        }
-        if (radius_in_degrees < 0) {
+        if (radius_in_degrees < 0)
             pr = -1;
-        }
         this.x = px;
         this.y = py;
         this.r = pr;
@@ -131,12 +107,10 @@ public class Location {
 
     public void setXyCircle(int px, int py, int radius_in_units) {
         setDimensions(2);
-        if (isGeoCircle()) {
-            throw new IllegalArgumentException("can only set geo circle once");
-        }
-        if (radius_in_units < 0) {
+        if (isGeoCircle())
+            throw new IllegalStateException("can only set geo circle once");
+        if (radius_in_units < 0)
             radius_in_units = -1;
-        }
         this.x = px;
         this.y = py;
         this.r = radius_in_units;
@@ -145,9 +119,8 @@ public class Location {
 
     private void parseRectangle(String rectangle) {
         int endof = rectangle.indexOf(']');
-        if (endof == -1) {
-            throw new IllegalArgumentException("Illegal location syntax: "+rectangle);
-        }
+        if (endof == -1)
+            throw new IllegalArgumentException("Illegal location syntax: " + rectangle);
         String rectPart = rectangle.substring(1,endof);
         StringTokenizer tokens = new StringTokenizer(rectPart, ",");
         setDimensions(Integer.parseInt(tokens.nextToken()));
@@ -155,21 +128,18 @@ public class Location {
         this.y1 = Integer.parseInt(tokens.nextToken());
         this.x2 = Integer.parseInt(tokens.nextToken());
         this.y2 = Integer.parseInt(tokens.nextToken());
-        if (tokens.hasMoreTokens()) {
-            throw new IllegalArgumentException("Illegal location syntax: "+rectangle);
-        }
+        if (tokens.hasMoreTokens())
+            throw new IllegalArgumentException("Illegal location syntax: " + rectangle);
         renderRectangle = true;
         String theRest = rectangle.substring(endof+1).trim();
-        if (theRest.length() >= 15 && theRest.charAt(0) == '(') {
+        if (theRest.length() >= 15 && theRest.charAt(0) == '(')
             parseCircle(theRest);
-        }
     }
 
     private void parseCircle(String circle) {
         int endof = circle.indexOf(')');
-        if (endof == -1) {
-            throw new IllegalArgumentException("Illegal location syntax: "+circle);
-        }
+        if (endof == -1)
+            throw new IllegalArgumentException("Illegal location syntax: " + circle);
         String circlePart = circle.substring(1,endof);
         StringTokenizer tokens = new StringTokenizer(circlePart, ",");
         setDimensions(Integer.parseInt(tokens.nextToken()));
@@ -187,18 +157,18 @@ public class Location {
                 try {
                     aspect = Long.parseLong(aspectToken);
                 } catch (NumberFormatException nfe) {
-                    throw new IllegalArgumentException("Aspect "+aspectToken+" for location must be an integer or 'CalcLatLon' for automatic aspect calculation.", nfe);
+                    throw new IllegalArgumentException("Aspect "+aspectToken+" for location must be an integer or " +
+                                                       "'CalcLatLon' for automatic aspect calculation.", nfe);
                 }
-                if (aspect > 4294967295L || aspect < 0) {
-                    throw new IllegalArgumentException("Aspect "+aspect+" for location parameter must be less than 4294967296 (2^32)");
-                }
+                if (aspect > 4294967295L || aspect < 0)
+                    throw new IllegalArgumentException("Aspect " + aspect + " for location parameter must be " +
+                                                       "less than 4294967296 (2^32)");
             }
         }
         renderCircle = true;
         String theRest = circle.substring(endof+1).trim();
-        if (theRest.length() > 5 && theRest.charAt(0) == '[') {
+        if (theRest.length() > 5 && theRest.charAt(0) == '[')
             parseRectangle(theRest);
-        }
     }
 
     public Location() {}
@@ -225,9 +195,11 @@ public class Location {
         }
     }
 
+    @Override
     public String toString() {
         return render(false);
     }
+
     public String backendString() {
         return render(true);
     }
@@ -284,6 +256,35 @@ public class Location {
         }
     }
 
+    @Override
+    public Location clone() {
+        try {
+            return (Location) super.clone();
+        }
+        catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (! (other instanceof Location)) return false;
+        Location l = (Location)other;
+        return dimensions == l.dimensions
+               && renderCircle == l.renderCircle
+               && renderRectangle == l.renderRectangle
+               && this.aspect == l.aspect
+               && this.x1 == l.x1
+               && this.x2 == l.x2
+               && this.y1 == l.y1
+               && this.y2 == l.y2
+               && this.x == l.x
+               && this.y == l.y
+               && this.r == l.r;
+    }
+
+    @Override
     public int hashCode() {
         return toString().hashCode();
     }

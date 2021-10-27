@@ -187,6 +187,7 @@ public class PredicateQueryItem extends SimpleTaggableItem {
         return Objects.hash(super.hashCode(), fieldName, features, rangeFeatures);
     }
 
+    /** An entry in a predicate item. This is immutable. */
     public abstract static class EntryBase {
 
         private final String key;
@@ -203,10 +204,6 @@ public class PredicateQueryItem extends SimpleTaggableItem {
 
         public long getSubQueryBitmap() {
             return subQueryBitmap;
-        }
-
-        public void setSubQueryBitmap(long subQueryBitmap) {
-            this.subQueryBitmap = subQueryBitmap;
         }
 
         public abstract void encode(ByteBuffer buffer);
@@ -228,6 +225,7 @@ public class PredicateQueryItem extends SimpleTaggableItem {
 
     }
 
+    /** A unique entry in a predicate item. This is immutable. */
     public static class Entry extends EntryBase {
 
         private final String value;
@@ -265,6 +263,7 @@ public class PredicateQueryItem extends SimpleTaggableItem {
 
     }
 
+    /** A range entry in a predicate item. This is immutable. */
     public static class RangeEntry extends EntryBase {
 
         private final long value;

@@ -8,11 +8,12 @@ import java.nio.ByteBuffer;
 /**
  * This represents a geo-location in the query tree.
  * Used for closeness(fieldname) and distance(fieldname) rank features.
+ *
  * @author arnej
  */
 public class GeoLocationItem extends TermItem {
 
-    private final Location location;
+    private Location location;
 
     /**
      * Construct from a Location, which must be geo circle with an attribute set.
@@ -86,6 +87,13 @@ public class GeoLocationItem extends TermItem {
         GeoLocationItem other = (GeoLocationItem) object; // Ensured by superclass
         if ( ! location.equals(other.location)) return false;
         return true;
+    }
+
+    @Override
+    public GeoLocationItem clone() {
+        var clone = (GeoLocationItem)super.clone();
+        clone.location = this.location.clone();
+        return clone;
     }
 
     @Override
