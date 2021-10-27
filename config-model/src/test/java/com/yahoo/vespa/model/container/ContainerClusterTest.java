@@ -136,7 +136,7 @@ public class ContainerClusterTest {
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocproc, String expectedArgs, String jvmArgs) {
         if (isHosted && hasDocproc) {
-            String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
+            String defaultHostedJVMArgs = "-XX:+SuppressFatalErrorMessage";
             if ( ! "".equals(expectedArgs)) {
                 defaultHostedJVMArgs = defaultHostedJVMArgs + " ";
             }
