@@ -12,7 +12,6 @@ using namespace proton::move::test;
 using document::BucketId;
 
 using ScanItr = bucketdb::ScanIterator;
-using ScanPass = ScanItr::Pass;
 
 struct ScanTestBase : public ::testing::Test
 {
@@ -24,11 +23,11 @@ struct ScanTestBase : public ::testing::Test
     ~ScanTestBase();
 
     ScanItr getItr() {
-        return ScanItr(_bucketDB->takeGuard(), BucketId());
+        return getItr(BucketId());
     }
 
-    ScanItr getItr(BucketId bucket, BucketId endBucket = BucketId(), ScanPass pass = ScanPass::FIRST) {
-        return ScanItr(_bucketDB->takeGuard(), pass, bucket, endBucket);
+    ScanItr getItr(BucketId bucket) {
+        return ScanItr(_bucketDB->takeGuard(), bucket);
     }
 };
 
@@ -99,7 +98,8 @@ advanceToFirstBucketWithDocs(ScanItr &itr, SubDbType subDbType)
     }
 }
 
-void assertEquals(const BucketVector &exp, ScanItr &itr, SubDbType subDbType)
+void
+assertEquals(const BucketVector &exp, ScanItr &itr, SubDbType subDbType)
 {
     for (size_t i = 0; i < exp.size(); ++i) {
         advanceToFirstBucketWithDocs(itr, subDbType);
@@ -129,16 +129,11 @@ TEST_F(ScanTest, require_that_we_can_iterate_all_buckets_from_start_to_end)
 
 TEST_F(ScanTest, require_that_we_can_iterate_from_the_middle_of_not_ready_buckets)
 {
-    BucketId bucket = _notReady.bucket(2);
+    BucketId bucket = _notReady.bucket(4);
     {
-        ScanItr itr = getItr(bucket, bucket, ScanPass::FIRST);
+        ScanItr itr = getItr(bucket);
         assertEquals(BucketVector().
                      add(_notReady.bucket(4)), itr, SubDbType::NOTREADY);
-    }
-    {
-        ScanItr itr = getItr(BucketId(), bucket, ScanPass::SECOND);
-        assertEquals(BucketVector().
-                     add(_notReady.bucket(2)), itr, SubDbType::NOTREADY);
     }
     {
         ScanItr itr = getItr();
@@ -150,7 +145,6 @@ TEST_F(ScanTest, require_that_we_can_iterate_from_the_middle_of_not_ready_bucket
 
 TEST_F(ScanTest, require_that_we_can_iterate_from_the_middle_of_ready_buckets)
 {
-    BucketId bucket = _ready.bucket(6);
     {
         ScanItr itr = getItr();
         assertEquals(BucketVector().
@@ -158,14 +152,11 @@ TEST_F(ScanTest, require_that_we_can_iterate_from_the_middle_of_ready_buckets)
                      add(_notReady.bucket(4)), itr, SubDbType::NOTREADY);
     }
     {
-        ScanItr itr = getItr(bucket, bucket, ScanPass::FIRST);
+        BucketId bucket = _ready.bucket(6);
+        ScanItr itr = getItr(bucket);
         assertEquals(BucketVector().
+                     add(_ready.bucket(6)).
                      add(_ready.bucket(8)), itr, SubDbType::READY);
-    }
-    {
-        ScanItr itr = getItr(BucketId(), bucket, ScanPass::SECOND);
-        assertEquals(BucketVector().
-                     add(_ready.bucket(6)), itr, SubDbType::READY);
     }
 }
 

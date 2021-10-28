@@ -26,16 +26,12 @@ private:
     // storage::spi::BucketIdListResult::List _modifiedBuckets;
     std::set<document::BucketId> _modifiedBuckets;
 
-    void
-    performSetClusterState(const storage::spi::ClusterState *calc,
-                           IGenericResultHandler *resultHandler);
+    void performSetClusterState(const storage::spi::ClusterState *calc, IGenericResultHandler *resultHandler);
 
-    void
-    performGetModifiedBuckets(IBucketIdListResultHandler *resultHandler);
+    void performGetModifiedBuckets(IBucketIdListResultHandler *resultHandler);
 
     // Implements IBucketModifiedHandler
-    virtual void
-    notifyBucketModified(const document::BucketId &bucket) override;
+    void notifyBucketModified(const document::BucketId &bucket) override;
 
 public:
     ClusterStateHandler(vespalib::Executor &executor);
@@ -47,12 +43,9 @@ public:
     /**
      * Implements the cluster state aspect of IPersistenceHandler.
      */
-    void
-    handleSetClusterState(const storage::spi::ClusterState &calc,
-                               IGenericResultHandler &resultHandler);
+    void handleSetClusterState(const storage::spi::ClusterState &calc, IGenericResultHandler &resultHandler);
 
-    void
-    handleGetModifiedBuckets(IBucketIdListResultHandler &resultHandler);
+    void handleGetModifiedBuckets(IBucketIdListResultHandler &resultHandler);
 };
 
 } // namespace proton
