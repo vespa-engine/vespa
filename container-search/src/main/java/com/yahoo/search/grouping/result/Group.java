@@ -19,8 +19,8 @@ public class Group extends HitGroup {
     /**
      * Creates a new instance of this class.
      *
-     * @param groupId The id to assign to this group.
-     * @param rel     The relevance of this group.
+     * @param groupId the id to assign to this group
+     * @param rel     the relevance of this group
      */
     public Group(GroupId groupId, Relevance rel) {
         super(groupId.toString(), rel);
@@ -29,11 +29,7 @@ public class Group extends HitGroup {
         this.groupId = groupId;
     }
 
-    /**
-     * Returns the id of this group. This is a model of the otherwise flattened {@link #getId() hit id}.
-     *
-     * @return the group id
-     */
+    /** Returns the id of this group. This is a model of the otherwise flattened {@link #getId() hit id}. */
     public GroupId getGroupId() {
         return groupId;
     }
@@ -65,8 +61,8 @@ public class Group extends HitGroup {
      * com.yahoo.search.grouping.request.EachOperation} that generated the list. This method returns null if no such
      * list was found.
      *
-     * @param label The label of the list to return.
-     * @return The requested list, or null.
+     * @param label the label of the list to return
+     * @return the requested list, or null
      */
     public GroupList getGroupList(String label) {
         for (Hit hit : this) {
