@@ -191,7 +191,7 @@ public class PredicateQueryItem extends SimpleTaggableItem {
     public abstract static class EntryBase {
 
         private final String key;
-        private long subQueryBitmap;
+        private final long subQueryBitmap;
 
         public EntryBase(String key, long subQueryBitmap) {
             this.key = key;
