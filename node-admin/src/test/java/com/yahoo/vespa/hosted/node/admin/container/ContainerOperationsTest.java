@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.component.TestTaskContext;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
+import java.nio.file.FileSystem;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,7 +23,8 @@ public class ContainerOperationsTest {
 
     private final TestTaskContext context = new TestTaskContext();
     private final ContainerEngineMock containerEngine = new ContainerEngineMock();
-    private final ContainerOperations containerOperations = new ContainerOperations(containerEngine, TestFileSystem.create());
+    private final FileSystem fileSystem = TestFileSystem.create();
+    private final ContainerOperations containerOperations = new ContainerOperations(containerEngine, new CGroupV2(fileSystem), fileSystem);
 
     @Test
     public void no_managed_containers_running() {
