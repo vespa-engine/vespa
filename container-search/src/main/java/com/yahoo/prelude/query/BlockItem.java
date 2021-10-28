@@ -19,7 +19,7 @@ public interface BlockItem extends HasIndexItem {
     String stringValue();
 
     /**
-     * Returns whether this block of text is originates from a user and should therefore
+     * Returns whether this block of text originates from a user and should therefore
      * receive the normal processing applied to raw text (such as stemming).
      */
     boolean isFromQuery();
