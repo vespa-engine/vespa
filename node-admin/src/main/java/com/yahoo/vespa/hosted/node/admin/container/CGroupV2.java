@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Read and write interface to the CGroup V1 of a Podman container.
+ * Read and write interface to the CGroup V2 of a Podman container.
  *
  * @see <a href="https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html">CGroups V2</a>
  * @author freva
