@@ -76,7 +76,7 @@ TEST_F("testExecute", Fixture) {
     tv->wait(1);
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
-    f._threads->sync();
+    f._threads->sync_all();
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
 }
@@ -91,7 +91,7 @@ TEST_F("require that task with same component id are serialized", Fixture)
     tv->wait(2);
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
-    f._threads->sync();
+    f._threads->sync_all();
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
 }
@@ -110,7 +110,7 @@ TEST_F("require that task with different component ids are not serialized", Fixt
         }
         EXPECT_EQUAL(1,  tv->_fail);
         EXPECT_EQUAL(14, tv->_val);
-        f._threads->sync();
+        f._threads->sync_all();
         EXPECT_EQUAL(1,  tv->_fail);
         EXPECT_EQUAL(14, tv->_val);
         break;
@@ -129,7 +129,7 @@ TEST_F("require that task with same string component id are serialized", Fixture
     tv->wait(2);
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
-    f._threads->sync();
+    f._threads->sync_all();
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
 }
@@ -150,7 +150,7 @@ int detectSerializeFailure(Fixture &f, vespalib::stringref altComponentId, int t
         }
         EXPECT_EQUAL(1,  tv->_fail);
         EXPECT_EQUAL(14, tv->_val);
-        f._threads->sync();
+        f._threads->sync_all();
         EXPECT_EQUAL(1,  tv->_fail);
         EXPECT_EQUAL(14, tv->_val);
         break;
@@ -200,7 +200,7 @@ TEST_F("require that execute works with const lambda", Fixture)
                         { res.push_back(i--); res.push_back(i--); };
     f._threads->execute(0, lambda);
     f._threads->execute(0, lambda);
-    f._threads->sync();
+    f._threads->sync_all();
     std::vector<int> exp({5, 4, 5, 4});
     EXPECT_EQUAL(exp, res);
     EXPECT_EQUAL(5, i);
@@ -215,7 +215,7 @@ TEST_F("require that execute works with reference to lambda", Fixture)
     auto &lambdaref = lambda;
     f._threads->execute(0, lambdaref);
     f._threads->execute(0, lambdaref);
-    f._threads->sync();
+    f._threads->sync_all();
     std::vector<int> exp({5, 4, 5, 4});
     EXPECT_EQUAL(exp, res);
     EXPECT_EQUAL(5, i);
@@ -228,7 +228,7 @@ TEST_F("require that executeLambda works", Fixture)
     const auto lambda = [i, &res]() mutable
                         { res.push_back(i--); res.push_back(i--); };
     f._threads->executeLambda(ISequencedTaskExecutor::ExecutorId(0), lambda);
-    f._threads->sync();
+    f._threads->sync_all();
     std::vector<int> exp({5, 4});
     EXPECT_EQUAL(exp, res);
     EXPECT_EQUAL(5, i);

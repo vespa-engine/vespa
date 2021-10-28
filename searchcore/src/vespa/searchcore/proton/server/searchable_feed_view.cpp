@@ -44,8 +44,8 @@ SearchableFeedView::performSync()
 {
     // Called by index write thread, delays when sync() method on it completes.
     assert(_writeService.index().isCurrentThread());
-    _writeService.indexFieldInverter().sync();
-    _writeService.indexFieldWriter().sync();
+    _writeService.indexFieldInverter().sync_all();
+    _writeService.indexFieldWriter().sync_all();
 }
 
 void

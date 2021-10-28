@@ -74,11 +74,11 @@ ExecutorThreadingService::syncOnce() {
     if (!isMasterThread) {
         _masterExecutor.sync();
     }
-    _attributeFieldWriter->sync();
+    _attributeFieldWriter->sync_all();
     _indexExecutor->sync();
     _summaryExecutor->sync();
-    _indexFieldInverter->sync();
-    _indexFieldWriter->sync();
+    _indexFieldInverter->sync_all();
+    _indexFieldWriter->sync_all();
     if (!isMasterThread) {
         _masterExecutor.sync();
     }
@@ -89,13 +89,13 @@ ExecutorThreadingService::shutdown()
 {
     _masterExecutor.shutdown();
     _masterExecutor.sync();
-    _attributeFieldWriter->sync();
+    _attributeFieldWriter->sync_all();
     _summaryExecutor->shutdown();
     _summaryExecutor->sync();
     _indexExecutor->shutdown();
     _indexExecutor->sync();
-    _indexFieldInverter->sync();
-    _indexFieldWriter->sync();
+    _indexFieldInverter->sync_all();
+    _indexFieldWriter->sync_all();
 }
 
 void

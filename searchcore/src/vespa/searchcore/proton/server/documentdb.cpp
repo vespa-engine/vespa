@@ -524,7 +524,7 @@ DocumentDB::performDropFeedView(IFeedView::SP feedView)
     // Called by executor task, delays when feed view is dropped.
     // Also called by DocumentDB::receive() method to keep feed view alive
 
-    _writeService.attributeFieldWriter().sync();
+    _writeService.attributeFieldWriter().sync_all();
     _writeService.summary().sync();
 
     // Feed view is kept alive in the closure's shared ptr.
@@ -536,8 +536,8 @@ void
 DocumentDB::performDropFeedView2(IFeedView::SP feedView) {
     // Called by executor task, delays when feed view is dropped.
     // Also called by DocumentDB::receive() method to keep feed view alive
-    _writeService.indexFieldInverter().sync();
-    _writeService.indexFieldWriter().sync();
+    _writeService.indexFieldInverter().sync_all();
+    _writeService.indexFieldWriter().sync_all();
     masterExecute([feedView]() { doNothing(feedView); });
 }
 

@@ -22,7 +22,7 @@ GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor 
 
 GidToLidChangeListener::~GidToLidChangeListener()
 {
-    _attributeFieldWriter.sync();
+    _attributeFieldWriter.sync_all();
 }
 
 void

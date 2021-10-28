@@ -51,7 +51,7 @@ SequencedTaskExecutor::create(vespalib::Runnable::init_fun_t func, uint32_t thre
 
 SequencedTaskExecutor::~SequencedTaskExecutor()
 {
-    sync();
+    sync_all();
 }
 
 SequencedTaskExecutor::SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executors)
@@ -82,7 +82,7 @@ SequencedTaskExecutor::executeTask(ExecutorId id, vespalib::Executor::Task::UP t
 }
 
 void
-SequencedTaskExecutor::sync() {
+SequencedTaskExecutor::sync_all() {
     wakeup();
     for (auto &executor : *_executors) {
         executor->sync();

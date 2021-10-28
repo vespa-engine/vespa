@@ -184,7 +184,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
             toBeAdded.push_back(aspec);
         }
     }
-    _attributeFieldWriter.sync();
+    _attributeFieldWriter.sync_all();
 }
 
 void

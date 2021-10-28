@@ -326,9 +326,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
 
     doc = make_doc10(b);
     inv.invertDocument(10, *doc);
-    invertThreads->sync();
+    invertThreads->sync_all();
     myPushDocument(inv);
-    pushThreads->sync();
+    pushThreads->sync_all();
 
     b.startDocument("id:ns:searchdocument::11").
         startIndexField("f3").
@@ -336,9 +336,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         endField();
     doc = b.endDocument();
     inv.invertDocument(11, *doc);
-    invertThreads->sync();
+    invertThreads->sync_all();
     myPushDocument(inv);
-    pushThreads->sync();
+    pushThreads->sync_all();
 
     b.startDocument("id:ns:searchdocument::12").
         startIndexField("f3").
@@ -346,9 +346,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         endField();
     doc = b.endDocument();
     inv.invertDocument(12, *doc);
-    invertThreads->sync();
+    invertThreads->sync_all();
     myPushDocument(inv);
-    pushThreads->sync();
+    pushThreads->sync_all();
 
     IndexBuilder ib(schema);
     vespalib::string dump2dir = prefix + "dump2";
@@ -465,9 +465,9 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
     DocumentInverter inv(_schema, *invertThreads, *pushThreads, fic);
 
     inv.invertDocument(10, *make_doc10(b));
-    invertThreads->sync();
+    invertThreads->sync_all();
     myPushDocument(inv);
-    pushThreads->sync();
+    pushThreads->sync_all();
 
     IndexBuilder ib(_schema);
     TuneFileIndexing tuneFileIndexing;

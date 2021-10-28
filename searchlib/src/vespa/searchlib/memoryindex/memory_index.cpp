@@ -73,8 +73,8 @@ MemoryIndex::MemoryIndex(const Schema& schema,
 
 MemoryIndex::~MemoryIndex()
 {
-    _invertThreads.sync();
-    _pushThreads.sync();
+    _invertThreads.sync_all();
+    _pushThreads.sync_all();
 }
 
 void
@@ -109,8 +109,8 @@ MemoryIndex::removeDocument(uint32_t docId)
 void
 MemoryIndex::commit(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone)
 {
-    _invertThreads.sync(); // drain inverting into this inverter
-    _pushThreads.sync(); // drain use of other inverter
+    _invertThreads.sync_all(); // drain inverting into this inverter
+    _pushThreads.sync_all(); // drain use of other inverter
     _inverter->pushDocuments(onWriteDone);
     flipInverter();
 }

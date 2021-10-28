@@ -145,7 +145,7 @@ struct IndexManagerTest : public ::testing::Test {
                               _index_manager->commit(serialNum,
                                                      emptyDestructorCallback);
                           });
-        _writeService.indexFieldWriter().sync();
+        _writeService.indexFieldWriter().sync_all();
     }
     void removeDocument(uint32_t docId) {
         SerialNum serialNum = ++_serial_num;
@@ -185,7 +185,7 @@ IndexManagerTest::addDocument(uint32_t id)
     runAsIndex([&]() { _index_manager->putDocument(id, *doc, serialNum);
                           _index_manager->commit(serialNum,
                                                  emptyDestructorCallback); });
-    _writeService.indexFieldWriter().sync();
+    _writeService.indexFieldWriter().sync_all();
     return doc;
 }
 
@@ -406,9 +406,9 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
 
     Document::UP doc = addDocument(docid);
     inverter.invertDocument(docid, *doc);
-    invertThreads->sync();
+    invertThreads->sync_all();
     inverter.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
-    pushThreads->sync();
+    pushThreads->sync_all();
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
 
     /// Must account for both docid 0 being reserved and the extra after.
@@ -425,9 +425,9 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
     inverter.invertDocument(docid + 10, *doc);
     doc = addDocument(docid + 100);
     inverter.invertDocument(docid + 100, *doc);
-    invertThreads->sync();
+    invertThreads->sync_all();
     inverter.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
-    pushThreads->sync();
+    pushThreads->sync_all();
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 100 + 1) * sizeof(Source);

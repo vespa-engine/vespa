@@ -253,7 +253,7 @@ public:
         uint64_t serialNum = _ddb->getFeedHandler().inc_serial_num();
         _aw->put(serialNum, doc, lid, std::shared_ptr<IDestructorCallback>());
         _aw->forceCommit(serialNum, std::shared_ptr<IDestructorCallback>());
-        _ddb->getReadySubDB()->getAttributeManager()->getAttributeFieldWriter().sync();
+        _ddb->getReadySubDB()->getAttributeManager()->getAttributeFieldWriter().sync_all();
         _sa->put(serialNum, lid, doc);
         const GlobalId &gid = docId.getGlobalId();
         BucketId bucketId(gid.convertToBucketId());
@@ -705,7 +705,7 @@ TEST("requireThatAttributesAreUsed")
                                                                              .add({{"x", "a"}, {"y", "b"}}, 4)));
                                      bjTensorAttr->commit();
                                  });
-    attributeFieldWriter.sync();
+    attributeFieldWriter.sync_all();
 
     DocsumReply::UP rep2 = dc._ddb->getDocsums(req);
     TEST_DO(assertTensor(make_tensor(TensorSpec("tensor(x{},y{})")

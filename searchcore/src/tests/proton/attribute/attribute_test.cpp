@@ -200,7 +200,7 @@ public:
     }
     SerialNum test_force_commit(AttributeVector &attr, SerialNum serialNum) {
         commit(serialNum);
-        _attributeFieldWriter->sync();
+        _attributeFieldWriter->sync_all();
         return attr.getStatus().getLastSyncToken();
     }
 };

@@ -91,7 +91,7 @@ void
 FastAccessFeedView::sync()
 {
     Parent::sync();
-    _writeService.attributeFieldWriter().sync();
+    _writeService.attributeFieldWriter().sync_all();
 }
 
 } // namespace proton

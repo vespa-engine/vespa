@@ -27,7 +27,7 @@ ForegroundTaskExecutor::executeTask(ExecutorId id, Executor::Task::UP task)
 }
 
 void
-ForegroundTaskExecutor::sync()
+ForegroundTaskExecutor::sync_all()
 {
 }
 

@@ -58,7 +58,7 @@ public:
     /**
      * Wrap lambda function into a task and schedule it to be run.
      * Caller must ensure that pointers and references are valid and
-     * call sync before tearing down pointed to/referenced data.
+     * call sync_all before tearing down pointed to/referenced data.
       *
      * @param id        which internal executor to use
      * @param function  function to be wrapped in a task and later executed
@@ -70,7 +70,7 @@ public:
     /**
      * Wait for all scheduled tasks to complete.
      */
-    virtual void sync() = 0;
+    virtual void sync_all() = 0;
 
     virtual void setTaskLimit(uint32_t taskLimit) = 0;
 
@@ -79,7 +79,7 @@ public:
     /**
      * Wrap lambda function into a task and schedule it to be run.
      * Caller must ensure that pointers and references are valid and
-     * call sync before tearing down pointed to/referenced data.
+     * call sync_all before tearing down pointed to/referenced data.
      *
      * @param componentId   component id
      * @param function      function to be wrapped in a task and later executed
@@ -93,7 +93,7 @@ public:
     /**
      * Wrap lambda function into a task and schedule it to be run.
      * Caller must ensure that pointers and references are valid and
-     * call sync before tearing down pointed to/referenced data.
+     * call sync_all before tearing down pointed to/referenced data.
      *
      * @param id        executor id
      * @param function  function to be wrapped in a task and later executed

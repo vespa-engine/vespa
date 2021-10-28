@@ -24,7 +24,7 @@ public:
     void setTaskLimit(uint32_t taskLimit) override;
     void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
     ExecutorId getExecutorId(uint64_t componentId) const override;
-    void sync() override;
+    void sync_all() override;
     ExecutorStats getStats() override;
     void wakeup() override;
 
