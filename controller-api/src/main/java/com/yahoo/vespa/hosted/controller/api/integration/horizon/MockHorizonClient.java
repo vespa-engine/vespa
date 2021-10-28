@@ -26,4 +26,9 @@ public class MockHorizonClient implements HorizonClient {
         return HorizonResponse.empty();
     }
 
+    @Override
+    public HorizonResponse getMetaData(byte[] query) {
+        return HorizonResponse.empty();
+    }
+
 }

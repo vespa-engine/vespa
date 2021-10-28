@@ -14,4 +14,6 @@ public interface HorizonClient {
 
     HorizonResponse getTopFolders();
 
+    HorizonResponse getMetaData(byte[] query);
+
 }

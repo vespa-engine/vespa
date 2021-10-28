@@ -88,7 +88,8 @@ public class HorizonApiHandler extends LoggingRequestHandler {
 
     private HttpResponse post(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator) {
         Path path = new Path(request.getUri());
-        if (path.matches("/horizon/v1/tsdb/api/query/graph")) return tsdbQuery(request, authorizedTenants, operator);
+        if (path.matches("/horizon/v1/tsdb/api/query/graph")) return metricQuery(request, authorizedTenants, operator);
+        if (path.matches("/horizon/v1/meta/search/timeseries")) return metaQuery(request, authorizedTenants, operator);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -98,10 +99,21 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse tsdbQuery(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator) {
+    private HttpResponse metricQuery(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator) {
         try {
             byte[] data = TsdbQueryRewriter.rewrite(request.getData().readAllBytes(), authorizedTenants, operator, systemName);
             return new JsonInputStreamResponse(client.getMetrics(data));
+        } catch (TsdbQueryRewriter.UnauthorizedException e) {
+            return ErrorResponse.forbidden("Access denied");
+        } catch (IOException e) {
+            return ErrorResponse.badRequest("Failed to parse request body: " + e.getMessage());
+        }
+    }
+
+    private HttpResponse metaQuery(HttpRequest request, Set<TenantName> authorizedTenants, boolean operator) {
+        try {
+            byte[] data = TsdbQueryRewriter.rewrite(request.getData().readAllBytes(), authorizedTenants, operator, systemName);
+            return new JsonInputStreamResponse(client.getMetaData(data));
         } catch (TsdbQueryRewriter.UnauthorizedException e) {
             return ErrorResponse.forbidden("Access denied");
         } catch (IOException e) {
