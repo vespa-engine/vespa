@@ -5,6 +5,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -267,6 +268,17 @@ public class PhraseItem extends CompositeIndexedItem {
     public void disclose(Discloser discloser) {
         super.disclose(discloser);
         discloser.addProperty("explicit", explicit);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if ( ! super.equals(other)) return false;
+        return this.explicit == ((PhraseItem)other).explicit;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), explicit);
     }
 
 }
