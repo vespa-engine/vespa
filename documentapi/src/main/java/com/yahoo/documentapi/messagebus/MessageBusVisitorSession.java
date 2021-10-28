@@ -1006,7 +1006,8 @@ public class MessageBusVisitorSession implements VisitorSession {
         }
         final long messageTimeoutMillis = computeBoundedMessageTimeoutMillis(elapsedMillis);
         taskExecutor.scheduleTask(new SendCreateVisitorsTask(messageTimeoutMillis), delay, unit);
-        return scheduledSendCreateVisitors = true;
+        scheduledSendCreateVisitors = true;
+        return true;
     }
 
     private boolean mayScheduleCreateVisitorsTask() {

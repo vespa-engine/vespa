@@ -699,11 +699,12 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             if ( ! documentsDone)
                 new JsonWriter(json).write(document);
 
-            if (completionHandler != null)
+            if (completionHandler != null) {
                 if ( ! documentsDone)
                     buffer.write(emptyBuffer, completionHandler);
                 else
                     completionHandler.completed();
+            }
         }
 
         synchronized void writeArrayEnd() throws IOException {
