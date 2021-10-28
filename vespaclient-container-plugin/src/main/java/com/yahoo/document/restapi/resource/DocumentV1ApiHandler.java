@@ -86,7 +86,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.ScheduledExecutorService;
@@ -583,6 +582,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final OutputStream out = new ContentChannelOutputStream(buffer);
         private final JsonGenerator json;
         private final ResponseHandler handler;
+        private boolean documentsDone = false;
         private ContentChannel channel;
 
         private JsonResponse(ResponseHandler handler) throws IOException {
@@ -636,6 +636,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         /** Closes the JSON and the output content channel of this. */
         @Override
         public synchronized void close() throws IOException {
+            documentsDone = true; // In case we were closed without explicitly closing the documents array.
             try {
                 if (channel == null) {
                     log.log(WARNING, "Close called before response was committed, in " + getClass().getName());
@@ -695,12 +696,18 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         synchronized void writeDocumentValue(Document document, CompletionHandler completionHandler) {
-            new JsonWriter(json).write(document);
+            if ( ! documentsDone)
+                new JsonWriter(json).write(document);
+
             if (completionHandler != null)
-                buffer.write(emptyBuffer, completionHandler);
+                if ( ! documentsDone)
+                    buffer.write(emptyBuffer, completionHandler);
+                else
+                    completionHandler.completed();
         }
 
         synchronized void writeArrayEnd() throws IOException {
+            documentsDone = true;
             json.writeEndArray();
         }
 
