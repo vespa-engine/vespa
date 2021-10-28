@@ -6,7 +6,7 @@ import java.util.Objects;
 /**
  * Describes Vespa user inside the container user namespace.
  * 
- * @author valerijf
+ * @author freva
  */
 public class VespaUser {
 

@@ -12,7 +12,7 @@ import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.util.Objects;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class ContainerUserPrincipalLookupService extends UserPrincipalLookupService {
 

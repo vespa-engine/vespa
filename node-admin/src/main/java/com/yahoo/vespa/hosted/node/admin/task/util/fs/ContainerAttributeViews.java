@@ -16,7 +16,7 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrinci
 import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrincipalLookupService.ContainerUserPrincipal;
 
 /**
- * @author valerijf
+ * @author freva
  */
 class ContainerAttributeViews {
 

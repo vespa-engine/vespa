@@ -39,7 +39,7 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerUserPrinci
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
- * @author valerijf
+ * @author freva
  */
 class ContainerFileSystemProvider extends FileSystemProvider {
     private final ContainerFileSystem containerFs;

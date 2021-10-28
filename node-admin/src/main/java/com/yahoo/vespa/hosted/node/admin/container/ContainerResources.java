@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.container;
 import java.util.Objects;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class ContainerResources {
 
