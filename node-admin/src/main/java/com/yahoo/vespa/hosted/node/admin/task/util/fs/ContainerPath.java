@@ -18,7 +18,7 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerFileSystem
 /**
  * Represents a path in container that is mapped in from the host. ContainerPaths are always normalized and absolute.
  *
- * @author valerijf
+ * @author freva
  */
 public class ContainerPath implements Path {
     private final ContainerFileSystem containerFs;

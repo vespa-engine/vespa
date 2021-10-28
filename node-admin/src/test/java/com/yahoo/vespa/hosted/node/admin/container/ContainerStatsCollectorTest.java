@@ -5,12 +5,22 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.SYSTEM_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.THROTTLED_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.THROTTLED_TIME_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TOTAL_PERIODS;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.TOTAL_USAGE_USEC;
+import static com.yahoo.vespa.hosted.node.admin.container.CGroup.CpuStatField.USER_USAGE_USEC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author mpolden
@@ -18,10 +28,11 @@ import static org.junit.Assert.assertTrue;
 public class ContainerStatsCollectorTest {
 
     private final FileSystem fileSystem = TestFileSystem.create();
+    private final CGroup cgroup = mock(CGroup.class);
 
     @Test
-    public void collect() {
-        ContainerStatsCollector collector = new ContainerStatsCollector(fileSystem);
+    public void collect() throws IOException {
+        ContainerStatsCollector collector = new ContainerStatsCollector(cgroup, fileSystem, 24);
         ContainerId containerId = new ContainerId("id1");
         int containerPid = 42;
         assertTrue("No stats found", collector.collect(containerId, containerPid, "eth0").isEmpty());
@@ -32,7 +43,7 @@ public class ContainerStatsCollectorTest {
 
         Optional<ContainerStats> stats = collector.collect(containerId, containerPid, "eth0");
         assertTrue(stats.isPresent());
-        assertEquals(new ContainerStats.CpuStats(24, 6049374780000000L, 691675615472L,
+        assertEquals(new ContainerStats.CpuStats(24, 6049374780000L, 691675615472L,
                                                  262190000000L, 3L, 1L, 2L),
                      stats.get().getCpuStats());
         assertEquals(new ContainerStats.MemoryStats(470790144L, 1228017664L, 2147483648L),
@@ -50,68 +61,20 @@ public class ContainerStatsCollectorTest {
                                "  eth0: 22280813  118083    3    4    0     0          0         0 19859383  115415    5    6    0     0       0          0\n");
     }
 
-    private void mockMemoryStats(ContainerId containerId) {
-        UnixPath root = new UnixPath(fileSystem.getPath("/sys/fs/cgroup/memory/machine.slice/libpod-" + containerId + ".scope"));
-        root.createDirectories();
-
-        root.resolve("memory.limit_in_bytes").writeUtf8File("2147483648\n");
-        root.resolve("memory.usage_in_bytes").writeUtf8File("1228017664\n");
-        root.resolve("memory.stat").writeUtf8File("cache 470790144\n" +
-                                                       "rss 698699776\n" +
-                                                       "rss_huge 526385152\n" +
-                                                       "shmem 0\n" +
-                                                       "mapped_file 811008\n" +
-                                                       "dirty 405504\n" +
-                                                       "writeback 0\n" +
-                                                       "swap 0\n" +
-                                                       "pgpgin 6938085\n" +
-                                                       "pgpgout 6780573\n" +
-                                                       "pgfault 14343186\n" +
-                                                       "pgmajfault 0\n" +
-                                                       "inactive_anon 0\n" +
-                                                       "active_anon 699289600\n" +
-                                                       "inactive_file 455516160\n" +
-                                                       "active_file 13787136\n" +
-                                                       "unevictable 0\n" +
-                                                       "hierarchical_memory_limit 2147483648\n" +
-                                                       "hierarchical_memsw_limit 4294967296\n" +
-                                                       "total_cache 470790144\n" +
-                                                       "total_rss 698699776\n" +
-                                                       "total_rss_huge 526385152\n" +
-                                                       "total_shmem 0\n" +
-                                                       "total_mapped_file 811008\n" +
-                                                       "total_dirty 405504\n" +
-                                                       "total_writeback 0\n" +
-                                                       "total_swap 0\n" +
-                                                       "total_pgpgin 6938085\n" +
-                                                       "total_pgpgout 6780573\n" +
-                                                       "total_pgfault 14343186\n" +
-                                                       "total_pgmajfault 0\n" +
-                                                       "total_inactive_anon 0\n" +
-                                                       "total_active_anon 699289600\n" +
-                                                       "total_inactive_file 455516160\n" +
-                                                       "total_active_file 13787136\n" +
-                                                       "total_unevictable 0\n");
+    private void mockMemoryStats(ContainerId containerId) throws IOException {
+        when(cgroup.memoryUsageInBytes(eq(containerId))).thenReturn(1228017664L);
+        when(cgroup.memoryLimitInBytes(eq(containerId))).thenReturn(2147483648L);
+        when(cgroup.memoryCacheInBytes(eq(containerId))).thenReturn(470790144L);
     }
 
-    private void mockCpuStats(ContainerId containerId) {
-        UnixPath root = new UnixPath(fileSystem.getPath("/sys/fs/cgroup/cpuacct/machine.slice/libpod-" + containerId + ".scope"));
+    private void mockCpuStats(ContainerId containerId) throws IOException {
         UnixPath proc = new UnixPath(fileSystem.getPath("/proc"));
-        root.createDirectories();
         proc.createDirectories();
 
-        root.resolve("cpu.stat").writeUtf8File("nr_periods 1\n" +
-                                                    "nr_throttled 2\n" +
-                                                    "throttled_time 3\n");
-        root.resolve("cpuacct.usage_percpu").writeUtf8File("25801608855 22529436415 25293652376 26212081533 " +
-                                                                "27545883290 25357818592 33464821448 32568003867 " +
-                                                                "28916742231 31771772292 34418037242 38417072233 " +
-                                                                "26069101127 24568838237 23683334366 26824607997 " +
-                                                                "24289870206 22249389818 32683986446 32444831154 " +
-                                                                "30488394217 26840956322 31633747261 30838696584\n");
-        root.resolve("cpuacct.usage").writeUtf8File("691675615472\n");
-        root.resolve("cpuacct.stat").writeUtf8File("user 40900\n" +
-                                                        "system 26219\n");
+        when(cgroup.cpuStats(eq(containerId))).thenReturn(Map.of(
+                TOTAL_USAGE_USEC, 691675615472L, SYSTEM_USAGE_USEC, 262190000000L, USER_USAGE_USEC, 40900L,
+                TOTAL_PERIODS, 1L, THROTTLED_PERIODS, 2L, THROTTLED_TIME_USEC, 3L));
+
         proc.resolve("stat").writeUtf8File("cpu  7991366 978222 2346238 565556517 1935450 25514479 615206 0 0 0\n" +
                                                 "cpu0 387906 61529 99088 23516506 42258 1063359 29882 0 0 0\n" +
                                                 "cpu1 271253 49383 86149 23655234 41703 1061416 31885 0 0 0\n" +

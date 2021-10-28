@@ -182,16 +182,16 @@ public class ContainerStats {
 
         public int getOnlineCpus() { return this.onlineCpus; }
 
-        /** Total CPU time (in ns) spent executing all the processes on this host */
+        /** Total CPU time (in µs) spent executing all the processes on this host */
         public long getSystemCpuUsage() { return this.systemCpuUsage; }
 
-        /** Total CPU time (in ns) spent running all the processes in this container */
+        /** Total CPU time (in µs) spent running all the processes in this container */
         public long getTotalUsage() { return totalUsage; }
 
-        /** Total CPU time (in ns) spent in kernel mode while executing processes in this container */
+        /** Total CPU time (in µs) spent in kernel mode while executing processes in this container */
         public long getUsageInKernelMode() { return usageInKernelMode; }
 
-        /** Total CPU time (in ns) processes in this container were throttled for */
+        /** Total CPU time (in µs) processes in this container were throttled for */
         public long getThrottledTime() { return throttledTime; }
 
         /** Number of periods with throttling enabled for this container */

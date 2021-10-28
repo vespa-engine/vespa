@@ -33,11 +33,11 @@ public class ContainerOperations {
     private final ContainerImagePruner imagePruner;
     private final ContainerStatsCollector containerStatsCollector;
 
-    public ContainerOperations(ContainerEngine containerEngine, FileSystem fileSystem) {
+    public ContainerOperations(ContainerEngine containerEngine, CGroup cgroup, FileSystem fileSystem) {
         this.containerEngine = Objects.requireNonNull(containerEngine);
         this.imageDownloader = new ContainerImageDownloader(containerEngine);
         this.imagePruner = new ContainerImagePruner(containerEngine, Clock.systemUTC());
-        this.containerStatsCollector = new ContainerStatsCollector(Objects.requireNonNull(fileSystem));
+        this.containerStatsCollector = new ContainerStatsCollector(cgroup, fileSystem);
     }
 
     public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
@@ -86,7 +86,7 @@ public class ContainerOperations {
     }
 
     /**
-     * Suspend node and return output. Suspending a node means the node should be taken temporarly offline,
+     * Suspend node and return output. Suspending a node means the node should be taken temporarily offline,
      * such that maintenance of the node can be done (upgrading, rebooting, etc).
      */
     public String suspendNode(NodeAgentContext context) {

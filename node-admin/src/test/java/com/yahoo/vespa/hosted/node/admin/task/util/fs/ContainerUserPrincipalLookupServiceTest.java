@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * @author valerijf
+ * @author freva
  */
 class ContainerUserPrincipalLookupServiceTest {
 

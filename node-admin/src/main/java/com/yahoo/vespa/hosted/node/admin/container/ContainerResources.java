@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.container;
 import java.util.Objects;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class ContainerResources {
 
@@ -87,7 +87,12 @@ public class ContainerResources {
 
     /** Returns true iff the CPU component(s) of between <code>this</code> and <code>other</code> are equal */
     public boolean equalsCpu(ContainerResources other) {
-        return Math.abs(other.cpus - cpus) < 0.0001 && cpuShares == other.cpuShares;
+        return Math.abs(other.cpus - cpus) < 0.0001 &&
+                // When using CGroups V2, CPU shares (range [2, 262144]) is mapped to CPU weight (range [1, 10000]),
+                // because there are ~26.2 shares/weight, we must allow for small deviation in cpuShares
+                // when comparing ContainerResources created from NodeResources vs one created from reading the
+                // CGroups weight file
+                Math.abs(cpuShares - other.cpuShares) < 28;
     }
 
     @Override
