@@ -30,9 +30,13 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
 
+import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import com.yahoo.tensor.Tensor;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ProtobufSerialization {
@@ -204,6 +208,7 @@ public class ProtobufSerialization {
         result.getResult().setCoverage(convertToCoverage(protobuf));
 
         convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList());
+        List<String> featureNames = protobuf.getMatchFeatureNamesList();
 
         var haveGrouping = ! protobuf.getGroupingBlob().isEmpty();
         if (haveGrouping) {
@@ -224,6 +229,21 @@ public class ProtobufSerialization {
             LeanHit hit = (replyHit.getSortData().isEmpty())
                     ? new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance())
                     : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance(), replyHit.getSortData().toByteArray());
+            if (! featureNames.isEmpty()) {
+                List<SearchProtocol.Feature> featureValues = replyHit.getFeaturesList();
+                var nameIter = featureNames.iterator();
+                var valueIter = featureValues.iterator();
+                while (nameIter.hasNext() && valueIter.hasNext()) {
+                    String name = nameIter.next();
+                    SearchProtocol.Feature value = valueIter.next();
+                    ByteString tensorBlob = value.getTensorBlob();
+                    Tensor tensor = tensorBlob.isEmpty()
+                        ? Tensor.from(value.getValue())
+                        : TypedBinaryFormat.decode(Optional.empty(),
+                                                   GrowableByteBuffer.wrap(tensorBlob.toByteArray()));
+                    hit.addMatchFeature(name, tensor);
+                }
+            }
             result.getLeanHits().add(hit);
         }
 
