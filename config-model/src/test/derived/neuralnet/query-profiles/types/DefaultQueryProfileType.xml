@@ -1,4 +1,4 @@
-<!-- Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <query-profile-type id="DefaultQueryProfileType" inherits="native">
     <field name="ranking.features.query(W_0)" type="tensor(x[9],hidden[9])" />
     <field name="ranking.features.query(b_0)" type="tensor(hidden[9])" />
