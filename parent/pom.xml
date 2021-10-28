@@ -889,7 +889,7 @@
         <curator.version>5.2.0</curator.version>
         <commons.codec.version>1.15</commons.codec.version>
         <commons.math3.version>3.6.1</commons.math3.version>
-        <jna.version>4.5.2</jna.version>
+        <jna.version>5.9.0</jna.version>
         <junit.version>5.7.0</junit.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
         <maven-bundle-plugin.version>5.1.2</maven-bundle-plugin.version>
