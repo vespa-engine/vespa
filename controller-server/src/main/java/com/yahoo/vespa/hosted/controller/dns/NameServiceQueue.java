@@ -4,12 +4,10 @@ package com.yahoo.vespa.hosted.controller.dns;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,17 +26,16 @@ public class NameServiceQueue {
 
     private static final Logger log = Logger.getLogger(NameServiceQueue.class.getName());
 
-    private final LinkedBlockingDeque<NameServiceRequest> requests;
+    private final LinkedList<NameServiceRequest> requests;
 
     /** DO NOT USE. Public for serialization purposes */
-    public NameServiceQueue(Collection<NameServiceRequest> requests) {
-        this.requests = new LinkedBlockingDeque<>();
-        this.requests.addAll(Objects.requireNonNull(requests, "requests must be non-null"));
+    public NameServiceQueue(List<NameServiceRequest> requests) {
+        this.requests = new LinkedList<>(Objects.requireNonNull(requests, "requests must be non-null"));
     }
 
     /** Returns a view of requests in this queue */
-    public Collection<NameServiceRequest> requests() {
-        return Collections.unmodifiableCollection(requests);
+    public List<NameServiceRequest> requests() {
+        return Collections.unmodifiableList(requests);
     }
 
     /** Returns a copy of this containing the last n requests */
@@ -99,7 +96,6 @@ public class NameServiceQueue {
     private NameServiceQueue resize(int n, UnaryOperator<List<NameServiceRequest>> resizer) {
         requireNonNegative(n);
         if (requests.size() <= n) return this;
-        List<NameServiceRequest> requests = new ArrayList<>(this.requests);
         return new NameServiceQueue(resizer.apply(requests));
     }
 
