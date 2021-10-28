@@ -72,7 +72,7 @@ TEST_F("testExecute", Fixture) {
     tv->wait(1);
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
-    f._threads.sync();
+    f._threads.sync_all();
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
 }
@@ -87,7 +87,7 @@ TEST_F("require that task with same id are serialized", Fixture)
     tv->wait(2);
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
-    f._threads.sync();
+    f._threads.sync_all();
     EXPECT_EQUAL(0,  tv->_fail);
     EXPECT_EQUAL(42, tv->_val);
 }
@@ -106,7 +106,7 @@ TEST_F("require that task with different ids are serialized", Fixture)
         }
         EXPECT_EQUAL(1,  tv->_fail);
         EXPECT_EQUAL(14, tv->_val);
-        f._threads.sync();
+        f._threads.sync_all();
         EXPECT_EQUAL(1,  tv->_fail);
         EXPECT_EQUAL(14, tv->_val);
         break;

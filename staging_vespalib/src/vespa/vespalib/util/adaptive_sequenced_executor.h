@@ -147,7 +147,7 @@ public:
     ~AdaptiveSequencedExecutor() override;
     ExecutorId getExecutorId(uint64_t component) const override;
     void executeTask(ExecutorId id, Task::UP task) override;
-    void sync() override;
+    void sync_all() override;
     void setTaskLimit(uint32_t task_limit) override;
     ExecutorStats getStats() override;
     Config get_config() const;

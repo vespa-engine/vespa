@@ -77,8 +77,8 @@ DocumentInverter::DocumentInverter(const Schema &schema,
 
 DocumentInverter::~DocumentInverter()
 {
-    _invertThreads.sync();
-    _pushThreads.sync();
+    _invertThreads.sync_all();
+    _pushThreads.sync_all();
 }
 
 void

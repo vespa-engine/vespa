@@ -28,10 +28,10 @@ SequencedTaskExecutorObserver::executeTask(ExecutorId id, vespalib::Executor::Ta
 }
 
 void
-SequencedTaskExecutorObserver::sync()
+SequencedTaskExecutorObserver::sync_all()
 {
     ++_syncCnt;
-    _executor.sync();
+    _executor.sync_all();
 }
 
 std::vector<uint32_t>

@@ -155,14 +155,14 @@ struct DocumentInverterTest : public ::testing::Test {
     }
 
     void pushDocuments() {
-        _invertThreads->sync();
+        _invertThreads->sync_all();
         uint32_t fieldId = 0;
         for (auto &inverter : _inv.getInverters()) {
             _inserter.setFieldId(fieldId);
             inverter->pushDocuments();
             ++fieldId;
         }
-        _pushThreads->sync();
+        _pushThreads->sync_all();
     }
 };
 

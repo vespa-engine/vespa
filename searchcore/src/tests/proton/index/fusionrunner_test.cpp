@@ -182,7 +182,7 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     addDocument(doc_builder, memory_index, *_selector, id, id + 1, "bar");
     addDocument(doc_builder, memory_index, *_selector, id, id + 2, "baz");
     addDocument(doc_builder, memory_index, *_selector, id, id + 3, "qux");
-    _threadingService.indexFieldWriter().sync();
+    _threadingService.indexFieldWriter().sync_all();
 
     const uint32_t docIdLimit =
         std::min(memory_index.getDocIdLimit(), _selector->getDocIdLimit());

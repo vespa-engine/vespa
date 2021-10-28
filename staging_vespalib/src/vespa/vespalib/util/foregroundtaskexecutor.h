@@ -23,7 +23,7 @@ public:
 
     ExecutorId getExecutorId(uint64_t componentId) const override;
     void executeTask(ExecutorId id, Executor::Task::UP task) override;
-    void sync() override;
+    void sync_all() override;
     void setTaskLimit(uint32_t taskLimit) override;
     ExecutorStats getStats() override;
 private:

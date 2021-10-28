@@ -246,7 +246,7 @@ AdaptiveSequencedExecutor::AdaptiveSequencedExecutor(size_t num_strands, size_t 
 
 AdaptiveSequencedExecutor::~AdaptiveSequencedExecutor()
 {
-    sync();
+    sync_all();
     {
         auto guard = std::unique_lock(_mutex);
         assert(_self.state == Self::State::OPEN);
@@ -305,7 +305,7 @@ AdaptiveSequencedExecutor::executeTask(ExecutorId id, Task::UP task)
 }
 
 void
-AdaptiveSequencedExecutor::sync()
+AdaptiveSequencedExecutor::sync_all()
 {
     BarrierCompletion barrierCompletion;
     {

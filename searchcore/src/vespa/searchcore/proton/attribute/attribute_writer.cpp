@@ -652,7 +652,7 @@ void AttributeWriter::setupAttributeMapping() {
 
 AttributeWriter::~AttributeWriter()
 {
-    _attributeFieldWriter.sync();
+    _attributeFieldWriter.sync_all();
 }
 
 std::vector<search::AttributeVector *>
@@ -806,7 +806,7 @@ AttributeWriter::onReplayDone(uint32_t docIdLimit)
                                       [docIdLimit, attr = entry.second.attribute]()
                                       { applyReplayDone(docIdLimit, *attr); });
     }
-    _attributeFieldWriter.sync();
+    _attributeFieldWriter.sync_all();
 }
 
 
@@ -818,7 +818,7 @@ AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum)
                                       [wantedLidLimit, serialNum, attr=entry.second.attribute]()
                                       { applyCompactLidSpace(wantedLidLimit, serialNum, *attr); });
     }
-    _attributeFieldWriter.sync();
+    _attributeFieldWriter.sync_all();
 }
 
 bool
