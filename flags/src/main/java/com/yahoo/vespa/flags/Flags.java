@@ -254,13 +254,6 @@ public class Flags {
             "The maximum number of hosts allowed to encrypt their disk concurrently",
             "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
 
-    public static final UnboundBooleanFlag REQUIRE_CONNECTIVITY_CHECK = defineFeatureFlag(
-            "require-connectivity-check", true,
-            List.of("arnej"), "2021-06-03", "2021-12-01",
-            "Require that config-sentinel connectivity check passes with good quality before starting services",
-            "Takes effect on next restart",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
             "defer-application-encryption", List.of(), String.class,
             List.of("mpolden", "hakonhall"), "2021-06-23", "2021-11-01",
@@ -292,13 +285,6 @@ public class Flags {
             List.of("balder"), "2021-09-01", "2021-11-01",
             "Number of threads for metrics proxy",
             "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag NEW_LOCATION_BROKER_LOGIC = defineFeatureFlag(
-            "new-location-broker-logic", true,
-            List.of("arnej"), "2021-09-07", "2021-12-31",
-            "Use new implementation of internal logic in service location broker",
-            "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
