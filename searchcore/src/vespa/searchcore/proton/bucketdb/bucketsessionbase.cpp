@@ -22,8 +22,7 @@ BucketSessionBase::extractInfo(const BucketId &bucket, BucketState *&state)
 
 
 bool
-BucketSessionBase::calcFixupNeed(BucketState *state, bool wantActive,
-                                 bool fixup)
+BucketSessionBase::calcFixupNeed(BucketState *state, bool wantActive, bool fixup)
 {
     if (state && state->isActive() != wantActive) {
         if (fixup) {

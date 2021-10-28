@@ -7,13 +7,6 @@
 
 namespace proton::bucketdb {
 
-struct ScanPosition {
-    document::BucketId _lastBucket;
-
-    ScanPosition() : _lastBucket() { }
-    bool validBucket() const { return _lastBucket.isSet(); }
-};
-
 
 class ScanIterator {
 private:
@@ -24,8 +17,6 @@ private:
     BucketIterator       _end;
 
 public:
-    enum class Pass {FIRST, SECOND};
-    ScanIterator(const Guard & db, Pass pass, BucketId lastBucket, BucketId endBucket);
     ScanIterator(const Guard & db, BucketId bucket);
     ScanIterator(const ScanIterator &) = delete;
     ScanIterator(ScanIterator &&rhs) = delete;

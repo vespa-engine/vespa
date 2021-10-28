@@ -6,7 +6,6 @@
 #include "iclusterstatechangednotifier.h"
 #include "i_disk_mem_usage_notifier.h"
 #include "ibucketmodifiedhandler.h"
-#include "move_operation_limiter.h"
 #include "document_db_maintenance_config.h"
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_notifier.h>
