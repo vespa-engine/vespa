@@ -254,7 +254,7 @@ public class DocumentV1ApiTest {
             assertEquals("content", parameters.getRoute().toString());
             assertEquals("default", parameters.getBucketSpace());
             assertEquals(1025, parameters.getMaxTotalHits()); // Not bounded likewise for streamed responses.
-            assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
+            assertEquals(1, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
             assertEquals(6000, parameters.getSessionTimeoutMs());
