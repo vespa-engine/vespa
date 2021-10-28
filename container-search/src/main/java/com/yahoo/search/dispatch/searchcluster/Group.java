@@ -39,7 +39,11 @@ public class Group {
         }
     }
 
-    /** Returns the unique identity of this group */
+    /**
+     * Returns the unique identity of this group.
+     * NOTE: This is a contiguous index from 0, NOT necessarily the group id assigned
+     * by the user or node repo.
+     */
     public int id() { return id; }
 
     /** Returns the nodes in this group as an immutable list */

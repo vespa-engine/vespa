@@ -54,7 +54,7 @@ public class Node {
 
     public String hostname() { return hostname; }
 
-    /** Returns the id of this group this node belongs to */
+    /** Returns the id of the group this node belongs to */
     public int group() { return group; }
 
     public void setWorking(boolean working) {
