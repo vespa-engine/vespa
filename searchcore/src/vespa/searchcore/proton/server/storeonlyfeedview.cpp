@@ -637,7 +637,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     if (useDMS) {
         vespalib::Gate gate;
         std::vector<document::GlobalId> gidsToRemove = getGidsToRemove(_metaStore, lidsToRemove);
-        _gidToLidChangeHandler.notifyRemove(std::make_shared<vespalib::GateCallback>(gate), gidsToRemove, serialNum);
+        _gidToLidChangeHandler.notifyRemoves(std::make_shared<vespalib::GateCallback>(gate), gidsToRemove, serialNum);
         gate.await();
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         _metaStore.commit(CommitParam(serialNum));

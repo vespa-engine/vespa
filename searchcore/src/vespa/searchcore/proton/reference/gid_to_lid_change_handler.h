@@ -54,7 +54,7 @@ public:
 
     void notifyPut(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serial_num) override;
     void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum);
-    void notifyRemove(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum) override;
+    void notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum) override;
     void notifyRemoveDone(GlobalId gid, SerialNum serialNum);
     std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override;
 

@@ -47,7 +47,7 @@ public:
      * Notify removal of gid. Passed on to listeners at once.
      */
     void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum);
-    virtual void notifyRemove(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum) = 0;
+    virtual void notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum) = 0;
     virtual std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() = 0;
 };
 

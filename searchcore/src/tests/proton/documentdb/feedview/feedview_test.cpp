@@ -187,7 +187,7 @@ public:
         ++_changes;
     }
 
-    void notifyRemove(IDestructorCallbackSP, const std::vector<document::GlobalId> & gids, SerialNum) override {
+    void notifyRemoves(IDestructorCallbackSP, const std::vector<document::GlobalId> & gids, SerialNum) override {
         for (const auto & gid : gids) {
             _changeGid = gid;
             _changeLid = 0;

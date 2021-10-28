@@ -10,7 +10,7 @@ void
 IGidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum) {
     std::vector<GlobalId> gids;
     gids.push_back(gid);
-    notifyRemove(std::move(context), gids, serialNum);
+    notifyRemoves(std::move(context), gids, serialNum);
 }
 
 }

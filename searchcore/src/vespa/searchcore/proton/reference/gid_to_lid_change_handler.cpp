@@ -71,7 +71,7 @@ GidToLidChangeHandler::notifyPutDone(IDestructorCallbackSP context, GlobalId gid
 }
 
 void
-GidToLidChangeHandler::notifyRemove(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum)
+GidToLidChangeHandler::notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum)
 {
     lock_guard guard(_lock);
     _pending_changes.reserve(_pending_changes.size() + gids.size());
