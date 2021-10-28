@@ -59,7 +59,7 @@ public class Flags {
             APPLICATION_ID, NODE_TYPE, HOSTNAME);
 
     public static final UnboundBooleanFlag USE_CGROUPS_V2 = defineFeatureFlag(
-            "use-cgroups-v2", true,
+            "use-cgroups-v2", false,
             List.of("freva"), "2021-10-27", "2021-12-01",
             "Whether a host should use CGroups v2",
             "Will attempt to switch on next host admin tick (requires reboot).",
