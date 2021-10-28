@@ -634,16 +634,10 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     const LidVector &lidsToRemove(ctx->getLidVector());
     bool useDMS = useDocumentMetaStore(serialNum);
     bool explicitReuseLids = false;
-    std::vector<document::GlobalId> gidsToRemove;
     if (useDMS) {
         vespalib::Gate gate;
-        gidsToRemove = getGidsToRemove(_metaStore, lidsToRemove);
-        {
-            IGidToLidChangeHandler::IDestructorCallbackSP context = std::make_shared<vespalib::GateCallback>(gate);
-            for (const auto &gid : gidsToRemove) {
-                _gidToLidChangeHandler.notifyRemove(context, gid, serialNum);
-            }
-        }
+        std::vector<document::GlobalId> gidsToRemove = getGidsToRemove(_metaStore, lidsToRemove);
+        _gidToLidChangeHandler.notifyRemove(std::make_shared<vespalib::GateCallback>(gate), gidsToRemove, serialNum);
         gate.await();
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         _metaStore.commit(CommitParam(serialNum));

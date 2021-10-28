@@ -10,6 +10,7 @@ vespa_add_library(searchcore_reference STATIC
     gid_to_lid_change_registrator.cpp
     gid_to_lid_mapper.cpp
     gid_to_lid_mapper_factory.cpp
+    i_gid_to_lid_change_handler.cpp
     pending_gid_to_lid_changes.cpp
     DEPENDS
     searchcore_attribute

@@ -5,6 +5,7 @@
 #include "i_gid_to_lid_change_listener.h"
 #include <vespa/searchlib/common/serialnum.h>
 #include <set>
+#include <vector>
 
 namespace document { class GlobalId; }
 
@@ -23,7 +24,7 @@ public:
     using SerialNum = search::SerialNum;
     using GlobalId = document::GlobalId;
 
-    virtual ~IGidToLidChangeHandler() { }
+    virtual ~IGidToLidChangeHandler();
 
     /*
      * Add listener unless a listener with matching docTypeName and
@@ -45,7 +46,8 @@ public:
     /**
      * Notify removal of gid. Passed on to listeners at once.
      */
-    virtual void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum) = 0;
+    void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum);
+    virtual void notifyRemove(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum) = 0;
     virtual std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() = 0;
 };
 
