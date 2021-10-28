@@ -33,7 +33,7 @@ public class NodeSpec {
     }
 
     /**
-     * Returns ther partition id of this, which is also a contiguous integer id, not necessarily
+     * Returns the partition id of this, which is also a contiguous integer id, not necessarily
      * the same as the group id assigned by the user or node repo.
      */
     public int partitionId() {
