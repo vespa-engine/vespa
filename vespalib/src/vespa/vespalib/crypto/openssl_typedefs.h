@@ -43,11 +43,13 @@ struct EvpPkeyDeleter {
 };
 using EvpPkeyPtr = std::unique_ptr<::EVP_PKEY, EvpPkeyDeleter>;
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
 struct EcKeyDeleter {
     void operator()(::EC_KEY* ec_key) const noexcept {
         ::EC_KEY_free(ec_key);
     }
 };
 using EcKeyPtr = std::unique_ptr<::EC_KEY, EcKeyDeleter>;
+#endif
 
 }
