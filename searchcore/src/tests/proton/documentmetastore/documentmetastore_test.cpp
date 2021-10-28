@@ -267,7 +267,11 @@ putGid(DocumentMetaStore &dms, const GlobalId &gid, uint32_t lid, Timestamp time
     EXPECT_TRUE(dms.put(gid, bid, timestamp, docSize, lid, 0u).ok());
 }
 
-TEST(DocumentMetaStoreTest, removed_documents_are_bucketized_to_bucket_0)
+TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
+    EXPECT_EQ(24u, sizeof(RawDocumentMetaData));
+    EXPECT_EQ(40u, sizeof(search::DocumentMetaData));
+}
+ TEST(DocumentMetaStoreTest, removed_documents_are_bucketized_to_bucket_0)
 {
     DocumentMetaStore dms(createBucketDB());
     dms.constructFreeList();

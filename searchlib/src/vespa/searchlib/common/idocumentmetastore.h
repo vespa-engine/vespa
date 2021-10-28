@@ -22,7 +22,7 @@ struct DocumentMetaData {
 
     typedef std::vector<DocumentMetaData> Vector;
 
-    DocumentMetaData()
+    DocumentMetaData() noexcept
         : lid(0),
           timestamp(0),
           bucketId(),
@@ -33,19 +33,15 @@ struct DocumentMetaData {
     DocumentMetaData(DocId lid_,
                      storage::spi::Timestamp timestamp_,
                      document::BucketId bucketId_,
-                     const document::GlobalId &gid_)
-        : lid(lid_),
-          timestamp(timestamp_),
-          bucketId(bucketId_),
-          gid(gid_),
-          removed(false)
+                     const document::GlobalId &gid_) noexcept
+        : DocumentMetaData(lid_, timestamp_, bucketId_, gid_, false)
     { }
 
     DocumentMetaData(DocId lid_,
                      storage::spi::Timestamp timestamp_,
                      document::BucketId bucketId_,
                      const document::GlobalId &gid_,
-                     bool removed_)
+                     bool removed_) noexcept
         : lid(lid_),
           timestamp(timestamp_),
           bucketId(bucketId_),

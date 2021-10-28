@@ -23,7 +23,7 @@ struct RawDocumentMetaData
     uint16_t  _docSizeHigh;
     Timestamp _timestamp;
 
-    RawDocumentMetaData()
+    RawDocumentMetaData() noexcept
         : _gid(),
           _bucketUsedBits(BucketId::minNumBits),
           _docSizeLow(0),
@@ -31,7 +31,7 @@ struct RawDocumentMetaData
           _timestamp()
     { }
 
-    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize)
+    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize) noexcept
         : _gid(gid),
           _bucketUsedBits(bucketId.getUsedBits()),
           _docSizeLow(docSize),
@@ -49,10 +49,10 @@ struct RawDocumentMetaData
         }
     }
 
-    bool operator<(const GlobalId &rhs) const { return _gid < rhs; }
-    bool operator==(const GlobalId &rhs) const { return _gid == rhs; }
-    bool operator<(const RawDocumentMetaData &rhs) const { return _gid < rhs._gid; }
-    bool operator==(const RawDocumentMetaData &rhs) const { return _gid == rhs._gid; }
+    bool operator<(const GlobalId &rhs) const noexcept { return _gid < rhs; }
+    bool operator==(const GlobalId &rhs) const noexcept { return _gid == rhs; }
+    bool operator<(const RawDocumentMetaData &rhs) const noexcept { return _gid < rhs._gid; }
+    bool operator==(const RawDocumentMetaData &rhs) const noexcept { return _gid == rhs._gid; }
 
     const GlobalId &getGid() const { return _gid; }
     GlobalId &getGid() { return _gid; }
