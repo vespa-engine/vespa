@@ -4,7 +4,6 @@ package com.yahoo.config.application.api;
 import com.yahoo.config.provision.RegionName;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -20,6 +19,8 @@ import java.util.stream.Collectors;
  */
 public class Endpoint {
 
+    public static final String DEFAULT_ID = "default";
+
     /*
      * Endpoint IDs must be:
      * - lowercase
@@ -30,13 +31,12 @@ public class Endpoint {
      */
     private static final Pattern endpointPattern = Pattern.compile("^[a-z](?:-?[a-z0-9]+)*$");
     private static final int endpointMaxLength = 12;
-    private static final String defaultEndpointId = "default";
 
-    private final Optional<String> endpointId;
+    private final String endpointId;
     private final String containerId;
     private final Set<RegionName> regions;
 
-    public Endpoint(Optional<String> endpointId, String containerId, Set<String> regions) {
+    public Endpoint(String endpointId, String containerId, Set<String> regions) {
         this.endpointId = Objects.requireNonNull(endpointId, "endpointId must be non-null");
         this.containerId = Objects.requireNonNull(containerId, "containerId must be non-null");
         this.regions = Set.copyOf(
@@ -50,7 +50,7 @@ public class Endpoint {
     }
 
     public String endpointId() {
-        return endpointId.orElse(defaultEndpointId);
+        return endpointId;
     }
 
     public String containerId() {

@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,6 +61,7 @@ public class DeploymentSpecXmlReader {
     private static final String endpointsTag = "endpoints";
     private static final String endpointTag = "endpoint";
     private static final String notificationsTag = "notifications";
+
 
     private static final String idAttribute = "id";
     private static final String athenzServiceAttribute = "athenz-service";
@@ -263,22 +265,18 @@ public class DeploymentSpecXmlReader {
     private List<Endpoint> readEndpoints(Element parent) {
         var endpointsElement = XML.getChild(parent, endpointsTag);
         if (endpointsElement == null)
-            return Collections.emptyList();
+            return List.of();
 
         var endpoints = new LinkedHashMap<String, Endpoint>();
 
         for (var endpointElement : XML.getChildren(endpointsElement, endpointTag)) {
-            Optional<String> rotationId = stringAttribute("id", endpointElement);
-            Optional<String> containerId = stringAttribute("container-id", endpointElement);
-            var regions = new HashSet<String>();
-
-            if (containerId.isEmpty()) {
-                throw new IllegalArgumentException("Missing 'container-id' from 'endpoint' tag.");
-            }
+            String endpointId = stringAttribute("id", endpointElement).orElse(Endpoint.DEFAULT_ID);
+            String containerId = requireStringAttribute("container-id", endpointElement);
+            Set<String> regions = new HashSet<>();
 
             for (var regionElement : XML.getChildren(endpointElement, "region")) {
                 var region = regionElement.getTextContent();
-                if (region == null || region.isEmpty() || region.isBlank()) {
+                if (region == null || region.isBlank()) {
                     throw new IllegalArgumentException("Empty 'region' element in 'endpoint' tag.");
                 }
                 if (regions.contains(region)) {
@@ -287,7 +285,7 @@ public class DeploymentSpecXmlReader {
                 regions.add(region);
             }
 
-            var endpoint = new Endpoint(rotationId, containerId.get(), regions);
+            Endpoint endpoint = new Endpoint(endpointId, containerId, regions);
             if (endpoints.containsKey(endpoint.endpointId())) {
                 throw new IllegalArgumentException("Duplicate attribute 'id' on 'endpoint': " + endpoint.endpointId());
             }
@@ -350,12 +348,17 @@ public class DeploymentSpecXmlReader {
         }
     }
 
-    /**
-     * Returns the given attribute as a string, or Optional.empty if it is not present or empty
-     */
+    /** Returns the given non-blank attribute of tag as a string, if any */
     private static Optional<String> stringAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
-        return Optional.ofNullable(value).filter(s -> !s.equals(""));
+        return Optional.ofNullable(value).filter(s -> !s.isBlank());
+    }
+
+    /** Returns the given non-blank attribute of tag or throw */
+    private static String requireStringAttribute(String attributeName, Element tag) {
+        return stringAttribute(attributeName, tag)
+                .orElseThrow(() -> new IllegalArgumentException("Missing required attribute '" + attributeName +
+                                                                "' in '" + tag.getTagName() + "'"));
     }
 
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
