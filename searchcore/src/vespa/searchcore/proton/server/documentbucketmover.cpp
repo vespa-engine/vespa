@@ -6,10 +6,8 @@
 #include "maintenancedocumentsubdb.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
-#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/util/destructor_callbacks.h>
 
 using document::BucketId;
 using document::Document;

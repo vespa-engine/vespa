@@ -559,8 +559,8 @@ DocumentMetaStore::updateMetaData(DocId lid,
     return true;
 }
 
-void
-DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num, bucketdb::Guard &bucketGuard)
+RawDocumentMetaData
+DocumentMetaStore::removeInternal(DocId lid, uint64_t prepare_serial_num)
 {
     const GlobalId & gid = getRawGid(lid);
     KeyComp comp(gid, _metaDataStore);
@@ -578,11 +578,7 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num, bucketdb::Guar
     }
     _gidToLidMap.remove(itr);
     _lidAlloc.unregisterLid(lid);
-    RawDocumentMetaData &oldMetaData = _metaDataStore[lid];
-    bucketGuard->remove(oldMetaData.getGid(),
-                        oldMetaData.getBucketId().stripUnused(),
-                        oldMetaData.getTimestamp(), oldMetaData.getDocSize(),
-                        _subDbType);
+    return _metaDataStore[lid];
 }
 
 bool
@@ -591,8 +587,9 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
     if (!validLid(lid)) {
         return false;
     }
-    bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
-    remove(lid, prepare_serial_num, bucketGuard);
+    RawDocumentMetaData meta = removeInternal(lid, prepare_serial_num);
+    _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(),
+                                   meta.getTimestamp(), meta.getDocSize(), _subDbType);
     incGeneration();
     if (_op_listener) {
         _op_listener->notify_remove();
@@ -638,13 +635,21 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
 void
 DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uint32_t docIdLimit)
 {
-    bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
+    std::vector<RawDocumentMetaData> removed;
+    removed.reserve(lidsToRemove.size());
     for (const auto &lid : lidsToRemove) {
         assert(lid > 0 && lid < docIdLimit);
         (void) docIdLimit;
 
         assert(validLid(lid));
-        remove(lid, 0u, bucketGuard);
+        removed.push_back(removeInternal(lid, 0u));
+    }
+    {
+        bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
+        for (const auto &meta: removed) {
+            bucketGuard->remove(meta.getGid(), meta.getBucketId().stripUnused(),
+                                meta.getTimestamp(), meta.getDocSize(), _subDbType);
+        }
     }
     incGeneration();
     if (_op_listener) {
@@ -691,8 +696,7 @@ DocumentMetaStore::getLid(const GlobalId &gid, DocId &lid) const
     GlobalId value(gid);
     KeyComp comp(value, _metaDataStore);
     auto find_key = GidToLidMapKey::make_find_key(gid);
-    TreeType::ConstIterator itr =
-        _gidToLidMap.getFrozenView().find(find_key, comp);
+    TreeType::ConstIterator itr = _gidToLidMap.getFrozenView().find(find_key, comp);
     if (!itr.valid()) {
         return false;
     }
@@ -718,11 +722,7 @@ DocumentMetaStore::getMetaData(const GlobalId &gid) const
     const RawDocumentMetaData &raw = getRawMetaData(lid);
     Timestamp timestamp(raw.getTimestamp());
     std::atomic_thread_fence(std::memory_order_acquire);
-    return search::DocumentMetaData(lid,
-                                    timestamp,
-                                    raw.getBucketId(),
-                                    raw.getGid(),
-                                    _subDbType == SubDbType::REMOVED);
+    return search::DocumentMetaData(lid, timestamp, raw.getBucketId(), raw.getGid(), _subDbType == SubDbType::REMOVED);
 }
 
 void
@@ -740,10 +740,7 @@ DocumentMetaStore::getMetaData(const BucketId &bucketId,
                 continue; // Wrong bucket (due to overlapping buckets)
             Timestamp timestamp(rawData.getTimestamp());
             std::atomic_thread_fence(std::memory_order_acquire);
-            result.push_back(search::DocumentMetaData(lid, timestamp,
-                            rawData.getBucketId(),
-                            rawData.getGid(),
-                            _subDbType == SubDbType::REMOVED));
+            result.emplace_back(lid, timestamp, rawData.getBucketId(), rawData.getGid(),_subDbType == SubDbType::REMOVED);
         }
     }
 }

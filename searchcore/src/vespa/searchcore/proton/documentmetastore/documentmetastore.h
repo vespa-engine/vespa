@@ -126,7 +126,7 @@ private:
 
     VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder);
 
-    void remove(DocId lid, uint64_t cached_iterator_sequence_id, bucketdb::Guard &bucketGuard);
+    RawDocumentMetaData removeInternal(DocId lid, uint64_t cached_iterator_sequence_id);
 
 public:
     typedef TreeType::Iterator Iterator;
