@@ -9,7 +9,7 @@
 #include <vespa/fastos/app.h>
 #include <iostream>
 #include <sstream>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <cassert>
 #include <getopt.h>
 
@@ -21,6 +21,18 @@ typedef std::vector<vespalib::string> StringArray;
 typedef std::shared_ptr<StringArray> StringArraySP;
 using namespace vespalib::alloc;
 using vespalib::string;
+
+namespace {
+
+struct EvpMdCtxDeleter {
+    void operator()(EVP_MD_CTX* evp_md_ctx) const noexcept {
+        EVP_MD_CTX_free(evp_md_ctx);
+    }
+};
+
+using EvpMdCtxPtr = std::unique_ptr<EVP_MD_CTX, EvpMdCtxDeleter>;
+
+}
 
 void
 usageHeader()
@@ -62,8 +74,8 @@ void
 shafile(const string &baseDir,
         const string &file)
 {
-    unsigned char digest[SHA256_DIGEST_LENGTH];
-    SHA256_CTX c; 
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len = 0;
     string fullFile(prependBaseDir(baseDir, file));
     FastOS_File f;
     std::ostringstream os;
@@ -76,17 +88,20 @@ shafile(const string &baseDir,
     }
     int64_t flen = f.GetSize();
     int64_t remainder = flen;
-    SHA256_Init(&c);
+    EvpMdCtxPtr md_ctx(EVP_MD_CTX_new());
+    const EVP_MD* md = EVP_get_digestbyname("SHA256");
+    EVP_DigestInit_ex(md_ctx.get(), md, nullptr);
     while (remainder > 0) {
         int64_t thistime =
             std::min(remainder, static_cast<int64_t>(buf.size()));
         f.ReadBuf(buf.get(), thistime);
-        SHA256_Update(&c, buf.get(), thistime);
+        EVP_DigestUpdate(md_ctx.get(), buf.get(), thistime);
         remainder -= thistime;
     }
     f.Close();
-    SHA256_Final(digest, &c);
-    for (unsigned int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+    EVP_DigestFinal_ex(md_ctx.get(), &digest[0], &digest_len);
+    assert(digest_len > 0u && digest_len <= EVP_MAX_MD_SIZE);
+    for (unsigned int i = 0; i < digest_len; ++i) {
         os.width(2);
         os.fill('0');
         os << std::hex << static_cast<unsigned int>(digest[i]);

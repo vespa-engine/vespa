@@ -18,7 +18,7 @@
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
-#include <openssl/sha.h>
+#include <openssl/evp.h>
 #include <vespa/fastos/app.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
@@ -52,6 +52,18 @@ using namespace search::index;
 
 // needed to resolve external symbol from httpd.h on AIX
 void FastS_block_usr2() { }
+
+namespace {
+
+struct EvpMdCtxDeleter {
+    void operator()(EVP_MD_CTX* evp_md_ctx) const noexcept {
+        EVP_MD_CTX_free(evp_md_ctx);
+    }
+};
+
+using EvpMdCtxPtr = std::unique_ptr<EVP_MD_CTX, EvpMdCtxDeleter>;
+
+}
 
 namespace fieldwriter {
 
@@ -283,19 +295,21 @@ WrappedFieldReader::close()
 
 class FileChecksum
 {
-    unsigned char _digest[SHA256_DIGEST_LENGTH];
-
+    unsigned char _digest[EVP_MAX_MD_SIZE];
+    unsigned int  _digest_len;
 public:
     FileChecksum(const vespalib::string &file_name);
     bool operator==(const FileChecksum &rhs) const {
-        return (memcmp(_digest, rhs._digest, SHA256_DIGEST_LENGTH) == 0);
+        return ((_digest_len == rhs._digest_len) &&
+                (memcmp(_digest, rhs._digest, _digest_len) == 0));
     }
 };
 
 
 FileChecksum::FileChecksum(const vespalib::string &file_name)
+    : _digest(),
+      _digest_len(0u)
 {
-    SHA256_CTX c; 
     FastOS_File f;
     Alloc buf = Alloc::alloc(64_Ki);
     vespalib::string full_file_name(dirprefix + file_name);
@@ -306,16 +320,19 @@ FileChecksum::FileChecksum(const vespalib::string &file_name)
     }
     int64_t flen = f.GetSize();
     int64_t remainder = flen;
-    SHA256_Init(&c);
+    EvpMdCtxPtr md_ctx(EVP_MD_CTX_new());
+    const EVP_MD* md = EVP_get_digestbyname("SHA256");
+    EVP_DigestInit_ex(md_ctx.get(), md, nullptr);
     while (remainder > 0) {
         int64_t thistime =
             std::min(remainder, static_cast<int64_t>(buf.size()));
         f.ReadBuf(buf.get(), thistime);
-        SHA256_Update(&c, buf.get(), thistime);
+        EVP_DigestUpdate(md_ctx.get(), buf.get(), thistime);
         remainder -= thistime;
     }
     f.Close();
-    SHA256_Final(_digest, &c);
+    EVP_DigestFinal_ex(md_ctx.get(), &_digest[0], &_digest_len);
+    assert(_digest_len > 0u && _digest_len <= EVP_MAX_MD_SIZE);
 }
 
 void
