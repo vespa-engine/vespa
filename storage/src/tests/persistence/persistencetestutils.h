@@ -56,6 +56,35 @@ public:
     private:
         document::Bucket _bucket;
     };
+    class MockBucketLocks {
+        std::mutex _mutex;
+        std::condition_variable _cv;
+        std::set<document::Bucket> _locked_buckets;
+    public:
+        MockBucketLocks();
+        ~MockBucketLocks();
+        void lock(document::Bucket bucket);
+        void unlock(document::Bucket bucket);
+    };
+
+    class MockBucketLock : public FileStorHandler::BucketLockInterface
+    {
+    public:
+        MockBucketLock(document::Bucket bucket, MockBucketLocks &locks) noexcept : _bucket(bucket), _locks(locks) { _locks.lock(bucket); }
+        ~MockBucketLock() { _locks.unlock(_bucket); }
+        const document::Bucket &getBucket() const override {
+            return _bucket;
+        }
+        api::LockingRequirements lockingRequirements() const noexcept override {
+            return api::LockingRequirements::Exclusive;
+        }
+        static std::shared_ptr<MockBucketLock> make(document::Bucket bucket, MockBucketLocks& locks) {
+            return std::make_shared<MockBucketLock>(bucket, locks);
+        }
+    private:
+        document::Bucket _bucket;
+        MockBucketLocks& _locks;
+    };
 
     struct ReplySender : public MessageSender {
         void sendCommand(const std::shared_ptr<api::StorageCommand> &) override {
@@ -73,6 +102,7 @@ public:
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequenceTaskExecutor;
     ReplySender _replySender;
     BucketOwnershipNotifier _bucketOwnershipNotifier;
+    MockBucketLocks _mock_bucket_locks;
     std::unique_ptr<PersistenceHandler> _persistenceHandler;
 
     PersistenceTestUtils();
@@ -112,6 +142,12 @@ public:
     createTracker(api::StorageMessage::SP cmd, document::Bucket bucket) {
         return MessageTracker::createForTesting(framework::MilliSecTimer(getEnv()._component.getClock()), getEnv(),
                                                 _replySender, NoBucketLock::make(bucket), std::move(cmd));
+    }
+
+    MessageTracker::UP
+    createLockedTracker(api::StorageMessage::SP cmd, document::Bucket bucket) {
+        return MessageTracker::createForTesting(framework::MilliSecTimer(getEnv()._component.getClock()), getEnv(),
+                                                _replySender, MockBucketLock::make(bucket, _mock_bucket_locks), std::move(cmd));
     }
 
     api::ReturnCode

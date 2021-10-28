@@ -49,6 +49,7 @@ public:
     std::future<vespalib::string> get_future();
     void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, std::shared_ptr<api::StorageReply>&& delayed_reply);
     void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, MessageSender& sender, std::shared_ptr<api::StorageReply>&& delayed_reply);
+    void set_tracker(std::unique_ptr<MessageTracker>&& tracker);
     const spi::Bucket& get_bucket() const noexcept { return _bucket; }
 };
 
