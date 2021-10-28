@@ -911,9 +911,6 @@ MergeHandler::handleMergeBucket(api::MergeBucketCommand& cmd, MessageTracker::UP
         tracker->fail(api::ReturnCode::BUSY, err);
         return tracker;
     }
-    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<spi::NoopOperationComplete>());
-
-
     MergeStateDeleter stateGuard(_env._fileStorHandler, bucket.getBucket());
     auto s = std::make_shared<MergeStatus>(_clock, cmd.getPriority(), cmd.getTrace().getLevel());
     _env._fileStorHandler.addMergeStatus(bucket.getBucket(), s);
@@ -1074,7 +1071,6 @@ MergeHandler::handleGetBucketDiff(api::GetBucketDiffCommand& cmd, MessageTracker
     tracker->setMetric(_env._metrics.getBucketDiff);
     spi::Bucket bucket(cmd.getBucket());
     LOG(debug, "GetBucketDiff(%s)", bucket.toString().c_str());
-    _spi.createBucketAsync(bucket, tracker->context(), std::make_unique<spi::NoopOperationComplete>());
     return handleGetBucketDiffStage2(cmd, std::move(tracker));
 }
 
