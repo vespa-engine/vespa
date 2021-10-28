@@ -28,7 +28,7 @@ public class SystemRoutingPolicyMaintainerTest {
     public void maintain() {
         var tester = new ControllerTester();
         var updater = new SystemRoutingPolicyMaintainer(tester.controller(), Duration.ofDays(1));
-        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofDays(1), Integer.MAX_VALUE);
+        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofSeconds(Integer.MAX_VALUE));
 
         var zone = ZoneId.from("prod", "us-west-1");
         tester.zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(zone));

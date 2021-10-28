@@ -227,7 +227,7 @@ public class DeploymentContext {
 
     /** Flush count pending DNS updates */
     public DeploymentContext flushDnsUpdates(int count) {
-        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofDays(1), count);
+        var dispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofSeconds(count));
         dispatcher.run();
         return this;
     }

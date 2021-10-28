@@ -152,7 +152,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.resourceMeterMaintainer = duration(3, MINUTES);
             this.cloudEventReporter = duration(30, MINUTES);
             this.resourceTagMaintainer = duration(30, MINUTES);
-            this.systemRoutingPolicyMaintainer = duration(10, MINUTES);
+            this.systemRoutingPolicyMaintainer = duration(15, MINUTES);
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
             this.containerImageExpirer = duration(12, HOURS);
             this.hostInfoUpdater = duration(12, HOURS);

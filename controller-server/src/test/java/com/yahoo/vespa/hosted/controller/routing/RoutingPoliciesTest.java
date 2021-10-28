@@ -699,7 +699,7 @@ public class RoutingPoliciesTest {
 
         tester.provisionLoadBalancers(1, app, zone1);
         tester.routingPolicies().refresh(app, DeploymentSpec.empty, zone1);
-        new NameServiceDispatcher(tester.tester.controller(), Duration.ofDays(1), Integer.MAX_VALUE).run();
+        new NameServiceDispatcher(tester.tester.controller(), Duration.ofSeconds(Integer.MAX_VALUE)).run();
 
         List<Record> records = tester.controllerTester().nameService().findRecords(Record.Type.CNAME, name);
         assertEquals(1, records.size());

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
@@ -12,8 +11,8 @@ import java.time.Duration;
 import java.util.logging.Level;
 
 /**
- * This consumes requests from the {@link NameServiceQueue} by submitting them to a {@link NameService}. Successfully
- * consumed requests are removed from the queue.
+ * This dispatches requests from {@link NameServiceQueue} to a {@link NameService}. Successfully dispatched requests are
+ * removed from the queue.
  *
  * @author mpolden
  */
@@ -22,22 +21,17 @@ public class NameServiceDispatcher extends ControllerMaintainer {
     private final Clock clock;
     private final CuratorDb db;
     private final NameService nameService;
-    private final int requestCount;
 
     public NameServiceDispatcher(Controller controller, Duration interval) {
-        this(controller, interval, requestCount(controller.system()));
-    }
-
-    public NameServiceDispatcher(Controller controller, Duration interval, int requestCount) {
         super(controller, interval);
         this.clock = controller.clock();
         this.db = controller.curator();
         this.nameService = controller.serviceRegistry().nameService();
-        this.requestCount = requestCount;
     }
 
     @Override
     protected double maintain() {
+        int requestCount = trueIntervalInSeconds(); // Dispatch 1 request per second
         try (var lock = db.lockNameServiceQueue()) {
             var queue = db.readNameServiceQueue();
             var instant = clock.instant();
@@ -56,9 +50,9 @@ public class NameServiceDispatcher extends ControllerMaintainer {
         return 1.0;
     }
 
-    private static int requestCount(SystemName system) {
-        // Dispatch more requests at a time in CD as integration tests expect reasonably quick DNS changes
-        return system.isCd() ? 3 : 1;
+    /** The true interval at which this runs in this cluster */
+    private int trueIntervalInSeconds() {
+        return (int) interval().dividedBy(db.cluster().size()).getSeconds();
     }
 
 }
