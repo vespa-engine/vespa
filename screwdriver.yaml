@@ -56,6 +56,7 @@ jobs:
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
       screwdriver.cd/timeout: 60
+      screwdriver.cd/buildPeriodically: H 4 * * *
 
     environment:
       LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
