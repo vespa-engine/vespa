@@ -2,11 +2,14 @@
 package com.yahoo.prelude.query;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
+ * An int item which cannot provide its own index (field) name, but will always query the index
+ * specified by the parent item it is added to.
+ *
  * @author baldersheim
  */
-// TODO: Fix javadoc
 public class PureWeightedInteger extends PureWeightedItem  {
 
     private final long value;
@@ -40,7 +43,20 @@ public class PureWeightedInteger extends PureWeightedItem  {
         buffer.append(value);
         super.appendBodyString(buffer);
     }
+
     public long getValue() {
         return value;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if ( ! super.equals(other)) return false;
+        return value == ((PureWeightedInteger)other).value;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), value);
+    }
+
 }

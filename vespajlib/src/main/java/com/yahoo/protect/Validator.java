@@ -3,7 +3,7 @@ package com.yahoo.protect;
 
 
 /**
- * <p>Static utility methods for validating input.</p>
+ * Static utility methods for validating input.
  *
  * @author bratseth
  */

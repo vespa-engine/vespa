@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
@@ -19,26 +20,6 @@ import com.yahoo.compress.IntegerCompressor;
 public class WordAlternativesItem extends TermItem {
 
     private List<Alternative> alternatives;
-
-    public static final class Alternative {
-
-        public final String word;
-        public final double exactness;
-
-        public Alternative(String word, double exactness) {
-            super();
-            this.word = word;
-            this.exactness = exactness;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("Alternative [word=").append(word).append(", exactness=").append(exactness).append("]");
-            return builder.toString();
-        }
-
-    }
 
     public WordAlternativesItem(String indexName, boolean isFromQuery, Substring origin, Collection<Alternative> terms) {
         super(indexName, isFromQuery, origin);
@@ -157,6 +138,57 @@ public class WordAlternativesItem extends TermItem {
         newTerms.addAll(alternatives);
         newTerms.add(new Alternative(term, exactness));
         setAlternatives(newTerms);
+    }
+
+    @Override
+    public WordAlternativesItem clone() {
+        var clone = (WordAlternativesItem)super.clone();
+        clone.alternatives = new ArrayList(this.alternatives);
+        return clone;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if ( ! super.equals(other)) return false;
+        return this.alternatives.equals(((WordAlternativesItem)other).alternatives);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), alternatives);
+    }
+
+    /** A word alternative. This is a value object. */
+    public static final class Alternative {
+
+        public final String word;
+        public final double exactness;
+
+        public Alternative(String word, double exactness) {
+            super();
+            this.word = word;
+            this.exactness = exactness;
+        }
+
+        @Override
+        public String toString() {
+            return "Alternative [word=" + word + ", exactness=" + exactness + "]";
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if ( ! (o instanceof Alternative)) return false;
+            var other = (Alternative)o;
+            if ( ! Objects.equals(this.word, other.word)) return false;
+            if (this.exactness != other.exactness) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(word, exactness);
+        }
+
     }
 
 }

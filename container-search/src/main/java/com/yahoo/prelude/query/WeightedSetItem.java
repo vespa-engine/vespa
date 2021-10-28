@@ -8,6 +8,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A term which contains a weighted set.
@@ -26,7 +27,7 @@ import java.util.Map;
 public class WeightedSetItem extends SimpleTaggableItem {
 
     private String indexName;
-    private CopyOnWriteHashMap<Object,Integer> set;
+    private CopyOnWriteHashMap<Object, Integer> set;
 
     /** Creates an empty weighted set; note you must provide an index name up front */
     public WeightedSetItem(String indexName) {
@@ -37,6 +38,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
         }
         set = new CopyOnWriteHashMap<>(1000);
     }
+
     public WeightedSetItem(String indexName, Map<Object, Integer> map) {
         if (indexName == null) {
             this.indexName = "";
@@ -51,11 +53,11 @@ public class WeightedSetItem extends SimpleTaggableItem {
     }
 
     /**
-     * Add weighted token.
-     * If token is already in the set, the maximum weight is kept.
-     * NOTE: The weight must be 1 or more; negative values (and zero) are not allowed.
+     * Adds a weighted token.
+     * If this token is already in the set, the maximum weight is kept.
+     * The weight must be 1 or more; negative values (and zero) are not allowed.
      *
-     * @return weight of added token (might be old value, if kept)
+     * @return the weight of the added token (might be the old value, if kept)
      */
     public Integer addToken(String token, int weight) {
         if (token == null) throw new IllegalArgumentException("token must be a string");
@@ -72,9 +74,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
         return newWeight;
     }
 
-    /**
-     * Add token with weight 1.
-     */
+    /** Adds a token with weight 1. */
     public Integer addToken(String token) {
         return addToken(token, 1);
     }
@@ -178,6 +178,20 @@ public class WeightedSetItem extends SimpleTaggableItem {
         WeightedSetItem clone = (WeightedSetItem)super.clone();
         clone.set = this.set.clone();
         return clone;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if ( ! super.equals(o)) return false;
+        var other = (WeightedSetItem)o;
+        if ( ! Objects.equals(this.indexName, other.indexName)) return false;
+        if ( ! Objects.equals(this.set, other.set)) return false;
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), indexName, set);
     }
 
 }

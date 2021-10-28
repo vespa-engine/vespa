@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 import com.yahoo.prelude.query.parser.Token;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import com.yahoo.protect.Validator;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * A simple word or token to match in some field.
@@ -147,16 +147,21 @@ public class WordItem extends TermItem {
     protected void appendHeadingString(StringBuilder buffer) {}
 
     @Override
-    public int hashCode() {
-        return word.hashCode() + 71 * super.hashCode();
+    public boolean equals(Object o) {
+        if ( ! super.equals(o)) return false;
+        var other = (WordItem)o;
+        if ( this.words != other.words) return false;
+        if ( this.stemmed != other.stemmed) return false;
+        if ( this.fromSegmented != other.fromSegmented) return false;
+        if ( this.segmentIndex != other.segmentIndex) return false;
+        if ( ! Objects.equals(this.word, other.word)) return false;
+        if ( this.lowercased != other.lowercased) return false;
+        return true;
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (!super.equals(object)) return false;
-
-        WordItem other = (WordItem) object; // Ensured by superclass
-        return this.word.equals(other.word);
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), words, stemmed, fromSegmented, segmentIndex, word, lowercased);
     }
 
     @Override

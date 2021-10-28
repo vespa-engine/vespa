@@ -6,6 +6,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A weighted set query item to be evaluated as a Wand with dot product scoring.
@@ -111,6 +112,21 @@ public class WandItem extends WeightedSetItem {
         discloser.addProperty("targetNumHits", targetNumHits);
         discloser.addProperty("scoreThreshold", scoreThreshold);
         discloser.addProperty("thresholdBoostFactor", thresholdBoostFactor);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if ( ! super.equals(o)) return false;
+        var other = (WandItem)o;
+        if ( this.targetNumHits != other.targetNumHits) return false;
+        if ( this.scoreThreshold != other.scoreThreshold) return false;
+        if ( this.thresholdBoostFactor != other.thresholdBoostFactor) return false;
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), targetNumHits, scoreThreshold, thresholdBoostFactor);
     }
 
 }

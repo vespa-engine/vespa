@@ -5,6 +5,7 @@ import com.yahoo.protect.Validator;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -75,5 +76,18 @@ public class SameElementItem extends NonReducibleCompositeItem {
     public String getName() {
         return getItemType().toString();
     }
+
     public String getFieldName() { return fieldName; }
+
+    @Override
+    public boolean equals(Object other) {
+        if ( ! super.equals(other)) return false;
+        return Objects.equals(this.fieldName, ((SameElementItem)other).fieldName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), fieldName);
+    }
+
 }

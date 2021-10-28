@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 /**
  * An interface used for anything which may be addressed using an external,
  * unique ID in the query tree in the backend.

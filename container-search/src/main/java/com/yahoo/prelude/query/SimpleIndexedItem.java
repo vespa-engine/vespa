@@ -4,6 +4,7 @@ package com.yahoo.prelude.query;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * Common implementation for Item classes implementing the IndexedItem interface.
@@ -61,7 +62,7 @@ public abstract class SimpleIndexedItem extends SimpleTaggableItem implements In
 
     @Override
     public int hashCode() {
-        return super.hashCode() + 113 * index.hashCode();
+        return Objects.hash(super.hashCode(), index);
     }
 
     public abstract String getIndexedString();

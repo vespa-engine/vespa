@@ -2,23 +2,22 @@
 
 package com.yahoo.prelude.query;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.prelude.Location;
 import java.nio.ByteBuffer;
 
 /**
  * This represents a geo-location in the query tree.
  * Used for closeness(fieldname) and distance(fieldname) rank features.
+ *
  * @author arnej
  */
-@Beta
 public class GeoLocationItem extends TermItem {
 
     private Location location;
 
     /**
      * Construct from a Location, which must be geo circle with an attribute set.
-     **/
+     */
     public GeoLocationItem(Location location) {
         this(location, location.getAttribute());
         if (! location.hasAttribute()) {
@@ -30,7 +29,7 @@ public class GeoLocationItem extends TermItem {
      * Construct from a Location and a field name.
      * The Location must be a geo circle.
      * If the Location has an attribute set, it must match the field name.
-     **/
+     */
     public GeoLocationItem(Location location, String fieldName) {
         super(fieldName, false);
         if (location.hasAttribute() && ! location.getAttribute().equals(fieldName)) {
@@ -88,6 +87,13 @@ public class GeoLocationItem extends TermItem {
         GeoLocationItem other = (GeoLocationItem) object; // Ensured by superclass
         if ( ! location.equals(other.location)) return false;
         return true;
+    }
+
+    @Override
+    public GeoLocationItem clone() {
+        var clone = (GeoLocationItem)super.clone();
+        clone.location = this.location.clone();
+        return clone;
     }
 
     @Override

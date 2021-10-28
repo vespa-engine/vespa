@@ -4,14 +4,21 @@ package com.yahoo.prelude.query;
 import java.nio.ByteBuffer;
 
 /**
+ * An item which cannot provide its own index (field) name, but will always query the index
+ * specified by the parent item it is added to.
+ * It's more efficient to use pure items where possible instead of
+ * {@link TermItem} children ({@link WordItem}, {@link IntItem})
+ * who each carry their own index name.
+ *
  * @author baldersheim
  */
-// TODO: Fix javadoc
 public abstract class PureWeightedItem extends Item {
 
     public PureWeightedItem(int weight) {
         setWeight(weight);
     }
+
+    /** Ignored. */
     @Override
     public void setIndexName(String index) {
         // No index
@@ -19,7 +26,7 @@ public abstract class PureWeightedItem extends Item {
 
     @Override
     public String getName() {
-        return getItemType().name();  //To change body of implemented methods use File | Settings | File Templates.
+        return getItemType().name();
     }
 
     @Override
@@ -32,4 +39,5 @@ public abstract class PureWeightedItem extends Item {
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append(':').append(getWeight());
     }
+
 }

@@ -4,7 +4,6 @@ package com.yahoo.prelude.query;
 
 /**
  * Ordered NearItem.
- * <p>
  * Matches as a near operator, but also demands that the operands have the
  * same order in the document as in the query.
  *

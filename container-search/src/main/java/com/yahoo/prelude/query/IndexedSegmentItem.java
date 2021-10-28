@@ -4,6 +4,7 @@ package com.yahoo.prelude.query;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * Common implementation for Item classes implementing the IndexedItem interface.
@@ -60,16 +61,14 @@ public abstract class IndexedSegmentItem extends TaggableSegmentItem implements 
     @Override
     public boolean equals(Object object) {
         if ( ! super.equals(object)) return false;
-
-        IndexedItem other = (IndexedItem) object; // Ensured by superclass
+        IndexedItem other = (IndexedItem) object;
         if ( ! this.index.equals(other.getIndexName())) return false;
-
         return true;
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + 31 * index.hashCode();
+        return Objects.hash(super.hashCode(), index);
     }
 
     public abstract String getIndexedString();

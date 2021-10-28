@@ -72,8 +72,8 @@ public class StemmingSearcherTestCase {
         r = (CompositeItem)q1.getModel().getQueryTree().getRoot();
         first = (WordItem)r.getItem(0);
         second = (PhraseSegmentItem)r.getItem(1);
-        assertEquals("Connectivity incorrect.",
-                     second, first.getConnectedItem());
+        var origSecond = first.getConnectedItem();
+        assertEquals("Connectivity incorrect.", second, first.getConnectedItem());
     }
 
     @Test

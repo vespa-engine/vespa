@@ -17,15 +17,19 @@ public class ExactStringItem extends WordItem {
         super(substring, isFromQuery);
     }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.EXACT;
     }
 
+    @Override
     public String getName() {
         return "EXACTSTRING";
     }
 
+    @Override
     public String stringValue() {
         return getWord();
     }
+
 }

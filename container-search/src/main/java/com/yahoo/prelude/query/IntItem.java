@@ -4,6 +4,7 @@ package com.yahoo.prelude.query;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 
 /**
@@ -224,7 +225,7 @@ public class IntItem extends TermItem {
 
     @Override
     public int hashCode() {
-        return super.hashCode() + 199 * expression.hashCode();
+        return Objects.hash(super.hashCode(), expression);
     }
 
     @Override

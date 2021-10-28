@@ -5,6 +5,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 
 
@@ -63,6 +64,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         return "SPHRASE";
     }
 
+    @Override
     public void setIndexName(String index) {
         super.setIndexName(index);
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
@@ -120,6 +122,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
         return (WordItem) getItem(index);
     }
 
+    @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer); // takes care of index bytes
     }
@@ -144,6 +147,7 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
 
 
     /** Returns false, no parenthezes for phrases */
+    @Override
     protected boolean shouldParenthize() {
         return false;
     }
@@ -169,13 +173,6 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
             }
         }
         buffer.append("'");
-    }
-
-    // TODO: Must check all pertinent items
-    @Override
-    public boolean equals(Object object) {
-        if ( ! super.equals(object)) return false;
-        return true;
     }
 
     @Override
@@ -205,6 +202,17 @@ public class PhraseSegmentItem extends IndexedSegmentItem {
     public void disclose(Discloser discloser) {
         super.disclose(discloser);
         discloser.addProperty("explicit", explicit);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if ( ! super.equals(other)) return false;
+        return this.explicit == ((PhraseSegmentItem)other).explicit;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), explicit);
     }
 
 }

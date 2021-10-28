@@ -5,6 +5,7 @@ import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -43,6 +44,7 @@ public class PhraseItem extends CompositeIndexedItem {
         return "PHRASE";
     }
 
+    @Override
     public void setIndexName(String index) {
         super.setIndexName(index);
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
@@ -73,6 +75,7 @@ public class PhraseItem extends CompositeIndexedItem {
      *
      * @throws IllegalArgumentException if the given item is not a WordItem or PhraseItem
      */
+    @Override
     public void addItem(Item item) {
         if (item instanceof WordItem || item instanceof PhraseSegmentItem || item instanceof WordAlternativesItem) {
             addIndexedItem((IndexedItem) item);
@@ -233,6 +236,7 @@ public class PhraseItem extends CompositeIndexedItem {
         buffer.append("\"");
     }
 
+    @Override
     public String getIndexedString() {
         StringBuilder buf = new StringBuilder();
 
@@ -251,6 +255,7 @@ public class PhraseItem extends CompositeIndexedItem {
         return getNumWords();
     }
 
+    @Override
     public int getNumWords() {
         int numWords = 0;
         for (Iterator<Item> j = getItemIterator(); j.hasNext();) {
@@ -263,6 +268,17 @@ public class PhraseItem extends CompositeIndexedItem {
     public void disclose(Discloser discloser) {
         super.disclose(discloser);
         discloser.addProperty("explicit", explicit);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if ( ! super.equals(other)) return false;
+        return this.explicit == ((PhraseItem)other).explicit;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), explicit);
     }
 
 }

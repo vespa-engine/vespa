@@ -14,10 +14,12 @@ package com.yahoo.prelude.query;
  */
 public class RankItem extends CompositeItem {
 
+    @Override
     public ItemType getItemType() {
         return ItemType.RANK;
     }
 
+    @Override
     public String getName() {
         return "RANK";
     }

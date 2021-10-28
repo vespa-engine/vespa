@@ -15,30 +15,28 @@ public class NullItem extends Item {
     public NullItem() {}
 
     /** Does nothing */
+    @Override
     public void setIndexName(String index) {}
 
+    @Override
     public int encode(ByteBuffer buffer) {
-        throw new RuntimeException(
-                "A NullItem was attempted encoded. "
-                        + "This is probably a misbehaving " + "searcher.");
+        throw new IllegalStateException("A NullItem was attempted encoded. This is probably a misbehaving searcher");
     }
 
+    @Override
     public ItemType getItemType() {
-        throw new RuntimeException(
-                "Packet code access attempted. "
-                        + "A NullItem has no packet code. "
-                        + "This is probably a misbehaving " + "searcher.");
+        throw new IllegalStateException("Packet code access attempted. A NullItem has no packet code. " +
+                                        "This is probably a misbehaving searcher.");
     }
 
-    public void appendBodyString(StringBuilder buffer) {
-        // No body for this Item
-        return;
-    }
+    @Override
+    public void appendBodyString(StringBuilder buffer) {}
 
     public void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
     }
 
+    @Override
     public String getName() {
         return "NULL";
     }

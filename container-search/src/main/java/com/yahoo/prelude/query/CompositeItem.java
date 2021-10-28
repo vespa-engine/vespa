@@ -74,9 +74,8 @@ public abstract class CompositeItem extends Item {
      * @throws IndexOutOfBoundsException if the index is out of range
      */
     public void addItem(int index, Item item) {
-        if (index > subitems.size() || index < 0) {
+        if (index > subitems.size() || index < 0)
             throw new IndexOutOfBoundsException("Could not add a subitem at position " + index + " to " + this);
-        }
         adding(item);
         subitems.add(index, item);
     }
@@ -97,7 +96,7 @@ public abstract class CompositeItem extends Item {
     }
 
     /**
-     * Replaces the item at the given index
+     * Replaces the item at the given index.
      *
      * @param  index the (0-base) index of the item to replace
      * @param  item the new item
@@ -118,7 +117,7 @@ public abstract class CompositeItem extends Item {
     /**
      * Returns the index of a subitem
      *
-     * @param  item The child item to find the index of
+     * @param  item the child item to find the index of
      * @return the 0-base index of the child or -1 if there is no such child
      */
     public int getItemIndex(Item item) {
@@ -218,6 +217,7 @@ public abstract class CompositeItem extends Item {
     }
 
     /** Returns a deep copy of this item */
+    @Override
     public CompositeItem clone() {
         CompositeItem copy = (CompositeItem) super.clone();
 
@@ -271,12 +271,11 @@ public abstract class CompositeItem extends Item {
         return -1;
     }
 
+    @Override
     public int hashCode() {
         int code = getName().hashCode() + subitems.size() * 17;
-
-        for (int i = 0; i < subitems.size() && i <= 5; i++) {
+        for (int i = 0; i < subitems.size() && i <= 5; i++)
             code += subitems.get(i).hashCode();
-        }
         return code;
     }
 
@@ -284,17 +283,12 @@ public abstract class CompositeItem extends Item {
      * Returns whether this item is of the same class and
      * contains the same state as the given item
      */
+    @Override
     public boolean equals(Object object) {
-        if (!super.equals(object)) {
-            return false;
-        }
+        if (!super.equals(object)) return false;
 
         CompositeItem other = (CompositeItem) object; // Ensured by superclass
-
-        if (!this.subitems.equals(other.subitems)) {
-            return false;
-        }
-
+        if ( ! this.subitems.equals(other.subitems)) return false;
         return true;
     }
 
@@ -304,71 +298,6 @@ public abstract class CompositeItem extends Item {
     /** Whether this composite is in a mutable state. */
     public boolean isLocked() {
         return false;
-    }
-
-    /** Handles mutator calls correctly */
-    private static class ListIteratorWrapper implements ListIterator<Item> {
-
-        private CompositeItem owner;
-
-        private ListIterator<Item> wrapped;
-
-        private Item current = null;
-
-        public ListIteratorWrapper(CompositeItem owner) {
-            this.owner = owner;
-            wrapped = owner.subitems.listIterator();
-        }
-
-        public boolean hasNext() {
-            return wrapped.hasNext();
-        }
-
-        public Item next() {
-            current = wrapped.next();
-            return current;
-        }
-
-        public boolean hasPrevious() {
-            return wrapped.hasPrevious();
-        }
-
-        public Item previous() {
-            Item current = wrapped.previous();
-
-            return current;
-        }
-
-        public int nextIndex() {
-            return wrapped.nextIndex();
-        }
-
-        public int previousIndex() {
-            return wrapped.previousIndex();
-        }
-
-        public void remove() {
-            owner.removing(current);
-            wrapped.remove();
-        }
-
-        public void set(Item o) {
-            Item newItem = o;
-
-            owner.removing(current);
-            owner.adding(newItem);
-            current = newItem;
-            wrapped.set(newItem);
-        }
-
-        public void add(Item o) {
-            Item newItem = o;
-
-            owner.adding(newItem);
-            // TODO: Change current here? Check javadoc
-            wrapped.add(o);
-        }
-
     }
 
     @Override
@@ -387,6 +316,78 @@ public abstract class CompositeItem extends Item {
      */
     public Optional<Item> extractSingleChild() {
         return getItemCount() == 1 ? Optional.of(getItem(0)) : Optional.empty();
+    }
+
+    /** Handles mutator calls correctly */
+    private static class ListIteratorWrapper implements ListIterator<Item> {
+
+        private final CompositeItem owner;
+
+        private final ListIterator<Item> wrapped;
+
+        private Item current = null;
+
+        public ListIteratorWrapper(CompositeItem owner) {
+            this.owner = owner;
+            wrapped = owner.subitems.listIterator();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return wrapped.hasNext();
+        }
+
+        @Override
+        public Item next() {
+            current = wrapped.next();
+            return current;
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return wrapped.hasPrevious();
+        }
+
+        @Override
+        public Item previous() {
+            current = wrapped.previous();
+            return current;
+        }
+
+        @Override
+        public int nextIndex() {
+            return wrapped.nextIndex();
+        }
+
+        @Override
+        public int previousIndex() {
+            return wrapped.previousIndex();
+        }
+
+        @Override
+        public void remove() {
+            owner.removing(current);
+            wrapped.remove();
+        }
+
+        @Override
+        public void set(Item o) {
+            Item newItem = o;
+            owner.removing(current);
+            owner.adding(newItem);
+            current = newItem;
+            wrapped.set(newItem);
+        }
+
+        @Override
+        public void add(Item o) {
+            Item newItem = o;
+
+            owner.adding(newItem);
+            // TODO: Change current here? Check javadoc
+            wrapped.add(o);
+        }
+
     }
 
 }

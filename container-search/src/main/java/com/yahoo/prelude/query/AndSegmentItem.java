@@ -50,8 +50,6 @@ public class AndSegmentItem extends SegmentItem implements BlockItem {
         }
     }
 
-    // TODO: Is it necessary to override equals?
-
     public void setWeight(int w) {
         for (Iterator<Item> i = getItemIterator(); i.hasNext();) {
             i.next().setWeight(w);

@@ -5,6 +5,7 @@ import com.yahoo.compress.IntegerCompressor;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 
 /**
@@ -77,20 +78,16 @@ public class NearItem extends CompositeItem {
     }
 
     @Override
-    public int hashCode() {
-        return super.hashCode() + 23* distance;
-    }
-
-    /**
-     * Returns whether this item is of the same class and
-     * contains the same state as the given item
-     */
-    @Override
     public boolean equals(Object object) {
         if (!super.equals(object)) return false;
         NearItem other = (NearItem) object; // Ensured by superclass
         if (this.distance != other.distance) return false;
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), distance);
     }
 
 }

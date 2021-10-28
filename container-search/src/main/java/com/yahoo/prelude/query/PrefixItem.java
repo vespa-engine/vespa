@@ -19,14 +19,17 @@ public class PrefixItem extends WordItem {
 
     public PrefixItem(String prefix, String indexName) { super(prefix, indexName); }
 
+    @Override
     public ItemType getItemType() {
         return ItemType.PREFIX;
     }
 
+    @Override
     public String getName() {
         return "PREFIX";
     }
 
+    @Override
     public String stringValue() {
         return getWord() + "*";
     }

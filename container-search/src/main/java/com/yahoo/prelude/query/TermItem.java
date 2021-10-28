@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 
 import java.nio.ByteBuffer;
-
+import java.util.Objects;
 
 /**
  * Superclass of "leaf" conditions containing a single entity which is either matched in a field or not.
@@ -16,7 +15,7 @@ import java.nio.ByteBuffer;
 public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
 
     /** Whether the term is from the raw query or is synthetic. */
-    private final boolean isFromQuery;
+    private boolean isFromQuery;
 
     /** Whether accent dropping should be performed */
     private boolean normalizable = true;
@@ -70,6 +69,7 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
      * the superstring this substring was a part of, e.g the whole query string.
      * If this did not originate directly from a user string, this is null.
      */
+    @Override
     public Substring getOrigin() { return origin; }
 
     /**
@@ -77,7 +77,12 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
      * Only terms from the user should be modified by query rewriters which attempts to improve the
      * precision or recall of the user's query.
      */
+    @Override
     public boolean isFromQuery() { return isFromQuery; }
+
+    public void setFromQuery(boolean isFromQuery) {
+        this.isFromQuery = isFromQuery;
+    }
 
     @Override
     public abstract boolean isWords();
@@ -111,5 +116,20 @@ public abstract class TermItem extends SimpleIndexedItem implements BlockItem {
     public SegmentingRule getSegmentingRule() { return segmentingRule; }
 
     public void setSegmentingRule(SegmentingRule segmentingRule) { this.segmentingRule = segmentingRule; }
+
+    @Override
+    public boolean equals(Object o) {
+        if ( ! super.equals(o)) return false;
+        var other = (TermItem)o;
+        if ( this.isFromQuery != other.isFromQuery) return false;
+        if ( this.normalizable != other.normalizable) return false;
+        if ( this.segmentingRule != other.segmentingRule) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), isFromQuery, normalizable, segmentingRule);
+    }
 
 }

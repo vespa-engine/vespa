@@ -3,7 +3,7 @@ package com.yahoo.prelude.query;
 
 /**
  * Common implementation for Item classes implementing the TaggableItem interface.
- * Note that this file exist in 3 copies that should be kept in sync:
+ * Note that this file exists in 3 copies that should be kept in sync:
  *
  * CompositeTaggableItem.java
  * SimpleTaggableItem.java
@@ -28,8 +28,8 @@ public abstract class CompositeTaggableItem extends CompositeItem implements Tag
     /** See {@link TaggableItem#setConnectivity} */
     public void setConnectivity(Item item, double connectivity) {
         if (!(item instanceof TaggableItem)) {
-            throw new IllegalArgumentException("setConnectivity item must be taggable, was: "
-                                               + item.getClass() + " [" + item + "]");
+            throw new IllegalArgumentException("setConnectivity item must be taggable, was: " +
+                                               item.getClass() + " [" + item + "]");
         }
         setHasUniqueID(true);
         item.setHasUniqueID(true);

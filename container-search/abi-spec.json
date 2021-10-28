@@ -557,11 +557,14 @@
       "public void setValue(java.lang.String)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
+      "public com.yahoo.prelude.query.GeoLocationItem clone()",
       "public java.lang.String getIndexedString()",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public int getNumWords()",
       "public boolean isStemmed()",
-      "public boolean isWords()"
+      "public boolean isWords()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
   },
@@ -881,8 +884,8 @@
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
-      "public int hashCode()",
-      "public boolean equals(java.lang.Object)"
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": [
       "protected int distance",
@@ -913,7 +916,9 @@
       "public int getTermCount()",
       "public int encode(java.nio.ByteBuffer)",
       "protected void appendBodyString(java.lang.StringBuilder)",
-      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1028,7 +1033,9 @@
       "public java.lang.String getIndexedString()",
       "protected int encodingArity()",
       "public int getNumWords()",
-      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1056,11 +1063,12 @@
       "protected boolean shouldParenthize()",
       "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void appendBodyString(java.lang.StringBuilder)",
-      "public boolean equals(java.lang.Object)",
       "public java.lang.String getIndexedString()",
       "public boolean isExplicit()",
       "public void setExplicit(boolean)",
-      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1074,7 +1082,9 @@
       "public void <init>(java.lang.String, java.lang.String)",
       "public void <init>(java.lang.String, java.lang.String, long)",
       "public java.lang.String getValue()",
-      "public void encode(java.nio.ByteBuffer)"
+      "public void encode(java.nio.ByteBuffer)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1089,8 +1099,9 @@
       "public void <init>(java.lang.String, long)",
       "public java.lang.String getKey()",
       "public long getSubQueryBitmap()",
-      "public void setSubQueryBitmap(long)",
-      "public abstract void encode(java.nio.ByteBuffer)"
+      "public abstract void encode(java.nio.ByteBuffer)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1104,7 +1115,9 @@
       "public void <init>(java.lang.String, long)",
       "public void <init>(java.lang.String, long, long)",
       "public long getValue()",
-      "public void encode(java.nio.ByteBuffer)"
+      "public void encode(java.nio.ByteBuffer)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1132,6 +1145,8 @@
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public com.yahoo.prelude.query.PredicateQueryItem clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -1168,7 +1183,9 @@
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
-      "public long getValue()"
+      "public long getValue()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1201,7 +1218,9 @@
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public int getTermCount()",
       "protected void appendBodyString(java.lang.StringBuilder)",
-      "public java.lang.String getString()"
+      "public java.lang.String getString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1317,7 +1336,9 @@
       "public java.util.Optional extractSingleChild()",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public java.lang.String getFieldName()"
+      "public java.lang.String getFieldName()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1353,6 +1374,8 @@
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public com.yahoo.prelude.query.SegmentingRule getSegmentingRule()",
       "public void setSegmentingRule(com.yahoo.prelude.query.SegmentingRule)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
@@ -1436,7 +1459,9 @@
       "public java.lang.String getSuperstring()",
       "public char charAfter(int)",
       "public char charBefore(int)",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": [
       "public final int start",
@@ -1540,6 +1565,7 @@
       "public abstract java.lang.String getRawWord()",
       "public com.yahoo.prelude.query.Substring getOrigin()",
       "public boolean isFromQuery()",
+      "public void setFromQuery(boolean)",
       "public abstract boolean isWords()",
       "public void setOrigin(com.yahoo.prelude.query.Substring)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
@@ -1547,7 +1573,9 @@
       "public boolean isNormalizable()",
       "public void setNormalizable(boolean)",
       "public com.yahoo.prelude.query.SegmentingRule getSegmentingRule()",
-      "public void setSegmentingRule(com.yahoo.prelude.query.SegmentingRule)"
+      "public void setSegmentingRule(com.yahoo.prelude.query.SegmentingRule)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1568,13 +1596,13 @@
       "public java.lang.String toString()"
     ],
     "fields": [
-      "public static com.yahoo.prelude.query.TermType RANK",
-      "public static com.yahoo.prelude.query.TermType AND",
-      "public static com.yahoo.prelude.query.TermType OR",
-      "public static com.yahoo.prelude.query.TermType NOT",
-      "public static com.yahoo.prelude.query.TermType PHRASE",
-      "public static com.yahoo.prelude.query.TermType EQUIV",
-      "public static com.yahoo.prelude.query.TermType DEFAULT",
+      "public static final com.yahoo.prelude.query.TermType RANK",
+      "public static final com.yahoo.prelude.query.TermType AND",
+      "public static final com.yahoo.prelude.query.TermType OR",
+      "public static final com.yahoo.prelude.query.TermType NOT",
+      "public static final com.yahoo.prelude.query.TermType PHRASE",
+      "public static final com.yahoo.prelude.query.TermType EQUIV",
+      "public static final com.yahoo.prelude.query.TermType DEFAULT",
       "public final java.lang.String name"
     ]
   },
@@ -1641,7 +1669,9 @@
       "public boolean isEndAnchorDefault()",
       "public void setEndAnchorDefault(boolean)",
       "public void setSourceString(java.lang.String)",
-      "public java.lang.String getArgumentString()"
+      "public java.lang.String getArgumentString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1662,7 +1692,9 @@
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
-      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -1719,6 +1751,8 @@
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public int getTermCount()",
       "public com.yahoo.prelude.query.WeightedSetItem clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
@@ -1733,7 +1767,9 @@
     ],
     "methods": [
       "public void <init>(java.lang.String, double)",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields": [
       "public final java.lang.String word",
@@ -1760,7 +1796,12 @@
       "public java.lang.String getName()",
       "public java.util.List getAlternatives()",
       "public void encodeThis(java.nio.ByteBuffer)",
-      "public void addTerm(java.lang.String, double)"
+      "public void addTerm(java.lang.String, double)",
+      "public com.yahoo.prelude.query.WordAlternativesItem clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic com.yahoo.prelude.query.Item clone()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
   },
@@ -1796,8 +1837,8 @@
       "public int getSegmentIndex()",
       "public void setSegmentIndex(int)",
       "protected void appendHeadingString(java.lang.StringBuilder)",
-      "public int hashCode()",
       "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public int getNumWords()",
       "public java.lang.String getIndexedString()",
       "public boolean isWords()",

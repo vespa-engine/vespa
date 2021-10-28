@@ -2,11 +2,14 @@
 package com.yahoo.prelude.query;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
+ * A word item which cannot provide its own index (field) name, but will always query the index
+ * specified by the parent item it is added to.
+ *
  * @author baldersheim
  */
-// TODO: Fix javadoc
 public class PureWeightedString extends PureWeightedItem  {
 
     private final String value;
@@ -14,6 +17,7 @@ public class PureWeightedString extends PureWeightedItem  {
     public PureWeightedString(String value) {
         this(value, 100);
     }
+
     public PureWeightedString(String value, int weight) {
         super(weight);
         this.value = value;
@@ -44,4 +48,16 @@ public class PureWeightedString extends PureWeightedItem  {
     public String getString() {
         return value;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if ( ! super.equals(other)) return false;
+        return Objects.equals(value, ((PureWeightedString)other).value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), value);
+    }
+
 }

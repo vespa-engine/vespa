@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-import com.yahoo.protect.Validator;
-
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * A composite item where the first item is positive and the following
@@ -16,18 +14,17 @@ import java.util.List;
 // TODO: Handle nulls by creating nullItem or checking in encode/toString
 public class NotItem extends CompositeItem {
 
+    @Override
     public ItemType getItemType() {
         return ItemType.NOT;
     }
 
+    @Override
     public String getName() {
         return "NOT";
     }
 
-    /**
-     * Adds an item. The first item is the positive
-     * the rest is negative
-     */
+    /** Adds an item. The first item is the positive, the rest are negative */
     public void addItem(Item item) {
         super.addItem(item);
     }
@@ -46,10 +43,7 @@ public class NotItem extends CompositeItem {
     /** Returns the negative items of this: All child items except the first */
     public List<Item> negativeItems() { return items().subList(1, getItemCount()); }
 
-    /**
-     * Returns the positive item (the first subitem),
-     * or null if no positive items has been added
-     */
+    /** Returns the positive item (the first subitem), or null if no positive items has been added. */
     public Item getPositiveItem() {
         if (getItemCount() == 0) {
             return null;
@@ -60,10 +54,10 @@ public class NotItem extends CompositeItem {
     /**
      * Sets the positive item (the first item)
      *
-     * @return the old positive item, or null if there was no items
+     * @return the old positive item, or null if there was none
      */
     public Item setPositiveItem(Item item) {
-        Validator.ensureNotNull("Positive item of " + this, item);
+        Objects.requireNonNull(item, () -> "Positive item of " + this);
         if (getItemCount() == 0) {
             addItem(item);
             return null;
