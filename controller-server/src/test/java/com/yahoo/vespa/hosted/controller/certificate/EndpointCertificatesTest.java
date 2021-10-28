@@ -134,7 +134,7 @@ public class EndpointCertificatesTest {
         EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
         EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
         List<String> expectedSans = List.of(
-                "vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa-app.cloud",
+                "vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.internal.vespa-app.cloud",
                 "default.default.g.vespa-app.cloud",
                 "*.default.default.g.vespa-app.cloud",
                 "default.default.aws-us-east-1a.z.vespa-app.cloud",

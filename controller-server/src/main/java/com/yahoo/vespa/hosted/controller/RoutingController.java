@@ -394,7 +394,7 @@ public class RoutingController {
     private String commonNameHashOf(ApplicationId application, SystemName system) {
         HashCode sha1 = Hashing.sha1().hashString(application.serializedForm(), StandardCharsets.UTF_8);
         String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
-        return 'v' + base32 + Endpoint.dnsSuffix(system, includeLegacyEndpoint(application, system));
+        return 'v' + base32 + Endpoint.internalDnsSuffix(system, includeLegacyEndpoint(application, system));
     }
 
     private boolean includeLegacyEndpoint(ApplicationId application, SystemName system) {

@@ -266,6 +266,18 @@ public class Endpoint {
         }
     }
 
+    /** Returns the DNS suffix used for internal names (i.e. names not exposed to tenants) in given system */
+    public static String internalDnsSuffix(SystemName system, boolean legacy) {
+        // TODO(mpolden): Stop exposing legacy parameter after legacy endpoints in public are completely removed
+        String suffix = dnsSuffix(system, legacy);
+        if (system.isPublic() && !legacy) {
+            // Certificate provider requires special approval for three-level DNS names, e.g. foo.vespa-app.cloud.
+            // To avoid this in public we always add an extra level.
+            return ".internal" + suffix;
+        }
+        return suffix;
+    }
+
     private static String upstreamIdOf(String name, ApplicationId application, ZoneId zone) {
         return Stream.of(namePart(name, ""),
                          instancePart(Optional.of(application.instance()), ""),
