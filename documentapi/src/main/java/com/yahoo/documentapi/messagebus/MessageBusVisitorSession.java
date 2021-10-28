@@ -682,10 +682,8 @@ public class MessageBusVisitorSession implements VisitorSession {
     }
 
     private void continueVisiting() {
-        if (visitingCompleted()) {
+        if ( ! scheduleSendCreateVisitorsIfApplicable() && visitingCompleted()) {
             markSessionCompleted();
-        } else {
-            scheduleSendCreateVisitorsIfApplicable();
         }
     }
 
@@ -996,23 +994,20 @@ public class MessageBusVisitorSession implements VisitorSession {
     /**
      * Schedule a new SendCreateVisitors task iff there are still buckets to
      * visit, the visiting has not failed fatally and we haven't already
-     * scheduled such a task.
+     * scheduled such a task. Return whether a visitor was scheduled here.
      */
-    private void scheduleSendCreateVisitorsIfApplicable(long delay, TimeUnit unit) {
+    private boolean scheduleSendCreateVisitorsIfApplicable(long delay, TimeUnit unit) {
         final long elapsedMillis = elapsedTimeMillis();
         if (!isInfiniteTimeout(sessionTimeoutMillis()) && (elapsedMillis >= sessionTimeoutMillis())) {
             transitionTo(new StateDescription(State.TIMED_OUT, String.format("Session timeout of %d ms expired", sessionTimeoutMillis())));
-            if (visitingCompleted()) {
-                markSessionCompleted();
-            }
-            return;
         }
-        if (!mayScheduleCreateVisitorsTask()) {
-            return;
+        if (!mayScheduleCreateVisitorsTask() || visitingCompleted()) {
+            return false;
         }
         final long messageTimeoutMillis = computeBoundedMessageTimeoutMillis(elapsedMillis);
         taskExecutor.scheduleTask(new SendCreateVisitorsTask(messageTimeoutMillis), delay, unit);
         scheduledSendCreateVisitors = true;
+        return true;
     }
 
     private boolean mayScheduleCreateVisitorsTask() {
@@ -1022,8 +1017,8 @@ public class MessageBusVisitorSession implements VisitorSession {
                   || enoughHitsReceived());
     }
 
-    private void scheduleSendCreateVisitorsIfApplicable() {
-        scheduleSendCreateVisitorsIfApplicable(0, TimeUnit.MILLISECONDS);
+    private boolean scheduleSendCreateVisitorsIfApplicable() {
+        return scheduleSendCreateVisitorsIfApplicable(0, TimeUnit.MILLISECONDS);
     }
 
     private void handleCreateVisitorReply(CreateVisitorReply reply) {

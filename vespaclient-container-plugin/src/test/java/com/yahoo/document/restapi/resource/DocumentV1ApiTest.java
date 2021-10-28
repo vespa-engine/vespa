@@ -254,7 +254,7 @@ public class DocumentV1ApiTest {
             assertEquals("content", parameters.getRoute().toString());
             assertEquals("default", parameters.getBucketSpace());
             assertEquals(1025, parameters.getMaxTotalHits()); // Not bounded likewise for streamed responses.
-            assertEquals(100, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
+            assertEquals(1, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
             assertEquals(6000, parameters.getSessionTimeoutMs());
@@ -263,12 +263,13 @@ public class DocumentV1ApiTest {
             // Put some documents in the response
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc1)), tokens.get(0));
             parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc2)), tokens.get(1));
-            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
             VisitorStatistics statistics = new VisitorStatistics();
             statistics.setBucketsVisited(1);
-            statistics.setDocumentsVisited(3);
+            statistics.setDocumentsVisited(2);
             parameters.getControlHandler().onVisitorStatistics(statistics);
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.TIMEOUT, "timeout is OK");
+            // Extra documents are ignored.
+            parameters.getLocalDataHandler().onMessage(new PutDocumentMessage(new DocumentPut(doc3)), tokens.get(2));
         });
         response = driver.sendRequest("http://localhost/document/v1?cluster=content&bucketSpace=default&wantedDocumentCount=1025&concurrency=123" +
                                       "&selection=all%20the%20things&fieldSet=[id]&timeout=6&stream=true&slices=4&sliceId=1");
@@ -286,13 +287,9 @@ public class DocumentV1ApiTest {
                        "      \"fields\": {" +
                        "        \"artist\": \"Asa-Chan & Jun-Ray\"" +
                        "      }" +
-                       "    }," +
-                       "    {" +
-                       "     \"id\": \"id:space:music:g=a:three\"," +
-                       "     \"fields\": {}" +
                        "    }" +
                        "  ]," +
-                       "  \"documentCount\": 3" +
+                       "  \"documentCount\": 2" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
 
