@@ -1,24 +1,51 @@
+// This "noinspection" comment is here to fix a warning
+//noinspection GroovyAssignabilityCheck
 plugins {
   id 'org.jetbrains.intellij' version '1.1.4'
   id 'java'
 
-//    id 'java-gradle-plugin' // I added that
-//    id 'maven-publish' // to deploy the plugin into a Maven repo
+  id "org.jetbrains.grammarkit" version '2021.1.3'
+  
+  id 'maven-publish' // to deploy the plugin into a Maven repo
 }
 
+apply plugin: 'org.jetbrains.grammarkit'
+
+import org.jetbrains.grammarkit.tasks.GenerateLexer
+import org.jetbrains.grammarkit.tasks.GenerateParser
+
+task generateSdLexer(type: GenerateLexer) {
+  source 'src/main/java/org/intellij/sdk/language/lexer/sd.flex'
+  targetDir 'src/main/gen/org/intellij/sdk/language/lexer/'
+  targetClass 'SdLexer'
+  purgeOldFiles true
+}
+
+task generateSdParser(type: GenerateParser) {
+  source 'src/main/java/org/intellij/sdk/language/parser/sd.bnf'
+  targetRoot 'src/main/gen'
+  pathToParser 'org/intellij/sdk/language/parser/SdParser.java'
+  pathToPsiRoot 'org/intellij/sdk/language/psi/'
+  purgeOldFiles true
+}
+
+compileJava {
+  dependsOn generateSdLexer
+  dependsOn generateSdParser
+}
+
+
 group 'org.vz.native'
-version '1.0.0'
+version '1.0.1'
 
-sourceCompatibility = 11 // I added that from Simple Plugin
+sourceCompatibility = 11
 
+// This "noinspection" comment is here to fix a warning
+//noinspection GroovyAssignabilityCheck
 repositories {
   mavenCentral()
 }
 
-dependencies {
-  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
-//    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
-}
 
 sourceSets.main.java.srcDirs 'src/main/gen'
 
@@ -28,7 +55,7 @@ intellij {
   plugins = ['com.intellij.java']
 }
 
-buildSearchableOptions {  // I added that from Simple Plugin
+buildSearchableOptions {
   enabled = false
 }
 

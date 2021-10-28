@@ -6,12 +6,12 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementResolveResult;
+import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReferenceBase;
 import com.intellij.psi.ResolveResult;
 import com.intellij.util.IncorrectOperationException;
 import org.intellij.sdk.language.psi.SdDeclaration;
-import org.intellij.sdk.language.psi.SdIdentifierVal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,7 +71,7 @@ public class SdReference extends PsiReferenceBase<PsiElement> implements PsiPoly
     
     @Override
     public PsiElement handleElementRename(@NotNull String newElementName) throws IncorrectOperationException {
-        return ((SdIdentifierVal) myElement).setName(newElementName);
+        return ((PsiNamedElement) myElement).setName(newElementName);
     }
     
 }

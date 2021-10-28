@@ -3,12 +3,12 @@ package org.intellij.sdk.language.hierarchy;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiNamedElement;
+import com.intellij.psi.PsiReference;
 import com.intellij.psi.util.PsiTreeUtil;
-import org.intellij.sdk.language.SdReference;
 import org.intellij.sdk.language.psi.SdExpressionDefinition;
 import org.intellij.sdk.language.psi.SdFunctionDefinition;
 import org.intellij.sdk.language.psi.SdIdentifier;
-import org.intellij.sdk.language.psi.SdIdentifierVal;
 import org.intellij.sdk.language.psi.SdRankProfileDefinition;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,8 +39,11 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
             return results;
         }
         for (SdIdentifier identifier : PsiTreeUtil.collectElementsOfType(expression, SdIdentifier.class)) {
-            if (macrosMap.containsKey(identifier.getName())) {
-                results.add(identifier.getReference().resolve());
+            if (macrosMap.containsKey(((PsiNamedElement) identifier).getName())) {
+                PsiReference identifierRef = identifier.getReference();
+                if (identifierRef != null) {
+                    results.add(identifierRef.resolve());
+                }
             }
         }
         

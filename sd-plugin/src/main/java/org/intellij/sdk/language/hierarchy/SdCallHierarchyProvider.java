@@ -11,18 +11,12 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiReference;
-import org.intellij.sdk.language.SdReference;
-import org.intellij.sdk.language.SdUtil;
-import org.intellij.sdk.language.psi.SdDeclaration;
 import org.intellij.sdk.language.psi.SdFunctionDefinition;
 import org.intellij.sdk.language.psi.SdIdentifierVal;
-import org.intellij.sdk.language.psi.impl.SdPsiImplUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
-
-import com.intellij.psi.util.PsiTreeUtil;
 
 /**
  * This class is used for the extension (in plugin.xml), to enable "Call Hierarchy" window using the plugin code.

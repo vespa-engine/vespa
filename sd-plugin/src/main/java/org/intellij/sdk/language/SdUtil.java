@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiManager;
+import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -123,7 +124,7 @@ public class SdUtil {
             PsiElement docField = docFieldRef != null ? docFieldRef.resolve() : null;
             SdFieldTypeName fieldType = docField != null ? PsiTreeUtil.findChildOfType(docField, SdFieldTypeName.class) : null;
             SdIdentifier docIdentifier = fieldType != null ? PsiTreeUtil.findChildOfType(fieldType, SdIdentifier.class) : null;
-            String docName = docIdentifier != null ? docIdentifier.getName() : null;
+            String docName = docIdentifier != null ? ((PsiNamedElement) docIdentifier).getName() : null;
             if (docName == null) {
                 return result;
             }
@@ -161,7 +162,7 @@ public class SdUtil {
         }
         
         // If element is a macro's name, return the most specific declaration of the macro
-        if (((SdIdentifier) element).isFunctionName(file)) {
+        if (((SdIdentifier) element).isFunctionName(file, name)) {
             PsiElement curRankProfile = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
             while (curRankProfile != null) {
                 for (SdFunctionDefinition macro : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {

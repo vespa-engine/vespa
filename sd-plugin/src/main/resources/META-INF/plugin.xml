@@ -2,13 +2,14 @@
 <idea-plugin>
     <id>org.intellij.sdk.language</id>
     <name>SdReader</name>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <!-- Text to display as company information on Preferences/Settings | Plugin page -->
     <vendor>Vespa</vendor>
 
     <!-- Product and plugin compatibility requirements -->
     <depends>com.intellij.java</depends>
+    <depends>com.intellij.modules.platform</depends>
 
     <!-- Text to display as description on Preferences/Settings | Plugin page -->
     <description><![CDATA[
@@ -20,18 +21,13 @@
     <li>Call Hierarchy (for functions/macros)</li>
     <li>Go To Declaration</li>
     <li>Go to Symbol</li>
-    <li>Refactoring</li>
+    <li>Refactoring (Only for uses of the same implementation)</li>
     <li>Syntax Highlighting</li>
     <li>Commenter- enable turning lines into a comment with "Code -> Comment with line comment"</li>
     </ul>
     <p>Find more information on Vespa's SD files <a href="https://docs.vespa.ai/en/reference/schema-reference.html">here</a>.</p>
     ]]></description>
-
-    <!-- please see https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html
-         on how to target different products -->
-    <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.java</depends>
-
+    
     <!-- Extension points defined by the plugin -->
     <extensions defaultExtensionNs="com.intellij">
         <fileType name="Sd File" implementationClass="org.intellij.sdk.language.SdFileType" fieldName="INSTANCE"
