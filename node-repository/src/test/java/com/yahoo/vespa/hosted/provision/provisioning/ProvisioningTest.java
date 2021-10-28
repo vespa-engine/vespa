@@ -534,10 +534,10 @@ public class ProvisioningTest {
         tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
         try {
             prepare(application, 2, 2, 3, 3,
-                    new NodeResources(2, 2, 10, 2), tester);
+                    new NodeResources(2, 1, 10, 2), tester);
         }
         catch (IllegalArgumentException e) {
-            assertEquals("container cluster 'container0': Min memoryGb size is 2.00 Gb but must be at least 4.00 Gb", e.getMessage());
+            assertEquals("container cluster 'container0': Min memoryGb size is 1.00 Gb but must be at least 2.00 Gb", e.getMessage());
         }
     }
 
