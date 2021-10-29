@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/server/ibucketstatecalculator.h>
 #include <vespa/document/bucket/bucketidlist.h>
 #include <vespa/document/bucket/bucket.h>
+#include <set>
 
 namespace proton::test {
 

@@ -17,6 +17,7 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <set>
 
 
 namespace search::test {
