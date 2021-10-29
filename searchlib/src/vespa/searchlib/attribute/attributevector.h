@@ -460,7 +460,6 @@ public:
      */
 
     virtual uint32_t clearDoc(DocId doc) = 0;
-    virtual largeint_t getDefaultValue() const = 0;
 
     // Implements IAttributeVector
     virtual uint32_t get(DocId doc, EnumHandle *v, uint32_t sz) const override = 0;

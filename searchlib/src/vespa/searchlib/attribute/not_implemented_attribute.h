@@ -31,7 +31,6 @@ struct NotImplementedAttribute : AttributeVector {
     long onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const override;
     long onSerializeForDescendingSort(DocId, void *, long, const common::BlobConverter *) const override;
     uint32_t clearDoc(DocId) override;
-    int64_t getDefaultValue() const override;
     uint32_t getEnum(DocId) const override;
     bool addDoc(DocId &) override;
     void onAddDocs(DocId lidLimit) override;

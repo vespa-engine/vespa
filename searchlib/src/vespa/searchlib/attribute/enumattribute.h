@@ -46,7 +46,7 @@ protected:
     void load_enum_store(LoadedVector& loaded) override;
     uint64_t getUniqueValueCount() const override;
 
-    static EnumEntryType getDefaultEnumTypeValue() { return B::defaultValue(); }
+    EnumEntryType getDefaultEnumTypeValue() { return B::defaultValue(); }
 
     /*
      * Iterate through the change vector and find new unique values.

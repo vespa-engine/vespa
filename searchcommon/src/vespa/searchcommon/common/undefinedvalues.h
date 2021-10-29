@@ -6,8 +6,7 @@
 #include <limits>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 // for all integers
 template <typename T>
@@ -68,5 +67,3 @@ inline bool isUndefined<vespalib::string>(const vespalib::string & value) {
 }
 
 }
-}
-

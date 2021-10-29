@@ -64,17 +64,16 @@ public:
     virtual uint32_t getRawValues(DocId doc, const multivalue::WeightedValue<T> * & values) const;
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
+    T defaultValue() const { return getConfig().isMutable() ? 0.0 : attribute::getUndefined<T>(); }
 protected:
     FloatingPointAttributeTemplate(const vespalib::string & name);
     FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c);
     ~FloatingPointAttributeTemplate() override;
-    static T defaultValue() { return attribute::getUndefined<T>(); }
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
     virtual void load_enum_store(LoadedVector&) {}
     virtual void fillValues(LoadedVector &) {}
     virtual void load_posting_lists(LoadedVector&) {}
 
-    largeint_t getDefaultValue() const override { return static_cast<largeint_t>(-std::numeric_limits<T>::max()); }
     const Change _defaultValue;
 private:
     bool findEnum(const char *value, EnumHandle &e) const override;

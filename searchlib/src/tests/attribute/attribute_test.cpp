@@ -2061,12 +2061,12 @@ AttributeTest::testCompactLidSpace()
 namespace {
 
 uint32_t
-get_default_value_ref_count(AttributeVector &attr)
+get_default_value_ref_count(AttributeVector &attr, int32_t defaultValue)
 {
     auto *enum_store_base = attr.getEnumStoreBase();
     auto &enum_store = dynamic_cast<EnumStoreT<int32_t> &>(*enum_store_base);
     IAttributeVector::EnumHandle default_value_handle(0);
-    if (enum_store.find_enum(attr.getDefaultValue(), default_value_handle)) {
+    if (enum_store.find_enum(defaultValue, default_value_handle)) {
         vespalib::datastore::EntryRef default_value_ref(default_value_handle);
         assert(default_value_ref.valid());
         return enum_store.get_ref_count(default_value_ref);
@@ -2085,14 +2085,15 @@ AttributeTest::test_default_value_ref_count_is_updated_after_shrink_lid_space()
     cfg.setFastSearch(true);
     vespalib::string name = "shrink";
     AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
+    const auto & iattr = dynamic_cast<const search::IntegerAttributeTemplate<int32_t> &>(*attr);
     attr->addReservedDoc();
     attr->addDocs(10);
-    EXPECT_EQUAL(11u, get_default_value_ref_count(*attr));
+    EXPECT_EQUAL(11u, get_default_value_ref_count(*attr, iattr.defaultValue()));
     attr->compactLidSpace(6);
-    EXPECT_EQUAL(11u, get_default_value_ref_count(*attr));
+    EXPECT_EQUAL(11u, get_default_value_ref_count(*attr, iattr.defaultValue()));
     attr->shrinkLidSpace();
     EXPECT_EQUAL(6u, attr->getNumDocs());
-    EXPECT_EQUAL(6u, get_default_value_ref_count(*attr));
+    EXPECT_EQUAL(6u, get_default_value_ref_count(*attr, iattr.defaultValue()));
 }
 
 template <typename AttributeType>
