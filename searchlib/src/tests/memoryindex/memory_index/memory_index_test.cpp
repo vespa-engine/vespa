@@ -112,7 +112,9 @@ struct Index {
         return d;
     }
     Index &remove(uint32_t id) {
-        index.removeDocument(id);
+        std::vector<uint32_t> lids;
+        lids.push_back(id);
+        index.removeDocuments(std::move(lids));
         internalSyncCommit();
         return *this;
     }

@@ -80,9 +80,7 @@ public:
         _index.insertDocument(lid, doc);
     }
     void removeDocuments(LidVector lids) override {
-        for (uint32_t lid : lids) {
-            _index.removeDocument(lid);
-        }
+        _index.removeDocuments(std::move(lids));
     }
     uint64_t getStaticMemoryFootprint() const override {
         return _index.getStaticMemoryFootprint();

@@ -41,6 +41,7 @@ class FieldIndexCollection;
 class MemoryIndex : public queryeval::Searchable {
 private:
     using ISequencedTaskExecutor = vespalib::ISequencedTaskExecutor;
+    using LidVector = std::vector<uint32_t>;
     index::Schema     _schema;
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;
@@ -115,7 +116,7 @@ public:
      *
      * This function is async. commit() must be called for changes to take effect.
      */
-    void removeDocument(uint32_t docId);
+    void removeDocuments(LidVector lids);
 
     /**
      * Commits the inserts and removes since the last commit, making them searchable.
