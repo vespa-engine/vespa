@@ -9,17 +9,9 @@
 
 namespace search {
 
-namespace attribute {
-
-template <typename, typename, typename > class PostingSearchContext;
-
-}
-
 template <typename B>
 class EnumAttribute : public B
 {
-    template <typename, typename, typename> 
-    friend class attribute::PostingSearchContext; // getEnumStore()
 protected:
     using BaseClass = B;
     using Change = typename B::Change;
@@ -36,7 +28,6 @@ public:
 protected:
     using generation_t = typename B::generation_t;
     using B::getGenerationHolder;
-    using B::getStatus;
 
 public:
     using EnumStore = EnumStoreT<EnumEntryType>;
@@ -71,7 +62,6 @@ public:
     bool findEnum(EnumEntryType v, EnumHandle & e) const override { return _enumStore.find_enum(v, e); }
     const EnumStore & getEnumStore() const { return _enumStore; }
     EnumStore &       getEnumStore()       { return _enumStore; }
-
 };
 
 } // namespace search
