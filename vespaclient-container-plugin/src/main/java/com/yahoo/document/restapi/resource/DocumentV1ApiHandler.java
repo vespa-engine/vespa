@@ -595,12 +595,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private boolean first = true;
         private ContentChannel channel;
 
-        private static class DocumentBuffer {
-            private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            private final CompletionHandler completionHandler;
-            private DocumentBuffer(CompletionHandler completionHandler) { this.completionHandler = completionHandler; }
-        }
-
         private JsonResponse(ResponseHandler handler) throws IOException {
             this.handler = handler;
             json = jsonFactory.createGenerator(out);
