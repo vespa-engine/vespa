@@ -55,9 +55,9 @@
       "final"
     ],
     "methods": [
+      "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.component.Version, com.yahoo.component.ComponentId)",
       "public void <init>(java.lang.String, com.yahoo.component.Version)",
-      "public void <init>(java.lang.String)",
       "public com.yahoo.component.ComponentId nestInNamespace(com.yahoo.component.ComponentId)",
       "public java.lang.String getName()",
       "public com.yahoo.component.Version getVersion()",
@@ -75,6 +75,7 @@
       "public java.lang.String toFileName()",
       "public static com.yahoo.component.ComponentId fromFileName(java.lang.String)",
       "public static void resetGlobalCountersForTests()",
+      "public static com.yahoo.component.ComponentId newAnonymous(java.lang.String)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": []
