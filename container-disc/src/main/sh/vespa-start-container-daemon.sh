@@ -90,19 +90,30 @@ vespa_cg2get() {
     local leaf_dir="$root_dir$slice"
     local current_dir="$leaf_dir"
 
-    while true; do
+    local min_value=
+    while (( ${#current_dir} >= ${#root_dir} )); do
         local path="$current_dir"/"$filename"
         if [ -r "$path" ]; then
-            cat "$path"
-            return 0
+            local value=$(< "$path")
+            if [ -z "$min_value" ]; then
+                min_value="$value"
+            elif [ "$min_value" == max ]; then
+                min_value="$value"
+            elif [ "$value" != max ] && (( value < min_value )); then
+                min_value="$value"
+            fi
         fi
 
         current_dir="${current_dir%/*}"
-        if (( ${#current_dir} < ${#root_dir} )); then
-            echo "No such filename was found at $leaf_dir: $filename" >&2
-            return 1
-        fi
     done
+
+    if [ -z "$min_value" ]; then
+        echo "No such filename was found at $leaf_dir: $filename" >&2
+        return 1
+    fi
+
+    echo "$min_value"
+    return 0
 }
 
 configure_memory() {
