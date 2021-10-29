@@ -11,7 +11,6 @@ import com.yahoo.config.provision.RegionName;
 
 import java.io.Reader;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -39,6 +38,7 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Optional.empty(),
                                                                   Optional.empty(),
+                                                                  List.of(),
                                                                   "<deployment version='1.0'/>");
 
     private final List<Step> steps;
@@ -47,6 +47,7 @@ public class DeploymentSpec {
     private final Optional<Integer> majorVersion;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
+    private final List<Endpoint> endpoints;
 
     private final String xmlForm;
 
@@ -54,23 +55,26 @@ public class DeploymentSpec {
                           Optional<Integer> majorVersion,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<AthenzService> athenzService,
+                          List<Endpoint> endpoints,
                           String xmlForm) {
-        this.steps = List.copyOf(steps);
-        this.majorVersion = majorVersion;
-        this.athenzDomain = athenzDomain;
-        this.athenzService = athenzService;
-        this.xmlForm = xmlForm;
+        this.steps = List.copyOf(Objects.requireNonNull(steps));
+        this.majorVersion = Objects.requireNonNull(majorVersion);
+        this.athenzDomain = Objects.requireNonNull(athenzDomain);
+        this.athenzService = Objects.requireNonNull(athenzService);
+        this.xmlForm = Objects.requireNonNull(xmlForm);
+        this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
         validateAthenz();
+        validateApplicationEndpoints();
     }
 
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
     private void validateTotalDelay(List<Step> steps) {
         long totalDelaySeconds = steps.stream().mapToLong(step -> (step.delay().getSeconds())).sum();
         if (totalDelaySeconds > Duration.ofHours(48).getSeconds())
-            throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
-                                               " but max 48 hours is allowed");
+            illegal("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
+                    " but max 48 hours is allowed");
     }
 
     /** Throws an IllegalArgumentException if any instance has a looser upgrade policy than the previous */
@@ -81,8 +85,8 @@ public class DeploymentSpec {
             List<DeploymentInstanceSpec> specs = instances(List.of(step));
             for (DeploymentInstanceSpec spec : specs) {
                 if (spec.upgradePolicy().compareTo(previous) < 0)
-                    throw new IllegalArgumentException("Instance '" + spec.name() + "' cannot have a looser upgrade " +
-                                                       "policy than the previous of '" + previous + "'");
+                    illegal("Instance '" + spec.name() + "' cannot have a looser upgrade " +
+                            "policy than the previous of '" + previous + "'");
 
                 strictest = Comparables.max(strictest, spec.upgradePolicy());
             }
@@ -101,7 +105,7 @@ public class DeploymentSpec {
             for (DeploymentInstanceSpec instance : instances()) {
                 for (DeploymentSpec.DeclaredZone zone : instance.zones()) {
                     if (zone.athenzService().isPresent()) {
-                        throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
+                        illegal("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
                     }
                 }
             }
@@ -111,13 +115,29 @@ public class DeploymentSpec {
             for (DeploymentInstanceSpec instance : instances()) {
                 for (DeploymentSpec.DeclaredZone zone : instance.zones()) {
                     if (zone.athenzService().isEmpty()) {
-                        throw new IllegalArgumentException("Athenz domain is configured, but Athenz service not configured for zone: " + zone);
+                        illegal("Athenz domain is configured, but Athenz service not configured for zone: " + zone);
                     }
                 }
             }
         }
     }
 
+    private void validateApplicationEndpoints() {
+        for (var endpoint : endpoints) {
+            if (endpoint.level() != Endpoint.Level.application) illegal("Endpoint '" + endpoint.endpointId() + "' must be an application–level endpoint, got " + endpoint.level());
+            String prefix = "Application-level endpoint '" + endpoint.endpointId() + "': ";
+            for (var target : endpoint.targets()) {
+                Optional<DeploymentInstanceSpec> instance = instance(target.instance());
+                if (instance.isEmpty()) {
+                    illegal(prefix + "targets undeclared instance '" + target.instance() + "'");
+                }
+                if (!instance.get().deploysTo(Environment.prod, target.region())) {
+                    illegal(prefix + "targets undeclared region '" + target.region() +
+                            "' in instance '" + target.instance() + "'");
+                }
+            }
+        }
+    }
 
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
@@ -176,6 +196,11 @@ public class DeploymentSpec {
         return instances(steps);
     }
 
+    /** Returns the application-level endpoints of this, if any */
+    public List<Endpoint> endpoints() {
+        return endpoints;
+    }
+
     private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
         return steps.stream()
                     .flatMap(DeploymentSpec::flatten)
@@ -185,6 +210,11 @@ public class DeploymentSpec {
     private static Stream<DeploymentInstanceSpec> flatten(Step step) {
         if (step instanceof DeploymentInstanceSpec) return Stream.of((DeploymentInstanceSpec) step);
         return step.steps().stream().flatMap(DeploymentSpec::flatten);
+    }
+
+
+    private static void illegal(String message) {
+        throw new IllegalArgumentException(message);
     }
 
     /**
@@ -317,9 +347,9 @@ public class DeploymentSpec {
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,
                             Optional<AthenzService> athenzService, Optional<String> testerFlavor) {
             if (environment != Environment.prod && region.isPresent())
-                throw new IllegalArgumentException("Non-prod environments cannot specify a region");
+                illegal("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
-                throw new IllegalArgumentException("Prod environments must be specified with a region");
+                illegal("Prod environments must be specified with a region");
             this.environment = environment;
             this.region = region;
             this.active = active;

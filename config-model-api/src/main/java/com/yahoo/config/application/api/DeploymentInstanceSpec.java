@@ -1,14 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -51,7 +49,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.globalServiceId = globalServiceId;
         this.athenzService = athenzService;
         this.notifications = notifications;
-        this.endpoints = List.copyOf(validateEndpoints(endpoints, steps()));
+        this.endpoints = List.copyOf(endpoints);
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(steps(), globalServiceId, this.endpoints);
     }
@@ -89,31 +87,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                     throw new IllegalArgumentException("prod." + region + " is listed twice in deployment.xml");
             }
         }
-    }
-
-    /** Validates the endpoints and makes sure default values are respected */
-    private List<Endpoint> validateEndpoints(List<Endpoint> endpoints, List<DeploymentSpec.Step> steps) {
-        Objects.requireNonNull(endpoints, "Missing endpoints parameter");
-
-        var productionRegions = steps.stream()
-                                     .filter(step -> step.concerns(Environment.prod))
-                                     .flatMap(step -> step.zones().stream())
-                                     .flatMap(zone -> zone.region().stream())
-                                     .map(RegionName::value)
-                                     .collect(Collectors.toSet());
-
-        var rebuiltEndpointsList = new ArrayList<Endpoint>();
-
-        for (var endpoint : endpoints) {
-            if (endpoint.regions().isEmpty()) {
-                var rebuiltEndpoint = endpoint.withRegions(productionRegions);
-                rebuiltEndpointsList.add(rebuiltEndpoint);
-            } else {
-                rebuiltEndpointsList.add(endpoint);
-            }
-        }
-
-        return List.copyOf(rebuiltEndpointsList);
     }
 
     /** Throw an IllegalArgumentException if an endpoint refers to a region that is not declared in 'prod' */

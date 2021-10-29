@@ -31,13 +31,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -97,33 +95,38 @@ public class DeploymentSpecXmlReader {
     public DeploymentSpec read(String xmlForm) {
         Element root = XML.getDocument(xmlForm).getDocumentElement();
         if ( ! root.getTagName().equals(deploymentTag))
-            throw new IllegalArgumentException("The root tag must be <deployment>");
+            illegal("The root tag must be <deployment>");
 
         if (isEmptySpec(root))
             return DeploymentSpec.empty;
 
         List<Step> steps = new ArrayList<>();
+        List<Endpoint> applicationEndpoints = List.of();
         if ( ! containsTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
             steps.addAll(readInstanceContent("default", root, new MutableOptional<>(), root));
         }
         else {
             if (XML.getChildren(root).stream().anyMatch(child -> child.getTagName().equals(prodTag)))
-                throw new IllegalArgumentException("A deployment spec cannot have both a <prod> tag and an " +
-                                                   "<instance> tag under the root: " +
-                                                   "Wrap the prod tags inside the appropriate instance");
+                illegal("A deployment spec cannot have both a <prod> tag and an " +
+                        "<instance> tag under the root: " +
+                        "Wrap the prod tags inside the appropriate instance");
 
-            for (Element topLevelTag : XML.getChildren(root)) {
-                if (topLevelTag.getTagName().equals(instanceTag))
-                    steps.addAll(readInstanceContent(topLevelTag.getAttribute(idAttribute), topLevelTag, new MutableOptional<>(), root));
-                else
-                    steps.addAll(readNonInstanceSteps(topLevelTag, new MutableOptional<>(), root)); // (No global service id here)
+            for (Element child : XML.getChildren(root)) {
+                String tagName = child.getTagName();
+                if (tagName.equals(instanceTag)) {
+                    steps.addAll(readInstanceContent(child.getAttribute(idAttribute), child, new MutableOptional<>(), root));
+                } else {
+                    steps.addAll(readNonInstanceSteps(child, new MutableOptional<>(), root)); // (No global service id here)
+                }
             }
+            applicationEndpoints = readEndpoints(root, Optional.empty(), steps);
         }
 
         return new DeploymentSpec(steps,
                                   optionalIntegerAttribute(majorVersionTag, root),
                                   stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
+                                  applicationEndpoints,
                                   xmlForm);
     }
 
@@ -140,7 +143,7 @@ public class DeploymentSpecXmlReader {
                                                              MutableOptional<String> globalServiceId,
                                                              Element parentTag) {
         if (instanceNameString.isBlank())
-            throw new IllegalArgumentException("<instance> attribute 'id' must be specified, and not be blank");
+            illegal("<instance> attribute 'id' must be specified, and not be blank");
 
         // If this is an absolutely empty instance, or the implicit "default" instance but without content, ignore it
         if (XML.getChildren(instanceTag).isEmpty() && (instanceTag.getAttributes().getLength() == 0 || instanceTag == parentTag))
@@ -160,7 +163,7 @@ public class DeploymentSpecXmlReader {
         List<Step> steps = new ArrayList<>();
         for (Element instanceChild : XML.getChildren(instanceTag))
             steps.addAll(readNonInstanceSteps(instanceChild, globalServiceId, instanceChild));
-        List<Endpoint> endpoints = readEndpoints(instanceTag);
+        List<Endpoint> endpoints = readEndpoints(instanceTag, Optional.of(instanceNameString), steps);
 
         // Build and return instances with these values
         return Arrays.stream(instanceNameString.split(","))
@@ -194,7 +197,7 @@ public class DeploymentSpecXmlReader {
         if (prodTag.equals(stepTag.getTagName()))
             globalServiceId.set(readGlobalServiceId(stepTag));
         else if (readGlobalServiceId(stepTag).isPresent())
-            throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
+            illegal("Attribute 'global-service-id' is only valid on 'prod' tag.");
 
         switch (stepTag.getTagName()) {
             case testTag:
@@ -254,7 +257,7 @@ public class DeploymentSpecXmlReader {
             Optional<Role> roleAttribute = stringAttribute("role", emailElement).map(Role::fromValue);
             When when = stringAttribute("when", emailElement).map(When::fromValue).orElse(defaultWhen);
             if (addressAttribute.isPresent() == roleAttribute.isPresent())
-                throw new IllegalArgumentException("Exactly one of 'role' and 'address' must be present in 'email' elements.");
+                illegal("Exactly one of 'role' and 'address' must be present in 'email' elements.");
 
             addressAttribute.ifPresent(address -> emailAddresses.get(when).add(address));
             roleAttribute.ifPresent(role -> emailRoles.get(when).add(role));
@@ -262,36 +265,62 @@ public class DeploymentSpecXmlReader {
         return Notifications.of(emailAddresses, emailRoles);
     }
 
-    private List<Endpoint> readEndpoints(Element parent) {
+    private List<Endpoint> readEndpoints(Element parent, Optional<String> instance, List<Step> steps) {
         var endpointsElement = XML.getChild(parent, endpointsTag);
-        if (endpointsElement == null)
-            return List.of();
+        if (endpointsElement == null) return List.of();
 
-        var endpoints = new LinkedHashMap<String, Endpoint>();
-
+        Endpoint.Level level = instance.isEmpty() ? Endpoint.Level.application : Endpoint.Level.instance;
+        Map<String, Endpoint> endpoints = new LinkedHashMap<>();
         for (var endpointElement : XML.getChildren(endpointsElement, endpointTag)) {
             String endpointId = stringAttribute("id", endpointElement).orElse(Endpoint.DEFAULT_ID);
             String containerId = requireStringAttribute("container-id", endpointElement);
-            Set<String> regions = new HashSet<>();
+            String msgPrefix = (level == Endpoint.Level.application ? "Application-level" : "Instance-level") +
+                               " endpoint '" + endpointId + "': ";
 
+            List<Endpoint.Target> targets = new ArrayList<>();
             for (var regionElement : XML.getChildren(endpointElement, "region")) {
-                var region = regionElement.getTextContent();
-                if (region == null || region.isBlank()) {
-                    throw new IllegalArgumentException("Empty 'region' element in 'endpoint' tag.");
+                String region = regionElement.getTextContent();
+                if (region == null || region.isBlank()) illegal(msgPrefix + "empty 'region' element");
+                Optional<String> instanceFromAttribute = stringAttribute("instance", regionElement);
+                Optional<String> weightFromAttribute = stringAttribute("weight", regionElement);
+                if (level == Endpoint.Level.application) {
+                    if (instanceFromAttribute.isEmpty()) illegal(msgPrefix + "element 'region' must have 'instance' attribute");
+                    if (weightFromAttribute.isEmpty()) illegal(msgPrefix + "element 'region' must have 'weight' attribute");
+                } else {
+                    if (instanceFromAttribute.isPresent()) illegal(msgPrefix + "element 'region' cannot have 'instance' attribute");
+                    if (weightFromAttribute.isPresent()) illegal(msgPrefix + "element 'region' cannot have 'weight' attribute");
+                    instanceFromAttribute = instance;
                 }
-                if (regions.contains(region)) {
-                    throw new IllegalArgumentException("Duplicate 'region' element in 'endpoint' tag: " + region);
+                int weight = 1;
+                if (weightFromAttribute.isPresent()) {
+                    try {
+                        weight = Integer.parseInt(weightFromAttribute.get());
+                    } catch (NumberFormatException e) {
+                        throw new IllegalArgumentException(msgPrefix + "invalid weight value '" + weightFromAttribute.get() + "'");
+                    }
                 }
-                regions.add(region);
+                targets.add(new Endpoint.Target(RegionName.from(region),
+                                                InstanceName.from(instanceFromAttribute.get()),
+                                                weight));
+            }
+            if (targets.isEmpty() && level == Endpoint.Level.instance) {
+                // No explicit targets given for instance level endpoint. Include all declared regions by default
+                InstanceName instanceName = instance.map(InstanceName::from).get();
+                steps.stream()
+                     .filter(step -> step.concerns(Environment.prod))
+                     .flatMap(step -> step.zones().stream())
+                     .flatMap(zone -> zone.region().stream())
+                     .distinct()
+                     .map(region -> new Endpoint.Target(region, instanceName, 1))
+                     .forEach(targets::add);
             }
 
-            Endpoint endpoint = new Endpoint(endpointId, containerId, regions);
+            Endpoint endpoint = new Endpoint(endpointId, containerId, level, targets);
             if (endpoints.containsKey(endpoint.endpointId())) {
-                throw new IllegalArgumentException("Duplicate attribute 'id' on 'endpoint': " + endpoint.endpointId());
+                illegal("Endpoint ID '" + endpoint.endpointId() + "' is specified multiple times");
             }
             endpoints.put(endpoint.endpointId(), endpoint);
         }
-
         return List.copyOf(endpoints.values());
     }
 
@@ -303,9 +332,9 @@ public class DeploymentSpecXmlReader {
         for (int i = 0; i < tags.size(); i++) {
             if (tags.get(i).equals(blockChangeTag)) {
                 String constraint = "<block-change> must be placed after <test> and <staging> and before <prod>";
-                if (containsAfter(i, testTag, tags)) throw new IllegalArgumentException(constraint);
-                if (containsAfter(i, stagingTag, tags)) throw new IllegalArgumentException(constraint);
-                if (containsBefore(i, prodTag, tags)) throw new IllegalArgumentException(constraint);
+                if (containsAfter(i, testTag, tags)) illegal(constraint);
+                if (containsAfter(i, stagingTag, tags)) illegal(constraint);
+                if (containsBefore(i, prodTag, tags)) illegal(constraint);
             }
         }
     }
@@ -462,6 +491,10 @@ public class DeploymentSpecXmlReader {
                      .map(Element.class::cast)
                      .flatMap(element -> stringAttribute(attributeName, element).stream())
                      .findFirst();
+    }
+
+    private static void illegal(String message) {
+        throw new IllegalArgumentException(message);
     }
 
     private static class MutableOptional<T> {
