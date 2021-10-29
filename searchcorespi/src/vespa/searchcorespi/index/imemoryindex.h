@@ -16,6 +16,7 @@ namespace searchcorespi::index {
  * Interface for a memory index as seen from an index maintainer.
  */
 struct IMemoryIndex : public searchcorespi::IndexSearchable {
+    using LidVector = std::vector<uint32_t>;
     using SP = std::shared_ptr<IMemoryIndex>;
     using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
     virtual ~IMemoryIndex() {}
@@ -49,7 +50,12 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
      *
      * @param lid the local document id.
      */
-    virtual void removeDocument(uint32_t lid) = 0;
+    void removeDocument(uint32_t lid) {
+        LidVector lids;
+        lids.push_back(lid);
+        removeDocuments(std::move(lids));
+    }
+    virtual void removeDocuments(LidVector lids) = 0;
 
     /**
      * Commits the inserts and removes since the last commit, making them searchable.
