@@ -321,13 +321,13 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
         // found in registry but not already added in *this* type (getField also checks parents): extend it
         if (type != null && ! fields.containsKey(name)) {
-            type = new QueryProfileType(ComponentId.createAnonymousComponentId(type.getIdString()),
+            type = new QueryProfileType(registry.createAnonymousId(type.getIdString()),
                                         new HashMap<>(),
                                         List.of(type));
         }
 
         if (type == null) { // create it
-            type = new QueryProfileType(ComponentId.createAnonymousComponentId(name));
+            type = new QueryProfileType(registry.createAnonymousId(name));
         }
 
         if (fieldDescription == null) {

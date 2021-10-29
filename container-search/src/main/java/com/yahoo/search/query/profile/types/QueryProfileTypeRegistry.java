@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.types;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -11,6 +12,8 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
  * @author bratseth
  */
 public class QueryProfileTypeRegistry extends ComponentRegistry<QueryProfileType> {
+
+    private int nextAnonymousId = 0;
 
     private final int nativeProfileCount;
 
@@ -40,6 +43,10 @@ public class QueryProfileTypeRegistry extends ComponentRegistry<QueryProfileType
         QueryProfileTypeRegistry registry = new QueryProfileTypeRegistry();
         registry.freeze();
         return registry;
+    }
+
+    public ComponentId createAnonymousId(String name) {
+        return ComponentId.newAnonymous(name + "_" + (nextAnonymousId++));
     }
 
 }

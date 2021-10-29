@@ -92,5 +92,4 @@ public class QueryProfileRegistry extends ComponentRegistry<QueryProfile> {
         return ComponentId.newAnonymous(name + "_" + (nextAnonymousId++));
     }
 
-
 }
