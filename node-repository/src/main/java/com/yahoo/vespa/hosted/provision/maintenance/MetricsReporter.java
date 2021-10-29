@@ -369,6 +369,8 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
     static Map<String, String> dimensions(ApplicationId application, ClusterSpec.Id cluster) {
         Map<String, String> dimensions = new HashMap<>(dimensions(application));
+        //TODO: Remove "clusterId" once internal aggregation uses "clusterid"
+        dimensions.put("clusterid", cluster.value());
         dimensions.put("clusterId", cluster.value());
         return dimensions;
     }
