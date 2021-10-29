@@ -128,7 +128,15 @@ configure_memory() {
     if ((jvm_heapSizeAsPercentageOfPhysicalMemory > 0)); then
         available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
         if hash cgget 2>/dev/null; then
+            # TODO: Create vespa_cgget for this and remove dependency on libcgroup-tools
             available_cgroup_bytes=$(cgget -nv -r memory.limit_in_bytes /)
+            if [ $? -ne 0 ]; then
+                available_cgroup_bytes=$(vespa_cg2get memory.max)
+                # If command failed or returned value is 'max' assign a big value (default in CGroup v1)
+                if ! [[ "$available_cgroup_bytes" =~ ^[0-9]+$ ]]; then
+                   available_cgroup_bytes=$(((1 << 63) -1))
+                fi
+            fi
             available_cgroup=$((available_cgroup_bytes >> 20))
             available=$((available > available_cgroup ? available_cgroup : available))
         fi
