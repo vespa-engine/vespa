@@ -63,24 +63,10 @@ public:
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
 protected:
-    IntegerAttributeTemplate(const vespalib::string & name) :
-        IntegerAttribute(name, BasicType::fromType(T())),
-        _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
-    { }
-    IntegerAttributeTemplate(const vespalib::string & name, const Config & c) :
-        IntegerAttribute(name, c),
-        _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
-    {
-        assert(c.basicType() == BasicType::fromType(T()));
-    }
-    IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType)
-        :  IntegerAttribute(name, c),
-           _defaultValue(ChangeBase::UPDATE, 0, 0u)
-    {
-        assert(c.basicType() == realType);
-        (void) realType;
-        assert(BasicType::fromType(T()) == BasicType::INT8);
-    }
+    IntegerAttributeTemplate(const vespalib::string & name);
+    IntegerAttributeTemplate(const vespalib::string & name, const Config & c);
+    IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType);
+    ~IntegerAttributeTemplate() override;
     static T defaultValue() { return attribute::getUndefined<T>(); }
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
     virtual void load_enum_store(LoadedVector&) {}

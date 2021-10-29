@@ -6,6 +6,15 @@
 
 namespace search {
 
+namespace {
+
+template <typename T>
+double createDefaultValue(const attribute::Config & config) {
+    return config.isMutable() ? 0.0 : attribute::getUndefined<T>();
+}
+
+}
+
 template<typename T>
 uint32_t
 FloatingPointAttributeTemplate<T>::getRawValues(DocId, const multivalue::Value<T> * &) const {
@@ -19,21 +28,20 @@ FloatingPointAttributeTemplate<T>::getRawValues(DocId, const multivalue::Weighte
 }
 
 template<typename T>
-FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name) :
-    FloatingPointAttribute(name, BasicType::fromType(T())),
-    _defaultValue(ChangeBase::UPDATE, 0, attribute::getUndefined<T>())
+FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name)
+    : FloatingPointAttributeTemplate(name, BasicType::fromType(T()))
 { }
 
 template<typename T>
-FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c) :
-    FloatingPointAttribute(name, c),
-    _defaultValue(ChangeBase::UPDATE, 0, attribute::getUndefined<T>())
+FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c)
+    : FloatingPointAttribute(name, c),
+      _defaultValue(ChangeBase::UPDATE, 0, createDefaultValue<T>(c))
 {
     assert(c.basicType() == BasicType::fromType(T()));
 }
 
 template<typename T>
-FloatingPointAttributeTemplate<T>::~FloatingPointAttributeTemplate() { }
+FloatingPointAttributeTemplate<T>::~FloatingPointAttributeTemplate() = default;
 
 template<typename T>
 bool

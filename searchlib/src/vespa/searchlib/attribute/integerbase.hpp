@@ -8,6 +8,41 @@ namespace search {
 
 using largeint_t = attribute::IAttributeVector::largeint_t;
 
+namespace {
+
+template <typename T>
+largeint_t createDefaultValue(const attribute::Config & config) {
+    return config.isMutable() ? 0 : attribute::getUndefined<T>();
+}
+
+}
+
+template<typename T>
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name)
+    : IntegerAttributeTemplate(name, BasicType::fromType(T()))
+{ }
+
+template<typename T>
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name, const Config & c)
+    : IntegerAttribute(name, c),
+      _defaultValue(ChangeBase::UPDATE, 0, createDefaultValue<T>(c))
+{
+    assert(c.basicType() == BasicType::fromType(T()));
+}
+
+template<typename T>
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType)
+    : IntegerAttribute(name, c),
+      _defaultValue(ChangeBase::UPDATE, 0, 0u)
+{
+    assert(c.basicType() == realType);
+    (void) realType;
+    assert(BasicType::fromType(T()) == BasicType::INT8);
+}
+
+template<typename T>
+IntegerAttributeTemplate<T>::~IntegerAttributeTemplate() = default;
+
 template<typename T>
 uint32_t
 IntegerAttributeTemplate<T>::getRawValues(DocId, const multivalue::Value<T> * &) const {
