@@ -873,10 +873,13 @@
         <apache.httpcore.version>4.4.13</apache.httpcore.version>
         <apache.httpclient5.version>5.1</apache.httpclient5.version>
         <asm.version>9.2</asm.version>
+
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
         <athenz.version>1.10.14</athenz.version>
         <jjwt.version>0.11.2</jjwt.version>
         <aws.sdk.version>1.11.974</aws.sdk.version>
+        <!-- Athenz END -->
+
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
              using something like
@@ -884,9 +887,9 @@
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
         <curator.version>5.2.0</curator.version>
-        <jna.version>4.5.2</jna.version>
         <commons.codec.version>1.15</commons.codec.version>
         <commons.math3.version>3.6.1</commons.math3.version>
+        <jna.version>5.9.0</jna.version>
         <junit.version>5.7.0</junit.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
         <maven-bundle-plugin.version>5.1.2</maven-bundle-plugin.version>
@@ -903,11 +906,11 @@
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <mockito.version>4.0.0</mockito.version>
-        <prometheus.client.version>0.6.0</prometheus.client.version>
         <onnxruntime.version>1.8.0</onnxruntime.version>
+        <prometheus.client.version>0.6.0</prometheus.client.version>
         <protobuf.version>3.11.4</protobuf.version>
         <spifly.version>1.3.3</spifly.version>
-        <surefire.version>2.22.0</surefire.version>
+        <surefire.version>2.22.2</surefire.version>
         <zookeeper.client.version>3.6.3</zookeeper.client.version>
 
         <doclint>all</doclint>
