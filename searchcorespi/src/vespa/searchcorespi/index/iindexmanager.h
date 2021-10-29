@@ -30,10 +30,10 @@ namespace searchcorespi {
  */
 class IIndexManager {
 protected:
-    typedef document::Document Document;
-    typedef search::SerialNum SerialNum;
-    typedef search::index::Schema Schema;
-
+    using Document = document::Document;
+    using SerialNum = search::SerialNum;
+    using Schema = search::index::Schema;
+    using LidVector = std::vector<uint32_t>;
 public:
     using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
 
@@ -107,7 +107,12 @@ public:
      * @param serialNum       The unique monotoninc increasing serial number
      *                        for this operation.
      **/
-    virtual void removeDocument(uint32_t lid, SerialNum serialNum) = 0;
+    void removeDocument(uint32_t lid, SerialNum serialNum) { 
+        LidVector lids;
+        lids.push_back(lid);
+        removeDocuments(std::move(lids), serialNum);
+    }
+    virtual void removeDocuments(LidVector lids, SerialNum serialNum) = 0;
 
     /**
      * Commits the document puts and removes since the last commit,

@@ -17,14 +17,20 @@ public:
     typedef std::shared_ptr<IIndexWriter> SP;
     using IIndexManager = searchcorespi::IIndexManager;
     using OnWriteDoneType = IIndexManager::OnWriteDoneType;
+    using LidVector = std::vector<search::DocumentIdT>;
 
-    virtual ~IIndexWriter() {}
+    virtual ~IIndexWriter() = default;
 
     virtual const std::shared_ptr<IIndexManager> &getIndexManager() const = 0;
 
     // feed interface
     virtual void put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid) = 0;
-    virtual void remove(search::SerialNum serialNum, const search::DocumentIdT lid) = 0;
+    void remove(search::SerialNum serialNum, search::DocumentIdT lid) {
+        LidVector lids;
+        lids.push_back(lid);
+        removeDocs(serialNum, std::move(lids));
+    }
+    virtual void removeDocs(search::SerialNum serialNum, LidVector lids) = 0;
     virtual void commit(search::SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
     virtual void heartBeat(search::SerialNum serialNum) = 0;
     virtual void compactLidSpace(search::SerialNum serialNum, const search::DocumentIdT lid) = 0;

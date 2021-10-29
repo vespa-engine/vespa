@@ -325,7 +325,7 @@ public:
 
     // Implements IIndexManager
     void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum) override;
-    void removeDocument(uint32_t lid, SerialNum serialNum) override;
+    void removeDocuments(LidVector lids, SerialNum serialNum) override;
     void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
     void heartBeat(search::SerialNum serialNum) override;
     void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) override;

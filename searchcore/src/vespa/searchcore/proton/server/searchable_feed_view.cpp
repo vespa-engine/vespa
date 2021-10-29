@@ -153,9 +153,9 @@ SearchableFeedView::performIndexRemove(SerialNum serialNum, const LidVector &lid
         VLOG(getDebugLevel(lid, nullptr),
              "database(%s): performIndexRemove: serialNum(%" PRIu64 "), lid(%d)",
              _params._docTypeName.toString().c_str(), serialNum, lid);
-
-        _indexWriter->remove(serialNum, lid);
     }
+
+    _indexWriter->removeDocs(serialNum, lidsToRemove);
 }
 
 void

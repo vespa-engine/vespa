@@ -15,22 +15,14 @@ private:
 
 public:
     IndexWriter(const IIndexManager::SP &mgr);
-    ~IndexWriter();
-    /**
-     * Implements IIndexWriter.
-     */
-    virtual const IIndexManager::SP & getIndexManager() const override { return _mgr; }
+    ~IndexWriter() override;
+    const IIndexManager::SP & getIndexManager() const override { return _mgr; }
 
-    virtual void put(search::SerialNum serialNum,
-                     const document::Document &doc,
-                     const search::DocumentIdT lid) override;
-    virtual void remove(search::SerialNum serialNum,
-                        const search::DocumentIdT lid) override;
-    virtual void commit(search::SerialNum serialNum,
-                        OnWriteDoneType onWriteDone) override;
+    void put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid) override;
+    void removeDocs(search::SerialNum serialNum, LidVector lids) override;
+    void commit(search::SerialNum serialNum, OnWriteDoneType onWriteDone) override;
 
-    virtual void
-    heartBeat(search::SerialNum serialNum) override;
+    void heartBeat(search::SerialNum serialNum) override;
     void compactLidSpace(search::SerialNum serialNum, const search::DocumentIdT lid) override;
 };
 

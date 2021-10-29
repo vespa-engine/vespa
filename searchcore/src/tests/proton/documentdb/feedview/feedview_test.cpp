@@ -23,7 +23,6 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/searchlib/index/docbuilder.h>
-#include <vespa/vespalib/util/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedview_test");
@@ -149,10 +148,12 @@ struct MyIndexWriter : public test::MockIndexWriter
         (void) doc;
         _tracer.tracePut(indexAdapterTypeName, serialNum, lid);
     }
-    void remove(SerialNum serialNum, const search::DocumentIdT lid) override {
-        LOG(info, "MyIndexAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
-        _removes.push_back(lid);
-        _tracer.traceRemove(indexAdapterTypeName, serialNum, lid);
+    void removeDocs(SerialNum serialNum,  LidVector lids) override {
+        for (search::DocumentIdT lid : lids) {
+            LOG(info, "MyIndexAdapter::remove(): serialNum(%" PRIu64 "), docId(%u)", serialNum, lid);
+            _removes.push_back(lid);
+            _tracer.traceRemove(indexAdapterTypeName, serialNum, lid);
+        }
     }
     void commit(SerialNum serialNum, OnWriteDoneType) override {
         ++_commitCount;

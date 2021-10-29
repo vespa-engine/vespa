@@ -49,22 +49,21 @@ struct MyIndexManager : public test::MockIndexManager
         return toString(removes[lid]);
     }
     // Implements IIndexManager
-    virtual void putDocument(uint32_t lid, const Document &,
-                             SerialNum serialNum) override {
+    void putDocument(uint32_t lid, const Document &, SerialNum serialNum) override {
         puts[lid].push_back(serialNum);
     }
-    virtual void removeDocument(uint32_t lid,
-                                SerialNum serialNum) override {
-        removes[lid].push_back(serialNum);
+    void removeDocuments(LidVector lids, SerialNum serialNum) override {
+        for (uint32_t lid : lids) {
+            removes[lid].push_back(serialNum);
+        }
     }
-    virtual void commit(SerialNum serialNum,
-                        OnWriteDoneType) override {
+    void commit(SerialNum serialNum, OnWriteDoneType) override {
         commitSerial = serialNum;
     }
-    virtual SerialNum getCurrentSerialNum() const override {
+    SerialNum getCurrentSerialNum() const override {
         return current;
     }
-    virtual SerialNum getFlushedSerialNum() const override {
+    SerialNum getFlushedSerialNum() const override {
         return flushed;
     }
     void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) override {

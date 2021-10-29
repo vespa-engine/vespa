@@ -43,13 +43,15 @@ IndexWriter::put(search::SerialNum serialNum, const document::Document &doc, con
 }
 
 void
-IndexWriter::remove(search::SerialNum serialNum, const search::DocumentIdT lid)
+IndexWriter::removeDocs(search::SerialNum serialNum, LidVector lids)
 {
     if (serialNum <= _mgr->getFlushedSerialNum()) {
         return;
     }
-    VLOG(getDebugLevel(lid, NULL), "Handle remove: serial(%" PRIu64 "), lid(%u)", serialNum, lid);
-    _mgr->removeDocument(lid, serialNum);
+    for (search::DocumentIdT lid : lids) {
+        VLOG(getDebugLevel(lid, NULL), "Handle remove: serial(%" PRIu64 "), num_lids(%lu)", serialNum, lids.size());
+    }
+    _mgr->removeDocuments(std::move(lids), serialNum);
 }
 
 void
