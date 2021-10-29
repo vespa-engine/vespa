@@ -230,19 +230,21 @@ public class ProtobufSerialization {
                     ? new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance())
                     : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance(), replyHit.getSortData().toByteArray());
             if (! featureNames.isEmpty()) {
-                List<SearchProtocol.Feature> featureValues = replyHit.getFeaturesList();
+                List<SearchProtocol.Feature> featureValues = replyHit.getMatchFeaturesList();
+                var object = new Value.ObjectValue();
                 var nameIter = featureNames.iterator();
                 var valueIter = featureValues.iterator();
                 while (nameIter.hasNext() && valueIter.hasNext()) {
                     String name = nameIter.next();
                     SearchProtocol.Feature value = valueIter.next();
-                    ByteString tensorBlob = value.getTensorBlob();
-                    Tensor tensor = tensorBlob.isEmpty()
-                        ? Tensor.from(value.getValue())
-                        : TypedBinaryFormat.decode(Optional.empty(),
-                                                   GrowableByteBuffer.wrap(tensorBlob.toByteArray()));
-                    hit.addMatchFeature(name, tensor);
+                    ByteString tensorBlob = value.getTensor();
+                    if (tensorBlob.isEmpty()) {
+                        object.put(name, value.getNumber());
+                    } else {
+                        object.put(name, new Value.DataValue(tensorBlob.toByteArray()));
+                    }
                 }
+                hit.addMatchFeatures(object);
             }
             result.getLeanHits().add(hit);
         }
