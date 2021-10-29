@@ -108,8 +108,9 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
                 currEnumIndices[change._doc] = newIdx;
             }
         } else if(change._type == ChangeBase::CLEARDOC) {
-            this->_defaultValue._doc = change._doc;
-            applyUpdateValueChange(this->_defaultValue, enumStore, currEnumIndices);
+            Change clearDoc(this->_defaultValue);
+            clearDoc._doc = change._doc;
+            applyUpdateValueChange(clearDoc, enumStore, currEnumIndices);
         }
     }
 

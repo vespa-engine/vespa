@@ -42,7 +42,6 @@ private:
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override;
-    virtual largeint_t getIntFromEnum(EnumHandle e) const = 0;
 };
 
 template<typename T>
@@ -90,12 +89,11 @@ protected:
 
     largeint_t getDefaultValue() const override { return defaultValue(); }
     bool isUndefined(DocId doc) const override { return get(doc) == defaultValue(); }
-    Change _defaultValue;
+    const Change _defaultValue;
 private:
     bool findEnum(const char *value, EnumHandle &e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
 
-    largeint_t getIntFromEnum(EnumHandle e) const override;
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 };

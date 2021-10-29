@@ -46,16 +46,6 @@ IntegerAttributeTemplate<T>::findFoldedEnums(const char *value) const
 }
 
 template<typename T>
-largeint_t
-IntegerAttributeTemplate<T>::getIntFromEnum(EnumHandle e) const {
-    T v(getFromEnum(e));
-    if (attribute::isUndefined<T>(v)) {
-        return attribute::getUndefined<largeint_t>();
-    }
-    return v;
-}
-
-template<typename T>
 long
 IntegerAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const {
     (void) bc;

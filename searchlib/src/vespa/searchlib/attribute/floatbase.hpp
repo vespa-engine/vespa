@@ -66,12 +66,6 @@ FloatingPointAttributeTemplate<T>::isUndefined(DocId doc) const {
 }
 
 template<typename T>
-double
-FloatingPointAttributeTemplate<T>::getFloatFromEnum(EnumHandle e) const {
-    return getFromEnum(e);
-}
-
-template<typename T>
 long
 FloatingPointAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const {
     (void) bc;
