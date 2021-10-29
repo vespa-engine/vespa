@@ -6,7 +6,6 @@
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include "enum_store_loaders.h"
-#include <vespa/searchlib/common/sort.h>
 
 namespace search {
 

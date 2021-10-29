@@ -155,8 +155,9 @@ SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, EnumStore
     } else if (c._type >= ChangeBase::ADD && c._type <= ChangeBase::DIV) {
         considerArithmeticAttributeChange(c, inserter); // for numeric
     } else if (c._type == ChangeBase::CLEARDOC) {
-        this->_defaultValue._doc = c._doc;
-        considerUpdateAttributeChange(this->_defaultValue, inserter);
+        Change clearDoc(this->_defaultValue);
+        clearDoc._doc = c._doc;
+        considerUpdateAttributeChange(clearDoc, inserter);
     }
 }
 
@@ -185,8 +186,9 @@ SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
             applyArithmeticValueChange(change, updater);
         } else if (change._type == ChangeBase::CLEARDOC) {
-            this->_defaultValue._doc = change._doc;
-            applyUpdateValueChange(this->_defaultValue, updater);
+            Change clearDoc(this->_defaultValue);
+            clearDoc._doc = change._doc;
+            applyUpdateValueChange(clearDoc, updater);
         }
     }
 }

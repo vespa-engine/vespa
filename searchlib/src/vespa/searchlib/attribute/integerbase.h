@@ -42,7 +42,6 @@ private:
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override;
-    virtual largeint_t getIntFromEnum(EnumHandle e) const = 0;
 };
 
 template<typename T>
@@ -63,39 +62,23 @@ public:
     virtual uint32_t getRawValues(DocId doc, const multivalue::WeightedValue<T> * & values) const;
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
+    T defaultValue() const { return getConfig().isMutable() ? 0 : attribute::getUndefined<T>(); }
 protected:
-    IntegerAttributeTemplate(const vespalib::string & name) :
-        IntegerAttribute(name, BasicType::fromType(T())),
-        _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
-    { }
-    IntegerAttributeTemplate(const vespalib::string & name, const Config & c) :
-        IntegerAttribute(name, c),
-        _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
-    {
-        assert(c.basicType() == BasicType::fromType(T()));
-    }
-    IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType)
-        :  IntegerAttribute(name, c),
-           _defaultValue(ChangeBase::UPDATE, 0, 0u)
-    {
-        assert(c.basicType() == realType);
-        (void) realType;
-        assert(BasicType::fromType(T()) == BasicType::INT8);
-    }
-    static T defaultValue() { return attribute::getUndefined<T>(); }
+    IntegerAttributeTemplate(const vespalib::string & name);
+    IntegerAttributeTemplate(const vespalib::string & name, const Config & c);
+    IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType);
+    ~IntegerAttributeTemplate() override;
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
     virtual void load_enum_store(LoadedVector&) {}
     virtual void fillValues(LoadedVector &) {}
     virtual void load_posting_lists(LoadedVector&) {}
 
-    largeint_t getDefaultValue() const override { return defaultValue(); }
-    bool isUndefined(DocId doc) const override { return get(doc) == defaultValue(); }
-    Change _defaultValue;
+    bool isUndefined(DocId doc) const override { return get(doc) == attribute::getUndefined<T>(); }
+    const Change _defaultValue;
 private:
     bool findEnum(const char *value, EnumHandle &e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
 
-    largeint_t getIntFromEnum(EnumHandle e) const override;
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 };

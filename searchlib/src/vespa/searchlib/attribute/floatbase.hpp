@@ -19,21 +19,20 @@ FloatingPointAttributeTemplate<T>::getRawValues(DocId, const multivalue::Weighte
 }
 
 template<typename T>
-FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name) :
-    FloatingPointAttribute(name, BasicType::fromType(T())),
-    _defaultValue(ChangeBase::UPDATE, 0, attribute::getUndefined<T>())
+FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name)
+    : FloatingPointAttributeTemplate(name, BasicType::fromType(T()))
 { }
 
 template<typename T>
-FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c) :
-    FloatingPointAttribute(name, c),
-    _defaultValue(ChangeBase::UPDATE, 0, attribute::getUndefined<T>())
+FloatingPointAttributeTemplate<T>::FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c)
+    : FloatingPointAttribute(name, c),
+      _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
 {
     assert(c.basicType() == BasicType::fromType(T()));
 }
 
 template<typename T>
-FloatingPointAttributeTemplate<T>::~FloatingPointAttributeTemplate() { }
+FloatingPointAttributeTemplate<T>::~FloatingPointAttributeTemplate() = default;
 
 template<typename T>
 bool
@@ -63,12 +62,6 @@ template<typename T>
 bool
 FloatingPointAttributeTemplate<T>::isUndefined(DocId doc) const {
     return attribute::isUndefined(get(doc));
-}
-
-template<typename T>
-double
-FloatingPointAttributeTemplate<T>::getFloatFromEnum(EnumHandle e) const {
-    return getFromEnum(e);
 }
 
 template<typename T>

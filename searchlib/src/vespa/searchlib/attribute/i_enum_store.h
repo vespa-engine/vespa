@@ -4,14 +4,9 @@
 
 #include "enum_store_loaders.h"
 #include "enum_store_types.h"
-#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.h>
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include <cassert>
-#include <set>
 
 namespace vespalib::datastore {
 

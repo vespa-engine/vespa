@@ -9,6 +9,32 @@ namespace search {
 using largeint_t = attribute::IAttributeVector::largeint_t;
 
 template<typename T>
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name)
+    : IntegerAttributeTemplate(name, BasicType::fromType(T()))
+{ }
+
+template<typename T>
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name, const Config & c)
+    : IntegerAttribute(name, c),
+      _defaultValue(ChangeBase::UPDATE, 0, defaultValue())
+{
+    assert(c.basicType() == BasicType::fromType(T()));
+}
+
+template<typename T>
+IntegerAttributeTemplate<T>::IntegerAttributeTemplate(const vespalib::string & name, const Config & c, const BasicType &realType)
+    : IntegerAttribute(name, c),
+      _defaultValue(ChangeBase::UPDATE, 0, 0u)
+{
+    assert(c.basicType() == realType);
+    (void) realType;
+    assert(BasicType::fromType(T()) == BasicType::INT8);
+}
+
+template<typename T>
+IntegerAttributeTemplate<T>::~IntegerAttributeTemplate() = default;
+
+template<typename T>
 uint32_t
 IntegerAttributeTemplate<T>::getRawValues(DocId, const multivalue::Value<T> * &) const {
     throw std::runtime_error(getNativeClassName() + "::getRawValues() not implemented.");
@@ -43,16 +69,6 @@ IntegerAttributeTemplate<T>::findFoldedEnums(const char *value) const
         result.push_back(h);
     }
     return result;
-}
-
-template<typename T>
-largeint_t
-IntegerAttributeTemplate<T>::getIntFromEnum(EnumHandle e) const {
-    T v(getFromEnum(e));
-    if (attribute::isUndefined<T>(v)) {
-        return attribute::getUndefined<largeint_t>();
-    }
-    return v;
 }
 
 template<typename T>

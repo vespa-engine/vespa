@@ -43,7 +43,6 @@ private:
     uint32_t get(DocId doc, const char ** v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override;
     uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override;
-    virtual double getFloatFromEnum(EnumHandle e) const = 0;
 };
 
 template<typename T>
@@ -65,24 +64,22 @@ public:
     virtual uint32_t getRawValues(DocId doc, const multivalue::WeightedValue<T> * & values) const;
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
+    T defaultValue() const { return getConfig().isMutable() ? 0.0 : attribute::getUndefined<T>(); }
 protected:
     FloatingPointAttributeTemplate(const vespalib::string & name);
     FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c);
-    ~FloatingPointAttributeTemplate();
-    static T defaultValue() { return attribute::getUndefined<T>(); }
+    ~FloatingPointAttributeTemplate() override;
     virtual bool findEnum(T v, EnumHandle & e) const = 0;
     virtual void load_enum_store(LoadedVector&) {}
     virtual void fillValues(LoadedVector &) {}
     virtual void load_posting_lists(LoadedVector&) {}
 
-    largeint_t getDefaultValue() const override { return static_cast<largeint_t>(-std::numeric_limits<T>::max()); }
-    Change _defaultValue;
+    const Change _defaultValue;
 private:
     bool findEnum(const char *value, EnumHandle &e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
     bool isUndefined(DocId doc) const override;
 
-    double getFloatFromEnum(EnumHandle e) const override;
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 };

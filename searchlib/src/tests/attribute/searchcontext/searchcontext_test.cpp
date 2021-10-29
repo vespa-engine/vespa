@@ -19,6 +19,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <set>
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchcontext_test");

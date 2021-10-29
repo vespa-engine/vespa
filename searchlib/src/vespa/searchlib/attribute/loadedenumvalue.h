@@ -8,11 +8,7 @@
 #include <cassert>
 #include <limits>
 
-namespace search
-{
-
-namespace attribute
-{
+namespace search::attribute {
 
 /**
  * Temporary representation of enumerated attribute loaded from enumerated
@@ -144,10 +140,6 @@ public:
     }
 };
 
-void
-sortLoadedByEnum(LoadedEnumAttributeVector &loaded);
+void sortLoadedByEnum(LoadedEnumAttributeVector &loaded);
 
-} // namespace attribute
-
-} // namespace search
-
+}

@@ -129,12 +129,6 @@ NotImplementedAttribute::clearDoc(DocId) {
     return 0;
 }
 
-int64_t
-NotImplementedAttribute::getDefaultValue() const {
-    notImplemented();
-    return 0;
-}
-
 uint32_t
 NotImplementedAttribute::getEnum(DocId) const {
     notImplemented();

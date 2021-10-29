@@ -78,7 +78,7 @@ template <typename B>
 bool
 SingleValueNumericAttribute<B>::addDoc(DocId & doc) {
     bool incGen = _data.isFull();
-    _data.push_back(attribute::getUndefined<T>());
+    _data.push_back(B::defaultValue());
     std::atomic_thread_fence(std::memory_order_release);
     B::incNumDocs();
     doc = B::getNumDocs() - 1;
