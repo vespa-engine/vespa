@@ -8,7 +8,6 @@
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
-#include <vespa/document/datatype/urldatatype.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
@@ -16,9 +15,9 @@
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/util/url.h>
-#include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <stdexcept>
 
 #include <vespa/log/log.h>
@@ -362,7 +361,6 @@ FieldInverter::FieldInverter(const Schema &schema, uint32_t fieldId,
       _elems(),
       _positions(),
       _features(),
-      _elementWordRefs(),
       _wordRefs(1),
       _terms(),
       _abortedDocs(),

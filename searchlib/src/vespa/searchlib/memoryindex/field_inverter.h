@@ -11,7 +11,6 @@
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <limits>
-#include <map>
 
 namespace search::index { class FieldLengthCalculator; }
 
@@ -36,8 +35,7 @@ public:
         uint32_t _wordPos;
         uint32_t _elemRef;  // Offset in _elems
 
-        static constexpr uint32_t _elemRemoved =
-            std::numeric_limits<uint32_t>::max();
+        static constexpr uint32_t _elemRemoved = std::numeric_limits<uint32_t>::max();
 
         PosInfo() noexcept
             : _wordNum(0),
@@ -174,7 +172,6 @@ private:
     ElemInfoVec                    _elems;
     PosInfoVec                     _positions;
     index::DocIdAndPosOccFeatures  _features;
-    UInt32Vector                   _elementWordRefs;
     UInt32Vector                   _wordRefs;
 
     using SpanTerm = std::pair<document::Span, const document::FieldValue *>;
@@ -182,9 +179,9 @@ private:
     SpanTermVector                      _terms;
 
     // Info about aborted and pending documents.
-    std::vector<PositionRange>        _abortedDocs;
-    std::map<uint32_t, PositionRange> _pendingDocs;
-    UInt32Vector                      _removeDocs;
+    std::vector<PositionRange>                  _abortedDocs;
+    vespalib::hash_map<uint32_t, PositionRange> _pendingDocs;
+    UInt32Vector                                _removeDocs;
 
     FieldIndexRemover                &_remover;
     IOrderedFieldIndexInserter       &_inserter;
