@@ -354,10 +354,13 @@ public class Identifiable extends Selectable implements Cloneable {
         }
     }
 
-    protected String getUtf8(Deserializer buf) {
+    protected static byte[] getRawUtf8Bytes(Deserializer buf) {
         int len = buf.getInt(null);
-        byte[] arr = buf.getBytes(null, len);
-        return Utf8.toString(arr);
+        return buf.getBytes(null, len);
+    }
+
+    protected String getUtf8(Deserializer buf) {
+        return Utf8.toString(getRawUtf8Bytes(buf));
     }
 
     protected void putUtf8(Serializer buf, String val) {
