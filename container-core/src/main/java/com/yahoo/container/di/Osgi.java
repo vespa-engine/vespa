@@ -14,6 +14,9 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptySet;
 
 /**
+ * This interface has default implementations of all methods, to allow using it
+ * for testing, instead of mocking or a test implementation.
+ *
  * @author gjoranv
  * @author Tony Vaagenes
  * @author ollivir
@@ -21,7 +24,7 @@ import static java.util.Collections.emptySet;
 public interface Osgi {
 
     default void installPlatformBundles(Collection<String> bundlePaths) {
-        System.out.println("installPlatformBundles " + bundlePaths);
+        //System.out.println("installPlatformBundles " + bundlePaths);
     }
 
     /**
@@ -29,12 +32,12 @@ public interface Osgi {
      * and therefore should be scheduled for uninstalling.
      */
     default Set<Bundle> useApplicationBundles(Collection<FileReference> bundles) {
-        System.out.println("useBundles " + bundles.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        //System.out.println("useBundles " + bundles.stream().map(Object::toString).collect(Collectors.joining(", ")));
         return emptySet();
     }
 
     default Class<?> resolveClass(BundleInstantiationSpecification spec) {
-        System.out.println("resolving class " + spec.classId);
+        //System.out.println("resolving class " + spec.classId);
         try {
             return Class.forName(spec.classId.getName());
         } catch (ClassNotFoundException e) {
@@ -43,7 +46,7 @@ public interface Osgi {
     }
 
     default Bundle getBundle(ComponentSpecification spec) {
-        System.out.println("resolving bundle " + spec);
+        //System.out.println("resolving bundle " + spec);
         return new MockBundle();
     }
 }
