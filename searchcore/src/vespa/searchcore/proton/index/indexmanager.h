@@ -90,8 +90,8 @@ public:
         _maintainer.putDocument(lid, doc, serialNum);
     }
 
-    void removeDocument(uint32_t lid, SerialNum serialNum) override {
-        _maintainer.removeDocument(lid, serialNum);
+    void removeDocuments(LidVector lids, SerialNum serialNum) override {
+        _maintainer.removeDocuments(std::move(lids), serialNum);
     }
 
     void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) override {

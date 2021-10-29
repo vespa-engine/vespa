@@ -3,35 +3,31 @@
 
 #include <vespa/searchcorespi/index/iindexmanager.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 /**
  * Mock of the IIndexManager interface used for unit testing.
  */
 struct MockIndexManager : public searchcorespi::IIndexManager
 {
-    virtual void putDocument(uint32_t, const Document &, SerialNum) override {}
-    virtual void removeDocument(uint32_t, SerialNum) override {}
-    virtual void commit(SerialNum, OnWriteDoneType) override {}
-    virtual SerialNum getCurrentSerialNum() const override { return 0; }
-    virtual SerialNum getFlushedSerialNum() const override { return 0; }
-    virtual searchcorespi::IndexSearchable::SP getSearchable() const override {
+    void putDocument(uint32_t, const Document &, SerialNum) override {}
+    void removeDocuments(LidVector, SerialNum) override {}
+    void commit(SerialNum, OnWriteDoneType) override {}
+    SerialNum getCurrentSerialNum() const override { return 0; }
+    SerialNum getFlushedSerialNum() const override { return 0; }
+    searchcorespi::IndexSearchable::SP getSearchable() const override {
         return searchcorespi::IndexSearchable::SP();
     }
-    virtual search::SearchableStats getSearchableStats() const override {
+    search::SearchableStats getSearchableStats() const override {
         return search::SearchableStats();
     }
-    virtual searchcorespi::IFlushTarget::List getFlushTargets() override {
+    searchcorespi::IFlushTarget::List getFlushTargets() override {
         return searchcorespi::IFlushTarget::List();
     }
-    virtual void setSchema(const Schema &, SerialNum) override {}
-    virtual void heartBeat(SerialNum) override {}
+    void setSchema(const Schema &, SerialNum) override {}
+    void heartBeat(SerialNum) override {}
     void compactLidSpace(uint32_t, SerialNum) override {}
-    virtual void setMaxFlushed(uint32_t) override { }
+    void setMaxFlushed(uint32_t) override { }
 };
 
-} // namespace test
-
-} // namespace proton
+}

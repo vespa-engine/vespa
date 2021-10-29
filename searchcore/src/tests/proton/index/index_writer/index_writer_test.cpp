@@ -52,8 +52,10 @@ struct MyIndexManager : public test::MockIndexManager
     void putDocument(uint32_t lid, const Document &, SerialNum serialNum) override {
         puts[lid].push_back(serialNum);
     }
-    void removeDocument(uint32_t lid, SerialNum serialNum) override {
-        removes[lid].push_back(serialNum);
+    void removeDocuments(LidVector lids, SerialNum serialNum) override {
+        for (uint32_t lid : lids) {
+            removes[lid].push_back(serialNum);
+        }
     }
     void commit(SerialNum serialNum, OnWriteDoneType) override {
         commitSerial = serialNum;
