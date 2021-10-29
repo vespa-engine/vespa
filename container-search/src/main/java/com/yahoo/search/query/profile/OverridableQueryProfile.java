@@ -16,12 +16,12 @@ public class OverridableQueryProfile extends QueryProfile {
     private static final String simpleClassName = OverridableQueryProfile.class.getSimpleName();
 
     /** Creates an unbacked overridable query profile */
-    protected OverridableQueryProfile() {
-        this("");
+    protected OverridableQueryProfile(QueryProfileRegistry owner) {
+        this("", owner);
     }
 
-    protected OverridableQueryProfile(String sourceName) {
-        super(ComponentId.createAnonymousComponentId(simpleClassName), sourceName);
+    protected OverridableQueryProfile(String sourceName, QueryProfileRegistry owner) {
+        super(createAnonymousId(owner), sourceName, owner);
     }
 
     @Override
@@ -35,7 +35,8 @@ public class OverridableQueryProfile extends QueryProfile {
 
     @Override
     protected QueryProfile createSubProfile(String name, DimensionBinding binding) {
-        return new OverridableQueryProfile(getSource()); // Nothing is set in this branch, so nothing to override, but need override checking
+        // Nothing is set in this branch, so nothing to override, but need override checking
+        return new OverridableQueryProfile(getSource(), getOwner());
     }
 
     /** Returns a clone of this which can be independently overridden */
@@ -43,13 +44,18 @@ public class OverridableQueryProfile extends QueryProfile {
     public OverridableQueryProfile clone() {
         if (isFrozen()) return this;
         OverridableQueryProfile clone = (OverridableQueryProfile)super.clone();
-        clone.initId(ComponentId.createAnonymousComponentId(simpleClassName));
+        clone.initId(createAnonymousId(getOwner()));
         return clone;
     }
 
     @Override
     public String toString() {
         return "an overridable query profile with no backing";
+    }
+
+    private static ComponentId createAnonymousId(QueryProfileRegistry owner) {
+        return owner != null ? owner.createAnonymousId(simpleClassName)
+                             : ComponentId.createAnonymousComponentId(simpleClassName);
     }
 
 }
