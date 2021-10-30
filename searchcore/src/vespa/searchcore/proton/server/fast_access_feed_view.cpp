@@ -87,11 +87,4 @@ FastAccessFeedView::internalForceCommit(const CommitParam & param, OnForceCommit
     Parent::internalForceCommit(param, onCommitDone);
 }
 
-void
-FastAccessFeedView::sync()
-{
-    Parent::sync();
-    _writeService.attributeFieldWriter().sync_all();
-}
-
 } // namespace proton

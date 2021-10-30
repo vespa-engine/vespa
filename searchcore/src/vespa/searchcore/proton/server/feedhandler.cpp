@@ -300,13 +300,6 @@ FeedHandler::performJoin(FeedToken token, JoinBucketsOperation &op) {
 }
 
 void
-FeedHandler::performSync()
-{
-    assert(_writeService.master().isCurrentThread());
-    _activeFeedView->sync();
-}
-
-void
 FeedHandler::performEof()
 {
     assert(_writeService.master().isCurrentThread());
@@ -767,13 +760,6 @@ FeedHandler::heartBeat()
     assert(_writeService.master().isCurrentThread());
     _heart_beat_time.store(vespalib::steady_clock::now());
     _activeFeedView->heartBeat(_serialNum);
-}
-
-void
-FeedHandler::sync()
-{
-    _writeService.master().execute(makeLambdaTask([this]() { performSync(); }));
-    _writeService.sync();
 }
 
 FeedHandler::RPC::Result

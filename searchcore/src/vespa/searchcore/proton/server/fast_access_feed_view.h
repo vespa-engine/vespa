@@ -63,7 +63,6 @@ public:
     }
 
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
-    void sync() override;
 };
 
 } // namespace proton

@@ -76,7 +76,6 @@ public:
     void prepareMove(MoveOperation &putOp) override;
     void handleMove(const MoveOperation &moveOp, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) override;
     void heartBeat(search::SerialNum serialNum) override;
-    void sync() override;
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
 

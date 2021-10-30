@@ -40,24 +40,6 @@ SearchableFeedView::SearchableFeedView(StoreOnlyFeedView::Context storeOnlyCtx, 
 SearchableFeedView::~SearchableFeedView() = default;
 
 void
-SearchableFeedView::performSync()
-{
-    // Called by index write thread, delays when sync() method on it completes.
-    assert(_writeService.index().isCurrentThread());
-    _writeService.indexFieldInverter().sync_all();
-    _writeService.indexFieldWriter().sync_all();
-}
-
-void
-SearchableFeedView::sync()
-{
-    assert(_writeService.master().isCurrentThread());
-    Parent::sync();
-    _writeService.index().execute(makeLambdaTask([this]() { performSync(); }));
-    _writeService.index().sync();
-}
-
-void
 SearchableFeedView::putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc,
                                      OnOperationDoneType onWriteDone)
 {

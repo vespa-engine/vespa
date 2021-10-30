@@ -123,7 +123,6 @@ private:
     void performDeleteBucket(FeedToken token, DeleteBucketOperation &op);
     void performSplit(FeedToken token, SplitBucketOperation &op);
     void performJoin(FeedToken token, JoinBucketsOperation &op);
-    void performSync();
     void performEof();
 
     /**
@@ -236,7 +235,6 @@ public:
     void handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) override;
     void heartBeat() override;
 
-    void sync();
     RPC::Result receive(const Packet &packet) override;
 
     void eof() override;
