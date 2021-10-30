@@ -5840,8 +5840,8 @@
       "public"
     ],
     "methods": [
-      "protected void <init>()",
-      "protected void <init>(java.lang.String)",
+      "protected void <init>(com.yahoo.search.query.profile.QueryProfileRegistry)",
+      "protected void <init>(java.lang.String, com.yahoo.search.query.profile.QueryProfileRegistry)",
       "protected java.lang.Object checkAndConvertAssignment(java.lang.String, java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
       "protected com.yahoo.search.query.profile.QueryProfile createSubProfile(java.lang.String, com.yahoo.search.query.profile.DimensionBinding)",
       "public com.yahoo.search.query.profile.OverridableQueryProfile clone()",
@@ -5865,7 +5865,9 @@
       "public void <init>(com.yahoo.component.ComponentId)",
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.component.ComponentId, java.lang.String)",
+      "public void <init>(com.yahoo.component.ComponentId, java.lang.String, com.yahoo.search.query.profile.QueryProfileRegistry)",
       "public java.lang.String getSource()",
+      "protected final com.yahoo.search.query.profile.QueryProfileRegistry getOwner()",
       "public com.yahoo.search.query.profile.types.QueryProfileType getType()",
       "public void setType(com.yahoo.search.query.profile.types.QueryProfileType)",
       "public com.yahoo.search.query.profile.QueryProfileVariants getVariants()",
@@ -5923,7 +5925,9 @@
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
       "public bridge synthetic java.lang.Object clone()"
     ],
-    "fields": []
+    "fields": [
+      "public final com.yahoo.search.query.profile.QueryProfileRegistry owner"
+    ]
   },
   "com.yahoo.search.query.profile.QueryProfileCompiler": {
     "superClass": "java.lang.Object",
@@ -5973,7 +5977,8 @@
       "public com.yahoo.search.query.profile.types.QueryProfileTypeRegistry getTypeRegistry()",
       "public com.yahoo.search.query.profile.QueryProfile findQueryProfile(java.lang.String)",
       "public void freeze()",
-      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry compile()"
+      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry compile()",
+      "public com.yahoo.component.ComponentId createAnonymousId(java.lang.String)"
     ],
     "fields": []
   },
@@ -6498,7 +6503,8 @@
       "public void register(com.yahoo.search.query.profile.types.QueryProfileType)",
       "public boolean hasApplicationTypes()",
       "public void freeze()",
-      "public static com.yahoo.search.query.profile.types.QueryProfileTypeRegistry emptyFrozen()"
+      "public static com.yahoo.search.query.profile.types.QueryProfileTypeRegistry emptyFrozen()",
+      "public com.yahoo.component.ComponentId createAnonymousId(java.lang.String)"
     ],
     "fields": []
   },

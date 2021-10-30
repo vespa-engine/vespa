@@ -13,31 +13,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class ComponentId implements Comparable<ComponentId> {
 
-    private final class VersionHandler implements Spec.VersionHandler<Version> {
-
-        @Override
-        public Version emptyVersion() {
-            return Version.emptyVersion;
-        }
-
-        @Override
-        public int compare(Version v1, Version v2) {
-            return v1.compareTo(v2);
-        }
-    }
-
     private final Spec<Version> spec;
     private final boolean anonymous;
-    private final static class Counter {
-        private int count = 0;
-        public int getAndIncrement() { return count++; }
-    }
+
+    private static AtomicInteger threadIdCounter = new AtomicInteger(0);
+
     private static ThreadLocal<Counter> threadLocalUniqueId = new ThreadLocal<Counter>() {
         @Override protected Counter initialValue() {
             return new Counter();
         }
     };
-    private static AtomicInteger threadIdCounter = new AtomicInteger(0);
+
     private static ThreadLocal<String> threadId = new ThreadLocal<String>() {
         @Override protected String initialValue() {
             return new String("_" + threadIdCounter.getAndIncrement() + "_");
@@ -46,29 +32,6 @@ public final class ComponentId implements Comparable<ComponentId> {
 
     /** Precomputed string value */
     private final String stringValue;
-
-    private ComponentId(String name, Version version, ComponentId namespace, boolean anonymous) {
-        if (anonymous) {
-            name = createAnonymousName(name);
-        }
-        spec = new Spec<>(new VersionHandler(), name, version, namespace);
-        this.anonymous = anonymous;
-
-        stringValue = spec.createStringValue();
-    }
-
-    private String createAnonymousName(String name) {
-        return new StringBuilder(name).append(threadId.get()).append(threadLocalUniqueId.get().getAndIncrement()).toString();
-    }
-
-    public ComponentId(String name, Version version, ComponentId namespace) {
-        this(name, version, namespace, false);
-    }
-
-    /** Creates a component id from a name and version. The version may be null */
-    public ComponentId(String name, Version version) {
-        this(name, version, null);
-    }
 
     /**
      * Creates a component id from the id string form: name(:version)?(@namespace)?,
@@ -81,6 +44,21 @@ public final class ComponentId implements Comparable<ComponentId> {
 
     private ComponentId(SpecSplitter splitter) {
         this(splitter.name, Version.fromString(splitter.version), splitter.namespace);
+    }
+
+    public ComponentId(String name, Version version, ComponentId namespace) {
+        this(name, version, namespace, false);
+    }
+
+    /** Creates a component id from a name and version. The version may be null */
+    public ComponentId(String name, Version version) {
+        this(name, version, null);
+    }
+
+    private ComponentId(String id, Version version, ComponentId namespace, boolean anonymous) {
+        this.spec = new Spec<>(new VersionHandler(), id, version, namespace);
+        this.anonymous = anonymous;
+        this.stringValue = spec.createStringValue();
     }
 
     public ComponentId nestInNamespace(ComponentId namespace) {
@@ -116,12 +94,13 @@ public final class ComponentId implements Comparable<ComponentId> {
         return spec.toString();
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (o==this) return true;
+        if (o == this) return true;
         if ( ! (o instanceof ComponentId)) return false;
 
         ComponentId c = (ComponentId) o;
-        if (isAnonymous() || c.isAnonymous())
+        if (isAnonymous() || c.isAnonymous()) // TODO: Stop doing this
             return false;
 
         return c.stringValue().equals(stringValue);
@@ -150,7 +129,7 @@ public final class ComponentId implements Comparable<ComponentId> {
 
     /** Creates a componentId that is unique for this run-time instance */
     public static ComponentId createAnonymousComponentId(String baseName) {
-        return new ComponentId(baseName, null, null, true);
+        return new ComponentId(createAnonymousId(baseName), null, null, true);
     }
 
     public boolean isAnonymous() {
@@ -230,6 +209,37 @@ public final class ComponentId implements Comparable<ComponentId> {
     public static void resetGlobalCountersForTests() {
         threadId.set("_0_");
         threadLocalUniqueId.set(new Counter());
+    }
+
+    private static String createAnonymousId(String name) {
+        return name + threadId.get() + threadLocalUniqueId.get().getAndIncrement();
+    }
+
+    /** Creates a component id with the given value, marked as anonymous */
+    public static ComponentId newAnonymous(String spec) {
+        var splitter = new SpecSplitter(spec);
+        return new ComponentId(splitter.name, Version.fromString(splitter.version), splitter.namespace, true);
+    }
+
+    private final class VersionHandler implements Spec.VersionHandler<Version> {
+
+        @Override
+        public Version emptyVersion() {
+            return Version.emptyVersion;
+        }
+
+        @Override
+        public int compare(Version v1, Version v2) {
+            return v1.compareTo(v2);
+        }
+
+    }
+
+    private final static class Counter {
+
+        private int count = 0;
+        public int getAndIncrement() { return count++; }
+
     }
 
 }

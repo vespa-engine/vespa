@@ -28,10 +28,10 @@ import java.util.Set;
 public class ComponentRegistry<COMPONENT> {
 
     /** All versions of all components, indexed by name and namespace */
-    private Map<ComponentId, Map<String, Map<Version, COMPONENT>>> componentsByNameByNamespace = new LinkedHashMap<>();
+    private final Map<ComponentId, Map<String, Map<Version, COMPONENT>>> componentsByNameByNamespace = new LinkedHashMap<>();
 
     /** All versions of all components indexed by id */
-    private Map<ComponentId, COMPONENT> componentsById =new LinkedHashMap<>();
+    private final Map<ComponentId, COMPONENT> componentsById =new LinkedHashMap<>();
 
     /** True when this cannot be changed any more */
     private boolean frozen = false;

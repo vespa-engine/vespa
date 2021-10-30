@@ -1,0 +1,5 @@
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<query-profile id="parent" type="parentType">
+    <field name="a.b">a.b-parent</field>
+    <field name="a.b.c">a.b.c-parent</field>
+</query-profile>

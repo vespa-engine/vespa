@@ -449,6 +449,24 @@ public class XmlReadingTestCase {
             query = new Query(HttpRequest.createTestRequest("?query=test&profileRef=ref:MyProfile2", Method.GET), registry.getComponent("default"));
             assertEquals("MyProfile2", query.properties().get("profileRef.name"));
         }
+
+    }
+
+    @Test
+    public void testAnonymousIdsAreStableBetweenImports() {
+        QueryProfileRegistry registry1 = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/typedinheritance");
+        var childIn1 = registry1.findQueryProfile("child");
+        var childTypeIn1 = registry1.getType("childType");
+
+        QueryProfileRegistry registry2 = new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/typedinheritance");
+        var childIn2 = registry2.findQueryProfile("child");
+        var childTypeIn2 = registry2.getType("childType");
+
+        assertEquals(((QueryProfile)childIn1.lookup("a", Map.of())).getId().stringValue(),
+                     ((QueryProfile)childIn2.lookup("a", Map.of())).getId().stringValue());
+
+        assertEquals(childTypeIn1.getType("a").getId().stringValue(),
+                     childTypeIn2.getType("a").getId().stringValue());
     }
 
     @Test

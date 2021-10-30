@@ -2,20 +2,17 @@
 package com.yahoo.search.query.profile;
 
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.protect.Validator;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * <p>A wrapper of a query profile where overrides to the values in the referenced
- * profile can be set.</p>
- *
- * <p>This is used to allow configured overrides (in a particular referencing profile) of a referenced query profile.
- *
- * <p>Properties which are defined as not overridable in the type (if any) of the referenced query profile
- * cannot be set.</p>
+ * A wrapper of a query profile where overrides to the values in the referenced
+ * profile can be set.
+ * This is used to allow configured overrides (in a particular referencing profile) of a referenced query profile.
+ * Properties which are defined as not overridable in the type (if any) of the referenced query profile
+ * cannot be set.
  *
  * @author bratseth
  */
@@ -31,7 +28,7 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
      * @param backingProfile the backing profile, which is assumed read only, never null
      */
     public BackedOverridableQueryProfile(QueryProfile backingProfile) {
-        Validator.ensureNotNull("An overridable query profile must be backed by a real query profile", backingProfile);
+        super(backingProfile.getOwner());
         setType(backingProfile.getType());
         this.backingProfile = backingProfile;
     }
@@ -66,7 +63,7 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
         if (backing instanceof QueryProfile)
             return new BackedOverridableQueryProfile((QueryProfile)backing);
         else
-            return new OverridableQueryProfile(); // Nothing is set in this branch, so nothing to override, but need override checking
+            return new OverridableQueryProfile(getOwner()); // Nothing is set in this branch, so nothing to override, but need override checking
     }
 
     /** Returns a clone of this which can be independently overridden, but which refers to the same backing profile */

@@ -1,11 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A set of query profiles. This also holds the query profile types as a dependent registry
@@ -14,7 +17,9 @@ import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
  */
 public class QueryProfileRegistry extends ComponentRegistry<QueryProfile> {
 
-    private QueryProfileTypeRegistry queryProfileTypeRegistry = new QueryProfileTypeRegistry();
+    private int nextAnonymousId = 0;
+
+    private final QueryProfileTypeRegistry queryProfileTypeRegistry = new QueryProfileTypeRegistry();
 
     /** Register this type by its id */
     public void register(QueryProfile profile) {
@@ -82,5 +87,9 @@ public class QueryProfileRegistry extends ComponentRegistry<QueryProfile> {
     }
 
     public CompiledQueryProfileRegistry compile() { return QueryProfileCompiler.compile(this); }
+
+    public ComponentId createAnonymousId(String name) {
+        return ComponentId.newAnonymous(name + "_" + (nextAnonymousId++));
+    }
 
 }
