@@ -769,10 +769,12 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
         internalForceCommit(CommitParam(serialNum), commitContext);
     }
     if (useDocumentStore(serialNum)) {
-        _writeService.summary().execute(makeLambdaTask([this, &op]() {
+        vespalib::Gate gate;
+        _writeService.summary().execute(makeLambdaTask([this, &op, &gate]() {
             _summaryAdapter->compactLidSpace(op.getLidLimit());
+            gate.countDown();
         }));
-        _writeService.summary().sync();
+        gate.await();
     }
 }
 
