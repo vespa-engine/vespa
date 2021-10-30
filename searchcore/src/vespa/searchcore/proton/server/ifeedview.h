@@ -59,7 +59,6 @@ public:
     virtual void prepareMove(MoveOperation &putOp) = 0;
     virtual void handleMove(const MoveOperation &putOp, DoneCallback onDone) = 0;
     virtual void heartBeat(search::SerialNum serialNum) = 0;
-    virtual void sync() = 0;
     virtual void forceCommit(const CommitParam & param, DoneCallback onDone) = 0;
     void forceCommit(CommitParam param) { forceCommit(param, DoneCallback()); }
     void forceCommit(search::SerialNum serialNum) { forceCommit(CommitParam(serialNum)); }

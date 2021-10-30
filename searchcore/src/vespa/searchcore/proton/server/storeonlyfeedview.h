@@ -236,7 +236,6 @@ public:
     void prepareMove(MoveOperation &putOp) override;
     void handleMove(const MoveOperation &putOp, std::shared_ptr<vespalib::IDestructorCallback> doneCtx) override;
     void heartBeat(search::SerialNum serialNum) override;
-    void sync() override;
     void forceCommit(const CommitParam & param, DoneCallback onDone) override;
 
     /**

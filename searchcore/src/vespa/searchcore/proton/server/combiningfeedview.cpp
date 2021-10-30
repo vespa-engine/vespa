@@ -226,13 +226,6 @@ CombiningFeedView::heartBeat(search::SerialNum serialNum)
 }
 
 void
-CombiningFeedView::sync()
-{
-    getReadyFeedView()->sync();
-    // Assume this synced all feed views due to sharing of threads.
-}
-
-void
 CombiningFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
 {
     for (const auto &view : _views) {

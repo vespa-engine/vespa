@@ -173,12 +173,6 @@ StoreOnlyFeedView::Context::Context(Context &&) noexcept = default;
 StoreOnlyFeedView::Context::~Context() = default;
 
 void
-StoreOnlyFeedView::sync()
-{
-    _writeService.summary().sync();
-}
-
-void
 StoreOnlyFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
 {
     internalForceCommit(param, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
