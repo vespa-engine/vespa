@@ -93,17 +93,20 @@ MemoryIndex::insertDocument(uint32_t docId, const document::Document &doc)
 }
 
 void
-MemoryIndex::removeDocument(uint32_t docId)
+MemoryIndex::removeDocuments(LidVector lids)
 {
     if (_frozen) {
-        LOG(warning, "Memory index frozen: ignoring remove of document (%u)", docId);
+        LOG(warning, "Memory index frozen: ignoring remove of %lu documents", lids.size());
         return;
     }
-    _inverter->removeDocument(docId);
-    if (_indexedDocs.find(docId) != _indexedDocs.end()) {
-        _indexedDocs.erase(docId);
-        decNumDocs();
+    for (uint32_t lid : lids) {
+
+        if (_indexedDocs.find(lid) != _indexedDocs.end()) {
+            _indexedDocs.erase(lid);
+            decNumDocs();
+        }
     }
+    _inverter->removeDocuments(std::move(lids));
 }
 
 void

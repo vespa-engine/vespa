@@ -40,6 +40,7 @@ private:
     void addFieldPath(const document::DocumentType &docType, uint32_t fieldId);
     void buildFieldPath(const document::DocumentType & docType, const document::DataType *dataType);
 
+    using LidVector = std::vector<uint32_t>;
     using FieldPath = document::Field;
     using IndexedFieldPaths = std::vector<std::unique_ptr<FieldPath>>;
     IndexedFieldPaths          _indexedFieldPaths;
@@ -100,6 +101,7 @@ public:
      * (using a field inverter) is added to the 'invert threads' executor', then this function returns.
      */
     void removeDocument(uint32_t docId);
+    void removeDocuments(LidVector lids);
 
     FieldInverter *getInverter(uint32_t fieldId) const {
         return _inverters[fieldId].get();

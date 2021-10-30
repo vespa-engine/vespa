@@ -227,7 +227,9 @@ struct Fixture {
         index.insertDocument(id, *doc);
     }
      void remove(uint32_t id) {
-        index.removeDocument(id);
+        std::vector<uint32_t> lids;
+        lids.push_back(id);
+        index.removeDocuments(std::move(lids));
     }
 
     void readWork(uint32_t cnt);

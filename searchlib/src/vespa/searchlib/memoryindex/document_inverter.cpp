@@ -116,6 +116,7 @@ DocumentInverter::buildFieldPath(const document::DocumentType &docType,
 void
 DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
 {
+    // Might want to batch inverters as we do for attributes
     const document::DataType *dataType(doc.getDataType());
     if (_indexedFieldPaths.empty() || _dataType != dataType) {
         buildFieldPath(doc.getType(), dataType);
@@ -152,20 +153,31 @@ DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
 }
 
 void
-DocumentInverter::removeDocument(uint32_t docId)
+DocumentInverter::removeDocument(uint32_t docId) {
+    LidVector lids;
+    lids.push_back(docId);
+    removeDocuments(std::move(lids));
+}
+void
+DocumentInverter::removeDocuments(LidVector lids)
 {
+    // Might want to batch inverters as we do for attributes
     for (uint32_t fieldId : _schemaIndexFields._textFields) {
         FieldInverter *inverter = _inverters[fieldId].get();
-        _invertThreads.execute(fieldId, [inverter, docId]() {
-            inverter->removeDocument(docId);
+        _invertThreads.execute(fieldId, [inverter, lids]() {
+            for (uint32_t lid : lids) {
+                inverter->removeDocument(lid);
+            }
         });
     }
     uint32_t urlId = 0;
     for (const auto & fi : _schemaIndexFields._uriFields) {
         uint32_t fieldId = fi._all;
         UrlFieldInverter *inverter = _urlInverters[urlId].get();
-        _invertThreads.execute(fieldId,[inverter, docId]() {
-            inverter->removeDocument(docId);
+        _invertThreads.execute(fieldId, [inverter, lids]() {
+            for (uint32_t lid : lids) {
+                inverter->removeDocument(lid);
+            }
         });
         ++urlId;
     }
