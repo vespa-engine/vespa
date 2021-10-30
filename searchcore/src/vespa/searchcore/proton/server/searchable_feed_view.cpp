@@ -170,11 +170,13 @@ void
 SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 {
     Parent::handleCompactLidSpace(op);
+    vespalib::Gate gate;
     _writeService.index().execute(
-            makeLambdaTask([this, &op]() {
+            makeLambdaTask([this, &op, &gate]() {
                 _indexWriter->compactLidSpace(op.getSerialNum(), op.getLidLimit());
+                gate.countDown();
             }));
-    _writeService.index().sync();
+    gate.await();
 }
 
 void
