@@ -17,7 +17,7 @@ import javax.swing.*;
 
 /**
  * This class represent a group of elements in the "Find Usages" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdUsageGroup implements UsageGroup {
     private final VirtualFile myFile;

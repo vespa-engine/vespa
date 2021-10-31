@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This abstract class is used for methods' implementations for SdIdentifier. Connected with "mixin" to IdentifierVal and 
  * IdentifierWithDashVal rules in sd.bnf
- * @author shahariel
+ * @author Shahar Ariel
  */
 public abstract class SdIdentifierMixin extends SdIdentifierMixinImpl implements PsiNamedElement {
     

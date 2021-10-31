@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  * This class handles creating the "Find Usages" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdFindUsagesHandler extends FindUsagesHandler {
     

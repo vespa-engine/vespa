@@ -13,7 +13,7 @@ import javax.swing.Icon;
 /**
  * This class is used for methods' implementations for SdSummaryDefinition. Connected with "mixin" to SummaryDefinition
  * rule in sd.bnf
- * @author shahariel
+ * @author Shahar Ariel
  */
 public abstract class SdSummaryDefinitionMixin extends ASTWrapperPsiElement {
     

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * This class is used for the extension (in plugin.xml) to the class SdStructureViewModel. It make the IDE use our 
  * plugin's code when creating the "Structure View" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdStructureViewFactory implements PsiStructureViewFactory {
 

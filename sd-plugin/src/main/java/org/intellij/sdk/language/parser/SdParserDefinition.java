@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for the extension (in plugin.xml), to make the parsing process use the plugin code.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdParserDefinition implements ParserDefinition {
     public static final TokenSet WHITE_SPACES = TokenSet.create(TokenType.WHITE_SPACE);

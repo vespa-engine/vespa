@@ -12,7 +12,7 @@ import static com.intellij.psi.TokenType.WHITE_SPACE; // Pre-defined whitespace 
 
 /*
 * This file is used for the generation of the lexer of the SD language.
-* @author shahariel
+* @author Shahar Ariel
 */
 
 %%

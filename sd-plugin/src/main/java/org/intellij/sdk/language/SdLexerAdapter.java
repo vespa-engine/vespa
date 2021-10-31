@@ -5,7 +5,7 @@ import com.intellij.lexer.FlexAdapter;
 
 /**
  * This class adapts the JFlex lexer to the IntelliJ Platform Lexer API.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdLexerAdapter extends FlexAdapter {
     

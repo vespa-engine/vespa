@@ -22,7 +22,7 @@ import javax.swing.JTree;
 
 /**
  * This class is a browser for the "Call Hierarchy" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdCallHierarchyBrowser extends CallHierarchyBrowserBase {
 

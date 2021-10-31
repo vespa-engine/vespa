@@ -18,7 +18,7 @@ import java.util.HashSet;
 
 /**
  * This class is util class to the Call Hierarchy feature.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdHierarchyUtil {
     
@@ -42,7 +42,8 @@ public class SdHierarchyUtil {
             HashSet<SdRankProfileDefinition> tempRanks = new HashSet<>();
             SdRankProfileDefinition curRank = rank;
             while (curRank != null) {
-                if (curRank.getName().equals(rankProfileTarget.getName())) {
+                String curRankName = curRank.getName();
+                if (curRankName != null && curRankName.equals(rankProfileTarget.getName())) {
                     result.addAll(tempRanks);
                     break;
                 }

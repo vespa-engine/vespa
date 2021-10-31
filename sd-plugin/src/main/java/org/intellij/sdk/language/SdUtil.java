@@ -39,7 +39,7 @@ import java.util.List;
 
 /**
  * This is the util class for the plugin's code.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdUtil {
     

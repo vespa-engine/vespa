@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * This class represent a Document Summary that groups elements in the "Find Usages" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdDocumentSummaryGroupingRule extends SingleParentUsageGroupingRule implements DumbAware {
     

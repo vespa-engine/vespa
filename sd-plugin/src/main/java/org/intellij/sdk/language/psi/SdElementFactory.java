@@ -9,7 +9,7 @@ import org.intellij.sdk.language.SdFileType;
 
 /**
  * This class is a factory of psi elements in the SD PSI tree.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdElementFactory {
     

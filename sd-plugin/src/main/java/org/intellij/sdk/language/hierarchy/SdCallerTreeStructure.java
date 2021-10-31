@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 /**
  * This class represents a Caller tree in the "Call Hierarchy" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdCallerTreeStructure extends SdCallTreeStructure {
     
@@ -52,7 +52,7 @@ public class SdCallerTreeStructure extends SdCallTreeStructure {
                 ProgressManager.checkCanceled();
                 PsiElement psiElement = r.getElement();
                 SdFunctionDefinition f = PsiTreeUtil.getParentOfType(psiElement, SdFunctionDefinition.class, false);
-                if (f != null && !f.getName().equals(macroName)) { 
+                if (f != null && f.getName() != null && !f.getName().equals(macroName)) { 
                     ContainerUtil.addIfNotNull(results, f); 
                 } else {
                     SdFirstPhaseDefinition fp = PsiTreeUtil.getParentOfType(psiElement, SdFirstPhaseDefinition.class, false);

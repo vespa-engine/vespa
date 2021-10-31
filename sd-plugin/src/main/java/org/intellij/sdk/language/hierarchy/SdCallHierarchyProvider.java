@@ -20,7 +20,7 @@ import com.intellij.openapi.project.Project;
 
 /**
  * This class is used for the extension (in plugin.xml), to enable "Call Hierarchy" window using the plugin code.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdCallHierarchyProvider implements HierarchyProvider {
 

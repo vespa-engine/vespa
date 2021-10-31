@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class represent an SD file.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdFile extends PsiFileBase {
     

@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * This abstract class represents a general tree in the "Call Hierarchy" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
     protected final String myScopeType;

@@ -1,7 +1,7 @@
 /**
 This file is the SD grammar. 
 NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats it like zero-to-many)
-@author: shahariel
+@author: Shahar Ariel
  */
 
 {
