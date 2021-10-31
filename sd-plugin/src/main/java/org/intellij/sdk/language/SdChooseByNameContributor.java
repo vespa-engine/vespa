@@ -8,7 +8,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.util.indexing.FileBasedIndex;
 import org.intellij.sdk.language.psi.SdDeclaration;
 import org.intellij.sdk.language.psi.SdFile;
 import org.jetbrains.annotations.NotNull;
@@ -25,11 +24,7 @@ public class SdChooseByNameContributor implements ChooseByNameContributor {
     
     @Override
     public String @NotNull [] getNames(Project project, boolean includeNonProjectItems) {
-        Collection<VirtualFile> virtualFiles = FileBasedIndex.getInstance().getContainingFiles(
-            FileTypeIndex.NAME,
-            SdFileType.INSTANCE,
-            GlobalSearchScope.allScope(project)
-        );
+        Collection<VirtualFile> virtualFiles = FileTypeIndex.getFiles(SdFileType.INSTANCE, GlobalSearchScope.allScope(project));
         
         List<SdDeclaration> declarations = new ArrayList<>();
         
@@ -47,11 +42,7 @@ public class SdChooseByNameContributor implements ChooseByNameContributor {
     
     @Override
     public NavigationItem @NotNull [] getItemsByName(String name, String pattern, Project project, boolean includeNonProjectItems) {
-        Collection<VirtualFile> virtualFiles = FileBasedIndex.getInstance().getContainingFiles(
-            FileTypeIndex.NAME,
-            SdFileType.INSTANCE,
-            GlobalSearchScope.allScope(project)
-        );
+        Collection<VirtualFile> virtualFiles = FileTypeIndex.getFiles(SdFileType.INSTANCE, GlobalSearchScope.allScope(project));
         
         List<SdDeclaration> declarations = new ArrayList<>();
         

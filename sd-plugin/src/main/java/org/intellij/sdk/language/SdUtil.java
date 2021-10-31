@@ -11,7 +11,6 @@ import com.intellij.psi.PsiReference;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.util.indexing.FileBasedIndex;
 import org.intellij.sdk.language.psi.SdAnnotationFieldDefinition;
 import org.intellij.sdk.language.psi.SdArgumentDefinition;
 import org.intellij.sdk.language.psi.SdDeclaration;
@@ -75,8 +74,8 @@ public class SdUtil {
             }
         }
         SdIdentifier ancestorIdentifier = (SdIdentifier) ancestorAST.getPsi();
-        return ancestorIdentifier.getReference().resolve();
-        
+        PsiReference ref = ancestorIdentifier.getReference();
+        return ref != null ? ref.resolve() : null;
     }
     
     public static String createFunctionDescription(SdFunctionDefinition macro) {
@@ -128,12 +127,9 @@ public class SdUtil {
             if (docName == null) {
                 return result;
             }
-            
-            Collection<VirtualFile> virtualFiles = FileBasedIndex.getInstance().getContainingFiles(
-                FileTypeIndex.NAME,
-                SdFileType.INSTANCE,
-                GlobalSearchScope.allScope(project)
-            );
+    
+            Collection<VirtualFile> virtualFiles = FileTypeIndex.getFiles(SdFileType.INSTANCE, GlobalSearchScope.allScope(project));
+
             for (VirtualFile vfile : virtualFiles) {
                 SdFile sdFile = (SdFile) PsiManager.getInstance(project).findFile(vfile);
                 if (sdFile != null && !sdFile.getName().equals(docName + ".sd")) {
@@ -166,7 +162,7 @@ public class SdUtil {
             PsiElement curRankProfile = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
             while (curRankProfile != null) {
                 for (SdFunctionDefinition macro : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {
-                    if (macro.getName().equals(name)) {
+                    if (macro.getName() != null && macro.getName().equals(name)) {
                         result.add(macro);
                         return result;
                     }
