@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for the extension (in plugin.xml) to the class SdSyntaxHighlighter.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdSyntaxHighlighterFactory extends SyntaxHighlighterFactory {
     

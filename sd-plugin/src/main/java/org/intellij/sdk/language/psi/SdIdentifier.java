@@ -6,7 +6,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 
 /**
  * This interface represents an identifier in the SD language (regular identifiers and identifiers with dash).
- * @author shahariel
+ * @author Shahar Ariel
  */
 public interface SdIdentifier extends PsiElement {
 

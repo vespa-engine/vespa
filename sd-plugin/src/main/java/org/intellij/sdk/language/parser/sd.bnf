@@ -1,7 +1,7 @@
 /**
 This file is the SD grammar. 
 NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats it like zero-to-many)
-@author: shahariel
+@author: Shahar Ariel
  */
 
 {
@@ -330,7 +330,7 @@ KeywordOrIdentifier ::= schema | search | document | struct | field | type | ind
                         bolding | on | off | true | false | id | normalizing | stemming | arity | hnsw | dictionary | hash | btree |
                         fieldset | fields | constant | annotation
                         | attribute | body | header | index | 
-                        reference | summary | set_language                  a      
+                        reference | summary | set_language
 
 // Note- in this form, those keywords can't be use as identifier-with-dash!
 KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features | from-disk | rank-profile | rank-type |

@@ -3,7 +3,6 @@ package org.intellij.sdk.language.findUsages;
 
 import com.intellij.navigation.ItemPresentation;
 import com.intellij.navigation.NavigationItemFileStatus;
-import com.intellij.openapi.util.NlsSafe;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -18,7 +17,7 @@ import javax.swing.*;
 
 /**
  * This class represent a group of elements in the "Find Usages" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdUsageGroup implements UsageGroup {
     private final VirtualFile myFile;
@@ -91,4 +90,7 @@ public class SdUsageGroup implements UsageGroup {
     public @Nullable Icon getIcon() {
         return myIcon;
     }
+    
+    @Override
+    public void update() {} // here because JetBrains asked
 }

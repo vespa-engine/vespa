@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for the extension (in plugin.xml), to make the IDE use our plugin's code for coding style.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdLanguageCodeStyleSettingsProvider extends LanguageCodeStyleSettingsProvider {
     

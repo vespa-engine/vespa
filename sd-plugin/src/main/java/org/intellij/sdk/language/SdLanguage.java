@@ -5,7 +5,7 @@ import com.intellij.lang.Language;
 
 /**
  * This class defines SD as a language.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdLanguage extends Language {
     public static final SdLanguage INSTANCE = new SdLanguage();

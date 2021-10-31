@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class represent a SdElementType.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdElementType extends IElementType {
     

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for methods' implementations for SdIdentifier. The abstract class SdIdentifierMixin extents it.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdIdentifierMixinImpl extends ASTWrapperPsiElement implements SdIdentifier {
     

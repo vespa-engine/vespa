@@ -1,4 +1,4 @@
-// This "noinspection" comment is here to fix a warning
+// This "noinspection" comment below is here to fix a warning
 //noinspection GroovyAssignabilityCheck
 plugins {
   id 'org.jetbrains.intellij' version '1.1.4'
@@ -35,12 +35,12 @@ compileJava {
 }
 
 
-group 'org.vz.native'
-version '1.0.1'
+group 'org.yahoo.native'
+version '1.0.0'
 
 sourceCompatibility = 11
 
-// This "noinspection" comment is here to fix a warning
+// This "noinspection" comment below is here to fix a warning
 //noinspection GroovyAssignabilityCheck
 repositories {
   mavenCentral()

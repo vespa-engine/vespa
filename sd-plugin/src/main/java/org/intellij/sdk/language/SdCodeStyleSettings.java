@@ -6,7 +6,7 @@ import com.intellij.psi.codeStyle.CustomCodeStyleSettings;
 
 /**
  * This class represent a code style settings, and creates an option page in settings/preferences.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdCodeStyleSettings extends CustomCodeStyleSettings {
     

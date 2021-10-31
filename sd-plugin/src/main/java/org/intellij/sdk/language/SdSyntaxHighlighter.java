@@ -17,7 +17,7 @@ import java.util.HashSet;
 
 /**
  * This class defines the syntax highlighting of an SD file.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
     

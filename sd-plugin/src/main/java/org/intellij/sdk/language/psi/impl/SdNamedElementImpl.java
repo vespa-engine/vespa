@@ -38,7 +38,7 @@ import javax.swing.Icon;
 /**
  * This abstract class is used to wrap a Psi Element with SdNamedElement interface, which enables the element to be a
  * "name owner" (like an identifier). It allows the element to take a part in references, find usages and more.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements SdNamedElement {
     

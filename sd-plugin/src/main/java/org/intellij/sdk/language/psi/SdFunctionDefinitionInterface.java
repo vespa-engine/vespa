@@ -5,7 +5,7 @@ import org.intellij.sdk.language.SdUtil;
 
 /**
  * This interface represents a function's declaration in the SD language.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public interface SdFunctionDefinitionInterface extends SdDeclaration {
     default boolean isOverride() {
@@ -17,7 +17,7 @@ public interface SdFunctionDefinitionInterface extends SdDeclaration {
         }
         while (curRankProfile != null) {
             for (SdFunctionDefinition macro : PsiTreeUtil.collectElementsOfType(curRankProfile, SdFunctionDefinition.class)) {
-                if (macro.getName().equals(macroName)) {
+                if (macro.getName() != null && macro.getName().equals(macroName)) {
                     return true;
                 }
             }

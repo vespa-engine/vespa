@@ -22,7 +22,7 @@ import javax.swing.Icon;
 
 /**
  * This class represents a node descriptor to a node in a tree in the "Call Hierarchy" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdCallHierarchyNodeDescriptor extends HierarchyNodeDescriptor {
 

@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * This class is used for the extension (in plugin.xml), to enable "find Usages" window take the element description from 
  * here. Used only for the "target" element.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdElementDescriptionProvider implements ElementDescriptionProvider {
     

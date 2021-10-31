@@ -7,11 +7,9 @@ import com.intellij.ide.hierarchy.HierarchyTreeStructure;
 import com.intellij.ide.util.treeView.NodeDescriptor;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
-import com.intellij.ui.PopupHandler;
 import com.intellij.util.ObjectUtils;
 import org.intellij.sdk.language.psi.SdFunctionDefinition;
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +22,7 @@ import javax.swing.JTree;
 
 /**
  * This class is a browser for the "Call Hierarchy" window.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdCallHierarchyBrowser extends CallHierarchyBrowserBase {
 
@@ -46,10 +44,8 @@ public class SdCallHierarchyBrowser extends CallHierarchyBrowserBase {
         type2TreeMap.put(getCalleeType(), createHierarchyTree(group));
     }
 
-    private JTree createHierarchyTree(ActionGroup group) {
-        final JTree tree = createTree(false);
-        PopupHandler.installPopupMenu(tree, group, ActionPlaces.CALL_HIERARCHY_VIEW_POPUP);
-        return tree;
+    private @NotNull JTree createHierarchyTree(ActionGroup group) {
+        return createTree(false);
     }
 
     @Override

@@ -9,7 +9,7 @@ import javax.swing.Icon;
 
 /**
  * This class is used for the extension (in plugin.xml), to define SD as a file's type.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdFileType extends LanguageFileType {
     

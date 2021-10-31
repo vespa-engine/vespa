@@ -7,7 +7,7 @@ import javax.swing.Icon;
 
 /**
  * This class is used for defining Icons for the IDE.
- * @author shahariel
+ * @author Shahar Ariel
  */
 public class SdIcons {
     public static final Icon FILE = IconLoader.getIcon("icons/sd_icon.png", SdIcons.class);
