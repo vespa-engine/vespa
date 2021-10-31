@@ -78,5 +78,17 @@
       "public static ai.vespa.cloud.Zone from(java.lang.String)"
     ],
     "fields": []
+  },
+  "ai.vespa.cloud.ZoneInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(ai.vespa.cloud.Zone)",
+      "public ai.vespa.cloud.Zone zone()"
+    ],
+    "fields": []
   }
 }
