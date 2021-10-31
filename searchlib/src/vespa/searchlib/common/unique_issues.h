@@ -18,7 +18,8 @@ private:
 public:
     using UP = std::unique_ptr<UniqueIssues>;
     void handle(const vespalib::Issue &issue) override;
-    void for_each_message(auto fun) const {
+    template <class Function>
+    void for_each_message(Function fun) const {
         for (const auto &msg: _messages) {
             fun(msg);
         }
