@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/backtrace.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <atomic>
 #include <thread>
 
 using namespace vespalib;

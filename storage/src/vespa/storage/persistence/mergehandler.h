@@ -21,6 +21,7 @@
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
+#include <atomic>
 
 namespace vespalib { class ISequencedTaskExecutor; }
 
