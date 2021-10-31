@@ -198,7 +198,7 @@ class ServletOutputStreamWriter {
             final int bytesToSend = buffer.remaining();
             try {
                 if (buffer.hasArray()) {
-                    outputStream.write(buffer.array(), buffer.arrayOffset(), buffer.remaining());
+                    outputStream.write(buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
                 } else {
                     final byte[] array = new byte[buffer.remaining()];
                     buffer.get(array);

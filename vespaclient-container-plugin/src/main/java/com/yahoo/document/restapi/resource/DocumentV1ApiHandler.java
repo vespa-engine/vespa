@@ -745,7 +745,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                     break;
 
                 if ( ! documentsDone) {
-                    if (first) { // First chunk, remove leading comma from first document, then flush "json" to "buffer".
+                    if (first) { // First chunk, remove leading comma from first document, and flush "json" to "buffer".
                         json.flush();
                         buffer.write(ByteBuffer.wrap(doc.toByteArray(), 1, doc.size() - 1), null);
                         first = false;
