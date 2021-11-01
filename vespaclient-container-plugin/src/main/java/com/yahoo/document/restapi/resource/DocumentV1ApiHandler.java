@@ -68,6 +68,7 @@ import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.Exceptions.RunnableThrowingIOException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -83,9 +84,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.ScheduledExecutorService;
@@ -577,12 +580,19 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private static class JsonResponse implements AutoCloseable {
 
         private static final ByteBuffer emptyBuffer = ByteBuffer.wrap(new byte[0]);
+        private static final int FLUSH_SIZE = 128;
 
         private final BufferedContentChannel buffer = new BufferedContentChannel();
         private final OutputStream out = new ContentChannelOutputStream(buffer);
         private final JsonGenerator json;
         private final ResponseHandler handler;
+        private final Queue<CompletionHandler> acks = new ConcurrentLinkedQueue<>();
+        private final Queue<ByteArrayOutputStream> docs = new ConcurrentLinkedQueue<>();
+        private final AtomicLong documentsWritten = new AtomicLong();
+        private final AtomicLong documentsFlushed = new AtomicLong();
+        private final AtomicLong documentsAcked = new AtomicLong();
         private boolean documentsDone = false;
+        private boolean first = true;
         private ContentChannel channel;
 
         private JsonResponse(ResponseHandler handler) throws IOException {
@@ -695,19 +705,72 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             json.writeArrayFieldStart("documents");
         }
 
-        synchronized void writeDocumentValue(Document document, CompletionHandler completionHandler) {
-            if ( ! documentsDone)
-                new JsonWriter(json).write(document);
-
+        /** Writes documents to an internal queue, which is flushed regularly. */
+        void writeDocumentValue(Document document, CompletionHandler completionHandler) throws IOException {
             if (completionHandler != null) {
-                if ( ! documentsDone)
-                    buffer.write(emptyBuffer, completionHandler);
-                else
-                    completionHandler.completed();
+                acks.add(completionHandler);
+                ackDocuments();
+            }
+
+            // Serialise document and add to queue, not necessarily in the order dictated by "written" above,
+            // i.e., the first 128 documents in the queue are not necessarily the ones ack'ed early.
+            ByteArrayOutputStream myOut = new ByteArrayOutputStream(1);
+            myOut.write(','); // Prepend rather than append, to avoid double memory copying.
+            try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
+                new JsonWriter(myJson).write(document);
+            }
+            docs.add(myOut);
+
+            // Flush the first FLUSH_SIZE documents in the queue to the network layer if chunk is filled.
+            if (documentsWritten.incrementAndGet() % FLUSH_SIZE == 0) {
+                flushDocuments();
             }
         }
 
+        void ackDocuments() {
+            while (documentsAcked.incrementAndGet() <= documentsFlushed.get() + FLUSH_SIZE) {
+                CompletionHandler ack = acks.poll();
+                if (ack != null)
+                    ack.completed();
+                else
+                    break;
+            }
+            documentsAcked.decrementAndGet(); // We overshoot by one above, so decrement again when done.
+        }
+
+        synchronized void flushDocuments() throws IOException {
+            for (int i = 0; i < FLUSH_SIZE; i++) {
+                ByteArrayOutputStream doc = docs.poll();
+                if (doc == null)
+                    break;
+
+                if ( ! documentsDone) {
+                    if (first) { // First chunk, remove leading comma from first document, and flush "json" to "buffer".
+                        json.flush();
+                        buffer.write(ByteBuffer.wrap(doc.toByteArray(), 1, doc.size() - 1), null);
+                        first = false;
+                    }
+                    else {
+                        buffer.write(ByteBuffer.wrap(doc.toByteArray()), null);
+                    }
+                }
+            }
+
+            // Ensure new, eligible acks are done, after flushing these documents.
+            buffer.write(emptyBuffer, new CompletionHandler() {
+                @Override public void completed() {
+                    documentsFlushed.addAndGet(FLUSH_SIZE);
+                    ackDocuments();
+                }
+                @Override public void failed(Throwable t) {
+                    log.log(WARNING, "Error writing documents", t);
+                    completed();
+                }
+            });
+        }
+
         synchronized void writeArrayEnd() throws IOException {
+            flushDocuments();
             documentsDone = true;
             json.writeEndArray();
         }
@@ -989,9 +1052,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         if (cluster.isEmpty() && path.documentType().isEmpty())
             throw new IllegalArgumentException("Must set 'cluster' parameter to a valid content cluster id when visiting at a root /document/v1/ level");
 
-        Optional<Integer> slices = getProperty(request, SLICES, integerParser);
-        Optional<Integer> sliceId = getProperty(request, SLICE_ID, integerParser);
-
         VisitorParameters parameters = parseCommonParameters(request, path, cluster);
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
@@ -1006,10 +1066,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setThrottlePolicy(throttlePolicy);
         parameters.visitInconsistentBuckets(true);
         parameters.setSessionTimeoutMs(Math.max(1, request.getTimeout(TimeUnit.MILLISECONDS) - handlerTimeout.toMillis()));
-        if (slices.isPresent() && sliceId.isPresent())
-            parameters.slice(slices.get(), sliceId.get());
-        else if (slices.isPresent() != sliceId.isPresent())
-            throw new IllegalArgumentException("None or both of '" + SLICES + "' and '" + SLICE_ID + "' must be set");
+
         return parameters;
     }
 
@@ -1043,6 +1100,13 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                                 path.documentType(),
                                                 List.of(FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace()),
                                                 getProperty(request, BUCKET_SPACE)));
+
+        Optional<Integer> slices = getProperty(request, SLICES, integerParser);
+        Optional<Integer> sliceId = getProperty(request, SLICE_ID, integerParser);
+        if (slices.isPresent() && sliceId.isPresent())
+            parameters.slice(slices.get(), sliceId.get());
+        else if (slices.isPresent() != sliceId.isPresent())
+            throw new IllegalArgumentException("None or both of '" + SLICES + "' and '" + SLICE_ID + "' must be set");
 
         return parameters;
     }
@@ -1124,14 +1188,22 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 response.writeDocumentsArrayStart();
             }
             @Override public void onDocument(JsonResponse response, Document document, Runnable ack, Consumer<String> onError) {
-                if (streamed)
-                    response.writeDocumentValue(document, new CompletionHandler() {
-                        @Override public void completed() { ack.run();}
-                        @Override public void failed(Throwable t) { ack.run(); onError.accept(t.getMessage()); }
-                    });
-                else {
-                    response.writeDocumentValue(document, null);
-                    ack.run();
+                try {
+                    if (streamed)
+                        response.writeDocumentValue(document, new CompletionHandler() {
+                            @Override public void completed() { ack.run();}
+                            @Override public void failed(Throwable t) {
+                                ack.run();
+                                onError.accept(t.getMessage());
+                            }
+                        });
+                    else {
+                        response.writeDocumentValue(document, null);
+                        ack.run();
+                    }
+                }
+                catch (Exception e) {
+                    onError.accept(e.getMessage());
                 }
             }
             @Override public void onEnd(JsonResponse response) throws IOException {

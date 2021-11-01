@@ -142,8 +142,7 @@ struct IndexManagerTest : public ::testing::Test {
     void resetIndexManager();
     void removeDocument(uint32_t docId, SerialNum serialNum) {
         runAsIndex([&]() { _index_manager->removeDocument(docId, serialNum);
-                              _index_manager->commit(serialNum,
-                                                     emptyDestructorCallback);
+                              _index_manager->commit(serialNum, emptyDestructorCallback);
                           });
         _writeService.indexFieldWriter().sync_all();
     }

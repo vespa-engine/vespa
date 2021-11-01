@@ -278,6 +278,7 @@ Requires: gtest
 %define _skip_vespamalloc 1
 %endif
 Requires: %{name}-base = %{version}-%{release}
+Requires: %{name}-base-libs = %{version}-%{release}
 Requires: %{name}-libs = %{version}-%{release}
 Requires: %{name}-clients = %{version}-%{release}
 Requires: %{name}-config-model-fat = %{version}-%{release}
@@ -464,6 +465,7 @@ Vespa - The open big data serving engine - tools
 
 Summary: Vespa - The open big data serving engine - ann-benchmark
 
+Requires: %{name}-base-libs = %{version}-%{release}
 Requires: %{name}-libs = %{version}-%{release}
 %if 0%{?el7}
 Requires: python3
@@ -487,6 +489,15 @@ nearest neighbor search used for low-level benchmarking.
 %setup -c -D -T
 %else
 %setup -q
+echo '%{version}' > VERSION
+case '%{version}' in
+    *.0)
+	:
+	;;
+    *)
+	sed -i -e 's,<version>[0-9].*-SNAPSHOT</version>,<version>%{version}</version>,' $(find . -name pom.xml -print)
+	;;
+esac
 %endif
 
 %build
