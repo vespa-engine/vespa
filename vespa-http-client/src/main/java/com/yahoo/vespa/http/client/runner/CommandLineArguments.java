@@ -193,6 +193,10 @@ public class CommandLineArguments {
             description = "Run validation tool on input files instead of feeding them.")
     private boolean validateArg = false;
 
+    @Option(name = {"--ignoreConditionNotMet"},
+            description = "Ignore condition not met failures.")
+    private boolean ignoreConditionNotMet = false;
+
     @Option(name = {"--priority"},
             description = "Specify priority of sent messages, see documentation ")
     private String priorityArg = null;
@@ -250,6 +254,8 @@ public class CommandLineArguments {
     public String getFile() { return fileArg; };
 
     public boolean getVerbose() { return verboseArg; }
+
+    public boolean getIgnoreConditionNotMet() { return ignoreConditionNotMet; }
 
     public boolean getAddRootElementToXml() { return addRootElementToXml; }
 

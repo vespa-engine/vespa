@@ -23,6 +23,7 @@ public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
     private int failureCounter = 0;
     private final AtomicInteger sentDocumentCounter;
     private final int printStatsForEveryXDocument;
+    private final boolean ignoreConditionNotMet;
     private Instant startSampleInstant = Instant.now();
     private int startSampleResultCount = 0;
 
@@ -36,9 +37,10 @@ public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
      * @param sentDocumentCounter a counter that is increased outside this class, but can be nice to print here.
      * @param printStatsForEveryXDocument how often to print stats.
      */
-    public SimpleLoggerResultCallback(AtomicInteger sentDocumentCounter, int printStatsForEveryXDocument) {
+    public SimpleLoggerResultCallback(AtomicInteger sentDocumentCounter, int printStatsForEveryXDocument, boolean ignoreConditionNotMet) {
         this.sentDocumentCounter = sentDocumentCounter;
         this.printStatsForEveryXDocument = printStatsForEveryXDocument;
+        this.ignoreConditionNotMet = ignoreConditionNotMet;
     }
 
     /**
@@ -95,7 +97,10 @@ public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
                 printProgress();
             }
             resultCounter++;
-            if (!documentResult.isSuccess()) {
+            boolean success = ignoreConditionNotMet
+                    ? documentResult.isSuccessOrConditionNotMet()
+                    : documentResult.isSuccess();
+            if ( ! success ) {
                 failureCounter++;
                 println("Failure: " + documentResult + (documentResult.getDetails().isEmpty() ? "" : ":"));
                 for (Result.Detail detail : documentResult.getDetails())
