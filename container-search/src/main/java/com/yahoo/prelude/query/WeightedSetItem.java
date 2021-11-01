@@ -182,11 +182,12 @@ public class WeightedSetItem extends SimpleTaggableItem {
 
     @Override
     public boolean equals(Object o) {
+        if (o == this) return true;
         if ( ! super.equals(o)) return false;
         var other = (WeightedSetItem)o;
         if ( ! Objects.equals(this.indexName, other.indexName)) return false;
         if ( ! Objects.equals(this.set, other.set)) return false;
-        return false;
+        return true;
     }
 
     @Override
