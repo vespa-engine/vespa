@@ -52,8 +52,8 @@ SchemaFieldDefinition ::= field IdentifierVal type FieldTypeName '{' SchemaField
                             implements=["org.intellij.sdk.language.psi.SdDeclaration" "org.intellij.sdk.language.psi.SdNamedElement"]
                            }
                             
-FieldTypeName ::= "array" '<' (FieldTypeName | IdentifierVal) '>' | "weightedset" '<' SingleValueFieldTypeName '>'| 
-                  "map" '<' (FieldTypeName | IdentifierVal) ',' (FieldTypeName | IdentifierVal) '>' | TensorType |
+FieldTypeName ::= ("array" '<' (FieldTypeName | IdentifierVal) '>') | ("weightedset" '<' SingleValueFieldTypeName '>') | 
+                  ("map" '<' (FieldTypeName | IdentifierVal) ',' (FieldTypeName | IdentifierVal) '>') | TensorType |
                   SingleValueFieldTypeName
 private SingleValueFieldTypeName ::= "string" | "int" | "long" | "bool" | "byte" | "float" | "double" | "position" | "predicate" | "raw" | "uri" | 
                              "reference" '<' IdentifierVal '>' | "annotationreference" '<' IdentifierVal '>' | IdentifierVal
