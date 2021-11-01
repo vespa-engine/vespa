@@ -45,12 +45,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag FORCE_DISK_ENCRYPTION = defineFeatureFlag(
-            "force-disk-encryption", true,
-            List.of("hakonhall"), "2021-10-01", "2021-11-01",
-            "Enable new conditions for when to encrypt disk.",
-            "Takes effect on next host admin tick.");
-
     public static final UnboundBooleanFlag MAP_USER_NAMESPACE = defineFeatureFlag(
             "map-user-namespace", false,
             List.of("freva"), "2021-10-18", "2021-12-01",
@@ -247,18 +241,6 @@ public class Flags {
             "Limit for size of rank expressions distributed by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
-
-    public static final UnboundIntFlag MAX_ENCRYPTING_HOSTS = defineIntFlag(
-            "max-encrypting-hosts", 0,
-            List.of("mpolden", "hakonhall"), "2021-05-27", "2021-11-01",
-            "The maximum number of hosts allowed to encrypt their disk concurrently",
-            "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
-
-    public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
-            "defer-application-encryption", List.of(), String.class,
-            List.of("mpolden", "hakonhall"), "2021-06-23", "2021-11-01",
-            "List of applications where encryption of their host should be deferred",
-            "Takes effect on next run of HostEncrypter");
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
