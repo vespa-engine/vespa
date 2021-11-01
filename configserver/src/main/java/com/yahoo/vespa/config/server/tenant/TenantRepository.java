@@ -225,7 +225,7 @@ public class TenantRepository {
         if (numThreads == 0) return new InThreadExecutorService();
         if (numThreads < 0) {
             long maxHeap = Runtime.getRuntime().maxMemory();
-            int maxThreadsToFitInMemory = (int)(maxHeap / 1*GB);
+            int maxThreadsToFitInMemory = (int)((maxHeap + (GB - 1))/ 1*GB);
             numThreads = Math.min(Runtime.getRuntime().availableProcessors(), maxThreadsToFitInMemory);
         }
         return Executors.newFixedThreadPool(numThreads, ThreadFactoryFactory.getDaemonThreadFactory("deploy-helper"));
