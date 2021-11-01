@@ -9,6 +9,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.SmartPointerManager;
 import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.usages.UsageGroup;
+import com.intellij.usages.UsageView;
 import org.intellij.sdk.language.psi.SdDeclaration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,7 +60,8 @@ public class SdUsageGroup implements UsageGroup {
 
     @Override
     public int compareTo(@NotNull UsageGroup usageGroup) {
-        return getPresentableGroupText().compareToIgnoreCase(usageGroup.getPresentableGroupText());
+//        return getPresentableGroupText().compareToIgnoreCase(usageGroup.getPresentableGroupText());
+        return getText(null).compareTo(usageGroup.getText(null));
     }
     
     @Override
@@ -91,6 +93,18 @@ public class SdUsageGroup implements UsageGroup {
         return myIcon;
     }
     
+    // here because JetBrains asked:
+    
+    @SuppressWarnings("deprecation")
+    public Icon getIcon(boolean isOpen) {
+        return myIcon;
+    }
+    
+    @SuppressWarnings("deprecation")
+    public String getText(UsageView view) {
+        return myText;
+    }
+    
     @Override
-    public void update() {} // here because JetBrains asked
+    public void update() {} 
 }
