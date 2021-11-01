@@ -493,7 +493,7 @@ case '%{version}' in
 	:
 	;;
     *)
-	sed -i -e 's,<version>7-SNAPSHOT</version>,<version>%{version}</version>,' $(find . -name pom.xml -print)
+	sed -i -e 's,<version>[0-9].*-SNAPSHOT</version>,<version>%{version}</version>,' $(find . -name pom.xml -print)
 	;;
 esac
 %endif
