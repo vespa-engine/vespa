@@ -1225,6 +1225,8 @@ public class DeploymentSpecTest {
         assertInvalid(String.format(xmlForm, "instance='foo' weight='1'", "us-west-1"), "Application-level endpoint 'foo': targets undeclared instance 'foo'");
         assertInvalid(String.format(xmlForm, "instance='beta' weight='foo'", "us-west-1"), "Application-level endpoint 'foo': invalid weight value 'foo'");
         assertInvalid(String.format(xmlForm, "instance='beta' weight='1'", "eu-north-1"), "Application-level endpoint 'foo': targets undeclared region 'eu-north-1' in instance 'beta'");
+        assertInvalid(String.format(xmlForm, "instance='main' weight='1'", "us-west-1</region><region instance ='beta' weight='1'>us-east-3"),
+                      "Instance 'beta' declares a region different from instance 'main': 'us-east-3'");
     }
 
     @Test
