@@ -8,14 +8,15 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SimpleLoggerResultCallbackTest {
     @Test
     public void testAverageCalculation() {
-        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(3), 0);
+        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(3), 0, false);
         Instant now = Instant.now();
         logger.newSamplingPeriod(now);
         Result result = mock(Result.class);
@@ -30,7 +31,7 @@ public class SimpleLoggerResultCallbackTest {
 
     @Test
     public void testAverageCalculationExteremeValues() {
-        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(3), 0);
+        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(3), 0, false);
         Instant now = Instant.now();
         logger.newSamplingPeriod(now);
         // 0 duration, 0 documents
@@ -40,7 +41,7 @@ public class SimpleLoggerResultCallbackTest {
 
     @Test
     public void testOutput() {
-        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(3), 0);
+        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(3), 0, false);
         Instant now = Instant.now();
         logger.newSamplingPeriod(now);
         Result result = mock(Result.class);
@@ -57,7 +58,7 @@ public class SimpleLoggerResultCallbackTest {
     public void testPrintout() {
         ArrayList<String> outputList = new ArrayList<>();
 
-        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(30), 0) {
+        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(30), 0, false) {
             @Override
             protected void println(String output) {
                 outputList.add(output);
