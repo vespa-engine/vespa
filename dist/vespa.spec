@@ -489,6 +489,15 @@ nearest neighbor search used for low-level benchmarking.
 %setup -c -D -T
 %else
 %setup -q
+echo '%{version}' > VERSION
+case '%{version}' in
+    *.0)
+	:
+	;;
+    *)
+	sed -i -e 's,<version>[0-9].*-SNAPSHOT</version>,<version>%{version}</version>,' $(find . -name pom.xml -print)
+	;;
+esac
 %endif
 
 %build
