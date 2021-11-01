@@ -868,7 +868,7 @@
 
     <properties>
         <aircompressor.version>0.21</aircompressor.version>
-        <airline.version>0.9</airline.version>
+        <airline.version>0.7</airline.version>
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
         <apache.httpclient.version>4.5.13</apache.httpclient.version>
