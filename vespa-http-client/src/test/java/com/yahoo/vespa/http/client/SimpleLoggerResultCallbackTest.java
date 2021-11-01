@@ -54,11 +54,10 @@ public class SimpleLoggerResultCallbackTest {
         assertEquals(rate, 15., 0.1 /* delta */);
     }
 
-    @Test
-    public void testPrintout() {
+    private void verifyPrintout(boolean ignoreConditionNotMet) {
         ArrayList<String> outputList = new ArrayList<>();
 
-        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(30), 0, false) {
+        SimpleLoggerResultCallback logger = new SimpleLoggerResultCallback(new AtomicInteger(30), 0, ignoreConditionNotMet) {
             @Override
             protected void println(String output) {
                 outputList.add(output);
@@ -71,15 +70,23 @@ public class SimpleLoggerResultCallbackTest {
         // 2 success, 1 failure
         Result result = mock(Result.class);
         when(result.isSuccess()).thenReturn(true);
+        when(result.isSuccessOrConditionNotMet()).thenReturn(true);
         logger.onCompletion("1", result);
         logger.onCompletion("1", result);
         when(result.isSuccess()).thenReturn(false);
+        when(result.isSuccessOrConditionNotMet()).thenReturn(false);
         when(result.toString()).thenReturn("fooError");
         logger.onCompletion("1", result);
         logger.printProgress();
         assertThat(outputList.toString(),
                 containsString("Result received: 3 (1 failed so far, 30 sent, success rate 19999999.23 docs/sec)."));
         assertThat(outputList.toString(), containsString("Failure: fooError"));
+    }
+
+    @Test
+    public void testPrintout() {
+        verifyPrintout(false);
+        verifyPrintout(true);
     }
 
 }

@@ -97,7 +97,10 @@ public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
                 printProgress();
             }
             resultCounter++;
-            if ( !documentResult.isSuccessOrConditionNotMet() ) {
+            boolean success = ignoreConditionNotMet
+                    ? documentResult.isSuccessOrConditionNotMet()
+                    : documentResult.isSuccess();
+            if ( ! success ) {
                 failureCounter++;
                 println("Failure: " + documentResult + (documentResult.getDetails().isEmpty() ? "" : ":"));
                 for (Result.Detail detail : documentResult.getDetails())
