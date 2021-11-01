@@ -221,9 +221,12 @@ public class TenantRepository {
     }
 
     private ExecutorService createModelBuilderExecutor(int numThreads) {
+        final long GB = 1024*1024*1024;
         if (numThreads == 0) return new InThreadExecutorService();
         if (numThreads < 0) {
-            numThreads = Runtime.getRuntime().availableProcessors();
+            long maxHeap = Runtime.getRuntime().maxMemory();
+            int maxThreadsToFitInMemory = (int)((maxHeap + (GB - 1))/(1*GB));
+            numThreads = Math.min(Runtime.getRuntime().availableProcessors(), maxThreadsToFitInMemory);
         }
         return Executors.newFixedThreadPool(numThreads, ThreadFactoryFactory.getDaemonThreadFactory("deploy-helper"));
     }
@@ -348,7 +351,7 @@ public class TenantRepository {
         PermanentApplicationPackage permanentApplicationPackage = new PermanentApplicationPackage(configserverConfig);
         SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry,
                                                               fileDistributionFactory,
-                deployHelperExecutor,
+                                                              deployHelperExecutor,
                                                               hostProvisionerProvider,
                                                               permanentApplicationPackage,
                                                               configserverConfig,
