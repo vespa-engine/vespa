@@ -130,7 +130,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
-            List.of("vekterli"), "2020-12-02", "2021-11-01",
+            List.of("vekterli"), "2020-12-02", "2022-01-01",
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -173,7 +173,7 @@ public class Flags {
 
     public static final UnboundIntFlag NUM_DEPLOY_HELPER_THREADS = defineIntFlag(
             "num-model-builder-threads", -1,
-            List.of("balder"), "2021-09-09", "2021-11-01",
+            List.of("balder"), "2021-09-09", "2022-01-01",
             "Number of threads used for speeding up building of models.",
             "Takes effect on first (re)start of config server");
 
@@ -186,14 +186,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
             "container-dump-heap-on-shutdown-timeout", false,
-            List.of("baldersheim"), "2021-09-25", "2021-11-01",
+            List.of("baldersheim"), "2021-09-25", "2022-01-01",
             "Will trigger a heap dump during if container shutdown times out",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag CONTAINER_SHUTDOWN_TIMEOUT = defineDoubleFlag(
             "container-shutdown-timeout", 50.0,
-            List.of("baldersheim"), "2021-09-25", "2021-11-01",
+            List.of("baldersheim"), "2021-09-25", "2022-01-01",
             "Timeout for shutdown of a jdisc container",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -221,14 +221,14 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
             "max-concurrent-merges-per-node", 128,
-            List.of("balder", "vekterli"), "2021-06-06", "2021-11-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2022-01-01",
             "Specifies max concurrent merges per content node.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
             "max-merge-queue-size", 1024,
-            List.of("balder", "vekterli"), "2021-06-06", "2021-11-01",
+            List.of("balder", "vekterli"), "2021-06-06", "2022-01-01",
             "Specifies max size of merge queue.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
@@ -243,7 +243,7 @@ public class Flags {
 
     public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
             "large-rank-expression-limit", 8192,
-            List.of("baldersheim"), "2021-06-09", "2021-11-01",
+            List.of("baldersheim"), "2021-06-09", "2022-01-01",
             "Limit for size of rank expressions distributed by filedistribution",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
@@ -282,7 +282,7 @@ public class Flags {
 
     public static final UnboundIntFlag METRICSPROXY_NUM_THREADS = defineIntFlag(
             "metricsproxy-num-threads", 2,
-            List.of("balder"), "2021-09-01", "2021-11-01",
+            List.of("balder"), "2021-09-01", "2022-01-01",
             "Number of threads for metrics proxy",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
