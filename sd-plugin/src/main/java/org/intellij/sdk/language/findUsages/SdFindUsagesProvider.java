@@ -7,7 +7,7 @@ import com.intellij.lang.findUsages.FindUsagesProvider;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
 import com.intellij.psi.tree.TokenSet;
-import org.intellij.sdk.language.SdLexerAdapter;
+import org.intellij.sdk.language.lexer.SdLexerAdapter;
 import org.intellij.sdk.language.psi.SdDeclaration;
 import org.intellij.sdk.language.psi.SdIdentifierVal;
 import org.intellij.sdk.language.psi.SdIdentifierWithDashVal;

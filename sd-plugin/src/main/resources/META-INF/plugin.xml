@@ -2,7 +2,6 @@
 <idea-plugin>
     <id>org.intellij.sdk.language</id>
     <name>SdReader</name>
-    <version>1.0.0</version>
 
     <!-- Text to display as company information on Preferences/Settings | Plugin page -->
     <vendor>Yahoo</vendor>
