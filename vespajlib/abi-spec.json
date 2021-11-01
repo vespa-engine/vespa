@@ -3428,6 +3428,7 @@
       "protected static com.yahoo.vespa.objects.Identifiable deserializeOptional(com.yahoo.vespa.objects.Deserializer)",
       "protected static boolean equals(java.lang.Object, java.lang.Object)",
       "public void visitMembers(com.yahoo.vespa.objects.ObjectVisitor)",
+      "protected static byte[] getRawUtf8Bytes(com.yahoo.vespa.objects.Deserializer)",
       "protected java.lang.String getUtf8(com.yahoo.vespa.objects.Deserializer)",
       "protected void putUtf8(com.yahoo.vespa.objects.Serializer, java.lang.String)",
       "public bridge synthetic java.lang.Object clone()"

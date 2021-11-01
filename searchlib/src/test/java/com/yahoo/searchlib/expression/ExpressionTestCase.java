@@ -705,6 +705,21 @@ public class ExpressionTestCase {
         assertEquals(0, large.compareTo(large));
     }
 
+    private void compareAllPairwise(ResultNode... orderedNodes) {
+        for (int i = 0; i < orderedNodes.length; ++i) {
+            for (int j = 0; j < orderedNodes.length; ++j) {
+                var ctx = String.format("lhs(i=%d): %s, rhs(j=%d): %s", i, orderedNodes[i], j, orderedNodes[j]);
+                if (j < i) {
+                    assertTrue(ctx, orderedNodes[i].compareTo(orderedNodes[j]) > 0);
+                } else if (j > i) {
+                    assertTrue(ctx, orderedNodes[i].compareTo(orderedNodes[j]) < 0);
+                } else { // j == i
+                    assertEquals(ctx, orderedNodes[i].compareTo(orderedNodes[j]), 0);
+                }
+            }
+        }
+    }
+
     @Test
     public void testStringResultNode() {
         try {
@@ -719,16 +734,87 @@ public class ExpressionTestCase {
         } catch (IllegalArgumentException e) {
             // expected
         }
-        StringResultNode a = new StringResultNode("7.3");
+        StringResultNode a = new StringResultNode("42");
+        assertEquals(a.getInteger(), 42);
+        assertEquals(a.getFloat(), 42, delta);
+        assertEquals(a.getString(), "42");
+
+        a = new StringResultNode("7.3");
         assertEquals(a.getInteger(), 0);
         assertEquals(a.getFloat(), 7.3, delta);
         assertEquals(a.getString(), "7.3");
+
         byte[] raw = a.getRaw();
         assertEquals(raw.length, 3);
+        assertEquals(Arrays.compareUnsigned(raw, Utf8.toBytes("7.3")), 0);
+
         assertResultNode(a);
         compare(new StringResultNode(), new StringResultNode("z"), new StringResultNode("zz"));
         compare(new StringResultNode("z"), new StringResultNode("zz"), new StringResultNode("zzz"));
         compare(new StringResultNode("a"), new StringResultNode("zz"), new PositiveInfinityResultNode());
+        assertEquals(new StringResultNode("zz").compareTo(new StringResultNode("zz")), 0);
+
+        // Remove this assertion if we remove support for implicit stringification
+        compare(new StringResultNode(), new StringResultNode("12"), new IntegerResultNode(13));
+
+        var node = new StringResultNode("foo");
+        node.append(new StringResultNode("bar"));
+        assertEquals(node.getString(), "foobar");
+        node.add(new StringResultNode("baz"));
+        assertEquals(node.getString(), "foobarbaz");
+
+        node.set(new StringResultNode("ABC"));
+        assertEquals(node.getString(), "ABC");
+
+        node.max(new StringResultNode("ABA"));
+        assertEquals(node.getString(), "ABC");
+
+        node.max(new StringResultNode("ABD"));
+        assertEquals(node.getString(), "ABD");
+
+        node.min(new StringResultNode("ABE"));
+        assertEquals(node.getString(), "ABD");
+
+        node.min(new StringResultNode("ABC"));
+        assertEquals(node.getString(), "ABC");
+
+        node.set(new IntegerResultNode(1234));
+        assertEquals(node.getString(), "1234");
+    }
+
+    @Test
+    public void string_result_node_comparison_is_memcmp_unsigned_byte_ordered() {
+        // Comparison is first by shared prefix (if equal), then ties are resolved by checking length.
+        // This is not actually valid UTF-8, so we depend on unchecked-ness...
+        compareAllPairwise(StringResultNode.ofUncheckedUtf8Array(new byte[] { 0 }),
+                           StringResultNode.ofUncheckedUtf8Array(new byte[] { 0, 0 }),
+                           StringResultNode.ofUncheckedUtf8Array(new byte[] { 0, 0, 1 }),
+                           StringResultNode.ofUncheckedUtf8Array(new byte[] { 1 }),
+                           StringResultNode.ofUncheckedUtf8Array(new byte[] { 127 }),  // 0x7F
+                           StringResultNode.ofUncheckedUtf8Array(new byte[] { -128 }), // 0x80
+                           StringResultNode.ofUncheckedUtf8Array(new byte[] { -1 }),   // 0xFF
+                           StringResultNode.ofUncheckedUtf8Array(new byte[] { -1, 0 }));
+    }
+
+    // Ensure that the ordering of string nodes on the container matches that of the C++ backend.
+    // The backend directly orders on the memcmp order of UTF-8 strings, so the container must do the same.
+    // In particular, this means that UTF-16 java.lang.String sorting is a no-go.
+    @Test
+    public void string_result_node_comparison_is_utf8_byte_ordered() {
+        // UTF-8 representation of "fried shrimp" emoji U+1F364 which requires a UTF-16 surrogate pair (2 chars)
+        // Its UTF-16 representation is D83C DF64
+        var surrogateUtf8 = new byte[] { -16, -97, -115, -92 }; // F0 9F 8D A4
+        // UTF-8 representation of U+F0BA, which exists in the Unicode private usage range. Only requires 1 UTF-16 char.
+        // Its UTF-16 representation is F0BA
+        var nonSurrogateUtf8 = new byte[] { -17, -126, -70 }; // EF 82 BA
+
+        var s1 = new StringResultNode(Utf8.toString(surrogateUtf8));
+        var s2 = new StringResultNode(Utf8.toString(nonSurrogateUtf8));
+        //   UTF-8:  s2 < s1, since 0xEF < 0xF0
+        //   UTF-16: s1 < s2, since 0xD83C < 0xF0BA
+        // Assert that ordering is defined by UTF-8, not (surrogated) UTF-16.
+        assertTrue(s2.compareTo(s1) < 0);
+        assertTrue(s1.compareTo(s2) > 0);
     }
 
     @Test
