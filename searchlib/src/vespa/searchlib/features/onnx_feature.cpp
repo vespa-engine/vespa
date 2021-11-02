@@ -100,13 +100,14 @@ public:
     }
 };
 
-OnnxBlueprint::OnnxBlueprint()
-    : Blueprint("onnxModel"),
+OnnxBlueprint::OnnxBlueprint(vespalib::stringref baseName)
+    : Blueprint(baseName),
       _cache_token(),
       _debug_model(),
       _model(nullptr),
       _wire_info()
 {
+    assert((baseName == "onnx") || (baseName == "onnxModel"));
 }
 
 OnnxBlueprint::~OnnxBlueprint() = default;
