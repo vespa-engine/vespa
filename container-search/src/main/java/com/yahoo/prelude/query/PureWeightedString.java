@@ -1,12 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import com.yahoo.prelude.query.textualrepresentation.Discloser;
+
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * A word item which cannot provide its own index (field) name, but will always query the index
- * specified by the parent item it is added to.
+ * A word item which only consists of a value and weight.
  *
  * @author baldersheim
  */
@@ -58,6 +59,12 @@ public class PureWeightedString extends PureWeightedItem  {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), value);
+    }
+
+    @Override
+    public void disclose(Discloser discloser) {
+        super.disclose(discloser);
+        discloser.setValue(value);
     }
 
 }

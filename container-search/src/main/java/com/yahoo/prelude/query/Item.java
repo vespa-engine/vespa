@@ -469,7 +469,7 @@ public abstract class Item implements Cloneable {
 
     public void disclose(Discloser discloser) {
         discloser.addProperty("connectivity", connectivity);
-        discloser.addProperty("connectedItem", connectedItem); //reference
+        discloser.addProperty("connectedItem", connectedItem); // reference
 
         discloser.addProperty("creator", creator);
         discloser.addProperty("explicitSignificance", explicitSignificance);
@@ -478,12 +478,10 @@ public abstract class Item implements Cloneable {
         discloser.addProperty("significance", significance);
         discloser.addProperty("weight", weight);
 
-        if (label != null) {
+        if (label != null)
             discloser.addProperty("label", label);
-        }
-        if (hasUniqueID) {
+        if (hasUniqueID)
             discloser.addProperty("uniqueID", uniqueID);
-        }
     }
 
     public boolean isFromSpecialToken() {

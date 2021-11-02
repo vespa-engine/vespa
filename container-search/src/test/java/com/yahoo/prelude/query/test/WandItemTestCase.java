@@ -1,14 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.test;
 
-import com.yahoo.io.HexDump;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.PureWeightedString;
+import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import com.yahoo.prelude.query.*;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -19,7 +18,7 @@ import java.util.Map;
  */
 public class WandItemTestCase {
 
-    private static double DELTA = 0.0000001;
+    private static final double DELTA = 0.0000001;
 
     private static WandItem createSimpleItem() {
         WandItem item = new WandItem("myfield", 10);
@@ -57,7 +56,7 @@ public class WandItemTestCase {
         actual.flip();
         expect.flip();
 
-        assertTrue(actual.equals(expect));
+        assertEquals(expect, actual);
     }
 
     @Test
@@ -68,7 +67,7 @@ public class WandItemTestCase {
     @Test
     public void requireThatDiscloseIsWorking() {
         class TestDiscloser implements Discloser {
-            public Map<String, Object> props = new HashMap<>();
+            public final Map<String, Object> props = new HashMap<>();
             public void addProperty(String key, Object value) {
                 props.put(key, value);
             }
@@ -82,4 +81,5 @@ public class WandItemTestCase {
         assertEquals(2.0, discloser.props.get("thresholdBoostFactor"));
         assertEquals("myfield", discloser.props.get("index"));
     }
+
 }

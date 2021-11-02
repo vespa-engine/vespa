@@ -1185,7 +1185,8 @@
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public long getValue()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
     ],
     "fields": []
   },
@@ -1201,7 +1202,8 @@
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getName()",
       "public int encode(java.nio.ByteBuffer)",
-      "protected void appendBodyString(java.lang.StringBuilder)"
+      "protected void appendBodyString(java.lang.StringBuilder)",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
     ],
     "fields": []
   },
@@ -1220,7 +1222,8 @@
       "protected void appendBodyString(java.lang.StringBuilder)",
       "public java.lang.String getString()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)"
     ],
     "fields": []
   },

@@ -138,11 +138,8 @@ public class WeightedSetItem extends SimpleTaggableItem {
     public void disclose(Discloser discloser) {
         super.disclose(discloser);
         discloser.addProperty("index", indexName);
-        for (Map.Entry<Object, Integer> entry : set.entrySet()) {
-            WordItem subitem = new WordItem(entry.getKey().toString(), indexName);
-            subitem.setWeight(entry.getValue());
-            discloser.addChild(subitem);
-        }
+        for (Map.Entry<Object, Integer> entry : set.entrySet())
+            discloser.addChild(asItem(entry));
     }
 
     @Override
@@ -150,15 +147,18 @@ public class WeightedSetItem extends SimpleTaggableItem {
         encodeThis(buffer);
         int itemCount = 1;
         for (Map.Entry<Object, Integer> entry : set.entrySet()) {
-            Object key = entry.getKey();
-            if (key instanceof Long) {
-                new PureWeightedInteger((Long)key, entry.getValue()).encode(buffer);
-            } else {
-                new PureWeightedString(key.toString(), entry.getValue()).encode(buffer);
-            }
+            asItem(entry).encode(buffer);
             itemCount++;
         }
         return itemCount;
+    }
+
+    private PureWeightedItem asItem(Map.Entry<Object, Integer> entry) {
+        Object key = entry.getKey();
+        if (key instanceof Long)
+            return new PureWeightedInteger((Long)key, entry.getValue());
+        else
+            return new PureWeightedString(key.toString(), entry.getValue());
     }
 
     @Override
