@@ -16,8 +16,6 @@ import java.util.Deque;
  */
 public final class ConstantNode extends ExpressionNode {
 
-    private final String sourceImage;
-
     private final Value value;
 
     public ConstantNode(Value value) {
@@ -33,7 +31,6 @@ public final class ConstantNode extends ExpressionNode {
     public ConstantNode(Value value, String sourceImage) {
         value.freeze();
         this.value = value;
-        this.sourceImage = sourceImage;
     }
 
     public Value getValue() { return value; }
@@ -45,7 +42,6 @@ public final class ConstantNode extends ExpressionNode {
 
     /** Returns the string which created this, or the value.toString() if not known */
     public String sourceString() {
-        if (sourceImage != null) return sourceImage;
         return value.toString();
     }
 
