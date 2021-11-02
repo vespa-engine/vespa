@@ -17,10 +17,7 @@ import java.util.List;
  * @author bratseth
  */
 public final class IfNode extends CompositeNode {
-
-    /** The expression nodes that make up this condition. */
-    private final ExpressionNode condition, trueExpression, falseExpression;
-    /** Frequent calls to children() makes this caching necessary. Might skip the entries above and just keep them as list.*/
+    /** [condition, trueExpression, falseExpression]*/
     private final List<ExpressionNode> asList;
     private final Double trueProbability;
 
@@ -41,10 +38,7 @@ public final class IfNode extends CompositeNode {
                   Double trueProbability) {
         if (trueProbability != null && ( trueProbability < 0.0 || trueProbability > 1.0) )
             throw new IllegalArgumentException("trueProbability must be a between 0.0 and 1.0, not " + trueProbability);
-        this.condition = condition;
         this.trueProbability = trueProbability;
-        this.trueExpression = trueExpression;
-        this.falseExpression = falseExpression;
         this.asList = List.of(condition, trueExpression, falseExpression);
     }
 
@@ -53,11 +47,11 @@ public final class IfNode extends CompositeNode {
         return asList;
     }
 
-    public ExpressionNode getCondition() { return condition; }
+    public ExpressionNode getCondition() { return asList.get(0); }
 
-    public ExpressionNode getTrueExpression() { return trueExpression; }
+    public ExpressionNode getTrueExpression() { return asList.get(1); }
 
-    public ExpressionNode getFalseExpression() { return falseExpression; }
+    public ExpressionNode getFalseExpression() { return asList.get(2); }
 
     /** The average probability that the condition of this node will evaluate to true, or null if not known */
     public Double getTrueProbability() { return trueProbability; }
@@ -65,9 +59,9 @@ public final class IfNode extends CompositeNode {
     @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
         string.append("if (");
-        condition.toString(string, context, path, this).append(", ");
-        trueExpression.toString(string, context, path, this).append(", ");
-        falseExpression.toString(string, context, path, this);
+        getCondition().toString(string, context, path, this).append(", ");
+        getTrueExpression().toString(string, context, path, this).append(", ");
+        getFalseExpression().toString(string, context, path, this);
         if (trueProbability != null) {
             string.append(", ").append(trueProbability);
         }
@@ -76,23 +70,23 @@ public final class IfNode extends CompositeNode {
 
     @Override
     public TensorType type(TypeContext<Reference> context) {
-        TensorType trueType = trueExpression.type(context);
-        TensorType falseType = falseExpression.type(context);
+        TensorType trueType = getTrueExpression().type(context);
+        TensorType falseType = getFalseExpression().type(context);
         return trueType.dimensionwiseGeneralizationWith(falseType).orElseThrow(() ->
             new IllegalArgumentException("An if expression must produce compatible types in both " +
                                          "alternatives, but the 'true' type is " + trueType + " while the " +
                                          "'false' type is " + falseType +
-                                         "\n'true' branch: " + trueExpression +
-                                         "\n'false' branch: " + falseExpression)
+                                         "\n'true' branch: " + getTrueExpression() +
+                                         "\n'false' branch: " + getFalseExpression())
         );
     }
 
     @Override
     public Value evaluate(Context context) {
-        if (condition.evaluate(context).asBoolean())
-            return trueExpression.evaluate(context);
+        if (getCondition().evaluate(context).asBoolean())
+            return getTrueExpression().evaluate(context);
         else
-            return falseExpression.evaluate(context);
+            return getFalseExpression().evaluate(context);
     }
 
     @Override

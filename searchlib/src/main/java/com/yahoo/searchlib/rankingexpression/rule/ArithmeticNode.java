@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -22,17 +21,17 @@ import java.util.List;
  */
 public final class ArithmeticNode extends CompositeNode {
 
-    private final ImmutableList<ExpressionNode> children;
-    private final ImmutableList<ArithmeticOperator> operators;
+    private final List<ExpressionNode> children;
+    private final List<ArithmeticOperator> operators;
 
     public ArithmeticNode(List<ExpressionNode> children, List<ArithmeticOperator> operators) {
-        this.children = ImmutableList.copyOf(children);
-        this.operators = ImmutableList.copyOf(operators);
+        this.children = List.copyOf(children);
+        this.operators = List.copyOf(operators);
     }
 
     public ArithmeticNode(ExpressionNode leftExpression, ArithmeticOperator operator, ExpressionNode rightExpression) {
-        this.children = ImmutableList.of(leftExpression, rightExpression);
-        this.operators = ImmutableList.of(operator);
+        this.children = List.of(leftExpression, rightExpression);
+        this.operators = List.of(operator);
     }
 
     public List<ArithmeticOperator> operators() { return operators; }

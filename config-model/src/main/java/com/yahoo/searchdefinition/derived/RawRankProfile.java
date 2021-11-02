@@ -44,12 +44,12 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     /** A reusable compressor with default settings */
     private static final Compressor compressor = new Compressor();
 
-    private final String keyEndMarker = "\r=";
-    private final String valueEndMarker = "\r\n";
+    private static final String keyEndMarker = "\r=";
+    private static final String valueEndMarker = "\r\n";
 
     // TODO: These are to expose coupling between the strings used here and elsewhere
-    public final static String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
-    public final static String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
+    public static final String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
+    public static final String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
 
     private final String name;
 
