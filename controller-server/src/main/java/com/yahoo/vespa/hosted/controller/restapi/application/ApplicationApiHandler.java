@@ -173,7 +173,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
     private final TestConfigSerializer testConfigSerializer;
-    private final ListFlag<String> allowedServiceViewProxy;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
@@ -183,7 +182,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
-        allowedServiceViewProxy = Flags.ALLOWED_SERVICE_VIEW_APIS.bindTo(controller.flagSource());
     }
 
     @Override
@@ -1719,7 +1717,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
 
         String normalizedRestPath = URI.create(restPath).normalize().toString();
-        if (allowedServiceViewProxy.value().stream().noneMatch(normalizedRestPath::startsWith)) {
+        // Only state/v1 is allowed
+        if (! normalizedRestPath.startsWith("state/v1/")) {
             return ErrorResponse.forbidden("Access denied");
         }
 
