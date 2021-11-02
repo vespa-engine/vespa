@@ -3,6 +3,7 @@
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
+#include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/i_field_index_collection.h>
@@ -129,6 +130,7 @@ struct DocumentInverterTest : public ::testing::Test {
     test::OrderedFieldIndexInserter _inserter;
     FieldLengthCalculator           _calculator;
     MockFieldIndexCollection        _fic;
+    DocumentInverterContext         _inv_context;
     DocumentInverter                _inv;
 
     static Schema makeSchema() {
@@ -150,7 +152,8 @@ struct DocumentInverterTest : public ::testing::Test {
           _inserter(),
           _calculator(),
           _fic(_remover, _inserter, _calculator),
-          _inv(_schema, *_invertThreads, *_pushThreads, _fic)
+          _inv_context(_schema, *_invertThreads, *_pushThreads, _fic),
+          _inv(_inv_context)
     {
     }
 

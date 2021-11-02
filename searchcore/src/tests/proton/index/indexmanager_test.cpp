@@ -14,6 +14,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/memoryindex/compact_words_store.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
+#include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
@@ -392,7 +393,8 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
     FieldIndexCollection fic(schema, MockFieldLengthInspector());
     auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
     auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
-    search::memoryindex::DocumentInverter inverter(schema, *invertThreads, *pushThreads, fic);
+    search::memoryindex::DocumentInverterContext inverter_context(schema, *invertThreads, *pushThreads, fic);
+    search::memoryindex::DocumentInverter inverter(inverter_context);
 
     uint64_t fixed_index_size = fic.getMemoryUsage().allocatedBytes();
     uint64_t index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;

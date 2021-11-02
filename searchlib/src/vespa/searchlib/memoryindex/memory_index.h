@@ -21,6 +21,7 @@ namespace document { class Document; }
 namespace search::memoryindex {
 
 class DocumentInverter;
+class DocumentInverterContext;
 class FieldIndexCollection;
 
 /**
@@ -46,6 +47,7 @@ private:
     ISequencedTaskExecutor &_invertThreads;
     ISequencedTaskExecutor &_pushThreads;
     std::unique_ptr<FieldIndexCollection> _fieldIndexes;
+    std::unique_ptr<DocumentInverterContext> _inverter_context;
     std::unique_ptr<DocumentInverter>  _inverter0;
     std::unique_ptr<DocumentInverter>  _inverter1;
     DocumentInverter                  *_inverter;
