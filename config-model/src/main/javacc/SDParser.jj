@@ -355,6 +355,8 @@ TOKEN :
 | < DISTANCEMETRIC: "distance-metric" >
 | < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
 | < MULTITHREADEDINDEXING: "multi-threaded-indexing" >
+| < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
@@ -2078,6 +2080,7 @@ Object rankProfileItem(RankProfile profile) : { }
       | secondPhase(profile)
       | rankDegradation(profile)
       | constants(profile)
+      | matchFeatures(profile)
       | summaryFeatures(profile) )
     { return null; }
 }
@@ -2315,6 +2318,26 @@ Object summaryFeatures(RankProfile profile) :
     )
     {
         profile.addSummaryFeatures(getFeatureList(features));
+        return null;
+    }
+}
+
+/**
+ * This rule consumes a match-features block of a rank profile.
+ *
+ * @param profile The rank profile to modify.
+ * @return Null.
+ */
+Object matchFeatures(RankProfile profile) :
+{
+    String features;
+}
+{
+    ( <MATCHFEATURES_SL> { features = token.image.substring(token.image.indexOf(":") + 1).trim(); } |
+      <MATCHFEATURES_ML> { features = token.image.substring(token.image.indexOf("{") + 1,
+                                                              token.image.lastIndexOf("}")).trim(); } ) 
+    {
+        profile.addMatchFeatures(getFeatureList(features));
         return null;
     }
 }
