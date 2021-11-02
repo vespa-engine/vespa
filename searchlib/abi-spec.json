@@ -1192,7 +1192,9 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields": [
+      "public static final com.yahoo.searchlib.rankingexpression.rule.Arguments EMPTY"
+    ]
   },
   "com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode": {
     "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",

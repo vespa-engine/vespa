@@ -30,7 +30,7 @@ public final class ReferenceNode extends CompositeNode {
 
     public ReferenceNode(String name, List<? extends ExpressionNode> arguments, String output) {
         this.reference = new Reference(name,
-                                       arguments != null ? new Arguments(arguments) : new Arguments(),
+                                       arguments != null ? new Arguments(arguments) : Arguments.EMPTY,
                                        output);
     }
 
