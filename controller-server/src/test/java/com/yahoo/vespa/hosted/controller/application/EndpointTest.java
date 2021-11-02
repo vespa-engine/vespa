@@ -311,6 +311,41 @@ public class EndpointTest {
     }
 
     @Test
+    public void application_endpoints() {
+        Map<String, Endpoint> tests = Map.of(
+                "https://weighted.a1.t1.a.vespa-app.cloud/",
+                Endpoint.of(app1)
+                        .targetApplication(EndpointId.of("weighted"), ClusterSpec.Id.from("qrs"),
+                                           ZoneId.from("prod", "us-west-1"))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.Public),
+                "https://weighted.a1.t1.a.cd.vespa-app.cloud/",
+                Endpoint.of(app1)
+                        .targetApplication(EndpointId.of("weighted"), ClusterSpec.Id.from("qrs"),
+                                           ZoneId.from("prod", "us-west-1"))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.PublicCd),
+                "https://a2.t2.a.vespa.oath.cloud/",
+                Endpoint.of(app2)
+                        .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
+                                           ZoneId.from("prod", "us-east-3"))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.main),
+                "https://cd.a2.t2.a.vespa.oath.cloud/",
+                Endpoint.of(app2)
+                        .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
+                                           ZoneId.from("prod", "us-east-3"))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.cd)
+        );
+        tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
+    }
+
+    @Test
     public void upstream_name() {
         var zone = ZoneId.from("prod", "us-north-1");
         var tests1 = Map.of(
@@ -320,7 +355,14 @@ public class EndpointTest {
 
                 // With non-default cluster
                 "c1.a1.t1.us-north-1.prod",
-                Endpoint.of(instance1).target(EndpointId.of("ignored1"), ClusterSpec.Id.from("c1"), List.of(zone)).on(Port.tls(4443)).in(SystemName.main)
+                Endpoint.of(instance1).target(EndpointId.of("ignored1"), ClusterSpec.Id.from("c1"), List.of(zone)).on(Port.tls(4443)).in(SystemName.main),
+
+                // With application endpoint
+                "c2.a1.t1.us-north-1.prod",
+                Endpoint.of(app1).targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("c2"), zone)
+                        .routingMethod(RoutingMethod.sharedLayer4)
+                        .on(Port.tls())
+                        .in(SystemName.main)
         );
         var tests2 = Map.of(
                 // With non-default instance and default cluster

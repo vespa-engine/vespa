@@ -75,7 +75,7 @@ public class Endpoint {
                        zones,
                        scope,
                        Objects.requireNonNull(system, "system must be non-null"),
-                       port,
+                       Objects.requireNonNull(port, "port must be non-null"),
                        legacy,
                        routingMethod),
              zones, scope, port, legacy, routingMethod);
@@ -140,7 +140,7 @@ public class Endpoint {
 
     /** Returns the upstream ID of given deployment. This *must* match what the routing layer generates */
     public String upstreamIdOf(DeploymentId deployment) {
-        if (scope != Scope.global) throw new IllegalArgumentException("Scope " + scope + " does not have upstream name");
+        if (!scope.multiRegion()) throw new IllegalArgumentException("Scope " + scope + " does not have upstream name");
         if (!routingMethod.isShared()) throw new IllegalArgumentException("Routing method " + routingMethod + " does not have upstream name");
         return upstreamIdOf(cluster.value(), deployment.applicationId(), deployment.zoneId());
     }
@@ -175,7 +175,7 @@ public class Endpoint {
         String portPart = port.isDefault() ? "" : ":" + port.port;
         return URI.create(scheme + "://" +
                           sanitize(namePart(name, separator)) +
-                          systemPart(system, separator, legacy) +
+                          systemPart(system, separator) +
                           sanitize(instancePart(instance, separator)) +
                           sanitize(application.application().value()) +
                           separator +
@@ -205,7 +205,7 @@ public class Endpoint {
 
     private static String scopePart(Scope scope, List<ZoneId> zones, SystemName system, boolean legacy) {
         String scopeSymbol = scopeSymbol(scope, system);
-        if (scope == Scope.global) return scopeSymbol;
+        if (scope.multiRegion()) return scopeSymbol;
 
         ZoneId zone = zones.get(0);
         String region = zone.region().value();
@@ -223,12 +223,14 @@ public class Endpoint {
                 case zone: return "z";
                 case region: return "w";
                 case global: return "g";
+                case application: return "a";
             }
         }
         switch (scope) {
             case zone: return "";
             case region: return "w";
             case global: return "global";
+            case application: return "a";
         }
         throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system);
     }
@@ -239,9 +241,9 @@ public class Endpoint {
         return instance.get().value() + separator;
     }
 
-    private static String systemPart(SystemName system, String separator, boolean legacy) {
+    private static String systemPart(SystemName system, String separator) {
         if (!system.isCd()) return "";
-        if (system.isPublic() && !legacy) return "";
+        if (system.isPublic()) return "";
         return system.value() + separator;
     }
 
@@ -315,6 +317,13 @@ public class Endpoint {
     /** An endpoint's scope */
     public enum Scope {
 
+        /**
+         * Endpoint points to a multiple instances of an application.
+         *
+         * Traffic is routed across instances according to weights specified in deployment.xml
+         */
+        application,
+
         /** Endpoint points to one or more zones. Traffic is routed to the zone closest to the client */
         global,
 
@@ -326,11 +335,22 @@ public class Endpoint {
         region,
 
         /** Endpoint points to a single zone */
-        zone,
+        zone;
+
+        /** Returns whether this scope may span multiple regions */
+        public boolean multiRegion() {
+            // application scope doesn't technically support multiple regions in practice, but we assume it does for the
+            // purposes of building an endpoint name. This allows us to support multiple regions in the future without
+            // needing to change endpoint names.
+            return this == application || this == global;
+        }
+
     }
 
     /** Represents an endpoint's HTTP port */
     public static class Port {
+
+        private static final Port TLS_DEFAULT = new Port(443, true);
 
         private final int port;
         private final boolean tls;
@@ -349,7 +369,7 @@ public class Endpoint {
 
         /** Returns the default HTTPS port */
         public static Port tls() {
-            return new Port(443, true);
+            return TLS_DEFAULT;
         }
 
         /** Returns default port for the given routing method */
@@ -438,6 +458,13 @@ public class Endpoint {
         /** Sets the zone wildcard target for this */
         public EndpointBuilder wildcard(ZoneId zone) {
             return target(ClusterSpec.Id.from("*"), zone);
+        }
+
+        /** Sets the application target with given ID, zones and cluster (as defined in deployments.xml) */
+        public EndpointBuilder targetApplication(EndpointId endpointId, ClusterSpec.Id cluster, ZoneId zone) {
+            target(endpointId, cluster, List.of(zone));
+            this.scope = Scope.application;
+            return this;
         }
 
         /** Sets the region target for this, deduced from given zone */
