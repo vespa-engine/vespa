@@ -14,7 +14,7 @@ DIST ?= $(CURDIR)/dist
 
 GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
-DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-win32 dist-win64
+DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-linux-arm64 dist-win32 dist-win64
 
 all: test checkfmt install
 
@@ -61,6 +61,9 @@ dist-mac-arm64: GOARCH=arm64
 
 dist-linux: GOOS=linux
 dist-linux: GOARCH=amd64
+
+dist-linux-arm64: GOOS=linux
+dist-linux-arm64: GOARCH=arm64
 
 dist-win32: GOOS=windows
 dist-win32: GOARCH=386
