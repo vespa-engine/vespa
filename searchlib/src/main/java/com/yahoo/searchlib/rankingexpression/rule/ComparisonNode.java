@@ -7,7 +7,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
@@ -21,32 +20,28 @@ public class ComparisonNode extends BooleanNode {
     /** The operator string of this condition. */
     private final TruthOperator operator;
 
-    private final ExpressionNode leftCondition, rightCondition;
+    private final List<ExpressionNode> conditions;
 
     public ComparisonNode(ExpressionNode leftCondition, TruthOperator operator, ExpressionNode rightCondition) {
-        this.leftCondition = leftCondition;
+        conditions = List.of(leftCondition, rightCondition);
         this.operator = operator;
-        this.rightCondition = rightCondition;
     }
 
     @Override
     public List<ExpressionNode> children() {
-        List<ExpressionNode> children = new ArrayList<>(2);
-        children.add(leftCondition);
-        children.add(rightCondition);
-        return children;
+        return conditions;
     }
 
     public TruthOperator getOperator() { return operator; }
 
-    public ExpressionNode getLeftCondition() { return leftCondition; }
+    public ExpressionNode getLeftCondition() { return conditions.get(0); }
 
-    public ExpressionNode getRightCondition() { return rightCondition; }
+    public ExpressionNode getRightCondition() { return conditions.get(1); }
 
     @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
-        leftCondition.toString(string, context, path, this).append(' ').append(operator).append(' ');
-        return rightCondition.toString(string, context, path, this);
+        getLeftCondition().toString(string, context, path, this).append(' ').append(operator).append(' ');
+        return getRightCondition().toString(string, context, path, this);
     }
 
     @Override
@@ -56,8 +51,8 @@ public class ComparisonNode extends BooleanNode {
 
     @Override
     public Value evaluate(Context context) {
-        Value leftValue = leftCondition.evaluate(context);
-        Value rightValue = rightCondition.evaluate(context);
+        Value leftValue = getLeftCondition().evaluate(context);
+        Value rightValue = getRightCondition().evaluate(context);
         return leftValue.compare(operator,rightValue);
     }
 
