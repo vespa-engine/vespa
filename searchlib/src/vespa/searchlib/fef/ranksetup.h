@@ -37,6 +37,7 @@ private:
     const IIndexEnvironment &_indexEnv;
     BlueprintResolver::SP    _first_phase_resolver;
     BlueprintResolver::SP    _second_phase_resolver;
+    BlueprintResolver::SP    _match_resolver;
     BlueprintResolver::SP    _summary_resolver;
     BlueprintResolver::SP    _dumpResolver;
     vespalib::string         _firstPhaseRankFeature;
@@ -57,6 +58,7 @@ private:
     double                   _degradationSamplePercentage;
     double                   _degradationPostFilterMultiplier;
     feature_t                _rankScoreDropLimit;
+    std::vector<vespalib::string> _match_features;
     std::vector<vespalib::string> _summaryFeatures;
     std::vector<vespalib::string> _dumpFeatures;
     bool                     _ignoreDefaultRankFeatures;
@@ -345,11 +347,31 @@ public:
 
     /**
      * This method may be used to indicate that certain features
+     * should be present in the search result.
+     *
+     * @param match_feature full feature name of a match feature
+     **/
+    void add_match_feature(const vespalib::string &match_feature);
+
+    /**
+     * This method may be used to indicate that certain features
      * should be present in the docsum.
      *
      * @param summaryFeature full feature name of a summary feature
      **/
     void addSummaryFeature(const vespalib::string &summaryFeature);
+
+    /**
+     * @return whether there are any match features
+     **/
+    bool has_match_features() const { return !_match_features.empty(); }
+
+    /**
+     * Returns a const view of the match features added.
+     *
+     * @return vector of match feature names.
+     **/
+    const std::vector<vespalib::string> &get_match_features() const { return _match_features; }
 
     /**
      * Returns a const view of the summary features added.
@@ -423,6 +445,7 @@ public:
 
     RankProgram::UP create_first_phase_program() const { return std::make_unique<RankProgram>(_first_phase_resolver); }
     RankProgram::UP create_second_phase_program() const { return std::make_unique<RankProgram>(_second_phase_resolver); }
+    RankProgram::UP create_match_program() const { return std::make_unique<RankProgram>(_match_resolver); }
     RankProgram::UP create_summary_program() const { return std::make_unique<RankProgram>(_summary_resolver); }
     RankProgram::UP create_dump_program() const { return std::make_unique<RankProgram>(_dumpResolver); }
 

@@ -29,6 +29,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _indexEnv(indexEnv),
       _first_phase_resolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
       _second_phase_resolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
+      _match_resolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
       _summary_resolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
       _dumpResolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
       _firstPhaseRankFeature(),
@@ -49,6 +50,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _degradationSamplePercentage(0.2),
       _degradationPostFilterMultiplier(1.0),
       _rankScoreDropLimit(0),
+      _match_features(),
       _summaryFeatures(),
       _dumpFeatures(),
       _ignoreDefaultRankFeatures(false),
@@ -78,6 +80,9 @@ RankSetup::configure()
 {
     setFirstPhaseRank(rank::FirstPhase::lookup(_indexEnv.getProperties()));
     setSecondPhaseRank(rank::SecondPhase::lookup(_indexEnv.getProperties()));
+    for (const auto &feature: match::Feature::lookup(_indexEnv.getProperties())) {
+        add_match_feature(feature);
+    }
     std::vector<vespalib::string> summaryFeatures = summary::Feature::lookup(_indexEnv.getProperties());
     for (const auto & feature : summaryFeatures) {
         addSummaryFeature(feature);
@@ -139,6 +144,13 @@ RankSetup::setSecondPhaseRank(const vespalib::string &featureName)
 }
 
 void
+RankSetup::add_match_feature(const vespalib::string &match_feature)
+{
+    LOG_ASSERT(!_compiled);
+    _match_features.push_back(match_feature);
+}
+
+void
 RankSetup::addSummaryFeature(const vespalib::string &summaryFeature)
 {
     LOG_ASSERT(!_compiled);
@@ -178,6 +190,9 @@ RankSetup::compile()
             _compileError = true;
         }
     }
+    for (const auto &feature: _match_features) {
+        _match_resolver->addSeed(feature);
+    }
     for (const auto & feature :_summaryFeatures) {
         _summary_resolver->addSeed(feature);
     }
@@ -191,6 +206,7 @@ RankSetup::compile()
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::RANK);
     _compileError |= !_first_phase_resolver->compile();
     _compileError |= !_second_phase_resolver->compile();
+    _compileError |= !_match_resolver->compile();
     _compileError |= !_summary_resolver->compile();
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::DUMP);
     _compileError |= !_dumpResolver->compile();
@@ -206,6 +222,9 @@ RankSetup::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &o
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
     for (const auto &spec : _second_phase_resolver->getExecutorSpecs()) {
+        spec.blueprint->prepareSharedState(queryEnv, objectStore);
+    }
+    for (const auto &spec : _match_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
     for (const auto &spec : _summary_resolver->getExecutorSpecs()) {

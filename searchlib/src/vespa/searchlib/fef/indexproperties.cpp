@@ -248,6 +248,19 @@ namespace on_summary {
 }
 }
 
+namespace match {
+
+const vespalib::string Feature::NAME("vespa.match.feature");
+const std::vector<vespalib::string> Feature::DEFAULT_VALUE;
+
+std::vector<vespalib::string>
+Feature::lookup(const Properties &props)
+{
+    return lookupStringVector(props, NAME, DEFAULT_VALUE);
+}
+
+} // namespace match
+
 namespace summary {
 
 const vespalib::string Feature::NAME("vespa.summary.feature");

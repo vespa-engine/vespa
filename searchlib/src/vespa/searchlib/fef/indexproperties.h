@@ -57,6 +57,20 @@ namespace rank {
 
 } // namespace rank
 
+namespace match {
+
+    /**
+     * Property for the set of features to be inserted into the search
+     * reply (match features).
+     **/
+    struct Feature {
+        static const vespalib::string NAME;
+        static const std::vector<vespalib::string> DEFAULT_VALUE;
+        static std::vector<vespalib::string> lookup(const Properties &props);
+    };
+
+} // namespace match
+
 namespace summary {
 
     /**
