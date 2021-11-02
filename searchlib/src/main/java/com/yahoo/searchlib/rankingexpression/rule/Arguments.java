@@ -15,7 +15,7 @@ import java.util.List;
  * @author bratseth
  */
 public final class Arguments implements Serializable {
-
+    public static final Arguments EMPTY = new Arguments();
     private final ImmutableList<ExpressionNode> expressions;
 
     public Arguments() {

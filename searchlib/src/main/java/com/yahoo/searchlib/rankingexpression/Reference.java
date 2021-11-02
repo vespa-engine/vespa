@@ -31,7 +31,7 @@ public class Reference extends Name implements Comparable<Reference> {
     private final boolean isIdentifier;
 
     public static Reference fromIdentifier(String identifier) {
-        return new Reference(identifier, new Arguments(), null, true);
+        return new Reference(identifier, Arguments.EMPTY, null, true);
     }
 
     public Reference(String name, Arguments arguments, String output) {
