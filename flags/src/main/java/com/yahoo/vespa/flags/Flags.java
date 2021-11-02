@@ -267,12 +267,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundListFlag<String> ALLOWED_SERVICE_VIEW_APIS = defineListFlag(
-            "allowed-service-view-apis", List.of("state/v1/"), String.class,
-            List.of("mortent"), "2021-08-05", "2022-01-01",
-            "Apis allowed to proxy through the service view api",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag SEPARATE_TENANT_IAM_ROLES = defineFeatureFlag(
             "separate-tenant-iam-roles", false,
             List.of("mortent"), "2021-08-12", "2022-01-01",
