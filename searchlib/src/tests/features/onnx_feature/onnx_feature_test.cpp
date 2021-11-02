@@ -39,6 +39,10 @@ vespalib::string expr_feature(const vespalib::string &name) {
 }
 
 vespalib::string onnx_feature(const vespalib::string &name) {
+    return fmt("onnx(%s)", name.c_str());
+}
+
+vespalib::string onnx_feature_old(const vespalib::string &name) {
     return fmt("onnxModel(%s)", name.c_str());
 }
 
@@ -54,7 +58,8 @@ struct OnnxFeatureTest : ::testing::Test {
     {
         factory.addPrototype(std::make_shared<DocidBlueprint>());
         factory.addPrototype(std::make_shared<RankingExpressionBlueprint>());
-        factory.addPrototype(std::make_shared<OnnxBlueprint>());
+        factory.addPrototype(std::make_shared<OnnxBlueprint>("onnx"));
+        factory.addPrototype(std::make_shared<OnnxBlueprint>("onnxModel"));
     }
     ~OnnxFeatureTest();
     void add_expr(const vespalib::string &name, const vespalib::string &expr) {
@@ -104,6 +109,18 @@ TEST_F(OnnxFeatureTest, simple_onnx_model_can_be_calculated) {
     add_onnx(OnnxModel("simple", simple_model));
     compile(onnx_feature("simple"));
     EXPECT_EQ(get(1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
+    EXPECT_EQ(get("onnx(simple).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
+    EXPECT_EQ(get(2), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 84.0));
+    EXPECT_EQ(get(3), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 89.0));
+}
+
+TEST_F(OnnxFeatureTest, simple_onnx_model_can_be_calculated_with_old_name) {
+    add_expr("query_tensor", "tensor<float>(a[1],b[4]):[[docid,2,3,4]]");
+    add_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
+    add_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
+    add_onnx(OnnxModel("simple", simple_model));
+    compile(onnx_feature_old("simple"));
+    EXPECT_EQ(get(1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
     EXPECT_EQ(get("onnxModel(simple).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
     EXPECT_EQ(get(2), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 84.0));
     EXPECT_EQ(get(3), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 89.0));
@@ -116,7 +133,7 @@ TEST_F(OnnxFeatureTest, dynamic_onnx_model_can_be_calculated) {
     add_onnx(OnnxModel("dynamic", dynamic_model));
     compile(onnx_feature("dynamic"));
     EXPECT_EQ(get(1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
-    EXPECT_EQ(get("onnxModel(dynamic).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
+    EXPECT_EQ(get("onnx(dynamic).output", 1), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 79.0));
     EXPECT_EQ(get(2), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 84.0));
     EXPECT_EQ(get(3), TensorSpec("tensor<float>(d0[1],d1[1])").add({{"d0",0},{"d1",0}}, 89.0));
 }
@@ -129,8 +146,8 @@ TEST_F(OnnxFeatureTest, strange_input_and_output_names_are_normalized) {
     auto expect_add = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},15).add({{"d0",1}},30);
     auto expect_sub = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},5).add({{"d0",1}},10);
     EXPECT_EQ(get(1), expect_add);
-    EXPECT_EQ(get("onnxModel(strange_names).foo_bar", 1), expect_add);
-    EXPECT_EQ(get("onnxModel(strange_names)._baz_0", 1), expect_sub);
+    EXPECT_EQ(get("onnx(strange_names).foo_bar", 1), expect_add);
+    EXPECT_EQ(get("onnx(strange_names)._baz_0", 1), expect_sub);
 }
 
 TEST_F(OnnxFeatureTest, input_features_and_output_names_can_be_specified) {
@@ -145,8 +162,8 @@ TEST_F(OnnxFeatureTest, input_features_and_output_names_can_be_specified) {
     auto expect_add = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},15).add({{"d0",1}},30);
     auto expect_sub = TensorSpec("tensor<float>(d0[2])").add({{"d0",0}},5).add({{"d0",1}},10);
     EXPECT_EQ(get(1), expect_add);
-    EXPECT_EQ(get("onnxModel(custom_names).my_first_output", 1), expect_add);
-    EXPECT_EQ(get("onnxModel(custom_names).my_second_output", 1), expect_sub);
+    EXPECT_EQ(get("onnx(custom_names).my_first_output", 1), expect_add);
+    EXPECT_EQ(get("onnx(custom_names).my_second_output", 1), expect_sub);
 }
 
 TEST_F(OnnxFeatureTest, fragile_model_can_be_evaluated) {
