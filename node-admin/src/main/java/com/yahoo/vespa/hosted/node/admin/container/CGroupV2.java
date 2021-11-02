@@ -36,10 +36,9 @@ public class CGroupV2 implements CGroup {
     @Override
     public Optional<Pair<Integer, Integer>> cpuQuotaPeriod(ContainerId containerId) {
         return cpuMaxPath(containerId).readUtf8FileIfExists()
-                .filter(s -> !s.startsWith(MAX))
                 .map(s -> {
                     String[] parts = s.strip().split(" ");
-                    return new Pair<>(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+                    return new Pair<>(MAX.equals(parts[0]) ? -1 : Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
                 });
     }
 

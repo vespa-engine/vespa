@@ -42,7 +42,7 @@ public class CGroupV1Test {
         UnixPath cpu = new UnixPath(fileSystem.getPath("/sys/fs/cgroup/cpu/machine.slice/libpod-4aec78cc.scope")).createDirectories();
         cpu.resolve("cpu.cfs_period_us").writeUtf8File("123456\n");
         cpu.resolve("cpu.cfs_quota_us").writeUtf8File("-1\n");
-        assertEquals(Optional.empty(), cgroup.cpuQuotaPeriod(containerId));
+        assertEquals(Optional.of(new Pair<>(-1, 123456)), cgroup.cpuQuotaPeriod(containerId));
 
         cpu.resolve("cpu.cfs_quota_us").writeUtf8File("456\n");
         assertEquals(Optional.of(new Pair<>(456, 123456)), cgroup.cpuQuotaPeriod(containerId));
