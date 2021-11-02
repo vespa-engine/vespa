@@ -121,9 +121,11 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public void createSymbolicLink(Path link, Path target, FileAttribute<?>... attrs) throws IOException {
         Path pathOnHost = pathOnHost(link);
+        boolean existedBefore = Files.exists(pathOnHost, LinkOption.NOFOLLOW_LINKS);
         if (target instanceof ContainerPath)
             target = pathOnHost.getFileSystem().getPath(toContainerPath(target).pathInContainer());
         provider(pathOnHost).createSymbolicLink(pathOnHost, target, attrs);
+        if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(link));
     }
 
     @Override
@@ -231,8 +233,8 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     }
 
     private void fixOwnerToContainerRoot(ContainerPath path) throws IOException {
-        setAttribute(path, "unix:uid", 0);
-        setAttribute(path, "unix:gid", 0);
+        setAttribute(path, "unix:uid", 0, LinkOption.NOFOLLOW_LINKS);
+        setAttribute(path, "unix:gid", 0, LinkOption.NOFOLLOW_LINKS);
     }
 
     private class ContainerDirectoryStream implements DirectoryStream<Path> {
