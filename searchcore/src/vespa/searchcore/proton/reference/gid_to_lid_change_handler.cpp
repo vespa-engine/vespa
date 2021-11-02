@@ -74,7 +74,7 @@ void
 GidToLidChangeHandler::notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum)
 {
     lock_guard guard(_lock);
-    _pending_changes.reserve(_pending_changes.size() + gids.size());
+    _pending_changes.reserve(vespalib::roundUp2inN(_pending_changes.size() + gids.size()));
     for (const GlobalId & gid : gids) {
         auto insRes = _pendingRemove.insert(std::make_pair(gid, PendingRemoveEntry(serialNum)));
         if (!insRes.second) {
