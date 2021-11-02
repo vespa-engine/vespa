@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public class ValidationOverrides {
 
-    public static final ValidationOverrides empty = new ValidationOverrides(ImmutableList.of(), "<validation-overrides/>");
+    public static final ValidationOverrides empty = new ValidationOverrides(List.of(), "<validation-overrides/>");
 
     private final List<Allow> overrides;
 
@@ -43,7 +42,7 @@ public class ValidationOverrides {
     }
 
     private ValidationOverrides(List<Allow> overrides, String xmlForm) {
-        this.overrides = ImmutableList.copyOf(overrides);
+        this.overrides = List.copyOf(overrides);
         this.xmlForm = xmlForm;
     }
 
