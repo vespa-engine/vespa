@@ -113,6 +113,8 @@ Delay = element delay {
 }
 
 EndpointRegion = element region {
+    attribute instance { xsd:string }? &
+    attribute weight { xsd:long }? &
     text
 }
 
