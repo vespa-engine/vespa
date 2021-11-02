@@ -9,7 +9,6 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -172,15 +171,16 @@ public class ApplicationPackageValidator {
         return endpoints;
     }
 
-    /** Returns global service ID as a endpoint, if any global service ID is set */
+    /** Returns global service ID as an endpoint, if any global service ID is set */
     private static Optional<Endpoint> legacyEndpoint(DeploymentInstanceSpec instance) {
         return instance.globalServiceId().map(globalServiceId -> {
-            var regions = instance.zones().stream()
+            var targets = instance.zones().stream()
                                   .filter(zone -> zone.environment().isProduction())
                                   .flatMap(zone -> zone.region().stream())
-                                  .map(RegionName::value)
-                                  .collect(Collectors.toSet());
-            return new Endpoint(Optional.of(EndpointId.defaultId().id()), globalServiceId, regions);
+                                  .distinct()
+                                  .map(region -> new Endpoint.Target(region, instance.name(), 1))
+                                  .collect(Collectors.toList());
+            return new Endpoint(EndpointId.defaultId().id(), globalServiceId, Endpoint.Level.instance, targets);
         });
     }
 

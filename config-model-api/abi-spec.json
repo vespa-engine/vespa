@@ -375,7 +375,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.lang.String)",
+      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List, java.lang.String)",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
       "public java.util.Optional athenzDomain()",
@@ -386,6 +386,7 @@
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(com.yahoo.config.provision.InstanceName)",
       "public java.util.List instanceNames()",
       "public java.util.List instances()",
+      "public java.util.List endpoints()",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.io.Reader)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String, boolean)",
@@ -397,6 +398,40 @@
       "public static final com.yahoo.config.application.api.DeploymentSpec empty"
     ]
   },
+  "com.yahoo.config.application.api.Endpoint$Level": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.application.api.Endpoint$Level[] values()",
+      "public static com.yahoo.config.application.api.Endpoint$Level valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.application.api.Endpoint$Level application",
+      "public static final enum com.yahoo.config.application.api.Endpoint$Level instance"
+    ]
+  },
+  "com.yahoo.config.application.api.Endpoint$Target": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.config.provision.RegionName, com.yahoo.config.provision.InstanceName, int)",
+      "public com.yahoo.config.provision.RegionName region()",
+      "public com.yahoo.config.provision.InstanceName instance()",
+      "public int weight()",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.application.api.Endpoint": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -404,16 +439,20 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.Optional, java.lang.String, java.util.Set)",
+      "public void <init>(java.lang.String, java.lang.String, com.yahoo.config.application.api.Endpoint$Level, java.util.List)",
       "public java.lang.String endpointId()",
       "public java.lang.String containerId()",
-      "public java.util.Set regions()",
-      "public com.yahoo.config.application.api.Endpoint withRegions(java.util.Set)",
+      "public java.util.List regions()",
+      "public com.yahoo.config.application.api.Endpoint$Level level()",
+      "public java.util.List targets()",
+      "public com.yahoo.config.application.api.Endpoint withTargets(java.util.List)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
     ],
-    "fields": []
+    "fields": [
+      "public static final java.lang.String DEFAULT_ID"
+    ]
   },
   "com.yahoo.config.application.api.FileRegistry$Entry": {
     "superClass": "java.lang.Object",

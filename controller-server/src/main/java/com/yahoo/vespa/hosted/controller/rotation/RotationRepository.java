@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -142,7 +143,7 @@ public class RotationRepository {
             } else { // Rotation already assigned to this endpoint, reuse it
                 rotationId = assignedRotation.rotationId();
             }
-            assignments.add(new AssignedRotation(ClusterSpec.Id.from(endpoint.containerId()), endpointId, rotationId, endpoint.regions()));
+            assignments.add(new AssignedRotation(ClusterSpec.Id.from(endpoint.containerId()), endpointId, rotationId, Set.copyOf(endpoint.regions())));
         }
         return Collections.unmodifiableList(assignments);
     }

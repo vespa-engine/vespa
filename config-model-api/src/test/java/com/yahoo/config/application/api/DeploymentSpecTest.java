@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 public class DeploymentSpecTest {
 
     @Test
-    public void testSpec() {
+    public void simpleSpec() {
         String specXml = "<deployment version='1.0'>" +
                          "   <instance id='default'>" +
                          "      <test/>" +
@@ -52,7 +52,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testSpecPinningMajorVersion() {
+    public void specPinningMajorVersion() {
         String specXml = "<deployment version='1.0' major-version='6'>" +
                          "   <instance id='default'>" +
                          "      <test/>" +
@@ -252,7 +252,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testMultipleInstancesShortForm() {
+    public void multipleInstancesShortForm() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
                 "   <instance id='instance1, instance2'>" + // The block checked by assertCorrectFirstInstance
@@ -436,7 +436,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testOnlyAthenzServiceDefinedInInstance() {
+    public void onlyAthenzServiceDefinedInInstance() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain'>" +
                 "  <instance id='default' athenz-service='service' />" +
@@ -475,7 +475,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testTestAndStagingOutsideAndInsideInstance() {
+    public void testAndStagingOutsideAndInsideInstance() {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "   <test/>" +
@@ -515,7 +515,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testNestedParallelAndSteps() {
+    public void nestedParallelAndSteps() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain'>" +
                 "   <staging />" +
@@ -588,7 +588,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testParallelInstances() {
+    public void parallelInstances() {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "   <parallel>" +
@@ -617,7 +617,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testInstancesWithDelay() {
+    public void instancesWithDelay() {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "    <instance id='instance0'>" +
@@ -798,7 +798,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testChangeBlockerInheritance() {
+    public void changeBlockerInheritance() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
                 "   <block-change revision='false' days='mon,tue' hours='15-16'/>" +
@@ -824,7 +824,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void athenz_config_is_read_from_deployment() {
+    public void athenzConfigIsReadFromDeployment() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
                 "   <instance id='instance1'>" +
@@ -842,7 +842,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void athenz_config_is_propagated_through_parallel_zones() {
+    public void athenzConfigPropagatesThroughParallelZones() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
                 "   <instance id='instance1'>" +
@@ -869,7 +869,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void athenz_config_is_propagated_through_parallel_zones_and_instances() {
+    public void athenzConfigPropagatesThroughParallelZonesAndInstances() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
                 "   <parallel>" +
@@ -903,7 +903,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void athenz_config_is_read_from_instance() {
+    public void athenzConfigIsReadFromInstance() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain'>" +
                 "   <instance id='default' athenz-service='service'>" +
@@ -920,7 +920,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void athenz_service_is_overridden_from_environment() {
+    public void athenzServiceIsOverriddenFromEnvironment() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='unused-service'>" +
                 "   <instance id='default' athenz-service='service'>" +
@@ -945,7 +945,7 @@ public class DeploymentSpecTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void it_fails_when_athenz_service_is_not_defined() {
+    public void missingAthenzServiceFails() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain'>" +
                 "   <instance id='default'>" +
@@ -959,7 +959,7 @@ public class DeploymentSpecTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void it_fails_when_athenz_service_is_configured_but_not_athenz_domain() {
+    public void athenzServiceWithoutDomainFails() {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "   <instance id='default'>" +
@@ -1100,7 +1100,7 @@ public class DeploymentSpecTest {
                                           "      <endpoints/>" +
                                           "   </instance>" +
                                           "</deployment>");
-        assertEquals(Collections.emptyList(), spec.requireInstance("default").endpoints());
+        assertEquals(List.of(), spec.requireInstance("default").endpoints());
     }
 
     @Test
@@ -1131,19 +1131,19 @@ public class DeploymentSpecTest {
                 spec.requireInstance("default").endpoints().stream().map(Endpoint::containerId).collect(Collectors.toList())
         );
 
-        assertEquals(Set.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
+        assertEquals(List.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
     }
 
     @Test
     public void invalidEndpoints() {
-        assertInvalid("<endpoint id='FOO' container-id='qrs'/>"); // Uppercase
-        assertInvalid("<endpoint id='123' container-id='qrs'/>"); // Starting with non-character
-        assertInvalid("<endpoint id='foo!' container-id='qrs'/>"); // Non-alphanumeric
-        assertInvalid("<endpoint id='foo.bar' container-id='qrs'/>");
-        assertInvalid("<endpoint id='foo--bar' container-id='qrs'/>"); // Multiple consecutive dashes
-        assertInvalid("<endpoint id='foo-' container-id='qrs'/>"); // Trailing dash
-        assertInvalid("<endpoint id='foooooooooooo' container-id='qrs'/>"); // Too long
-        assertInvalid("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>"); // Duplicate
+        assertInvalidEndpoints("<endpoint id='FOO' container-id='qrs'/>"); // Uppercase
+        assertInvalidEndpoints("<endpoint id='123' container-id='qrs'/>"); // Starting with non-character
+        assertInvalidEndpoints("<endpoint id='foo!' container-id='qrs'/>"); // Non-alphanumeric
+        assertInvalidEndpoints("<endpoint id='foo.bar' container-id='qrs'/>");
+        assertInvalidEndpoints("<endpoint id='foo--bar' container-id='qrs'/>"); // Multiple consecutive dashes
+        assertInvalidEndpoints("<endpoint id='foo-' container-id='qrs'/>"); // Trailing dash
+        assertInvalidEndpoints("<endpoint id='foooooooooooo' container-id='qrs'/>"); // Too long
+        assertInvalidEndpoints("<endpoint id='foo' container-id='qrs'/><endpoint id='foo' container-id='qrs'/>"); // Duplicate
     }
 
     @Test
@@ -1159,8 +1159,7 @@ public class DeploymentSpecTest {
 
     @Test
     public void endpointDefaultRegions() {
-        var spec = DeploymentSpec.fromXml("" +
-                                          "<deployment>" +
+        var spec = DeploymentSpec.fromXml("<deployment>" +
                                           "   <instance id='default'>" +
                                           "      <prod>" +
                                           "         <region active=\"true\">us-east</region>" +
@@ -1181,10 +1180,109 @@ public class DeploymentSpecTest {
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("default", spec));
     }
 
-    private static void assertInvalid(String endpointTag) {
+    @Test
+    public void instanceEndpointDisallowsApplicationLevelAttributes() {
+        String xmlForm = "<deployment>\n" +
+                         "  <prod>\n" +
+                         "    <region active=\"true\">us-east</region>\n" +
+                         "    <region active=\"true\">us-west</region>\n" +
+                         "  </prod>\n" +
+                         "  <endpoints>\n" +
+                         "    <endpoint id=\"foo\" container-id=\"bar\">\n" +
+                         "      <region %s>us-east</region>\n" +
+                         "    </endpoint>\n" +
+                         "  </endpoints>\n" +
+                         "</deployment>";
+        assertInvalid(String.format(xmlForm, "instance='foo'"),
+                      "Instance-level endpoint 'foo': element 'region' cannot have 'instance' attribute");
+        assertInvalid(String.format(xmlForm, "weight='1'"),
+                      "Instance-level endpoint 'foo': element 'region' cannot have 'weight' attribute");
+    }
+
+    @Test
+    public void applicationLevelEndpointRequiresAttributes() {
+        String xmlForm = "<deployment>\n" +
+                         "  <instance id=\"beta\">\n" +
+                         "    <prod>\n" +
+                         "      <region active='true'>us-west-1</region>\n" +
+                         "      <region active='true'>us-east-3</region>\n" +
+                         "    </prod>\n" +
+                         "  </instance>\n" +
+                         "  <instance id=\"main\">\n" +
+                         "    <prod>\n" +
+                         "      <region active='true'>us-west-1</region>\n" +
+                         "      <region active='true'>us-east-3</region>\n" +
+                         "    </prod>\n" +
+                         "  </instance>\n" +
+                         "  <endpoints>\n" +
+                         "    <endpoint id=\"foo\" container-id=\"qrs\">\n" +
+                         "      <region %s>%s</region>\n" +
+                         "    </endpoint>\n" +
+                         "  </endpoints>\n" +
+                         "</deployment>\n";
+        assertInvalid(String.format(xmlForm, "", "us-west-1"), "Application-level endpoint 'foo': element 'region' must have 'instance' attribute");
+        assertInvalid(String.format(xmlForm, "instance='beta'", "us-west-1"), "Application-level endpoint 'foo': element 'region' must have 'weight' attribute");
+        assertInvalid(String.format(xmlForm, "instance='foo' weight='1'", "us-west-1"), "Application-level endpoint 'foo': targets undeclared instance 'foo'");
+        assertInvalid(String.format(xmlForm, "instance='beta' weight='foo'", "us-west-1"), "Application-level endpoint 'foo': invalid weight value 'foo'");
+        assertInvalid(String.format(xmlForm, "instance='beta' weight='1'", "eu-north-1"), "Application-level endpoint 'foo': targets undeclared region 'eu-north-1' in instance 'beta'");
+        assertInvalid(String.format(xmlForm, "instance='main' weight='1'", "us-west-1</region><region instance ='beta' weight='1'>us-east-3"),
+                      "Instance 'beta' declares a region different from instance 'main': 'us-east-3'");
+    }
+
+    @Test
+    public void applicationLevelEndpoint() {
+        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
+                                                     "  <instance id=\"beta\">\n" +
+                                                     "    <prod>\n" +
+                                                     "      <region active='true'>us-west-1</region>\n" +
+                                                     "      <region active='true'>us-east-3</region>\n" +
+                                                     "    </prod>\n" +
+                                                     "  </instance>\n" +
+                                                     "  <instance id=\"main\">\n" +
+                                                     "    <prod>\n" +
+                                                     "      <region active='true'>us-west-1</region>\n" +
+                                                     "      <region active='true'>us-east-3</region>\n" +
+                                                     "    </prod>\n" +
+                                                     "    <endpoints>\n" +
+                                                     "      <endpoint id=\"glob\" container-id=\"music\"/>\n" +
+                                                     "    </endpoints>\n" +
+                                                     "  </instance>\n" +
+                                                     "  <endpoints>\n" +
+                                                     "    <endpoint id=\"foo\" container-id=\"movies\">\n" +
+                                                     "      <region instance=\"beta\" weight=\"2\">us-west-1</region>\n" +
+                                                     "      <region instance=\"main\" weight=\"8\">us-west-1</region>\n" +
+                                                     "    </endpoint>\n" +
+                                                     "    <endpoint id=\"bar\" container-id=\"music\">\n" +
+                                                     "      <region instance=\"main\" weight=\"10\">us-east-3</region>\n" +
+                                                     "    </endpoint>\n" +
+                                                     "  </endpoints>\n" +
+                                                     "</deployment>\n");
+        assertEquals(List.of(new Endpoint("foo", "movies", Endpoint.Level.application,
+                                          List.of(new Endpoint.Target(RegionName.from("us-west-1"), InstanceName.from("beta"), 2),
+                                                  new Endpoint.Target(RegionName.from("us-west-1"), InstanceName.from("main"), 8))),
+                             new Endpoint("bar", "music", Endpoint.Level.application,
+                                          List.of(new Endpoint.Target(RegionName.from("us-east-3"), InstanceName.from("main"), 10)))),
+                             spec.endpoints());
+        assertEquals(List.of(new Endpoint("glob", "music", Endpoint.Level.instance,
+                                          List.of(new Endpoint.Target(RegionName.from("us-west-1"), InstanceName.from("main"), 1),
+                                                  new Endpoint.Target(RegionName.from("us-east-3"), InstanceName.from("main"), 1)))),
+                     spec.requireInstance("main").endpoints());
+    }
+
+    private static void assertInvalid(String deploymentSpec, String errorMessagePart) {
         try {
-            endpointIds(endpointTag);
-            fail("Expected exception for input '" + endpointTag + "'");
+            DeploymentSpec.fromXml(deploymentSpec);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue("\"" + e.getMessage() + "\" contains \"" + errorMessagePart + "\"",
+                       e.getMessage().contains(errorMessagePart));
+        }
+    }
+
+    private static void assertInvalidEndpoints(String endpointsBody) {
+        try {
+            endpointIds(endpointsBody);
+            fail("Expected exception for input '" + endpointsBody + "'");
         } catch (IllegalArgumentException ignored) {}
     }
 
@@ -1196,14 +1294,14 @@ public class DeploymentSpecTest {
                 .collect(Collectors.toSet());
     }
 
-    private static List<String> endpointIds(String endpointTag) {
+    private static List<String> endpointIds(String endpointsBody) {
         var xml = "<deployment>" +
                   "   <instance id='default'>" +
                   "      <prod>" +
                   "         <region active=\"true\">us-east</region>" +
                   "      </prod>" +
                   "      <endpoints>" +
-                  endpointTag +
+                  endpointsBody +
                   "      </endpoints>" +
                   "   </instance>" +
                   "</deployment>";
