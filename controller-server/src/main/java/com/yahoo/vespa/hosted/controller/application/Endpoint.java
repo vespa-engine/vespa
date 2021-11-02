@@ -32,8 +32,6 @@ public class Endpoint {
     private static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
     private static final String PUBLIC_DNS_SUFFIX = ".vespa-app.cloud";
     private static final String PUBLIC_CD_DNS_SUFFIX = ".cd.vespa-app.cloud";
-    private static final String PUBLIC_DNS_LEGACY_SUFFIX = ".public.vespa.oath.cloud";
-    private static final String PUBLIC_CD_LEGACY_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
 
     private final EndpointId id;
     private final ClusterSpec.Id cluster;
@@ -206,21 +204,21 @@ public class Endpoint {
     }
 
     private static String scopePart(Scope scope, List<ZoneId> zones, SystemName system, boolean legacy) {
-        String scopeSymbol = scopeSymbol(scope, system, legacy);
+        String scopeSymbol = scopeSymbol(scope, system);
         if (scope == Scope.global) return scopeSymbol;
 
         ZoneId zone = zones.get(0);
         String region = zone.region().value();
         boolean skipEnvironment = zone.environment().isProduction() && (system.isPublic() || !legacy);
         String environment = skipEnvironment ? "" : "." + zone.environment().value();
-        if (system.isPublic() && !legacy) {
+        if (system.isPublic()) {
             return region + environment + "." + scopeSymbol;
         }
         return region + (scopeSymbol.isEmpty() ? "" : "-" + scopeSymbol) + environment;
     }
 
-    private static String scopeSymbol(Scope scope, SystemName system, boolean legacy) {
-        if (system.isPublic() && !legacy) {
+    private static String scopeSymbol(Scope scope, SystemName system) {
+        if (system.isPublic()) {
             switch (scope) {
                 case zone: return "z";
                 case regionSplit: return "w";
@@ -234,7 +232,7 @@ public class Endpoint {
             case region: return "r";
             case global: return "global";
         }
-        throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system + " (legacy: " + legacy + ")");
+        throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system);
     }
 
     private static String instancePart(Optional<InstanceName> instance, String separator) {
@@ -250,27 +248,26 @@ public class Endpoint {
     }
 
     /** Returns the DNS suffix used for endpoints in given system */
-    public static String dnsSuffix(SystemName system, boolean legacy) {
+    private static String dnsSuffix(SystemName system, boolean legacy) {
         switch (system) {
             case cd:
             case main:
                 if (legacy) return YAHOO_DNS_SUFFIX;
                 return OATH_DNS_SUFFIX;
             case Public:
-                if (legacy) return PUBLIC_DNS_LEGACY_SUFFIX;
+                if (legacy) throw new IllegalArgumentException("No legacy DNS suffix declared for system " + system);
                 return PUBLIC_DNS_SUFFIX;
             case PublicCd:
-                if (legacy) return PUBLIC_CD_LEGACY_DNS_SUFFIX;
+                if (legacy) throw new IllegalArgumentException("No legacy DNS suffix declared for system " + system);
                 return PUBLIC_CD_DNS_SUFFIX;
             default: throw new IllegalArgumentException("No DNS suffix declared for system " + system);
         }
     }
 
     /** Returns the DNS suffix used for internal names (i.e. names not exposed to tenants) in given system */
-    public static String internalDnsSuffix(SystemName system, boolean legacy) {
-        // TODO(mpolden): Stop exposing legacy parameter after legacy endpoints in public are completely removed
-        String suffix = dnsSuffix(system, legacy);
-        if (system.isPublic() && !legacy) {
+    public static String internalDnsSuffix(SystemName system) {
+        String suffix = dnsSuffix(system, false);
+        if (system.isPublic()) {
             // Certificate provider requires special approval for three-level DNS names, e.g. foo.vespa-app.cloud.
             // To avoid this in public we always add an extra level.
             return ".internal" + suffix;

@@ -72,7 +72,6 @@ public class RoutingController {
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
     private final BooleanFlag hideSharedRoutingEndpoint;
-    private final BooleanFlag legacyEndpointInCertificate;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -81,7 +80,6 @@ public class RoutingController {
                                                          controller.applications(),
                                                          controller.curator());
         this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
-        this.legacyEndpointInCertificate = Flags.LEGACY_ENDPOINT_IN_CERTIFICATE.bindTo(controller.flagSource());
     }
 
     public RoutingPolicies policies() {
@@ -178,13 +176,9 @@ public class RoutingController {
 
         // Build all endpoints
         for (var builder : builders) {
-            builder = builder.routingMethod(RoutingMethod.exclusive)
-                             .on(Port.tls());
-            Endpoint endpoint = builder.in(controller.system());
-            if (includeLegacyEndpoint(deployment.applicationId(), controller.system())) {
-                Endpoint legacyEndpoint = builder.legacy().in(controller.system());
-                endpointDnsNames.add(legacyEndpoint.dnsName());
-            }
+            Endpoint endpoint = builder.routingMethod(RoutingMethod.exclusive)
+                                       .on(Port.tls())
+                                       .in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
         }
         return Collections.unmodifiableList(endpointDnsNames);
@@ -356,14 +350,6 @@ public class RoutingController {
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
-            if (controller.system().isPublic()) {
-                endpoints.add(Endpoint.of(routingId.application())
-                                      .target(routingId.endpointId(), cluster, zones)
-                                      .on(Port.fromRoutingMethod(method))
-                                      .routingMethod(method)
-                                      .legacy()
-                                      .in(controller.system()));
-            }
             // Add legacy endpoints
             if (legacyNamesAvailable && method == RoutingMethod.shared) {
                 endpoints.add(Endpoint.of(routingId.application())
@@ -394,13 +380,7 @@ public class RoutingController {
     private String commonNameHashOf(ApplicationId application, SystemName system) {
         HashCode sha1 = Hashing.sha1().hashString(application.serializedForm(), StandardCharsets.UTF_8);
         String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
-        return 'v' + base32 + Endpoint.internalDnsSuffix(system, includeLegacyEndpoint(application, system));
-    }
-
-    private boolean includeLegacyEndpoint(ApplicationId application, SystemName system) {
-        return system.isPublic() && legacyEndpointInCertificate.with(FetchVector.Dimension.APPLICATION_ID,
-                                                                     application.serializedForm())
-                                                               .value();
+        return 'v' + base32 + Endpoint.internalDnsSuffix(system);
     }
 
     /** Returns direct routing endpoints if any exist and feature flag is set for given application */
