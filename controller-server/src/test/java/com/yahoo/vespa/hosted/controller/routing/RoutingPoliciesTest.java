@@ -832,7 +832,7 @@ public class RoutingPoliciesTest {
                 DeploymentId deployment = new DeploymentId(application, zone);
                 EndpointList regionEndpoints = tester.controller().routing().endpointsOf(deployment)
                                                     .cluster(cluster)
-                                                    .scope(Endpoint.Scope.regionSplit);
+                                                    .scope(Endpoint.Scope.region);
                 if (!legacy) {
                     regionEndpoints = regionEndpoints.not().legacy();
                 }
