@@ -851,7 +851,7 @@ ConstantNode constantPrimitive() :
     ( <INTEGER> { value = token.image; } |
       <FLOAT> { value = token.image; } |
       <STRING> { value = token.image; } )
-    { return new ConstantNode(Value.parse(sign + value),sign + value); }
+    { return new ConstantNode(Value.parse(sign + value)); }
 }
 
 Value primitiveValue() :

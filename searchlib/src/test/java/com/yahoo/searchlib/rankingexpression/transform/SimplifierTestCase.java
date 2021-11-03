@@ -80,7 +80,7 @@ public class SimplifierTestCase {
         Simplifier s = new Simplifier();
         TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
         CompositeNode transformed = (CompositeNode)s.transform(new RankingExpression("a + (b + c) / 100000000.0"), c).getRoot();
-        assertEquals("a + (b + c) / 100000000.0", transformed.toString());
+        assertEquals("a + (b + c) / 1.0E8", transformed.toString());
     }
 
 }
