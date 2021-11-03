@@ -141,10 +141,10 @@ public class GroupingExecutor extends Searcher {
      * context that corresponds to the given request, whereas the created {@link Grouping} objects are written directly
      * to the given map.
      *
-     * @param query The query being executed.
-     * @param req   The request to convert.
-     * @param map   The grouping map to write to.
-     * @return The context required to identify the request results.
+     * @param query the query being executed
+     * @param req   the request to convert
+     * @param map   the grouping map to write to
+     * @return the context required to identify the request results
      */
     private RequestContext convertRequest(Query query, GroupingRequest req, int requestId, Map<Integer, Grouping> map) {
         RequestBuilder builder = new RequestBuilder(requestId);
@@ -168,10 +168,10 @@ public class GroupingExecutor extends Searcher {
     /**
      * Converts the results of the given request context into a single {@link Group}.
      *
-     * @param requestContext   The context that identifies the results to convert.
-     * @param groupingMap  The map of all {@link Grouping} objects available.
-     * @param hitConverter The converter to use for {@link Hit} conversion.
-     * @return The corresponding root RootGroup.
+     * @param requestContext the context that identifies the results to convert
+     * @param groupingMap    the map of all {@link Grouping} objects available
+     * @param hitConverter   the converter to use for {@link Hit} conversion
+     * @return the corresponding root RootGroup.
      */
     private RootGroup convertResult(RequestContext requestContext, Map<Integer, Grouping> groupingMap,
                                     HitConverter hitConverter) {
@@ -191,10 +191,10 @@ public class GroupingExecutor extends Searcher {
      * grouping map argument as both an input and an output variable, as the contained {@link Grouping} objects are
      * updates as results arrive from the back end.
      *
-     * @param query       The query to execute.
-     * @param execution   The execution context used to run the queries.
-     * @param groupingMap The map of grouping requests to perform.
-     * @return The search result to pass back from this searcher.
+     * @param query       the query to execute
+     * @param execution   the execution context used to run the queries
+     * @param groupingMap the map of grouping requests to perform
+     * @return the search result to pass back from this searcher
      */
     private Result performSearch(Query query, Execution execution, Map<Integer, Grouping> groupingMap) {
         // Determine how many passes to perform.
@@ -263,8 +263,8 @@ public class GroupingExecutor extends Searcher {
      * Merges the content of result into state. This needs to be done in order to conserve the context objects contained
      * in the state as they are not part of the serialized object representation.
      *
-     * @param state  the current state.
-     * @param result the results from the current pass.
+     * @param state  the current state
+     * @param result the results from the current pass
      */
     private void mergeGroupingMaps(Map<Integer, Grouping> state, Map<Integer, Grouping> result) {
         for (Grouping grouping : result.values()) {
@@ -282,9 +282,9 @@ public class GroupingExecutor extends Searcher {
     /**
      * Returns a list of {@link Grouping} objects that are to be used for the given pass.
      *
-     * @param groupingMap The map of all grouping objects.
-     * @param pass        The pass about to be performed.
-     * @return A list of grouping objects.
+     * @param groupingMap the map of all grouping objects
+     * @param pass        the pass about to be performed
+     * @return a list of grouping objects
      */
     private List<Grouping> getGroupingListForPassN(Map<Integer, Grouping> groupingMap, int pass) {
         List<Grouping> ret = new ArrayList<>();
@@ -310,8 +310,8 @@ public class GroupingExecutor extends Searcher {
      * Merges the grouping content of the given result object. The first grouping hit found by iterating over the result
      * content is kept, and all consecutive matching hits are merged into this.
      *
-     * @param result The result to traverse.
-     * @return A map of merged grouping objects.
+     * @param result the result to traverse
+     * @return a map of merged grouping objects
      */
     private Map<Integer, Grouping> mergeGroupingResults(Result result) {
         Map<Integer, Grouping> ret = new HashMap<>();
@@ -341,8 +341,8 @@ public class GroupingExecutor extends Searcher {
      * Returns the list of {@link Grouping} objects assigned to the given query. If no list has been assigned, this
      * method returns an empty list.
      *
-     * @param query The query whose grouping list to return.
-     * @return The list of assigned grouping objects.
+     * @param query the query whose grouping list to return
+     * @return the list of assigned grouping objects
      */
     @SuppressWarnings({ "unchecked" })
     public static List<Grouping> getGroupingList(Query query) {
@@ -362,11 +362,11 @@ public class GroupingExecutor extends Searcher {
      * Sets the list of {@link Grouping} objects assigned to the given query. This method overwrites any grouping
      * objects already assigned to the query.
      *
-     * @param query The query whose grouping list to set.
-     * @param lst   The grouping list to set.
+     * @param query the query whose grouping list to set
+     * @param list   the grouping list to set
      */
-    public static void setGroupingList(Query query, List<Grouping> lst) {
-        query.properties().set(PROP_GROUPINGLIST, lst);
+    public static void setGroupingList(Query query, List<Grouping> list) {
+        query.properties().set(PROP_GROUPINGLIST, list);
     }
 
     private static CompoundName newCompoundName(String name) {
@@ -403,4 +403,5 @@ public class GroupingExecutor extends Searcher {
             this.transform = transform;
         }
     }
+
 }

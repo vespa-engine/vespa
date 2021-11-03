@@ -18,4 +18,5 @@ public class StringBucketId extends BucketGroupId<String> {
     public StringBucketId(String from, String to) {
         super("string_bucket", from, to);
     }
+
 }
