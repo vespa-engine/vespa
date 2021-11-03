@@ -48,10 +48,10 @@ public class ManualClock extends Clock {
     public Instant instant() { return currentTime.get(); }
 
     @Override
-    public ZoneId getZone() { return null; }
+    public ZoneId getZone() { return ZoneOffset.UTC; }
 
     @Override
-    public Clock withZone(ZoneId zone) { return null; }
+    public Clock withZone(ZoneId zone) { return this; }
 
     @Override
     public long millis() { return instant().toEpochMilli(); }
