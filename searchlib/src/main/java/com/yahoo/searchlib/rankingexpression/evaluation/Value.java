@@ -113,7 +113,7 @@ public abstract class Value {
         else if (value.equals("false"))
             return new BooleanValue(false);
         else if (value.startsWith("\"") || value.startsWith("'"))
-            return new StringValue(UnicodeUtilities.unquote(value));
+            return new StringValue(value);
         else if (value.startsWith("{"))
             return new TensorValue(Tensor.from(value));
         else
