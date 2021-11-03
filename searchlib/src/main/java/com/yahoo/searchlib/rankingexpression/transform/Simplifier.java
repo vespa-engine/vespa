@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.transform;
 
-import com.yahoo.document.update.ArithmeticValueUpdate;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleCompatibleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
@@ -12,9 +12,9 @@ import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
+import com.yahoo.searchlib.rankingexpression.rule.NegativeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
-import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +36,8 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
             node = ((EmbracedNode)node).children().get(0);
         if (node instanceof ArithmeticNode)
             node = transformArithmetic((ArithmeticNode) node);
+        if (node instanceof NegativeNode)
+            node = transformNegativeNode((NegativeNode) node);
         return node;
     }
 
@@ -105,6 +107,14 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
             return node.getTrueExpression();
         else
             return node.getFalseExpression();
+    }
+
+    private ExpressionNode transformNegativeNode(NegativeNode node) {
+        if ( ! (node.getValue() instanceof ConstantNode) ) return node;
+
+        ConstantNode constant = (ConstantNode) node.getValue();
+        if ( ! (constant.getValue() instanceof DoubleCompatibleValue)) return node;
+        return new ConstantNode(constant.getValue().negate() );
     }
 
     private boolean allMultiplicationOrDivision(ArithmeticNode node) {
