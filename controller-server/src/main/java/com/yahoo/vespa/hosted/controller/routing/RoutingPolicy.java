@@ -80,7 +80,7 @@ public class RoutingPolicy {
     }
 
     /** Returns the zone endpoints of this */
-    public List<Endpoint> endpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
+    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
         Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
                                                             .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
         if (infraEndpoint.isPresent()) {
@@ -102,18 +102,9 @@ public class RoutingPolicy {
         return endpoints;
     }
 
-    /** Returns all region endpoints of this */
-    public List<Endpoint> regionEndpointsIn(SystemName system, RoutingMethod routingMethod) {
-        return List.of(regionEndpointIn(system, routingMethod, false));
-    }
-
     /** Returns the region endpoint of this */
-    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, boolean legacy) {
-        Endpoint.EndpointBuilder endpoint = endpoint(routingMethod).targetRegion(id.cluster(), id.zone());
-        if (legacy) {
-            endpoint = endpoint.legacy();
-        }
-        return endpoint.in(system);
+    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod) {
+        return endpoint(routingMethod).targetRegion(id.cluster(), id.zone()).in(system);
     }
 
     @Override

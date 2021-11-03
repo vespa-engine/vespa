@@ -361,7 +361,7 @@ public class RoutingPoliciesTest {
 
         tester.assertTargets(context.instanceId(), EndpointId.defaultId(),
                              ClusterSpec.Id.from("default"), 0,
-                             Map.of(zone1, 1L, zone2, 1L), true);
+                             Map.of(zone1, 1L, zone2, 1L));
         assertEquals("Registers expected DNS names",
                      Set.of("app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
                             "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
@@ -822,10 +822,6 @@ public class RoutingPoliciesTest {
         }
 
         private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights) {
-            assertTargets(application, endpointId, cluster, loadBalancerId, zoneWeights, false);
-        }
-
-        private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights, boolean legacy) {
             Set<String> latencyTargets = new HashSet<>();
             Map<String, List<ZoneId>> zonesByRegionEndpoint = new HashMap<>();
             for (var zone : zoneWeights.keySet()) {
@@ -833,9 +829,6 @@ public class RoutingPoliciesTest {
                 EndpointList regionEndpoints = tester.controller().routing().endpointsOf(deployment)
                                                     .cluster(cluster)
                                                     .scope(Endpoint.Scope.region);
-                if (!legacy) {
-                    regionEndpoints = regionEndpoints.not().legacy();
-                }
                 Endpoint regionEndpoint = regionEndpoints.first().orElseThrow(() -> new IllegalArgumentException("No region endpoint found for " + cluster + " in " + deployment));
                 zonesByRegionEndpoint.computeIfAbsent(regionEndpoint.dnsName(), (k) -> new ArrayList<>())
                                      .add(zone);
