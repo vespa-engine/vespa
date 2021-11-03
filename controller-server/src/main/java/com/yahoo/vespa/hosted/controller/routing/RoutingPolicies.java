@@ -202,6 +202,7 @@ public class RoutingPolicies {
             var existingPolicy = policies.get(policyId);
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname().get(), loadBalancer.dnsZone(),
                                               allocation.endpointIdsOf(loadBalancer),
+                                              Set.of(),
                                               new Status(isActive(loadBalancer), GlobalRouting.DEFAULT_STATUS));
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
@@ -273,7 +274,7 @@ public class RoutingPolicies {
     private static Map<RoutingId, List<RoutingPolicy>> routingTableFrom(Collection<RoutingPolicy> routingPolicies) {
         var routingTable = new LinkedHashMap<RoutingId, List<RoutingPolicy>>();
         for (var policy : routingPolicies) {
-            for (var endpoint : policy.endpoints()) {
+            for (var endpoint : policy.instanceEndpoints()) {
                 var id = new RoutingId(policy.id().owner(), endpoint);
                 routingTable.computeIfAbsent(id, k -> new ArrayList<>())
                             .add(policy);

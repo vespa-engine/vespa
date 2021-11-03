@@ -29,16 +29,18 @@ public class RoutingPolicy {
     private final RoutingPolicyId id;
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
-    private final Set<EndpointId> endpoints;
+    private final Set<EndpointId> instanceEndpoints;
+    private final Set<EndpointId> applicationEndpoints;
     private final Status status;
 
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingPolicy(RoutingPolicyId id, HostName canonicalName, Optional<String> dnsZone, Set<EndpointId> endpoints,
-                         Status status) {
+    public RoutingPolicy(RoutingPolicyId id, HostName canonicalName, Optional<String> dnsZone,
+                         Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, Status status) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
-        this.endpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(endpoints, "endpoints must be non-null"));
+        this.instanceEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(instanceEndpoints, "instanceEndpoints must be non-null"));
+        this.applicationEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(applicationEndpoints, "applicationEndpoints must be non-null"));
         this.status = Objects.requireNonNull(status, "status must be non-null");
     }
 
@@ -57,9 +59,14 @@ public class RoutingPolicy {
         return dnsZone;
     }
 
-    /** The endpoints of this policy */
-    public Set<EndpointId> endpoints() {
-        return endpoints;
+    /** The instance-level endpoints this participates in */
+    public Set<EndpointId> instanceEndpoints() {
+        return instanceEndpoints;
+    }
+
+    /** The application-level endpoints  this participates in */
+    public Set<EndpointId> applicationEndpoints() {
+        return applicationEndpoints;
     }
 
     /** Returns the status of this */
@@ -69,7 +76,7 @@ public class RoutingPolicy {
 
     /** Returns a copy of this with status set to given status */
     public RoutingPolicy with(Status status) {
-        return new RoutingPolicy(id, canonicalName, dnsZone, endpoints, status);
+        return new RoutingPolicy(id, canonicalName, dnsZone, instanceEndpoints, applicationEndpoints, status);
     }
 
     /** Returns the zone endpoints of this */
@@ -124,9 +131,10 @@ public class RoutingPolicy {
 
     @Override
     public String toString() {
-        return Text.format("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
-                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
-                             id.zone().value());
+        return Text.format("%s [instance endpoints: %s, application endpoints: %s%s], %s owned by %s, in %s", canonicalName,
+                           instanceEndpoints, applicationEndpoints,
+                           dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
+                           id.zone().value());
     }
 
     private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod) {

@@ -240,6 +240,7 @@ public class DeploymentContext {
         policies.put(id, new RoutingPolicy(id, HostName.from("lb-host"),
                                            Optional.empty(),
                                            Set.of(EndpointId.of("default")),
+                                           Set.of(),
                                            new Status(false, GlobalRouting.DEFAULT_STATUS)));
         tester.controller().curator().writeRoutingPolicies(instanceId, policies);
         return this;

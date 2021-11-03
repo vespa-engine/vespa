@@ -30,7 +30,8 @@ public class RoutingPolicySerializerTest {
     @Test
     public void serialization() {
         var owner = ApplicationId.defaultId();
-        var endpoints = Set.of(EndpointId.of("r1"), EndpointId.of("r2"));
+        var instanceEndpoints = Set.of(EndpointId.of("r1"), EndpointId.of("r2"));
+        var applicationEndpoints = Set.of(EndpointId.of("a1"));
         var id1 = new RoutingPolicyId(owner,
                                       ClusterSpec.Id.from("my-cluster1"),
                                       ZoneId.from("prod", "us-north-1"));
@@ -38,16 +39,20 @@ public class RoutingPolicySerializerTest {
                                       ClusterSpec.Id.from("my-cluster2"),
                                       ZoneId.from("prod", "us-north-2"));
         var policies = ImmutableMap.of(id1, new RoutingPolicy(id1,
-                                                         HostName.from("long-and-ugly-name"),
-                                                         Optional.of("zone1"),
-                                                         endpoints, new Status(true, GlobalRouting.DEFAULT_STATUS)),
+                                                              HostName.from("long-and-ugly-name"),
+                                                              Optional.of("zone1"),
+                                                              instanceEndpoints,
+                                                              applicationEndpoints,
+                                                              new Status(true, GlobalRouting.DEFAULT_STATUS)),
                                        id2, new RoutingPolicy(id2,
-                                                         HostName.from("long-and-ugly-name-2"),
-                                                         Optional.empty(),
-                                                         endpoints, new Status(false,
-                                                                               new GlobalRouting(GlobalRouting.Status.out,
-                                                                                                 GlobalRouting.Agent.tenant,
-                                                                                                 Instant.ofEpochSecond(123)))));
+                                                              HostName.from("long-and-ugly-name-2"),
+                                                              Optional.empty(),
+                                                              instanceEndpoints,
+                                                              Set.of(),
+                                                              new Status(false,
+                                                                         new GlobalRouting(GlobalRouting.Status.out,
+                                                                                           GlobalRouting.Agent.tenant,
+                                                                                           Instant.ofEpochSecond(123)))));
         var serialized = serializer.fromSlime(owner, serializer.toSlime(policies));
         assertEquals(policies.size(), serialized.size());
         for (Iterator<RoutingPolicy> it1 = policies.values().iterator(), it2 = serialized.values().iterator(); it1.hasNext();) {
@@ -56,7 +61,8 @@ public class RoutingPolicySerializerTest {
             assertEquals(expected.id(), actual.id());
             assertEquals(expected.canonicalName(), actual.canonicalName());
             assertEquals(expected.dnsZone(), actual.dnsZone());
-            assertEquals(expected.endpoints(), actual.endpoints());
+            assertEquals(expected.instanceEndpoints(), actual.instanceEndpoints());
+            assertEquals(expected.applicationEndpoints(), actual.applicationEndpoints());
             assertEquals(expected.status(), actual.status());
         }
     }

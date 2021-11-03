@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Serializer and deserializer for a {@link RoutingPolicy}.
@@ -42,7 +43,8 @@ public class RoutingPolicySerializer {
     private static final String canonicalNameField = "canonicalName";
     private static final String zoneField = "zone";
     private static final String dnsZoneField = "dnsZone";
-    private static final String rotationsField = "rotations";
+    private static final String instanceEndpointsField = "rotations";
+    private static final String applicationEndpointsField = "applicationEndpoints";
     private static final String loadBalancerActiveField = "active";
     private static final String globalRoutingField = "globalRouting";
     private static final String agentField = "agent";
@@ -59,10 +61,10 @@ public class RoutingPolicySerializer {
             policyObject.setString(zoneField, policy.id().zone().value());
             policyObject.setString(canonicalNameField, policy.canonicalName().value());
             policy.dnsZone().ifPresent(dnsZone -> policyObject.setString(dnsZoneField, dnsZone));
-            var rotationArray = policyObject.setArray(rotationsField);
-            policy.endpoints().forEach(endpointId -> {
-                rotationArray.addString(endpointId.id());
-            });
+            var instanceEndpointsArray = policyObject.setArray(instanceEndpointsField);
+            policy.instanceEndpoints().forEach(endpointId -> instanceEndpointsArray.addString(endpointId.id()));
+            var applicationEndpointsArray = policyObject.setArray(applicationEndpointsField);
+            policy.applicationEndpoints().forEach(endpointId -> applicationEndpointsArray.addString(endpointId.id()));
             policyObject.setBool(loadBalancerActiveField, policy.status().isActive());
             globalRoutingToSlime(policy.status().globalRouting(), policyObject.setObject(globalRoutingField));
         });
@@ -74,15 +76,18 @@ public class RoutingPolicySerializer {
         var root = slime.get();
         var field = root.field(routingPoliciesField);
         field.traverse((ArrayTraverser) (i, inspect) -> {
-            var endpointIds = new LinkedHashSet<EndpointId>();
-            inspect.field(rotationsField).traverse((ArrayTraverser) (j, endpointId) -> endpointIds.add(EndpointId.of(endpointId.asString())));
-            var id = new RoutingPolicyId(owner,
-                                         ClusterSpec.Id.from(inspect.field(clusterField).asString()),
-                                         ZoneId.from(inspect.field(zoneField).asString()));
+            Set<EndpointId> instanceEndpoints = new LinkedHashSet<>();
+            inspect.field(instanceEndpointsField).traverse((ArrayTraverser) (j, endpointId) -> instanceEndpoints.add(EndpointId.of(endpointId.asString())));
+            Set<EndpointId> applicationEndpoints = new LinkedHashSet<>();
+            inspect.field(applicationEndpointsField).traverse((ArrayTraverser) (idx, endpointId) -> applicationEndpoints.add(EndpointId.of(endpointId.asString())));
+            RoutingPolicyId id = new RoutingPolicyId(owner,
+                                                     ClusterSpec.Id.from(inspect.field(clusterField).asString()),
+                                                     ZoneId.from(inspect.field(zoneField).asString()));
             policies.put(id, new RoutingPolicy(id,
                                                HostName.from(inspect.field(canonicalNameField).asString()),
                                                SlimeUtils.optionalString(inspect.field(dnsZoneField)),
-                                               endpointIds,
+                                               instanceEndpoints,
+                                               applicationEndpoints,
                                                new Status(inspect.field(loadBalancerActiveField).asBool(),
                                                           globalRoutingFromSlime(inspect.field(globalRoutingField)))));
         });

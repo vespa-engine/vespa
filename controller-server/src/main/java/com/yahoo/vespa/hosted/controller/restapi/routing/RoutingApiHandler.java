@@ -323,10 +323,10 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private List<GlobalRouting> directGlobalRoutingStatus(DeploymentId deploymentId) {
         return controller.routing().policies().get(deploymentId).values().stream()
-                .filter(p -> ! p.endpoints().isEmpty())  // This policy does not apply to a global endpoint
-                .filter(p -> controller.zoneRegistry().routingMethods(p.id().zone()).contains(RoutingMethod.exclusive))
-                .map(p -> p.status().globalRouting())
-                .collect(Collectors.toList());
+                         .filter(p -> ! p.instanceEndpoints().isEmpty())  // This policy does not apply to a global endpoint
+                         .filter(p -> controller.zoneRegistry().routingMethods(p.id().zone()).contains(RoutingMethod.exclusive))
+                         .map(p -> p.status().globalRouting())
+                         .collect(Collectors.toList());
     }
 
     /** Returns whether a rotation can route traffic to given zone */

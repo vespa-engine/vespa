@@ -138,7 +138,7 @@ public class RoutingPoliciesTest {
         var policies = tester.policiesOf(context1.instanceId());
         assertEquals(clustersPerZone * numberOfDeployments, policies.size());
         assertTrue("Rotation membership is removed from all policies",
-                   policies.stream().allMatch(policy -> policy.endpoints().isEmpty()));
+                   policies.stream().allMatch(policy -> policy.instanceEndpoints().isEmpty()));
         assertEquals("Rotations for " + context2.application() + " are not removed", 2, tester.aliasDataOf(endpoint4).size());
     }
 
