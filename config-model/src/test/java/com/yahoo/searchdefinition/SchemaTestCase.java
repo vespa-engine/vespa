@@ -153,9 +153,9 @@ public class SchemaTestCase {
         assertNotNull(child.getField("child_field"));
         assertNotNull(child.getExtraField("parent_field"));
         assertNotNull(child.getExtraField("child_field"));
-        assertNotNull(application.rankProfileRegistry().get(child, "parent_profile"));
-        assertNotNull(application.rankProfileRegistry().get(child, "child_profile"));
-        assertEquals("parent_profile", application.rankProfileRegistry().get(child, "child_profile").getInheritedName());
+        assertNotNull(builder.getRankProfileRegistry().get(child, "parent_profile"));
+        assertNotNull(builder.getRankProfileRegistry().get(child, "child_profile"));
+        assertEquals("parent_profile", builder.getRankProfileRegistry().get(child, "child_profile").getInheritedName());
         assertNotNull(child.rankingConstants().get("parent_constant"));
         assertNotNull(child.rankingConstants().get("child_constant"));
         assertTrue(child.rankingConstants().asMap().containsKey("parent_constant"));
@@ -239,17 +239,17 @@ public class SchemaTestCase {
         builder.build(true);
         var application = builder.application();
 
-        assertInheritedFromParent(application.schemas().get("child"), application);
-        assertInheritedFromParent(application.schemas().get("grandchild"), application);
+        assertInheritedFromParent(application.schemas().get("child"), application, builder.getRankProfileRegistry());
+        assertInheritedFromParent(application.schemas().get("grandchild"), application, builder.getRankProfileRegistry());
     }
 
-    private void assertInheritedFromParent(Schema schema, Application application) {
+    private void assertInheritedFromParent(Schema schema, Application application, RankProfileRegistry rankProfileRegistry) {
         assertEquals("pf1", schema.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
         assertEquals(Stemming.NONE, schema.getStemming());
         assertEquals(Stemming.BEST, schema.getIndex("parent_index").getStemming());
         assertNotNull(schema.getField("parent_field"));
         assertNotNull(schema.getExtraField("parent_field"));
-        assertNotNull(application.rankProfileRegistry().get(schema, "parent_profile"));
+        assertNotNull(rankProfileRegistry.get(schema, "parent_profile"));
         assertNotNull(schema.rankingConstants().get("parent_constant"));
         assertTrue(schema.rankingConstants().asMap().containsKey("parent_constant"));
         assertNotNull(schema.onnxModels().get("parent_model"));
