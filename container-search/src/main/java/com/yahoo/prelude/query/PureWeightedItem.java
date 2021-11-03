@@ -1,14 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import com.yahoo.prelude.query.textualrepresentation.Discloser;
+
 import java.nio.ByteBuffer;
 
 /**
- * An item which cannot provide its own index (field) name, but will always query the index
- * specified by the parent item it is added to.
+ * A word item which only consists of a value and weight, and gets other properties
+ * such as the index to query from ther parent item.
+ *
  * It's more efficient to use pure items where possible instead of
  * {@link TermItem} children ({@link WordItem}, {@link IntItem})
- * who each carry their own index name.
+ * which may carry many auxiliary properties.
  *
  * @author baldersheim
  */
@@ -38,6 +41,11 @@ public abstract class PureWeightedItem extends Item {
     @Override
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append(':').append(getWeight());
+    }
+
+    @Override
+    public void disclose(Discloser discloser) {
+        discloser.addProperty("weight", getWeight());
     }
 
 }

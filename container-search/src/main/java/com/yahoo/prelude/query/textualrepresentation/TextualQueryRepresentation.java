@@ -20,10 +20,101 @@ import java.util.regex.Pattern;
  */
 public class TextualQueryRepresentation {
 
-    private Map<Item, Integer> itemReferences = new IdentityHashMap<>();
+    private final Map<Item, Integer> itemReferences = new IdentityHashMap<>();
     private int nextItemReference = 0;
 
     final private ItemDiscloser rootDiscloser;
+
+    @SuppressWarnings("rawtypes")
+    private String valueString(Object value) {
+        if (value == null)
+            return null;
+        else if (value instanceof String)
+            return '"' + quote((String)value) + '"';
+        else if (value instanceof Number || value instanceof Boolean || value instanceof Enum)
+            return value.toString();
+        else if (value instanceof Item)
+            return itemReference((Item)value);
+        else if (value.getClass().isArray())
+            return listString(arrayToList(value).iterator());
+        else if ( value instanceof List )
+            return listString(((List)value).iterator());
+        else if ( value instanceof Set )
+            return listString( ((Set)value).iterator());
+        else if ( value instanceof Map )
+            return mapString((Map)value);
+        else
+            return '"' + quote(value.toString()) + '"';
+    }
+
+    //handles both primitive and object arrays.
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private List arrayToList(Object array) {
+        int length = Array.getLength(array);
+        List list = new ArrayList();
+        for (int i = 0; i<length; ++i)
+            list.add(Array.get(array, i));
+        return list;
+    }
+
+    private String mapString(Map<?, ?> map) {
+        StringBuilder result = new StringBuilder();
+        final String mapBegin = "map(";
+        result.append(mapBegin);
+
+        boolean firstTime = true;
+        for (Map.Entry<?,?> entry: map.entrySet()) {
+            if (!firstTime)
+                result.append(' ');
+            firstTime = false;
+
+            result.append(valueString(entry.getKey())).append("=>").append(valueString(entry.getValue()));
+        }
+
+        result.append(')');
+        return result.toString();
+    }
+
+    private String listString(Iterator<?> iterator) {
+        StringBuilder result = new StringBuilder();
+        result.append('(');
+
+        boolean firstTime = true;
+        while (iterator.hasNext()) {
+            if (!firstTime)
+                result.append(' ');
+            firstTime = false;
+
+            result.append(valueString(iterator.next()));
+        }
+
+        result.append(')');
+        return result.toString();
+    }
+
+    private String itemReference(Item item) {
+        Integer reference = itemReferences.get(item);
+        return reference != null ? reference.toString() : "Unknown item: '"  + System.identityHashCode(item) + "'";
+    }
+
+    private static String quote(String s) {
+        return s.replaceAll("\"", "\\\\\"" );
+    }
+
+    private ItemDiscloser expose(Item item) {
+        ItemDiscloser itemDiscloser = new ItemDiscloser(item);
+        item.disclose(itemDiscloser);
+        return itemDiscloser;
+    }
+
+    public TextualQueryRepresentation(Item root) {
+        rootDiscloser = expose(root);
+    }
+
+    @Override
+    public String toString() {
+        return rootDiscloser.toString();
+    }
 
     /** Creates the textual representation for a single Item. */
     private class ItemDiscloser implements Discloser {
@@ -122,98 +213,6 @@ public class TextualQueryRepresentation {
                 itemReferences.put(item, nextItemReference++);
         }
 
-    }
-
-
-    @SuppressWarnings("rawtypes")
-    private String valueString(Object value) {
-        if (value == null)
-            return null;
-        else if (value instanceof String)
-            return '"' + quote((String)value) + '"';
-        else if (value instanceof Number || value instanceof Boolean || value instanceof Enum)
-            return value.toString();
-        else if (value instanceof Item)
-            return itemReference((Item)value);
-        else if (value.getClass().isArray())
-            return listString(arrayToList(value).iterator());
-        else if ( value instanceof List )
-            return listString(((List)value).iterator());
-        else if ( value instanceof Set )
-            return listString( ((Set)value).iterator());
-        else if ( value instanceof Map )
-            return mapString((Map)value);
-        else
-            return '"' + quote(value.toString()) + '"';
-    }
-
-    //handles both primitive and object arrays.
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private List arrayToList(Object array) {
-        int length = Array.getLength(array);
-        List list = new ArrayList();
-        for (int i = 0; i<length; ++i)
-            list.add(Array.get(array, i));
-        return list;
-    }
-
-    private String mapString(Map<?, ?> map) {
-        StringBuilder result = new StringBuilder();
-        final String mapBegin = "map(";
-        result.append(mapBegin);
-
-        boolean firstTime = true;
-        for (Map.Entry<?,?> entry: map.entrySet()) {
-            if (!firstTime)
-                result.append(' ');
-            firstTime = false;
-
-            result.append(valueString(entry.getKey())).append("=>").append(valueString(entry.getValue()));
-        }
-
-        result.append(')');
-        return result.toString();
-    }
-
-    private String listString(Iterator<?> iterator) {
-        StringBuilder result = new StringBuilder();
-        result.append('(');
-
-        boolean firstTime = true;
-        while (iterator.hasNext()) {
-            if (!firstTime)
-                result.append(' ');
-            firstTime = false;
-
-            result.append(valueString(iterator.next()));
-        }
-
-        result.append(')');
-        return result.toString();
-    }
-
-    private String itemReference(Item item) {
-        Integer reference = itemReferences.get(item);
-        return reference != null ? reference.toString() : "Unknown item: '"  + System.identityHashCode(item) + "'";
-    }
-
-    private static String quote(String s) {
-        return s.replaceAll("\"", "\\\\\"" );
-    }
-
-    private ItemDiscloser expose(Item item) {
-        ItemDiscloser itemDiscloser = new ItemDiscloser(item);
-        item.disclose(itemDiscloser);
-        return itemDiscloser;
-    }
-
-    public TextualQueryRepresentation(Item root) {
-        rootDiscloser = expose(root);
-    }
-
-    @Override
-    public String toString() {
-        return rootDiscloser.toString();
     }
 
 }
