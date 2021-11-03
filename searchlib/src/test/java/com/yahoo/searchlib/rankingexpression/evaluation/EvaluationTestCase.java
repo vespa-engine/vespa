@@ -815,7 +815,7 @@ public class EvaluationTestCase {
             try {
                 ExpressionNode e = arguments.expressions().get(index);
                 if (e instanceof ConstantNode) {
-                    return new DoubleValue(new RankingExpression(UnicodeUtilities.unquote(((ConstantNode)e).sourceString())).evaluate(this).asDouble());
+                    return new DoubleValue(new RankingExpression(UnicodeUtilities.unquote(e.toString())).evaluate(this).asDouble());
                 }
                 return e.evaluate(this);
             }

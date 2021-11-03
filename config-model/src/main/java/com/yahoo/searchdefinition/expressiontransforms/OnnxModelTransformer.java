@@ -135,7 +135,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
     public static String asString(ExpressionNode node) {
         if ( ! (node instanceof ConstantNode))
             throw new IllegalArgumentException("Expected a constant string as argument, but got '" + node);
-        return stripQuotes(((ConstantNode)node).sourceString());
+        return stripQuotes(node.toString());
     }
 
 }
