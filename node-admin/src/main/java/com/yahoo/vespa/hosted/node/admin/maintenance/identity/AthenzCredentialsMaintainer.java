@@ -257,14 +257,13 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                                       PrivateKey privateKey,
                                                       ContainerPath certificateFile,
                                                       X509Certificate certificate) {
-        writeFile(privateKeyFile, vespaUser, KeyUtils.toPem(privateKey));
-        writeFile(certificateFile, vespaUser, X509CertificateUtils.toPem(certificate));
+        writeFile(privateKeyFile.withUser(vespaUser), KeyUtils.toPem(privateKey));
+        writeFile(certificateFile.withUser(vespaUser), X509CertificateUtils.toPem(certificate));
     }
 
-    private static void writeFile(ContainerPath path, UnixUser vespaUser, String utf8Content) {
+    private static void writeFile(ContainerPath path, String utf8Content) {
         new UnixPath(path.resolveSibling(path.getFileName() + ".tmp"))
                 .writeUtf8File(utf8Content, "r--------")
-                .setOwnerId(vespaUser.uid())
                 .atomicMove(path);
     }
 
