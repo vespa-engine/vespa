@@ -52,6 +52,7 @@ message SearchReply {
     bytes grouping_blob = 8; // serialized opaquely like now, to be changed later
     bytes slime_trace = 9;
     repeated Error errors = 10;
+    repeated string match_feature_names = 11;
 }
 
 message Error {
@@ -62,6 +63,12 @@ message Hit {
     bytes global_id = 1;
     double relevance = 2;
     bytes sort_data = 3;
+    repeated Feature match_features = 4;
+}
+
+message Feature {
+    double number = 1;
+    bytes tensor = 2;
 }
 
 message DocsumRequest {

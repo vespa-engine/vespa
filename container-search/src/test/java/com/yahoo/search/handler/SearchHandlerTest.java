@@ -304,11 +304,22 @@ public class SearchHandlerTest {
         assertOkResult(driver.sendRequest(request), jsonResult);
     }
 
+    private boolean waitForMetric(String key) {
+        try {
+            for (int i = 0; i < 10; i++) {
+                if (metric.metrics().containsKey(key)) return true;
+                Thread.sleep(20);
+            }
+        } catch (InterruptedException e) {
+        }
+        return false;
+    }
+
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
         assertEquals(expected, response.readAll());
         assertEquals(200, response.getStatus());
         assertEquals(selfHostname, response.getResponse().headers().get(myHostnameHeader).get(0));
-        assertTrue(metric.metrics().containsKey(SearchHandler.RENDER_LATENCY_METRIC));
+        assertTrue(waitForMetric(SearchHandler.RENDER_LATENCY_METRIC));
     }
 
     @Test
