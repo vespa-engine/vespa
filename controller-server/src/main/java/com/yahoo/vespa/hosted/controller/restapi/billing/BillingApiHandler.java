@@ -111,8 +111,8 @@ public class BillingApiHandler extends LoggingRequestHandler {
                 .map(bill -> {
                     return new Object[] {
                             bill.id().value(), bill.tenant().value(),
-                            bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
-                            bill.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                            bill.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
+                            bill.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE),
                             bill.sumCpuHours(), bill.sumMemoryHours(), bill.sumDiskHours(),
                             bill.sumCpuCost(), bill.sumMemoryCost(), bill.sumDiskCost(),
                             bill.sumAdditionalCost()
@@ -246,7 +246,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
         LocalDate startDate = LocalDate.parse(getInspectorFieldOrThrow(inspector, "startTime"));
         LocalDate endDate = LocalDate.parse(getInspectorFieldOrThrow(inspector, "endTime"));
         ZonedDateTime startTime = startDate.atStartOfDay(ZoneId.of("UTC"));
-        ZonedDateTime endTime = endDate.atStartOfDay(ZoneId.of("UTC"));
+        ZonedDateTime endTime = endDate.plusDays(1).atStartOfDay(ZoneId.of("UTC"));
 
         var billId = billingController.createBillForPeriod(tenantName, startTime, endTime, userId);
 
@@ -332,7 +332,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
         if (currentUsage == null) return;
         cursor.setString("amount", currentUsage.sum().toPlainString());
         cursor.setString("status", "accrued");
-        cursor.setString("from", currentUsage.getStartTime().format(DATE_TIME_FORMATTER));
+        cursor.setString("from", currentUsage.getStartDate().format(DATE_TIME_FORMATTER));
         var itemsCursor = cursor.setArray("items");
         currentUsage.lineItems().forEach(lineItem -> {
             var itemCursor = itemsCursor.addObject();
@@ -363,8 +363,8 @@ public class BillingApiHandler extends LoggingRequestHandler {
 
     private void renderBillToCursor(Cursor billCursor, Bill bill) {
         billCursor.setString("id", bill.id().value());
-        billCursor.setString("from", bill.getStartTime().format(DATE_TIME_FORMATTER));
-        billCursor.setString("to", bill.getEndTime().format(DATE_TIME_FORMATTER));
+        billCursor.setString("from", bill.getStartDate().format(DATE_TIME_FORMATTER));
+        billCursor.setString("to", bill.getEndDate().format(DATE_TIME_FORMATTER));
 
         billCursor.setString("amount", bill.sum().toString());
         billCursor.setString("status", bill.status());
