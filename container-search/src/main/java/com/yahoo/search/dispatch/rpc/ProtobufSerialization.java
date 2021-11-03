@@ -30,9 +30,6 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
 
-import com.yahoo.tensor.serialization.TypedBinaryFormat;
-import com.yahoo.tensor.Tensor;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
