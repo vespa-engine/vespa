@@ -40,7 +40,7 @@ public class RankingExpressionTestCase {
 
     @Test
     public void testParamInFeature() throws ParseException {
-        assertParse("if (1 > 2, dotProduct(allparentid,query(cate1_parentid)), 2)",
+        assertParse("if (1.0 > 2.0, dotProduct(allparentid,query(cate1_parentid)), 2.0)",
                     "if ( 1 > 2,\n" +
                     "dotProduct(allparentid, query(cate1_parentid)),\n" +
                     "2\n" +
@@ -58,7 +58,7 @@ public class RankingExpressionTestCase {
         assertParse("query(var1) + (query(var2) - query(var3)) * query(var4) / query(var5)", " $var1 +($var2 - $var3)* $var4 / $var5 ");
         assertParse("query(var1) + query(var2) - (query(var3) * query(var4)) / query(var5)", " $var1 + $var2 -($var3 * $var4)/ $var5 ");
         assertParse("query(var1) + query(var2) - query(var3) * (query(var4) / query(var5))", " $var1 + $var2 - $var3 *($var4 / $var5)");
-        assertParse("if (if (f1.out < query(p1), 0, 1) < if (f2.out < query(p2), 0, 1), f3.out, query(p3))", "if(if(f1.out<$p1,0,1)<if(f2.out<$p2,0,1),f3.out,$p3)");
+        assertParse("if (if (f1.out < query(p1), 0.0, 1.0) < if (f2.out < query(p2), 0.0, 1.0), f3.out, query(p3))", "if(if(f1.out<$p1,0,1)<if(f2.out<$p2,0,1),f3.out,$p3)");
     }
     
     @Test
@@ -124,26 +124,25 @@ public class RankingExpressionTestCase {
         functions.add(new ExpressionFunction("bar", Arrays.asList("arg1", "arg2"), new RankingExpression("arg1 * arg1 + 2 * arg1 * arg2 + arg2 * arg2")));
         functions.add(new ExpressionFunction("baz", Arrays.asList("arg1", "arg2"), new RankingExpression("foo(1, 2) / bar(arg1, arg2)")));
         functions.add(new ExpressionFunction("cox", null, new RankingExpression("10 + 08 * 1977")));
-
         assertSerialization(Arrays.asList(
-         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(foo@af74e3fd9070bd18.a368ed0a5ba3a5d0) * rankingExpression(foo@dbab346efdad5362.e5c39e42ebd91c30)",
-         "min(5,pow(rankingExpression(foo@d1d1417259cdc651.573bbcd4be18f379),2))",
-         "min(6,pow(7,2))",
-         "min(1,pow(2,2))",
-         "min(3,pow(4,2))",
-         "min(rankingExpression(foo@84951be88255b0ec.d0303e061b36fab8),pow(8,2))"), "foo(1,2) + foo(3,4) * foo(5, foo(foo(6, 7), 8))", functions);
+         "rankingExpression(foo@4689cd324380305d.5fcdf29fcc41a2bc) + rankingExpression(foo@af773a6f947ad407.66ce52fa17c2b09) * rankingExpression(foo@21b18c0e85002fa0.451254a7dce17294)",
+         "min(5.0,pow(rankingExpression(foo@1ccd482b337bef24.1b9a3e0814e0e252),2.0))",
+         "min(6.0,pow(7.0,2.0))",
+         "min(1.0,pow(2.0,2.0))",
+         "min(3.0,pow(4.0,2.0))",
+         "min(rankingExpression(foo@b454522a3d463653.a6d5095906f4305e),pow(8.0,2.0))"), "foo(1,2) + foo(3,4) * foo(5, foo(foo(6, 7), 8))", functions);
         assertSerialization(Arrays.asList(
-         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) + rankingExpression(bar@af74e3fd9070bd18.a368ed0a5ba3a5d0)",
-         "min(1,pow(2,2))",
-         "3 * 3 + 2 * 3 * 4 + 4 * 4"), "foo(1, 2) + bar(3, 4)", functions);
+         "rankingExpression(foo@4689cd324380305d.5fcdf29fcc41a2bc) + rankingExpression(bar@af773a6f947ad407.66ce52fa17c2b09)",
+         "min(1.0,pow(2.0,2.0))",
+         "3.0 * 3.0 + 2.0 * 3.0 * 4.0 + 4.0 * 4.0"), "foo(1, 2) + bar(3, 4)", functions);
         assertSerialization(Arrays.asList(
-         "rankingExpression(baz@e2dc17a89864aed0.12232eb692c6c502)",
-         "min(1,pow(2,2))",
-         "rankingExpression(foo@e2dc17a89864aed0.12232eb692c6c502) / rankingExpression(bar@e2dc17a89864aed0.12232eb692c6c502)",
-         "1 * 1 + 2 * 1 * 2 + 2 * 2"), "baz(1, 2)", functions);
+         "rankingExpression(baz@4689cd324380305d.5fcdf29fcc41a2bc)",
+         "min(1.0,pow(2.0,2.0))",
+         "rankingExpression(foo@4689cd324380305d.5fcdf29fcc41a2bc) / rankingExpression(bar@4689cd324380305d.5fcdf29fcc41a2bc)",
+         "1.0 * 1.0 + 2.0 * 1.0 * 2.0 + 2.0 * 2.0"), "baz(1, 2)", functions);
         assertSerialization(Arrays.asList(
          "rankingExpression(cox)",
-         "10 + 08 * 1977"), "cox", functions
+         "10.0 + 8.0 * 1977.0"), "cox", functions
         );
     }
     
@@ -155,11 +154,11 @@ public class RankingExpressionTestCase {
                             "map(constant(tensor0), f(a)(cos(a))) + l2_normalize(attribute(tensor1), x)");
         assertSerialization("join(reduce(join(reduce(join(constant(tensor0), attribute(tensor1), f(a,b)(a * b)), sum, x), attribute(tensor1), f(a,b)(a * b)), sum, y), query(tensor2), f(a,b)(a + b))", 
                             "xw_plus_b(matmul(constant(tensor0), attribute(tensor1), x), attribute(tensor1), query(tensor2), y)");
-        assertSerialization("tensor(x{}):{{x:a}:(1 + 2 + 3),{x:b}:(if (1 > 2, 3, 4)),{x:c}:(reduce(tensor0 * tensor1, sum))}",
+        assertSerialization("tensor(x{}):{{x:a}:(1.0 + 2.0 + 3.0),{x:b}:(if (1.0 > 2.0, 3.0, 4.0)),{x:c}:(reduce(tensor0 * tensor1, sum))}",
                             "tensor(x{}):{ {x:a}:1+2+3, {x:b}:if(1>2,3,4), {x:c}:sum(tensor0*tensor1) }");
-        assertSerialization("tensor(x[3]):{{x:0}:1.0,{x:1}:2.0,{x:2}:3}",
+        assertSerialization("tensor(x[3]):{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}",
                             "tensor(x[3]):[1.0, 2.0, 3]");
-        assertSerialization("tensor(x[3]):{{x:0}:1.0,{x:1}:(reduce(tensor0 * tensor1, sum)),{x:2}:3}",
+        assertSerialization("tensor(x[3]):{{x:0}:1.0,{x:1}:(reduce(tensor0 * tensor1, sum)),{x:2}:3.0}",
                             "tensor(x[3]):[1.0, sum(tensor0*tensor1), 3]");
     }
 
@@ -236,8 +235,8 @@ public class RankingExpressionTestCase {
         String expRhs = "(rankingExpression(log10tweetage) * rankingExpression(log10tweetage) * " +
                         "rankingExpression(log10tweetage)) + 5.0 * attribute(ythl)";
 
-        assertSerialization(Arrays.asList(expLhs + " + " + expRhs, "69"), lhs + " + " + rhs, functions);
-        assertSerialization(Arrays.asList(expLhs + " - " + expRhs, "69"), lhs + " - " + rhs, functions);
+        assertSerialization(Arrays.asList(expLhs + " + " + expRhs, "69.0"), lhs + " + " + rhs, functions);
+        assertSerialization(Arrays.asList(expLhs + " - " + expRhs, "69.0"), lhs + " - " + rhs, functions);
     }
 
     @Test
@@ -278,7 +277,7 @@ public class RankingExpressionTestCase {
     @Test
     public void testIssue() throws ParseException {
         assertEquals("feature.0", new RankingExpression("feature.0").toString());
-        assertEquals("if (1 > 2, 3, 4) + feature(arg1).out.out",
+        assertEquals("if (1.0 > 2.0, 3.0, 4.0) + feature(arg1).out.out",
                      new RankingExpression("if ( 1 > 2 , 3 , 4 ) + feature ( arg1 ) . out.out").toString());
     }
 

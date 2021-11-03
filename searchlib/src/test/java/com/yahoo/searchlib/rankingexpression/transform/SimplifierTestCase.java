@@ -46,8 +46,8 @@ public class SimplifierTestCase {
     public void testNaNExpression() throws ParseException {
         Simplifier s = new Simplifier();
         TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
-        assertEquals("0 / 0", s.transform(new RankingExpression("0/0"), c).toString());
-        assertEquals("1 + 0.0 / 0.0", s.transform(new RankingExpression("1 + (1-1)/(2-2)"), c).toString());
+        assertEquals("0.0 / 0.0", s.transform(new RankingExpression("0/0"), c).toString());
+        assertEquals("1.0 + 0.0 / 0.0", s.transform(new RankingExpression("1 + (1-1)/(2-2)"), c).toString());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class SimplifierTestCase {
         Simplifier s = new Simplifier();
         TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
         CompositeNode transformed = (CompositeNode)s.transform(new RankingExpression("a + (b + c) / 100000000.0"), c).getRoot();
-        assertEquals("a + (b + c) / 100000000.0", transformed.toString());
+        assertEquals("a + (b + c) / 1.0E8", transformed.toString());
     }
 
 }
