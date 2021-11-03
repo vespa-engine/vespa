@@ -84,16 +84,16 @@ public class GbdtConverterTestCase {
     @Test
     public void testSetTestsWork() throws Exception {
         assertConvert("src/test/files/gbdt_set_inclusion_test.xml",
-                      "if (AGE_GROUP$ in [2.0], if (EDUCATION_LEVEL$ in [0.0], -0.25, 0.125), if (AGE_GROUP$ in [1.0], 0.125, 0.25)) +\n" +
-                      "if (AGE_GROUP$ in [2.0], if (EDUCATION_LEVEL$ in [0.0], -0.2189117, -0.0), if (EDUCATION_LEVEL$ in [0.0], 0.1094559, 0.2343953)) +\n" +
-                      "if (AGE_GROUP$ in [2.0], -0.0962185, if (EDUCATION_LEVEL$ in [0.0], if (AGE_GROUP$ in [1.0], 0.0, 0.2055456), 0.205553)) +\n" +
-                      "if (EDUCATION_LEVEL$ in [0.0], 0.0905977, 0.1812016) +\n" +
-                      "if (EDUCATION_LEVEL$ in [0.0, 1.0], if (AGE_GROUP$ in [2.0], if (EDUCATION_LEVEL$ in [0.0], -0.191772, -0.0), if (AGE_GROUP$ in [1.0], if (EDUCATION_LEVEL$ in [0.0], 0.0, 0.1608304), 0.1708644)), 0.1923393) +\n" +
-                      "if (EDUCATION_LEVEL$ in [\"foo\", \"bar\"], if (AGE_GROUP$ in [2.0], if (EDUCATION_LEVEL$ in [\"baz\"], -0.1696624, -0.0), if (AGE_GROUP$ in [1.0], if (EDUCATION_LEVEL$ in [0.0], 0.0, 0.1438091), 0.1521967)), 0.2003772) +\n" +
+                      "if (AGE_GROUP$ in [2], if (EDUCATION_LEVEL$ in [0], -0.25, 0.125), if (AGE_GROUP$ in [1], 0.125, 0.25)) +\n" +
+                      "if (AGE_GROUP$ in [2], if (EDUCATION_LEVEL$ in [0], -0.2189117, -0.0), if (EDUCATION_LEVEL$ in [0], 0.1094559, 0.2343953)) +\n" +
+                      "if (AGE_GROUP$ in [2], -0.0962185, if (EDUCATION_LEVEL$ in [0], if (AGE_GROUP$ in [1], 0.0, 0.2055456), 0.205553)) +\n" +
+                      "if (EDUCATION_LEVEL$ in [0], 0.0905977, 0.1812016) +\n" +
+                      "if (EDUCATION_LEVEL$ in [0, 1], if (AGE_GROUP$ in [2], if (EDUCATION_LEVEL$ in [0], -0.191772, -0.0), if (AGE_GROUP$ in [1], if (EDUCATION_LEVEL$ in [0], 0.0, 0.1608304), 0.1708644)), 0.1923393) +\n" +
+                      "if (EDUCATION_LEVEL$ in [\"foo\", \"bar\"], if (AGE_GROUP$ in [2], if (EDUCATION_LEVEL$ in [\"baz\"], -0.1696624, -0.0), if (AGE_GROUP$ in [1], if (EDUCATION_LEVEL$ in [0], 0.0, 0.1438091), 0.1521967)), 0.2003772) +\n" +
                       "if (value(0) < 1.0, -0.0108278, 0.0) +\n" +
-                      "if (EDUCATION_LEVEL$ in [0.0], -0.1500528, if (GENDER$ in [1.0], 0.0652894, 0.1543407)) +\n" +
-                      "if (AGE_GROUP$ in [1.0], 0.0, 0.1569706) +\n" +
-                      "if (AGE_GROUP$ in [1.0], 0.0, if (EDUCATION_LEVEL$ in [1.0], 0.0, 0.1405829))\n" +
+                      "if (EDUCATION_LEVEL$ in [0], -0.1500528, if (GENDER$ in [1], 0.0652894, 0.1543407)) +\n" +
+                      "if (AGE_GROUP$ in [1], 0.0, 0.1569706) +\n" +
+                      "if (AGE_GROUP$ in [1], 0.0, if (EDUCATION_LEVEL$ in [1], 0.0, 0.1405829))\n" +
                       "\n");
     }
 

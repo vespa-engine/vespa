@@ -116,8 +116,10 @@ public abstract class Value {
             return new StringValue(value);
         else if (value.startsWith("{"))
             return new TensorValue(Tensor.from(value));
-        else
-            return new DoubleValue(Double.parseDouble(value));
+        else if ((value.indexOf('.') == -1) && (value.indexOf('e') == -1) && (value.indexOf('E') == -1))
+            return new LongValue(Long.parseLong(value));
+         else
+             return new DoubleValue(Double.parseDouble(value));
     }
 
     public static Value of(Tensor tensor) {
