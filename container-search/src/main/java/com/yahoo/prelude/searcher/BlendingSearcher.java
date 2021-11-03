@@ -57,7 +57,6 @@ public class BlendingSearcher extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         Result result = execution.search(query);
-
         Result blended = blendResults(result, query, query.getOffset(), query.getHits(), execution);
         blended.trace("Blended result");
         return blended;
@@ -78,7 +77,7 @@ public class BlendingSearcher extends Searcher {
      * This assumes that all hits are organized into hitgroups. If not, blending will not be performed.
      */
     protected Result blendResults(Result result, Query q, int offset, int hits, Execution execution) {
-        // Assert that there are more than one hitgroup and that there are only hitgroups on the lowest level
+        // Assert that there are more than one hitgroup and that there are only hitgroups on the highest level
         boolean foundNonGroup = false;
         Iterator<Hit> hitIterator = result.hits().iterator();
         List<HitGroup> groups = new ArrayList<>();
@@ -186,11 +185,11 @@ public class BlendingSearcher extends Searcher {
         void scanResult(Execution execution) {
             List<Hit> hits = group.asUnorderedHits();
             for (int i = hits.size()-1; i >= 0; i--) {
-                Hit sniffHit = hits.get(i);
-                if (!sniffHit.isMeta()) {
-                    scan(sniffHit, i, execution);
+                Hit hit = hits.get(i);
+                if (!hit.isMeta()) {
+                    scan(hit, i, execution);
                 } else {
-                    result.hits().add(sniffHit);
+                    result.hits().add(hit);
                 }
             }
         }
@@ -199,7 +198,7 @@ public class BlendingSearcher extends Searcher {
             // note, different loop direction from scanResult()
             for(HitGroup group : groups.subList(1, groups.size())) {
                 for(Hit hit : group.asList()) {
-                    if(hit.isMeta()) {
+                    if (hit.isMeta()) {
                         result.hits().add(hit);
                     } else {
                         put(group, hit, execution);

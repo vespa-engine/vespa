@@ -5,9 +5,10 @@ package com.yahoo.document;
  * Representation of a bucket identifier.
  */
 public class BucketId implements Comparable<BucketId> {
+
     public static final int COUNT_BITS = 6;
     private long id = 0;
-    private static long[] usedMask;
+    private final static long[] usedMask;
 
     static {
         usedMask = new long[59];
@@ -18,9 +19,7 @@ public class BucketId implements Comparable<BucketId> {
         }
     }
 
-    /**
-     * Default-constructed BucketId signifies an invalid bucket ID.
-     */
+    /** Default-constructed BucketId signifies an invalid bucket ID. */
     public BucketId() {
     }
 
@@ -127,4 +126,5 @@ public class BucketId implements Comparable<BucketId> {
     public boolean contains(DocumentId docId, BucketIdFactory factory) {
         return contains(factory.getBucketId(docId));
     }
+
 }
