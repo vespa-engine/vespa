@@ -4,49 +4,60 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 import com.yahoo.searchlib.rankingexpression.rule.Function;
 
 /**
- * A double value result of a ranking expression evaluation.
- * In a boolean context doubles are true if they are different from 0.0
+ * A representation for integer numbers
  *
- * @author bratseth
+ * @author balder
  */
-public final class DoubleValue extends DoubleCompatibleValue {
+public class LongValue extends DoubleCompatibleValue {
+    private final long value;
 
-    // A note on performance: Reusing double values like below is actually slightly slower per evaluation,
-    // but the reduced garbage cost seems to regain this plus some additional percentages
-
-    private double value;
-
-    /** The double value instance for 0 */
-    public final static DoubleValue zero = DoubleValue.frozen(0);
-
-    /** The double value instance for NaN */
-    public final static DoubleValue NaN = DoubleValue.frozen(Double.NaN);
-
-    public DoubleValue(double value) {
+    public LongValue(long value) {
         this.value = value;
     }
-
-    /**
-     * Create a double which is frozen at the outset.
-     */
-    public static DoubleValue frozen(double value) {
-        DoubleValue doubleValue = new DoubleValue(value);
-        doubleValue.freeze();
-        return doubleValue;
+    @Override
+    public double asDouble() {
+        return value;
+    }
+    @Override
+    public boolean asBoolean() {
+        return value != 0;
     }
 
     @Override
-    public double asDouble() { return value; }
+    public Value asMutable() {
+        return new LongValue(value);
+    }
 
     @Override
-    public DoubleValue asDoubleValue() { return this; }
+    public String toString() {
+        return String.valueOf(value);
+    }
 
     @Override
-    public boolean asBoolean() { return value != 0.0; }
+    public boolean equals(Object other) {
+        if (this==other) return true;
+        if ( ! (other instanceof Value)) return false;
+        if ( ! ((Value) other).hasDouble()) return false;
+        return new DoubleValue(value).equals(other);
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(value);
+    }
 
     @Override
     public DoubleValue negate() {
-        return mutable(-value);
+        return new DoubleValue(-value);
+    }
+
+    private UnsupportedOperationException unsupported(String operation, Value value) {
+        return new UnsupportedOperationException("Cannot perform " + operation + " on " + value + " and " + this);
+    }
+
+    /** Returns this or a mutable copy assigned the given value */
+    private DoubleValue mutable(double value) {
+        return new DoubleValue(value);
     }
 
     @Override
@@ -108,7 +119,6 @@ public final class DoubleValue extends DoubleCompatibleValue {
         }
     }
 
-
     @Override
     public Value function(Function function, Value value) {
         // use the tensor implementation of max and min if the argument is a tensor
@@ -121,41 +131,6 @@ public final class DoubleValue extends DoubleCompatibleValue {
         catch (UnsupportedOperationException e) {
             throw unsupported("function " + function, value);
         }
-    }
-
-    private UnsupportedOperationException unsupported(String operation, Value value) {
-        return new UnsupportedOperationException("Cannot perform " + operation + " on " + value + " and " + this);
-    }
-
-    /** Returns this or a mutable copy assigned the given value */
-    private DoubleValue mutable(double value) {
-        DoubleValue mutable=this.asMutable();
-        mutable.value=value;
-        return mutable;
-    }
-
-    @Override
-    public DoubleValue asMutable() {
-        if ( ! isFrozen()) return this;
-        return new DoubleValue(value);
-    }
-
-    @Override
-    public String toString() {
-        return String.valueOf(value);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (this==other) return true;
-        if ( ! (other instanceof Value)) return false;
-        if ( ! ((Value) other).hasDouble()) return false;
-        return this.asDouble() == ((Value) other).asDouble();
-    }
-
-    @Override
-    public int hashCode() {
-        return toString().hashCode();
     }
 
 }
