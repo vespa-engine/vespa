@@ -600,6 +600,7 @@
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value multiply(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value divide(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value modulo(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value function(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.Value negate()"
     ],
     "fields": []

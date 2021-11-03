@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
+import com.yahoo.searchlib.rankingexpression.rule.Function;
+
 /**
  * A representation for integer numbers
  *
@@ -114,6 +116,20 @@ public class LongValue extends DoubleCompatibleValue {
         }
         catch (UnsupportedOperationException e) {
             throw unsupported("modulo",value);
+        }
+    }
+
+    @Override
+    public Value function(Function function, Value value) {
+        // use the tensor implementation of max and min if the argument is a tensor
+        if ( (function.equals(Function.min) || function.equals(Function.max)) && value instanceof TensorValue)
+            return value.function(function, this);
+
+        try {
+            return mutable(function.evaluate(this.value, value.asDouble()));
+        }
+        catch (UnsupportedOperationException e) {
+            throw unsupported("function " + function, value);
         }
     }
 
