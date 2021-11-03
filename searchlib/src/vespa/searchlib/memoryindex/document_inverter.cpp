@@ -6,12 +6,14 @@
 #include "field_inverter.h"
 #include "url_field_inverter.h"
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/retain_guard.h>
 
 namespace search::memoryindex {
 
 using document::Document;
 using index::Schema;
 using search::index::FieldLengthCalculator;
+using vespalib::RetainGuard;
 
 DocumentInverter::DocumentInverter(DocumentInverterContext& context)
     : _context(context),
@@ -113,15 +115,24 @@ void
 DocumentInverter::pushDocuments(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone)
 {
     uint32_t fieldId = 0;
+    auto retain = std::make_shared<RetainGuard>(_ref_count);
+    auto& invert_threads = _context.get_invert_threads();
     auto& push_threads = _context.get_push_threads();
     for (auto &inverter : _inverters) {
-        push_threads.execute(fieldId,[inverter(inverter.get()), onWriteDone]() {
-            inverter->applyRemoves();
-            inverter->pushDocuments();
-        });
+        auto invert_id = invert_threads.getExecutorId(fieldId);
+        auto push_id = push_threads.getExecutorId(fieldId);
+        invert_threads.execute(invert_id,
+                               [&push_threads, push_id, inverter(inverter.get()), retain, onWriteDone] () mutable
+                               {
+                                   push_threads.execute(push_id,
+                                                        [inverter, retain(std::move(retain)), onWriteDone(std::move(onWriteDone))]()
+                                                        {
+                                                            inverter->applyRemoves();
+                                                            inverter->pushDocuments();
+                                                        });
+                               });
         ++fieldId;
     }
 }
 
 }
-
