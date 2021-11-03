@@ -64,7 +64,7 @@ public class ContainerFileSystem extends FileSystem {
 
     @Override
     public ContainerPath getPath(String first, String... more) {
-        return ContainerPath.fromPathInContainer(this, Path.of(first, more));
+        return ContainerPath.fromPathInContainer(this, Path.of(first, more), getUserPrincipalLookupService().userScope().root());
     }
 
     @Override

@@ -87,7 +87,8 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
         Path pathOnHost = pathOnHost(dir);
-        return new ContainerDirectoryStream(provider(pathOnHost).newDirectoryStream(pathOnHost, filter));
+        return new ContainerDirectoryStream(provider(pathOnHost).newDirectoryStream(pathOnHost, filter),
+                toContainerPath(dir).user());
     }
 
     @Override
@@ -233,15 +234,17 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     }
 
     private void fixOwnerToContainerRoot(ContainerPath path) throws IOException {
-        setAttribute(path, "unix:uid", 0, LinkOption.NOFOLLOW_LINKS);
-        setAttribute(path, "unix:gid", 0, LinkOption.NOFOLLOW_LINKS);
+        setAttribute(path, "unix:uid", path.user().uid(), LinkOption.NOFOLLOW_LINKS);
+        setAttribute(path, "unix:gid", path.user().gid(), LinkOption.NOFOLLOW_LINKS);
     }
 
     private class ContainerDirectoryStream implements DirectoryStream<Path> {
         private final DirectoryStream<Path> hostDirectoryStream;
+        private final UnixUser user;
 
-        private ContainerDirectoryStream(DirectoryStream<Path> hostDirectoryStream) {
+        private ContainerDirectoryStream(DirectoryStream<Path> hostDirectoryStream, UnixUser user) {
             this.hostDirectoryStream = hostDirectoryStream;
+            this.user = user;
         }
 
         @Override
@@ -256,7 +259,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
                 @Override
                 public Path next() {
                     Path pathOnHost = hostPathIterator.next();
-                    return ContainerPath.fromPathOnHost(containerFs, pathOnHost);
+                    return ContainerPath.fromPathOnHost(containerFs, pathOnHost, user);
                 }
             };
         }

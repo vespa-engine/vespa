@@ -60,6 +60,10 @@ class ContainerFileSystemTest {
         assertOwnership(containerPath, 500, 200, 10500, 11200); // Owner should not have been updated as the file already existed
 
         assertEquals("hello world", unixPath.readUtf8File());
+
+        unixPath.deleteIfExists();
+        new UnixPath(containerPath.withUser(userScope.vespa())).writeUtf8File("test123");
+        assertOwnership(containerPath, 1000, 100, 11000, 11100);
     }
 
     @Test
