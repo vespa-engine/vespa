@@ -146,5 +146,11 @@ public:
     const Value *getFeaturesByDocId(uint32_t docId) const;
 };
 
-} // namespace search
+// An even simpler feature container. Used to pass match features around.
+struct FeatureValues {
+    using Value = FeatureSet::Value;
+    std::vector<vespalib::string> names;
+    std::vector<Value> values; // values.size() == names.size() * N
+};
 
+} // namespace search

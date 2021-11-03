@@ -3,6 +3,7 @@
 #include "docsum_matcher.h"
 #include "match_tools.h"
 #include "search_session.h"
+#include "extract_features.h"
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
@@ -46,45 +47,7 @@ get_feature_set(const MatchToolsFactory &mtf,
     } else {
         matchTools->setup_dump();
     }
-    RankProgram &rankProgram = matchTools->rank_program();
-
-    std::vector<vespalib::string> featureNames;
-    FeatureResolver resolver(rankProgram.get_seeds(false));
-    featureNames.reserve(resolver.num_features());
-    for (size_t i = 0; i < resolver.num_features(); ++i) {
-        featureNames.emplace_back(resolver.name_of(i));
-    }
-    auto retval = std::make_unique<FeatureSet>(featureNames, docs.size());
-    if (docs.empty()) {
-        return retval;
-    }
-    FeatureSet &fs = *retval;
-
-    SearchIterator &search = matchTools->search();
-    search.initRange(docs.front(), docs.back()+1);
-    for (uint32_t i = 0; i < docs.size(); ++i) {
-        if (search.seek(docs[i])) {
-            uint32_t docId = search.getDocId();
-            search.unpack(docId);
-            auto * f = fs.getFeaturesByIndex(fs.addDocId(docId));
-            for (uint32_t j = 0; j < featureNames.size(); ++j) {
-                if (resolver.is_object(j)) {
-                    auto obj = resolver.resolve(j).as_object(docId);
-                    if (! obj.get().type().is_double()) {
-                        vespalib::nbostream buf;
-                        encode_value(obj.get(), buf);
-                        f[j].set_data(vespalib::Memory(buf.peek(), buf.size()));
-                    } else {
-                        f[j].set_double(obj.get().as_double());
-                    }
-                } else {
-                    f[j].set_double(resolver.resolve(j).as_number(docId));
-                }
-            }
-        } else {
-            LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
-        }
-    }
+    auto retval = ExtractFeatures::get_feature_set(matchTools->search(), matchTools->rank_program(), docs);
     if (auto onSummaryTask = mtf.createOnSummaryTask()) {
         onSummaryTask->run(docs);
     }
