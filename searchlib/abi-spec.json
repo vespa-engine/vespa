@@ -594,14 +594,13 @@
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue negate()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value negate()",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value add(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value subtract(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value multiply(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value divide(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value modulo(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public com.yahoo.searchlib.rankingexpression.evaluation.Value function(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.Value negate()"
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value function(com.yahoo.searchlib.rankingexpression.rule.Function, com.yahoo.searchlib.rankingexpression.evaluation.Value)"
     ],
     "fields": []
   },
@@ -943,7 +942,7 @@
       "public final java.util.List bracedIdentifierList()",
       "public final java.lang.String tag()",
       "public final java.util.List tagCommaLeadingList()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ConstantNode constantPrimitive()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode constantPrimitive(boolean)",
       "public final com.yahoo.searchlib.rankingexpression.evaluation.Value primitiveValue()",
       "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorValueBody(com.yahoo.tensor.TensorType, java.util.List)",
       "public final com.yahoo.tensor.functions.DynamicTensor mappedTensorValueBody(com.yahoo.tensor.TensorType)",

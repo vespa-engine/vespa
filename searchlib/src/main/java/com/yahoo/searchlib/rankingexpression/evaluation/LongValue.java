@@ -47,8 +47,8 @@ public class LongValue extends DoubleCompatibleValue {
     }
 
     @Override
-    public DoubleValue negate() {
-        return new DoubleValue(-value);
+    public Value negate() {
+        return new LongValue(-value);
     }
 
     private UnsupportedOperationException unsupported(String operation, Value value) {
