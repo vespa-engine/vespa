@@ -6,8 +6,8 @@ import com.google.common.base.Suppliers;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
-import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -21,7 +21,6 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -65,9 +64,6 @@ import java.util.stream.Collectors;
  */
 public class RoutingController {
 
-    /** The minimum Vespa version that supports directly routed endpoints */
-    public static final Version DIRECT_ROUTING_MIN_VERSION = new Version(7, 196, 4);
-
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
@@ -95,12 +91,12 @@ public class RoutingController {
         Set<Endpoint> endpoints = new LinkedHashSet<>();
         boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
         // Avoid reading application more than once per call to this
-        Supplier<Application> application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())));
+        Supplier<DeploymentSpec> deploymentSpec = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())).deploymentSpec());
         // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
         for (var policy : routingPolicies.get(deployment).values()) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
-                if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
+                if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, deploymentSpec.get())) continue;
                 endpoints.addAll(policy.zoneEndpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
                 endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
             }
@@ -119,7 +115,8 @@ public class RoutingController {
     public EndpointList endpointsOf(Application application, InstanceName instanceName) {
         Set<Endpoint> endpoints = new LinkedHashSet<>();
         Instance instance = application.require(instanceName);
-        Optional<DeploymentInstanceSpec> spec = application.deploymentSpec().instance(instanceName);
+        DeploymentSpec deploymentSpec = application.deploymentSpec();
+        Optional<DeploymentInstanceSpec> spec = deploymentSpec.instance(instanceName);
         if (spec.isEmpty()) return EndpointList.EMPTY;
         // Add endpoint declared with legacy syntax
         spec.get().globalServiceId().ifPresent(clusterId -> {
@@ -128,7 +125,7 @@ public class RoutingController {
                                                  .map(zone -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, zone.region().get())))
                                                  .collect(Collectors.toList());
             RoutingId routingId = RoutingId.of(instance.id(), EndpointId.defaultId());
-            endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), application, deployments));
+            endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), deployments, deploymentSpec));
         });
         // Add endpoints declared with current syntax
         spec.get().endpoints().forEach(declaredEndpoint -> {
@@ -137,7 +134,7 @@ public class RoutingController {
                                                              .map(region -> new DeploymentId(instance.id(),
                                                                                              ZoneId.from(Environment.prod, region)))
                                                              .collect(Collectors.toList());
-            endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), application, deployments));
+            endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), deployments, deploymentSpec));
         });
         return EndpointList.copyOf(endpoints);
     }
@@ -224,7 +221,7 @@ public class RoutingController {
     /** Returns the global endpoints for given deployment as container endpoints */
     public Set<ContainerEndpoint> containerEndpointsOf(Application application, InstanceName instanceName, ZoneId zone) {
         Instance instance = application.require(instanceName);
-        boolean registerLegacyNames = legacyNamesAvailable(application, instanceName);
+        boolean registerLegacyNames = legacyNamesAvailable(application.deploymentSpec(), instanceName);
         Set<ContainerEndpoint> containerEndpoints = new HashSet<>();
         EndpointList endpoints = endpointsOf(application, instanceName);
         // Add endpoints backed by a rotation, and register them in DNS if necessary
@@ -280,7 +277,7 @@ public class RoutingController {
                                       .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
                                       .collect(Collectors.toList());
             endpointsToRemove.addAll(computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()),
-                                                            rotation.clusterId(), application, deployments));
+                                                            rotation.clusterId(), deployments, application.deploymentSpec()));
         }
         endpointsToRemove.forEach(endpoint -> controller.nameServiceForwarder()
                                                         .removeRecords(Record.Type.CNAME,
@@ -289,7 +286,7 @@ public class RoutingController {
     }
 
     /** Returns the routing methods that are available across all given deployments */
-    private List<RoutingMethod> routingMethodsOfAll(List<DeploymentId> deployments, Application application) {
+    private List<RoutingMethod> routingMethodsOfAll(List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
         var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
         for (var deployment : deployments) {
             for (var method : controller.zoneRegistry().routingMethods(deployment.zoneId())) {
@@ -300,7 +297,7 @@ public class RoutingController {
         var routingMethods = new ArrayList<RoutingMethod>();
         deploymentsByMethod.forEach((method, supportedDeployments) -> {
             if (supportedDeployments.containsAll(deployments)) {
-                if (method.isDirect() && !canRouteDirectlyTo(deployments, application)) return;
+                if (method.isDirect() && !canRouteDirectlyTo(deployments, deploymentSpec)) return;
                 routingMethods.add(method);
             }
         });
@@ -308,37 +305,32 @@ public class RoutingController {
     }
 
     /** Returns whether traffic can be directly routed to all given deployments */
-    private boolean canRouteDirectlyTo(List<DeploymentId> deployments, Application application) {
-        return deployments.stream().allMatch(deployment -> canRouteDirectlyTo(deployment, application));
+    private boolean canRouteDirectlyTo(List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
+        return deployments.stream().allMatch(deployment -> canRouteDirectlyTo(deployment, deploymentSpec));
     }
 
     /** Returns whether traffic can be directly routed to given deployment */
-    private boolean canRouteDirectlyTo(DeploymentId deploymentId, Application application) {
+    private boolean canRouteDirectlyTo(DeploymentId deploymentId, DeploymentSpec deploymentSpec) {
         if (controller.system().isPublic()) return true; // Public always supports direct routing
         if (controller.system().isCd()) return true; // CD deploys directly so we cannot enforce all requirements below
         if (deploymentId.zoneId().environment().isManuallyDeployed()) return true; // Manually deployed zones always support direct routing
 
         // Check Athenz service presence. The test framework uses this identity when sending requests to the
         // deployment's container(s).
-        var athenzService = application.deploymentSpec().instance(deploymentId.applicationId().instance())
-                                       .flatMap(instance -> instance.athenzService(deploymentId.zoneId().environment(),
-                                                                                   deploymentId.zoneId().region()));
+        var athenzService = deploymentSpec.instance(deploymentId.applicationId().instance())
+                                          .flatMap(instance -> instance.athenzService(deploymentId.zoneId().environment(),
+                                                                                      deploymentId.zoneId().region()));
         if (athenzService.isEmpty()) return false;
-
-        // Check minimum required compile-version
-        var compileVersion = application.latestVersion().flatMap(ApplicationVersion::compileVersion);
-        if (compileVersion.isEmpty()) return false;
-        if (compileVersion.get().isBefore(DIRECT_ROUTING_MIN_VERSION)) return false;
         return true;
     }
 
     /** Compute global endpoints for given routing ID, application and deployments */
-    private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, Application application, List<DeploymentId> deployments) {
+    private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
         var zones = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
-        var availableRoutingMethods = routingMethodsOfAll(deployments, application);
-        boolean legacyNamesAvailable = legacyNamesAvailable(application, routingId.application().instance());
+        var availableRoutingMethods = routingMethodsOfAll(deployments, deploymentSpec);
+        boolean legacyNamesAvailable = legacyNamesAvailable(deploymentSpec, routingId.application().instance());
 
         for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
@@ -370,10 +362,10 @@ public class RoutingController {
     }
 
     /** Whether legacy global DNS names should be available for given application */
-    private static boolean legacyNamesAvailable(Application application, InstanceName instanceName) {
-        return application.deploymentSpec().instance(instanceName)
-                          .flatMap(DeploymentInstanceSpec::globalServiceId)
-                          .isPresent();
+    private static boolean legacyNamesAvailable(DeploymentSpec deploymentSpec, InstanceName instanceName) {
+        return deploymentSpec.instance(instanceName)
+                             .flatMap(DeploymentInstanceSpec::globalServiceId)
+                             .isPresent();
     }
 
     /** Create a common name based on a hash of given application. This must be less than 64 characters long. */
