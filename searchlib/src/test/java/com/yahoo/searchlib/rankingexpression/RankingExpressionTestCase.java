@@ -143,7 +143,7 @@ public class RankingExpressionTestCase {
          "1 * 1 + 2 * 1 * 2 + 2 * 2"), "baz(1, 2)", functions);
         assertSerialization(Arrays.asList(
          "rankingExpression(cox)",
-         "10 + 08 * 1977"), "cox", functions
+         "10 + 8 * 1977"), "cox", functions
         );
     }
     

@@ -140,7 +140,7 @@ public class RankingExpressionWithOnnxTestCase {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
-                            "onnx_vespa('mnist_softmax.onnx'): " +
+                            "onnx_vespa(\"mnist_softmax.onnx\"): " +
                             "Model refers input 'Placeholder' of type tensor<float>(d0[1],d1[784]) but this function is " +
                             "not present in rank profile 'my_profile'",
                     Exceptions.toMessageString(expected));
@@ -157,7 +157,7 @@ public class RankingExpressionWithOnnxTestCase {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
-                            "onnx_vespa('mnist_softmax.onnx'): " +
+                            "onnx_vespa(\"mnist_softmax.onnx\"): " +
                             "Model refers input 'Placeholder'. The required type of this is tensor<float>(d0[1],d1[784]), " +
                             "but this function returns tensor(d0[1],d5[10])",
                     Exceptions.toMessageString(expected));
@@ -174,7 +174,7 @@ public class RankingExpressionWithOnnxTestCase {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
-                         "onnx_vespa('mnist_softmax.onnx','y'): " +
+                         "onnx_vespa(\"mnist_softmax.onnx\",\"y\"): " +
                          "No expressions named 'y' in model 'mnist_softmax.onnx'. Available expressions: default.layer_add",
                          Exceptions.toMessageString(expected));
         }
@@ -183,7 +183,7 @@ public class RankingExpressionWithOnnxTestCase {
     @Test
     public void testImportingFromStoredExpressions() throws IOException {
         RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[1],d1[784])(0.0)",
-                "onnx_vespa('mnist_softmax.onnx')");
+                "onnx_vespa(\"mnist_softmax.onnx\")");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
 
         // At this point the expression is stored - copy application to another location which do not have a models dir

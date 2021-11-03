@@ -196,7 +196,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         builder.build();
         Schema s = builder.getSchema();
         RankProfile profile = rankProfileRegistry.get(s, "test");
-        assertEquals("k1 + (k2 + k3) / 100000000.0",
+        assertEquals("k1 + (k2 + k3) / 1.0E8",
                      profile.compile(new QueryProfileRegistry(), new ImportedMlModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 

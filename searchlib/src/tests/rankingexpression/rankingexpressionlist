@@ -3,9 +3,9 @@
 # printed as the original. Note that all strings are trimmed before they are parsed / compared.
   1
 1.0; 1.0; 1
-1e1; 1e1; 10
+1e1; 1e1; 10.0
 1e-1; 1e-1; 0.1
-1.0e1; 1.0e1; 10
+1.0e1; 1.0e1; 10.0
 1.0e-1; 1.0e-1; 0.1
 -1; -1
 1 + -1; 1 + -1; 1 - 1
@@ -156,10 +156,10 @@ mysum ( mysum(4,  4), value( 4 ), value(4) ); mysum(mysum(4,4),value(4),value(4)
 "fa\rt"
 "\t"
 "fe\tish"
-"\x10081977"
-"10\x081977"
-"1008\x1977"
-"100819\x77"
+"\x10081977"; "x10081977"
+"10\\x081977"
+"1008\x1977"; "1008x1977"
+"100819\\x77"
 if(1.09999~=1.1,2,3); if (1.09999 ~= 1.1, 2, 3)
 10 % 3
 1 && 0 || 1
