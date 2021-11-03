@@ -49,6 +49,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
     // TODO: These are to expose coupling between the strings used here and elsewhere
     public static final String summaryFeatureFefPropertyPrefix = "vespa.summary.feature";
+    public static final String matchFeatureFefPropertyPrefix = "vespa.match.feature";
     public static final String rankFeatureFefPropertyPrefix = "vespa.dump.feature";
 
     private final String name;
@@ -121,6 +122,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
         private final Map<String, FieldRankSettings> fieldRankSettings = new java.util.LinkedHashMap<>();
         private final Set<ReferenceNode> summaryFeatures;
+        private final Set<ReferenceNode> matchFeatures;
         private final Set<ReferenceNode> rankFeatures;
         private final List<RankProfile.RankProperty> rankProperties;
 
@@ -163,6 +165,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             firstPhaseRanking = compiled.getFirstPhaseRanking();
             secondPhaseRanking = compiled.getSecondPhaseRanking();
             summaryFeatures = new LinkedHashSet<>(compiled.getSummaryFeatures());
+            matchFeatures = new LinkedHashSet<>(compiled.getMatchFeatures());
             rankFeatures = compiled.getRankFeatures();
             rerankCount = compiled.getRerankCount();
             matchPhaseSettings = compiled.getMatchPhaseSettings();
@@ -188,8 +191,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 functionProperties.putAll(secondPhaseRanking.getRankProperties(functionSerializationContext));
             }
 
-            derivePropertiesAndSummaryFeaturesFromFunctions(functions, functionProperties, functionSerializationContext);
-            deriveOnnxModelFunctionsAndSummaryFeatures(compiled);
+            derivePropertiesAndFeaturesFromFunctions(functions, functionProperties, functionSerializationContext);
+            deriveOnnxModelFunctionsAndFeatures(compiled);
 
             deriveRankTypeSetting(compiled, attributeFields);
             deriveFilterFields(compiled);
@@ -200,12 +203,13 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             filterFields.addAll(rp.allFilterFields());
         }
 
-        private void derivePropertiesAndSummaryFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
+        private void derivePropertiesAndFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
                                                                      Map<String, String> functionProperties,
                                                                      SerializationContext functionContext) {
             if (functions.isEmpty()) return;
 
-            replaceFunctionSummaryFeatures(functionContext);
+            replaceFunctionFeatures(summaryFeatures, functionContext);
+            replaceFunctionFeatures(matchFeatures, functionContext);
 
             // First phase, second phase and summary features should add all required functions to the context.
             // However, we need to add any functions not referenced in those anyway for model-evaluation.
@@ -236,10 +240,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             functionProperties.putAll(context.serializedFunctions());
         }
 
-        private void replaceFunctionSummaryFeatures(SerializationContext context) {
-            if (summaryFeatures == null) return;
-            Map<String, ReferenceNode> functionSummaryFeatures = new LinkedHashMap<>();
-            for (Iterator<ReferenceNode> i = summaryFeatures.iterator(); i.hasNext(); ) {
+        private void replaceFunctionFeatures(Set<ReferenceNode> features, SerializationContext context) {
+            if (features == null) return;
+            Map<String, ReferenceNode> functionFeatures = new LinkedHashMap<>();
+            for (Iterator<ReferenceNode> i = features.iterator(); i.hasNext(); ) {
                 ReferenceNode referenceNode = i.next();
                 // Is the feature a function?
                 ExpressionFunction function = context.getFunction(referenceNode.getName());
@@ -248,13 +252,13 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     String expressionString = function.getBody().getRoot().toString(context).toString();
                     context.addFunctionSerialization(propertyName, expressionString);
                     ReferenceNode newReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")", referenceNode.getArguments().expressions(), referenceNode.getOutput());
-                    functionSummaryFeatures.put(referenceNode.getName(), newReferenceNode);
+                    functionFeatures.put(referenceNode.getName(), newReferenceNode);
                     i.remove(); // Will add the expanded one in next block
                 }
             }
-            // Then, replace the summary features that were functions
-            for (Map.Entry<String, ReferenceNode> e : functionSummaryFeatures.entrySet()) {
-                summaryFeatures.add(e.getValue());
+            // Then, replace the features that were functions
+            for (Map.Entry<String, ReferenceNode> e : functionFeatures.entrySet()) {
+                features.add(e.getValue());
             }
         }
 
@@ -352,6 +356,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (ReferenceNode feature : summaryFeatures) {
                 properties.add(new Pair<>(summaryFeatureFefPropertyPrefix, feature.toString()));
             }
+            for (ReferenceNode feature : matchFeatures) {
+                properties.add(new Pair<>(matchFeatureFefPropertyPrefix, feature.toString()));
+            }
             for (ReferenceNode feature : rankFeatures) {
                 properties.add(new Pair<>(rankFeatureFefPropertyPrefix, feature.toString()));
             }
@@ -441,11 +448,12 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             return properties;
         }
 
-        private void deriveOnnxModelFunctionsAndSummaryFeatures(RankProfile rankProfile) {
+        private void deriveOnnxModelFunctionsAndFeatures(RankProfile rankProfile) {
             if (rankProfile.getSearch() == null) return;
             if (rankProfile.getSearch().onnxModels().asMap().isEmpty()) return;
             replaceOnnxFunctionInputs(rankProfile);
-            replaceImplicitOnnxConfigSummaryFeatures(rankProfile);
+            replaceImplicitOnnxConfigFeatures(summaryFeatures, rankProfile);
+            replaceImplicitOnnxConfigFeatures(matchFeatures, rankProfile);
         }
 
         private void replaceOnnxFunctionInputs(RankProfile rankProfile) {
@@ -461,18 +469,18 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
         }
 
-        private void replaceImplicitOnnxConfigSummaryFeatures(RankProfile rankProfile) {
-            if (summaryFeatures == null || summaryFeatures.isEmpty()) return;
-            Set<ReferenceNode> replacedSummaryFeatures = new HashSet<>();
-            for (Iterator<ReferenceNode> i = summaryFeatures.iterator(); i.hasNext(); ) {
+        private void replaceImplicitOnnxConfigFeatures(Set<ReferenceNode> features, RankProfile rankProfile) {
+            if (features == null || features.isEmpty()) return;
+            Set<ReferenceNode> replacedFeatures = new HashSet<>();
+            for (Iterator<ReferenceNode> i = features.iterator(); i.hasNext(); ) {
                 ReferenceNode referenceNode = i.next();
                 ReferenceNode replacedNode = (ReferenceNode) OnnxModelTransformer.transformFeature(referenceNode, rankProfile);
                 if (referenceNode != replacedNode) {
-                    replacedSummaryFeatures.add(replacedNode);
+                    replacedFeatures.add(replacedNode);
                     i.remove();
                 }
             }
-            summaryFeatures.addAll(replacedSummaryFeatures);
+            features.addAll(replacedFeatures);
         }
 
     }
