@@ -172,6 +172,7 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
         constants.add(SdTypes.SUMMARY);
         constants.add(SdTypes.INDEX);
         constants.add(SdTypes.SET_LANGUAGE);
+        constants.add(SdTypes.LOWERCASE);
         constants.add(SdTypes.FAST_SEARCH);
         constants.add(SdTypes.FAST_ACCESS);
         constants.add(SdTypes.PAGED);
