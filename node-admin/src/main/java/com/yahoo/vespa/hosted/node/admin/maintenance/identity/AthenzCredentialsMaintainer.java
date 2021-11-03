@@ -24,9 +24,9 @@ import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import javax.net.ssl.HostnameVerifier;
@@ -207,7 +207,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                             EntityBindingsMapper.toAttestationData(signedIdentityDocument),
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
-            writePrivateKeyAndCertificate(context.vespaUser(),
+            writePrivateKeyAndCertificate(context.users().vespa(),
                     privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
@@ -235,7 +235,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                 context.identity(),
                                 identityDocument.providerUniqueId().asDottedString(),
                                 csr);
-                writePrivateKeyAndCertificate(context.vespaUser(),
+                writePrivateKeyAndCertificate(context.users().vespa(),
                         privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
@@ -252,7 +252,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
 
-    private static void writePrivateKeyAndCertificate(VespaUser vespaUser,
+    private static void writePrivateKeyAndCertificate(UnixUser vespaUser,
                                                       ContainerPath privateKeyFile,
                                                       PrivateKey privateKey,
                                                       ContainerPath certificateFile,
@@ -261,7 +261,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         writeFile(certificateFile, vespaUser, X509CertificateUtils.toPem(certificate));
     }
 
-    private static void writeFile(ContainerPath path, VespaUser vespaUser, String utf8Content) {
+    private static void writeFile(ContainerPath path, UnixUser vespaUser, String utf8Content) {
         new UnixPath(path.resolveSibling(path.getFileName() + ".tmp"))
                 .writeUtf8File(utf8Content, "r--------")
                 .setOwnerId(vespaUser.uid())

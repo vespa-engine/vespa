@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
-import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserScope;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,10 +45,10 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     private final ContainerFileSystem containerFs;
     private final ContainerUserPrincipalLookupService userPrincipalLookupService;
 
-    ContainerFileSystemProvider(Path containerRootOnHost, UserNamespace userNamespace, VespaUser vespaUser) {
+    ContainerFileSystemProvider(Path containerRootOnHost, UserScope userScope) {
         this.containerFs = new ContainerFileSystem(this, containerRootOnHost);
         this.userPrincipalLookupService = new ContainerUserPrincipalLookupService(
-                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userNamespace, vespaUser);
+                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userScope);
     }
 
     public ContainerUserPrincipalLookupService userPrincipalLookupService() {

@@ -24,10 +24,10 @@ public interface NodeAgentContext extends TaskContext {
     /** @return node ACL from node-repository */
     Acl acl();
 
-    /** @return name of the docker container this context applies to */
+    /** @return name of the linux container this context applies to */
     ContainerName containerName();
 
-    /** @return hostname of the docker container this context applies to */
+    /** @return hostname of the linux container this context applies to */
     default HostName hostname() {
         return HostName.from(node().hostname());
     }
@@ -42,10 +42,8 @@ public interface NodeAgentContext extends TaskContext {
 
     ZoneApi zone();
 
-    /** @return information about the Vespa user inside the container */
-    VespaUser vespaUser();
-
-    UserNamespace userNamespace();
+    /** @return information about users/user namespace of the linux container this context applies to */
+    UserScope users();
 
     default boolean isDisabled(NodeAgentTask task) {
         return false;

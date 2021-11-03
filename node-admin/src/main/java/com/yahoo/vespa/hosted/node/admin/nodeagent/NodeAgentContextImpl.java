@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerFileSystem;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
@@ -99,13 +100,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public VespaUser vespaUser() {
-        return containerFs.getUserPrincipalLookupService().vespaUser();
-    }
-
-    @Override
-    public UserNamespace userNamespace() {
-        return containerFs.getUserPrincipalLookupService().userNamespace();
+    public UserScope users() {
+        return containerFs.getUserPrincipalLookupService().userScope();
     }
 
     @Override
@@ -133,7 +129,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
     @Override
     public ContainerPath containerPathFromPathOnHost(Path pathOnHost) {
-        return ContainerPath.fromPathOnHost(containerFs, pathOnHost);
+        return ContainerPath.fromPathOnHost(containerFs, pathOnHost, users().root());
     }
 
     @Override
@@ -193,7 +189,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private ContainerNetworkMode containerNetworkMode;
         private ZoneApi zone;
         private UserNamespace userNamespace;
-        private VespaUser vespaUser;
+        private UnixUser vespaUser;
         private Path containerStorage;
         private FlagSource flagSource;
         private double cpuSpeedUp = 1;
@@ -233,7 +229,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
-        public Builder vespaUser(VespaUser vespaUser) {
+        public Builder vespaUser(UnixUser vespaUser) {
             this.vespaUser = vespaUser;
             return this;
         }
@@ -267,12 +263,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         public NodeAgentContextImpl build() {
             Objects.requireNonNull(containerStorage, "Must set one of containerStorage or fileSystem");
 
-            UserNamespace userNamespace = Optional.ofNullable(this.userNamespace)
-                    .orElseGet(() -> new UserNamespace(100000, 100000, 100000));
-            VespaUser vespaUser = Optional.ofNullable(this.vespaUser)
-                    .orElseGet(() -> new VespaUser("vespa", "vespa", 1000, 100));
+            UserScope userScope = UserScope.create(
+                    Optional.ofNullable(vespaUser).orElseGet(() -> new UnixUser("vespa", 1000, "vespa", 100)),
+                    Optional.ofNullable(userNamespace).orElseGet(() -> new UserNamespace(100000, 100000, 100000)));
             ContainerFileSystem containerFs = ContainerFileSystem.create(containerStorage
-                    .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userNamespace, vespaUser);
+                    .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userScope);
             containerFs.createRoot();
 
             return new NodeAgentContextImpl(
