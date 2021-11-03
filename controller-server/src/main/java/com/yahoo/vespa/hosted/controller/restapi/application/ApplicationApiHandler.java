@@ -38,8 +38,6 @@ import com.yahoo.slime.JsonParseException;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -2697,7 +2695,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private static String endpointScopeString(Endpoint.Scope scope) {
         switch (scope) {
             case region: return "region";
-            case regionSplit: return "regionSplit";
             case global: return "global";
             case zone: return "zone";
         }
