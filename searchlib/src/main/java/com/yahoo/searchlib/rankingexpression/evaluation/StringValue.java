@@ -26,7 +26,7 @@ public class StringValue extends Value {
     }
 
     public StringValue(String value) {
-        this.value = value;
+        this.value = UnicodeUtilities.unquote(value);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class StringValue extends Value {
     /** Returns the hashcode of this, to enable strings to be encoded (with reasonable safely) as doubles for optimization */
     @Override
     public double asDouble() {
-        return UnicodeUtilities.unquote(value).hashCode();
+        return value.hashCode();
     }
 
     @Override
@@ -121,7 +121,7 @@ public class StringValue extends Value {
 
     @Override
     public String toString() {
-        return "\"" + value + "\"";
+        return UnicodeUtilities.quote(value, '"');
     }
 
     @Override
