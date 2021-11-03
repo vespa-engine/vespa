@@ -2,3 +2,4 @@
 add_subdirectory(zookeeper-server-common)
 add_subdirectory(zookeeper-server-3.6.2)
 add_subdirectory(zookeeper-server-3.6.3)
+add_subdirectory(zookeeper-server-3.7.0)
