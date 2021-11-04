@@ -27,6 +27,10 @@ private:
     std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldInverter;
     std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldWriter;
     std::unique_ptr<vespalib::ISequencedTaskExecutor>    _attributeFieldWriter;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _field_writer;
+    vespalib::ISequencedTaskExecutor*                    _index_field_inverter_ptr;
+    vespalib::ISequencedTaskExecutor*                    _index_field_writer_ptr;
+    vespalib::ISequencedTaskExecutor*                    _attribute_field_writer_ptr;
 
     void syncOnce();
 public:

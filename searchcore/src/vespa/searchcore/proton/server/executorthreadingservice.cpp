@@ -12,6 +12,7 @@ using vespalib::BlockingThreadStackExecutor;
 using vespalib::SingleExecutor;
 using vespalib::SequencedTaskExecutor;
 using OptimizeFor = vespalib::Executor::OptimizeFor;
+using SharedFieldWriterExecutor = proton::ThreadingServiceConfig::SharedFieldWriterExecutor;
 
 namespace proton {
 
@@ -30,9 +31,10 @@ createExecutorWithOneThread(uint32_t stackSize, uint32_t taskLimit, OptimizeFor 
 VESPA_THREAD_STACK_TAG(master_executor)
 VESPA_THREAD_STACK_TAG(index_executor)
 VESPA_THREAD_STACK_TAG(summary_executor)
-VESPA_THREAD_STACK_TAG(field_inverter_executor)
+VESPA_THREAD_STACK_TAG(index_field_inverter_executor)
+VESPA_THREAD_STACK_TAG(index_field_writer_executor)
+VESPA_THREAD_STACK_TAG(attribute_field_writer_executor)
 VESPA_THREAD_STACK_TAG(field_writer_executor)
-VESPA_THREAD_STACK_TAG(attribute_executor)
 
 }
 
@@ -50,11 +52,38 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor & sh
       _masterService(_masterExecutor),
       _indexService(*_indexExecutor),
       _summaryService(*_summaryExecutor),
-      _indexFieldInverter(SequencedTaskExecutor::create(field_inverter_executor, cfg.indexingThreads(), cfg.defaultTaskLimit())),
-      _indexFieldWriter(SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit())),
-      _attributeFieldWriter(SequencedTaskExecutor::create(attribute_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
-                                                          cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime()))
+      _indexFieldInverter(),
+      _indexFieldWriter(),
+      _attributeFieldWriter(),
+      _field_writer(),
+      _index_field_inverter_ptr(),
+      _index_field_writer_ptr(),
+      _attribute_field_writer_ptr()
 {
+    if (cfg.shared_field_writer() == SharedFieldWriterExecutor::INDEX) {
+        _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 2, cfg.defaultTaskLimit());
+        _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
+                                                              cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+        _index_field_inverter_ptr = _field_writer.get();
+        _index_field_writer_ptr = _field_writer.get();
+        _attribute_field_writer_ptr = _attributeFieldWriter.get();
+
+    } else if (cfg.shared_field_writer() == SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE) {
+        _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 3, cfg.defaultTaskLimit(),
+                                                      cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+        _index_field_inverter_ptr = _field_writer.get();
+        _index_field_writer_ptr = _field_writer.get();
+        _attribute_field_writer_ptr = _field_writer.get();
+    } else {
+        // TODO: Add support for shared field writer across all document dbs.
+        _indexFieldInverter = SequencedTaskExecutor::create(index_field_inverter_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
+        _indexFieldWriter = SequencedTaskExecutor::create(index_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
+        _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
+                                                              cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+        _index_field_inverter_ptr = _indexFieldInverter.get();
+        _index_field_writer_ptr = _indexFieldWriter.get();
+        _attribute_field_writer_ptr = _attributeFieldWriter.get();
+    }
 }
 
 ExecutorThreadingService::~ExecutorThreadingService() = default;
@@ -74,11 +103,11 @@ ExecutorThreadingService::syncOnce() {
     if (!isMasterThread) {
         _masterExecutor.sync();
     }
-    _attributeFieldWriter->sync_all();
+    _attribute_field_writer_ptr->sync_all();
     _indexExecutor->sync();
     _summaryExecutor->sync();
-    _indexFieldInverter->sync_all();
-    _indexFieldWriter->sync_all();
+    _index_field_inverter_ptr->sync_all();
+    _index_field_writer_ptr->sync_all();
     if (!isMasterThread) {
         _masterExecutor.sync();
     }
@@ -89,13 +118,13 @@ ExecutorThreadingService::shutdown()
 {
     _masterExecutor.shutdown();
     _masterExecutor.sync();
-    _attributeFieldWriter->sync_all();
+    _attribute_field_writer_ptr->sync_all();
     _summaryExecutor->shutdown();
     _summaryExecutor->sync();
     _indexExecutor->shutdown();
     _indexExecutor->sync();
-    _indexFieldInverter->sync_all();
-    _indexFieldWriter->sync_all();
+    _index_field_inverter_ptr->sync_all();
+    _index_field_writer_ptr->sync_all();
 }
 
 void
@@ -103,9 +132,9 @@ ExecutorThreadingService::setTaskLimit(uint32_t taskLimit, uint32_t summaryTaskL
 {
     _indexExecutor->setTaskLimit(taskLimit);
     _summaryExecutor->setTaskLimit(summaryTaskLimit);
-    _indexFieldInverter->setTaskLimit(taskLimit);
-    _indexFieldWriter->setTaskLimit(taskLimit);
-    _attributeFieldWriter->setTaskLimit(taskLimit);
+    _index_field_inverter_ptr->setTaskLimit(taskLimit);
+    _index_field_writer_ptr->setTaskLimit(taskLimit);
+    _attribute_field_writer_ptr->setTaskLimit(taskLimit);
 }
 
 ExecutorThreadingServiceStats
@@ -115,24 +144,24 @@ ExecutorThreadingService::getStats()
                                          _indexExecutor->getStats(),
                                          _summaryExecutor->getStats(),
                                          _sharedExecutor.getStats(),
-                                         _indexFieldInverter->getStats(),
-                                         _indexFieldWriter->getStats(),
-                                         _attributeFieldWriter->getStats());
+                                         _index_field_inverter_ptr->getStats(),
+                                         _index_field_writer_ptr->getStats(),
+                                         _attribute_field_writer_ptr->getStats());
 }
 
 vespalib::ISequencedTaskExecutor &
 ExecutorThreadingService::indexFieldInverter() {
-    return *_indexFieldInverter;
+    return *_index_field_inverter_ptr;
 }
 
 vespalib::ISequencedTaskExecutor &
 ExecutorThreadingService::indexFieldWriter() {
-    return *_indexFieldWriter;
+    return *_index_field_writer_ptr;
 }
 
 vespalib::ISequencedTaskExecutor &
 ExecutorThreadingService::attributeFieldWriter() {
-    return *_attributeFieldWriter;
+    return *_attribute_field_writer_ptr;
 }
 
 } // namespace proton
