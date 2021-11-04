@@ -31,7 +31,7 @@ public abstract class Item implements Cloneable {
      * The definitions in Item.ItemType must match the ones in
      * searchlib/src/vespa/searchlib/parsequery/parse.h
      */
-    public static enum ItemType {
+    public enum ItemType {
         OR(0),
         AND(1),
         NOT(2),
@@ -102,10 +102,10 @@ public abstract class Item implements Cloneable {
     /** The annotations made on this item */
     private CopyOnWriteHashMap<String, Object> annotations;
 
-    /** Whether or not this item should affect ranking. */
+    /** Whether this item should affect ranking. */
     private boolean isRanked = true;
 
-    /** Whether or not position data should be used when ranking this item */
+    /** Whether position data should be used when ranking this item */
     private boolean usePositionData = true;
 
     /** Whether the item should encode a unique ID */
@@ -122,10 +122,10 @@ public abstract class Item implements Cloneable {
     // Move this to an object which can take care of being a weighted bidirectional reference more elegantly and safely.
     protected Item connectedItem;
     protected Item connectedBacklink;
-    protected double connectivity;
+    protected double connectivity = 0;
 
     /** Explicit term significance */
-    protected double significance;
+    protected double significance = 0;
     protected boolean explicitSignificance = false;
 
     /** Whether this item is eligible for change by query rewriters (false) or should be kept as-is (true) */
@@ -197,9 +197,7 @@ public abstract class Item implements Cloneable {
         annotations.put(key, value);
     }
 
-    /**
-     * Returns an annotation on this item, or null if the annotation is not set
-     */
+    /** Returns an annotation on this item, or null if the annotation is not set */
     public Object getAnnotation(String annotation) {
         if (annotations == null) {
             return null;
@@ -273,7 +271,7 @@ public abstract class Item implements Cloneable {
      * Returns an integer that contains all feature flags for this item. This must be kept in sync with the flags
      * defined in searchlib/parsequery/parse.h.
      *
-     * @return The feature flags.
+     * @return the feature flags
      */
     private byte getFlagsFeature() {
         byte FLAGS_NORANK = 0x01;
@@ -313,17 +311,15 @@ public abstract class Item implements Cloneable {
     public abstract int getTermCount();
 
     /**
-     * <p>Returns the canonical query language string of this item.</p>
-     *
-     * <p>The canonical language represent an item by the string
+     * Returns the canonical query language string of this item.
+     * The canonical language represent an item by the string
      * <pre>
      * ([itemName] [body])
      * </pre>
      * where the body may recursively be other items.
      *
      * <p>
-     * TODO: Change the output query language into a canonical form of the input
-     *       query language
+     * TODO (Vespa 8?): Output YQL
      */
     @Override
     public String toString() {
@@ -350,7 +346,7 @@ public abstract class Item implements Cloneable {
     }
 
     /**
-     * Returns whether or not this item should be parethized when printed.
+     * Returns whether this item should be parethized when printed.
      * Default is false - no parentheses
      */
     protected boolean shouldParenthize() {
@@ -440,7 +436,7 @@ public abstract class Item implements Cloneable {
     }
 
     /**
-     * Sets whether or not this term item should affect ranking.
+     * Sets whether this term item should affect ranking.
      * If set to false this term is not exposed to the ranking framework in the search backend.
      */
     public void setRanked(boolean isRanked) {
@@ -453,7 +449,7 @@ public abstract class Item implements Cloneable {
     }
 
     /**
-     * Sets whether or not position data should be used when ranking this term item.
+     * Sets whether position data should be used when ranking this term item.
      * If set to false the search backend uses fast bit vector data structures when matching on this term
      * and only a few simple ranking features will be available when ranking this term.
      * Note that setting this to false also saves a lot of CPU during matching as bit vector data structures are used.
@@ -462,22 +458,26 @@ public abstract class Item implements Cloneable {
         this.usePositionData = usePositionData;
     }
 
-    /** Returns whether or not position data should be used when ranking this item */
+    /** Returns whether position data should be used when ranking this item */
     public boolean usePositionData() {
         return usePositionData;
     }
 
     public void disclose(Discloser discloser) {
-        discloser.addProperty("connectivity", connectivity);
-        discloser.addProperty("connectedItem", connectedItem); // reference
-
-        discloser.addProperty("creator", creator);
-        discloser.addProperty("explicitSignificance", explicitSignificance);
-        discloser.addProperty("isRanked", isRanked);
-        discloser.addProperty("usePositionData", usePositionData);
-        discloser.addProperty("significance", significance);
-        discloser.addProperty("weight", weight);
-
+        if (connectivity != 0)
+            discloser.addProperty("connectivity", connectivity);
+        if (connectedItem != null)
+            discloser.addProperty("connectedItem", connectedItem); // reference
+        if (creator != ItemCreator.ORIG)
+            discloser.addProperty("creator", creator);
+        if ( ! isRanked)
+            discloser.addProperty("isRanked", isRanked);
+        if ( ! usePositionData)
+            discloser.addProperty("usePositionData", usePositionData);
+        if (explicitSignificance)
+            discloser.addProperty("significance", significance);
+        if (weight != 100)
+            discloser.addProperty("weight", weight);
         if (label != null)
             discloser.addProperty("label", label);
         if (hasUniqueID)

@@ -5,6 +5,7 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PureWeightedString;
 import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.textualrepresentation.Discloser;
+import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -19,14 +20,6 @@ import java.util.Map;
 public class WandItemTestCase {
 
     private static final double DELTA = 0.0000001;
-
-    private static WandItem createSimpleItem() {
-        WandItem item = new WandItem("myfield", 10);
-        item.addToken("foo", 30);
-        item.setScoreThreshold(20);
-        item.setThresholdBoostFactor(2.0);
-        return item;
-    }
 
     @Test
     public void requireThatWandItemCanBeConstructed() {
@@ -80,6 +73,28 @@ public class WandItemTestCase {
         assertEquals(20.0, discloser.props.get("scoreThreshold"));
         assertEquals(2.0, discloser.props.get("thresholdBoostFactor"));
         assertEquals("myfield", discloser.props.get("index"));
+    }
+
+    @Test
+    public void testTextualRepresentation() {
+        WandItem item = new WandItem("myfield", 10);
+        item.addToken("term1", 10);
+        item.setScoreThreshold(20);
+        item.setThresholdBoostFactor(2.0);
+        assertEquals("WAND[index=\"myfield\" scoreThreshold=20.0 targetNumHits=10 thresholdBoostFactor=2.0]{\n" +
+                     "  PURE_WEIGHTED_STRING[weight=10]{\n" +
+                     "    \"term1\"\n" +
+                     "  }\n" +
+                     "}\n",
+                     new TextualQueryRepresentation(item).toString());
+    }
+
+    private static WandItem createSimpleItem() {
+        WandItem item = new WandItem("myfield", 10);
+        item.addToken("foo", 30);
+        item.setScoreThreshold(20);
+        item.setThresholdBoostFactor(2.0);
+        return item;
     }
 
 }
