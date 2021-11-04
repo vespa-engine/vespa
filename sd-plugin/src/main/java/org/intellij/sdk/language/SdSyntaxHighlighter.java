@@ -112,6 +112,7 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
         keyWords.add(SdTypes.FUNCTION);
         keyWords.add(SdTypes.INLINE);
         keyWords.add(SdTypes.SUMMARY_FEATURES);
+        keyWords.add(SdTypes.MATCH_FEATURES);
         keyWords.add(SdTypes.RANK_FEATURES);
         keyWords.add(SdTypes.CONSTANTS);
         keyWords.add(SdTypes.DOCUMENT);
