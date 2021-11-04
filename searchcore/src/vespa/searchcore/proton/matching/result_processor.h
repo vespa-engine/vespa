@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "match_features.h"
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/vespalib/util/dual_merge_director.h>
 
@@ -104,6 +105,7 @@ public:
     void prepareThreadContextCreation(size_t num_threads);
     Context::UP createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey);
     std::unique_ptr<Result> makeReply(PartialResultUP full_result);
+    std::unique_ptr<Result> makeReply(PartialResultUP full_result, MatchFeatureFinder find_match_features);
 };
 
 }

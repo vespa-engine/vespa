@@ -105,6 +105,13 @@ ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thr
 ResultProcessor::Result::UP
 ResultProcessor::makeReply(PartialResultUP full_result)
 {
+    MatchFeatureFinder empty = [](const HitIdVector&) noexcept { return FeatureValuesPerHit::UP(); };
+    return makeReply(std::move(full_result), std::move(empty));
+}
+
+ResultProcessor::Result::UP
+ResultProcessor::makeReply(PartialResultUP full_result, MatchFeatureFinder find_match_features)
+{
     auto reply = std::make_unique<search::engine::SearchReply>();
     const search::IDocumentMetaStore &metaStore = _metaStore;
     search::engine::SearchReply &r = *reply;
@@ -127,16 +134,20 @@ ResultProcessor::makeReply(PartialResultUP full_result)
     r.totalHitCount    = result.totalHits();
     r.hits.resize(hitcnt);
     document::GlobalId gid;
+    std::vector<uint32_t> final_doc_ids;
+    final_doc_ids.reserve(hitcnt);
     for (size_t i = 0; i < hitcnt; ++i) {
         search::engine::SearchReply::Hit &dst = r.hits[i];
         const search::RankedHit &src = result.hit(hitOffset + i);
         uint32_t docId = src._docId;
+        final_doc_ids.push_back(docId);
         if (metaStore.getGidEvenIfMoved(docId, gid)) {
             dst.gid = gid;
         }
         dst.metric = src._rankValue;
         LOG(debug, "convertLidToGid: hit[%zu]: lid(%u) -> gid(%s)", i, docId, dst.gid.toString().c_str());
     }
+    r.match_features = find_match_features(final_doc_ids);
     if (result.hasSortData() && (hitcnt > 0)) {
         size_t sortDataSize = result.sortDataSize();
         for (size_t i = 0; i < hitOffset; ++i) {
