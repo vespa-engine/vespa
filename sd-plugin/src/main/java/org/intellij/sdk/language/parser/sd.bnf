@@ -28,21 +28,21 @@ NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats 
         ID_WITH_DASH_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_-]*'
         WHITE_SPACE = 'regexp:\s+'
         COMMENT = 'regexp:#.*'
-        SYMBOL = 'regexp:[!|:{}(),.\[\]]'
+        SYMBOL = 'regexp:[!$|:{}(),.\[\]]'
         COMPARISON_OPERATOR = 'regexp:[<>]|(==)|(<=)|(>=)|(~=)'
         ARITHMETIC_OPERATOR = 'regexp:[\-+*/]'
         INTEGER_REG = 'regexp:[0-9]+'
         FLOAT_REG = 'regexp:[0-9]+[.][0-9]+[e]?'
-        STRING_REG = 'regexp:[\"][^\"]*[\"]'
+        STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"'
         WORD_REG = 'regexp:\w+'
     ]
 }
 
-SdFile ::= SchemaDefinition
-SchemaDefinition ::= (search | schema) IdentifierVal? '{' SchemaBody '}'
+SdFile ::= SchemaDefinition | DocumentDefinition
+SchemaDefinition ::= (search | schema) IdentifierVal? (inherits IdentifierVal)? '{' SchemaBody '}'
 SchemaBody ::= SchemaBodyOptions* DocumentDefinition SchemaBodyOptions* // Does not support zero-or-one occurrences
 private SchemaBodyOptions ::= SchemaFieldDefinition | ImportFieldDefinition | DocumentSummaryDefinition | 
-                              RankProfileDefinition | 
+                              RankProfileDefinition | IndexDefinition |
                               FieldSetDefinition | ConstantDefinition | OnnxModelDefinition | StemmingDefinition |
                               raw-as-base64-in-summary | SchemaAnnotationDefinition
 
@@ -57,16 +57,10 @@ FieldTypeName ::= ("array" '<' (FieldTypeName | IdentifierVal) '>') | ("weighted
                   (SingleValueFieldTypeName '[' ']') | SingleValueFieldTypeName
 private SingleValueFieldTypeName ::= "string" | "int" | "long" | "bool" | "byte" | "float" | "double" | "position" | "predicate" | "raw" | "uri" | 
                              "reference" '<' IdentifierVal '>' | "annotationreference" '<' IdentifierVal '>' | IdentifierVal
-private TensorType ::= "tensor" '<' ("float" | "double" | "int8" | "bfloat16") '>' '(' TensorDimension (',' TensorDimension)* ')'
-private TensorDimension ::= WordWrapper ('{' '}') | ('[' INTEGER_REG ']')
+private TensorType ::= "tensor" ('<' ("float" | "double" | "int8" | "bfloat16") '>')? '(' TensorDimension (',' TensorDimension)* ')'
+private TensorDimension ::= WordWrapper (('{' '}') | ('[' INTEGER_REG ']'))
 
-SchemaFieldBody ::= DocumentFieldBodyOptions* // SchemaFieldBodyOptions* // Does not support zero-or-one occurrences
-//SchemaFieldBodyOptions ::= SchemaFieldIndexingDefinition | AttributeDefinition | RankDefinition | IndexingRewriteState |
-//                           MatchDefinition | StructFieldDefinition | QueryCommandDefinition | StemmingDefinition | RankTypeDefinition |
-//                           AliasDef 
-//                    
-//SchemaFieldIndexingDefinition ::= indexing ((':' SchemaFieldIndexingStatement) | ('{' SchemaFieldIndexingStatement+ '}'))
-//SchemaFieldIndexingStatement ::= IndexingStatement //|  | IndexingStatement // ('|' IndexingStatement)?)
+SchemaFieldBody ::= DocumentFieldBodyOptions* // Fields of schemas and documents defined the same way here
 
 DocumentSummaryDefinition ::= document-summary IdentifierWithDashVal (inherits IdentifierWithDashVal)? '{' DocumentSummaryBody '}' 
                               { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
@@ -87,7 +81,7 @@ private FieldSetBodyOptions ::= (fields ':' IdentifierVal (',' IdentifierVal)*) 
 ConstantDefinition ::= constant IdentifierVal '{' ConstantBody '}'
 ConstantBody ::= ConstantBodyOptions*
 private ConstantBodyOptions ::= (file ':' FilePath) | (uri ':' UriPath) | (type ':' TensorType)
-private FilePath ::= (IdentifierVal | WORD_REG) ('.' | '/' | IdentifierWithDashVal | WORD_REG)+            
+private FilePath ::= WordWrapper (('.' | '/') WordWrapper)+   
 private UriPath ::= ('H'|'h') ('T'|'t') ('T'|'t') ('P'|'p') ('S'|'s')? ':' ('//')? (IdentifierWithDashVal | '.' | '/' | ':')+
 
 
@@ -110,8 +104,10 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //-------------------------
 //--- Expressions rules ---
 //-------------------------
-RankingExpression ::= ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr | 
+RankingExpression ::= FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr | 
                       QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr
+
+FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
 IfFunctionExpr ::= "if" '(' (InListRankingExpr | RankingExpression) ',' RankingExpression ',' RankingExpression ')'
 InListRankingExpr ::= RankingExpression "in" '[' RankingExpression (',' RankingExpression)* ']'
@@ -131,7 +127,7 @@ PrimitiveExpr ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | Ra
 //-------------------------
 //-- Rank Profile rules ---
 //-------------------------
-RankProfileDefinition ::= rank-profile IdentifierWithDashVal (inherits IdentifierWithDashVal)? '{' RankProfileBody '}'
+RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits IdentifierWithDashVal)? '{' RankProfileBody '}'
                           { mixin="org.intellij.sdk.language.psi.impl.SdNamedElementImpl"
                             implements=["org.intellij.sdk.language.psi.SdDeclaration"]
                            }
@@ -139,27 +135,29 @@ private RankProfileBody ::= RankProfileBodyOptions* // Does not support zero-or-
 private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition | FunctionDefinition | TermwiseLimitDefinition | 
                            ignore-default-rank-features | RankPropertiesDefinition | FirstPhaseDefinition | 
                            SummaryFeaturesDefinition | RankFeaturesDefinition | SecondPhaseDefinition | ConstantsDefinition |
-                           RankDefinition | RankTypeDefinition | MinHitsDefinition | NumSearchPartitionDefinition
+                           RankDefinition | RankTypeDefinition | MinHitsDefinition | NumSearchPartitionDefinition |
+                           FieldWeightDefinition
 
 MatchPhaseDefinition ::= match-phase '{' MatchPhaseBody '}'
 MatchPhaseBody ::= MatchPhaseBodyOptions+
-MatchPhaseBodyOptions ::= (attribute ':' IdentifierVal (order ':' (ascending | descending))?) | (max-hits ':' INTEGER_REG)
-                          | DiversityDefinition // Does not support zero-or-one occurrences
+MatchPhaseBodyOptions ::= (attribute ':' IdentifierVal) | (order ':' (ascending | descending)) | (max-hits ':' ('-')? INTEGER_REG)
+                          | DiversityDefinition | (evaluation-point ':' ('-')? FLOAT_REG) |
+                          (pre-post-filter-tipping-point ':' ('-')? FLOAT_REG) // Does not support zero-or-one occurrences
 DiversityDefinition ::= diversity '{' DiversityBody '}'
 DiversityBody ::= DiversityBodyOptions*
-private DiversityBodyOptions ::= (attribute ':' IdentifierVal) | (min-groups ':' INTEGER_REG) | (cutoff-factor ':' FLOAT_REG) |
+private DiversityBodyOptions ::= (attribute ':' IdentifierVal) | (min-groups ':' ('-')? INTEGER_REG) | (cutoff-factor ':' ('-')? FLOAT_REG) |
                                  (cutoff-strategy ':' (strict | loose))
 
 private NumThreadsDefinition ::= num-threads-per-search ':' INTEGER_REG
-private TermwiseLimitDefinition ::= termwise-limit ':' (FLOAT_REG | INTEGER_REG)
-private MinHitsDefinition ::= min-hits-per-thread ':' INTEGER_REG
+private TermwiseLimitDefinition ::= termwise-limit ':' ('-')? (FLOAT_REG | INTEGER_REG)
+private MinHitsDefinition ::= min-hits-per-thread ':' ('-')? INTEGER_REG
 private NumSearchPartitionDefinition ::= num-search-partition ':' INTEGER_REG
+FieldWeightDefinition ::= weight IdentifierVal ':' INTEGER_REG
 FirstPhaseDefinition ::= first-phase '{' FirstPhaseBody '}'  { mixin="org.intellij.sdk.language.psi.impl.SdFirstPhaseDefinitionMixin" }
 FirstPhaseBody ::= FirstPhaseBodyOptions* // Does not support zero-or-one occurrences
-private FirstPhaseBodyOptions ::= (keep-rank-count ':' INTEGER_REG) | (rank-score-drop-limit ':' (FLOAT_REG | INTEGER_REG)) | ExpressionDefinition
+private FirstPhaseBodyOptions ::= (keep-rank-count ':' INTEGER_REG) | (rank-score-drop-limit ':' ('-')? (FLOAT_REG | INTEGER_REG)) | ExpressionDefinition
 
-ExpressionDefinition ::= expression ((':' RankingExpression) | ('{' RankingExpression* '}') |
-                                     (':' file ':' FilePath))
+ExpressionDefinition ::= expression ((':' RankingExpression) | ('{' RankingExpression* '}'))
 
 SecondPhaseDefinition ::= second-phase '{' SecondPhaseBody '}'
 SecondPhaseBody ::= SecondPhaseBodyOptions*
@@ -167,7 +165,7 @@ private SecondPhaseBodyOptions ::= (rerank-count ':' INTEGER_REG) | ExpressionDe
 
 RankPropertiesDefinition ::= rank-properties '{' RankPropertiesBody '}'
 RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue)+
-RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | ',')+ 
+RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | ',' | '$' | INTEGER_REG)+ 
 RankPropertiesValue ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | WORD_REG | IdentifierVal | STRING_REG
 
 FunctionDefinition ::= (function | macro) inline? IdentifierVal '(' (ArgumentDefinition (',' ArgumentDefinition)*)? ')'
@@ -182,7 +180,7 @@ ArgumentDefinition ::= IdentifierVal
 
 SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierVal)? '{' RankFeature* '}'))
 
-RankFeaturesDefinition ::= rank-features (':' RankFeature+) | ('{' RankFeature* '}')
+RankFeaturesDefinition ::= rank-features ((':' RankFeature+) | ('{' RankFeature* '}'))
 
 ConstantsDefinition ::= constants '{' (IdentifierVal ':' RankPropertiesValue)* '}'
 
@@ -232,11 +230,10 @@ DocumentFieldDefinition ::= field IdentifierVal type FieldTypeName '{' DocumentF
 
 DocumentFieldBody ::= DocumentFieldBodyOptions* // Does not support zero-or-one occurrences
 private DocumentFieldBodyOptions ::= StructFieldDefinition | MatchDefinition | IndexingDefinition | AttributeDefinition | 
-                             AliasDef | RankDefinition | IndexingRewriteState | QueryCommandDefinition | SummaryDefinition |
+                             AliasDefinition | RankDefinition | IndexingRewriteState | QueryCommandDefinition | SummaryDefinition |
                              BoldingDefinition | (id ':' INTEGER_REG) | IndexDefinition | (normalizing ':' IdentifierWithDashVal) | 
                              SortingDefinition | StemmingDefinition | (weight ':' INTEGER_REG) | WeightedSetDefinition |
-                             RankTypeDefinition | DictionaryDefinition
-
+                             RankTypeDefinition | DictionaryDefinition | SummaryToDefinition | body
 //***** Field's body elements ******//
 // Struct
 StructFieldDefinition ::= struct-field IdentifierVal ('.' IdentifierVal)? '{' StructFieldBody '}'
@@ -257,15 +254,15 @@ IndexingStatement ::= IndexingStatementOptions ((('|' | ';') IndexingStatementOp
                       // Does not support zero-or-one occurrences
 IndexingStatementOptions ::= summary | attribute | index | set_language | lowercase | (input (IdentifierVal | IndexingStuff)+) | 
                              ('{' IndexingStatementOptions '}') | IndexingStuff+
-private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | '{' IndexingStatementOptions+ '}' |
+private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | ('{' IndexingStatementOptions+ '}') |
                           ':' | ('|' IndexingStatementOptions) | ';' | '.' | '(' | ')' | ARITHMETIC_OPERATOR | COMPARISON_OPERATOR
 // Attribute
-AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (SimpleAttributeProperty | ComplexAttributeProperty)+ '}'))
+AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (ComplexAttributeProperty | SimpleAttributeProperty)+ '}'))
 SimpleAttributeProperty ::= fast-search | fast-access | paged | mutable | enable-bit-vectors | enable-only-bit-vector | WordWrapper // Does not support zero-or-one occurrences
-ComplexAttributeProperty ::= AliasDef | SortingDefinition | DistanceMetricDef // Does not support zero-or-one occurrences
+ComplexAttributeProperty ::= AliasDefinition | SortingDefinition | DistanceMetricDef // Does not support zero-or-one occurrences
 DistanceMetricDef ::= distance-metric ':' IdentifierWithDashVal
 // Alias
-AliasDef ::= alias IdentifierVal? ':' IdentifierWithDashVal ('.' IdentifierWithDashVal)*
+AliasDefinition ::= alias (IdentifierWithDashVal ('.' IdentifierWithDashVal)*)? ':' IdentifierWithDashVal ('.' IdentifierWithDashVal)*
 // Stemming
 StemmingDefinition ::= stemming ':' IdentifierWithDashVal
 // Rank
@@ -276,11 +273,13 @@ IndexingRewriteState ::= indexing-rewrite ':' none
 // Query Command
 QueryCommandDefinition ::= query-command ':' (IdentifierVal | STRING_REG | WordWrapper)
 // Summary
-SummaryDefinition ::= summary ((':' SummaryBodyOptions) | (IdentifierWithDashVal? (type FieldTypeName)? '{' SummaryBody '}'))
+SummaryDefinition ::= summary IdentifierWithDashVal? (type FieldTypeName)? ((':' SummaryBodyOptions) | ( '{' SummaryBody '}'))
                       { mixin="org.intellij.sdk.language.psi.impl.SdSummaryDefinitionMixin" }
 SummaryBody ::= SummaryBodyOptions* // Does not support zero-or-one occurrences
-SummaryBodyOptions ::= full | dynamic | (source ':' IdentifierVal (',' IdentifierVal)*) |
-                       (to ':' IdentifierVal (',' IdentifierVal)*) | matched-elements-only
+SummaryBodyOptions ::= full | static | dynamic | (source ':' (IdentifierVal ('.' IdentifierVal)?) (',' IdentifierVal ('.' IdentifierVal)?)*) |
+                       (to ':' IdentifierVal (',' IdentifierVal)*) | matched-elements-only | BoldingDefinition
+// Summary To
+SummaryToDefinition ::= summary-to ':' WordWrapper (',' WordWrapper)*
 // Bolding                       
 BoldingDefinition ::= bolding ':' (on | off | true | false)
 // Index
@@ -314,7 +313,7 @@ DictionarySetting ::= hash | btree | cased | uncased
 //---- Util rules -----
 //---------------------
 
-private WordWrapper ::= ID_REG | ID_WITH_DASH_REG | WORD_REG
+private WordWrapper ::= KeywordOrIdentifier | KeywordNotIdentifier | ID_REG | ID_WITH_DASH_REG | WORD_REG
 
 IdentifierVal ::= KeywordOrIdentifier | ID_REG { mixin="org.intellij.sdk.language.psi.impl.SdIdentifierMixin"
                                                  implements=["org.intellij.sdk.language.psi.SdIdentifier"]
@@ -335,8 +334,8 @@ KeywordOrIdentifier ::= schema | search | document | struct | field | type | ind
                         none | full | dynamic | source | to | strict | loose |
                         bolding | on | off | true | false | id | normalizing | stemming | arity | hnsw | dictionary | hash | btree |
                         fieldset | fields | constant | annotation
-                        | attribute | body | header | index | 
-                        reference | summary | set_language
+                        | attribute | body | header | index | static |
+                        reference | summary | set_language | model
 
 // Note- in this form, those keywords can't be use as identifier-with-dash!
 KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features | from-disk | rank-profile | rank-type |
@@ -348,5 +347,5 @@ KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features
                          dense-posting-list-threshold | enable-bm25 | max-links-per-node | neighbors-to-explore-at-insert | 
                          multi-threaded-indexing | create-if-nonexistent | remove-if-zero | raw-as-base64-in-summary |
                          onnx-model | cutoff-factor | cutoff-strategy | on-match | on-rank | on-summary | enable-bit-vectors |
-                         enable-only-bit-vector
+                         enable-only-bit-vector | summary-to | evaluation-point | pre-post-filter-tipping-point
                          
