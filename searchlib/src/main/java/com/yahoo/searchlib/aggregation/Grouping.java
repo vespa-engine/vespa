@@ -162,33 +162,29 @@ public class Grouping extends Identifiable {
     }
 
     /**
-     * <p>Sets the first level to start grouping work. All the necessary work above this group level is expected to be
-     * already done.</p>
+     * Sets the first level to start grouping work. All the necessary work above this group level is expected to be
+     * already done.
      *
-     * @param level The level to set.
-     * @return This, to allow chaining.
+     * @param level the level to set
+     * @return this, to allow chaining
      */
     public Grouping setFirstLevel(int level) {
         firstLevel = level;
         return this;
     }
 
-    /**
-     * <p>Returns the last level to do grouping work. See note on {@link #setLastLevel(int)}.</p>
-     *
-     * @return The last level.
-     */
+    /** Returns the last level to do grouping work. See note on {@link #setLastLevel(int)}. */
     public int getLastLevel() {
         return lastLevel;
     }
 
     /**
-     * <p>Sets the last level to do grouping work. Executing a level will instantiate the {@link Group} objects for the
+     * Sets the last level to do grouping work. Executing a level will instantiate the {@link Group} objects for the
      * next level, if there is any. This means that grouping work ends at this level, but also instantiates the groups
-     * for level (lastLevel + 1).</p>
+     * for level (lastLevel + 1).
      *
-     * @param level The level to set.
-     * @return This, to allow chaining.
+     * @param level the level to set
+     * @return this, to allow chaining
      */
     public Grouping setLastLevel(int level) {
         lastLevel = level;

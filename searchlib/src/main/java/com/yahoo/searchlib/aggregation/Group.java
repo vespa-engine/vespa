@@ -166,8 +166,8 @@ public class Group extends Identifiable {
      * Sets the label to use for this group. This is a {@link ResultNode} so that a group can be labeled with
      * whatever value the classifier expression returns.
      *
-     * @param id The label to set.
-     * @return This, to allow chaining.
+     * @param id the label to set
+     * @return this, to allow chaining
      */
     public Group setId(ResultNode id) {
         this.id = id;
@@ -204,30 +204,24 @@ public class Group extends Identifiable {
         return this;
     }
 
-    /**
-     * <p>Returns the list of child groups to this.</p>
-     *
-     * @return The children.
-     */
+    /** Returns the list of child groups to this. */
     public List<Group> getChildren() {
         return children;
     }
 
     /**
-     * <p>Returns the tag of this group. This value is set per-level in the grouping request, and then becomes assigned
-     * to each group of that level in the grouping result as they are copied from the prototype.</p>
-     *
-     * @return The numerical tag.
+     * Returns the tag of this group. This value is set per-level in the grouping request, and then becomes assigned
+     * to each group of that level in the grouping result as they are copied from the prototype.
      */
     public int getTag() {
         return tag;
     }
 
     /**
-     * <p>Assigns a tag to this group.</p>
+     * Assigns a tag to this group.
      *
-     * @param tag The numerical tag to set.
-     * @return This, to allow chaining.
+     * @param tag the numerical tag to set
+     * @return this, to allow chaining
      */
     public Group setTag(int tag) {
         this.tag = tag;
@@ -235,19 +229,19 @@ public class Group extends Identifiable {
     }
 
     /**
-     * <p>Returns this group's aggregation results.</p>
+     * Returns this group's aggregation results.
      *
-     * @return The aggregation results.
+     * @return the aggregation results
      */
     public List<AggregationResult> getAggregationResults() {
         return aggregationResults;
     }
 
     /**
-     * <p>Adds an aggregation result to this group.</p>
+     * Adds an aggregation result to this group.
      *
-     * @param result The result to add.
-     * @return This, to allow chaining.
+     * @param result the result to add
+     * @return this, to allow chaining
      */
     public Group addAggregationResult(AggregationResult result) {
         aggregationResults.add(result);
@@ -255,13 +249,13 @@ public class Group extends Identifiable {
     }
 
     /**
-     * <p>Adds an order-by expression to this group. If the expression is an AggregationResult, it will be added to the
+     * Adds an order-by expression to this group. If the expression is an AggregationResult, it will be added to the
      * list of this group's AggregationResults, and a reference to that expression is added instead. If the
-     * AggregationResult is already present, a reference to THAT result is created instead.</p>
+     * AggregationResult is already present, a reference to THAT result is created instead.
      *
-     * @param exp The result to add.
-     * @param asc True to sort ascending, false to sort descending.
-     * @return This, to allow chaining.
+     * @param exp the result to add
+     * @param asc true to sort ascending, false to sort descending
+     * @return this, to allow chaining
      */
     public Group addOrderBy(ExpressionNode exp, boolean asc) {
         if (exp instanceof AggregationResult) {
@@ -373,28 +367,16 @@ public class Group extends Identifiable {
 
     @Override
     public boolean equals(Object obj) {
-        if (!super.equals(obj)) {
-            return false;
-        }
+        if (obj == this) return true;
+        if (!super.equals(obj)) return false;
+
         Group rhs = (Group)obj;
-        if (!equals(id, rhs.id)) {
-            return false;
-        }
-        if (rank != rhs.rank) {
-            return false;
-        }
-        if (!aggregationResults.equals(rhs.aggregationResults)) {
-            return false;
-        }
-        if (!orderByIdx.equals(rhs.orderByIdx)) {
-            return false;
-        }
-        if (!orderByExp.equals(rhs.orderByExp)) {
-            return false;
-        }
-        if (!children.equals(rhs.children)) {
-            return false;
-        }
+        if (!equals(id, rhs.id)) return false;
+        if (rank != rhs.rank) return false;
+        if (!aggregationResults.equals(rhs.aggregationResults)) return false;
+        if (!orderByIdx.equals(rhs.orderByIdx)) return false;
+        if (!orderByExp.equals(rhs.orderByExp)) return false;
+        if (!children.equals(rhs.children)) return false;
         return true;
     }
 
@@ -497,4 +479,5 @@ public class Group extends Identifiable {
             return -1;
         }
     }
+
 }
