@@ -20,6 +20,8 @@ import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
@@ -56,8 +58,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     protected double maintain() {
         if (getOtherConfigServersInCluster(configserverConfig).isEmpty()) return 1.0; // Nothing to do
 
-        int attempts = 0;
-        int failures = 0;
+        final AtomicInteger attempts = new AtomicInteger(0);
+        final AtomicInteger failures = new AtomicInteger(0);
 
         try (var fileDownloader = createFileDownloader()) {
             for (var applicationId : applicationRepository.listApplications()) {
@@ -70,24 +72,27 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 log.fine(() -> "Verifying application package file reference " + applicationPackage + " for session " + sessionId);
 
                 if (applicationPackage != null) {
-                    attempts++;
                     if (! fileReferenceExistsOnDisk(downloadDirectory, applicationPackage)) {
                         log.fine(() -> "Downloading missing application package for application " + applicationId + " (session " + sessionId + ")");
 
                         FileReferenceDownload download = new FileReferenceDownload(applicationPackage,
                                                                                    false,
                                                                                    this.getClass().getSimpleName());
-                        if (fileDownloader.getFile(download).isEmpty()) {
-                            failures++;
-                            log.warning("Failed to download application package for application " + applicationId + " (session " + sessionId + ")");
-                            continue;
-                        }
+                        CompletableFuture.supplyAsync(() -> fileDownloader.getFile(download))
+                                         .thenAccept(file -> {
+                                             if (file.isPresent()) {
+                                                 attempts.incrementAndGet();
+                                                 createLocalSessionIfMissing(applicationId, sessionId);
+                                             } else {
+                                                 failures.incrementAndGet();
+                                                 log.warning("Failed to download application package for application " + applicationId + " (session " + sessionId + ")");
+                                             }
+                                         });
                     }
-                    createLocalSessionIfMissing(applicationId, sessionId);
                 }
             }
         }
-        return asSuccessFactor(attempts, failures);
+        return asSuccessFactor(attempts.get(), failures.get());
     }
 
     private FileDownloader createFileDownloader() {
