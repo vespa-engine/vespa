@@ -41,4 +41,11 @@ MonitoredRefCount::waitForZeroRefCount()
     _cv.wait(guard, [this] { return (_refCount == 0u); });
 }
 
+bool
+MonitoredRefCount::has_zero_ref_count()
+{
+    std::unique_lock<std::mutex> guard(_lock);
+    return (_refCount == 0u);
+}
+
 }

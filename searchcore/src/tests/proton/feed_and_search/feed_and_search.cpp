@@ -20,6 +20,8 @@
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <sstream>
 
@@ -58,6 +60,13 @@ using std::ostringstream;
 using vespalib::string;
 
 namespace {
+
+void commit_memory_index_and_wait(MemoryIndex &memory_index)
+{
+    vespalib::Gate gate;
+    memory_index.commit(std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
+}
 
 class Test : public vespalib::TestApp {
     const char *current_state;
@@ -163,8 +172,7 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
 
     doc = buildDocument(doc_builder, doc_id2, word2);
     memory_index.insertDocument(doc_id2, *doc.get());
-    memory_index.commit(std::shared_ptr<vespalib::IDestructorCallback>());
-    indexFieldWriter->sync_all();
+    commit_memory_index_and_wait(memory_index);
 
     testSearch(memory_index, word1, doc_id1);
     testSearch(memory_index, word2, doc_id2);

@@ -21,6 +21,8 @@
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/time.h>
@@ -96,6 +98,12 @@ Document::UP buildDocument(DocBuilder &doc_builder, int id,
     return doc_builder.endDocument();
 }
 
+void push_documents_and_wait(search::memoryindex::DocumentInverter &inverter) {
+    vespalib::Gate gate;
+    inverter.pushDocuments(std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
+}
+
 std::shared_ptr<vespalib::IDestructorCallback> emptyDestructorCallback;
 
 struct IndexManagerTest : public ::testing::Test {
@@ -142,10 +150,11 @@ struct IndexManagerTest : public ::testing::Test {
     Document::UP addDocument(uint32_t docid);
     void resetIndexManager();
     void removeDocument(uint32_t docId, SerialNum serialNum) {
+        vespalib::Gate gate;
         runAsIndex([&]() { _index_manager->removeDocument(docId, serialNum);
-                              _index_manager->commit(serialNum, emptyDestructorCallback);
+                              _index_manager->commit(serialNum, std::make_shared<vespalib::GateCallback>(gate));
                           });
-        _writeService.indexFieldWriter().sync_all();
+        gate.await();
     }
     void removeDocument(uint32_t docId) {
         SerialNum serialNum = ++_serial_num;
@@ -182,10 +191,11 @@ IndexManagerTest::addDocument(uint32_t id)
 {
     Document::UP doc = buildDocument(_builder, id, "foo");
     SerialNum serialNum = ++_serial_num;
+    vespalib::Gate gate;
     runAsIndex([&]() { _index_manager->putDocument(id, *doc, serialNum);
                           _index_manager->commit(serialNum,
-                                                 emptyDestructorCallback); });
-    _writeService.indexFieldWriter().sync_all();
+                                                 std::make_shared<vespalib::GateCallback>(gate)); });
+    gate.await();
     return doc;
 }
 
@@ -407,9 +417,7 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
 
     Document::UP doc = addDocument(docid);
     inverter.invertDocument(docid, *doc);
-    invertThreads->sync_all();
-    inverter.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
-    pushThreads->sync_all();
+    push_documents_and_wait(inverter);
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
 
     /// Must account for both docid 0 being reserved and the extra after.
@@ -426,9 +434,7 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
     inverter.invertDocument(docid + 10, *doc);
     doc = addDocument(docid + 100);
     inverter.invertDocument(docid + 100, *doc);
-    invertThreads->sync_all();
-    inverter.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
-    pushThreads->sync_all();
+    push_documents_and_wait(inverter);
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.
     selector_size = (docid + 100 + 1) * sizeof(Source);

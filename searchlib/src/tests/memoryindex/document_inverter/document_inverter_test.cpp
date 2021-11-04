@@ -8,24 +8,22 @@
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/i_field_index_collection.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
+#include <vespa/searchlib/test/memoryindex/mock_field_index_collection.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
 #include <vespa/vespalib/gtest/gtest.h>
 
-namespace search {
+namespace search::memoryindex {
 
 using document::Document;
 using index::DocBuilder;
+using index::FieldLengthCalculator;
 using index::Schema;
 using index::schema::CollectionType;
 using index::schema::DataType;
 using vespalib::SequencedTaskExecutor;
 using vespalib::ISequencedTaskExecutor;
-
-using namespace index;
-
-namespace memoryindex {
 
 namespace {
 
@@ -91,32 +89,6 @@ makeDoc15(DocBuilder &b)
 
 }
 
-class MockFieldIndexCollection : public IFieldIndexCollection {
-    FieldIndexRemover               &_remover;
-    test::OrderedFieldIndexInserter &_inserter;
-    FieldLengthCalculator           &_calculator;
-
-public:
-    MockFieldIndexCollection(FieldIndexRemover &remover,
-                             test::OrderedFieldIndexInserter &inserter,
-                             FieldLengthCalculator &calculator)
-        : _remover(remover),
-          _inserter(inserter),
-          _calculator(calculator)
-    {
-    }
-
-    FieldIndexRemover &get_remover(uint32_t) override {
-        return _remover;
-    }
-    IOrderedFieldIndexInserter &get_inserter(uint32_t) override {
-        return _inserter;
-    }
-    index::FieldLengthCalculator &get_calculator(uint32_t) override {
-        return _calculator;
-    }
-};
-
 VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
@@ -129,7 +101,7 @@ struct DocumentInverterTest : public ::testing::Test {
     FieldIndexRemover               _remover;
     test::OrderedFieldIndexInserter _inserter;
     FieldLengthCalculator           _calculator;
-    MockFieldIndexCollection        _fic;
+    test::MockFieldIndexCollection  _fic;
     DocumentInverterContext         _inv_context;
     DocumentInverter                _inv;
 
@@ -305,7 +277,6 @@ TEST_F(DocumentInverterTest, require_that_empty_document_can_be_inverted)
               _inserter.toStr());
 }
 
-}
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
