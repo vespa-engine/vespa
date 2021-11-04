@@ -90,6 +90,7 @@ vespa_define_module(
     src/tests/proton/documentdb/documentbucketmover
     src/tests/proton/documentdb/documentdbconfig
     src/tests/proton/documentdb/documentdbconfigscout
+    src/tests/proton/documentdb/executor_threading_service
     src/tests/proton/documentdb/feedhandler
     src/tests/proton/documentdb/feedview
     src/tests/proton/documentdb/fileconfigmanager

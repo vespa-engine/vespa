@@ -493,6 +493,16 @@ hwinfo.cpu.cores int default = 0 restart
 ## Deprecated -> Use documentdb.feeding.concurrency
 feeding.concurrency double default = 0.2 restart
 
+## Whether we should use a shared field writer executor in the document db threading service:
+##
+##   NONE: Don't use a shared executor.
+##   INDEX: Use a shared executor for index field inverter and index field writer.
+##   INDEX_AND_ATTRIBUTE: Use a shared executor for index field inverter, index field writer, and attribute field writer.
+##   DOCUMENT_DB: Use a shared executor for index field inverter, index field writer, and attribute field writer among all document dbs.
+##
+## TODO: Remove this when a shared executor is the default.
+feeding.shared_field_writer_executor enum {NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB} default = NONE restart
+
 ## Adjustment to resource limit when determining if maintenance jobs can run.
 ##
 ## Currently used by 'lid_space_compaction' and 'move_buckets' jobs.
