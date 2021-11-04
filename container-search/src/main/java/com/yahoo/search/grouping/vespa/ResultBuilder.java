@@ -162,14 +162,14 @@ class ResultBuilder {
         }
 
         Group fill(Group group) {
-            for (AggregationResult res : this.group.getAggregationResults()) {
-                int tag = res.getTag();
-                if (res instanceof HitsAggregationResult) {
-                    group.add(newHitList(group.size(), tag, (HitsAggregationResult)res));
+            for (AggregationResult result : this.group.getAggregationResults()) {
+                int tag = result.getTag();
+                if (result instanceof HitsAggregationResult) {
+                    group.add(newHitList(group.size(), tag, (HitsAggregationResult)result));
                 } else {
-                    String label = transform.getLabel(res.getTag());
+                    String label = transform.getLabel(result.getTag());
                     if (label != null) {
-                        group.setField(label, newResult(res, tag));
+                        group.setField(label, newResult(result, tag));
                     }
                 }
             }
@@ -331,13 +331,13 @@ class ResultBuilder {
         }
 
         GroupBuilder getOrCreateGroup(com.yahoo.searchlib.aggregation.Group execGroup) {
-            ResultNode res = execGroup.getId();
-            GroupBuilder ret = childResultGroups.get(res);
+            ResultNode result = execGroup.getId();
+            GroupBuilder ret = childResultGroups.get(result);
             if (ret != null) {
                 ret.merge(execGroup);
             } else {
                 ret = new GroupBuilder(resultId.newChildId(childResultGroups.size()), execGroup, stableChildren);
-                childResultGroups.put(res, ret);
+                childResultGroups.put(result, ret);
                 childGroups.add(ret);
             }
             return ret;
