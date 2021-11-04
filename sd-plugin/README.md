@@ -26,7 +26,7 @@ You should now have a "gen" folder next to the "java" folder, and it contains al
 NOTE- Running those tasks would reset the "gen" folder, and all the previous generated files would be deleted before the
 new ones would be generated.
 
-Now, you can run the gradle task "intellij/runIde", open a project with some sd file and see how the plugin works on it.
+Now, you can run the gradle task "intellij/runIde" (or "./gradlew runIde" in the command line), open a project with some sd file and see how the plugin works on it.
 
 ### Build the Plugin
 In order to build the plugin and create a zip file from it, you should run the command:
