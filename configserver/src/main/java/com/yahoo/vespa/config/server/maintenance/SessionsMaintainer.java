@@ -25,7 +25,6 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
 
     @Override
     protected double maintain() {
-        log.log(Level.FINE, () -> "Running " + SessionsMaintainer.class.getSimpleName());
         applicationRepository.deleteExpiredLocalSessions();
 
         if (hostedVespa) {
