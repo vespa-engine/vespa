@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/memoryindex/i_ordered_field_index_inserter.h>
 #include <sstream>
 

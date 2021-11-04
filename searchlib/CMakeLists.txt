@@ -176,6 +176,7 @@ vespa_define_module(
     src/tests/memoryindex/compact_words_store
     src/tests/memoryindex/datastore
     src/tests/memoryindex/document_inverter
+    src/tests/memoryindex/document_inverter_collection
     src/tests/memoryindex/field_index
     src/tests/memoryindex/field_index_remover
     src/tests/memoryindex/field_inverter

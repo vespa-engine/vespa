@@ -26,6 +26,8 @@ public:
     ~DocumentInverterCollection();
     DocumentInverter& get_active_inverter() noexcept { return *_active_inverter; }
     void switch_active_inverter();
+    uint32_t get_num_inverters() const noexcept { return _num_inverters; }
+    uint32_t get_max_inverters() const noexcept { return _max_inverters; }
 };
 
 }
