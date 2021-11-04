@@ -5,7 +5,9 @@
 #include "match_loop_communicator.h"
 #include "match_thread.h"
 #include "match_tools.h"
+#include "extract_features.h"
 #include <vespa/searchlib/engine/trace.h>
+#include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/data/slime/inserter.h>
@@ -21,6 +23,7 @@ namespace proton::matching {
 using namespace search::fef;
 using search::queryeval::SearchIterator;
 using search::FeatureSet;
+using vespalib::ThreadBundle;
 using vespalib::Issue;
 
 namespace {
@@ -57,12 +60,25 @@ createScheduler(uint32_t numThreads, uint32_t numSearchPartitions, uint32_t numD
     return std::make_unique<TaskDocidRangeScheduler>(numThreads, numSearchPartitions, numDocs);
 }
 
+auto make_reply(const MatchToolsFactory &mtf, ResultProcessor &processor, ThreadBundle &bundle, auto full_result) {
+    if (mtf.has_match_features()) {
+        auto docs = processor.extract_docid_ordering(*full_result);
+        auto reply = processor.makeReply(std::move(std::move(full_result)));
+        if ((docs.size() > 0) && reply->_reply) {
+            reply->_reply->match_features = ExtractFeatures::get_match_features(mtf, docs, bundle);
+        }
+        return reply;
+    } else {
+        return processor.makeReply(std::move(full_result));
+    }
+}
+
 } // namespace proton::matching::<unnamed>
 
 ResultProcessor::Result::UP
 MatchMaster::match(search::engine::Trace & trace,
                    const MatchParams &params,
-                   vespalib::ThreadBundle &threadBundle,
+                   ThreadBundle &threadBundle,
                    const MatchToolsFactory &mtf,
                    ResultProcessor &resultProcessor,
                    uint32_t distributionKey,
@@ -87,7 +103,7 @@ MatchMaster::match(search::engine::Trace & trace,
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
     threadBundle.run(targets);
-    ResultProcessor::Result::UP reply = resultProcessor.makeReply(threadState[0]->extract_result());
+    auto reply = make_reply(mtf, resultProcessor, threadBundle, threadState[0]->extract_result());
     double query_time_s = vespalib::to_s(query_latency_time.elapsed());
     double rerank_time_s = vespalib::to_s(timedCommunicator.elapsed);
     double match_time_s = 0.0;

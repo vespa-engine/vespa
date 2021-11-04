@@ -141,6 +141,12 @@ MatchTools::setup_second_phase()
 }
 
 void
+MatchTools::setup_match_features()
+{
+    setup(_rankSetup.create_match_program());
+}
+
+void
 MatchTools::setup_summary()
 {
     setup(_rankSetup.create_summary_program());
@@ -279,6 +285,12 @@ MatchToolsFactory::createOnSummaryTask() const {
 bool
 MatchToolsFactory::has_first_phase_rank() const {
     return !_rankSetup.getFirstPhaseRank().empty();
+}
+
+bool
+MatchToolsFactory::has_match_features() const
+{
+    return _rankSetup.has_match_features();
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

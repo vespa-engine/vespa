@@ -67,6 +67,7 @@ public:
     void tag_search_as_changed() { _search_has_changed = true; }
     void setup_first_phase();
     void setup_second_phase();
+    void setup_match_features();
     void setup_summary();
     void setup_dump();
 };
@@ -129,6 +130,7 @@ public:
     std::unique_ptr<search::queryeval::IDiversifier> createDiversifier(uint32_t heapSize) const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const;
+    bool has_match_features() const;
     std::unique_ptr<AttributeOperationTask> createOnMatchTask() const;
     std::unique_ptr<AttributeOperationTask> createOnFirstPhaseTask() const;
     std::unique_ptr<AttributeOperationTask> createOnSecondPhaseTask() const;

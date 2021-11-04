@@ -7,6 +7,7 @@ vespa_add_library(searchcore_matching STATIC
     docid_range_scheduler.cpp
     docsum_matcher.cpp
     document_scorer.cpp
+    extract_features.cpp
     fakesearchcontext.cpp
     handlerecorder.cpp
     i_match_loop_communicator.cpp

@@ -5,6 +5,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/searchlib/common/unique_issues.h>
+#include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vector>
@@ -70,6 +71,7 @@ public:
     vespalib::Array<char> groupResult;
     Coverage              coverage;
     std::vector<Hit>      hits;
+    FeatureValues         match_features;
     PropertiesMap         propertiesMap;
 
     SearchRequest::UP     request;
@@ -84,4 +86,3 @@ public:
 };
 
 }
-
