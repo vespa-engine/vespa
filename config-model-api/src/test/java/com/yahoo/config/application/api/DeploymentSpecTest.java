@@ -1181,22 +1181,22 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void instanceEndpointDisallowsApplicationLevelAttributes() {
+    public void instanceEndpointDisallowsRegionAttributeOrInstanceTag() {
         String xmlForm = "<deployment>\n" +
-                         "  <prod>\n" +
-                         "    <region active=\"true\">us-east</region>\n" +
-                         "    <region active=\"true\">us-west</region>\n" +
-                         "  </prod>\n" +
-                         "  <endpoints>\n" +
-                         "    <endpoint id=\"foo\" container-id=\"bar\">\n" +
-                         "      <region %s>us-east</region>\n" +
-                         "    </endpoint>\n" +
-                         "  </endpoints>\n" +
+                         "  <instance id='default'>\n" +
+                         "    <prod>\n" +
+                         "      <region active=\"true\">us-east</region>\n" +
+                         "      <region active=\"true\">us-west</region>\n" +
+                         "    </prod>\n" +
+                         "    <endpoints>\n" +
+                         "      <endpoint id=\"foo\" container-id=\"bar\" %s>\n" +
+                         "        %s\n" +
+                         "      </endpoint>\n" +
+                         "    </endpoints>\n" +
+                         "  </instance>\n" +
                          "</deployment>";
-        assertInvalid(String.format(xmlForm, "instance='foo'"),
-                      "Instance-level endpoint 'foo': element 'region' cannot have 'instance' attribute");
-        assertInvalid(String.format(xmlForm, "weight='1'"),
-                      "Instance-level endpoint 'foo': element 'region' cannot have 'weight' attribute");
+        assertInvalid(String.format(xmlForm, "region='us-east'", "<region>us-east</region>"), "Instance-level endpoint 'foo': invalid 'region' attribute");
+        assertInvalid(String.format(xmlForm, "", "<instance>us-east</instance>"), "Instance-level endpoint 'foo': invalid element 'instance'");
     }
 
     @Test
@@ -1215,18 +1215,17 @@ public class DeploymentSpecTest {
                          "    </prod>\n" +
                          "  </instance>\n" +
                          "  <endpoints>\n" +
-                         "    <endpoint id=\"foo\" container-id=\"qrs\">\n" +
-                         "      <region %s>%s</region>\n" +
+                         "    <endpoint id=\"foo\" container-id=\"qrs\" %s>\n" +
+                         "      <instance %s>%s</instance>\n%s" +
                          "    </endpoint>\n" +
                          "  </endpoints>\n" +
                          "</deployment>\n";
-        assertInvalid(String.format(xmlForm, "", "us-west-1"), "Application-level endpoint 'foo': element 'region' must have 'instance' attribute");
-        assertInvalid(String.format(xmlForm, "instance='beta'", "us-west-1"), "Application-level endpoint 'foo': element 'region' must have 'weight' attribute");
-        assertInvalid(String.format(xmlForm, "instance='foo' weight='1'", "us-west-1"), "Application-level endpoint 'foo': targets undeclared instance 'foo'");
-        assertInvalid(String.format(xmlForm, "instance='beta' weight='foo'", "us-west-1"), "Application-level endpoint 'foo': invalid weight value 'foo'");
-        assertInvalid(String.format(xmlForm, "instance='beta' weight='1'", "eu-north-1"), "Application-level endpoint 'foo': targets undeclared region 'eu-north-1' in instance 'beta'");
-        assertInvalid(String.format(xmlForm, "instance='main' weight='1'", "us-west-1</region><region instance ='beta' weight='1'>us-east-3"),
-                      "Instance 'beta' declares a region different from instance 'main': 'us-east-3'");
+        assertInvalid(String.format(xmlForm, "", "", "", ""), "Missing required attribute 'region' in 'endpoint'");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "", "main", ""), "Missing required attribute 'weight' in 'instance");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "", ""), "Application-level endpoint 'foo': empty 'instance' element");
+        assertInvalid(String.format(xmlForm, "region='invalid'", "weight='1'", "main", ""), "Application-level endpoint 'foo': targets undeclared region 'invalid' in instance 'main'");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='foo'", "main", ""), "Application-level endpoint 'foo': invalid weight value 'foo'");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "main", "<region>us-east-3</region>"), "Application-level endpoint 'foo': invalid element 'region'");
     }
 
     @Test
@@ -1248,12 +1247,12 @@ public class DeploymentSpecTest {
                                                      "    </endpoints>\n" +
                                                      "  </instance>\n" +
                                                      "  <endpoints>\n" +
-                                                     "    <endpoint id=\"foo\" container-id=\"movies\">\n" +
-                                                     "      <region instance=\"beta\" weight=\"2\">us-west-1</region>\n" +
-                                                     "      <region instance=\"main\" weight=\"8\">us-west-1</region>\n" +
+                                                     "    <endpoint id=\"foo\" container-id=\"movies\" region='us-west-1'>\n" +
+                                                     "      <instance weight=\"2\">beta</instance>\n" +
+                                                     "      <instance weight=\"8\">main</instance>\n" +
                                                      "    </endpoint>\n" +
-                                                     "    <endpoint id=\"bar\" container-id=\"music\">\n" +
-                                                     "      <region instance=\"main\" weight=\"10\">us-east-3</region>\n" +
+                                                     "    <endpoint id=\"bar\" container-id=\"music\" region='us-east-3'>\n" +
+                                                     "      <instance weight=\"10\">main</instance>\n" +
                                                      "    </endpoint>\n" +
                                                      "  </endpoints>\n" +
                                                      "</deployment>\n");
@@ -1270,6 +1269,7 @@ public class DeploymentSpecTest {
     }
 
     private static void assertInvalid(String deploymentSpec, String errorMessagePart) {
+        if (errorMessagePart.isEmpty()) throw new IllegalArgumentException("Message part must be non-empty");
         try {
             DeploymentSpec.fromXml(deploymentSpec);
             fail("Expected exception");

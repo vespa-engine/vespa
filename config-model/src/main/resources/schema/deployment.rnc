@@ -113,15 +113,20 @@ Delay = element delay {
 }
 
 EndpointRegion = element region {
-    attribute instance { xsd:string }? &
-    attribute weight { xsd:long }? &
+    text
+}
+
+EndpointInstance = element instance {
+    attribute weight { xsd:long } &
     text
 }
 
 Endpoint = element endpoint {
     attribute id { xsd:string }? &
     attribute container-id { xsd:string } &
-    EndpointRegion*
+    attribute region { xsd:string }? &
+    EndpointRegion* &
+    EndpointInstance*
 }
 
 Endpoints = element endpoints {
