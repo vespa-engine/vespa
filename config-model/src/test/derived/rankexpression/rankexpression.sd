@@ -51,6 +51,9 @@ search rankexpression {
       indexing: attribute
     }
 
+    field t1 type tensor(m{},v[3]) {
+      indexing: attribute
+    }
   }
 
   rank-profile default {
@@ -317,5 +320,30 @@ search rankexpression {
     }
   }
 
-}
+  rank-profile withmf {
+      function myplus() {
+        expression: attribute(foo1)+attribute(foo2)
+      }
+      function mymul() {
+        expression: attribute(t1)*query(fromq)
+      }
+      first-phase {
+        expression: attribute(foo1)
+      }
+      second-phase {
+        expression: attribute(foo2)
+      }
+      match-features: attribute(foo1).out attribute(bar1)
+      match-features { attribute(foo2).out attribute(bar2).out }
+      match-features {
+        attribute(foo3).out attribute(bar3).out }
+      match-features {
+        attribute(foo4)
+        myplus
+        mymul
+        firstPhase
+        secondPhase
+      }
+  }
 
+}
