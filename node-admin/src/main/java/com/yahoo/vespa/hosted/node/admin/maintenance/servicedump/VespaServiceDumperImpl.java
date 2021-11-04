@@ -88,7 +88,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
             handleFailure(context, request, startedAt, "No artifacts requested");
             return;
         }
-        ContainerPath directory = context.containerPathUnderVespaHome("tmp/vespa-service-dump");
+        ContainerPath directory = context.paths().underVespaHome("tmp/vespa-service-dump");
         UnixPath unixPathDirectory = new UnixPath(directory);
         try {
             context.log(log, Level.INFO,
@@ -192,7 +192,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
         @Override
         public int servicePid() {
             if (pid == -1) {
-                ContainerPath findPidBinary = nodeAgentCtx.containerPathUnderVespaHome("libexec/vespa/find-pid");
+                ContainerPath findPidBinary = nodeAgentCtx.paths().underVespaHome("libexec/vespa/find-pid");
                 CommandResult findPidResult = executeCommandInNode(List.of(findPidBinary.pathInContainer(), serviceId()), true);
                 this.pid = Integer.parseInt(findPidResult.getOutput());
             }
@@ -226,7 +226,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
         @Override
         public ContainerPath containerPathUnderVespaHome(String relativePath) {
-            return nodeAgentCtx.containerPathUnderVespaHome(relativePath);
+            return nodeAgentCtx.paths().underVespaHome(relativePath);
         }
 
         @Override public Options options() { return this; }

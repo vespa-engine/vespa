@@ -48,7 +48,7 @@ public class CoredumpHandlerTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final NodeAgentContext context = NodeAgentContextImpl.builder("container-123.domain.tld")
             .fileSystem(fileSystem).build();
-    private final ContainerPath containerCrashPath = context.containerPath("/var/crash");
+    private final ContainerPath containerCrashPath = context.paths().of("/var/crash");
     private final Path doneCoredumpsPath = fileSystem.getPath("/home/docker/dumps");
 
     private final TestTerminal terminal = new TestTerminal();
@@ -64,8 +64,8 @@ public class CoredumpHandlerTest {
 
     @Test
     public void coredump_enqueue_test() throws IOException {
-        ContainerPath crashPath = context.containerPath("/some/crash/path");
-        ContainerPath processingDir = context.containerPath("/some/other/processing");
+        ContainerPath crashPath = context.paths().of("/some/crash/path");
+        ContainerPath processingDir = context.paths().of("/some/other/processing");
 
         Files.createDirectories(crashPath);
         createFileAged(crashPath.resolve("bash.core.431"), Duration.ZERO);
@@ -98,8 +98,8 @@ public class CoredumpHandlerTest {
 
     @Test
     public void enqueue_with_hs_err_files() throws IOException {
-        ContainerPath crashPath = context.containerPath("/some/crash/path");
-        ContainerPath processingDir = context.containerPath("/some/other/processing");
+        ContainerPath crashPath = context.paths().of("/some/crash/path");
+        ContainerPath processingDir = context.paths().of("/some/other/processing");
         Files.createDirectories(crashPath);
 
         createFileAged(crashPath.resolve("java.core.69"), Duration.ofSeconds(515));
@@ -119,7 +119,7 @@ public class CoredumpHandlerTest {
 
     @Test
     public void coredump_to_process_test() throws IOException {
-        ContainerPath processingDir = context.containerPath("/some/other/processing");
+        ContainerPath processingDir = context.paths().of("/some/other/processing");
 
         // Initially there are no core dumps
         Optional<ContainerPath> enqueuedPath = coredumpHandler.enqueueCoredump(containerCrashPath, processingDir);
@@ -164,7 +164,7 @@ public class CoredumpHandlerTest {
                 "}}";
 
 
-        ContainerPath coredumpDirectory = context.containerPath("/var/crash/id-123");
+        ContainerPath coredumpDirectory = context.paths().of("/var/crash/id-123");
         Files.createDirectories(coredumpDirectory.pathOnHost());
         Files.createFile(coredumpDirectory.resolve("dump_core.456"));
         when(coreCollector.collect(eq(context), eq(coredumpDirectory.resolve("dump_core.456"))))
@@ -180,12 +180,12 @@ public class CoredumpHandlerTest {
 
     @Test(expected = IllegalStateException.class)
     public void cant_get_metadata_if_no_core_file() throws IOException {
-        coredumpHandler.getMetadata(context, context.containerPath("/fake/path"), Map::of);
+        coredumpHandler.getMetadata(context, context.paths().of("/fake/path"), Map::of);
     }
 
     @Test(expected = IllegalStateException.class)
     public void fails_to_get_core_file_if_only_compressed() throws IOException {
-        ContainerPath coredumpDirectory = context.containerPath("/path/to/coredump/proccessing/id-123");
+        ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
         Files.createDirectories(coredumpDirectory);
         Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.lz4"));
         coredumpHandler.findCoredumpFileInProcessingDirectory(coredumpDirectory);
@@ -193,7 +193,7 @@ public class CoredumpHandlerTest {
 
     @Test
     public void process_single_coredump_test() throws IOException {
-        ContainerPath coredumpDirectory = context.containerPath("/path/to/coredump/proccessing/id-123");
+        ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
         Files.createDirectories(coredumpDirectory);
         Files.write(coredumpDirectory.resolve("metadata.json"), "metadata".getBytes());
         Files.createFile(coredumpDirectory.resolve("dump_bash.core.431"));

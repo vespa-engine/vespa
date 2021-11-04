@@ -9,8 +9,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
 import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncClient;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
@@ -76,7 +76,7 @@ public class StorageMaintainerTest {
         Path pathToArchiveDir = fileSystem.getPath("/data/vespa/storage/container-archive");
         Files.createDirectories(pathToArchiveDir);
 
-        Path containerStorageRoot = context1.containerPath("/").pathOnHost().getParent();
+        Path containerStorageRoot = context1.paths().of("/").pathOnHost().getParent();
         Set<String> containerStorageRootContentsBeforeArchive = FileFinder.from(containerStorageRoot)
                 .maxDepth(1)
                 .stream()
@@ -115,9 +115,9 @@ public class StorageMaintainerTest {
         NodeAgentContext context = NodeAgentContextImpl.builder(containerName + ".domain.tld")
                 .fileSystem(fileSystem).build();
 
-        ContainerPath containerVespaHome = context.containerPathUnderVespaHome("");
-        Files.createDirectories(context.containerPath("/etc/something"));
-        Files.createFile(context.containerPath("/etc/something/conf"));
+        ContainerPath containerVespaHome = context.paths().underVespaHome("");
+        Files.createDirectories(context.paths().of("/etc/something"));
+        Files.createFile(context.paths().of("/etc/something/conf"));
 
         Files.createDirectories(containerVespaHome.resolve("logs/vespa"));
         Files.createFile(containerVespaHome.resolve("logs/vespa/vespa.log"));
@@ -126,7 +126,7 @@ public class StorageMaintainerTest {
         Files.createDirectories(containerVespaHome.resolve("var/db"));
         Files.createFile(containerVespaHome.resolve("var/db/some-file"));
 
-        ContainerPath containerRoot = context.containerPath("/");
+        ContainerPath containerRoot = context.paths().of("/");
         Set<String> actualContents = FileFinder.files(containerRoot)
                 .stream()
                 .map(fileAttributes -> containerRoot.relativize(fileAttributes.path()).toString())

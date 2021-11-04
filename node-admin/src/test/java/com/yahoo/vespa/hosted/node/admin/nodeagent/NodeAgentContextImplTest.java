@@ -26,54 +26,54 @@ public class NodeAgentContextImplTest {
     public void path_on_host_from_path_in_node_test() {
         assertEquals(
                 "/data/vespa/storage/container-1",
-                context.containerPath("/").pathOnHost().toString());
+                context.paths().of("/").pathOnHost().toString());
 
         assertEquals(
                 "/data/vespa/storage/container-1/dev/null",
-                context.containerPath("/dev/null").pathOnHost().toString());
+                context.paths().of("/dev/null").pathOnHost().toString());
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_in_container_must_be_absolute() {
-        context.containerPath("some/relative/path");
+        context.paths().of("some/relative/path");
     }
 
     @Test
     public void path_in_node_from_path_on_host_test() {
         assertEquals(
                 "/dev/null",
-                context.containerPathFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-1/dev/null")).pathInContainer());
+                context.paths().fromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-1/dev/null")).pathInContainer());
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_on_host_must_be_absolute() {
-        context.containerPathFromPathOnHost(Path.of("some/relative/path"));
+        context.paths().fromPathOnHost(Path.of("some/relative/path"));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_on_host_must_be_inside_container_storage_of_context() {
-        context.containerPathFromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-2/dev/null"));
+        context.paths().fromPathOnHost(fileSystem.getPath("/data/vespa/storage/container-2/dev/null"));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_on_host_must_be_inside_container_storage() {
-        context.containerPathFromPathOnHost(fileSystem.getPath("/home"));
+        context.paths().fromPathOnHost(fileSystem.getPath("/home"));
     }
 
     @Test
     public void path_under_vespa_host_in_container_test() {
         assertEquals(
                 "/opt/vespa",
-                context.containerPathUnderVespaHome("").pathInContainer());
+                context.paths().underVespaHome("").pathInContainer());
 
         assertEquals(
                 "/opt/vespa/logs/vespa/vespa.log",
-                context.containerPathUnderVespaHome("logs/vespa/vespa.log").pathInContainer());
+                context.paths().underVespaHome("logs/vespa/vespa.log").pathInContainer());
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_under_vespa_home_must_be_relative() {
-        context.containerPathUnderVespaHome("/home");
+        context.paths().underVespaHome("/home");
     }
 
     @Test

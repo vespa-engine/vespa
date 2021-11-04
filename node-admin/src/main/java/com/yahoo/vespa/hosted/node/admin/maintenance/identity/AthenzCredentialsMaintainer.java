@@ -109,7 +109,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
         try {
             context.log(logger, Level.FINE, "Checking certificate");
-            ContainerPath containerSiaDirectory = context.containerPath(CONTAINER_SIA_DIRECTORY);
+            ContainerPath containerSiaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY);
             ContainerPath privateKeyFile = (ContainerPath) SiaUtils.getPrivateKeyFile(containerSiaDirectory, context.identity());
             ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
             ContainerPath identityDocumentFile = containerSiaDirectory.resolve("vespa-node-identity-document.json");
@@ -153,14 +153,14 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     }
 
     public void clearCredentials(NodeAgentContext context) {
-        FileFinder.files(context.containerPath(CONTAINER_SIA_DIRECTORY))
+        FileFinder.files(context.paths().of(CONTAINER_SIA_DIRECTORY))
                 .deleteRecursively(context);
         lastRefreshAttempt.remove(context.containerName());
     }
 
     @Override
     public Duration certificateLifetime(NodeAgentContext context) {
-        ContainerPath containerSiaDirectory = context.containerPath(CONTAINER_SIA_DIRECTORY);
+        ContainerPath containerSiaDirectory = context.paths().of(CONTAINER_SIA_DIRECTORY);
         ContainerPath certificateFile = (ContainerPath) SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
         try {
             X509Certificate certificate = readCertificateFromFile(certificateFile);
