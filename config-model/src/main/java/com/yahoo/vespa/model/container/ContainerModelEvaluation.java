@@ -45,10 +45,6 @@ public class ContainerModelEvaluation implements
         cluster.addComponent(ContainerModelEvaluation.getHandler());
     }
 
-    public void prepare(List<ApplicationContainer> containers) {
-        rankProfileList.sendTo(containers);
-    }
-
     @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
         rankProfileList.getConfig(builder);

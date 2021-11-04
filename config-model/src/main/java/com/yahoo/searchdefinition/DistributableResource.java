@@ -4,16 +4,13 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.utils.FileSender;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.Objects;
 
 public class DistributableResource {
 
-    public enum PathType { FILE, URI, BLOB };
+    public enum PathType { FILE, URI, BLOB }
 
     /** The search definition-unique name of this constant */
     private final String name;
@@ -54,11 +51,6 @@ public class DistributableResource {
         Objects.requireNonNull(uri, "uri cannot be null");
         this.path = uri;
         this.pathType = PathType.URI;
-    }
-
-    /** Initiate sending of this constant to some services over file distribution */
-    public void sendTo(Collection<? extends AbstractService> services) {
-        FileSender.send(fileReference, services);
     }
 
     public String getName() { return name; }

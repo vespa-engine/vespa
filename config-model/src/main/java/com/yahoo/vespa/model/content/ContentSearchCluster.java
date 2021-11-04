@@ -73,10 +73,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
 
-    public void prepare() {
-        clusters.values().forEach(cluster -> cluster.prepareToDistributeFiles(getSearchNodes()));
-    }
-
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ContentSearchCluster> {
 
         private final Map<String, NewDocumentType> documentDefinitions;

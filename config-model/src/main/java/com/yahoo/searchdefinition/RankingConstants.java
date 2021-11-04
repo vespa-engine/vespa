@@ -2,9 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.vespa.model.AbstractService;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,10 +73,5 @@ public class RankingConstants {
         var allConstants = new HashMap<>(owner.get().inherited().get().rankingConstants().asMap());
         allConstants.putAll(constants);
         return Collections.unmodifiableMap(allConstants);
-    }
-
-    /** Initiate sending of these constants to some services over file distribution */
-    public void sendTo(Collection<? extends AbstractService> services) {
-        asMap().values().forEach(constant -> constant.sendTo(services));
     }
 }

@@ -114,8 +114,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     protected void doPrepare(DeployState deployState) {
         addAndSendApplicationBundles(deployState);
-        if (modelEvaluation != null)
-            modelEvaluation.prepare(containers);
         sendUserConfiguredFiles(deployState);
     }
 

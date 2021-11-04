@@ -408,10 +408,6 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(clusterId); }
 
-    public void prepare() {
-        search.prepare();
-    }
-
     public DistributionMode getDistributionMode() {
         if (distributionMode != null) return distributionMode;
         return getPersistence().getDefaultDistributionMode();

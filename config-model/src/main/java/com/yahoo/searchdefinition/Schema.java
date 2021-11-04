@@ -219,12 +219,6 @@ public class Schema implements ImmutableSchema {
     @Override
     public OnnxModels onnxModels() { return onnxModels; }
 
-    public void sendTo(Collection<? extends AbstractService> services) {
-        rankingConstants.sendTo(services);
-        largeRankExpressions.sendTo(services);
-        onnxModels.sendTo(services);
-    }
-
     public Optional<TemporaryImportedFields> temporaryImportedFields() {
         return temporaryImportedFields;
     }

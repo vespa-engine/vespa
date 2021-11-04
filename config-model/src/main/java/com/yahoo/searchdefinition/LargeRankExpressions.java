@@ -2,9 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.vespa.model.AbstractService;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,10 +33,5 @@ public class LargeRankExpressions {
     /** Returns a read-only map of the ranking constants in this indexed by name */
     public Map<String, RankExpressionBody> asMap() {
         return Collections.unmodifiableMap(expressions);
-    }
-
-    /** Initiate sending of these constants to some services over file distribution */
-    public void sendTo(Collection<? extends AbstractService> services) {
-        expressions.values().forEach(constant -> constant.sendTo(services));
     }
 }
