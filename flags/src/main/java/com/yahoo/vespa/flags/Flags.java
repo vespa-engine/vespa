@@ -348,9 +348,12 @@ public class Flags {
     public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
             "jdk-version", "11",
             List.of("hmusum"), "2021-10-25", "2021-11-25",
-            "JDK version to use inside containers",
-            "Takes effect on restart of Docker container",
-            APPLICATION_ID);
+            "JDK version to use on host and inside containers. Note application-id dimension only applies for container, " +
+                    "while hostname and node type applies for host.",
+            "Takes effect on restart for Docker container and on next host-admin tick for host",
+            APPLICATION_ID,
+            HOSTNAME,
+            NODE_TYPE);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
