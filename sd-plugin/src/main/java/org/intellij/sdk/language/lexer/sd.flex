@@ -32,12 +32,12 @@ ID_WITH_DASH = [a-zA-Z_][a-zA-Z0-9_-]*
 WHITE_SPACE=[ \t\n\x0B\f\r]+
 
 COMMENT=#.*
-SYMBOL= [|:{}(),.\[\]]
+SYMBOL= [!$|:{}(),.\[\]]
 INTEGER = [0-9]+
 FLOAT = {INTEGER}[.][0-9]+[e]?
 COMPARISON_OPERATOR = [<>]|(==)|(<=)|(>=)|(\~=)
 ARITHMETIC_OPERATOR = [\-+*/]
-STRING = [\"][^\"\n]*[\"]
+STRING = \"([^\"\\]*(\\.[^\"\\]*)*)\"
 WORD = \w+
 
 
@@ -109,17 +109,21 @@ WORD = \w+
   "rank"                     { return RANK; }
   "filter"                   { return FILTER; }
   "normal"                   { return NORMAL; }
+  "literal"                  { return LITERAL; }
   "indexing-rewrite"         { return INDEXING_REWRITE; }
   "none"                     { return NONE; }
   "query-command"            { return QUERY_COMMAND; }
   "full"                     { return FULL; }
-  "dinamic"                  { return DYNAMIC; }
+  "static"                   { return STATIC; }
+  "dynamic"                  { return DYNAMIC; }
   "source"                   { return SOURCE; }
   "to"                       { return TO; }
   "matched-elements-only"    { return MATCHED_ELEMENTS_ONLY; }
 
   "input"                    { return INPUT; }
   "mutable"                  { return MUTABLE; }
+  "enable-bit-vectors"       { return ENABLE_BIT_VECTORS; }
+  "enable-only-bit-vector"   { return ENABLE_ONLY_BIT_VECTOR; }
   "document-summary"         { return DOCUMENT_SUMMARY; }
   "from-disk"                { return FROM_DISK; }
   "omit-summary-features"    { return OMIT_SUMMARY_FEATURES; }
@@ -127,10 +131,12 @@ WORD = \w+
   "as"                       { return AS; }
 
   "rank-profile"             { return RANK_PROFILE; }
+  "model"                    { return MODEL; }
   "match-phase"              { return MATCH_PHASE; }
   "order"                    { return ORDER; }
   "ascending"                { return ASCENDING; }
   "descending"               { return DESCENDING; }
+  "locale"                   { return LOCALE; }
   "max-hits"                 { return MAX_HITS; }
   "diversity"                { return DIVERSITY; }
   "min-groups"               { return MIN_GROUPS; }
@@ -154,6 +160,7 @@ WORD = \w+
   "constants"                { return CONSTANTS; }
   "second-phase"             { return SECOND_PHASE; }
   "rerank-count"             { return RERANK_COUNT; }
+  "rank-features"            { return RANK_FEATURES; }
 
   "weight"                   { return WEIGHT; }
   "index"                    { return INDEX; }
@@ -201,6 +208,10 @@ WORD = \w+
   
   "body"                     { return BODY; }
   "header"                   { return HEADER; }
+  "summary-to"               { return SUMMARY_TO; }
+      
+  "evaluation-point"         { return EVALUATION_POINT; }
+  "pre-post-filter-tipping-point" { return PRE_POST_FILTER_TIPPING_POINT; }
       
   // In here, we check for character sequences which matches regular expressions defined above.
   {ID}                       { return ID_REG; }
