@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
-import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserScope;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -14,8 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath.fromPathInContainer;
-import static com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath.fromPathOnHost;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -28,28 +26,28 @@ import static org.mockito.Mockito.mock;
 class ContainerPathTest {
 
     private final FileSystem baseFs = TestFileSystem.create();
-    private final ContainerFileSystem containerFs = ContainerFileSystem.create(baseFs.getPath("/data/storage/ctr1"), mock(UserNamespace.class), mock(VespaUser.class));
+    private final ContainerFileSystem containerFs = ContainerFileSystem.create(baseFs.getPath("/data/storage/ctr1"), mock(UserScope.class));
 
     @Test
     public void create_new_container_path() {
-        ContainerPath path = fromPathInContainer(containerFs, Path.of("/opt/vespa//logs/./file"));
+        ContainerPath path = fromPathInContainer(Path.of("/opt/vespa//logs/./file"));
         assertPaths(path, "/data/storage/ctr1/opt/vespa/logs/file", "/opt/vespa/logs/file");
 
-        path = fromPathOnHost(containerFs, baseFs.getPath("/data/storage/ctr1/opt/vespa/logs/file"));
+        path = fromPathOnHost(baseFs.getPath("/data/storage/ctr1/opt/vespa/logs/file"));
         assertPaths(path, "/data/storage/ctr1/opt/vespa/logs/file", "/opt/vespa/logs/file");
 
-        path = fromPathOnHost(containerFs, baseFs.getPath("/data/storage/ctr2/..////./ctr1/./opt"));
+        path = fromPathOnHost(baseFs.getPath("/data/storage/ctr2/..////./ctr1/./opt"));
         assertPaths(path, "/data/storage/ctr1/opt", "/opt");
 
-        assertThrows(() -> fromPathInContainer(containerFs, Path.of("relative/path")), "Path in container must be absolute: relative/path");
-        assertThrows(() -> fromPathOnHost(containerFs, baseFs.getPath("relative/path")), "Paths have different roots: /data/storage/ctr1, relative/path");
-        assertThrows(() -> fromPathOnHost(containerFs, baseFs.getPath("/data/storage/ctr2")), "Path /data/storage/ctr2 is not under container root /data/storage/ctr1");
-        assertThrows(() -> fromPathOnHost(containerFs, baseFs.getPath("/data/storage/ctr1/../ctr2")), "Path /data/storage/ctr2 is not under container root /data/storage/ctr1");
+        assertThrows(() -> fromPathInContainer(Path.of("relative/path")), "Path in container must be absolute: relative/path");
+        assertThrows(() -> fromPathOnHost(baseFs.getPath("relative/path")), "Paths have different roots: /data/storage/ctr1, relative/path");
+        assertThrows(() -> fromPathOnHost(baseFs.getPath("/data/storage/ctr2")), "Path /data/storage/ctr2 is not under container root /data/storage/ctr1");
+        assertThrows(() -> fromPathOnHost(baseFs.getPath("/data/storage/ctr1/../ctr2")), "Path /data/storage/ctr2 is not under container root /data/storage/ctr1");
     }
 
     @Test
     public void container_path_operations() {
-        ContainerPath path = fromPathInContainer(containerFs, Path.of("/opt/vespa/logs/file"));
+        ContainerPath path = fromPathInContainer(Path.of("/opt/vespa/logs/file"));
         ContainerPath parent = path.getParent();
         assertPaths(path.getRoot(), "/data/storage/ctr1", "/");
         assertPaths(parent, "/data/storage/ctr1/opt/vespa/logs", "/opt/vespa/logs");
@@ -72,7 +70,7 @@ class ContainerPathTest {
 
     @Test
     public void resolution()  {
-        ContainerPath path = fromPathInContainer(containerFs, Path.of("/opt/vespa/logs"));
+        ContainerPath path = fromPathInContainer(Path.of("/opt/vespa/logs"));
         assertPaths(path.resolve(Path.of("/root")), "/data/storage/ctr1/root", "/root");
         assertPaths(path.resolve(Path.of("relative")), "/data/storage/ctr1/opt/vespa/logs/relative", "/opt/vespa/logs/relative");
         assertPaths(path.resolve(Path.of("/../../../dir2/../../../dir2")), "/data/storage/ctr1/dir2", "/dir2");
@@ -84,7 +82,7 @@ class ContainerPathTest {
 
     @Test
     public void resolves_real_paths() throws IOException {
-        ContainerPath path = fromPathInContainer(containerFs, Path.of("/opt/vespa/logs"));
+        ContainerPath path = fromPathInContainer(Path.of("/opt/vespa/logs"));
         Files.createDirectories(path.pathOnHost().getParent());
 
         Files.createFile(baseFs.getPath("/data/storage/ctr1/opt/vespa/target1"));
@@ -101,6 +99,13 @@ class ContainerPathTest {
         Files.createFile(baseFs.getPath("/data/storage/ctr2"));
         Files.createSymbolicLink(path.pathOnHost(), path.getRoot().pathOnHost().resolveSibling("ctr2"));
         assertThrows(path::toRealPath, "Path /data/storage/ctr2 is not under container root /data/storage/ctr1");
+    }
+
+    private ContainerPath fromPathInContainer(Path pathInContainer) {
+        return ContainerPath.fromPathInContainer(containerFs, pathInContainer, UnixUser.ROOT);
+    }
+    private ContainerPath fromPathOnHost(Path pathOnHost) {
+        return ContainerPath.fromPathOnHost(containerFs, pathOnHost, UnixUser.ROOT);
     }
 
     private static void assertPaths(ContainerPath actual, String expectedPathOnHost, String expectedPathInContainer) {

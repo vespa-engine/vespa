@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/monitored_refcount.h>
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -41,6 +43,7 @@ private:
 
     std::vector<std::unique_ptr<FieldInverter>> _inverters;
     std::vector<std::unique_ptr<UrlFieldInverter>> _urlInverters;
+    vespalib::MonitoredRefCount                    _ref_count;
 
 public:
     /**
@@ -92,6 +95,9 @@ public:
     const std::vector<std::unique_ptr<FieldInverter> > & getInverters() const { return _inverters; }
 
     uint32_t getNumFields() const { return _inverters.size(); }
+    void wait_for_zero_ref_count() { _ref_count.waitForZeroRefCount(); }
+    bool has_zero_ref_count() { return _ref_count.has_zero_ref_count(); }
+    vespalib::MonitoredRefCount& get_ref_count() noexcept { return _ref_count; }
 };
 
 }

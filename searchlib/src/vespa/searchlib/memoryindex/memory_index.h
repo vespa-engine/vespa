@@ -20,7 +20,7 @@ namespace document { class Document; }
 
 namespace search::memoryindex {
 
-class DocumentInverter;
+class DocumentInverterCollection;
 class DocumentInverterContext;
 class FieldIndexCollection;
 
@@ -48,9 +48,7 @@ private:
     ISequencedTaskExecutor &_pushThreads;
     std::unique_ptr<FieldIndexCollection> _fieldIndexes;
     std::unique_ptr<DocumentInverterContext> _inverter_context;
-    std::unique_ptr<DocumentInverter>  _inverter0;
-    std::unique_ptr<DocumentInverter>  _inverter1;
-    DocumentInverter                  *_inverter;
+    std::unique_ptr<DocumentInverterCollection> _inverters;
     bool                _frozen;
     uint32_t            _maxDocId;
     uint32_t            _numDocs;
@@ -78,8 +76,6 @@ private:
             --_numDocs;
         }
     }
-
-    void flipInverter();
 
 public:
     using UP = std::unique_ptr<MemoryIndex>;

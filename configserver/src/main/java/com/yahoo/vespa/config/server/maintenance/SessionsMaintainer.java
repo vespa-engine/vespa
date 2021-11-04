@@ -19,13 +19,12 @@ public class SessionsMaintainer extends ConfigServerMaintainer {
     private final boolean hostedVespa;
 
     SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, FlagSource flagSource) {
-        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval);
+        super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval, true);
         this.hostedVespa = applicationRepository.configserverConfig().hostedVespa();
     }
 
     @Override
     protected double maintain() {
-        log.log(Level.FINE, () -> "Running " + SessionsMaintainer.class.getSimpleName());
         applicationRepository.deleteExpiredLocalSessions();
 
         if (hostedVespa) {

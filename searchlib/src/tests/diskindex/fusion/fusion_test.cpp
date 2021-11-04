@@ -19,6 +19,8 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <gtest/gtest.h>
@@ -75,7 +77,9 @@ namespace {
 void
 myPushDocument(DocumentInverter &inv)
 {
-    inv.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
+    vespalib::Gate gate;
+    inv.pushDocuments(std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
 }
 
 }
@@ -329,9 +333,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
 
     doc = make_doc10(b);
     inv.invertDocument(10, *doc);
-    invertThreads->sync_all();
     myPushDocument(inv);
-    pushThreads->sync_all();
 
     b.startDocument("id:ns:searchdocument::11").
         startIndexField("f3").
@@ -339,9 +341,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         endField();
     doc = b.endDocument();
     inv.invertDocument(11, *doc);
-    invertThreads->sync_all();
     myPushDocument(inv);
-    pushThreads->sync_all();
 
     b.startDocument("id:ns:searchdocument::12").
         startIndexField("f3").
@@ -349,9 +349,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         endField();
     doc = b.endDocument();
     inv.invertDocument(12, *doc);
-    invertThreads->sync_all();
     myPushDocument(inv);
-    pushThreads->sync_all();
 
     IndexBuilder ib(schema);
     vespalib::string dump2dir = prefix + "dump2";
@@ -469,9 +467,7 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
     DocumentInverter inv(inv_context);
 
     inv.invertDocument(10, *make_doc10(b));
-    invertThreads->sync_all();
     myPushDocument(inv);
-    pushThreads->sync_all();
 
     IndexBuilder ib(_schema);
     TuneFileIndexing tuneFileIndexing;
@@ -614,7 +610,7 @@ TEST_F(FusionTest, require_that_fusion_can_be_stopped)
     vespalib::rmdir("stopdump3", true);
     flush_token = std::make_shared<MyFlushToken>(47);
     ASSERT_FALSE(try_merge_simple_indexes("stopdump3", {"stopdump2"}, flush_token));
-    EXPECT_EQ(49, flush_token->get_checks());
+    EXPECT_LT(48, flush_token->get_checks());
     clean_stopped_fusion_testdirs();
 }
 

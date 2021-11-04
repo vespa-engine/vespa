@@ -6,12 +6,15 @@
 #include "field_inverter.h"
 #include "url_field_inverter.h"
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+#include <vespa/vespalib/util/retain_guard.h>
 
 namespace search::memoryindex {
 
 using document::Document;
 using index::Schema;
 using search::index::FieldLengthCalculator;
+using vespalib::ISequencedTaskExecutor;
+using vespalib::RetainGuard;
 
 DocumentInverter::DocumentInverter(DocumentInverterContext& context)
     : _context(context),
@@ -109,19 +112,50 @@ DocumentInverter::removeDocuments(LidVector lids)
     }
 }
 
+namespace {
+
+template <typename Inverter>
+void push_documents_helper(ISequencedTaskExecutor& invert_threads,
+                           ISequencedTaskExecutor& push_threads,
+                           Inverter &inverter,
+                           uint32_t field_id,
+                           std::shared_ptr<vespalib::IDestructorCallback> on_write_done,
+                           std::shared_ptr<RetainGuard> retain)
+{
+    auto invert_id = invert_threads.getExecutorId(field_id);
+    auto push_id = push_threads.getExecutorId(field_id);
+    invert_threads.execute(invert_id,
+                           [&push_threads, push_id, &inverter, retain(std::move(retain)), on_write_done(std::move(on_write_done))] () mutable
+                           {
+                               push_threads.execute(push_id,
+                                                    [&inverter, retain(std::move(retain)), on_write_done(std::move(on_write_done))]()
+                                                    {
+                                                        inverter.applyRemoves();
+                                                        inverter.pushDocuments();
+                                                    });
+                           });
+}
+
+}
+
 void
 DocumentInverter::pushDocuments(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone)
 {
-    uint32_t fieldId = 0;
+    auto retain = std::make_shared<RetainGuard>(_ref_count);
+    auto& schema_index_fields = _context.get_schema_index_fields();
+    auto& invert_threads = _context.get_invert_threads();
     auto& push_threads = _context.get_push_threads();
-    for (auto &inverter : _inverters) {
-        push_threads.execute(fieldId,[inverter(inverter.get()), onWriteDone]() {
-            inverter->applyRemoves();
-            inverter->pushDocuments();
-        });
-        ++fieldId;
+    for (uint32_t field_id : schema_index_fields._textFields) {
+        auto& inverter = *_inverters[field_id];
+        push_documents_helper(invert_threads, push_threads, inverter, field_id, onWriteDone, retain);
+    }
+    uint32_t uri_field_id = 0;
+    for (const auto& uri_field : schema_index_fields._uriFields) {
+        uint32_t field_id = uri_field._all;
+        auto& inverter = *_urlInverters[uri_field_id];
+        push_documents_helper(invert_threads, push_threads, inverter, field_id, onWriteDone, retain);
+        ++uri_field_id;
     }
 }
 
 }
-

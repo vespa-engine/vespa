@@ -14,12 +14,14 @@ ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
                                                uint32_t defaultTaskLimit_,
                                                OptimizeFor optimize_,
                                                uint32_t kindOfWatermark_,
-                                               vespalib::duration reactionTime_)
+                                               vespalib::duration reactionTime_,
+                                               SharedFieldWriterExecutor shared_field_writer_)
     : _indexingThreads(indexingThreads_),
       _defaultTaskLimit(defaultTaskLimit_),
       _optimize(optimize_),
       _kindOfWatermark(kindOfWatermark_),
-      _reactionTime(reactionTime_)
+      _reactionTime(reactionTime_),
+      _shared_field_writer(shared_field_writer_)
 {
 }
 
@@ -60,12 +62,13 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
     return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
                                   selectOptimization(cfg.indexing.optimize),
                                   cfg.indexing.kindOfWatermark,
-                                  vespalib::from_s(cfg.indexing.reactiontime));
+                                  vespalib::from_s(cfg.indexing.reactiontime),
+                                  cfg.feeding.sharedFieldWriterExecutor);
 }
 
 ThreadingServiceConfig
-ThreadingServiceConfig::make(uint32_t indexingThreads) {
-    return ThreadingServiceConfig(indexingThreads, 100, OptimizeFor::LATENCY, 0, 10ms);
+ThreadingServiceConfig::make(uint32_t indexingThreads, SharedFieldWriterExecutor shared_field_writer_) {
+    return ThreadingServiceConfig(indexingThreads, 100, OptimizeFor::LATENCY, 0, 10ms, shared_field_writer_);
 }
 
 void
@@ -81,7 +84,8 @@ ThreadingServiceConfig::operator==(const ThreadingServiceConfig &rhs) const
         _defaultTaskLimit == rhs._defaultTaskLimit &&
         _optimize == rhs._optimize &&
         _kindOfWatermark == rhs._kindOfWatermark &&
-        _reactionTime == rhs._reactionTime;
+        _reactionTime == rhs._reactionTime &&
+        _shared_field_writer == rhs._shared_field_writer;
 }
 
 }

@@ -36,8 +36,9 @@ public class LeanHit implements Comparable<LeanHit> {
     public boolean hasSortData() { return sortData != null; }
     public int getPartId() { return partId; }
     public int getDistributionKey() { return distributionKey; }
-    public FeatureData getMatchFeatures() { return matchFeatures; }
 
+    public FeatureData getMatchFeatures() { return matchFeatures; }
+    public boolean hasMatchFeatures() { return matchFeatures != null; }
     public void addMatchFeatures(Inspector features) {
         matchFeatures = new FeatureData(features);
     }
