@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_inverter.h"
+#include "document_inverter_context.h"
 #include "field_index_collection.h"
 #include "memory_index.h"
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
@@ -57,8 +58,9 @@ MemoryIndex::MemoryIndex(const Schema& schema,
       _invertThreads(invertThreads),
       _pushThreads(pushThreads),
       _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema, inspector)),
-      _inverter0(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
-      _inverter1(std::make_unique<DocumentInverter>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
+      _inverter_context(std::make_unique<DocumentInverterContext>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
+      _inverter0(std::make_unique<DocumentInverter>(*_inverter_context)),
+      _inverter1(std::make_unique<DocumentInverter>(*_inverter_context)),
       _inverter(_inverter0.get()),
       _frozen(false),
       _maxDocId(0), // docId 0 is reserved

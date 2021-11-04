@@ -97,6 +97,7 @@ public class RankProfile implements Cloneable {
     private Set<ReferenceNode> summaryFeatures;
     private String inheritedSummaryFeatures;
 
+    private Set<ReferenceNode> matchFeatures;
     private Set<ReferenceNode> rankFeatures;
 
     /** The properties of this - a multimap */
@@ -518,6 +519,26 @@ public class RankProfile implements Cloneable {
         this.inheritedSummaryFeatures = parentProfile;
     }
 
+    /** Returns a read-only view of the match features to use in this profile. This is never null */
+    public Set<ReferenceNode> getMatchFeatures() {
+        if (matchFeatures != null) return Collections.unmodifiableSet(matchFeatures);
+        if (getInherited() != null) return getInherited().getMatchFeatures();
+        return Set.of();
+    }
+
+    private void addMatchFeature(ReferenceNode feature) {
+        if (matchFeatures == null)
+            matchFeatures = new LinkedHashSet<>();
+        matchFeatures.add(feature);
+    }
+
+    /** Adds the content of the given feature list to the internal list of summary features. */
+    public void addMatchFeatures(FeatureList features) {
+        for (ReferenceNode feature : features) {
+            addMatchFeature(feature);
+        }
+    }
+
     /** Returns a read-only view of the rank features to use in this profile. This is never null */
     public Set<ReferenceNode> getRankFeatures() {
         if (rankFeatures != null) return Collections.unmodifiableSet(rankFeatures);
@@ -817,6 +838,7 @@ public class RankProfile implements Cloneable {
             clone.rankSettings = new LinkedHashSet<>(this.rankSettings);
             clone.matchPhaseSettings = this.matchPhaseSettings; // hmm?
             clone.summaryFeatures = summaryFeatures != null ? new LinkedHashSet<>(this.summaryFeatures) : null;
+            clone.matchFeatures = matchFeatures != null ? new LinkedHashSet<>(this.matchFeatures) : null;
             clone.rankFeatures = rankFeatures != null ? new LinkedHashSet<>(this.rankFeatures) : null;
             clone.rankProperties = new LinkedHashMap<>(this.rankProperties);
             clone.inputFeatures = new LinkedHashMap<>(this.inputFeatures);

@@ -7,6 +7,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -76,6 +77,14 @@ public class Bill {
 
     public ZonedDateTime getEndTime() {
         return endTime;
+    }
+
+    public LocalDate getStartDate() {
+        return startTime.toLocalDate();
+    }
+
+    public LocalDate getEndDate() {
+        return endTime.minusDays(1).toLocalDate();
     }
 
     public BigDecimal sum() {

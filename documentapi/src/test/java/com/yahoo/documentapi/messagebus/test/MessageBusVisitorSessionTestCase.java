@@ -1850,9 +1850,11 @@ public class MessageBusVisitorSessionTestCase {
         assertEquals(0, mc.sender.getMessageCount());
         assertTrue(mc.visitorSession.isDone());
 
-        assertEquals("onDone : FAILURE - 'Got exception of type java.lang.NullPointerException " +
-                "with message 'null' while processing reply in visitor session'\n",
-                mc.controlHandler.toString());
+        var controlHandlerMessage = mc.controlHandler.toString();
+        assertTrue(controlHandlerMessage.startsWith(
+                "onDone : FAILURE - 'Got exception of type java.lang.NullPointerException with message '"));
+        // NPE message between these strings changed with helpful NPEs in JDK 14+, so not tested.
+        assertTrue(controlHandlerMessage.endsWith("' while processing reply in visitor session'\n"));
     }
 
     /**

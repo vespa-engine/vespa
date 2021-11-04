@@ -74,7 +74,7 @@ public class OnnxModelConfigGenerator extends Processor {
             if (feature.getArguments().size() > 0) {
                 if (feature.getArguments().expressions().get(0) instanceof ConstantNode) {
                     ConstantNode node = (ConstantNode) feature.getArguments().expressions().get(0);
-                    String path = OnnxModelTransformer.stripQuotes(node.sourceString());
+                    String path = OnnxModelTransformer.stripQuotes(node.toString());
                     String modelConfigName = OnnxModelTransformer.asValidIdentifier(path);
 
                     // Only add the configuration if the model can actually be found.

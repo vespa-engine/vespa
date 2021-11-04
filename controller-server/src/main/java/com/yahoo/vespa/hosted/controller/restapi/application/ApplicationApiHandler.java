@@ -38,8 +38,6 @@ import com.yahoo.slime.JsonParseException;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -173,7 +171,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
     private final TestConfigSerializer testConfigSerializer;
-    private final ListFlag<String> allowedServiceViewProxy;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
@@ -183,7 +180,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
-        allowedServiceViewProxy = Flags.ALLOWED_SERVICE_VIEW_APIS.bindTo(controller.flagSource());
     }
 
     @Override
@@ -1719,7 +1715,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
 
         String normalizedRestPath = URI.create(restPath).normalize().toString();
-        if (allowedServiceViewProxy.value().stream().noneMatch(normalizedRestPath::startsWith)) {
+        // Only state/v1 is allowed
+        if (! normalizedRestPath.startsWith("state/v1/")) {
             return ErrorResponse.forbidden("Access denied");
         }
 
@@ -2698,7 +2695,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private static String endpointScopeString(Endpoint.Scope scope) {
         switch (scope) {
             case region: return "region";
-            case regionSplit: return "regionSplit";
             case global: return "global";
             case zone: return "zone";
         }

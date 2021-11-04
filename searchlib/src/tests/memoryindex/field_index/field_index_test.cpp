@@ -9,6 +9,7 @@
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
+#include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/ordered_field_index_inserter.h>
@@ -911,6 +912,7 @@ public:
     DocBuilder _b;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
+    DocumentInverterContext _inv_context;
     DocumentInverter _inv;
 
     InverterTest(const Schema& schema)
@@ -919,7 +921,8 @@ public:
           _b(_schema),
           _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
           _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
-          _inv(_schema, *_invertThreads, *_pushThreads, _fic)
+          _inv_context(_schema, *_invertThreads, *_pushThreads, _fic),
+          _inv(_inv_context)
     {
     }
     NormalFieldIndex::PostingList::Iterator find(const vespalib::stringref word, uint32_t field_id) const {
@@ -1470,7 +1473,8 @@ struct RemoverTest : public FieldIndexCollectionTest {
         EXPECT_TRUE(assertPostingList(e3, find("b", 1)));
     }
     void remove(uint32_t docId) {
-        DocumentInverter inv(schema, *_invertThreads, *_pushThreads, fic);
+        DocumentInverterContext inv_context(schema, *_invertThreads, *_pushThreads, fic);
+        DocumentInverter inv(inv_context);
         myremove(docId, inv, *_invertThreads);
         _pushThreads->sync_all();
         EXPECT_FALSE(fic.getFieldIndex(0u)->getDocumentRemover().

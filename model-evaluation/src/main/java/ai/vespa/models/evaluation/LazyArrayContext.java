@@ -293,8 +293,8 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                 ReferenceNode reference = (ReferenceNode) node;
                 if (reference.getArguments().size() > 0) {
                     if (reference.getArguments().expressions().get(0) instanceof ConstantNode) {
-                        ConstantNode constantNode = (ConstantNode) reference.getArguments().expressions().get(0);
-                        return Optional.of(stripQuotes(constantNode.sourceString()));
+                        ExpressionNode constantNode = reference.getArguments().expressions().get(0);
+                        return Optional.of(stripQuotes(constantNode.toString()));
                     }
                     if (reference.getArguments().expressions().get(0) instanceof ReferenceNode) {
                         ReferenceNode referenceNode = (ReferenceNode) reference.getArguments().expressions().get(0);

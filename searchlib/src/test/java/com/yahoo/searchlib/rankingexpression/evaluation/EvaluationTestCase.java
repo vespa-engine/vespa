@@ -14,6 +14,7 @@ import com.yahoo.tensor.Tensor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -24,6 +25,35 @@ import static org.junit.Assert.fail;
 public class EvaluationTestCase {
 
     private final double tolerance = 0.000001;
+
+    private void verifyStringValueToString(String s) {
+        s = '"' + s + '"';
+        Value val = Value.parse(s);
+        assertTrue(val instanceof StringValue);
+        assertEquals(s, val.toString());
+    }
+
+    @Test
+    public void testStringValueToString() {
+        verifyStringValueToString("");
+        verifyStringValueToString("something");
+        verifyStringValueToString("needs \\\" escape");
+
+        verifyStringValueToString("\\\\");
+        verifyStringValueToString("\\\"");
+        verifyStringValueToString("\\f");
+        verifyStringValueToString("\\female");
+        verifyStringValueToString("\\n");
+        verifyStringValueToString("\\nude");
+        verifyStringValueToString("\\r");
+        verifyStringValueToString("fa\\rt");
+        verifyStringValueToString("\\t");
+        verifyStringValueToString("fe\\tish");
+        verifyStringValueToString("\\f");
+        verifyStringValueToString("\\\\hx");
+        verifyStringValueToString("\\\\xx");
+        verifyStringValueToString("\\\\x10081977");
+    }
 
     @Test
     public void testEvaluation() {
@@ -785,7 +815,7 @@ public class EvaluationTestCase {
             try {
                 ExpressionNode e = arguments.expressions().get(index);
                 if (e instanceof ConstantNode) {
-                    return new DoubleValue(new RankingExpression(UnicodeUtilities.unquote(((ConstantNode)e).sourceString())).evaluate(this).asDouble());
+                    return new DoubleValue(new RankingExpression(UnicodeUtilities.unquote(e.toString())).evaluate(this).asDouble());
                 }
                 return e.evaluate(this);
             }

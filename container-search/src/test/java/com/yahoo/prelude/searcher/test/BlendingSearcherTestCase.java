@@ -13,7 +13,6 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.search.federation.FederationConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.federation.StrictContractsConfig;
-import com.yahoo.prelude.IndexFacts;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -21,8 +20,14 @@ import com.yahoo.prelude.searcher.BlendingSearcher;
 import com.yahoo.prelude.searcher.FillSearcher;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.federation.FederationSearcher;
+import com.yahoo.search.grouping.result.Group;
+import com.yahoo.search.grouping.result.RootGroup;
+import com.yahoo.search.grouping.result.StringBucketId;
+import com.yahoo.search.grouping.result.StringId;
+import com.yahoo.search.grouping.result.ValueGroupId;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChain;
 import com.yahoo.search.searchchain.SearchChainRegistry;
@@ -487,6 +492,109 @@ public class BlendingSearcherTestCase {
         //TODO: Do not depend on sources order
         assertEquals("Could not resolve source ref 'nonesuch'. Valid source refs are first, second.",
                      e.getDetailedMessage());
+    }
+
+    @Test
+    public void testBlendingFederationWithGrouping() {
+        DocumentSourceSearcher docSource1 = new DocumentSourceSearcher();
+        DocumentSourceSearcher docSource2 = new DocumentSourceSearcher();
+
+        Query q = new Query("/search?query=test");
+
+        Result r1 = new Result(q);
+        Result r2 = new Result(q);
+
+        RootGroup root1 = new RootGroup(0, null);
+        Group subGroup11 = new Group(new StringBucketId("a", "b"), new Relevance(1.0));
+        subGroup11.add(new Group(new StringId("unique1"), new Relevance(1.0)));
+        subGroup11.add(new Group(new StringId("unique5"), new Relevance(1.0)));
+        subGroup11.add(new Group(new StringId("unique6"), new Relevance(1.0)));
+        subGroup11.add(new Group(new StringId("unique7"), new Relevance(1.0)));
+        root1.add(subGroup11);
+        r1.hits().add(root1);
+        docSource1.addResult(q, r1);
+
+        RootGroup root2 = new RootGroup(0, null);
+        Group subGroup21 = new Group(new StringBucketId("a", "b"), new Relevance(1.0));
+        subGroup21.add(new Group(new StringId("unique1"), new Relevance(1.0)));
+        subGroup21.add(new Group(new StringId("unique2"), new Relevance(1.0)));
+        subGroup21.add(new Group(new StringId("unique3"), new Relevance(1.0)));
+        root2.add(subGroup21);
+        Group subGroup22 = new Group(new StringBucketId("c", "d"), new Relevance(1.0));
+        subGroup22.add(new Group(new StringId("unique3"), new Relevance(1.0)));
+        subGroup22.add(new Group(new StringId("unique4"), new Relevance(1.0)));
+        root2.add(subGroup22);
+        r2.hits().add(root2);
+        docSource2.addResult(q, r2);
+
+        BlendingSearcherWrapper blender = new BlendingSearcherWrapper();
+        blender.addSource(new Chain<>("a", new FillSearcher(), docSource1));
+        blender.addSource(new Chain<>("b", new FillSearcher(), docSource2));
+        blender.initialize();
+        q.setWindow( 0, 10);
+        Result result = new Execution(blender, Execution.Context.createContextStub()).search(q);
+        assertEquals(2, result.hits().size());
+
+        assertTrue(result.hits().get(0) instanceof RootGroup);
+        RootGroup resultRoot1 = (RootGroup)result.hits().get(0);
+        assertEquals(1, resultRoot1.asList().size());
+
+        assertTrue(result.hits().get(1) instanceof RootGroup);
+        RootGroup resultRoot2 = (RootGroup)result.hits().get(1);
+        assertEquals(2, resultRoot2.asList().size());
+    }
+
+    /** Multiple document types in the same cluster are returned without a top level group representing each */
+    @Test
+    public void testBlendingMultipleDocumentTypesWithGrouping() {
+        DocumentSourceSearcher docSource = new DocumentSourceSearcher();
+
+        Query q = new Query("/search?query=test");
+
+        Result r = new Result(q);
+
+        RootGroup root1 = new RootGroup(0, null);
+        Group subGroup11 = new Group(new StringBucketId("a", "b"), new Relevance(1.0));
+        subGroup11.add(new Group(new StringId("unique1"), new Relevance(1.0)));
+        subGroup11.add(new Group(new StringId("unique5"), new Relevance(1.0)));
+        subGroup11.add(new Group(new StringId("unique6"), new Relevance(1.0)));
+        subGroup11.add(new Group(new StringId("unique7"), new Relevance(1.0)));
+        root1.add(subGroup11);
+        r.hits().add(root1);
+
+        RootGroup root2 = new RootGroup(0, null);
+        Group subGroup21 = new Group(new StringBucketId("a", "b"), new Relevance(1.0));
+        subGroup21.add(new Group(new StringId("unique1"), new Relevance(1.0)));
+        subGroup21.add(new Group(new StringId("unique2"), new Relevance(1.0)));
+        subGroup21.add(new Group(new StringId("unique3"), new Relevance(1.0)));
+        root2.add(subGroup21);
+        Group subGroup22 = new Group(new StringBucketId("c", "d"), new Relevance(1.0));
+        subGroup22.add(new Group(new StringId("unique3"), new Relevance(1.0)));
+        subGroup22.add(new Group(new StringId("unique4"), new Relevance(1.0)));
+        root2.add(subGroup22);
+        r.hits().add(root2);
+
+        docSource.addResult(q, r);
+
+        Chain<Searcher> chain = new Chain<>("main",
+                                            new FillSearcher(),
+                                            new BlendingSearcher(ComponentId.fromString("test"), new QrSearchersConfig.Builder().build()),
+                                            docSource);
+        q.setWindow( 0, 10);
+        Result result = new Execution(chain, Execution.Context.createContextStub()).search(q);
+        assertEquals(3, result.hits().size());
+
+        assertTrue(result.hits().get(0) instanceof Group);
+        Group resultSubGroup1 = (Group)result.hits().get(0);
+        assertEquals(4, resultSubGroup1.asList().size());
+
+        assertTrue(result.hits().get(1) instanceof Group);
+        Group resultSubGroup2 = (Group)result.hits().get(1);
+        assertEquals(3, resultSubGroup2.asList().size());
+
+        assertTrue(result.hits().get(2) instanceof Group);
+        Group resultSubGroup3 = (Group)result.hits().get(2);
+        assertEquals(2, resultSubGroup3.asList().size());
     }
 
 }

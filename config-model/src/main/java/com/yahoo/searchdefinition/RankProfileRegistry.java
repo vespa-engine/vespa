@@ -25,7 +25,7 @@ import java.util.Set;
 public class RankProfileRegistry {
 
     private final Map<String, Map<String, RankProfile>> rankProfiles = new LinkedHashMap<>();
-    private final String MAGIC_GLOBAL_RANKPROFILES = "[MAGIC_GLOBAL_RANKPROFILES]";
+    private static final String MAGIC_GLOBAL_RANKPROFILES = "[MAGIC_GLOBAL_RANKPROFILES]";
 
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));

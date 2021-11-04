@@ -45,12 +45,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag FORCE_DISK_ENCRYPTION = defineFeatureFlag(
-            "force-disk-encryption", true,
-            List.of("hakonhall"), "2021-10-01", "2021-11-01",
-            "Enable new conditions for when to encrypt disk.",
-            "Takes effect on next host admin tick.");
-
     public static final UnboundBooleanFlag MAP_USER_NAMESPACE = defineFeatureFlag(
             "map-user-namespace", false,
             List.of("freva"), "2021-10-18", "2021-12-01",
@@ -213,7 +207,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2021-11-01",
+            List.of("vekterli"), "2021-02-19", "2022-02-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -248,30 +242,12 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
-    public static final UnboundIntFlag MAX_ENCRYPTING_HOSTS = defineIntFlag(
-            "max-encrypting-hosts", 0,
-            List.of("mpolden", "hakonhall"), "2021-05-27", "2021-11-01",
-            "The maximum number of hosts allowed to encrypt their disk concurrently",
-            "Takes effect on next run of HostEncrypter, but any currently encrypting hosts will not be cancelled when reducing the limit");
-
-    public static final UnboundListFlag<String> DEFER_APPLICATION_ENCRYPTION = defineListFlag(
-            "defer-application-encryption", List.of(), String.class,
-            List.of("mpolden", "hakonhall"), "2021-06-23", "2021-11-01",
-            "List of applications where encryption of their host should be deferred",
-            "Takes effect on next run of HostEncrypter");
-
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
             List.of("geirst", "vekterli"), "2021-07-16", "2021-12-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundListFlag<String> ALLOWED_SERVICE_VIEW_APIS = defineListFlag(
-            "allowed-service-view-apis", List.of("state/v1/"), String.class,
-            List.of("mortent"), "2021-08-05", "2022-01-01",
-            "Apis allowed to proxy through the service view api",
-            "Takes effect immediately");
 
     public static final UnboundBooleanFlag SEPARATE_TENANT_IAM_ROLES = defineFeatureFlag(
             "separate-tenant-iam-roles", false,
@@ -368,13 +344,6 @@ public class Flags {
             List.of("hmusum"), "2021-10-25", "2021-11-25",
             "JDK version to use inside containers",
             "Takes effect on restart of Docker container",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag LEGACY_ENDPOINT_IN_CERTIFICATE = defineFeatureFlag(
-            "legacy-endpoint-in-certificate", false,
-            List.of("mpolden"), "2021-10-26", "2021-12-01",
-            "Whether to include legacy endpoint names in issued certificates",
-            "Takes effect on deployment through controller",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

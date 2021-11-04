@@ -113,11 +113,13 @@ public abstract class Value {
         else if (value.equals("false"))
             return new BooleanValue(false);
         else if (value.startsWith("\"") || value.startsWith("'"))
-            return new StringValue(UnicodeUtilities.unquote(value));
+            return new StringValue(value);
         else if (value.startsWith("{"))
             return new TensorValue(Tensor.from(value));
-        else
-            return new DoubleValue(Double.parseDouble(value));
+        else if ((value.indexOf('.') == -1) && (value.indexOf('e') == -1) && (value.indexOf('E') == -1))
+            return new LongValue(Long.parseLong(value));
+         else
+             return new DoubleValue(Double.parseDouble(value));
     }
 
     public static Value of(Tensor tensor) {

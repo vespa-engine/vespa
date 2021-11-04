@@ -76,7 +76,7 @@ public class Runner {
                 ? commandLineArgs.getWhenVerboseEnabledPrintMessageForEveryXDocuments()
                 : Integer.MAX_VALUE;
         AtomicInteger numSent = new AtomicInteger(0);
-        SimpleLoggerResultCallback callback = new SimpleLoggerResultCallback(numSent, intervalOfLogging);
+        SimpleLoggerResultCallback callback = new SimpleLoggerResultCallback(numSent, intervalOfLogging, commandLineArgs.getIgnoreConditionNotMet());
 
         FeedClient feedClient = FeedClientFactory.create(commandLineArgs.createSessionParams(formatInputStream.getFormat()== FormatInputStream.Format.JSON),
                                                          callback);

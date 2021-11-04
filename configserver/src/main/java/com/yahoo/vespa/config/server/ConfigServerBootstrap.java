@@ -43,7 +43,7 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
  *
  * Starts RPC server without allowing config requests. If config server has been upgraded to a new version since the
  * last time it was running it will redeploy all applications. If that is done successfully the RPC server will start
- * allowing config requets and the health status code will change from 'initializing' to 'up'. If VIP status mode is
+ * allowing config requests and the health status code will change from 'initializing' to 'up'. If VIP status mode is
  * VIP_STATUS_PROGRAMMATICALLY the config server will be put into rotation (start serving status.html with 200 OK),
  * if the mode is VIP_STATUS_FILE a VIP status file is created or removed by some external program based on the
  * health status code.
@@ -144,10 +144,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             log.log(Level.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
                     + versionState.currentVersion() + ". Redeploying all applications");
             try {
-                if ( ! redeployAllApplications()) {
-                    redeployingApplicationsFailed();
-                    return; // Status will not be set to 'up' since we return here
-                }
+                redeployAllApplications();
                 versionState.saveNewVersion();
                 log.log(Level.INFO, "All applications redeployed successfully");
             } catch (Exception e) {
@@ -204,7 +201,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         if (exitIfRedeployingApplicationsFails == EXIT_JVM) System.exit(1);
     }
 
-    private boolean redeployAllApplications() throws InterruptedException {
+    private void redeployAllApplications() throws InterruptedException {
         Instant end = Instant.now().plus(maxDurationOfRedeployment);
         List<ApplicationId> applicationsToRedeploy = applicationRepository.listApplications();
         Collections.shuffle(applicationsToRedeploy);
@@ -220,12 +217,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             }
         } while ( ! applicationsToRedeploy.isEmpty() && Instant.now().isBefore(end));
 
-        if ( ! applicationsToRedeploy.isEmpty()) {
-            log.log(Level.SEVERE, "Redeploying applications not finished after " + maxDurationOfRedeployment +
-                    ", exiting, applications that failed redeployment: " + applicationsToRedeploy);
-            return false;
-        }
-        return true;
+        if ( ! applicationsToRedeploy.isEmpty())
+            throw new RuntimeException("Redeploying applications not finished after " + maxDurationOfRedeployment +
+                                       ", exiting, applications that failed redeployment: " + applicationsToRedeploy);
     }
 
     // Returns the set of applications that failed to redeploy
@@ -234,7 +228,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                                                                 new DaemonThreadFactory("redeploy-apps-"));
         // Keep track of deployment status per application
         Map<ApplicationId, Future<?>> deployments = new HashMap<>();
-        log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps: " + applicationIds);
+        log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps " + applicationIds + " with " +
+                configserverConfig.numRedeploymentThreads() + " threads");
         applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
             log.log(Level.INFO, () -> "Starting redeployment of " + appId);
             applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
@@ -250,7 +245,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         return failedDeployments;
     }
 
-    private enum DeploymentStatus { inProgress, done, failed};
+    private enum DeploymentStatus { inProgress, done, failed}
 
     private List<ApplicationId> checkDeployments(Map<ApplicationId, Future<?>> deployments) {
         int applicationCount = deployments.size();

@@ -5,8 +5,11 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapTypeContext;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
+import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
+import com.yahoo.searchlib.rankingexpression.rule.NegativeNode;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -80,7 +83,22 @@ public class SimplifierTestCase {
         Simplifier s = new Simplifier();
         TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
         CompositeNode transformed = (CompositeNode)s.transform(new RankingExpression("a + (b + c) / 100000000.0"), c).getRoot();
-        assertEquals("a + (b + c) / 100000000.0", transformed.toString());
+        assertEquals("a + (b + c) / 1.0E8", transformed.toString());
+    }
+
+    @Test
+    public void testOptimizingNegativeConstants() throws ParseException {
+        Simplifier s = new Simplifier();
+        TransformContext c = new TransformContext(Collections.emptyMap(), new MapTypeContext());
+        assertEquals("-3", s.transform(new RankingExpression("-3"), c).toString());
+        assertEquals("-9.0", s.transform(new RankingExpression("-3 + -6"), c).toString());
+        assertEquals("-a", s.transform(new RankingExpression("-a"), c).toString());
+        assertEquals("-\"a\"", s.transform(new RankingExpression("-'a'"), c).toString());
+
+        RankingExpression r = new RankingExpression(new NegativeNode(new ConstantNode(Value.parse("3"))));
+        assertTrue(r.getRoot() instanceof NegativeNode);
+        r = s.transform(r, c);
+        assertTrue(r.getRoot() instanceof ConstantNode);
     }
 
 }

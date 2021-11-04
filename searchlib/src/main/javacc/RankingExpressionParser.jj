@@ -246,18 +246,20 @@ ExpressionNode value() :
     (
       [ <NOT>                                               { not = true; } ]
       [ LOOKAHEAD(2) <SUB>                                  { neg = true; } ]
-      (            value = constantPrimitive()                                |
-                   LOOKAHEAD(2) value = ifExpression()                        |
-                   LOOKAHEAD(4) value = function()                            |
-                   value = feature()                                          |
-                   value = legacyQueryFeature()                               |
-                   ( <LBRACE> value = expression() <RBRACE> { value = new EmbracedNode(value); } ) )
-
+      ( value = constantPrimitive(neg)                             |
+        (
+          LOOKAHEAD(2) value = ifExpression()                        |
+          LOOKAHEAD(4) value = function()                            |
+          value = feature()                                          |
+          value = legacyQueryFeature()                               |
+          ( <LBRACE> value = expression() <RBRACE> { value = new EmbracedNode(value); } )
+        ) { value = neg ? new NegativeNode(value) : value; }
       )
-      [ LOOKAHEAD(2) valueAddress = valueAddress() { value = new TensorFunctionNode(new Slice(TensorFunctionNode.wrap(value), valueAddress)); } ]
+
+    )
+    [ LOOKAHEAD(2) valueAddress = valueAddress() { value = new TensorFunctionNode(new Slice(TensorFunctionNode.wrap(value), valueAddress)); } ]
     {
         value = not ? new NotNode(value) : value;
-        value = neg ? new NegativeNode(value) : value;
         return value;
     }
 }
@@ -841,17 +843,24 @@ List<String> tagCommaLeadingList() :
     { return list; }
 }
 
-ConstantNode constantPrimitive() :
+ExpressionNode constantPrimitive(boolean negate) :
 {
-    String sign = "";
     String value;
+    ExpressionNode node;
 }
 {
-    ( <SUB> { sign = "-";} ) ?
-    ( <INTEGER> { value = token.image; } |
-      <FLOAT> { value = token.image; } |
-      <STRING> { value = token.image; } )
-    { return new ConstantNode(Value.parse(sign + value),sign + value); }
+    ( <SUB> { negate = !negate; } ) ?
+    (
+      ( <INTEGER> { value = token.image; } |
+        <FLOAT> { value = token.image; }
+      ) { node = new ConstantNode(Value.parse(negate ? ("-" + value) : value)); } |
+      <STRING> {
+        value = token.image;
+        node = new ConstantNode(Value.parse(value));
+        if (negate) node = new NegativeNode(node);
+      }
+    )
+    { return node; }
 }
 
 Value primitiveValue() :

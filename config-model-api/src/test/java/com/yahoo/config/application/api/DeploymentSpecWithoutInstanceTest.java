@@ -3,7 +3,6 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
@@ -678,7 +677,7 @@ public class DeploymentSpecWithoutInstanceTest {
                 spec.requireInstance("default").endpoints().stream().map(Endpoint::containerId).collect(Collectors.toList())
         );
 
-        assertEquals(Set.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
+        assertEquals(List.of(RegionName.from("us-east")), spec.requireInstance("default").endpoints().get(0).regions());
     }
 
     @Test

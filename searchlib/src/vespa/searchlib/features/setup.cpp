@@ -124,7 +124,8 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<TermFieldMdBlueprint>());
     registry.addPrototype(std::make_shared<ConstantBlueprint>());
     registry.addPrototype(std::make_shared<GlobalSequenceBlueprint>());
-    registry.addPrototype(std::make_shared<OnnxBlueprint>());
+    registry.addPrototype(std::make_shared<OnnxBlueprint>("onnx"));
+    registry.addPrototype(std::make_shared<OnnxBlueprint>("onnxModel"));
 
     // Ranking Expression
     auto replacers = std::make_unique<ListExpressionReplacer>();

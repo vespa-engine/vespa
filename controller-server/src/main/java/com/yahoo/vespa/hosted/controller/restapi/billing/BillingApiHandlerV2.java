@@ -35,6 +35,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 
 /**
  * @author ogronnesby
@@ -178,7 +179,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private Slime tenantUsage(RestApi.RequestContext requestContext) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
-        var untilAt = untilParameter(requestContext);
+        var untilAt = untilParameter(requestContext).orElseGet(clock::instant);
         var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var slime = new Slime();
@@ -189,7 +190,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     // --------- ACCOUNTANT API ----------
 
     private Slime accountant(RestApi.RequestContext requestContext) {
-        var untilAt = untilParameter(requestContext);
+        var untilAt = untilParameter(requestContext).orElseGet(clock::instant);
         var usagePerTenant = billing.createUncommittedBills(untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var response = new Slime();
@@ -200,7 +201,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
             tenantResponse.setString("tenant", tenant.name().value());
             tenantResponse.setString("plan", billing.getPlan(tenant.name()).value());
             tenantResponse.setString("collection", billing.getCollectionMethod(tenant.name()).name());
-            tenantResponse.setString("lastBill", usage.map(Bill::getStartTime).map(DateTimeFormatter.ISO_DATE::format).orElse(null));
+            tenantResponse.setString("lastBill", usage.map(Bill::getStartDate).map(DateTimeFormatter.ISO_DATE::format).orElse(null));
             tenantResponse.setString("unbilled", usage.map(Bill::sum).map(BigDecimal::toPlainString).orElse("0.00"));
         });
 
@@ -210,7 +211,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private Slime previewBill(RestApi.RequestContext requestContext) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
-        var untilAt = untilParameter(requestContext);
+        var untilAt = untilParameter(requestContext).orElseGet(this::startOfDayTodayUTC);
 
         var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
@@ -229,7 +230,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var tenant = tenants.require(tenantName, CloudTenant.class);
 
         var startAt = LocalDate.parse(getInspectorFieldOrThrow(body, "from")).atStartOfDay(ZoneOffset.UTC);
-        var endAt = LocalDate.parse(getInspectorFieldOrThrow(body, "to")).atStartOfDay(ZoneOffset.UTC);
+        var endAt = LocalDate.parse(getInspectorFieldOrThrow(body, "to")).plusDays(1).atStartOfDay(ZoneOffset.UTC);
 
         var invoiceId = billing.createBillForPeriod(tenant.name(), startAt, endAt, security.principal().getName());
 
@@ -246,23 +247,23 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     private void invoiceSummaryToSlime(Cursor slime, Bill bill) {
         slime.setString("id", bill.id().value());
-        slime.setString("from", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("to", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("from", bill.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("to", bill.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
         slime.setString("total", bill.sum().toString());
         slime.setString("status", bill.status());
     }
 
     private void usageToSlime(Cursor slime, Bill bill) {
-        slime.setString("from", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("to", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("from", bill.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("to", bill.getEndTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
         slime.setString("total", bill.sum().toString());
         toSlime(slime.setArray("items"), bill.lineItems());
     }
 
     private void toSlime(Cursor slime, Bill bill) {
         slime.setString("id", bill.id().value());
-        slime.setString("from", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
-        slime.setString("to", bill.getStartTime().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("from", bill.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
+        slime.setString("to", bill.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE));
         slime.setString("total", bill.sum().toString());
         slime.setString("status", bill.status());
         toSlime(slime.setArray("statusHistory"), bill.statusHistory());
@@ -308,8 +309,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private List<Object[]> toCsv(Bill bill) {
         return List.<Object[]>of(new Object[]{
                 bill.id().value(), bill.tenant().value(),
-                bill.getStartTime().format(DateTimeFormatter.ISO_DATE),
-                bill.getEndTime().format(DateTimeFormatter.ISO_DATE),
+                bill.getStartDate().format(DateTimeFormatter.ISO_DATE),
+                bill.getEndDate().format(DateTimeFormatter.ISO_DATE),
                 bill.sumCpuHours(), bill.sumMemoryHours(), bill.sumDiskHours(),
                 bill.sumCpuCost(), bill.sumMemoryCost(), bill.sumDiskCost(),
                 bill.sumAdditionalCost()
@@ -318,11 +319,14 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     // ---------- END INVOICE RENDERING ----------
 
-    private Instant untilParameter(RestApi.RequestContext ctx) {
+    private Optional<Instant> untilParameter(RestApi.RequestContext ctx) {
         return ctx.queryParameters().getString("until")
                 .map(LocalDate::parse)
-                .map(date -> date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant())
-                .orElseGet(clock::instant);
+                .map(date -> date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant());
+    }
+
+    private Instant startOfDayTodayUTC() {
+        return LocalDate.now(clock.withZone(ZoneOffset.UTC)).atStartOfDay(ZoneOffset.UTC).toInstant();
     }
 
     private static String getInspectorFieldOrThrow(Inspector inspector, String field) {

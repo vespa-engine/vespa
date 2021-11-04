@@ -63,6 +63,11 @@ public class Result {
     public boolean isSuccess() {
         return success;
     }
+    public boolean isSuccessOrConditionNotMet() {
+        return isSuccess() ||
+                details.stream().allMatch(d -> d.getResultType() == Result.ResultType.OPERATION_EXECUTED ||
+                                               d.getResultType() == Result.ResultType.CONDITION_NOT_MET);
+    }
 
     public List<Detail> getDetails() { return details; }
 

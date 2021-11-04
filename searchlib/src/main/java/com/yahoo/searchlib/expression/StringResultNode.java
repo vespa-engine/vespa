@@ -6,6 +6,8 @@ import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
 
+import java.util.Arrays;
+
 /**
  * This result holds a string.
  *
@@ -16,18 +18,20 @@ public class StringResultNode extends SingleResultNode {
 
     // The global class identifier shared with C++.
     public static final int classId = registerClass(0x4000 + 53, StringResultNode.class);
-    private static StringResultNode negativeInfinity = new StringResultNode("");
-    private static PositiveInfinityResultNode positiveInfinity = new PositiveInfinityResultNode();
+    private static final StringResultNode negativeInfinity = new StringResultNode("");
+    private static final PositiveInfinityResultNode positiveInfinity = new PositiveInfinityResultNode();
 
-    // The string value of this node.
-    private String value;
+    private static final byte[] EMPTY_UTF8_ARRAY = new byte[0];
+
+    // The string value of this node, in raw UTF-8 octets.
+    private byte[] utf8Value;
 
     /**
      * Constructs an empty result node. <b>NOTE:</b> This instance is broken until non-optional member data is set.
      */
     public StringResultNode() {
         super();
-        value = "";
+        utf8Value = EMPTY_UTF8_ARRAY;
     }
 
     /**
@@ -40,6 +44,19 @@ public class StringResultNode extends SingleResultNode {
         setValue(value);
     }
 
+    private StringResultNode(byte[] rawUtf8Value) {
+        super();
+        utf8Value = rawUtf8Value;
+    }
+
+    /**
+     * Creates a new StringResultNode backed by an underlying byte array. The input is
+     * presumed to be in valid UTF-8 format, but is _not_ checked for validity.
+     */
+    protected static StringResultNode ofUncheckedUtf8Array(byte[] rawUtf8Value) {
+        return new StringResultNode(rawUtf8Value);
+    }
+
     /**
      * Sets the value of this result.
      *
@@ -50,7 +67,7 @@ public class StringResultNode extends SingleResultNode {
         if (value == null) {
             throw new IllegalArgumentException("Value can not be null.");
         }
-        this.value = value;
+        this.utf8Value = Utf8.toBytes(value);
         return this;
     }
 
@@ -68,13 +85,14 @@ public class StringResultNode extends SingleResultNode {
 
     @Override
     protected void onDeserialize(Deserializer buf) {
-        value = getUtf8(buf);
+        // We expect the UTF-8 we get from the backend to be pre-checked and valid.
+        utf8Value = getRawUtf8Bytes(buf);
     }
 
     @Override
     public long getInteger() {
         try {
-            return Integer.valueOf(value);
+            return Integer.valueOf(getString());
         } catch (java.lang.NumberFormatException e) {
             return 0;
         }
@@ -83,7 +101,7 @@ public class StringResultNode extends SingleResultNode {
     @Override
     public double getFloat() {
         try {
-            return Double.valueOf(value);
+            return Double.valueOf(getString());
         } catch (java.lang.NumberFormatException e) {
             return 0;
         }
@@ -91,50 +109,53 @@ public class StringResultNode extends SingleResultNode {
 
     @Override
     public String getString() {
-        return value;
+        return Utf8.toString(utf8Value);
     }
 
     @Override
     public byte[] getRaw() {
-        return Utf8.toBytes(value);
+        return utf8Value;
     }
 
     @Override
     protected int onCmp(ResultNode rhs) {
         return (rhs instanceof PositiveInfinityResultNode)
                ? -1
-               : value.compareTo(rhs.getString());
+               : internalNonPositiveInfinityCompareTo(rhs);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + value.hashCode();
+        return super.hashCode() + Arrays.hashCode(utf8Value);
     }
 
     @Override
     public void visitMembers(ObjectVisitor visitor) {
         super.visitMembers(visitor);
-        visitor.visit("value", value);
+        visitor.visit("value", getString());
     }
 
+    @Override
     public void add(ResultNode rhs) {
-        value += rhs.getString();
+        setValue(getString() + rhs.getString());
     }
 
+    @Override
     public void min(ResultNode rhs) {
-        if (value.compareTo(rhs.getString()) > 0) {
-            value = rhs.getString();
+        if (internalNonPositiveInfinityCompareTo(rhs) > 0) {
+            set(rhs);
         }
     }
 
+    @Override
     public void max(ResultNode rhs) {
-        if (value.compareTo(rhs.getString()) < 0) {
-            value = rhs.getString();
+        if (internalNonPositiveInfinityCompareTo(rhs) < 0) {
+            set(rhs);
         }
     }
 
     public void append(ResultNode rhs) {
-        value += rhs.getString();
+        setValue(getString() + rhs.getString());
     }
 
     @Override
@@ -144,16 +165,34 @@ public class StringResultNode extends SingleResultNode {
 
     @Override
     public void set(ResultNode rhs) {
-        value = rhs.getString();
+        if (rhs instanceof StringResultNode) {
+            utf8Value = ((StringResultNode) rhs).utf8Value;
+        } else {
+            setValue(rhs.getString());
+        }
     }
 
     @Override
     public void negate() {
-        char a[] = value.toCharArray();
+        char[] a = getString().toCharArray();
         for (int i = 0; i < a.length; i++) {
             a[i] = (char)-a[i];
         }
-        value = new String(a);
+        setValue(new String(a));
+    }
+
+    private int internalNonPositiveInfinityCompareTo(ResultNode rhs) {
+        // Note: this may not necessarily be well-defined _semantically_ unless rhs is
+        // also a StringResultNode. The C++ implementation explicitly expects rhs to be
+        // such an instance, but this depends on a classId check that is _not_ done in
+        // the Java implementation...
+        // We use getString() instead of getRaw() to support implicit stringification
+        // (legacy Java implementation behavior), but it's not given that this is always
+        // the desired outcome.
+        var rhsAsUtf8 = (rhs instanceof StringResultNode)
+                        ? ((StringResultNode)rhs).utf8Value
+                        : Utf8.toBytes(rhs.getString());
+        return Arrays.compareUnsigned(utf8Value, rhsAsUtf8);
     }
 
     /**

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -133,6 +134,7 @@ class ContainerFileSystemTest {
         // Symlinks from ContainerPath to a ContainerPath: Target is resolved within container with base FS provider
         Files.createSymbolicLink(source, ContainerPath.fromPathInContainer(containerFs, Path.of("/path/in/container")));
         assertEquals(fileSystem.getPath("/path/in/container"), Files.readSymbolicLink(source));
+        assertOwnership(source, 0, 0, 10000, 11000);
     }
 
     private static void assertOwnership(ContainerPath path, int contUid, int contGid, int hostUid, int hostGid) throws IOException {
@@ -141,7 +143,7 @@ class ContainerFileSystemTest {
     }
 
     private static void assertOwnership(Path path, int uid, int gid) throws IOException {
-        Map<String, Object> attrs = Files.readAttributes(path, "unix:*");
+        Map<String, Object> attrs = Files.readAttributes(path, "unix:*", LinkOption.NOFOLLOW_LINKS);
         assertEquals(uid, attrs.get("uid"));
         assertEquals(gid, attrs.get("gid"));
     }

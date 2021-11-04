@@ -1,67 +1,36 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_inverter.h"
+#include "document_inverter_context.h"
 #include "i_field_index_collection.h"
 #include "field_inverter.h"
-#include "ordered_field_index_inserter.h"
 #include "url_field_inverter.h"
-#include <vespa/document/annotation/alternatespanlist.h>
-#include <vespa/document/datatype/urldatatype.h>
-#include <vespa/document/repo/fixedtyperepo.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
-#include <vespa/searchlib/util/url.h>
-#include <stdexcept>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".memoryindex.document_inverter");
 
 namespace search::memoryindex {
 
-using document::Field;
-using document::FieldValue;
 using document::Document;
-using document::ArrayFieldValue;
-using document::WeightedSetFieldValue;
-using document::StringFieldValue;
-using document::IntFieldValue;
-using document::StructFieldValue;
-using document::DataType;
-using document::DocumentType;
-using document::AlternateSpanList;
-using document::Span;
-using document::SpanList;
-using document::SimpleSpanList;
-using document::SpanNode;
-using index::DocIdAndPosOccFeatures;
 using index::Schema;
-using search::util::URL;
 using search::index::FieldLengthCalculator;
 
-DocumentInverter::DocumentInverter(const Schema &schema,
-                                   ISequencedTaskExecutor &invertThreads,
-                                   ISequencedTaskExecutor &pushThreads,
-                                   IFieldIndexCollection &fieldIndexes)
-    : _schema(schema),
-      _indexedFieldPaths(),
-      _dataType(nullptr),
-      _schemaIndexFields(),
+DocumentInverter::DocumentInverter(DocumentInverterContext& context)
+    : _context(context),
       _inverters(),
-      _urlInverters(),
-      _invertThreads(invertThreads),
-      _pushThreads(pushThreads)
+      _urlInverters()
 {
-    _schemaIndexFields.setup(schema);
-
-    for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields();
+    auto& schema = context.get_schema();
+    auto& field_indexes = context.get_field_indexes();
+    for (uint32_t fieldId = 0; fieldId < schema.getNumIndexFields();
          ++fieldId) {
-        auto &remover(fieldIndexes.get_remover(fieldId));
-        auto &inserter(fieldIndexes.get_inserter(fieldId));
-        auto &calculator(fieldIndexes.get_calculator(fieldId));
-        _inverters.push_back(std::make_unique<FieldInverter>(_schema, fieldId, remover, inserter, calculator));
+        auto &remover(field_indexes.get_remover(fieldId));
+        auto &inserter(field_indexes.get_inserter(fieldId));
+        auto &calculator(field_indexes.get_calculator(fieldId));
+        _inverters.push_back(std::make_unique<FieldInverter>(schema, fieldId, remover, inserter, calculator));
     }
-    for (auto &urlField : _schemaIndexFields._uriFields) {
+    auto& schema_index_fields = context.get_schema_index_fields();
+    for (auto &urlField : schema_index_fields._uriFields) {
         Schema::CollectionType collectionType =
-            _schema.getIndexField(urlField._all).getCollectionType();
+            schema.getIndexField(urlField._all).getCollectionType();
         _urlInverters.push_back(std::make_unique<UrlFieldInverter>
                                 (collectionType,
                                  _inverters[urlField._all].get(),
@@ -77,75 +46,30 @@ DocumentInverter::DocumentInverter(const Schema &schema,
 
 DocumentInverter::~DocumentInverter()
 {
-    _invertThreads.sync_all();
-    _pushThreads.sync_all();
-}
-
-void
-DocumentInverter::addFieldPath(const document::DocumentType &docType, uint32_t fieldId)
-{
-    assert(fieldId < _indexedFieldPaths.size());
-    std::unique_ptr<FieldPath> fp;
-    if ( ! docType.hasField(_schema.getIndexField(fieldId).getName())) {
-        LOG(error,
-            "Mismatch between documentdefinition and schema. "
-            "No field named '%s' from schema in document type '%s'",
-            _schema.getIndexField(fieldId).getName().c_str(),
-            docType.getName().c_str());
-    } else {
-        fp = std::make_unique<Field>(docType.getField(_schema.getIndexField(fieldId).getName()));
-    }
-    _indexedFieldPaths[fieldId] = std::move(fp);
-}
-
-void
-DocumentInverter::buildFieldPath(const document::DocumentType &docType,
-                                 const document::DataType *dataType)
-{
-    _indexedFieldPaths.clear();
-    _indexedFieldPaths.resize(_schema.getNumIndexFields());
-    for (const auto & fi : _schemaIndexFields._textFields) {
-        addFieldPath(docType, fi);
-    }
-    for (const auto & fi : _schemaIndexFields._uriFields) {
-        addFieldPath(docType, fi._all);
-    }
-    _dataType = dataType;
+    _context.get_invert_threads().sync_all();
+    _context.get_push_threads().sync_all();
 }
 
 void
 DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
 {
     // Might want to batch inverters as we do for attributes
-    const document::DataType *dataType(doc.getDataType());
-    if (_indexedFieldPaths.empty() || _dataType != dataType) {
-        buildFieldPath(doc.getType(), dataType);
-    }
-    for (uint32_t fieldId : _schemaIndexFields._textFields) {
-        const FieldPath *const fieldPath(_indexedFieldPaths[fieldId].get());
-        FieldValue::UP fv;
-        if (fieldPath != nullptr) {
-            // TODO: better handling of input data (and better input data)
-            // FieldValue::UP fv = doc.getNestedFieldValue(fieldPath.begin(), fieldPath.end());
-            fv = doc.getValue(*fieldPath);
-        }
+    _context.set_data_type(doc);
+    auto& schema_index_fields = _context.get_schema_index_fields();
+    auto& invert_threads = _context.get_invert_threads();
+    for (uint32_t fieldId : schema_index_fields._textFields) {
+        auto fv = _context.get_field_value(doc, fieldId);
         FieldInverter *inverter = _inverters[fieldId].get();
-        _invertThreads.execute(fieldId,[inverter, docId, fv(std::move(fv))]() {
+        invert_threads.execute(fieldId,[inverter, docId, fv(std::move(fv))]() {
             inverter->invertField(docId, fv);
         });
     }
     uint32_t urlId = 0;
-    for (const auto & fi : _schemaIndexFields._uriFields) {
+    for (const auto & fi : schema_index_fields._uriFields) {
         uint32_t fieldId = fi._all;
-        const FieldPath *const fieldPath(_indexedFieldPaths[fieldId].get());
-        FieldValue::UP fv;
-        if (fieldPath != nullptr) {
-            // TODO: better handling of input data (and better input data)
-            // FieldValue::UP fv = doc.getNestedFieldValue(fieldPath.begin(), fieldPath.end());
-            fv = doc.getValue(*fieldPath);
-        }
+        auto fv = _context.get_field_value(doc, fieldId);
         UrlFieldInverter *inverter = _urlInverters[urlId].get();
-        _invertThreads.execute(fieldId,[inverter, docId, fv(std::move(fv))]() {
+        invert_threads.execute(fieldId,[inverter, docId, fv(std::move(fv))]() {
             inverter->invertField(docId, fv);
         });
         ++urlId;
@@ -162,19 +86,21 @@ void
 DocumentInverter::removeDocuments(LidVector lids)
 {
     // Might want to batch inverters as we do for attributes
-    for (uint32_t fieldId : _schemaIndexFields._textFields) {
+    auto& schema_index_fields = _context.get_schema_index_fields();
+    auto& invert_threads = _context.get_invert_threads();
+    for (uint32_t fieldId : schema_index_fields._textFields) {
         FieldInverter *inverter = _inverters[fieldId].get();
-        _invertThreads.execute(fieldId, [inverter, lids]() {
+        invert_threads.execute(fieldId, [inverter, lids]() {
             for (uint32_t lid : lids) {
                 inverter->removeDocument(lid);
             }
         });
     }
     uint32_t urlId = 0;
-    for (const auto & fi : _schemaIndexFields._uriFields) {
+    for (const auto & fi : schema_index_fields._uriFields) {
         uint32_t fieldId = fi._all;
         UrlFieldInverter *inverter = _urlInverters[urlId].get();
-        _invertThreads.execute(fieldId, [inverter, lids]() {
+        invert_threads.execute(fieldId, [inverter, lids]() {
             for (uint32_t lid : lids) {
                 inverter->removeDocument(lid);
             }
@@ -187,8 +113,9 @@ void
 DocumentInverter::pushDocuments(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone)
 {
     uint32_t fieldId = 0;
+    auto& push_threads = _context.get_push_threads();
     for (auto &inverter : _inverters) {
-        _pushThreads.execute(fieldId,[inverter(inverter.get()), onWriteDone]() {
+        push_threads.execute(fieldId,[inverter(inverter.get()), onWriteDone]() {
             inverter->applyRemoves();
             inverter->pushDocuments();
         });

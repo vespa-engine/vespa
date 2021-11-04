@@ -37,7 +37,7 @@ public class CGroupV1 implements CGroup {
     @Override
     public Optional<Pair<Integer, Integer>> cpuQuotaPeriod(ContainerId containerId) {
         OptionalInt quota = readCgroupsCpuInt(cfsQuotaPath(containerId));
-        if (quota.isEmpty() || quota.getAsInt() < 0) return Optional.empty();
+        if (quota.isEmpty()) return Optional.empty();
         OptionalInt period = readCgroupsCpuInt(cfsPeriodPath(containerId));
         if (period.isEmpty()) return Optional.empty();
         return Optional.of(new Pair<>(quota.getAsInt(), period.getAsInt()));

@@ -50,6 +50,7 @@ public class SchemaBuilder {
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
     private final DocumentModel model = new DocumentModel();
     private final Application application;
+    private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
     private final FileRegistry fileRegistry;
     private final DeployLogger deployLogger;
@@ -119,7 +120,8 @@ public class SchemaBuilder {
                           RankProfileRegistry rankProfileRegistry,
                           QueryProfileRegistry queryProfileRegistry,
                           boolean documentsOnly) {
-        this.application = new Application(applicationPackage, rankProfileRegistry);
+        this.application = new Application(applicationPackage);
+        this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
         this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
@@ -172,7 +174,7 @@ public class SchemaBuilder {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
             return importRawSchema(new SDParser(stream, fileRegistry, deployLogger, properties, application,
-                                                application.rankProfileRegistry(), documentsOnly)
+                                                rankProfileRegistry, documentsOnly)
                                            .schema(docTypeMgr, searchDefDir));
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
@@ -261,7 +263,7 @@ public class SchemaBuilder {
      * #build()} method so that subclasses can choose not to build anything.
      */
     private void process(Schema schema, QueryProfiles queryProfiles, boolean validate) {
-        new Processing().process(schema, deployLogger, application.rankProfileRegistry(), queryProfiles, validate,
+        new Processing().process(schema, deployLogger, rankProfileRegistry, queryProfiles, validate,
                                  documentsOnly, processorsToSkip);
     }
 
@@ -531,7 +533,7 @@ public class SchemaBuilder {
     }
 
     public RankProfileRegistry getRankProfileRegistry() {
-        return application.rankProfileRegistry();
+        return rankProfileRegistry;
     }
 
     public QueryProfileRegistry getQueryProfileRegistry() {

@@ -43,7 +43,7 @@ public class CGroupV2Test {
         assertEquals(Optional.empty(), cgroup.cpuQuotaPeriod(containerId));
 
         cgroupRoot.resolve("cpu.max").writeUtf8File("max 100000\n");
-        assertEquals(Optional.empty(), cgroup.cpuQuotaPeriod(containerId));
+        assertEquals(Optional.of(new Pair<>(-1, 100000)), cgroup.cpuQuotaPeriod(containerId));
 
         cgroupRoot.resolve("cpu.max").writeUtf8File("456 123456\n");
         assertEquals(Optional.of(new Pair<>(456, 123456)), cgroup.cpuQuotaPeriod(containerId));
@@ -55,7 +55,7 @@ public class CGroupV2Test {
         assertEquals("654 123456", cgroupRoot.resolve("cpu.max").readUtf8File());
 
         assertTrue(cgroup.updateCpuQuotaPeriod(context, containerId, -1, 123456));
-        assertEquals(Optional.empty(), cgroup.cpuQuotaPeriod(containerId));
+        assertEquals(Optional.of(new Pair<>(-1, 123456)), cgroup.cpuQuotaPeriod(containerId));
         assertEquals("max 123456", cgroupRoot.resolve("cpu.max").readUtf8File());
     }
 

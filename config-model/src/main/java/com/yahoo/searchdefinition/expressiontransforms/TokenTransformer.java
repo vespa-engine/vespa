@@ -43,11 +43,11 @@ import static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode.wrap
  */
 public class TokenTransformer extends ExpressionTransformer<RankProfileTransformContext> {
 
-    static private final ConstantNode ZERO = new ConstantNode(new DoubleValue(0.0), "0");
-    static private final ConstantNode ONE  = new ConstantNode(new DoubleValue(1.0), "1");
-    static private final ConstantNode TWO  = new ConstantNode(new DoubleValue(2.0), "2");
-    static private final ConstantNode CLS  = new ConstantNode(new DoubleValue(101), "101");
-    static private final ConstantNode SEP  = new ConstantNode(new DoubleValue(102), "102");
+    static private final ConstantNode ZERO = new ConstantNode(new DoubleValue(0.0));
+    static private final ConstantNode ONE  = new ConstantNode(new DoubleValue(1.0));
+    static private final ConstantNode TWO  = new ConstantNode(new DoubleValue(2.0));
+    static private final ConstantNode CLS  = new ConstantNode(new DoubleValue(101));
+    static private final ConstantNode SEP  = new ConstantNode(new DoubleValue(102));
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {

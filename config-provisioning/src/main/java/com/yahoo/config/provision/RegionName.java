@@ -4,7 +4,7 @@ package com.yahoo.config.provision;
 import java.util.Objects;
 
 /**
- * Represents an applications region, which may be any kind of string or default. This type is defined
+ * Represents an application's region, which may be any kind of string or default. This type is defined
  * in order to provide a type safe API for defining regions.
  *
  * @author Ulf Lilleengen

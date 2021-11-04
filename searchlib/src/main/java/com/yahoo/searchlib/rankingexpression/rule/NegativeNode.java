@@ -30,7 +30,7 @@ public class NegativeNode extends CompositeNode {
 
     @Override
     public List<ExpressionNode> children() {
-        return Collections.singletonList(value);
+        return List.of(value);
     }
 
     @Override

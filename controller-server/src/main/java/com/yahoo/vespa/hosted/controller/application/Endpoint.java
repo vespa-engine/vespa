@@ -32,8 +32,6 @@ public class Endpoint {
     private static final String OATH_DNS_SUFFIX = ".vespa.oath.cloud";
     private static final String PUBLIC_DNS_SUFFIX = ".vespa-app.cloud";
     private static final String PUBLIC_CD_DNS_SUFFIX = ".cd.vespa-app.cloud";
-    private static final String PUBLIC_DNS_LEGACY_SUFFIX = ".public.vespa.oath.cloud";
-    private static final String PUBLIC_CD_LEGACY_DNS_SUFFIX = ".public-cd.vespa.oath.cloud";
 
     private final EndpointId id;
     private final ClusterSpec.Id cluster;
@@ -77,7 +75,7 @@ public class Endpoint {
                        zones,
                        scope,
                        Objects.requireNonNull(system, "system must be non-null"),
-                       port,
+                       Objects.requireNonNull(port, "port must be non-null"),
                        legacy,
                        routingMethod),
              zones, scope, port, legacy, routingMethod);
@@ -142,7 +140,7 @@ public class Endpoint {
 
     /** Returns the upstream ID of given deployment. This *must* match what the routing layer generates */
     public String upstreamIdOf(DeploymentId deployment) {
-        if (scope != Scope.global) throw new IllegalArgumentException("Scope " + scope + " does not have upstream name");
+        if (!scope.multiRegion()) throw new IllegalArgumentException("Scope " + scope + " does not have upstream name");
         if (!routingMethod.isShared()) throw new IllegalArgumentException("Routing method " + routingMethod + " does not have upstream name");
         return upstreamIdOf(cluster.value(), deployment.applicationId(), deployment.zoneId());
     }
@@ -177,7 +175,7 @@ public class Endpoint {
         String portPart = port.isDefault() ? "" : ":" + port.port;
         return URI.create(scheme + "://" +
                           sanitize(namePart(name, separator)) +
-                          systemPart(system, separator, legacy) +
+                          systemPart(system, separator) +
                           sanitize(instancePart(instance, separator)) +
                           sanitize(application.application().value()) +
                           separator +
@@ -206,35 +204,35 @@ public class Endpoint {
     }
 
     private static String scopePart(Scope scope, List<ZoneId> zones, SystemName system, boolean legacy) {
-        String scopeSymbol = scopeSymbol(scope, system, legacy);
-        if (scope == Scope.global) return scopeSymbol;
+        String scopeSymbol = scopeSymbol(scope, system);
+        if (scope.multiRegion()) return scopeSymbol;
 
         ZoneId zone = zones.get(0);
         String region = zone.region().value();
         boolean skipEnvironment = zone.environment().isProduction() && (system.isPublic() || !legacy);
         String environment = skipEnvironment ? "" : "." + zone.environment().value();
-        if (system.isPublic() && !legacy) {
+        if (system.isPublic()) {
             return region + environment + "." + scopeSymbol;
         }
         return region + (scopeSymbol.isEmpty() ? "" : "-" + scopeSymbol) + environment;
     }
 
-    private static String scopeSymbol(Scope scope, SystemName system, boolean legacy) {
-        if (system.isPublic() && !legacy) {
+    private static String scopeSymbol(Scope scope, SystemName system) {
+        if (system.isPublic()) {
             switch (scope) {
                 case zone: return "z";
-                case regionSplit: return "w";
-                case region: return "r";
+                case region: return "w";
                 case global: return "g";
+                case application: return "a";
             }
         }
         switch (scope) {
             case zone: return "";
-            case regionSplit: return "w";
-            case region: return "r";
+            case region: return "w";
             case global: return "global";
+            case application: return "a";
         }
-        throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system + " (legacy: " + legacy + ")");
+        throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system);
     }
 
     private static String instancePart(Optional<InstanceName> instance, String separator) {
@@ -243,34 +241,33 @@ public class Endpoint {
         return instance.get().value() + separator;
     }
 
-    private static String systemPart(SystemName system, String separator, boolean legacy) {
+    private static String systemPart(SystemName system, String separator) {
         if (!system.isCd()) return "";
-        if (system.isPublic() && !legacy) return "";
+        if (system.isPublic()) return "";
         return system.value() + separator;
     }
 
     /** Returns the DNS suffix used for endpoints in given system */
-    public static String dnsSuffix(SystemName system, boolean legacy) {
+    private static String dnsSuffix(SystemName system, boolean legacy) {
         switch (system) {
             case cd:
             case main:
                 if (legacy) return YAHOO_DNS_SUFFIX;
                 return OATH_DNS_SUFFIX;
             case Public:
-                if (legacy) return PUBLIC_DNS_LEGACY_SUFFIX;
+                if (legacy) throw new IllegalArgumentException("No legacy DNS suffix declared for system " + system);
                 return PUBLIC_DNS_SUFFIX;
             case PublicCd:
-                if (legacy) return PUBLIC_CD_LEGACY_DNS_SUFFIX;
+                if (legacy) throw new IllegalArgumentException("No legacy DNS suffix declared for system " + system);
                 return PUBLIC_CD_DNS_SUFFIX;
             default: throw new IllegalArgumentException("No DNS suffix declared for system " + system);
         }
     }
 
     /** Returns the DNS suffix used for internal names (i.e. names not exposed to tenants) in given system */
-    public static String internalDnsSuffix(SystemName system, boolean legacy) {
-        // TODO(mpolden): Stop exposing legacy parameter after legacy endpoints in public are completely removed
-        String suffix = dnsSuffix(system, legacy);
-        if (system.isPublic() && !legacy) {
+    public static String internalDnsSuffix(SystemName system) {
+        String suffix = dnsSuffix(system, false);
+        if (system.isPublic()) {
             // Certificate provider requires special approval for three-level DNS names, e.g. foo.vespa-app.cloud.
             // To avoid this in public we always add an extra level.
             return ".internal" + suffix;
@@ -320,28 +317,40 @@ public class Endpoint {
     /** An endpoint's scope */
     public enum Scope {
 
+        /**
+         * Endpoint points to a multiple instances of an application.
+         *
+         * Traffic is routed across instances according to weights specified in deployment.xml
+         */
+        application,
+
         /** Endpoint points to one or more zones. Traffic is routed to the zone closest to the client */
         global,
-
-        /**
-         * Endpoint points to one more zones in the same geographical region. Traffic is weighted according to
-         * configured weights.
-         */
-        region,
-
-        /** Endpoint points to a single zone */
-        zone,
 
         /**
          * Endpoint points to one more zones in the same geographical region. Traffic is routed equally across zones.
          *
          * This is for internal use only. Endpoints with this scope are not exposed directly to tenants.
          */
-        regionSplit,
+        region,
+
+        /** Endpoint points to a single zone */
+        zone;
+
+        /** Returns whether this scope may span multiple regions */
+        public boolean multiRegion() {
+            // application scope doesn't technically support multiple regions in practice, but we assume it does for the
+            // purposes of building an endpoint name. This allows us to support multiple regions in the future without
+            // needing to change endpoint names.
+            return this == application || this == global;
+        }
+
     }
 
     /** Represents an endpoint's HTTP port */
     public static class Port {
+
+        private static final Port TLS_DEFAULT = new Port(443, true);
 
         private final int port;
         private final boolean tls;
@@ -360,7 +369,7 @@ public class Endpoint {
 
         /** Returns the default HTTPS port */
         public static Port tls() {
-            return new Port(443, true);
+            return TLS_DEFAULT;
         }
 
         /** Returns default port for the given routing method */
@@ -451,19 +460,16 @@ public class Endpoint {
             return target(ClusterSpec.Id.from("*"), zone);
         }
 
-        /** Sets the region target for this, deduced from given zone */
-        public EndpointBuilder targetRegionSplit(ClusterSpec.Id cluster, ZoneId zone) {
-            checkScope();
-            this.cluster = cluster;
-            this.scope = Scope.regionSplit;
-            this.zones = List.of(effectiveZone(zone));
+        /** Sets the application target with given ID, zones and cluster (as defined in deployments.xml) */
+        public EndpointBuilder targetApplication(EndpointId endpointId, ClusterSpec.Id cluster, ZoneId zone) {
+            target(endpointId, cluster, List.of(zone));
+            this.scope = Scope.application;
             return this;
         }
 
-        /** Sets the region target for this by endpointId, deduced from given zone */
-        public EndpointBuilder targetRegion(EndpointId endpointId, ClusterSpec.Id cluster, ZoneId zone) {
+        /** Sets the region target for this, deduced from given zone */
+        public EndpointBuilder targetRegion(ClusterSpec.Id cluster, ZoneId zone) {
             checkScope();
-            this.endpointId = endpointId;
             this.cluster = cluster;
             this.scope = Scope.region;
             this.zones = List.of(effectiveZone(zone));
@@ -495,9 +501,6 @@ public class Endpoint {
             }
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
-            }
-            if (scope == Scope.region && instance.isPresent()) {
-                throw new IllegalArgumentException("Instance cannot be set for scope " + scope);
             }
             return new Endpoint(endpointId, cluster, application, instance, zones, scope, system, port, legacy, routingMethod);
         }

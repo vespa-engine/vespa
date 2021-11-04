@@ -75,14 +75,14 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
+            return ErrorResponse.internalServerError("An unexpected error occurred");
         }
     }
 
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/horizon/v1/config/dashboard/topFolders")) return new JsonInputStreamResponse(client.getTopFolders());
-        if (path.matches("/horizon/v1/config/dashboard/file/{id}")) return new JsonInputStreamResponse(client.getDashboard());
+        if (path.matches("/horizon/v1/config/dashboard/file/{id}")) return getDashboard(path.get("id"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -118,6 +118,15 @@ public class HorizonApiHandler extends LoggingRequestHandler {
             return ErrorResponse.forbidden("Access denied");
         } catch (IOException e) {
             return ErrorResponse.badRequest("Failed to parse request body: " + e.getMessage());
+        }
+    }
+
+    private HttpResponse getDashboard(String id) {
+        try {
+            int dashboardId = Integer.parseInt(id);
+            return new JsonInputStreamResponse(client.getDashboard(dashboardId));
+        } catch (NumberFormatException e) {
+            return ErrorResponse.badRequest("Dashboard ID must be integer, was " + id);
         }
     }
 

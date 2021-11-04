@@ -27,8 +27,8 @@ public class ConstantDereferencerTestCase {
         constants.put("c", Value.parse("3.5"));
         TransformContext context = new TransformContext(constants, new MapTypeContext());
 
-        assertEquals("1.0 + 2.0 + 3.5", c.transform(new RankingExpression("a + b + c"), context).toString());
-        assertEquals("myFunction(1.0,2.0)", c.transform(new RankingExpression("myFunction(a, b)"), context).toString());
+        assertEquals("1.0 + 2 + 3.5", c.transform(new RankingExpression("a + b + c"), context).toString());
+        assertEquals("myFunction(1.0,2)", c.transform(new RankingExpression("myFunction(a, b)"), context).toString());
         assertEquals("tensor(x[2],y[3])((x + y == 1.0))", c.transform(new RankingExpression("tensor(x[2],y[3])(x+y==a)"), context).toString());
 
     }

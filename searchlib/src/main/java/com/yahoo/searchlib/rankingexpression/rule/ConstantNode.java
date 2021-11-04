@@ -16,12 +16,11 @@ import java.util.Deque;
  */
 public final class ConstantNode extends ExpressionNode {
 
-    private final String sourceImage;
-
     private final Value value;
 
     public ConstantNode(Value value) {
-        this(value,null);
+        value.freeze();
+        this.value = value;
     }
 
     /**
@@ -30,22 +29,21 @@ public final class ConstantNode extends ExpressionNode {
      * @param value the value. Ownership of this value is transferred to this.
      * @param sourceImage the source string image producing this value
      */
+    @Deprecated
     public ConstantNode(Value value, String sourceImage) {
-        value.freeze();
-        this.value = value;
-        this.sourceImage = sourceImage;
+        this(value);
     }
 
     public Value getValue() { return value; }
 
     @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return string.append(sourceString());
+        return string.append(value.toString());
     }
 
     /** Returns the string which created this, or the value.toString() if not known */
+    @Deprecated
     public String sourceString() {
-        if (sourceImage != null) return sourceImage;
         return value.toString();
     }
 

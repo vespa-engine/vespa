@@ -103,7 +103,7 @@ public class AbstractComponent implements Component, Deconstructable {
     public AbstractComponent clone() {
         try {
             AbstractComponent clone=(AbstractComponent)super.clone();
-            clone.id=null;
+            clone.id = null;
             return clone;
         }
         catch (CloneNotSupportedException e) {

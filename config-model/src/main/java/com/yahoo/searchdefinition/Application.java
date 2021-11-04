@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.DeployLogger;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,22 +18,14 @@ import java.util.Map;
 public class Application {
 
     private final ApplicationPackage applicationPackage;
-    private final RankProfileRegistry rankProfileRegistry;
     private final Map<String, Schema> schemas = new LinkedHashMap<>();
 
     public Application(ApplicationPackage applicationPackage) {
-        this(applicationPackage, new RankProfileRegistry());
-    }
-
-    // TODO: Almost sure the rank profile registry passed is always new RankProfileRegistry() (apart from in some tests), so remove the parameter
-    public Application(ApplicationPackage applicationPackage, RankProfileRegistry rankProfileRegistry) {
         this.applicationPackage = applicationPackage;
-        this.rankProfileRegistry = rankProfileRegistry;
     }
 
     public ApplicationPackage applicationPackage() { return applicationPackage; }
 
-    public RankProfileRegistry rankProfileRegistry() { return rankProfileRegistry; }
 
     public void add(Schema schema) {
         if (schemas.containsKey(schema.getName()))

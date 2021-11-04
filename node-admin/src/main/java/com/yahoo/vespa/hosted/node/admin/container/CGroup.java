@@ -19,10 +19,21 @@ import static com.yahoo.vespa.hosted.node.admin.container.ContainerStatsCollecto
  */
 public interface CGroup {
 
+    /**
+     * Returns quota and period values used for CPU scheduling. This serves as hard cap on CPU usage by allowing
+     * the CGroup to use up to {@code quota} each {@code period}. If uncapped, quota will be negative.
+     *
+     * @param containerId full container ID.
+     * @return CPU quota and period for the given container. Empty if CGroup for this container is not found.
+     */
     Optional<Pair<Integer, Integer>> cpuQuotaPeriod(ContainerId containerId);
+
+    /** @return number of shares allocated to this CGroup for purposes of CPU time scheduling, empty if CGroup not found */
     OptionalInt cpuShares(ContainerId containerId);
 
+    /** Update CPU quota and period for the given container ID, set quota to -1 value for unlimited */
     boolean updateCpuQuotaPeriod(NodeAgentContext context, ContainerId containerId, int cpuQuotaUs, int periodUs);
+
     boolean updateCpuShares(NodeAgentContext context, ContainerId containerId, int shares);
 
     Map<CpuStatField, Long> cpuStats(ContainerId containerId) throws IOException;

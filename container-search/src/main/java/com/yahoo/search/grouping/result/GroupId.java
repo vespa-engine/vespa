@@ -28,11 +28,7 @@ public abstract class GroupId {
         this.image = image.toString();
     }
 
-    /**
-     * Returns the type name of this group id. This is the second part of the {@link #toString()} value of this.
-     *
-     * @return The type name.
-     */
+    /** Returns the type name of this group id. This is the second part of the {@link #toString()} value of this. */
     public String getTypeName() {
         return type;
     }

@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.evaluation;
 
 import com.yahoo.searchlib.rankingexpression.rule.Function;
-import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
 
 /**
  * A double value result of a ranking expression evaluation.
@@ -120,7 +119,7 @@ public final class DoubleValue extends DoubleCompatibleValue {
             return mutable(function.evaluate(this.value, value.asDouble()));
         }
         catch (UnsupportedOperationException e) {
-            throw unsupported("function " + function.toString(), value);
+            throw unsupported("function " + function, value);
         }
     }
 

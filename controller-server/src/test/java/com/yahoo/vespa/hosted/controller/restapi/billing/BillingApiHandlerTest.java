@@ -122,8 +122,11 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         bills = billingController.getBillsForTenant(tenant);
         assertEquals(1, bills.size());
         Bill bill = bills.get(0);
-        assertEquals(bill.getStartTime().toString(), "2020-04-20T00:00Z[UTC]");
-        assertEquals(bill.getEndTime().toString(), "2020-05-20T00:00Z[UTC]");
+        assertEquals("2020-04-20T00:00Z[UTC]", bill.getStartTime().toString());
+        assertEquals("2020-05-21T00:00Z[UTC]", bill.getEndTime().toString());
+
+        assertEquals("2020-04-20", bill.getStartDate().toString());
+        assertEquals("2020-05-20", bill.getEndDate().toString());
     }
 
     @Test
@@ -223,7 +226,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
 
     static Bill createBill() {
         var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
-        var end = start.plusDays(5);
+        var end = start.toLocalDate().plusDays(6).atStartOfDay(ZoneOffset.UTC);
         var statusHistory = new Bill.StatusHistory(new TreeMap<>(Map.of(start, "OPEN")));
         return new Bill(
                 Bill.Id.of("id-1"),

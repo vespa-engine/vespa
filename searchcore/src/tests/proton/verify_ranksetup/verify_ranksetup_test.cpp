@@ -405,6 +405,13 @@ TEST_F("require that onnx model can be verified", OnnxSetup()) {
     f.rank_expr("query_tensor", "tensor<float>(a[1],b[4]):[[1,2,3,4]]");
     f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
+    f.verify_valid({"onnx(simple)"});
+}
+
+TEST_F("require that onnx model can be verified with old name", OnnxSetup()) {
+    f.rank_expr("query_tensor", "tensor<float>(a[1],b[4]):[[1,2,3,4]]");
+    f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
+    f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
     f.verify_valid({"onnxModel(simple)"});
 }
 
@@ -412,32 +419,32 @@ TEST_F("require that input type mismatch makes onnx model fail verification", On
     f.rank_expr("query_tensor", "tensor<float>(a[1],b[3]):[[1,2,3]]"); // <- 3 vs 4
     f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
-    f.verify_invalid({"onnxModel(simple)"});
+    f.verify_invalid({"onnx(simple)"});
 }
 
 TEST_F("require that onnx model can have inputs and outputs mapped", OnnxSetup()) {
     f.rank_expr("qt", "tensor<float>(a[1],b[4]):[[1,2,3,4]]");
     f.rank_expr("at", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bt", "tensor<float>(a[1],b[1]):[[9]]");
-    f.verify_valid({"onnxModel(mapped).result"});
+    f.verify_valid({"onnx(mapped).result"});
 }
 
 TEST_F("require that fragile model can pass verification", OnnxSetup()) {
     f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
     f.rank_expr("in2", "tensor<float>(a[2]):[3,4]");
-    f.verify_valid({"onnxModel(fragile)"});
+    f.verify_valid({"onnx(fragile)"});
 }
 
 TEST_F("require that broken fragile model fails verification", OnnxSetup()) {
     f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
     f.rank_expr("in2", "tensor<float>(a[3]):[3,4,31515]");
-    f.verify_invalid({"onnxModel(fragile)"});
+    f.verify_invalid({"onnx(fragile)"});
 }
 
 TEST_F("require that broken fragile model without dry-run passes verification", OnnxSetup()) {
     f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
     f.rank_expr("in2", "tensor<float>(a[3]):[3,4,31515]");
-    f.verify_valid({"onnxModel(unfragile)"});
+    f.verify_valid({"onnx(unfragile)"});
 }
 
 //-----------------------------------------------------------------------------
