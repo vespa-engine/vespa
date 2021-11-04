@@ -46,6 +46,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -165,13 +166,16 @@ public class DeploymentContext {
 
     /** Completely deploy the latest change */
     public DeploymentContext deploy() {
-        assertTrue("Application package submitted", application().latestVersion().isPresent());
-        assertFalse("Submission is not already deployed", application().instances().values().stream()
-                                                                       .anyMatch(instance -> instance.deployments().values().stream()
+        Application application = application();
+        assertTrue("Application package submitted", application.latestVersion().isPresent());
+        assertFalse("Submission is not already deployed", application.instances().values().stream()
+                                                                     .anyMatch(instance -> instance.deployments().values().stream()
                                                                                                      .anyMatch(deployment -> deployment.applicationVersion().equals(lastSubmission))));
-        assertEquals(application().latestVersion(), instance().change().application());
-        completeRollout();
-        assertFalse(instance().change().hasTargets());
+        assertEquals(application.latestVersion(), instance().change().application());
+        completeRollout(application.deploymentSpec().instances().size() > 1);
+        for (var instance : application().instances().values()) {
+            assertFalse(instance.change().hasTargets());
+        }
         return this;
     }
 
@@ -304,19 +308,28 @@ public class DeploymentContext {
         return Optional.ofNullable(lastSubmission);
     }
 
-    /** Runs and returns all remaining jobs for the application, at most once, and asserts the current change is rolled out. */
     public DeploymentContext completeRollout() {
+        return completeRollout(false);
+    }
+
+    /** Runs and returns all remaining jobs for the application, at most once, and asserts the current change is rolled out. */
+    public DeploymentContext completeRollout(boolean multiInstance) {
         triggerJobs();
-        Set<JobType> jobs = new HashSet<>();
+        Map<ApplicationId, Set<JobType>> jobsByInstance = new HashMap<>();
         List<Run> activeRuns;
         while ( ! (activeRuns = this.jobs.active(applicationId)).isEmpty())
-            for (Run run : activeRuns)
+            for (Run run : activeRuns) {
+                Set<JobType> jobs = jobsByInstance.computeIfAbsent(run.id().application(), k -> new HashSet<>());
                 if (jobs.add(run.id().type())) {
-                    runJob(run.id().type());
+                    runJob(run.id().type(), run.id().application());
+                    if (multiInstance) {
+                        tester.outstandingChangeDeployer().run();
+                    }
                     triggerJobs();
-                }
-                else
+                } else {
                     throw new AssertionError("Job '" + run.id() + "' was run twice");
+                }
+            }
 
         assertFalse("Change should have no targets, but was " + instance().change(), instance().change().hasTargets());
         return this;
@@ -338,9 +351,14 @@ public class DeploymentContext {
         return runJob(JobType.from(tester.controller().system(), zone).get(), applicationPackage, null);
     }
 
-    /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
+    /** Pulls the ready job trigger, and then runs the whole of the given job in the instance of this, successfully. */
     public DeploymentContext runJob(JobType type) {
-        var job = jobId(type);
+        return runJob(type, instanceId);
+    }
+
+    /** Pulls the ready job trigger, and then runs the whole of job for the given instance, successfully. */
+    public DeploymentContext runJob(JobType type, ApplicationId instance) {
+        var job = new JobId(instance, type);
         triggerJobs();
         doDeploy(job);
         if (job.type().isDeployment()) {

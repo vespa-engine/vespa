@@ -782,10 +782,9 @@ public class DeploymentTriggerTest {
                 .instances("instance1,instance2")
                 .region("us-east-3")
                 .build();
-        var app = tester.newDeploymentContext("tenant1", "application1", "instance1").submit(applicationPackage); // TODO jonmv: support instances in deployment context>
-        var otherInstance = tester.newDeploymentContext("tenant1", "application1", "instance2");
-        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
-        otherInstance.runJob(productionUsEast3);
+        var app = tester.newDeploymentContext("tenant1", "application1", "instance1")
+                        .submit(applicationPackage)
+                        .completeRollout();
         assertEquals(2, app.application().instances().size());
         assertEquals(2, app.application().productionDeployments().values().stream()
                            .mapToInt(Collection::size)
