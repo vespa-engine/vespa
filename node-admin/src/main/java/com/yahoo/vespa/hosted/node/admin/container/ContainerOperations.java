@@ -141,7 +141,7 @@ public class ContainerOperations {
     }
 
     private String executeNodeCtlInContainer(NodeAgentContext context, String program) {
-        String[] command = new String[] {context.containerPathUnderVespaHome("bin/vespa-nodectl").pathInContainer(), program};
+        String[] command = new String[] {context.paths().underVespaHome("bin/vespa-nodectl").pathInContainer(), program};
         return executeCommandInContainerAsRoot(context, command).getOutput();
     }
 

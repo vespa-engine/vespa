@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
-import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserScope;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,10 +45,10 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     private final ContainerFileSystem containerFs;
     private final ContainerUserPrincipalLookupService userPrincipalLookupService;
 
-    ContainerFileSystemProvider(Path containerRootOnHost, UserNamespace userNamespace, VespaUser vespaUser) {
+    ContainerFileSystemProvider(Path containerRootOnHost, UserScope userScope) {
         this.containerFs = new ContainerFileSystem(this, containerRootOnHost);
         this.userPrincipalLookupService = new ContainerUserPrincipalLookupService(
-                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userNamespace, vespaUser);
+                containerRootOnHost.getFileSystem().getUserPrincipalLookupService(), userScope);
     }
 
     public ContainerUserPrincipalLookupService userPrincipalLookupService() {
@@ -87,7 +87,8 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     @Override
     public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
         Path pathOnHost = pathOnHost(dir);
-        return new ContainerDirectoryStream(provider(pathOnHost).newDirectoryStream(pathOnHost, filter));
+        return new ContainerDirectoryStream(provider(pathOnHost).newDirectoryStream(pathOnHost, filter),
+                toContainerPath(dir).user());
     }
 
     @Override
@@ -233,15 +234,17 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     }
 
     private void fixOwnerToContainerRoot(ContainerPath path) throws IOException {
-        setAttribute(path, "unix:uid", 0, LinkOption.NOFOLLOW_LINKS);
-        setAttribute(path, "unix:gid", 0, LinkOption.NOFOLLOW_LINKS);
+        setAttribute(path, "unix:uid", path.user().uid(), LinkOption.NOFOLLOW_LINKS);
+        setAttribute(path, "unix:gid", path.user().gid(), LinkOption.NOFOLLOW_LINKS);
     }
 
     private class ContainerDirectoryStream implements DirectoryStream<Path> {
         private final DirectoryStream<Path> hostDirectoryStream;
+        private final UnixUser user;
 
-        private ContainerDirectoryStream(DirectoryStream<Path> hostDirectoryStream) {
+        private ContainerDirectoryStream(DirectoryStream<Path> hostDirectoryStream, UnixUser user) {
             this.hostDirectoryStream = hostDirectoryStream;
+            this.user = user;
         }
 
         @Override
@@ -256,7 +259,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
                 @Override
                 public Path next() {
                     Path pathOnHost = hostPathIterator.next();
-                    return ContainerPath.fromPathOnHost(containerFs, pathOnHost);
+                    return ContainerPath.fromPathOnHost(containerFs, pathOnHost, user);
                 }
             };
         }

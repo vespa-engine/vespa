@@ -48,7 +48,7 @@ abstract class AbstractProducer implements ArtifactProducer {
     }
 
     protected int findVespaServicePid(NodeAgentContext ctx, String configId) throws IOException {
-        ContainerPath findPidBinary = ctx.containerPathUnderVespaHome("libexec/vespa/find-pid");
+        ContainerPath findPidBinary = ctx.paths().underVespaHome("libexec/vespa/find-pid");
         CommandResult findPidResult = executeCommand(ctx, List.of(findPidBinary.pathInContainer(), configId), true);
         return Integer.parseInt(findPidResult.getOutput());
     }
