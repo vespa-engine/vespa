@@ -75,7 +75,7 @@ public class HorizonApiHandler extends LoggingRequestHandler {
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
+            return ErrorResponse.internalServerError("An unexpected error occurred");
         }
     }
 
