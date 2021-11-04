@@ -6,13 +6,13 @@
 
 namespace search::memoryindex {
 
-DocumentInverterCollection::DocumentInverterCollection(DocumentInverterContext& context)
+DocumentInverterCollection::DocumentInverterCollection(DocumentInverterContext& context, uint32_t max_inverters)
     : _context(context),
       _free_inverters(),
       _inflight_inverters(),
       _active_inverter(std::make_unique<DocumentInverter>(_context)),
       _num_inverters(1),
-      _max_inverters(4)
+      _max_inverters(max_inverters)
 {
 }
 

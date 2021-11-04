@@ -22,7 +22,7 @@ class DocumentInverterCollection {
     uint32_t                                       _num_inverters;
     uint32_t                                       _max_inverters;
 public:
-    DocumentInverterCollection(DocumentInverterContext& context);
+    DocumentInverterCollection(DocumentInverterContext& context, uint32_t max_inverters);
     ~DocumentInverterCollection();
     DocumentInverter& get_active_inverter() noexcept { return *_active_inverter; }
     void switch_active_inverter();

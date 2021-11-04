@@ -60,7 +60,7 @@ MemoryIndex::MemoryIndex(const Schema& schema,
       _pushThreads(pushThreads),
       _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema, inspector)),
       _inverter_context(std::make_unique<DocumentInverterContext>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
-      _inverters(std::make_unique<DocumentInverterCollection>(*_inverter_context)),
+      _inverters(std::make_unique<DocumentInverterCollection>(*_inverter_context, 4)),
       _frozen(false),
       _maxDocId(0), // docId 0 is reserved
       _numDocs(0),
