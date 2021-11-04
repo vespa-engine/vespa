@@ -205,6 +205,8 @@ WORD = \w+
   "inline"                   { return INLINE; }
 
   "summary-features"         { return SUMMARY_FEATURES; }
+  "match-features"           { return MATCH_FEATURES; }
+  "rank-features"            { return RANK_FEATURES; }
   
   "body"                     { return BODY; }
   "header"                   { return HEADER; }

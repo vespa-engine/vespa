@@ -134,9 +134,9 @@ RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits
 private RankProfileBody ::= RankProfileBodyOptions* // Does not support zero-or-one occurrences
 private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition | FunctionDefinition | TermwiseLimitDefinition | 
                            ignore-default-rank-features | RankPropertiesDefinition | FirstPhaseDefinition | 
-                           SummaryFeaturesDefinition | RankFeaturesDefinition | SecondPhaseDefinition | ConstantsDefinition |
-                           RankDefinition | RankTypeDefinition | MinHitsDefinition | NumSearchPartitionDefinition |
-                           FieldWeightDefinition
+                           SummaryFeaturesDefinition | MatchFeaturesDefinition | RankFeaturesDefinition | 
+                           SecondPhaseDefinition | ConstantsDefinition | RankDefinition | RankTypeDefinition | 
+                           MinHitsDefinition | NumSearchPartitionDefinition | FieldWeightDefinition
 
 MatchPhaseDefinition ::= match-phase '{' MatchPhaseBody '}'
 MatchPhaseBody ::= MatchPhaseBodyOptions+
@@ -179,6 +179,8 @@ ArgumentDefinition ::= IdentifierVal
                        }
 
 SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierVal)? '{' RankFeature* '}'))
+
+MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ('{' RankFeature* '}'))
 
 RankFeaturesDefinition ::= rank-features ((':' RankFeature+) | ('{' RankFeature* '}'))
 
@@ -342,6 +344,7 @@ KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features
                          num-threads-per-search | termwise-limit | ignore-default-rank-features | min-hits-per-thread | 
                          num-search-partition | match-phase | max-hits | second-phase | rerank-count | min-groups | 
                          first-phase | keep-rank-count | rank-score-drop-limit | rank-properties | summary-features | 
+                         match-features | rank-features |
                          exact-terminator | max-length | gram-size | fast-search | fast-access | distance-metric | 
                          indexing-rewrite | query-command | matched-elements-only | lower-bound | upper-bound | 
                          dense-posting-list-threshold | enable-bm25 | max-links-per-node | neighbors-to-explore-at-insert | 
