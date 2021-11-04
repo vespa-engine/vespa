@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
@@ -21,7 +20,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -46,7 +44,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
 
     public ReindexingMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                                 Duration interval, ConfigConvergenceChecker convergence, Clock clock) {
-        super(applicationRepository, curator, flagSource, clock.instant(), interval);
+        super(applicationRepository, curator, flagSource, clock.instant(), interval, true);
         this.convergence = convergence;
         this.clock = clock;
     }
