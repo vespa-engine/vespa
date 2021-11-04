@@ -103,6 +103,23 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
                 asked_hits, asked_offset, got_hits, reply.totalHitCount);
         }
     }
+    size_t num_match_features = (reply.match_features ? reply.match_features->names.size() : 0);
+    using FeatureValuesIterator = std::vector<SearchReply::FeatureValues::Value>::const_iterator;
+    FeatureValuesIterator mfv_iter;
+    bool has_match_features = (num_match_features > 0 && reply.hits.size() > 0);
+    if (has_match_features) {
+        size_t num_match_feature_values = reply.match_features->values.size();
+        /*
+        fprintf(stderr, "reply with %zu hits has %zu match features, total %zu/%zu\n",
+                reply.hits.size(), num_match_features,
+                num_match_feature_values, reply.hits.size() * num_match_features);
+        */
+        assert(num_match_feature_values == reply.hits.size() * num_match_features);
+        for (const auto & name : reply.match_features->names) {
+            *proto.add_match_feature_names() = name;
+        }
+        mfv_iter = reply.match_features->values.begin();
+    }
     for (size_t i = 0; i < reply.hits.size(); ++i) {
         auto *hit = proto.add_hits();
         hit->set_global_id(reply.hits[i].gid.get(), document::GlobalId::LENGTH);
@@ -113,6 +130,21 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
             assert((sort_data_offset + sort_data_size) <= reply.sortData.size());
             hit->set_sort_data(&reply.sortData[sort_data_offset], sort_data_size);
         }
+        if (has_match_features) {
+            for (size_t j = 0; j < num_match_features; ++j) {
+                auto * obj = hit->add_match_features();
+                const auto & feature_value = *mfv_iter++;
+                if (feature_value.is_data()) {
+                    auto mem = feature_value.as_data();
+                    obj->set_tensor(mem.data, mem.size);
+                } else if (feature_value.is_double()) {
+                    obj->set_number(feature_value.as_double());
+                }
+            }
+        }
+    }
+    if (has_match_features) {
+        assert(mfv_iter == reply.match_features->values.end());
     }
     proto.set_grouping_blob(&reply.groupResult[0], reply.groupResult.size());
     const auto &slime_trace = reply.propertiesMap.trace().lookup("slime");

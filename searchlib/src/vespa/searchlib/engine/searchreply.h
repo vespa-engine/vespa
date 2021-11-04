@@ -4,6 +4,7 @@
 
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
+#include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/searchlib/engine/searchrequest.h>
@@ -22,6 +23,14 @@ public:
         Hit() noexcept : gid(), metric(0) {}
         document::GlobalId gid;
         search::HitRank    metric;
+    };
+
+    struct FeatureValues {
+        // must contain blocks of N feature values for each Hit, in hit order.
+        using Value = search::FeatureSet::Value;
+        using UP = std::unique_ptr<FeatureValues>;
+        std::vector<vespalib::string> names;  // N feature names
+        std::vector<Value>            values; // H*N feature values
     };
 
     class Coverage {
@@ -73,6 +82,7 @@ public:
     PropertiesMap         propertiesMap;
 
     SearchRequest::UP     request;
+    FeatureValues::UP     match_features;
     UniqueIssues::UP      my_issues;
 
     SearchReply();
