@@ -236,6 +236,7 @@ struct MyWorld {
                 const auto *f = &reply.match_features.values[i * 5];
                 EXPECT_GREATER(f[0].as_double(), 0.0);
                 EXPECT_GREATER(f[1].as_double(), 0.0);
+                EXPECT_EQUAL(f[0].as_double(), reply.hits[i].metric);
                 EXPECT_EQUAL(f[0].as_double() * 2, f[1].as_double());
                 EXPECT_EQUAL(f[2].as_double(), double(matched_field == "a1"));
                 EXPECT_EQUAL(f[3].as_double(), double(matched_field == "f1"));
