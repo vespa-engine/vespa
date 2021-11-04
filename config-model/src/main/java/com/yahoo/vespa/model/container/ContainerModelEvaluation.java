@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 
 /**

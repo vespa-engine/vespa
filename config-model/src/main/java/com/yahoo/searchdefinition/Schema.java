@@ -21,7 +21,6 @@ import com.yahoo.searchdefinition.document.TemporaryImportedFields;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
-import com.yahoo.vespa.model.AbstractService;
 
 import java.io.Reader;
 import java.util.ArrayList;
