@@ -151,6 +151,9 @@ App::verify(const search::index::Schema &schema,
     for (size_t i = 0; i < rankSetup.getSummaryFeatures().size(); ++i) {
         ok = verifyFeature(factory, indexEnv, rankSetup.getSummaryFeatures()[i], "summary features") && ok;
     }
+    for (const auto & feature : rankSetup.get_match_features()) {
+        ok = verifyFeature(factory, indexEnv, feature, "match features") && ok;
+    }
     for (size_t i = 0; i < rankSetup.getDumpFeatures().size(); ++i) {
         ok = verifyFeature(factory, indexEnv, rankSetup.getDumpFeatures()[i], "dump features") && ok;
     }
