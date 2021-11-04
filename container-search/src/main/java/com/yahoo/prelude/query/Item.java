@@ -102,10 +102,10 @@ public abstract class Item implements Cloneable {
     /** The annotations made on this item */
     private CopyOnWriteHashMap<String, Object> annotations;
 
-    /** Whether or not this item should affect ranking. */
+    /** Whether this item should affect ranking. */
     private boolean isRanked = true;
 
-    /** Whether or not position data should be used when ranking this item */
+    /** Whether position data should be used when ranking this item */
     private boolean usePositionData = true;
 
     /** Whether the item should encode a unique ID */
@@ -468,16 +468,16 @@ public abstract class Item implements Cloneable {
             discloser.addProperty("connectivity", connectivity);
         if (connectedItem != null)
             discloser.addProperty("connectedItem", connectedItem); // reference
-
-        discloser.addProperty("creator", creator);
-        discloser.addProperty("isRanked", isRanked);
-        discloser.addProperty("usePositionData", usePositionData);
-
+        if (creator != ItemCreator.ORIG)
+            discloser.addProperty("creator", creator);
+        if ( ! isRanked)
+            discloser.addProperty("isRanked", isRanked);
+        if ( ! usePositionData)
+            discloser.addProperty("usePositionData", usePositionData);
         if (explicitSignificance)
             discloser.addProperty("significance", significance);
-
-        discloser.addProperty("weight", weight);
-
+        if (weight != 100)
+            discloser.addProperty("weight", weight);
         if (label != null)
             discloser.addProperty("label", label);
         if (hasUniqueID)

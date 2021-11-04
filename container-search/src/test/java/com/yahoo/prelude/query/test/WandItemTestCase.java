@@ -81,7 +81,7 @@ public class WandItemTestCase {
         item.addToken("term1", 10);
         item.setScoreThreshold(20);
         item.setThresholdBoostFactor(2.0);
-        assertEquals("WAND[creator=ORIG index=\"myfield\" isRanked=true scoreThreshold=20.0 targetNumHits=10 thresholdBoostFactor=2.0 usePositionData=true weight=100]{\n" +
+        assertEquals("WAND[index=\"myfield\" scoreThreshold=20.0 targetNumHits=10 thresholdBoostFactor=2.0]{\n" +
                      "  PURE_WEIGHTED_STRING[weight=10]{\n" +
                      "    \"term1\"\n" +
                      "  }\n" +
