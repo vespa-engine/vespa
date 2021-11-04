@@ -33,8 +33,8 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
     /** Creates a maintainer where maintainers on different nodes in this cluster run with even delay. */
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
-                           Instant now, Duration interval) {
-        super(null, interval, now, new JobControl(new JobControlFlags(curator, flagSource)),
+                           Instant now, Duration interval, boolean useLock) {
+        super(null, interval, now, new JobControl(new JobControlFlags(curator, flagSource, useLock)),
               new ConfigServerJobMetrics(applicationRepository.metric()), cluster(curator), false);
         this.applicationRepository = applicationRepository;
     }
@@ -59,13 +59,15 @@ public abstract class ConfigServerMaintainer extends Maintainer {
         private static final Path root = Path.fromString("/configserver/v1/");
 
         private static final Path lockRoot = root.append("locks");
+
         private final Curator curator;
-
         private final ListFlag<String> inactiveJobsFlag;
+        private final boolean useLock;
 
-        public JobControlFlags(Curator curator, FlagSource flagSource) {
+        public JobControlFlags(Curator curator, FlagSource flagSource, boolean useLock) {
             this.curator = curator;
             this.inactiveJobsFlag = PermanentFlags.INACTIVE_MAINTENANCE_JOBS.bindTo(flagSource);
+            this.useLock = useLock;
         }
 
         @Override
@@ -75,7 +77,9 @@ public abstract class ConfigServerMaintainer extends Maintainer {
 
         @Override
         public Mutex lockMaintenanceJob(String job) {
-            return curator.lock(lockRoot.append(job), Duration.ofSeconds(1));
+            return (useLock)
+                    ? curator.lock(lockRoot.append(job), Duration.ofSeconds(1))
+                    : () -> { };
         }
 
     }
