@@ -363,6 +363,32 @@ UrlFieldInverter::removeDocument(uint32_t docId)
     _hostname->removeDocument(docId);
 }
 
+void
+UrlFieldInverter::applyRemoves()
+{
+    _all->applyRemoves();
+    _scheme->applyRemoves();
+    _host->applyRemoves();
+    _port->applyRemoves();
+    _path->applyRemoves();
+    _query->applyRemoves();
+    _fragment->applyRemoves();
+    _hostname->applyRemoves();
+}
+
+void
+UrlFieldInverter::pushDocuments()
+{
+    _all->pushDocuments();
+    _scheme->pushDocuments();
+    _host->pushDocuments();
+    _port->pushDocuments();
+    _path->pushDocuments();
+    _query->pushDocuments();
+    _fragment->pushDocuments();
+    _hostname->pushDocuments();
+}
+
 UrlFieldInverter::UrlFieldInverter(index::Schema::CollectionType collectionType,
                                    FieldInverter *all,
                                    FieldInverter *scheme,
