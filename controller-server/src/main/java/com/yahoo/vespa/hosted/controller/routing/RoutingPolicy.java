@@ -6,6 +6,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
@@ -86,15 +87,16 @@ public class RoutingPolicy {
         if (infraEndpoint.isPresent()) {
             return List.of(infraEndpoint.get());
         }
+        DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
         List<Endpoint> endpoints = new ArrayList<>();
-        endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone()).in(system));
+        endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
         // Add legacy endpoints
         if (routingMethod == RoutingMethod.shared) {
-            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
+            endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment)
                                                  .on(Port.plain(4080))
                                                  .legacy()
                                                  .in(system));
-            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
+            endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment)
                                                  .on(Port.tls(4443))
                                                  .legacy()
                                                  .in(system));

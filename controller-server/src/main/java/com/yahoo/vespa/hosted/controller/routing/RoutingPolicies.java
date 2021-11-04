@@ -124,7 +124,7 @@ public class RoutingPolicies {
         Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
-            controller.routing().endpointsOf(routingId.application())
+            controller.routing().endpointsOf(routingId.instance())
                       .named(routingId.endpointId())
                       .not().requiresRotation()
                       .forEach(endpoint -> updateGlobalDnsOf(endpoint, inactiveZones, routeEntry.getValue()));
@@ -250,7 +250,7 @@ public class RoutingPolicies {
         var activeRoutingIds = routingIdsFrom(allocation);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
-            var endpoints = controller.routing().endpointsOf(id.application())
+            var endpoints = controller.routing().endpointsOf(id.instance())
                                       .not().requiresRotation()
                                       .named(id.endpointId());
             var forwarder = nameServiceForwarderIn(allocation.deployment.zoneId());

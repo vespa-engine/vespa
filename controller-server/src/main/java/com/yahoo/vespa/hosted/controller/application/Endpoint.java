@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -36,28 +37,52 @@ public class Endpoint {
     private final EndpointId id;
     private final ClusterSpec.Id cluster;
     private final URI url;
-    private final List<ZoneId> zones;
+    private final List<Target> targets;
     private final Scope scope;
     private final boolean legacy;
     private final RoutingMethod routingMethod;
     private final boolean tls;
 
-    private Endpoint(EndpointId id, ClusterSpec.Id cluster, URI url, List<ZoneId> zones, Scope scope, Port port, boolean legacy, RoutingMethod routingMethod) {
+    private Endpoint(TenantAndApplicationId application, Optional<InstanceName> instanceName, EndpointId id,
+                     ClusterSpec.Id cluster, URI url, List<Target> targets, Scope scope, Port port, boolean legacy,
+                     RoutingMethod routingMethod) {
+        Objects.requireNonNull(application, "application must be non-null");
+        Objects.requireNonNull(instanceName, "instanceName must be non-null");
         Objects.requireNonNull(cluster, "cluster must be non-null");
-        Objects.requireNonNull(zones, "zones must be non-null");
+        Objects.requireNonNull(targets, "deployment must be non-null");
         Objects.requireNonNull(scope, "scope must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
-        if (scope == Scope.global) {
-            if (id == null) throw new IllegalArgumentException("Endpoint ID must be set for global endpoints");
+        if (scope.multiRegion()) {
+            if (id == null) throw new IllegalArgumentException("Endpoint ID must be set for multi-region endpoints");
         } else {
             if (scope == Scope.zone && id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
-            if (zones.size() != 1) throw new IllegalArgumentException("A single zone must be given for " + scope + " endpoints");
+            if (targets.size() != 1) throw new IllegalArgumentException("A single target must be given for " + scope + " endpoints");
+        }
+        if (scope != Scope.application && instanceName.isEmpty()) {
+            throw new IllegalArgumentException("Instance must be set for scope " + scope);
+        }
+        for (var target : targets) {
+            if (scope == Scope.application) {
+                TenantAndApplicationId owner = TenantAndApplicationId.from(target.deployment().applicationId());
+                if (!owner.equals(application)) {
+                    throw new IllegalArgumentException(id + " has target owned by " + owner +
+                                                       ", which does not match application of this endpoint: " +
+                                                       application);
+                }
+            } else {
+                ApplicationId owner = target.deployment.applicationId();
+                ApplicationId instance = application.instance(instanceName.get());
+                if (!owner.equals(instance)) {
+                    throw new IllegalArgumentException(id + " has target owned by " + owner +
+                                                       ", which does not match instance of this endpoint: " + instance);
+                }
+            }
         }
         this.id = id;
         this.cluster = cluster;
         this.url = url;
-        this.zones = List.copyOf(zones);
+        this.targets = List.copyOf(targets);
         this.scope = scope;
         this.legacy = legacy;
         this.routingMethod = routingMethod;
@@ -65,20 +90,22 @@ public class Endpoint {
     }
 
     private Endpoint(EndpointId id, ClusterSpec.Id cluster, TenantAndApplicationId application,
-                     Optional<InstanceName> instance, List<ZoneId> zones, Scope scope, SystemName system, Port port,
+                     Optional<InstanceName> instance, List<Target> targets, Scope scope, SystemName system, Port port,
                      boolean legacy, RoutingMethod routingMethod) {
-        this(id,
+        this(application,
+             instance,
+             id,
              cluster,
              createUrl(endpointOrClusterAsString(id, cluster),
                        Objects.requireNonNull(application, "application must be non-null"),
                        Objects.requireNonNull(instance, "instance must be non-null"),
-                       zones,
+                       targets,
                        scope,
                        Objects.requireNonNull(system, "system must be non-null"),
                        Objects.requireNonNull(port, "port must be non-null"),
                        legacy,
                        routingMethod),
-             zones, scope, port, legacy, routingMethod);
+             targets, scope, port, legacy, routingMethod);
     }
 
     /**
@@ -108,9 +135,14 @@ public class Endpoint {
         return url.getAuthority().replaceAll(":.*", "");
     }
 
-    /** Returns the zone(s) to which this routes traffic */
-    public List<ZoneId> zones() {
-        return zones;
+    /** Returns the target(s) to which this routes traffic */
+    public List<Target> targets() {
+        return targets;
+    }
+
+    /** Returns the deployments(s) to which this routes traffic */
+    public List<DeploymentId> deployments() {
+        return targets.stream().map(Target::deployment).collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns the scope of this */
@@ -168,7 +200,7 @@ public class Endpoint {
     }
 
     private static URI createUrl(String name, TenantAndApplicationId application, Optional<InstanceName> instance,
-                                 List<ZoneId> zones, Scope scope, SystemName system, Port port, boolean legacy,
+                                 List<Target> targets, Scope scope, SystemName system, Port port, boolean legacy,
                                  RoutingMethod routingMethod) {
         String scheme = port.tls ? "https" : "http";
         String separator = separator(system, routingMethod, port.tls);
@@ -181,7 +213,7 @@ public class Endpoint {
                           separator +
                           sanitize(application.tenant().value()) +
                           "." +
-                          scopePart(scope, zones, system, legacy) +
+                          scopePart(scope, targets, system, legacy) +
                           dnsSuffix(system, legacy) +
                           portPart +
                           "/");
@@ -203,11 +235,11 @@ public class Endpoint {
         return name + separator;
     }
 
-    private static String scopePart(Scope scope, List<ZoneId> zones, SystemName system, boolean legacy) {
+    private static String scopePart(Scope scope, List<Target> targets, SystemName system, boolean legacy) {
         String scopeSymbol = scopeSymbol(scope, system);
         if (scope.multiRegion()) return scopeSymbol;
 
-        ZoneId zone = zones.get(0);
+        ZoneId zone = targets.get(0).deployment().zoneId();
         String region = zone.region().value();
         boolean skipEnvironment = zone.environment().isProduction() && (system.isPublic() || !legacy);
         String environment = skipEnvironment ? "" : "." + zone.environment().value();
@@ -405,7 +437,43 @@ public class Endpoint {
         if (!systemApplication.hasEndpoint()) throw new IllegalArgumentException(systemApplication + " has no endpoint");
         RoutingMethod routingMethod = RoutingMethod.exclusive;
         Port port = url.getPort() == -1 ? Port.tls() : Port.tls(url.getPort()); // System application endpoints are always TLS
-        return new Endpoint(null, ClusterSpec.Id.from("admin"), url, List.of(zone), Scope.zone, port, false, routingMethod);
+        return new Endpoint(TenantAndApplicationId.from(systemApplication.id()),
+                            Optional.of(systemApplication.id().instance()),
+                            null,
+                            ClusterSpec.Id.from("admin"),
+                            url,
+                            List.of(new Target(new DeploymentId(systemApplication.id(), zone))),
+                            Scope.zone, port, false, routingMethod);
+    }
+
+    /** A target of an endpoint */
+    public static class Target {
+
+        private final DeploymentId deployment;
+        private final int weight;
+
+        private Target(DeploymentId deployment, int weight) {
+            this.deployment = Objects.requireNonNull(deployment);
+            this.weight = weight;
+            if (weight < 0 || weight > 100) {
+                throw new IllegalArgumentException("Endpoint target weight must be in range [0, 100], got " + weight);
+            }
+        }
+
+        private Target(DeploymentId deployment) {
+            this(deployment, 1);
+        }
+
+        /** Returns the deployment of this */
+        public DeploymentId deployment() {
+            return deployment;
+        }
+
+        /** Returns the assigned weight of this */
+        public int weight() {
+            return weight;
+        }
+
     }
 
     public static class EndpointBuilder {
@@ -414,7 +482,7 @@ public class Endpoint {
         private final Optional<InstanceName> instance;
 
         private Scope scope;
-        private List<ZoneId> zones;
+        private List<Target> targets;
         private ClusterSpec.Id cluster;
         private EndpointId endpointId;
         private Port port;
@@ -426,12 +494,12 @@ public class Endpoint {
             this.instance = Objects.requireNonNull(instance);
         }
 
-        /** Sets the zone target for this */
-        public EndpointBuilder target(ClusterSpec.Id cluster, ZoneId zone) {
+        /** Sets the deployment target for this */
+        public EndpointBuilder target(ClusterSpec.Id cluster, DeploymentId deployment) {
             checkScope();
             this.cluster = cluster;
             this.scope = Scope.zone;
-            this.zones = List.of(zone);
+            this.targets = List.of(new Target(deployment));
             return this;
         }
 
@@ -440,12 +508,12 @@ public class Endpoint {
            return target(endpointId, ClusterSpec.Id.from("default"), List.of());
         }
 
-        /** Sets the global target with given ID, zones and cluster (as defined in deployments.xml) */
-        public EndpointBuilder target(EndpointId endpointId, ClusterSpec.Id cluster, List<ZoneId> zones) {
+        /** Sets the global target with given ID, deployments and cluster (as defined in deployments.xml) */
+        public EndpointBuilder target(EndpointId endpointId, ClusterSpec.Id cluster, List<DeploymentId> deployments) {
             checkScope();
             this.endpointId = endpointId;
             this.cluster = cluster;
-            this.zones = zones;
+            this.targets = deployments.stream().map(Target::new).collect(Collectors.toUnmodifiableList());
             this.scope = Scope.global;
             return this;
         }
@@ -456,13 +524,18 @@ public class Endpoint {
         }
 
         /** Sets the zone wildcard target for this */
-        public EndpointBuilder wildcard(ZoneId zone) {
-            return target(ClusterSpec.Id.from("*"), zone);
+        public EndpointBuilder wildcard(DeploymentId deployment) {
+            return target(ClusterSpec.Id.from("*"), deployment);
         }
 
-        /** Sets the application target with given ID, zones and cluster (as defined in deployments.xml) */
-        public EndpointBuilder targetApplication(EndpointId endpointId, ClusterSpec.Id cluster, ZoneId zone) {
-            target(endpointId, cluster, List.of(zone));
+        /** Sets the application target with given ID, cluster, deployments and their weights */
+        public EndpointBuilder targetApplication(EndpointId endpointId, ClusterSpec.Id cluster, Map<DeploymentId, Integer> deployments) {
+            checkScope();
+            this.endpointId = endpointId;
+            this.cluster = cluster;
+            this.targets = deployments.entrySet().stream()
+                                      .map(kv -> new Target(kv.getKey(), kv.getValue()))
+                                      .collect(Collectors.toUnmodifiableList());
             this.scope = Scope.application;
             return this;
         }
@@ -472,7 +545,7 @@ public class Endpoint {
             checkScope();
             this.cluster = cluster;
             this.scope = Scope.region;
-            this.zones = List.of(effectiveZone(zone));
+            this.targets = List.of(new Target(new DeploymentId(application.instance(instance.get()), effectiveZone(zone))));
             return this;
         }
 
@@ -502,7 +575,7 @@ public class Endpoint {
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            return new Endpoint(endpointId, cluster, application, instance, zones, scope, system, port, legacy, routingMethod);
+            return new Endpoint(endpointId, cluster, application, instance, targets, scope, system, port, legacy, routingMethod);
         }
 
         private void checkScope() {

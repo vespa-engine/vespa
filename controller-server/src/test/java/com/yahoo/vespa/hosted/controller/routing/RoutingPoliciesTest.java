@@ -819,11 +819,11 @@ public class RoutingPoliciesTest {
                          .collect(Collectors.toList());
         }
 
-        private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights) {
+        private void assertTargets(ApplicationId instance, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights) {
             Set<String> latencyTargets = new HashSet<>();
             Map<String, List<ZoneId>> zonesByRegionEndpoint = new HashMap<>();
             for (var zone : zoneWeights.keySet()) {
-                DeploymentId deployment = new DeploymentId(application, zone);
+                DeploymentId deployment = new DeploymentId(instance, zone);
                 EndpointList regionEndpoints = tester.controller().routing().endpointsOf(deployment)
                                                     .cluster(cluster)
                                                     .scope(Endpoint.Scope.region);
@@ -834,7 +834,7 @@ public class RoutingPoliciesTest {
             zonesByRegionEndpoint.forEach((regionEndpoint, zonesInRegion) -> {
                 Set<String> weightedTargets = zonesInRegion.stream()
                                                            .map(z -> "weighted/lb-" + loadBalancerId + "--" +
-                                                                     application.serializedForm() + "--" + z.value() +
+                                                                     instance.serializedForm() + "--" + z.value() +
                                                                      "/dns-zone-1/" + z.value() + "/" + zoneWeights.get(z))
                                                            .collect(Collectors.toSet());
                 assertEquals("Region endpoint " + regionEndpoint + " points to load balancer",
@@ -844,9 +844,10 @@ public class RoutingPoliciesTest {
                 String latencyTarget = "latency/" + regionEndpoint + "/dns-zone-1/" + zone.value();
                 latencyTargets.add(latencyTarget);
             });
-            String globalEndpoint = tester.controller().routing().endpointsOf(application)
+            List<DeploymentId> deployments = zoneWeights.keySet().stream().map(z -> new DeploymentId(instance, z)).collect(Collectors.toList());
+            String globalEndpoint = tester.controller().routing().endpointsOf(instance)
                                           .named(endpointId)
-                                          .targets(List.copyOf(zoneWeights.keySet()))
+                                          .targets(deployments)
                                           .primary()
                                           .map(Endpoint::dnsName)
                                           .orElse("<none>");

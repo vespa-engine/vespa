@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.util.Collection;
 import java.util.List;
@@ -41,14 +41,14 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         return matching(endpoint -> endpoint.cluster().equals(cluster));
     }
 
-    /** Returns the subset of endpoints which target all of the given zones */
-    public EndpointList targets(List<ZoneId> zones) {
-        return matching(endpoint -> endpoint.zones().containsAll(zones));
+    /** Returns the subset of endpoints which target all of the given deployments */
+    public EndpointList targets(List<DeploymentId> deployments) {
+        return matching(endpoint -> endpoint.deployments().containsAll(deployments));
     }
 
-    /** Returns the subset of endpoints which target the given zones */
-    public EndpointList targets(ZoneId zone) {
-        return targets(List.of(zone));
+    /** Returns the subset of endpoints which target the given deployments */
+    public EndpointList targets(DeploymentId deployment) {
+        return targets(List.of(deployment));
     }
 
     /** Returns the subset of endpoints that are considered legacy */

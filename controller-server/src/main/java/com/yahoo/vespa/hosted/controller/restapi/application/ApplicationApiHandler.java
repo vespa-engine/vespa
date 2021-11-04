@@ -1397,7 +1397,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
         // Add global endpoints
         EndpointList globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
-                                                 .targets(deploymentId.zoneId());
+                                                 .targets(deploymentId);
         if (!legacyEndpoints) {
             globalEndpoints = globalEndpoints.not().legacy();
         }

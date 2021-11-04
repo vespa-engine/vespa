@@ -25,9 +25,7 @@ public class EndpointId implements Comparable<EndpointId> {
 
     @Override
     public String toString() {
-        return "EndpointId{" +
-                "id='" + id + '\'' +
-                '}';
+        return "endpoint id '" + id + "'";
     }
 
     @Override

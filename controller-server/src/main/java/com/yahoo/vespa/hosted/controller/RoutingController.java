@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
  * The routing controller encapsulates state and methods for inspecting and manipulating deployment endpoints in a
  * hosted Vespa system.
  *
- * The one stop shop for all your routing needs!
+ * The one-stop shop for all your routing needs!
  *
  * @author mpolden
  */
@@ -168,8 +168,8 @@ public class RoutingController {
         }
 
         // Add wildcard names for zone endpoints
-        builders.add(Endpoint.of(deployment.applicationId()).target(ClusterSpec.Id.from("default"), deployment.zoneId()));
-        builders.add(Endpoint.of(deployment.applicationId()).wildcard(deployment.zoneId()));
+        builders.add(Endpoint.of(deployment.applicationId()).target(ClusterSpec.Id.from("default"), deployment));
+        builders.add(Endpoint.of(deployment.applicationId()).wildcard(deployment));
 
         // Build all endpoints
         for (var builder : builders) {
@@ -256,8 +256,9 @@ public class RoutingController {
             containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(), names));
         }
         // Add endpoints not backed by a rotation
+        DeploymentId deployment = new DeploymentId(instance.id(), zone);
         endpoints.not().requiresRotation()
-                 .targets(zone)
+                 .targets(deployment)
                  .groupingBy(Endpoint::cluster)
                  .forEach((clusterId, clusterEndpoints) -> {
                      containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
@@ -330,28 +331,28 @@ public class RoutingController {
         var directMethods = 0;
         var zones = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
         var availableRoutingMethods = routingMethodsOfAll(deployments, deploymentSpec);
-        boolean legacyNamesAvailable = legacyNamesAvailable(deploymentSpec, routingId.application().instance());
+        boolean legacyNamesAvailable = legacyNamesAvailable(deploymentSpec, routingId.instance().instance());
 
         for (var method : availableRoutingMethods) {
             if (method.isDirect() && ++directMethods > 1) {
                 throw new IllegalArgumentException("Invalid routing methods for " + routingId + ": Exceeded maximum " +
                                                    "direct methods");
             }
-            endpoints.add(Endpoint.of(routingId.application())
-                                  .target(routingId.endpointId(), cluster, zones)
+            endpoints.add(Endpoint.of(routingId.instance())
+                                  .target(routingId.endpointId(), cluster, deployments)
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
             // Add legacy endpoints
             if (legacyNamesAvailable && method == RoutingMethod.shared) {
-                endpoints.add(Endpoint.of(routingId.application())
-                                      .target(routingId.endpointId(), cluster, zones)
+                endpoints.add(Endpoint.of(routingId.instance())
+                                      .target(routingId.endpointId(), cluster, deployments)
                                       .on(Port.plain(4080))
                                       .legacy()
                                       .routingMethod(method)
                                       .in(controller.system()));
-                endpoints.add(Endpoint.of(routingId.application())
-                                      .target(routingId.endpointId(), cluster, zones)
+                endpoints.add(Endpoint.of(routingId.instance())
+                                      .target(routingId.endpointId(), cluster, deployments)
                                       .on(Port.tls(4443))
                                       .legacy()
                                       .routingMethod(method)
