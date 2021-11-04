@@ -76,9 +76,9 @@ public class Group {
             boolean balanced = skew <= activeDocs * maxContentSkew;
             if (!isBalanced.get() || balanced != isBalanced.get()) {
                 if (!isSparse())
-                    log.info("Content in " + this + " is " + (balanced ? "" : "not ") + "well balanced. Current deviation = " +
-                             skew * 100 / activeDocs + " %. activeDocs = " + activeDocs + ", skew = " + skew +
-                             ", average = " + average);
+                    log.info("Content in " + this + ", with " + numWorkingNodes + "/" + nodes.size() + " working nodes, is " +
+                             (balanced ? "" : "not ") + "well balanced. Current deviation = " + skew * 100 / activeDocs +
+                             " %. activeDocs = " + activeDocs + ", skew = " + skew + ", average = " + average);
                 isBalanced.set(balanced);
             }
         } else {

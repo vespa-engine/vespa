@@ -12,9 +12,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.Values;
-import com.yahoo.prelude.fastsearch.FastHit;
-
-import java.util.List;
 
 /**
  * A client which uses rpc request to search nodes to implement the Client API.
