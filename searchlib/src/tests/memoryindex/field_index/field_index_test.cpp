@@ -19,6 +19,8 @@
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 
 #include <vespa/vespalib/gtest/gtest.h>
@@ -412,12 +414,12 @@ public:
 MyInserter::~MyInserter() = default;
 
 void
-myremove(uint32_t docId, DocumentInverter &inv,
-         ISequencedTaskExecutor &invertThreads)
+myremove(uint32_t docId, DocumentInverter &inv)
 {
     inv.removeDocument(docId);
-    invertThreads.sync_all();
-    inv.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
+    vespalib::Gate gate;
+    inv.pushDocuments(std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
 }
 
 class MyDrainRemoves : IFieldIndexRemoveListener {
@@ -443,7 +445,9 @@ public:
 void
 myPushDocument(DocumentInverter &inv)
 {
-    inv.pushDocuments(std::shared_ptr<vespalib::IDestructorCallback>());
+    vespalib::Gate gate;
+    inv.pushDocuments(std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
 }
 
 const FeatureStore *
@@ -953,9 +957,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         endField();
     doc = _b.endDocument();
     _inv.invertDocument(10, *doc);
-    _invertThreads->sync_all();
     myPushDocument(_inv);
-    _pushThreads->sync_all();
 
     _b.startDocument("id:ns:searchdocument::20");
     _b.startIndexField("f0").
@@ -963,9 +965,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         endField();
     doc = _b.endDocument();
     _inv.invertDocument(20, *doc);
-    _invertThreads->sync_all();
     myPushDocument(_inv);
-    _pushThreads->sync_all();
 
     _b.startDocument("id:ns:searchdocument::30");
     _b.startIndexField("f0").
@@ -994,9 +994,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         endField();
     doc = _b.endDocument();
     _inv.invertDocument(30, *doc);
-    _invertThreads->sync_all();
     myPushDocument(_inv);
-    _pushThreads->sync_all();
 
     _b.startDocument("id:ns:searchdocument::40");
     _b.startIndexField("f0").
@@ -1005,9 +1003,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         endField();
     doc = _b.endDocument();
     _inv.invertDocument(40, *doc);
-    _invertThreads->sync_all();
     myPushDocument(_inv);
-    _pushThreads->sync_all();
 
     _b.startDocument("id:ns:searchdocument::999");
     _b.startIndexField("f0").
@@ -1035,12 +1031,9 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
     doc = _b.endDocument();
     for (uint32_t docId = 10000; docId < 20000; ++docId) {
         _inv.invertDocument(docId, *doc);
-        _invertThreads->sync_all();
         myPushDocument(_inv);
-        _pushThreads->sync_all();
     }
 
-    _pushThreads->sync_all();
     DataStoreBase::MemStats beforeStats = getFeatureStoreMemStats(_fic);
     LOG(info,
         "Before feature compaction: allocElems=%zu, usedElems=%zu"
@@ -1152,17 +1145,13 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
     _b.startIndexField("f1").addStr("a").addStr("c").endField();
     Document::UP doc1 = _b.endDocument();
     _inv.invertDocument(1, *doc1.get());
-    _invertThreads->sync_all();
     myPushDocument(_inv);
-    _pushThreads->sync_all();
 
     _b.startDocument("id:ns:searchdocument::2");
     _b.startIndexField("f0").addStr("b").addStr("c").endField();
     Document::UP doc2 = _b.endDocument();
     _inv.invertDocument(2, *doc2.get());
-    _invertThreads->sync_all();
     myPushDocument(_inv);
-    _pushThreads->sync_all();
 
     EXPECT_TRUE(assertPostingList("[1]", find("a", 0)));
     EXPECT_TRUE(assertPostingList("[1,2]", find("b", 0)));
@@ -1170,8 +1159,7 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
     EXPECT_TRUE(assertPostingList("[1]", find("a", 1)));
     EXPECT_TRUE(assertPostingList("[1]", find("c", 1)));
 
-    myremove(1, _inv, *_invertThreads);
-    _pushThreads->sync_all();
+    myremove(1, _inv);
 
     EXPECT_TRUE(assertPostingList("[]", find("a", 0)));
     EXPECT_TRUE(assertPostingList("[2]", find("b", 0)));
@@ -1321,10 +1309,7 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
         endField();
     doc = _b.endDocument();
     _inv.invertDocument(10, *doc);
-    _invertThreads->sync_all();
     myPushDocument(_inv);
-
-    _pushThreads->sync_all();
 
     SimpleMatchData match_data;
     {
@@ -1397,10 +1382,7 @@ TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)
         endField();
     doc = _b.endDocument();
     _inv.invertDocument(10, *doc);
-    _invertThreads->sync_all();
     myPushDocument(_inv);
-
-    _pushThreads->sync_all();
 
     SimpleMatchData match_data;
     uint32_t fieldId = _schema.getIndexFieldId("f0");
@@ -1475,8 +1457,7 @@ struct RemoverTest : public FieldIndexCollectionTest {
     void remove(uint32_t docId) {
         DocumentInverterContext inv_context(schema, *_invertThreads, *_pushThreads, fic);
         DocumentInverter inv(inv_context);
-        myremove(docId, inv, *_invertThreads);
-        _pushThreads->sync_all();
+        myremove(docId, inv);
         EXPECT_FALSE(fic.getFieldIndex(0u)->getDocumentRemover().
                      getStore().get(docId).valid());
     }

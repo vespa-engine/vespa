@@ -24,6 +24,7 @@ public:
     MonitoredRefCount();
     virtual ~MonitoredRefCount();
     void waitForZeroRefCount();
+    bool has_zero_ref_count();
 };
 
 }

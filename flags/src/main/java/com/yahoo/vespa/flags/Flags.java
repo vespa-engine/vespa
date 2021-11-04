@@ -59,6 +59,12 @@ public class Flags {
             "Will attempt to switch on next host admin tick (requires reboot).",
             NODE_TYPE, HOSTNAME);
 
+    public static final UnboundBooleanFlag MOUNT_READONLY = defineFeatureFlag(
+            "mount-readonly", false,
+            List.of("freva"), "2021-11-04", "2021-12-01",
+            "Whether host-admin should mount container-data and credential directories read-only when starting container",
+            "Takes effect on next container restart.");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",

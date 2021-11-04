@@ -2,9 +2,9 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
@@ -87,7 +87,7 @@ public class CoredumpHandler {
 
 
     public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier, boolean throwIfCoreBeingWritten) {
-        ContainerPath containerCrashPath = context.containerPath(crashPatchInContainer);
+        ContainerPath containerCrashPath = context.paths().of(crashPatchInContainer);
         ContainerPath containerProcessingPath = containerCrashPath.resolve(PROCESSING_DIRECTORY_NAME);
 
         updateMetrics(context, containerCrashPath);

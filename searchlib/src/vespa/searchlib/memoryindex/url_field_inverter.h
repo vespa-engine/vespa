@@ -63,6 +63,8 @@ public:
     void setUseAnnotations(bool useAnnotations) {
         _useAnnotations = useAnnotations;
     }
+    void applyRemoves();
+    void pushDocuments();
 };
 
 }

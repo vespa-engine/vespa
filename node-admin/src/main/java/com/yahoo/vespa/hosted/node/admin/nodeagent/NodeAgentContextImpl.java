@@ -16,8 +16,8 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerFileSystem;
-import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -40,15 +40,15 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final AthenzIdentity identity;
     private final ContainerNetworkMode containerNetworkMode;
     private final ZoneApi zone;
-    private final ContainerFileSystem containerFs;
-    private final ContainerPath pathToVespaHome;
+    private final UserScope userScope;
+    private final PathScope pathScope;
     private final double cpuSpeedup;
     private final Set<NodeAgentTask> disabledNodeAgentTasks;
     private final Optional<ApplicationId> hostExclusiveTo;
 
     public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzIdentity identity,
                                 ContainerNetworkMode containerNetworkMode, ZoneApi zone,
-                                FlagSource flagSource, ContainerFileSystem containerFs, String pathToVespaHome,
+                                FlagSource flagSource, UserScope userScope, PathScope pathScope,
                                 double cpuSpeedup, Optional<ApplicationId> hostExclusiveTo) {
         if (cpuSpeedup <= 0)
             throw new IllegalArgumentException("cpuSpeedUp must be positive, was: " + cpuSpeedup);
@@ -59,12 +59,14 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.identity = Objects.requireNonNull(identity);
         this.containerNetworkMode = Objects.requireNonNull(containerNetworkMode);
         this.zone = Objects.requireNonNull(zone);
-        this.containerFs = Objects.requireNonNull(containerFs);
-        this.pathToVespaHome = containerFs.getPath(pathToVespaHome);
+        this.userScope = Objects.requireNonNull(userScope);
+        this.pathScope = Objects.requireNonNull(pathScope);
         this.logPrefix = containerName.asString() + ": ";
         this.cpuSpeedup = cpuSpeedup;
         this.disabledNodeAgentTasks = NodeAgentTask.fromString(
-                PermanentFlags.DISABLED_HOST_ADMIN_TASKS.bindTo(flagSource).with(FetchVector.Dimension.HOSTNAME, node.hostname()).value());
+                PermanentFlags.DISABLED_HOST_ADMIN_TASKS.bindTo(flagSource)
+                        .with(FetchVector.Dimension.HOSTNAME, node.hostname())
+                        .with(FetchVector.Dimension.NODE_TYPE, node.type().name()).value());
         this.hostExclusiveTo = hostExclusiveTo;
     }
 
@@ -99,13 +101,13 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public VespaUser vespaUser() {
-        return containerFs.getUserPrincipalLookupService().vespaUser();
+    public UserScope users() {
+        return userScope;
     }
 
     @Override
-    public UserNamespace userNamespace() {
-        return containerFs.getUserPrincipalLookupService().userNamespace();
+    public PathScope paths() {
+        return pathScope;
     }
 
     @Override
@@ -116,24 +118,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     @Override
     public double vcpuOnThisHost() {
         return node.vcpu() / cpuSpeedup;
-    }
-
-    @Override
-    public ContainerPath containerPath(String pathInNode) {
-        return containerFs.getPath(pathInNode);
-    }
-
-    @Override
-    public ContainerPath containerPathUnderVespaHome(String relativePath) {
-        if (relativePath.startsWith("/"))
-            throw new IllegalArgumentException("Expected a relative path to the Vespa home, got: " + relativePath);
-
-        return pathToVespaHome.resolve(relativePath);
-    }
-
-    @Override
-    public ContainerPath containerPathFromPathOnHost(Path pathOnHost) {
-        return ContainerPath.fromPathOnHost(containerFs, pathOnHost);
     }
 
     @Override
@@ -154,20 +138,6 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     @Override
     public void log(Logger logger, Level level, String message, Throwable throwable) {
         logger.log(level, logPrefix + message, throwable);
-    }
-
-    @Override
-    public String toString() {
-        return "NodeAgentContextImpl{" +
-               "node=" + node +
-               ", acl=" + acl +
-               ", containerName=" + containerName +
-               ", identity=" + identity +
-               ", dockerNetworking=" + containerNetworkMode +
-               ", zone=" + zone +
-               ", pathToVespaHome=" + pathToVespaHome +
-               ", hostExclusiveTo='" + hostExclusiveTo + '\'' +
-               '}';
     }
 
     public static NodeAgentContextImpl.Builder builder(NodeSpec node) {
@@ -193,7 +163,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private ContainerNetworkMode containerNetworkMode;
         private ZoneApi zone;
         private UserNamespace userNamespace;
-        private VespaUser vespaUser;
+        private UnixUser vespaUser;
         private Path containerStorage;
         private FlagSource flagSource;
         private double cpuSpeedUp = 1;
@@ -233,7 +203,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
-        public Builder vespaUser(VespaUser vespaUser) {
+        public Builder vespaUser(UnixUser vespaUser) {
             this.vespaUser = vespaUser;
             return this;
         }
@@ -267,12 +237,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         public NodeAgentContextImpl build() {
             Objects.requireNonNull(containerStorage, "Must set one of containerStorage or fileSystem");
 
-            UserNamespace userNamespace = Optional.ofNullable(this.userNamespace)
-                    .orElseGet(() -> new UserNamespace(100000, 100000, 100000));
-            VespaUser vespaUser = Optional.ofNullable(this.vespaUser)
-                    .orElseGet(() -> new VespaUser("vespa", "vespa", 1000, 100));
+            UserScope userScope = UserScope.create(
+                    Optional.ofNullable(vespaUser).orElseGet(() -> new UnixUser("vespa", 1000, "vespa", 100)),
+                    Optional.ofNullable(userNamespace).orElseGet(() -> new UserNamespace(100000, 100000, 100000)));
             ContainerFileSystem containerFs = ContainerFileSystem.create(containerStorage
-                    .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userNamespace, vespaUser);
+                    .resolve(nodeSpecBuilder.hostname().split("\\.")[0]), userScope);
             containerFs.createRoot();
 
             return new NodeAgentContextImpl(
@@ -302,8 +271,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                         }
                     }),
                     Optional.ofNullable(flagSource).orElseGet(InMemoryFlagSource::new),
-                    containerFs,
-                    "/opt/vespa",
+                    userScope,
+                    new PathScope(containerFs, "/opt/vespa"),
                     cpuSpeedUp, hostExclusiveTo);
         }
     }

@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
-import com.yahoo.vespa.hosted.node.admin.nodeagent.UserNamespace;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.VespaUser;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.UserScope;
 
 import java.io.IOException;
 import java.nio.file.FileStore;
@@ -65,7 +64,7 @@ public class ContainerFileSystem extends FileSystem {
 
     @Override
     public ContainerPath getPath(String first, String... more) {
-        return ContainerPath.fromPathInContainer(this, Path.of(first, more));
+        return ContainerPath.fromPathInContainer(this, Path.of(first, more), getUserPrincipalLookupService().userScope().root());
     }
 
     @Override
@@ -93,7 +92,7 @@ public class ContainerFileSystem extends FileSystem {
         throw new UnsupportedOperationException();
     }
 
-    public static ContainerFileSystem create(Path containerStorageRoot, UserNamespace userNamespace, VespaUser vespaUser) {
-        return new ContainerFileSystemProvider(containerStorageRoot, userNamespace, vespaUser).getFileSystem(null);
+    public static ContainerFileSystem create(Path containerStorageRoot, UserScope userScope) {
+        return new ContainerFileSystemProvider(containerStorageRoot, userScope).getFileSystem(null);
     }
 }

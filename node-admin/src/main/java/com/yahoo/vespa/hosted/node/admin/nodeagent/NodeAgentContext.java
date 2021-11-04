@@ -11,9 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerNetworkMode;
-import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
 public interface NodeAgentContext extends TaskContext {
@@ -24,10 +22,10 @@ public interface NodeAgentContext extends TaskContext {
     /** @return node ACL from node-repository */
     Acl acl();
 
-    /** @return name of the docker container this context applies to */
+    /** @return name of the linux container this context applies to */
     ContainerName containerName();
 
-    /** @return hostname of the docker container this context applies to */
+    /** @return hostname of the linux container this context applies to */
     default HostName hostname() {
         return HostName.from(node().hostname());
     }
@@ -42,14 +40,15 @@ public interface NodeAgentContext extends TaskContext {
 
     ZoneApi zone();
 
-    /** @return information about the Vespa user inside the container */
-    VespaUser vespaUser();
+    /** @return information about users/user namespace of the linux container this context applies to */
+    UserScope users();
 
-    UserNamespace userNamespace();
+    /** @return methods to resolve paths within container's file system */
+    PathScope paths();
 
     default boolean isDisabled(NodeAgentTask task) {
         return false;
-    };
+    }
 
     /**
      * The vcpu value in NodeSpec is the number of vcpus required by the node on a fixed historical
@@ -60,12 +59,6 @@ public interface NodeAgentContext extends TaskContext {
      * @return the vcpus required by the node on this host.
      */
     double vcpuOnThisHost();
-
-    ContainerPath containerPath(String pathInNode);
-
-    ContainerPath containerPathUnderVespaHome(String relativePath);
-
-    ContainerPath containerPathFromPathOnHost(Path pathOnHost);
 
     Optional<ApplicationId> hostExclusiveTo();
 }

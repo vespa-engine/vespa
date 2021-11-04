@@ -14,6 +14,8 @@
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
+#include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <set>
 
@@ -156,8 +158,10 @@ void addDocument(DocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &
                  uint8_t index_id, uint32_t docid, const string &word) {
     Document::UP doc = buildDocument(doc_builder, docid, word);
     index.insertDocument(docid, *doc);
-    index.commit(std::shared_ptr<vespalib::IDestructorCallback>());
+    vespalib::Gate gate;
+    index.commit(std::make_shared<vespalib::GateCallback>(gate));
     selector.setSource(docid, index_id);
+    gate.await();
 }
 
 void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
@@ -182,7 +186,6 @@ void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
     addDocument(doc_builder, memory_index, *_selector, id, id + 1, "bar");
     addDocument(doc_builder, memory_index, *_selector, id, id + 2, "baz");
     addDocument(doc_builder, memory_index, *_selector, id, id + 3, "qux");
-    _threadingService.indexFieldWriter().sync_all();
 
     const uint32_t docIdLimit =
         std::min(memory_index.getDocIdLimit(), _selector->getDocIdLimit());

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_inverter.h"
+#include "document_inverter_collection.h"
 #include "document_inverter_context.h"
 #include "field_index_collection.h"
 #include "memory_index.h"
@@ -59,9 +60,7 @@ MemoryIndex::MemoryIndex(const Schema& schema,
       _pushThreads(pushThreads),
       _fieldIndexes(std::make_unique<FieldIndexCollection>(_schema, inspector)),
       _inverter_context(std::make_unique<DocumentInverterContext>(_schema, _invertThreads, _pushThreads, *_fieldIndexes)),
-      _inverter0(std::make_unique<DocumentInverter>(*_inverter_context)),
-      _inverter1(std::make_unique<DocumentInverter>(*_inverter_context)),
-      _inverter(_inverter0.get()),
+      _inverters(std::make_unique<DocumentInverterCollection>(*_inverter_context, 4)),
       _frozen(false),
       _maxDocId(0), // docId 0 is reserved
       _numDocs(0),
@@ -88,7 +87,8 @@ MemoryIndex::insertDocument(uint32_t docId, const document::Document &doc)
         return;
     }
     updateMaxDocId(docId);
-    _inverter->invertDocument(docId, doc);
+    auto& inverter = _inverters->get_active_inverter();
+    inverter.invertDocument(docId, doc);
     if (_indexedDocs.insert(docId).second) {
         incNumDocs();
     }
@@ -108,22 +108,16 @@ MemoryIndex::removeDocuments(LidVector lids)
             decNumDocs();
         }
     }
-    _inverter->removeDocuments(std::move(lids));
+    auto& inverter = _inverters->get_active_inverter();
+    inverter.removeDocuments(std::move(lids));
 }
 
 void
 MemoryIndex::commit(const std::shared_ptr<vespalib::IDestructorCallback> &onWriteDone)
 {
-    _invertThreads.sync_all(); // drain inverting into this inverter
-    _pushThreads.sync_all(); // drain use of other inverter
-    _inverter->pushDocuments(onWriteDone);
-    flipInverter();
-}
-
-void
-MemoryIndex::flipInverter()
-{
-    _inverter = (_inverter != _inverter0.get()) ? _inverter0.get(): _inverter1.get();
+    auto& inverter = _inverters->get_active_inverter();
+    inverter.pushDocuments(onWriteDone);
+    _inverters->switch_active_inverter();
 }
 
 void

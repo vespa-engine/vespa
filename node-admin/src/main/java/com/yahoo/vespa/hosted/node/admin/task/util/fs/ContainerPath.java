@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.fs;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.LinkOption;
@@ -24,11 +26,13 @@ public class ContainerPath implements Path {
     private final ContainerFileSystem containerFs;
     private final Path pathOnHost;
     private final String[] parts;
+    private final UnixUser user;
 
-    private ContainerPath(ContainerFileSystem containerFs, Path pathOnHost, String[] parts) {
+    private ContainerPath(ContainerFileSystem containerFs, Path pathOnHost, String[] parts, UnixUser user) {
         this.containerFs = Objects.requireNonNull(containerFs);
         this.pathOnHost = Objects.requireNonNull(pathOnHost);
         this.parts = Objects.requireNonNull(parts);
+        this.user = Objects.requireNonNull(user);
 
         if (!pathOnHost.isAbsolute())
             throw new IllegalArgumentException("Path host must be absolute: " + pathOnHost);
@@ -39,6 +43,8 @@ public class ContainerPath implements Path {
 
     public Path pathOnHost() { return pathOnHost; }
     public String pathInContainer() { return '/' + String.join("/", parts); }
+    public ContainerPath withUser(UnixUser user) { return new ContainerPath(containerFs, pathOnHost, parts, user); }
+    UnixUser user() { return user; }
 
     @Override
     public ContainerFileSystem getFileSystem() {
@@ -47,7 +53,7 @@ public class ContainerPath implements Path {
 
     @Override
     public ContainerPath getRoot() {
-        return resolve(containerFs, new String[0], Path.of("/"));
+        return resolve(containerFs, new String[0], Path.of("/"), user);
     }
 
     @Override
@@ -59,7 +65,7 @@ public class ContainerPath implements Path {
     @Override
     public ContainerPath getParent() {
         if (parts.length == 0) return null;
-        return new ContainerPath(containerFs, pathOnHost.getParent(), Arrays.copyOf(parts, parts.length-1));
+        return new ContainerPath(containerFs, pathOnHost.getParent(), Arrays.copyOf(parts, parts.length-1), user);
     }
 
     @Override
@@ -83,7 +89,7 @@ public class ContainerPath implements Path {
         return Path.of(parts[beginIndex], rest);
     }
 
-    @Override public ContainerPath resolve(Path other) { return resolve(containerFs, parts, other); }
+    @Override public ContainerPath resolve(Path other) { return resolve(containerFs, parts, other, user); }
     @Override public ContainerPath resolve(String other) { return resolve(Path.of(other)); }
     @Override public ContainerPath resolveSibling(String other) { return resolve(Path.of("..", other)); }
 
@@ -133,7 +139,7 @@ public class ContainerPath implements Path {
     public ContainerPath toRealPath(LinkOption... options) throws IOException {
         Path realPathOnHost = pathOnHost.toRealPath(options);
         if (realPathOnHost.equals(pathOnHost)) return this;
-        return fromPathOnHost(containerFs, realPathOnHost);
+        return fromPathOnHost(containerFs, realPathOnHost, user);
     }
 
     @Override
@@ -176,7 +182,7 @@ public class ContainerPath implements Path {
         return containerFs.containerRootOnHost().getFileName() + ":" + pathInContainer();
     }
 
-    private static ContainerPath resolve(ContainerFileSystem containerFs, String[] currentParts, Path other) {
+    private static ContainerPath resolve(ContainerFileSystem containerFs, String[] currentParts, Path other, UnixUser user) {
         List<String> parts = other.isAbsolute() ? new ArrayList<>() : new ArrayList<>(Arrays.asList(currentParts));
         for (int i = 0; i < other.getNameCount(); i++) {
             String part = other.getName(i).toString();
@@ -190,28 +196,29 @@ public class ContainerPath implements Path {
 
         return new ContainerPath(containerFs,
                 containerFs.containerRootOnHost().resolve(String.join("/", parts)),
-                parts.toArray(String[]::new));
+                parts.toArray(String[]::new),
+                user);
     }
 
-    public static ContainerPath fromPathInContainer(ContainerFileSystem containerFs, Path pathInContainer) {
+    public static ContainerPath fromPathInContainer(ContainerFileSystem containerFs, Path pathInContainer, UnixUser user) {
         if (!pathInContainer.isAbsolute())
             throw new IllegalArgumentException("Path in container must be absolute: " + pathInContainer);
-        return resolve(containerFs, new String[0], pathInContainer);
+        return resolve(containerFs, new String[0], pathInContainer, user);
     }
 
-    public static ContainerPath fromPathOnHost(ContainerFileSystem containerFs, Path pathOnHost) {
+    public static ContainerPath fromPathOnHost(ContainerFileSystem containerFs, Path pathOnHost, UnixUser user) {
         pathOnHost = pathOnHost.normalize();
         Path containerRootOnHost = containerFs.containerRootOnHost();
         Path pathUnderContainerStorage = containerRootOnHost.relativize(pathOnHost);
 
         if (pathUnderContainerStorage.getNameCount() == 0 || pathUnderContainerStorage.getName(0).toString().isEmpty())
-            return new ContainerPath(containerFs, pathOnHost, new String[0]);
+            return new ContainerPath(containerFs, pathOnHost, new String[0], user);
         if (pathUnderContainerStorage.getName(0).toString().equals(".."))
             throw new IllegalArgumentException("Path " + pathOnHost + " is not under container root " + containerRootOnHost);
 
         List<String> parts = new ArrayList<>();
         for (int i = 0; i < pathUnderContainerStorage.getNameCount(); i++)
             parts.add(pathUnderContainerStorage.getName(i).toString());
-        return new ContainerPath(containerFs, pathOnHost, parts.toArray(String[]::new));
+        return new ContainerPath(containerFs, pathOnHost, parts.toArray(String[]::new), user);
     }
 }
