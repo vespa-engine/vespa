@@ -2,5 +2,7 @@
 vespa_add_library(searchlib_searchlib_test_memoryindex
     SOURCES
     mock_field_index_collection.cpp
+    ordered_field_index_inserter.cpp
+    ordered_field_index_inserter_backend.cpp
     DEPENDS
 )

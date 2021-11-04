@@ -8,6 +8,7 @@
 #include <vespa/searchlib/memoryindex/url_field_inverter.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
+#include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter_backend.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace search {
@@ -181,8 +182,9 @@ struct UrlFieldInverterTest : public ::testing::Test {
     DocBuilder _b;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
-    test::OrderedFieldIndexInserter _inserter;
+    test::OrderedFieldIndexInserterBackend _inserter_backend;
     FieldLengthCalculator           _calculator;
+    std::vector<std::unique_ptr<IOrderedFieldIndexInserter>> _inserters;
     std::vector<std::unique_ptr<FieldInverter> > _inverters;
     std::unique_ptr<UrlFieldInverter> _urlInverter;
     index::SchemaIndexFields _schemaIndexFields;
@@ -198,8 +200,9 @@ struct UrlFieldInverterTest : public ::testing::Test {
           _b(_schema),
           _word_store(),
           _remover(_word_store),
-          _inserter(),
+          _inserter_backend(),
           _calculator(),
+          _inserters(),
           _inverters(),
           _urlInverter(),
           _schemaIndexFields()
@@ -207,10 +210,11 @@ struct UrlFieldInverterTest : public ::testing::Test {
         _schemaIndexFields.setup(_schema);
         for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields();
              ++fieldId) {
+            _inserters.emplace_back(std::make_unique<test::OrderedFieldIndexInserter>(_inserter_backend, fieldId));
             _inverters.push_back(std::make_unique<FieldInverter>(_schema,
                                                                  fieldId,
                                                                  _remover,
-                                                                 _inserter,
+                                                                 *_inserters.back(),
                                                                  _calculator));
         }
         index::UriField &urlField =
@@ -234,11 +238,8 @@ struct UrlFieldInverterTest : public ::testing::Test {
     }
 
     void pushDocuments() {
-        uint32_t fieldId = 0;
         for (auto &inverter : _inverters) {
-            _inserter.setFieldId(fieldId);
             inverter->pushDocuments();
-            ++fieldId;
         }
     }
 
@@ -297,7 +298,7 @@ TEST_F(SingleInverterTest, require_that_single_url_field_works)
               "w=com,a=10,"
               "w=example,a=10,"
               "w=www,a=10",
-              _inserter.toStr());
+              _inserter_backend.toStr());
 }
 
 TEST_F(ArrayInverterTest, require_that_array_url_field_works)
@@ -340,7 +341,7 @@ TEST_F(ArrayInverterTest, require_that_array_url_field_works)
               "w=example,a=10,"
               "w=flickr,a=10,"
               "w=www,a=10",
-              _inserter.toStr());
+              _inserter_backend.toStr());
 }
 
 TEST_F(WeightedSetInverterTest, require_that_weighted_set_field_works)
@@ -385,7 +386,7 @@ TEST_F(WeightedSetInverterTest, require_that_weighted_set_field_works)
               "w=example,a=10,"
               "w=flickr,a=10,"
               "w=www,a=10",
-              _inserter.toStr());
+              _inserter_backend.toStr());
 }
 
 TEST_F(SingleInverterTest, require_that_annotated_single_url_field_works)
@@ -425,7 +426,7 @@ TEST_F(SingleInverterTest, require_that_annotated_single_url_field_works)
               "w=com,a=10,"
               "w=example,a=10,"
               "w=www,a=10",
-              _inserter.toStr());
+              _inserter_backend.toStr());
 }
 
 TEST_F(ArrayInverterTest, require_that_annotated_array_url_field_works)
@@ -470,13 +471,13 @@ TEST_F(ArrayInverterTest, require_that_annotated_array_url_field_works)
               "w=example,a=10,"
               "w=flickr,a=10,"
               "w=www,a=10",
-              _inserter.toStr());
+              _inserter_backend.toStr());
 }
 
 TEST_F(WeightedSetInverterTest, require_that_annotated_weighted_set_field_works)
 {
     enableAnnotations();
-    _inserter.setVerbose();
+    _inserter_backend.setVerbose();
     invertDocument(10, *makeDoc10WeightedSet(_b));
     pushDocuments();
     EXPECT_EQ("f=0,"
@@ -518,14 +519,14 @@ TEST_F(WeightedSetInverterTest, require_that_annotated_weighted_set_field_works)
               "w=example,a=10(e=0,w=4,l=5[2]),"
               "w=flickr,a=10(e=1,w=7,l=5[2]),"
               "w=www,a=10(e=0,w=4,l=5[1],e=1,w=7,l=5[1])",
-              _inserter.toStr());
+              _inserter_backend.toStr());
 }
 
 TEST_F(SingleInverterTest, require_that_empty_single_field_works)
 {
     invertDocument(10, *makeDoc10Empty(_b));
     pushDocuments();
-    EXPECT_EQ("", _inserter.toStr());
+    EXPECT_EQ("", _inserter_backend.toStr());
 }
 
 TEST_F(ArrayInverterTest, require_that_empty_array_field_works)
@@ -533,14 +534,14 @@ TEST_F(ArrayInverterTest, require_that_empty_array_field_works)
     invertDocument(10, *makeDoc10Empty(_b));
     pushDocuments();
     EXPECT_EQ("",
-              _inserter.toStr());
+              _inserter_backend.toStr());
 }
 
 TEST_F(WeightedSetInverterTest, require_that_empty_weighted_set_field_works)
 {
     invertDocument(10, *makeDoc10Empty(_b));
     pushDocuments();
-    EXPECT_EQ("", _inserter.toStr());
+    EXPECT_EQ("", _inserter_backend.toStr());
 }
 
 TEST_F(SingleInverterTest, require_that_annotated_empty_single_field_works)
@@ -548,7 +549,7 @@ TEST_F(SingleInverterTest, require_that_annotated_empty_single_field_works)
     enableAnnotations();
     invertDocument(10, *makeDoc10Empty(_b));
     pushDocuments();
-    EXPECT_EQ("", _inserter.toStr());
+    EXPECT_EQ("", _inserter_backend.toStr());
 }
 
 TEST_F(ArrayInverterTest, require_that_annotated_empty_array_field_works)
@@ -556,7 +557,7 @@ TEST_F(ArrayInverterTest, require_that_annotated_empty_array_field_works)
     enableAnnotations();
     invertDocument(10, *makeDoc10Empty(_b));
     pushDocuments();
-    EXPECT_EQ("", _inserter.toStr());
+    EXPECT_EQ("", _inserter_backend.toStr());
 }
 
 TEST_F(WeightedSetInverterTest, require_that_annotated_empty_weighted_set_field_works)
@@ -564,7 +565,7 @@ TEST_F(WeightedSetInverterTest, require_that_annotated_empty_weighted_set_field_
     enableAnnotations();
     invertDocument(10, *makeDoc10Empty(_b));
     pushDocuments();
-    EXPECT_EQ("", _inserter.toStr());
+    EXPECT_EQ("", _inserter_backend.toStr());
 }
 
 }

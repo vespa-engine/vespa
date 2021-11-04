@@ -9,7 +9,7 @@
 #include <vespa/searchlib/memoryindex/i_field_index_collection.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/searchlib/test/memoryindex/mock_field_index_collection.h>
-#include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
+#include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter_backend.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <thread>
@@ -35,7 +35,7 @@ struct DocumentInverterCollectionTest : public ::testing::Test {
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
     WordStore                       _word_store;
     FieldIndexRemover               _remover;
-    test::OrderedFieldIndexInserter _inserter;
+    test::OrderedFieldIndexInserterBackend _inserter_backend;
     FieldLengthCalculator           _calculator;
     test::MockFieldIndexCollection  _fic;
     DocumentInverterContext         _inv_context;
@@ -47,9 +47,9 @@ struct DocumentInverterCollectionTest : public ::testing::Test {
           _pushThreads(SequencedTaskExecutor::create(push_executor, 4)),
           _word_store(),
           _remover(_word_store),
-          _inserter(),
+          _inserter_backend(),
           _calculator(),
-          _fic(_remover, _inserter, _calculator),
+          _fic(_remover, _inserter_backend, _calculator),
           _inv_context(_schema, *_invertThreads, *_pushThreads, _fic),
           _inv_collection(_inv_context, 10)
     {

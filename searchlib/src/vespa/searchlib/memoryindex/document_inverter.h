@@ -92,8 +92,6 @@ public:
         return _inverters[fieldId].get();
     }
 
-    const std::vector<std::unique_ptr<FieldInverter> > & getInverters() const { return _inverters; }
-
     uint32_t getNumFields() const { return _inverters.size(); }
     void wait_for_zero_ref_count() { _ref_count.waitForZeroRefCount(); }
     bool has_zero_ref_count() { return _ref_count.has_zero_ref_count(); }
