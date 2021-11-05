@@ -108,6 +108,9 @@ struct Setup {
     void second_phase(const std::string &feature) {
         property(rank::SecondPhase::NAME, feature);
     }
+    void match_feature(const std::string &feature) {
+        property(match::Feature::NAME, feature);
+    }
     void summary_feature(const std::string &feature) {
         property(summary::Feature::NAME, feature);
     }
@@ -314,6 +317,11 @@ TEST_F("require that first phase can break validation", SimpleSetup()) {
 
 TEST_F("require that second phase can break validation", SimpleSetup()) {
     f.second_phase(invalid_feature);
+    EXPECT_TRUE(!f.verify());
+}
+
+TEST_F("require that match features can break validation", SimpleSetup()) {
+    f.match_feature(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
