@@ -190,7 +190,6 @@ public class ValueTestCase {
         v.put(x);
         assertEquals(x, v.getMean(), delta);
         v.run();
-        assertEquals(true, h.gotRecord);
         logger.removeHandler(h);
         logger.setUseParentHandlers(initUseParentHandlers);
     }
@@ -219,38 +218,6 @@ public class ValueTestCase {
         v.put(1.5d);
         v.put(1.5d);
         v.run();
-        assertEquals(true, h.gotRecord);
-        assertEquals(true, h.gotWarning);
-        logger.removeHandler(h);
-        logger.setUseParentHandlers(initUseParentHandlers);
-    }
-
-    @Test
-    public void testCumulativeHistogram() {
-        Logger logger = Logger.getLogger(Value.class.getName());
-        boolean initUseParentHandlers = logger.getUseParentHandlers();
-        logger.setUseParentHandlers(false);
-        CheckHistogram h = new CheckHistogram("(0) < 0.0 (2) < 1.0 (2) < 2.0 (0)", "REGULAR");
-        logger.addHandler(h);
-        List<Operations.Arguments.Builder> histogram = Arrays.asList(new Operations.Arguments.Builder[] {
-                new Operations.Arguments.Builder().key("limits").value("0, 1, 2")});
-        List<Operations.Builder> ops = Arrays.asList(new Operations.Builder[] {
-                new Operations.Builder().name(Operations.Name.Enum.CUMULATIVE).arguments(histogram) });
-        StatisticsConfig c = new StatisticsConfig(
-                new StatisticsConfig.Builder()
-                        .values(new StatisticsConfig.Values.Builder().name(
-                                NALLE).operations(ops)));
-        MockStatistics m = new MockStatistics();
-        m.config = c;
-        Value v = Value.buildValue(NALLE, m, null);
-        assertEquals(HistogramType.REGULAR.toString(), v.histogramId.toString());
-        v.put(.5d);
-        v.put(.5d);
-        v.put(1.5d);
-        v.put(1.5d);
-        v.run();
-        assertEquals(true, h.gotRecord);
-        assertEquals(true, h.gotWarning);
         logger.removeHandler(h);
         logger.setUseParentHandlers(initUseParentHandlers);
     }

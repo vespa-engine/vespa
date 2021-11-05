@@ -165,16 +165,10 @@ public class Counter extends Handle {
      */
     @Override
     public void runHandle() {
-        String name = getName();
-        long lastCurrent;
         boolean resetState = getResetCounter();
 
         if (resetState) {
-            lastCurrent = current.getAndSet(0L);
-            Event.value(name, lastCurrent);
-        } else {
-            lastCurrent = current.get();
-            Event.count(name, lastCurrent);
+            current.set(0L);
         }
     }
 

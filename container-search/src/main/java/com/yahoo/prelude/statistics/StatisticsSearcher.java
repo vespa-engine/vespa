@@ -3,7 +3,6 @@ package com.yahoo.prelude.statistics;
 
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.container.protect.Error;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.metrics.simple.MetricReceiver;
@@ -19,7 +18,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
-import com.yahoo.statistics.Counter;
 import com.yahoo.statistics.Value;
 
 import java.util.HashMap;
@@ -76,16 +74,11 @@ public class StatisticsSearcher extends Searcher {
     private static final String RELEVANCE_AT_3_METRIC = "relevance.at_3";
     private static final String RELEVANCE_AT_10_METRIC = "relevance.at_10";
 
-    private final Counter queriesCounter; // basic counter
-    private final Counter failedQueriesCounter; // basic counter
-    private final Counter nullQueriesCounter; // basic counter
-    private final Counter illegalQueriesCounter; // basic counter
     private final Value meanQueryLatency; // mean pr 5 min
     private final Value queryLatencyBuckets;
     private final Value maxQueryLatency; // separate to avoid name mangling
     @SuppressWarnings("unused") // all the work is done by the callback
     private final Value peakQPS; // peak 1s QPS
-    private final Counter emptyResultsCounter; // number of results containing no concrete hits
     private final Value hitsPerQuery; // mean number of hits per query
     private final Value totalHitsPerQuery;
 
@@ -139,10 +132,6 @@ public class StatisticsSearcher extends Searcher {
         this.peakQpsReporter = new PeakQpsReporter();
         this.metric = metric;
 
-        queriesCounter = new Counter(QUERIES_METRIC, manager, false);
-        failedQueriesCounter = new Counter(FAILED_QUERIES_METRIC, manager, false);
-        nullQueriesCounter = new Counter("null_queries", manager, false);
-        illegalQueriesCounter = new Counter("illegal_queries", manager, false);
         meanQueryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
         maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
         queryLatencyBuckets = Value.buildValue(QUERY_LATENCY_METRIC, manager, null);
@@ -150,7 +139,6 @@ public class StatisticsSearcher extends Searcher {
         hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
         totalHitsPerQuery = new Value(TOTALHITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
 
-        emptyResultsCounter = new Counter(EMPTY_RESULTS_METRIC, manager, false);
         metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
         metricReceiver.declareGauge(HITS_PER_QUERY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
         metricReceiver.declareGauge(TOTALHITS_PER_QUERY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
@@ -265,7 +253,7 @@ public class StatisticsSearcher extends Searcher {
         } else {
             getLogger().log(Level.WARNING,
                             "Apparently negative latency measure, start: " + start_ns
-                            + ", end: " + end_ns + ", for query: " + query.toString());
+                            + ", end: " + end_ns + ", for query: " + query);
         }
         if (result.hits().getError() != null) {
             incrErrorCount(result, metricContext);
@@ -290,7 +278,6 @@ public class StatisticsSearcher extends Searcher {
 
         metric.set(QUERY_HIT_OFFSET_METRIC, (double) (query.getHits() + query.getOffset()), metricContext);
         if (hitCount == 0) {
-            emptyResultsCounter.increment();
             metric.add(EMPTY_RESULTS_METRIC, 1, metricContext);
         }
 
@@ -319,21 +306,14 @@ public class StatisticsSearcher extends Searcher {
     }
 
     private void incrQueryCount(Metric.Context metricContext) {
-        //myStats.incrQueryCnt();
-        queriesCounter.increment();
         metric.add(QUERIES_METRIC, 1, metricContext);
     }
 
     private void incrErrorCount(Result result, Metric.Context metricContext) {
-        failedQueriesCounter.increment();
         metric.add(FAILED_QUERIES_METRIC, 1, metricContext);
 
         if (result == null) // the chain threw an exception
             metric.add("error.unhandled_exception", 1, metricContext);
-        else if (result.hits().getErrorHit().hasOnlyErrorCode(Error.NULL_QUERY.code))
-            nullQueriesCounter.increment();
-        else if (result.hits().getErrorHit().hasOnlyErrorCode(Error.ILLEGAL_QUERY.code))
-            illegalQueriesCounter.increment();
     }
 
     /**
