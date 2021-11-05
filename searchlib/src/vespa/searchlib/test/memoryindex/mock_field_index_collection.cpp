@@ -6,10 +6,10 @@
 namespace search::memoryindex::test {
 
 MockFieldIndexCollection::MockFieldIndexCollection(FieldIndexRemover& remover,
-                                                   OrderedFieldIndexInserter& inserter,
+                                                   OrderedFieldIndexInserterBackend& inserter_backend,
                                                    index::FieldLengthCalculator& calculator)
     : _remover(remover),
-      _inserter(inserter),
+      _inserter_backend(inserter_backend),
       _calculator(calculator)
 {
 }
@@ -23,9 +23,16 @@ MockFieldIndexCollection::get_remover(uint32_t)
 }
 
 IOrderedFieldIndexInserter&
-MockFieldIndexCollection::get_inserter(uint32_t)
+MockFieldIndexCollection::get_inserter(uint32_t field_id)
 {
-    return _inserter;
+    if (_inserters.size() <= field_id) {
+        _inserters.resize(field_id + 1);
+    }
+    auto& inserter = _inserters[field_id];
+    if (!inserter) {
+        inserter = std::make_unique<OrderedFieldIndexInserter>(_inserter_backend, field_id);
+    }
+    return *inserter;
 }
 
 index::FieldLengthCalculator&
