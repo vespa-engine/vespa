@@ -148,6 +148,10 @@ func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
 	return ioutil.ReadFile(c.APIKeyPath(tenantName))
 }
 
+func (c *Config) AuthConfigPath() string {
+	return filepath.Join(c.Home, "auth", "config.json")
+}
+
 func (c *Config) ReadSessionID(app vespa.ApplicationID) (int64, error) {
 	sessionPath, err := c.applicationFilePath(app, "session_id")
 	if err != nil {
