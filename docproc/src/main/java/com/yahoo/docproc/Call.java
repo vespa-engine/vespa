@@ -11,7 +11,6 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.statistics.Counter;
 import com.yahoo.statistics.Statistics;
 
 import java.util.List;
@@ -25,14 +24,12 @@ import java.util.List;
 public class Call implements Cloneable {
 
     private final DocumentProcessor processor;
-    private final Counter docCounter;
     private final String docCounterName;
-    private final Counter procTimeCounter;
     private final String procTimeCounterName;
     private final Metric metric;
 
     public Call(DocumentProcessor processor) {
-        this(processor, Statistics.nullImplementation, new NullMetric());
+        this(processor, new NullMetric());
     }
 
     /**
@@ -40,11 +37,19 @@ public class Call implements Cloneable {
      *
      * @param processor the document processor to call
      */
+    public Call(DocumentProcessor processor, Metric metric) {
+        this(processor, "", metric);
+    }
+    @Deprecated
     public Call(DocumentProcessor processor, Statistics manager, Metric metric) {
-        this(processor, "", manager, metric);
+        this(processor, "", metric);
+    }
+    @Deprecated
+    public Call(DocumentProcessor processor, String chainName, Statistics manager, Metric metric) {
+        this(processor, chainName, metric);
     }
 
-    public Call(DocumentProcessor processor, String chainName, Statistics manager, Metric metric) {
+    public Call(DocumentProcessor processor, String chainName, Metric metric) {
         this.processor = processor;
         if (chainName == null)
             chainName = "";
@@ -53,8 +58,6 @@ public class Call implements Cloneable {
                          getDocumentProcessorId().stringValue().replaceAll("[^\\p{Alnum}]", "_") + "_documents";
         procTimeCounterName = "docprocessor_" + chainName + "_" +
                               getDocumentProcessorId().stringValue().replaceAll("[^\\p{Alnum}]", "_") + "_proctime";
-        docCounter = new Counter(docCounterName, manager, false);
-        procTimeCounter = new Counter(procTimeCounterName, manager, false, null, true);
         this.metric = metric;
     }
 
@@ -171,12 +174,10 @@ public class Call implements Cloneable {
     }
 
     private void incrementDocs(long increment) {
-        docCounter.increment(increment);
         metric.add(docCounterName, increment, null);
     }
 
     private void incrementProcTime(long increment) {
-        procTimeCounter.increment(increment);
         metric.add(procTimeCounterName, increment, null);
     }
 

@@ -7,7 +7,6 @@ import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.docproc.proxy.SchemaMap;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.statistics.Statistics;
 
 /**
  * Class to hold parameters given to DocumentProcessingHandler, typically used by unit tests.
@@ -21,7 +20,6 @@ public class DocumentProcessingHandlerParameters {
     private DocumentTypeManager documentTypeManager = null;
     private ChainsModel chainsModel = null;
     private SchemaMap schemaMap = null;
-    private Statistics statisticsManager = Statistics.nullImplementation;
     private Metric metric = new NullMetric();
     private ContainerDocumentConfig containerDocConfig;
 
@@ -83,15 +81,6 @@ public class DocumentProcessingHandlerParameters {
 
     public DocumentProcessingHandlerParameters setSchemaMap(SchemaMap schemaMap) {
         this.schemaMap = schemaMap;
-        return this;
-    }
-
-    public Statistics getStatisticsManager() {
-        return statisticsManager;
-    }
-
-    public DocumentProcessingHandlerParameters setStatisticsManager(Statistics statisticsManager) {
-        this.statisticsManager = statisticsManager;
         return this;
     }
 
