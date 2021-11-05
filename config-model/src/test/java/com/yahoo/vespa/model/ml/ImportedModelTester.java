@@ -42,18 +42,20 @@ public class ImportedModelTester {
 
     private final String modelName;
     private final Path applicationDir;
+    private final DeployState deployState;
 
     public ImportedModelTester(String modelName, Path applicationDir) {
         this.modelName = modelName;
         this.applicationDir = applicationDir;
+        deployState = new DeployState.Builder()
+                .applicationPackage(ApplicationPackageTester.create(applicationDir.toString()).app())
+                .modelImporters(importers)
+                .build();
     }
 
     public VespaModel createVespaModel() {
         try {
-            DeployState.Builder state = new DeployState.Builder();
-            state.applicationPackage(ApplicationPackageTester.create(applicationDir.toString()).app());
-            state.modelImporters(importers);
-            return new VespaModel(state.build());
+            return new VespaModel(deployState);
         }
         catch (SAXException | IOException e) {
             throw new RuntimeException(e);
