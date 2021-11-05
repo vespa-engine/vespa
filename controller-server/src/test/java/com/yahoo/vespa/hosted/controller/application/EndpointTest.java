@@ -314,28 +314,28 @@ public class EndpointTest {
     @Test
     public void application_endpoints() {
         Map<String, Endpoint> tests = Map.of(
-                "https://weighted.a1.t1.a.vespa-app.cloud/",
+                "https://weighted.a1.t1.us-west-1.r.vespa-app.cloud/",
                 Endpoint.of(app1)
                         .targetApplication(EndpointId.of("weighted"), ClusterSpec.Id.from("qrs"),
                                            Map.of(new DeploymentId(app1.instance("i1"), ZoneId.from("prod", "us-west-1")), 1))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
-                "https://weighted.a1.t1.a.cd.vespa-app.cloud/",
+                "https://weighted.a1.t1.us-west-1.r.cd.vespa-app.cloud/",
                 Endpoint.of(app1)
                         .targetApplication(EndpointId.of("weighted"), ClusterSpec.Id.from("qrs"),
                                            Map.of(new DeploymentId(app1.instance("i1"), ZoneId.from("prod", "us-west-1")), 1))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.PublicCd),
-                "https://a2.t2.a.vespa.oath.cloud/",
+                "https://a2.t2.us-east-3-r.vespa.oath.cloud/",
                 Endpoint.of(app2)
                         .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
                                            Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.main),
-                "https://cd.a2.t2.a.vespa.oath.cloud/",
+                "https://cd.a2.t2.us-east-3-r.vespa.oath.cloud/",
                 Endpoint.of(app2)
                         .targetApplication(EndpointId.defaultId(), ClusterSpec.Id.from("qrs"),
                                            Map.of(new DeploymentId(app2.instance("i1"), ZoneId.from("prod", "us-east-3")), 1))

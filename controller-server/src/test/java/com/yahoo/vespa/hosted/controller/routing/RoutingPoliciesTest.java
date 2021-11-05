@@ -826,7 +826,7 @@ public class RoutingPoliciesTest {
                 DeploymentId deployment = new DeploymentId(instance, zone);
                 EndpointList regionEndpoints = tester.controller().routing().endpointsOf(deployment)
                                                     .cluster(cluster)
-                                                    .scope(Endpoint.Scope.region);
+                                                    .scope(Endpoint.Scope.weighted);
                 Endpoint regionEndpoint = regionEndpoints.first().orElseThrow(() -> new IllegalArgumentException("No region endpoint found for " + cluster + " in " + deployment));
                 zonesByRegionEndpoint.computeIfAbsent(regionEndpoint.dnsName(), (k) -> new ArrayList<>())
                                      .add(zone);

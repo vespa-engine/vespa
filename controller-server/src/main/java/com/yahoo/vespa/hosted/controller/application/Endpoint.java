@@ -53,17 +53,17 @@ public class Endpoint {
         Objects.requireNonNull(scope, "scope must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
-        if (scope.multiRegion()) {
-            if (id == null) throw new IllegalArgumentException("Endpoint ID must be set for multi-region endpoints");
+        if (scope.multiDeployment()) {
+            if (id == null) throw new IllegalArgumentException("Endpoint ID must be set for multi-deployment endpoints");
         } else {
             if (scope == Scope.zone && id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
             if (targets.size() != 1) throw new IllegalArgumentException("A single target must be given for " + scope + " endpoints");
         }
-        if (scope != Scope.application && instanceName.isEmpty()) {
+        if (scope != Scope.region && instanceName.isEmpty()) {
             throw new IllegalArgumentException("Instance must be set for scope " + scope);
         }
         for (var target : targets) {
-            if (scope == Scope.application) {
+            if (scope == Scope.region) {
                 TenantAndApplicationId owner = TenantAndApplicationId.from(target.deployment().applicationId());
                 if (!owner.equals(application)) {
                     throw new IllegalArgumentException(id + " has target owned by " + owner +
@@ -172,7 +172,6 @@ public class Endpoint {
 
     /** Returns the upstream ID of given deployment. This *must* match what the routing layer generates */
     public String upstreamIdOf(DeploymentId deployment) {
-        if (!scope.multiRegion()) throw new IllegalArgumentException("Scope " + scope + " does not have upstream name");
         if (!routingMethod.isShared()) throw new IllegalArgumentException("Routing method " + routingMethod + " does not have upstream name");
         return upstreamIdOf(cluster.value(), deployment.applicationId(), deployment.zoneId());
     }
@@ -237,7 +236,7 @@ public class Endpoint {
 
     private static String scopePart(Scope scope, List<Target> targets, SystemName system, boolean legacy) {
         String scopeSymbol = scopeSymbol(scope, system);
-        if (scope.multiRegion()) return scopeSymbol;
+        if (scope == Scope.global) return scopeSymbol;
 
         ZoneId zone = targets.get(0).deployment().zoneId();
         String region = zone.region().value();
@@ -253,16 +252,16 @@ public class Endpoint {
         if (system.isPublic()) {
             switch (scope) {
                 case zone: return "z";
-                case region: return "w";
+                case weighted: return "w";
                 case global: return "g";
-                case application: return "a";
+                case region: return "r";
             }
         }
         switch (scope) {
             case zone: return "";
-            case region: return "w";
+            case weighted: return "w";
             case global: return "global";
-            case application: return "a";
+            case region: return "r";
         }
         throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system);
     }
@@ -350,31 +349,28 @@ public class Endpoint {
     public enum Scope {
 
         /**
-         * Endpoint points to a multiple instances of an application.
+         * Endpoint points to a multiple instances of an application, in the same region.
          *
          * Traffic is routed across instances according to weights specified in deployment.xml
          */
-        application,
+        region,
 
         /** Endpoint points to one or more zones. Traffic is routed to the zone closest to the client */
         global,
 
         /**
-         * Endpoint points to one more zones in the same geographical region. Traffic is routed equally across zones.
+         * Endpoint points to one more zones in the same geographical region. Traffic is routed evenly across zones.
          *
          * This is for internal use only. Endpoints with this scope are not exposed directly to tenants.
          */
-        region,
+        weighted,
 
         /** Endpoint points to a single zone */
         zone;
 
-        /** Returns whether this scope may span multiple regions */
-        public boolean multiRegion() {
-            // application scope doesn't technically support multiple regions in practice, but we assume it does for the
-            // purposes of building an endpoint name. This allows us to support multiple regions in the future without
-            // needing to change endpoint names.
-            return this == application || this == global;
+        /** Returns whether this scope may span multiple deployments */
+        public boolean multiDeployment() {
+            return this == region || this == global;
         }
 
     }
@@ -536,7 +532,7 @@ public class Endpoint {
             this.targets = deployments.entrySet().stream()
                                       .map(kv -> new Target(kv.getKey(), kv.getValue()))
                                       .collect(Collectors.toUnmodifiableList());
-            this.scope = Scope.application;
+            this.scope = Scope.region;
             return this;
         }
 
@@ -544,7 +540,7 @@ public class Endpoint {
         public EndpointBuilder targetRegion(ClusterSpec.Id cluster, ZoneId zone) {
             checkScope();
             this.cluster = cluster;
-            this.scope = Scope.region;
+            this.scope = Scope.weighted;
             this.targets = List.of(new Target(new DeploymentId(application.instance(instance.get()), effectiveZone(zone))));
             return this;
         }
