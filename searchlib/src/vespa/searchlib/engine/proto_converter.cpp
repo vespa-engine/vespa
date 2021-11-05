@@ -109,11 +109,6 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
     bool has_match_features = (num_match_features > 0 && reply.hits.size() > 0);
     if (has_match_features) {
         size_t num_match_feature_values = reply.match_features.values.size();
-
-        fprintf(stderr, "reply with %zu hits has %zu match features, total %zu/%zu\n",
-                reply.hits.size(), num_match_features,
-                num_match_feature_values, reply.hits.size() * num_match_features);
-
         assert(num_match_feature_values == reply.hits.size() * num_match_features);
         for (const auto & name : reply.match_features.names) {
             *proto.add_match_feature_names() = name;
