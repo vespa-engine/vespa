@@ -86,6 +86,14 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag SHARED_FIELD_WRITER_EXECUTOR = defineStringFlag(
+            "shared-field-writer-executor", "NONE",
+            List.of("geirst, baldersheim"), "2021-11-05", "2022-02-01",
+            "Whether to use a shared field writer executor for the document database(s) in proton. " +
+            "Valid values: NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB",
+            "Takes effect at redeployment (requires restart)",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
             List.of("geirst, baldersheim"), "2021-10-21", "2022-01-01",
