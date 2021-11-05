@@ -29,6 +29,7 @@ import com.yahoo.documentmodel.*;
 import com.yahoo.compress.Compressor;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.searchdefinition.Application;
+import com.yahoo.searchdefinition.DistributableResource;
 import com.yahoo.searchdefinition.document.*;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
 import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferenceDataType;
@@ -1945,8 +1946,8 @@ Object onnxModelItem(OnnxModel onnxModel) :
 }
 {
     (
-        (<FILE> <COLON> path = filePath() { } (<NL>)*) { onnxModel.setFileName(path); } |
-        (<URI> <COLON> path = uriPath() { } (<NL>)*) { onnxModel.setUri(path); } |
+        (path = fileItem()) { onnxModel.setFileName(path); } |
+        (path = uriItem()) { onnxModel.setUri(path); } |
         (<ONNX_INPUT_SL>) {
             String name = token.image.substring(5, token.image.lastIndexOf(":")).trim();
             if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
@@ -1973,56 +1974,42 @@ Object onnxModelItem(OnnxModel onnxModel) :
 void rankingConstant(Schema schema) :
 {
     String name;
-    RankingConstant constant;
-}
-{
-    ( <CONSTANT> name = identifier()
-        {
-            constant = new RankingConstant(name);
-        }
-      lbrace() (rankingConstantItem(constant) (<NL>)*)+ <RBRACE> )
-    {
-        if (documentsOnly) return;
-        schema.rankingConstants().add(constant);
-    }
-}
-
-/**
- * This rule consumes a constant block.
- *
- * @param constant The constant to modify.
- * @return Null.
- */
-Object rankingConstantItem(RankingConstant constant) :
-{
     String path = null;
+    DistributableResource.PathType pathType = DistributableResource.PathType.FILE;
     TensorType type = null;
 }
 {
-    ( (<FILE> <COLON> path = filePath() { } (<NL>)*) { constant.setFileName(path); }
-      | (<URI> <COLON> path = uriPath() { } (<NL>)*) { constant.setUri(path); }
-      | type = tensorTypeWithPrefix(rankingConstantErrorMessage(constant.getName())) (<NL>)* { constant.setType(type); }
+    ( <CONSTANT> name = identifier() lbrace()
+      (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; }
+       | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
+      )+
+      <RBRACE>
     )
     {
-        return null;
+        if (documentsOnly) return;
+        schema.rankingConstants().add(new RankingConstant(name, type, path, pathType));
     }
+}
+
+String fileItem() :
+{
+   String path;
+}
+{
+  (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = token.image; } { } (<NL>)*) { return path; }
+}
+String uriItem() :
+{
+   String path;
+}
+{
+  (<URI> <COLON> ( <URI_PATH> ) { path = token.image; } (<NL>)*) { return path; }
 }
 
 String rankingConstantErrorMessage(String name) : {}
 {
     { return "For ranking constant ' " + name + "'"; }
-}
-
-String filePath() : { }
-{
-    ( <FILE_PATH> | <STRING> | <IDENTIFIER>)
-    { return token.image; }
-}
-
-String uriPath() : { }
-{
-    ( <URI_PATH> )
-    { return token.image; }
 }
 
 /**

@@ -19,7 +19,10 @@ public class RankingConstant extends DistributableResource {
     }
 
     public RankingConstant(String name, TensorType type, String fileName) {
-        super(name, fileName);
+        this(name, type, fileName, PathType.FILE);
+    }
+    public RankingConstant(String name, TensorType type, String fileName, PathType pathType) {
+        super(name, fileName, pathType);
         this.tensorType = type;
         validate();
     }
