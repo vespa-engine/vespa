@@ -211,7 +211,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var zone = zoneFrom(path);
         if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
             var status = in ? GlobalRouting.Status.in : GlobalRouting.Status.out;
-            controller.routing().policies().setGlobalRoutingStatus(zone, status);
+            controller.routing().policies().setRoutingStatus(zone, status);
         } else {
             controller.serviceRegistry().configServer().setGlobalRotationStatus(zone, in);
         }
@@ -256,7 +256,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         }
 
         // Set policy status
-        controller.routing().policies().setGlobalRoutingStatus(deployment, status, agent);
+        controller.routing().policies().setRoutingStatus(deployment, status, agent);
         return new MessageResponse("Set global routing status for " + deployment + " to " + (in ? "IN" : "OUT"));
     }
 

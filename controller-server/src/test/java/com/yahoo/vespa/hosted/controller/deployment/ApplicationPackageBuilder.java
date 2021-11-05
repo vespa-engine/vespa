@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
@@ -26,8 +27,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalInt;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -48,6 +51,7 @@ public class ApplicationPackageBuilder {
                                                                 "<notifications>\n  <email ",
                                                                 "/>\n</notifications>\n").setEmptyValue("");
     private final StringBuilder endpointsBody = new StringBuilder();
+    private final StringBuilder applicationEndpointsBody = new StringBuilder();
     private final List<X509Certificate> trustedCertificates = new ArrayList<>();
 
     private OptionalInt majorVersion = OptionalInt.empty();
@@ -86,15 +90,32 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
-    public ApplicationPackageBuilder endpoint(String endpointId, String containerId, String... regions) {
+    public ApplicationPackageBuilder endpoint(String id, String containerId, String... regions) {
         endpointsBody.append("      <endpoint");
-        endpointsBody.append(" id='").append(endpointId).append("'");
+        endpointsBody.append(" id='").append(id).append("'");
         endpointsBody.append(" container-id='").append(containerId).append("'");
         endpointsBody.append(">\n");
         for (var region : regions) {
             endpointsBody.append("        <region>").append(region).append("</region>\n");
         }
         endpointsBody.append("      </endpoint>\n");
+        return this;
+    }
+
+    public ApplicationPackageBuilder applicationEndpoint(String id, String containerId, String region,
+                                                         Map<InstanceName, Integer> instanceWeights) {
+        if (instanceWeights.isEmpty()) throw new IllegalArgumentException("At least one instance must be given");
+        applicationEndpointsBody.append("    <endpoint");
+        applicationEndpointsBody.append(" id='").append(id).append("'");
+        applicationEndpointsBody.append(" container-id='").append(containerId).append("'");
+        applicationEndpointsBody.append(" region='").append(region).append("'");
+        applicationEndpointsBody.append(">\n");
+        for (var kv : new TreeMap<>(instanceWeights).entrySet()) {
+            applicationEndpointsBody.append("      <instance weight='").append(kv.getValue().toString()).append("'>")
+                                    .append(kv.getKey().value())
+                                    .append("</instance>\n");
+        }
+        applicationEndpointsBody.append("    </endpoint>\n");
         return this;
     }
 
@@ -248,10 +269,17 @@ public class ApplicationPackageBuilder {
         xml.append(">\n");
         xml.append(prodBody);
         xml.append("    </prod>\n");
-        xml.append("    <endpoints>\n");
-        xml.append(endpointsBody);
-        xml.append("    </endpoints>\n");
+        if (endpointsBody.length() > 0 ) {
+            xml.append("    <endpoints>\n");
+            xml.append(endpointsBody);
+            xml.append("    </endpoints>\n");
+        }
         xml.append("  </instance>\n");
+        if (applicationEndpointsBody.length() > 0) {
+            xml.append("  <endpoints>\n");
+            xml.append(applicationEndpointsBody);
+            xml.append("  </endpoints>\n");
+        }
         xml.append("</deployment>\n");
         return xml.toString().getBytes(UTF_8);
     }

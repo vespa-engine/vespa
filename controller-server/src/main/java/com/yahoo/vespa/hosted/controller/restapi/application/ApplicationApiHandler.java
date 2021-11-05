@@ -1563,7 +1563,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
         var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
         var status = inService ? GlobalRouting.Status.in : GlobalRouting.Status.out;
-        controller.routing().policies().setGlobalRoutingStatus(deployment, status, agent);
+        controller.routing().policies().setRoutingStatus(deployment, status, agent);
     }
 
     /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */

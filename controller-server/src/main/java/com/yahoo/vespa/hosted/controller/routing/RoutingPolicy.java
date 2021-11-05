@@ -75,6 +75,12 @@ public class RoutingPolicy {
         return status;
     }
 
+    /** Returns whether this policy applies to given deployment */
+    public boolean appliesTo(DeploymentId deployment) {
+        return id.owner().equals(deployment.applicationId()) &&
+               id.zone().equals(deployment.zoneId());
+    }
+
     /** Returns a copy of this with status set to given status */
     public RoutingPolicy with(Status status) {
         return new RoutingPolicy(id, canonicalName, dnsZone, instanceEndpoints, applicationEndpoints, status);

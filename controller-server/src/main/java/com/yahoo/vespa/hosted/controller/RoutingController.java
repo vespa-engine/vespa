@@ -139,6 +139,29 @@ public class RoutingController {
         return EndpointList.copyOf(endpoints);
     }
 
+    /** Returns application-scoped endpoints for given application */
+    public EndpointList endpointsOf(TenantAndApplicationId applicationId) {
+        Application app = controller.applications().requireApplication(applicationId);
+        Set<Endpoint> endpoints = new LinkedHashSet<>();
+        for (var declaredEndpoint : app.deploymentSpec().endpoints()) {
+            Map<DeploymentId, Integer> deployments = declaredEndpoint.targets().stream()
+                                                                     .collect(Collectors.toMap(t -> new DeploymentId(applicationId.instance(t.instance()),
+                                                                                                                     ZoneId.from(Environment.prod, t.region())),
+                                                                                               t -> t.weight()));
+            List<RoutingMethod> availableRoutingMethods = routingMethodsOfAll(deployments.keySet(), app.deploymentSpec());
+            for (var routingMethod : availableRoutingMethods) {
+                endpoints.add(Endpoint.of(applicationId)
+                                      .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
+                                                         ClusterSpec.Id.from(declaredEndpoint.containerId()),
+                                                         deployments)
+                                      .routingMethod(routingMethod)
+                                      .on(Port.fromRoutingMethod(routingMethod))
+                                      .in(controller.system()));
+            }
+        }
+        return EndpointList.copyOf(endpoints);
+    }
+
     /** Returns all zone-scoped endpoints and corresponding cluster IDs for given deployments, grouped by their zone */
     public Map<ZoneId, List<Endpoint>> zoneEndpointsOf(Collection<DeploymentId> deployments) {
         var endpoints = new TreeMap<ZoneId, List<Endpoint>>(Comparator.comparing(ZoneId::value));
@@ -287,7 +310,7 @@ public class RoutingController {
     }
 
     /** Returns the routing methods that are available across all given deployments */
-    private List<RoutingMethod> routingMethodsOfAll(List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
+    private List<RoutingMethod> routingMethodsOfAll(Collection<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
         var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
         for (var deployment : deployments) {
             for (var method : controller.zoneRegistry().routingMethods(deployment.zoneId())) {
@@ -306,7 +329,7 @@ public class RoutingController {
     }
 
     /** Returns whether traffic can be directly routed to all given deployments */
-    private boolean canRouteDirectlyTo(List<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
+    private boolean canRouteDirectlyTo(Collection<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
         return deployments.stream().allMatch(deployment -> canRouteDirectlyTo(deployment, deploymentSpec));
     }
 

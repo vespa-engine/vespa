@@ -3,22 +3,30 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.util.Objects;
 
 /**
- * Unique identifier for a global routing table entry (instance x endpoint ID).
+ * Unique identifier for a instance routing table entry (instance x endpoint ID).
  *
  * @author mpolden
  */
 public class RoutingId {
 
+    private final TenantAndApplicationId application;
     private final ApplicationId instance;
     private final EndpointId endpointId;
 
-    public RoutingId(ApplicationId instance, EndpointId endpointId) {
-        this.instance = Objects.requireNonNull(instance, "instance must be non-null");
+    private RoutingId(ApplicationId instance, EndpointId endpointId) {
+        this.instance = Objects.requireNonNull(instance, "application must be non-null");
         this.endpointId = Objects.requireNonNull(endpointId, "endpointId must be non-null");
+
+        application = TenantAndApplicationId.from(instance);
+    }
+
+    public TenantAndApplicationId application() {
+        return application;
     }
 
     public ApplicationId instance() {
@@ -33,14 +41,13 @@ public class RoutingId {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RoutingId that = (RoutingId) o;
-        return instance.equals(that.instance) &&
-               endpointId.equals(that.endpointId);
+        RoutingId routingId = (RoutingId) o;
+        return application.equals(routingId.application) && instance.equals(routingId.instance) && endpointId.equals(routingId.endpointId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(instance, endpointId);
+        return Objects.hash(application, instance, endpointId);
     }
 
     @Override
