@@ -17,18 +17,17 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -138,7 +137,7 @@ public class RoutingPoliciesTest {
         var policies = tester.policiesOf(context1.instanceId());
         assertEquals(clustersPerZone * numberOfDeployments, policies.size());
         assertTrue("Rotation membership is removed from all policies",
-                   policies.stream().allMatch(policy -> policy.endpoints().isEmpty()));
+                   policies.stream().allMatch(policy -> policy.instanceEndpoints().isEmpty()));
         assertEquals("Rotations for " + context2.application() + " are not removed", 2, tester.aliasDataOf(endpoint4).size());
     }
 
@@ -361,7 +360,7 @@ public class RoutingPoliciesTest {
 
         tester.assertTargets(context.instanceId(), EndpointId.defaultId(),
                              ClusterSpec.Id.from("default"), 0,
-                             Map.of(zone1, 1L, zone2, 1L), true);
+                             Map.of(zone1, 1L, zone2, 1L));
         assertEquals("Registers expected DNS names",
                      Set.of("app1.tenant1.aws-eu-west-1.w.vespa-app.cloud",
                             "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
@@ -705,8 +704,7 @@ public class RoutingPoliciesTest {
     /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
     private static ApplicationPackageBuilder applicationPackageBuilder() {
         return new ApplicationPackageBuilder()
-                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION);
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"));
     }
     
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, boolean shared, int count) {
@@ -821,21 +819,14 @@ public class RoutingPoliciesTest {
                          .collect(Collectors.toList());
         }
 
-        private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights) {
-            assertTargets(application, endpointId, cluster, loadBalancerId, zoneWeights, false);
-        }
-
-        private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights, boolean legacy) {
+        private void assertTargets(ApplicationId instance, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights) {
             Set<String> latencyTargets = new HashSet<>();
             Map<String, List<ZoneId>> zonesByRegionEndpoint = new HashMap<>();
             for (var zone : zoneWeights.keySet()) {
-                DeploymentId deployment = new DeploymentId(application, zone);
+                DeploymentId deployment = new DeploymentId(instance, zone);
                 EndpointList regionEndpoints = tester.controller().routing().endpointsOf(deployment)
                                                     .cluster(cluster)
-                                                    .scope(Endpoint.Scope.region);
-                if (!legacy) {
-                    regionEndpoints = regionEndpoints.not().legacy();
-                }
+                                                    .scope(Endpoint.Scope.weighted);
                 Endpoint regionEndpoint = regionEndpoints.first().orElseThrow(() -> new IllegalArgumentException("No region endpoint found for " + cluster + " in " + deployment));
                 zonesByRegionEndpoint.computeIfAbsent(regionEndpoint.dnsName(), (k) -> new ArrayList<>())
                                      .add(zone);
@@ -843,7 +834,7 @@ public class RoutingPoliciesTest {
             zonesByRegionEndpoint.forEach((regionEndpoint, zonesInRegion) -> {
                 Set<String> weightedTargets = zonesInRegion.stream()
                                                            .map(z -> "weighted/lb-" + loadBalancerId + "--" +
-                                                                     application.serializedForm() + "--" + z.value() +
+                                                                     instance.serializedForm() + "--" + z.value() +
                                                                      "/dns-zone-1/" + z.value() + "/" + zoneWeights.get(z))
                                                            .collect(Collectors.toSet());
                 assertEquals("Region endpoint " + regionEndpoint + " points to load balancer",
@@ -853,9 +844,10 @@ public class RoutingPoliciesTest {
                 String latencyTarget = "latency/" + regionEndpoint + "/dns-zone-1/" + zone.value();
                 latencyTargets.add(latencyTarget);
             });
-            String globalEndpoint = tester.controller().routing().endpointsOf(application)
+            List<DeploymentId> deployments = zoneWeights.keySet().stream().map(z -> new DeploymentId(instance, z)).collect(Collectors.toList());
+            String globalEndpoint = tester.controller().routing().endpointsOf(instance)
                                           .named(endpointId)
-                                          .targets(List.copyOf(zoneWeights.keySet()))
+                                          .targets(deployments)
                                           .primary()
                                           .map(Endpoint::dnsName)
                                           .orElse("<none>");

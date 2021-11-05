@@ -1397,7 +1397,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
         // Add global endpoints
         EndpointList globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
-                                                 .targets(deploymentId.zoneId());
+                                                 .targets(deploymentId);
         if (!legacyEndpoints) {
             globalEndpoints = globalEndpoints.not().legacy();
         }
@@ -2694,7 +2694,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static String endpointScopeString(Endpoint.Scope scope) {
         switch (scope) {
-            case region: return "region";
+            case weighted: return "region";
             case global: return "global";
             case zone: return "zone";
         }

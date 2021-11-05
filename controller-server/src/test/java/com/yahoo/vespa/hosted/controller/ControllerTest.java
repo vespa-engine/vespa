@@ -698,7 +698,6 @@ public class ControllerTest {
         var testZone = ZoneId.from("test", "us-east-1");
         tester.controllerTester().zoneRegistry().exclusiveRoutingIn(ZoneApiMock.from(prodZone));
         var applicationPackage = new ApplicationPackageBuilder().athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                                                                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                                                                 .region(prodZone.region())
                                                                 .build();
         // Deploy app1 in production
@@ -786,7 +785,6 @@ public class ControllerTest {
         var zone2 = ZoneId.from("prod", "us-east-3");
         var applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                 .endpoint("default", "default", zone1.region().value(), zone2.region().value())
                 .endpoint("east", "default", zone2.region().value())
                 .region(zone1.region())
@@ -849,8 +847,7 @@ public class ControllerTest {
                 .endpoint("default", "default")
                 .endpoint("foo", "qrs")
                 .endpoint("us", "default", zone1.region().value(), zone2.region().value())
-                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION);
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"));
         context.submit(applicationPackageBuilder.build()).deploy();
 
         // Deployment passes container endpoints to config server
@@ -884,17 +881,12 @@ public class ControllerTest {
                                                                   .map(Endpoint::routingMethod)
                                                                   .collect(Collectors.toSet());
 
-        // Without satisfying any requirement
-        context.submit(applicationPackageBuilder.build()).deploy();
-        assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
-
-        // Without satisfying version requirement
-        applicationPackageBuilder = applicationPackageBuilder.athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"));
+        // Without satisfying requirements
         context.submit(applicationPackageBuilder.build()).deploy();
         assertEquals(Set.of(RoutingMethod.shared), routingMethods.get());
 
         // Package satisfying all requirements is submitted, but not deployed yet
-        applicationPackageBuilder = applicationPackageBuilder.compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION);
+        applicationPackageBuilder = applicationPackageBuilder.athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"));
         var context2 = context.submit(applicationPackageBuilder.build());
         assertEquals("Direct routing endpoint is available after submission and before deploy",
                      Set.of(RoutingMethod.shared, RoutingMethod.sharedLayer4), routingMethods.get());

@@ -7,22 +7,22 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import java.util.Objects;
 
 /**
- * Unique identifier for a global routing table entry (application x endpoint ID).
+ * Unique identifier for a global routing table entry (instance x endpoint ID).
  *
  * @author mpolden
  */
 public class RoutingId {
 
-    private final ApplicationId application;
+    private final ApplicationId instance;
     private final EndpointId endpointId;
 
-    public RoutingId(ApplicationId application, EndpointId endpointId) {
-        this.application = Objects.requireNonNull(application, "application must be non-null");
+    public RoutingId(ApplicationId instance, EndpointId endpointId) {
+        this.instance = Objects.requireNonNull(instance, "instance must be non-null");
         this.endpointId = Objects.requireNonNull(endpointId, "endpointId must be non-null");
     }
 
-    public ApplicationId application() {
-        return application;
+    public ApplicationId instance() {
+        return instance;
     }
 
     public EndpointId endpointId() {
@@ -34,22 +34,22 @@ public class RoutingId {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RoutingId that = (RoutingId) o;
-        return application.equals(that.application) &&
+        return instance.equals(that.instance) &&
                endpointId.equals(that.endpointId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(application, endpointId);
+        return Objects.hash(instance, endpointId);
     }
 
     @Override
     public String toString() {
-        return "routing id for " + endpointId + " of " + application;
+        return "routing id for " + endpointId + " of " + instance;
     }
 
-    public static RoutingId of(ApplicationId application, EndpointId endpoint) {
-        return new RoutingId(application, endpoint);
+    public static RoutingId of(ApplicationId instance, EndpointId endpoint) {
+        return new RoutingId(instance, endpoint);
     }
 
 }

@@ -124,7 +124,7 @@ public class RoutingPolicies {
         Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
-            controller.routing().endpointsOf(routingId.application())
+            controller.routing().endpointsOf(routingId.instance())
                       .named(routingId.endpointId())
                       .not().requiresRotation()
                       .forEach(endpoint -> updateGlobalDnsOf(endpoint, inactiveZones, routeEntry.getValue()));
@@ -135,7 +135,7 @@ public class RoutingPolicies {
     private void updateGlobalDnsOf(Endpoint endpoint, Set<ZoneId> inactiveZones, List<RoutingPolicy> policies) {
         if (endpoint.scope() != Endpoint.Scope.global) throw new IllegalArgumentException("Endpoint " + endpoint + " is not global");
         // Create a weighted ALIAS per region, pointing to all zones within the same region
-        Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(policies, inactiveZones, endpoint.legacy());
+        Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(policies, inactiveZones);
         regionEndpoints.forEach(regionEndpoint -> {
             controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.target().name().value()),
                                                           Collections.unmodifiableSet(regionEndpoint.zoneTargets()),
@@ -169,13 +169,13 @@ public class RoutingPolicies {
 
 
     /** Compute region endpoints and their targets from given policies */
-    private Collection<RegionEndpoint> computeRegionEndpoints(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones, boolean legacy) {
+    private Collection<RegionEndpoint> computeRegionEndpoints(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
         Map<Endpoint, RegionEndpoint> endpoints = new LinkedHashMap<>();
         RoutingMethod routingMethod = RoutingMethod.exclusive;
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty()) continue;
             if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(routingMethod)) continue;
-            Endpoint regionEndpoint = policy.regionEndpointIn(controller.system(), routingMethod, legacy);
+            Endpoint regionEndpoint = policy.regionEndpointIn(controller.system(), routingMethod);
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(policy, zonePolicy, inactiveZones)) {
@@ -202,6 +202,7 @@ public class RoutingPolicies {
             var existingPolicy = policies.get(policyId);
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname().get(), loadBalancer.dnsZone(),
                                               allocation.endpointIdsOf(loadBalancer),
+                                              Set.of(),
                                               new Status(isActive(loadBalancer), GlobalRouting.DEFAULT_STATUS));
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
@@ -215,7 +216,7 @@ public class RoutingPolicies {
 
     /** Update zone DNS record for given policy */
     private void updateZoneDnsOf(RoutingPolicy policy) {
-        for (var endpoint : policy.endpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
+        for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
             var name = RecordName.from(endpoint.dnsName());
             var data = RecordData.fqdn(policy.canonicalName().value());
             nameServiceForwarderIn(policy.id().zone()).createCname(name, data, Priority.normal);
@@ -231,7 +232,7 @@ public class RoutingPolicies {
             // Leave active load balancers and irrelevant zones alone
             if (activeIds.contains(policy.id()) ||
                 !policy.id().zone().equals(allocation.deployment.zoneId())) continue;
-            for (var endpoint : policy.endpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
+            for (var endpoint : policy.zoneEndpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
                 var dnsName = endpoint.dnsName();
                 nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME,
                                                                                      RecordName.from(dnsName),
@@ -249,7 +250,7 @@ public class RoutingPolicies {
         var activeRoutingIds = routingIdsFrom(allocation);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
-            var endpoints = controller.routing().endpointsOf(id.application())
+            var endpoints = controller.routing().endpointsOf(id.instance())
                                       .not().requiresRotation()
                                       .named(id.endpointId());
             var forwarder = nameServiceForwarderIn(allocation.deployment.zoneId());
@@ -273,7 +274,7 @@ public class RoutingPolicies {
     private static Map<RoutingId, List<RoutingPolicy>> routingTableFrom(Collection<RoutingPolicy> routingPolicies) {
         var routingTable = new LinkedHashMap<RoutingId, List<RoutingPolicy>>();
         for (var policy : routingPolicies) {
-            for (var endpoint : policy.endpoints()) {
+            for (var endpoint : policy.instanceEndpoints()) {
                 var id = new RoutingId(policy.id().owner(), endpoint);
                 routingTable.computeIfAbsent(id, k -> new ArrayList<>())
                             .add(policy);

@@ -6,6 +6,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
@@ -29,16 +30,18 @@ public class RoutingPolicy {
     private final RoutingPolicyId id;
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
-    private final Set<EndpointId> endpoints;
+    private final Set<EndpointId> instanceEndpoints;
+    private final Set<EndpointId> applicationEndpoints;
     private final Status status;
 
     /** DO NOT USE. Public for serialization purposes */
-    public RoutingPolicy(RoutingPolicyId id, HostName canonicalName, Optional<String> dnsZone, Set<EndpointId> endpoints,
-                         Status status) {
+    public RoutingPolicy(RoutingPolicyId id, HostName canonicalName, Optional<String> dnsZone,
+                         Set<EndpointId> instanceEndpoints, Set<EndpointId> applicationEndpoints, Status status) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
-        this.endpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(endpoints, "endpoints must be non-null"));
+        this.instanceEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(instanceEndpoints, "instanceEndpoints must be non-null"));
+        this.applicationEndpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(applicationEndpoints, "applicationEndpoints must be non-null"));
         this.status = Objects.requireNonNull(status, "status must be non-null");
     }
 
@@ -57,9 +60,14 @@ public class RoutingPolicy {
         return dnsZone;
     }
 
-    /** The endpoints of this policy */
-    public Set<EndpointId> endpoints() {
-        return endpoints;
+    /** The instance-level endpoints this participates in */
+    public Set<EndpointId> instanceEndpoints() {
+        return instanceEndpoints;
+    }
+
+    /** The application-level endpoints  this participates in */
+    public Set<EndpointId> applicationEndpoints() {
+        return applicationEndpoints;
     }
 
     /** Returns the status of this */
@@ -69,25 +77,26 @@ public class RoutingPolicy {
 
     /** Returns a copy of this with status set to given status */
     public RoutingPolicy with(Status status) {
-        return new RoutingPolicy(id, canonicalName, dnsZone, endpoints, status);
+        return new RoutingPolicy(id, canonicalName, dnsZone, instanceEndpoints, applicationEndpoints, status);
     }
 
     /** Returns the zone endpoints of this */
-    public List<Endpoint> endpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
+    public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
         Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
                                                             .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
         if (infraEndpoint.isPresent()) {
             return List.of(infraEndpoint.get());
         }
+        DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
         List<Endpoint> endpoints = new ArrayList<>();
-        endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone()).in(system));
+        endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
         // Add legacy endpoints
         if (routingMethod == RoutingMethod.shared) {
-            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
+            endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment)
                                                  .on(Port.plain(4080))
                                                  .legacy()
                                                  .in(system));
-            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
+            endpoints.add(endpoint(routingMethod).target(id.cluster(), deployment)
                                                  .on(Port.tls(4443))
                                                  .legacy()
                                                  .in(system));
@@ -95,18 +104,9 @@ public class RoutingPolicy {
         return endpoints;
     }
 
-    /** Returns all region endpoints of this */
-    public List<Endpoint> regionEndpointsIn(SystemName system, RoutingMethod routingMethod) {
-        return List.of(regionEndpointIn(system, routingMethod, false));
-    }
-
     /** Returns the region endpoint of this */
-    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod, boolean legacy) {
-        Endpoint.EndpointBuilder endpoint = endpoint(routingMethod).targetRegion(id.cluster(), id.zone());
-        if (legacy) {
-            endpoint = endpoint.legacy();
-        }
-        return endpoint.in(system);
+    public Endpoint regionEndpointIn(SystemName system, RoutingMethod routingMethod) {
+        return endpoint(routingMethod).targetRegion(id.cluster(), id.zone()).in(system);
     }
 
     @Override
@@ -124,9 +124,10 @@ public class RoutingPolicy {
 
     @Override
     public String toString() {
-        return Text.format("%s [endpoints: %s%s], %s owned by %s, in %s", canonicalName, endpoints,
-                             dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
-                             id.zone().value());
+        return Text.format("%s [instance endpoints: %s, application endpoints: %s%s], %s owned by %s, in %s", canonicalName,
+                           instanceEndpoints, applicationEndpoints,
+                           dnsZone.map(z -> ", DNS zone: " + z).orElse(""), id.cluster(), id.owner().toShortString(),
+                           id.zone().value());
     }
 
     private Endpoint.EndpointBuilder endpoint(RoutingMethod routingMethod) {

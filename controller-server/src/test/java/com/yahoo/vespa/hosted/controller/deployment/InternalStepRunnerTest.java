@@ -13,7 +13,6 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
@@ -25,8 +24,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Before;
@@ -248,7 +247,6 @@ public class InternalStepRunnerTest {
                 .upgradePolicy("default")
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
-                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                 .build();
         app.submit(applicationPackage)
            .triggerJobs();

@@ -101,9 +101,8 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
                 .asList();
 
         var deployments = endpoints.stream()
-                .flatMap(e -> e.zones().stream())
+                .flatMap(e -> e.deployments().stream())
                 .distinct()
-                .map(zoneId -> new DeploymentId(instanceId, zoneId))
                 .sorted(Comparator.comparing(DeploymentId::dottedString))
                 .collect(Collectors.toList());
 
@@ -123,10 +122,9 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             var endpointRoot = endpointsRoot.addObject();
             endpointToSlime(endpointRoot, endpoint);
             var zonesRoot = endpointRoot.setArray("zones");
-            endpoint.zones().stream().sorted(Comparator.comparing(ZoneId::value)).forEach(zoneId -> {
-                var deploymentId = new DeploymentId(instanceId, zoneId);
-                deploymentsStatus.getOrDefault(deploymentId, List.of()).forEach(status -> {
-                    deploymentStatusToSlime(zonesRoot.addObject(), deploymentId, status, endpoint.routingMethod());
+            endpoint.deployments().stream().sorted(Comparator.comparing(d -> d.zoneId().value())).forEach(deployment -> {
+                deploymentsStatus.getOrDefault(deployment, List.of()).forEach(status -> {
+                    deploymentStatusToSlime(zonesRoot.addObject(), deployment, status, endpoint.routingMethod());
                 });
             });
         });
@@ -323,10 +321,10 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private List<GlobalRouting> directGlobalRoutingStatus(DeploymentId deploymentId) {
         return controller.routing().policies().get(deploymentId).values().stream()
-                .filter(p -> ! p.endpoints().isEmpty())  // This policy does not apply to a global endpoint
-                .filter(p -> controller.zoneRegistry().routingMethods(p.id().zone()).contains(RoutingMethod.exclusive))
-                .map(p -> p.status().globalRouting())
-                .collect(Collectors.toList());
+                         .filter(p -> ! p.instanceEndpoints().isEmpty())  // This policy does not apply to a global endpoint
+                         .filter(p -> controller.zoneRegistry().routingMethods(p.id().zone()).contains(RoutingMethod.exclusive))
+                         .map(p -> p.status().globalRouting())
+                         .collect(Collectors.toList());
     }
 
     /** Returns whether a rotation can route traffic to given zone */

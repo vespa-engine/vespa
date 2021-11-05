@@ -8,7 +8,6 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -131,7 +130,6 @@ public class RoutingApiTest extends ControllerContainerTest {
         // Deploy application
         var applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                 .region(westZone.region())
                 .region(eastZone.region())
                 .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
@@ -183,7 +181,6 @@ public class RoutingApiTest extends ControllerContainerTest {
         // Endpoint is removed
         applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                 .region(westZone.region())
                 .region(eastZone.region())
                 .allow(ValidationId.globalEndpointChange)
@@ -313,7 +310,6 @@ public class RoutingApiTest extends ControllerContainerTest {
                 .region(westZone.region())
                 .region(eastZone.region())
                 .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION)
                 .endpoint("endpoint1", "default", westZone.region().value())
                 .endpoint("endpoint2", "default", eastZone.region().value())
                 .build();
