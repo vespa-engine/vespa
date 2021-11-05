@@ -60,7 +60,6 @@ public class DeploymentSpecXmlReader {
     private static final String endpointTag = "endpoint";
     private static final String notificationsTag = "notifications";
 
-
     private static final String idAttribute = "id";
     private static final String athenzServiceAttribute = "athenz-service";
     private static final String athenzDomainAttribute = "athenz-domain";
@@ -276,32 +275,35 @@ public class DeploymentSpecXmlReader {
             String containerId = requireStringAttribute("container-id", endpointElement);
             String msgPrefix = (level == Endpoint.Level.application ? "Application-level" : "Instance-level") +
                                " endpoint '" + endpointId + "': ";
+            String invalidChild = level == Endpoint.Level.application ? "region" : "instance";
+            if (!XML.getChildren(endpointElement, invalidChild).isEmpty()) illegal(msgPrefix + "invalid element '" + invalidChild + "'");
 
             List<Endpoint.Target> targets = new ArrayList<>();
-            for (var regionElement : XML.getChildren(endpointElement, "region")) {
-                String region = regionElement.getTextContent();
-                if (region == null || region.isBlank()) illegal(msgPrefix + "empty 'region' element");
-                Optional<String> instanceFromAttribute = stringAttribute("instance", regionElement);
-                Optional<String> weightFromAttribute = stringAttribute("weight", regionElement);
-                if (level == Endpoint.Level.application) {
-                    if (instanceFromAttribute.isEmpty()) illegal(msgPrefix + "element 'region' must have 'instance' attribute");
-                    if (weightFromAttribute.isEmpty()) illegal(msgPrefix + "element 'region' must have 'weight' attribute");
-                } else {
-                    if (instanceFromAttribute.isPresent()) illegal(msgPrefix + "element 'region' cannot have 'instance' attribute");
-                    if (weightFromAttribute.isPresent()) illegal(msgPrefix + "element 'region' cannot have 'weight' attribute");
-                    instanceFromAttribute = instance;
-                }
-                int weight = 1;
-                if (weightFromAttribute.isPresent()) {
+            if (level == Endpoint.Level.application) {
+                String region = requireStringAttribute("region", endpointElement);
+                for (var instanceElement : XML.getChildren(endpointElement, "instance")) {
+                    String instanceName = instanceElement.getTextContent();
+                    String weightFromAttribute = requireStringAttribute("weight", instanceElement);
+                    if (instanceName == null || instanceName.isBlank()) illegal(msgPrefix + "empty 'instance' element");
+                    int weight;
                     try {
-                        weight = Integer.parseInt(weightFromAttribute.get());
+                        weight = Integer.parseInt(weightFromAttribute);
                     } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException(msgPrefix + "invalid weight value '" + weightFromAttribute.get() + "'");
+                        throw new IllegalArgumentException(msgPrefix + "invalid weight value '" + weightFromAttribute + "'");
                     }
+                    targets.add(new Endpoint.Target(RegionName.from(region),
+                                                    InstanceName.from(instanceName),
+                                                    weight));
                 }
-                targets.add(new Endpoint.Target(RegionName.from(region),
-                                                InstanceName.from(instanceFromAttribute.get()),
-                                                weight));
+            } else {
+                if (stringAttribute("region", endpointElement).isPresent()) illegal(msgPrefix + "invalid 'region' attribute");
+                for (var regionElement : XML.getChildren(endpointElement, "region")) {
+                    String region = regionElement.getTextContent();
+                    if (region == null || region.isBlank()) illegal(msgPrefix + "empty 'region' element");
+                    targets.add(new Endpoint.Target(RegionName.from(region),
+                                                    InstanceName.from(instance.get()),
+                                                    1));
+                }
             }
             if (targets.isEmpty() && level == Endpoint.Level.instance) {
                 // No explicit targets given for instance level endpoint. Include all declared regions by default
