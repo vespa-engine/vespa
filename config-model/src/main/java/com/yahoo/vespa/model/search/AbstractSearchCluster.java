@@ -37,12 +37,6 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer<Abstr
         this.index = index;
     }
 
-    public void prepareToDistributeFiles(List<SearchNode> backends) {
-        for (SchemaSpec sds : localSDS) {
-            sds.getSearchDefinition().getSearch().sendTo(backends);
-        }
-    }
-
     public void addDocumentNames(NamedSchema searchDefinition) {
         String dName = searchDefinition.getSearch().getDocument().getDocumentName().getName();
         documentNames.add(dName);

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -451,15 +450,6 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
 
     public boolean isInitialized() {
         return initialized;
-    }
-
-    /**
-     * Add the given file to the application's file distributor.
-     *
-     * @param reference file reference (hash)
-     */
-    public void send(FileReference reference) {
-        getRoot().fileReferencesRepository().add(reference);
     }
 
     /** The service HTTP port for health status */

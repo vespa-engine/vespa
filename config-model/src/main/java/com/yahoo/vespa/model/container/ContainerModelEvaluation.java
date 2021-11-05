@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -43,10 +42,6 @@ public class ContainerModelEvaluation implements
         this.rankProfileList = Objects.requireNonNull(rankProfileList, "rankProfileList cannot be null");
         cluster.addSimpleComponent(EVALUATOR_NAME, null, EVALUATION_BUNDLE_NAME);
         cluster.addComponent(ContainerModelEvaluation.getHandler());
-    }
-
-    public void prepare(List<ApplicationContainer> containers) {
-        rankProfileList.sendTo(containers);
     }
 
     @Override

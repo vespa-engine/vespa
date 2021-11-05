@@ -114,15 +114,12 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     @Override
     protected void doPrepare(DeployState deployState) {
         addAndSendApplicationBundles(deployState);
-        if (modelEvaluation != null)
-            modelEvaluation.prepare(containers);
         sendUserConfiguredFiles(deployState);
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {
         for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getVespaVersion())) {
             FileReference reference = deployState.getFileRegistry().addFile(component.getPathRelativeToAppDir());
-            FileSender.send(reference, containers);
             applicationBundles.add(reference);
         }
     }
@@ -166,7 +163,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         return servletGroup.getComponentMap();
     }
 
-    public final void addServlet(Servlet servlet) {
+    public void addServlet(Servlet servlet) {
         servletGroup.addComponent(servlet.getGlobalComponentId(), servlet);
     }
 
@@ -282,7 +279,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         this.mbusParams = mbusParams;
     }
 
-    public final void setMessageBusEnabled(boolean messageBusEnabled) { this.messageBusEnabled = messageBusEnabled; }
+    public void setMessageBusEnabled(boolean messageBusEnabled) { this.messageBusEnabled = messageBusEnabled; }
 
     protected boolean messageBusEnabled() { return messageBusEnabled; }
 

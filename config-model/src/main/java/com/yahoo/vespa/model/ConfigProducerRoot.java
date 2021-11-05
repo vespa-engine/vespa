@@ -4,7 +4,6 @@ package com.yahoo.vespa.model;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.filedistribution.FileReferencesRepository;
 
 import java.util.Set;
 
@@ -37,9 +36,7 @@ public interface ConfigProducerRoot extends ConfigProducer {
      * @param configId The config id
      * @return A config instance of the given type
      */
-    public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz, String configId);
-
-    FileReferencesRepository fileReferencesRepository();
+    <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz, String configId);
 
     Admin getAdmin();
 
