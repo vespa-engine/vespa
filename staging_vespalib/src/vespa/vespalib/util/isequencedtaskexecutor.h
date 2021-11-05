@@ -19,12 +19,12 @@ class ISequencedTaskExecutor
 public:
     class ExecutorId {
     public:
-        ExecutorId() : ExecutorId(0) { }
-        explicit ExecutorId(uint32_t id) : _id(id) { }
-        uint32_t getId() const { return _id; }
-        bool operator != (ExecutorId rhs) const { return _id != rhs._id; }
-        bool operator == (ExecutorId rhs) const { return _id == rhs._id; }
-        bool operator < (ExecutorId rhs) const { return _id < rhs._id; }
+        ExecutorId() noexcept : ExecutorId(0) { }
+        explicit ExecutorId(uint32_t id) noexcept : _id(id) { }
+        uint32_t getId() const noexcept { return _id; }
+        bool operator != (ExecutorId rhs) const noexcept { return _id != rhs._id; }
+        bool operator == (ExecutorId rhs) const noexcept { return _id == rhs._id; }
+        bool operator < (ExecutorId rhs) const noexcept { return _id < rhs._id; }
     private:
         uint32_t _id;
     };

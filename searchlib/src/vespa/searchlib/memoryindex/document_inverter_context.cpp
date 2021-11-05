@@ -15,6 +15,99 @@ using document::Document;
 using document::DocumentType;
 using document::Field;
 using vespalib::ISequencedTaskExecutor;
+using index::SchemaIndexFields;
+
+namespace {
+
+template <typename Context>
+void make_contexts(const SchemaIndexFields& schema_index_fields, ISequencedTaskExecutor& executor, std::vector<Context>& contexts)
+{
+    using ExecutorId = ISequencedTaskExecutor::ExecutorId;
+    using IdMapping = std::vector<std::tuple<ExecutorId, bool, uint32_t>>;
+    IdMapping map;
+    for (uint32_t field_id : schema_index_fields._textFields) {
+        map.emplace_back(executor.getExecutorId(field_id), false, field_id);
+    }
+    uint32_t uri_field_id = 0;
+    for (auto& uri_field : schema_index_fields._uriFields) {
+        map.emplace_back(executor.getExecutorId(uri_field._all), true, uri_field_id);
+        ++uri_field_id;
+    }
+    std::sort(map.begin(), map.end());
+    std::optional<ExecutorId> prev_id;
+    for (auto& entry : map) {
+        if (!prev_id.has_value() || prev_id.value() != std::get<0>(entry)) {
+            contexts.emplace_back(std::get<0>(entry));
+            prev_id = std::get<0>(entry);
+        }
+        if (std::get<1>(entry)) {
+            contexts.back().add_uri_field(std::get<2>(entry));
+        } else {
+            contexts.back().add_field(std::get<2>(entry));
+        }
+    }
+}
+
+class PusherMapping {
+    std::vector<std::optional<uint32_t>> _pushers;
+public:
+    PusherMapping(size_t size);
+    ~PusherMapping();
+
+    void add_mapping(const std::vector<uint32_t>& fields, uint32_t pusher_id) {
+        for (auto field_id : fields) {
+            assert(field_id < _pushers.size());
+            auto& opt_pusher = _pushers[field_id];
+            assert(!opt_pusher.has_value());
+            opt_pusher = pusher_id;
+        }
+    }
+    
+    void use_mapping(const std::vector<uint32_t>& fields, std::vector<uint32_t>& pushers) {
+        for (auto field_id : fields) {
+            assert(field_id < _pushers.size());
+            auto& opt_pusher = _pushers[field_id];
+            assert(opt_pusher.has_value());
+            pushers.emplace_back(opt_pusher.value());
+        }
+    }
+};
+
+PusherMapping::PusherMapping(size_t size)
+    : _pushers(size)
+{
+}
+
+PusherMapping::~PusherMapping() = default;
+                       
+void connect_contexts(std::vector<InvertContext>& invert_contexts,
+                      const std::vector<PushContext>& push_contexts,
+                      uint32_t num_fields,
+                      uint32_t num_uri_fields)
+{
+    PusherMapping field_to_pusher(num_fields);
+    PusherMapping uri_field_to_pusher(num_uri_fields);
+    uint32_t pusher_id = 0;
+    for (auto& push_context : push_contexts) {
+        field_to_pusher.add_mapping(push_context.get_fields(), pusher_id);
+        uri_field_to_pusher.add_mapping(push_context.get_uri_fields(), pusher_id);
+        ++pusher_id;
+    }
+    std::vector<uint32_t> pushers;
+    for (auto& invert_context : invert_contexts) {
+        pushers.clear();
+        field_to_pusher.use_mapping(invert_context.get_fields(), pushers);
+        uri_field_to_pusher.use_mapping(invert_context.get_uri_fields(), pushers);
+        std::sort(pushers.begin(), pushers.end());
+        auto last = std::unique(pushers.begin(), pushers.end());
+        pushers.erase(last, pushers.end());
+        for (auto pusher : pushers) {
+            invert_context.add_pusher(pusher);
+        }
+    }
+}
+
+}
 
 void
 DocumentInverterContext::add_field(const DocumentType& doc_type, uint32_t fieldId)
@@ -57,9 +150,12 @@ DocumentInverterContext::DocumentInverterContext(const index::Schema& schema,
       _schema_index_fields(),
       _invert_threads(invert_threads),
       _push_threads(push_threads),
-      _field_indexes(field_indexes)
+      _field_indexes(field_indexes),
+      _invert_contexts(),
+      _push_contexts()
 {
     _schema_index_fields.setup(schema);
+    setup_contexts();
 }
 
 DocumentInverterContext::~DocumentInverterContext() = default;
@@ -81,6 +177,14 @@ DocumentInverterContext::get_field_value(const Document& doc, uint32_t field_id)
         return doc.getValue(*field);
     }
     return {};
+}
+
+void
+DocumentInverterContext::setup_contexts()
+{
+    make_contexts(_schema_index_fields, _invert_threads, _invert_contexts);
+    make_contexts(_schema_index_fields, _push_threads, _push_contexts);
+    connect_contexts(_invert_contexts, _push_contexts, _schema.getNumIndexFields(), _schema_index_fields._uriFields.size());
 }
 
 }
