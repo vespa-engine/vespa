@@ -192,7 +192,8 @@ public class PermanentFlags {
 
     public static final UnboundListFlag<String> LOGCTL_OVERRIDE = defineListFlag(
             "logctl-override", List.of(), String.class,
-            "Run vespa-logctl statements on container startup. Should be on the form <service>:<component> <level>=on",
+            "A list of vespa-logctl statements that are run on container startup. " +
+                    "Each item should be on the form <service>:<component> <level>=on",
             "Takes effect on container restart",
             APPLICATION_ID, HOSTNAME
     );
