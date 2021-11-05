@@ -49,10 +49,7 @@ import com.yahoo.search.statistics.ElapsedTime;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.statistics.Callback;
-import com.yahoo.statistics.Handle;
 import com.yahoo.statistics.Statistics;
-import com.yahoo.statistics.Value;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
@@ -93,9 +90,6 @@ public class SearchHandler extends LoggingRequestHandler {
     static final String RENDERER_DIMENSION = "renderer";
 
     private static final String JSON_CONTENT_TYPE = "application/json";
-
-    private final Value searchConnections;
-
     public static final String defaultSearchChainName = "default";
     private static final String fallbackSearchChain = "vespa";
 
@@ -105,30 +99,26 @@ public class SearchHandler extends LoggingRequestHandler {
     private final Optional<String> hostResponseHeaderKey;
     
     private final String selfHostname = HostName.getLocalhost();
-
     private final Embedder embedder;
-
     private final ExecutionFactory executionFactory;
-
     private final AtomicLong numRequestsLeftToTrace;
 
     private final static RequestHandlerSpec REQUEST_HANDLER_SPEC = RequestHandlerSpec.builder()
             .withAclMapping(SearchHandler.aclRequestMapper()).build();
 
-    private final class MeanConnections implements Callback {
-
-        @Override
-        public void run(Handle h, boolean firstTime) {
-            if (firstTime) {
-                metric.set(SEARCH_CONNECTIONS, 0.0d, null);
-                return;
-            }
-            Value v = (Value) h;
-            metric.set(SEARCH_CONNECTIONS, v.getMean(), null);
-        }
+    @Inject
+    public SearchHandler(Metric metric,
+                         ContainerThreadPool threadpool,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ContainerHttpConfig config,
+                         Embedder embedder,
+                         ExecutionFactory executionFactory) {
+        this(metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
+                config.numQueriesToTraceOnDebugAfterConstruction(),
+                config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()));
     }
 
-    @Inject
+    @Deprecated
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          ContainerThreadPool threadpool,
@@ -136,7 +126,7 @@ public class SearchHandler extends LoggingRequestHandler {
                          ContainerHttpConfig config,
                          Embedder embedder,
                          ExecutionFactory executionFactory) {
-        this(statistics, metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
+        this(metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
              config.numQueriesToTraceOnDebugAfterConstruction(),
              config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()));
     }
@@ -166,12 +156,7 @@ public class SearchHandler extends LoggingRequestHandler {
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ContainerHttpConfig containerHttpConfig,
                          ExecutionFactory executionFactory) {
-        this(statistics,
-             metric,
-             executor,
-             queryProfileRegistry,
-             Embedder.throwsOnUse,
-             executionFactory,
+        this(metric, executor, queryProfileRegistry, Embedder.throwsOnUse, executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
                      Optional.empty() : Optional.of(containerHttpConfig.hostResponseHeaderKey()));
@@ -188,12 +173,8 @@ public class SearchHandler extends LoggingRequestHandler {
                          QueryProfilesConfig queryProfileConfig,
                          ContainerHttpConfig containerHttpConfig,
                          ExecutionFactory executionFactory) {
-        this(statistics,
-             metric,
-             executor,
-             QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
-             Embedder.throwsOnUse,
-             executionFactory,
+        this(metric, executor, QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
+             Embedder.throwsOnUse, executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
              containerHttpConfig.hostResponseHeaderKey().equals("") ?
                      Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
@@ -210,12 +191,11 @@ public class SearchHandler extends LoggingRequestHandler {
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ExecutionFactory executionFactory,
                          Optional<String> hostResponseHeaderKey) {
-        this(statistics, metric, executor, queryProfileRegistry, Embedder.throwsOnUse,
+        this(metric, executor, queryProfileRegistry, Embedder.throwsOnUse,
              executionFactory, 0, hostResponseHeaderKey);
     }
 
-    private SearchHandler(Statistics statistics,
-                          Metric metric,
+    private SearchHandler(Metric metric,
                           Executor executor,
                           CompiledQueryProfileRegistry queryProfileRegistry,
                           Embedder embedder,
@@ -230,14 +210,9 @@ public class SearchHandler extends LoggingRequestHandler {
 
         this.maxThreads = examineExecutor(executor);
 
-        searchConnections = new Value(SEARCH_CONNECTIONS, statistics,
-                                      new Value.Parameters().setLogRaw(true).setLogMax(true)
-                                                            .setLogMean(true).setLogMin(true)
-                                                            .setNameExtension(true)
-                                                            .setCallback(new MeanConnections()));
-
         this.hostResponseHeaderKey = hostResponseHeaderKey;
         this.numRequestsLeftToTrace = new AtomicLong(numQueriesToTraceOnDebugAfterStartup);
+        metric.set(SEARCH_CONNECTIONS, 0.0d, null);
     }
 
     /** @deprecated use the other constructor */
@@ -487,13 +462,8 @@ public class SearchHandler extends LoggingRequestHandler {
             query.trace("Invoking " + searchChain, false, 2);
         }
 
-        if (searchConnections != null) {
-            connectionStatistics();
-        } else {
-            log.log(Level.WARNING,
-                    "searchConnections is a null reference, probably a known race condition during startup.",
-                    new IllegalStateException("searchConnections reference is null."));
-        }
+        connectionStatistics();
+
         try {
             return searchAndFill(query, searchChain);
         } catch (ParseException e) {
@@ -525,24 +495,24 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private void connectionStatistics() {
+        if (maxThreads <= 3) return;
+
         int connections = requestsInFlight.intValue();
-        searchConnections.put(connections);
-        if (maxThreads > 3) {
-            // cast to long to avoid overflows if maxThreads is at no
-            // log value (maxint)
-            long maxThreadsAsLong = maxThreads;
-            long connectionsAsLong = connections;
-            // only log when exactly crossing the limit to avoid
-            // spamming the log
-            if (connectionsAsLong < maxThreadsAsLong * 9L / 10L) {
-                // NOP
-            } else if (connectionsAsLong == maxThreadsAsLong * 9L / 10L) {
-                log.log(Level.WARNING, threadConsumptionMessage(connections, maxThreads, "90"));
-            } else if (connectionsAsLong == maxThreadsAsLong * 95L / 100L) {
-                log.log(Level.WARNING, threadConsumptionMessage(connections, maxThreads, "95"));
-            } else if (connectionsAsLong == maxThreadsAsLong) {
-                log.log(Level.WARNING, threadConsumptionMessage(connections, maxThreads, "100"));
-            }
+        metric.set(SEARCH_CONNECTIONS, connections, null);
+        // cast to long to avoid overflows if maxThreads is at no
+        // log value (maxint)
+        long maxThreadsAsLong = maxThreads;
+        long connectionsAsLong = connections;
+        // only log when exactly crossing the limit to avoid
+        // spamming the log
+        if (connectionsAsLong < maxThreadsAsLong * 9L / 10L) {
+            // NOP
+        } else if (connectionsAsLong == maxThreadsAsLong * 9L / 10L) {
+            log.log(Level.WARNING, threadConsumptionMessage(connections, maxThreads, "90"));
+        } else if (connectionsAsLong == maxThreadsAsLong * 95L / 100L) {
+            log.log(Level.WARNING, threadConsumptionMessage(connections, maxThreads, "95"));
+        } else if (connectionsAsLong == maxThreadsAsLong) {
+            log.log(Level.WARNING, threadConsumptionMessage(connections, maxThreads, "100"));
         }
     }
 
@@ -598,7 +568,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private void traceVespaVersion(Query query) {
-        query.trace("Vespa version: " + Vtag.currentVersion.toString(), false, 4);
+        query.trace("Vespa version: " + Vtag.currentVersion, false, 4);
     }
 
     public SearchChainRegistry getSearchChainRegistry() { return executionFactory.searchChainRegistry();
