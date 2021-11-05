@@ -118,7 +118,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
         size_t num_match_features = reply.match_features.names.size();
         assert(num_match_features * reply.hits.size() == reply.match_features.values.size());
         for (const auto & name : reply.match_features.names) {
-            proto.add_match_feature_names()->assign(name.c_str(), name.size());
+            proto.add_match_feature_names()->assign(name.data(), name.size());
         }
         auto mfv_iter = reply.match_features.values.begin();
         for (size_t i = 0; i < reply.hits.size(); ++i) {
