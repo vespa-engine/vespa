@@ -15,8 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
-import com.yahoo.statistics.Statistics;
-import com.yahoo.statistics.Counter;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -25,7 +23,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Metrics for config server. The statistics framework takes care of logging.
+ * Metrics for config server.
  *
  * @author Harald Musum
  */
@@ -37,9 +35,6 @@ public class Metrics extends AbstractComponent implements MetricUpdaterFactory, 
     private static final String METRIC_FREE_MEMORY = getMetricName("freeMemory");
     private static final String METRIC_LATENCY = getMetricName("latency");
 
-    private final Counter requests;
-    private final Counter failedRequests;
-    private final Counter procTimeCounter;
     private final Metric metric;
     private final Optional<ZKMetricUpdater> zkMetricUpdater;
 
@@ -48,16 +43,13 @@ public class Metrics extends AbstractComponent implements MetricUpdaterFactory, 
     private final Optional<ScheduledExecutorService> executorService;
 
     @Inject
-    public Metrics(Metric metric, Statistics statistics, HealthMonitorConfig healthMonitorConfig, ZookeeperServerConfig zkServerConfig) {
-        this(metric, statistics, healthMonitorConfig, zkServerConfig, true);
+    public Metrics(Metric metric, HealthMonitorConfig healthMonitorConfig, ZookeeperServerConfig zkServerConfig) {
+        this(metric, healthMonitorConfig, zkServerConfig, true);
     }
 
-    private Metrics(Metric metric, Statistics statistics, HealthMonitorConfig healthMonitorConfig,
+    private Metrics(Metric metric, HealthMonitorConfig healthMonitorConfig,
                     ZookeeperServerConfig zkServerConfig, boolean createZkMetricUpdater) {
         this.metric = metric;
-        requests = createCounter(METRIC_REQUESTS, statistics);
-        failedRequests = createCounter(METRIC_FAILED_REQUESTS, statistics);
-        procTimeCounter = createCounter("procTime", statistics);
 
         if (createZkMetricUpdater) {
             log.log(Level.FINE, () -> "Metric update interval is " + healthMonitorConfig.snapshot_interval() + " seconds");
@@ -73,29 +65,21 @@ public class Metrics extends AbstractComponent implements MetricUpdaterFactory, 
 
     public static Metrics createTestMetrics() {
         NullMetric metric = new NullMetric();
-        Statistics.NullImplementation statistics = new Statistics.NullImplementation();
         HealthMonitorConfig.Builder builder = new HealthMonitorConfig.Builder();
         builder.snapshot_interval(60.0);
         ZookeeperServerConfig.Builder zkBuilder = new ZookeeperServerConfig.Builder().myid(1);
-        return new Metrics(metric, statistics, new HealthMonitorConfig(builder), new ZookeeperServerConfig(zkBuilder), false);
-    }
-
-    private Counter createCounter(String name, Statistics statistics) {
-        return new Counter(name, statistics, false);
+        return new Metrics(metric, new HealthMonitorConfig(builder), new ZookeeperServerConfig(zkBuilder), false);
     }
 
     void incrementRequests(Metric.Context metricContext) {
-        requests.increment(1);
         metric.add(METRIC_REQUESTS, 1, metricContext);
     }
 
     void incrementFailedRequests(Metric.Context metricContext) {
-        failedRequests.increment(1);
         metric.add(METRIC_FAILED_REQUESTS, 1, metricContext);
     }
 
     void incrementProcTime(long increment, Metric.Context metricContext) {
-        procTimeCounter.increment(increment);
         metric.set(METRIC_LATENCY, increment, metricContext);
     }
 
