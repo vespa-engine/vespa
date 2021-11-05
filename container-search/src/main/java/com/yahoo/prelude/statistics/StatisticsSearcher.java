@@ -18,7 +18,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
-import com.yahoo.statistics.Value;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,14 +73,7 @@ public class StatisticsSearcher extends Searcher {
     private static final String RELEVANCE_AT_3_METRIC = "relevance.at_3";
     private static final String RELEVANCE_AT_10_METRIC = "relevance.at_10";
 
-    private final Value meanQueryLatency; // mean pr 5 min
-    private final Value queryLatencyBuckets;
-    private final Value maxQueryLatency; // separate to avoid name mangling
     @SuppressWarnings("unused") // all the work is done by the callback
-    private final Value peakQPS; // peak 1s QPS
-    private final Value hitsPerQuery; // mean number of hits per query
-    private final Value totalHitsPerQuery;
-
     private final PeakQpsReporter peakQpsReporter;
 
     // Naming of enums are reflected directly in metric dimensions and should not be changed as they are public API
@@ -116,7 +108,6 @@ public class StatisticsSearcher extends Searcher {
         private void flushPeakQps(long now) {
             double ms = (double) (now - prevMaxQPSTime);
             final double value = ((double)queriesForQPS) / (ms / 1000.0);
-            peakQPS.put(value);
             metric.set(PEAK_QPS_METRIC, value, metricContext);
             prevMaxQPSTime = now;
             queriesForQPS = 0;
@@ -128,16 +119,9 @@ public class StatisticsSearcher extends Searcher {
         }
     }
 
-    public StatisticsSearcher(com.yahoo.statistics.Statistics manager, Metric metric, MetricReceiver metricReceiver) {
+    public StatisticsSearcher(Metric metric, MetricReceiver metricReceiver) {
         this.peakQpsReporter = new PeakQpsReporter();
         this.metric = metric;
-
-        meanQueryLatency = new Value(MEAN_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        maxQueryLatency = new Value(MAX_QUERY_LATENCY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
-        queryLatencyBuckets = Value.buildValue(QUERY_LATENCY_METRIC, manager, null);
-        peakQPS = new Value(PEAK_QPS_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMax(true).setNameExtension(false));
-        hitsPerQuery = new Value(HITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
-        totalHitsPerQuery = new Value(TOTALHITS_PER_QUERY_METRIC, manager, new Value.Parameters().setLogRaw(false).setLogMean(true).setNameExtension(false));
 
         metricReceiver.declareGauge(QUERY_LATENCY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
         metricReceiver.declareGauge(HITS_PER_QUERY_METRIC, Optional.empty(), new MetricSettings.Builder().histogram(true).build());
@@ -269,13 +253,10 @@ public class StatisticsSearcher extends Searcher {
             metric.add(DOCS_TOTAL_METRIC, queryCoverage.getActive(), metricContext);
         }
         int hitCount = result.getConcreteHitCount();
-        hitsPerQuery.put(hitCount);
         metric.set(HITS_PER_QUERY_METRIC, (double) hitCount, metricContext);
 
         long totalHitCount = result.getTotalHitCount();
-        totalHitsPerQuery.put(totalHitCount);
         metric.set(TOTALHITS_PER_QUERY_METRIC, (double) totalHitCount, metricContext);
-
         metric.set(QUERY_HIT_OFFSET_METRIC, (double) (query.getHits() + query.getOffset()), metricContext);
         if (hitCount == 0) {
             metric.add(EMPTY_RESULTS_METRIC, 1, metricContext);
@@ -296,13 +277,9 @@ public class StatisticsSearcher extends Searcher {
 
     private void addLatency(long latency_ns, Metric.Context metricContext) {
         double latency = 0.000001 * latency_ns;
-        //myStats.addLatency(latency);
-        meanQueryLatency.put(latency);
         metric.set(QUERY_LATENCY_METRIC, latency, metricContext);
         metric.set(MEAN_QUERY_LATENCY_METRIC, latency, metricContext);
-        maxQueryLatency.put(latency);
         metric.set(MAX_QUERY_LATENCY_METRIC, latency, metricContext);
-        queryLatencyBuckets.put(latency);
     }
 
     private void incrQueryCount(Metric.Context metricContext) {
