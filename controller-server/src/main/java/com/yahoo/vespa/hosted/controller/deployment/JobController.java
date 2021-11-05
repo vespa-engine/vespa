@@ -21,9 +21,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -49,7 +49,6 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
-import static com.google.common.collect.ImmutableList.copyOf;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
@@ -212,10 +211,10 @@ public class JobController {
 
     /** Returns a list of all instances of applications which have registered. */
     public List<ApplicationId> instances() {
-        return copyOf(controller.applications().readable().stream()
-                                .flatMap(application -> application.instances().values().stream())
-                                .map(Instance::id)
-                                .iterator());
+        return controller.applications().readable().stream()
+                         .flatMap(application -> application.instances().values().stream())
+                         .map(Instance::id)
+                         .collect(toUnmodifiableList());
     }
 
     /** Returns all job types which have been run for the given application. */
@@ -298,21 +297,21 @@ public class JobController {
 
     /** Returns a list of all active runs for the given application. */
     public List<Run> active(TenantAndApplicationId id) {
-        return copyOf(controller.applications().requireApplication(id).instances().keySet().stream()
-                                .flatMap(name -> Stream.of(JobType.values())
-                                                       .map(type -> last(id.instance(name), type))
-                                                       .flatMap(Optional::stream)
-                                                       .filter(run -> ! run.hasEnded()))
-                                .iterator());
+        return controller.applications().requireApplication(id).instances().keySet().stream()
+                         .flatMap(name -> Stream.of(JobType.values())
+                                                .map(type -> last(id.instance(name), type))
+                                                .flatMap(Optional::stream)
+                                                .filter(run -> !run.hasEnded()))
+                         .collect(toUnmodifiableList());
     }
 
     /** Returns a list of all active runs for the given instance. */
     public List<Run> active(ApplicationId id) {
-        return copyOf(Stream.of(JobType.values())
-                            .map(type -> last(id, type))
-                            .flatMap(Optional::stream)
-                            .filter(run -> ! run.hasEnded())
-                            .iterator());
+        return Stream.of(JobType.values())
+                     .map(type -> last(id, type))
+                     .flatMap(Optional::stream)
+                     .filter(run -> !run.hasEnded())
+                     .collect(toUnmodifiableList());
     }
 
     /** Returns the job status of the given job, possibly empty. */
