@@ -131,7 +131,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
 
-    private final FileReferencesRepository fileReferencesRepository = new FileReferencesRepository();
+    private final FileReferencesRepository fileReferencesRepository;
 
     private final Provisioned provisioned;
 
@@ -171,6 +171,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             throws IOException, SAXException {
         super("vespamodel");
         version = deployState.getVespaVersion();
+        fileReferencesRepository = new FileReferencesRepository(deployState.getFileRegistry());
         rankingConstants = new RankingConstants(deployState.getFileRegistry(), Optional.empty());
         validationOverrides = deployState.validationOverrides();
         applicationPackage = deployState.getApplicationPackage();
@@ -383,9 +384,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                            .map(HostResource::getHostInfo)
                            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
-
-    @Override
-    public FileReferencesRepository fileReferencesRepository() { return fileReferencesRepository; }
 
     public Set<FileReference> fileReferences() { return fileReferencesRepository.allFileReferences(); }
 

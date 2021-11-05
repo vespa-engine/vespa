@@ -66,7 +66,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
         super(rootConfigId);
         hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner(), deployState.getDeployLogger());
         this.deployState = deployState;
-        fileReferencesRepository = new FileReferencesRepository();
+        fileReferencesRepository = new FileReferencesRepository(deployState.getFileRegistry());
     }
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {

@@ -2,9 +2,7 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.vespa.model.AbstractService;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,11 +62,6 @@ public class OnnxModels {
         var allModels = new HashMap<>(owner.get().inherited().get().onnxModels().asMap());
         allModels.putAll(models);
         return Collections.unmodifiableMap(allModels);
-    }
-
-    /** Initiate sending of these models to some services over file distribution */
-    public void sendTo(Collection<? extends AbstractService> services) {
-        asMap().values().forEach(model -> model.sendTo(services));
     }
 
 }

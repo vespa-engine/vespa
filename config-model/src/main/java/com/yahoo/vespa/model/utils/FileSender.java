@@ -36,25 +36,6 @@ public class FileSender implements Serializable {
     }
 
     /**
-     * Send the given file to all given services.
-     *
-     * @param fileReference  The file reference to send.
-     * @param services  The services to send the file to.
-     * @throws IllegalStateException if services is empty.
-     */
-    public static void send(FileReference fileReference, Collection<? extends AbstractService> services) {
-        if (services.isEmpty()) {
-            throw new IllegalStateException("No service instances. Probably a standalone cluster setting up <nodes> " +
-                                            "using 'count' instead of <node> tags.");
-        }
-
-        for (AbstractService service : services) {
-            // The same reference will be returned from each call.
-            service.send(fileReference);
-        }
-    }
-
-    /**
      * Sends all user configured files for a producer to all given services.
      */
     public <PRODUCER extends AbstractConfigProducer<?>> void sendUserConfiguredFiles(PRODUCER producer) {
@@ -149,9 +130,7 @@ public class FileSender implements Serializable {
         String path = builder.getValue();
         FileReference reference = sentFiles.get(path);
         if (reference == null) {
-
             reference = fileRegistry.addFile(path);
-            send(reference, services);
             sentFiles.put(path, reference);
         }
         builder.setValue(reference.value());

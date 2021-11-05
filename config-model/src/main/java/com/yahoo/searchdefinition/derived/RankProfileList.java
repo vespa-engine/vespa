@@ -16,10 +16,8 @@ import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
-import com.yahoo.vespa.model.AbstractService;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,12 +140,6 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     /** Returns the raw rank profile with the given name, or null if it is not present */
     public RawRankProfile getRankProfile(String name) {
         return rankProfiles.get(name);
-    }
-
-    public void sendTo(Collection<? extends AbstractService> services) {
-        rankingConstants.sendTo(services);
-        largeRankExpressions.sendTo(services);
-        onnxModels.sendTo(services);
     }
 
     @Override

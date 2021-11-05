@@ -2,9 +2,11 @@
 package com.yahoo.vespa.model.filedistribution;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.api.FileRegistry;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Keeps track of what files to send with file distribution
@@ -14,13 +16,13 @@ import java.util.Set;
  */
 public class FileReferencesRepository {
 
-    /** A set of file references that should be distributed */
-    private final Set<FileReference> fileReferences = new LinkedHashSet<>();
+    private final FileRegistry fileRegistry;
+    public FileReferencesRepository(FileRegistry fileRegistry) {
+        this.fileRegistry = fileRegistry;
+    }
 
-    public FileReferencesRepository() { }
-
-    public void add(FileReference reference) { fileReferences.add(reference); }
-
-    public Set<FileReference> allFileReferences() { return Set.copyOf(fileReferences); }
+    public Set<FileReference> allFileReferences() {
+        return fileRegistry.export().stream().map(e -> e.reference).collect(Collectors.toUnmodifiableSet());
+    }
 
 }
