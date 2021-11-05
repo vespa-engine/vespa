@@ -116,8 +116,9 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
     }
     if (reply.match_features.values.size() > 0) {
         size_t num_match_features = reply.match_features.names.size();
+        assert(num_match_features * reply.hits.size() == reply.match_features.values.size());
         for (const auto & name : reply.match_features.names) {
-            *proto.add_match_feature_names() = name;
+            proto.add_match_feature_names()->assign(name.c_str(), name.size());
         }
         auto mfv_iter = reply.match_features.values.begin();
         for (size_t i = 0; i < reply.hits.size(); ++i) {
@@ -133,7 +134,6 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
                 }
             }
         }
-        assert(mfv_iter == reply.match_features.values.end());
     }
     proto.set_grouping_blob(&reply.groupResult[0], reply.groupResult.size());
     const auto &slime_trace = reply.propertiesMap.trace().lookup("slime");
