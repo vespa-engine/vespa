@@ -38,10 +38,10 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
         respondedAt = now();
 
         if (error.getCode() == Error.BACKEND_COMMUNICATION_ERROR.code) {
-            setWorking(false, "Connection failure: " + error.toString());
+            setWorking(false, "Connection failure: " + error);
         } else if (error.getCode() == Error.NO_ANSWER_WHEN_PINGING_NODE.code) {
             if ((respondedAt - succeededAt) > 10000) {
-                setWorking(false, "Not working for 10 s: " + error.toString());
+                setWorking(false, "Not working for 10 s: " + error);
             }
         } else {
             succeededAt = respondedAt;
