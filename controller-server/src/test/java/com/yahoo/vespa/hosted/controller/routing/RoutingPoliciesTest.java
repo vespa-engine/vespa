@@ -166,8 +166,8 @@ public class RoutingPoliciesTest {
                      tester.policiesOf(context.instance().id()).size());
 
         // A zone in shared region is set out
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone4), GlobalRouting.Status.out,
-                                                  GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone4), RoutingStatus.Value.out,
+                                                  RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
 
         // Weight of inactive zone is set to zero
@@ -177,16 +177,16 @@ public class RoutingPoliciesTest {
 
         // Other zone in shared region is set out. Entire record group for the region is removed as all zones in the
         // region are out (weight sum = 0)
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone3), GlobalRouting.Status.out,
-                                                  GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone3), RoutingStatus.Value.out,
+                                                  RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 1L));
 
         // Everything is set back in
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone3), GlobalRouting.Status.in,
-                                                  GlobalRouting.Agent.tenant);
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone4), GlobalRouting.Status.in,
-                                                  GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone3), RoutingStatus.Value.in,
+                                                  RoutingStatus.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone4), RoutingStatus.Value.in,
+                                                  RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 1L,
                                                                                            zone3, 1L,
@@ -481,8 +481,8 @@ public class RoutingPoliciesTest {
 
         // Global routing status is overridden in one zone
         var changedAt = tester.controllerTester().clock().instant();
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.out,
-                                                  GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), RoutingStatus.Value.out,
+                                                  RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
 
         // Inactive zone is removed from global DNS record
@@ -491,15 +491,15 @@ public class RoutingPoliciesTest {
 
         // Status details is stored in policy
         var policy1 = tester.routingPolicies().get(context.deploymentIdIn(zone1)).values().iterator().next();
-        assertEquals(GlobalRouting.Status.out, policy1.status().globalRouting().status());
-        assertEquals(GlobalRouting.Agent.tenant, policy1.status().globalRouting().agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().globalRouting().changedAt());
+        assertEquals(RoutingStatus.Value.out, policy1.status().routingStatus().value());
+        assertEquals(RoutingStatus.Agent.tenant, policy1.status().routingStatus().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().routingStatus().changedAt());
 
         // Other zone remains in
         var policy2 = tester.routingPolicies().get(context.deploymentIdIn(zone2)).values().iterator().next();
-        assertEquals(GlobalRouting.Status.in, policy2.status().globalRouting().status());
-        assertEquals(GlobalRouting.Agent.system, policy2.status().globalRouting().agent());
-        assertEquals(Instant.EPOCH, policy2.status().globalRouting().changedAt());
+        assertEquals(RoutingStatus.Value.in, policy2.status().routingStatus().value());
+        assertEquals(RoutingStatus.Agent.system, policy2.status().routingStatus().agent());
+        assertEquals(Instant.EPOCH, policy2.status().routingStatus().changedAt());
 
         // Next deployment does not affect status
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
@@ -510,15 +510,15 @@ public class RoutingPoliciesTest {
         // Deployment is set back in
         tester.controllerTester().clock().advance(Duration.ofHours(1));
         changedAt = tester.controllerTester().clock().instant();
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.in, GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1, zone2);
 
         policy1 = tester.routingPolicies().get(context.deploymentIdIn(zone1)).values().iterator().next();
-        assertEquals(GlobalRouting.Status.in, policy1.status().globalRouting().status());
-        assertEquals(GlobalRouting.Agent.tenant, policy1.status().globalRouting().agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().globalRouting().changedAt());
+        assertEquals(RoutingStatus.Value.in, policy1.status().routingStatus().value());
+        assertEquals(RoutingStatus.Agent.tenant, policy1.status().routingStatus().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().routingStatus().changedAt());
 
         // Deployment is set out through a new deployment.xml
         var applicationPackage2 = applicationPackageBuilder()
@@ -563,37 +563,37 @@ public class RoutingPoliciesTest {
         }
 
         // Set zone out
-        tester.routingPolicies().setRoutingStatus(zone2, GlobalRouting.Status.out);
+        tester.routingPolicies().setRoutingStatus(zone2, RoutingStatus.Value.out);
         context1.flushDnsUpdates();
         tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
         tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1);
         for (var context : contexts) {
             var policies = tester.routingPolicies().get(context.instanceId());
-            assertTrue("Global routing status for policy remains " + GlobalRouting.Status.in,
+            assertTrue("Global routing status for policy remains " + RoutingStatus.Value.in,
                        policies.values().stream()
                                .map(RoutingPolicy::status)
-                               .map(Status::globalRouting)
-                               .map(GlobalRouting::status)
-                               .allMatch(status -> status == GlobalRouting.Status.in));
+                               .map(Status::routingStatus)
+                               .map(RoutingStatus::value)
+                               .allMatch(status -> status == RoutingStatus.Value.in));
         }
         var changedAt = tester.controllerTester().clock().instant();
         var zonePolicy = tester.controllerTester().controller().curator().readZoneRoutingPolicy(zone2);
-        assertEquals(GlobalRouting.Status.out, zonePolicy.globalRouting().status());
-        assertEquals(GlobalRouting.Agent.operator, zonePolicy.globalRouting().agent());
+        assertEquals(RoutingStatus.Value.out, zonePolicy.globalRouting().value());
+        assertEquals(RoutingStatus.Agent.operator, zonePolicy.globalRouting().agent());
         assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), zonePolicy.globalRouting().changedAt());
 
         // Setting status per deployment does not affect status as entire zone is out
-        tester.routingPolicies().setRoutingStatus(context1.deploymentIdIn(zone2), GlobalRouting.Status.in, GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context1.deploymentIdIn(zone2), RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
         context1.flushDnsUpdates();
         tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
         tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1);
 
         // Set single deployment out
-        tester.routingPolicies().setRoutingStatus(context1.deploymentIdIn(zone2), GlobalRouting.Status.out, GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context1.deploymentIdIn(zone2), RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
         context1.flushDnsUpdates();
 
         // Set zone back in. Deployment set explicitly out, remains out, the rest are in
-        tester.routingPolicies().setRoutingStatus(zone2, GlobalRouting.Status.in);
+        tester.routingPolicies().setRoutingStatus(zone2, RoutingStatus.Value.in);
         context1.flushDnsUpdates();
         tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
         tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1, zone2);
@@ -647,41 +647,41 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
 
         // Global routing status is overridden for one deployment
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.out,
-                                                  GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), RoutingStatus.Value.out,
+                                                  RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone2);
 
         // Setting other deployment out implicitly sets all deployments in. Weight is set to zero, but that has no
         // impact on routing decisions when the weight sum is zero
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), GlobalRouting.Status.out,
-                                                  GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.out,
+                                                  RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 0L, zone2, 0L));
 
         // One inactive deployment is put back in. Global DNS record now points to the only active deployment
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), GlobalRouting.Status.in,
-                                                  GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone1), RoutingStatus.Value.in,
+                                                  RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
 
         // Setting zone (containing active deployment) out puts all deployments in
-        tester.routingPolicies().setRoutingStatus(zone1, GlobalRouting.Status.out);
+        tester.routingPolicies().setRoutingStatus(zone1, RoutingStatus.Value.out);
         context.flushDnsUpdates();
-        assertEquals(GlobalRouting.Status.out, tester.routingPolicies().get(zone1).globalRouting().status());
+        assertEquals(RoutingStatus.Value.out, tester.routingPolicies().get(zone1).globalRouting().value());
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 0L, zone2, 0L));
 
         // Setting zone back in removes the currently inactive deployment
-        tester.routingPolicies().setRoutingStatus(zone1, GlobalRouting.Status.in);
+        tester.routingPolicies().setRoutingStatus(zone1, RoutingStatus.Value.in);
         context.flushDnsUpdates();
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1);
 
         // Inactive deployment is set in
-        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), GlobalRouting.Status.in,
-                                                  GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.in,
+                                                  RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
         for (var policy : tester.routingPolicies().get(context.instanceId()).values()) {
-            assertSame(GlobalRouting.Status.in, policy.status().globalRouting().status());
+            assertSame(RoutingStatus.Value.in, policy.status().routingStatus().value());
         }
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
     }
@@ -763,12 +763,12 @@ public class RoutingPoliciesTest {
                                     mainZone2, 9));
 
         // Changing routing status updates weight
-        tester.routingPolicies().setRoutingStatus(mainZone2, GlobalRouting.Status.out, RoutingStatus.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
                              Map.of(betaZone2, 1,
                                     mainZone2, 0));
-        tester.routingPolicies().setRoutingStatus(mainZone2, GlobalRouting.Status.in, GlobalRouting.Agent.tenant);
+        tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
                              Map.of(betaZone2, 1,

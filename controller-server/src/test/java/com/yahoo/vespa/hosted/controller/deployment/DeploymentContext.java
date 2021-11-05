@@ -35,7 +35,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
-import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.Status;
@@ -245,7 +245,7 @@ public class DeploymentContext {
                                            Optional.empty(),
                                            Set.of(EndpointId.of("default")),
                                            Set.of(),
-                                           new Status(false, GlobalRouting.DEFAULT_STATUS)));
+                                           new Status(false, RoutingStatus.DEFAULT)));
         tester.controller().curator().writeRoutingPolicies(instanceId, policies);
         return this;
     }

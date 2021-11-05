@@ -100,9 +100,9 @@ public class RoutingPolicies {
     }
 
     /** Set the status of all global endpoints in given zone */
-    public void setRoutingStatus(ZoneId zone, GlobalRouting.Status status) {
+    public void setRoutingStatus(ZoneId zone, RoutingStatus.Value value) {
         try (var lock = db.lockRoutingPolicies()) {
-            db.writeZoneRoutingPolicy(new ZoneRoutingPolicy(zone, GlobalRouting.status(status, GlobalRouting.Agent.operator,
+            db.writeZoneRoutingPolicy(new ZoneRoutingPolicy(zone, RoutingStatus.create(value, RoutingStatus.Agent.operator,
                                                                                        controller.clock().instant())));
             Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> allPolicies = db.readRoutingPolicies();
             for (var applicationPolicies : allPolicies.values()) {
@@ -112,13 +112,13 @@ public class RoutingPolicies {
     }
 
     /** Set the status of all global endpoints for given deployment */
-    public void setRoutingStatus(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {
+    public void setRoutingStatus(DeploymentId deployment, RoutingStatus.Value value, RoutingStatus.Agent agent) {
         try (var lock = db.lockRoutingPolicies()) {
             var policies = get(deployment.applicationId());
             var newPolicies = new LinkedHashMap<>(policies);
             for (var policy : policies.values()) {
                 if (!policy.appliesTo(deployment)) continue;
-                var newPolicy = policy.with(policy.status().with(GlobalRouting.status(status, agent,
+                var newPolicy = policy.with(policy.status().with(RoutingStatus.create(value, agent,
                                                                                       controller.clock().instant())));
                 newPolicies.put(policy.id(), newPolicy);
             }
@@ -248,10 +248,10 @@ public class RoutingPolicies {
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname().get(), loadBalancer.dnsZone(),
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
-                                              new Status(isActive(loadBalancer), GlobalRouting.DEFAULT_STATUS));
+                                              new Status(isActive(loadBalancer), RoutingStatus.DEFAULT));
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
-                newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().globalRouting()));
+                newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().routingStatus()));
             }
             updateZoneDnsOf(newPolicy);
             policies.put(newPolicy.id(), newPolicy);
@@ -374,12 +374,12 @@ public class RoutingPolicies {
         return Collections.unmodifiableMap(routingTable);
     }
 
-    /** Returns whether the endpoints of given policy are globally configured {@link GlobalRouting.Status#out} */
+    /** Returns whether the endpoints of given policy are globally configured {@link RoutingStatus.Value#out} */
     private static boolean isConfiguredOut(ZoneRoutingPolicy zonePolicy, RoutingPolicy policy, Set<ZoneId> inactiveZones) {
         return isConfiguredOut(policy, Optional.of(zonePolicy), inactiveZones);
     }
 
-    /** Returns whether the endpoints of given policy are configured {@link GlobalRouting.Status#out} */
+    /** Returns whether the endpoints of given policy are configured {@link RoutingStatus.Value#out} */
     private static boolean isConfiguredOut(RoutingPolicy policy, Set<ZoneId> inactiveZones) {
         return isConfiguredOut(policy, Optional.empty(), inactiveZones);
     }
@@ -389,8 +389,8 @@ public class RoutingPolicies {
         // - zone level (ZoneRoutingPolicy, only applies to global endpoints)
         // - deployment level (RoutingPolicy)
         // - application package level (deployment.xml)
-        return (zonePolicy.isPresent() && zonePolicy.get().globalRouting().status() == GlobalRouting.Status.out) ||
-               policy.status().globalRouting().status() == GlobalRouting.Status.out ||
+        return (zonePolicy.isPresent() && zonePolicy.get().globalRouting().value() == RoutingStatus.Value.out) ||
+               policy.status().routingStatus().value() == RoutingStatus.Value.out ||
                inactiveZones.contains(policy.id().zone());
     }
 

@@ -13,12 +13,12 @@ import java.util.Objects;
 public class Status {
 
     private final boolean active;
-    private final GlobalRouting globalRouting;
+    private final RoutingStatus routingStatus;
 
     /** DO NOT USE. Public for serialization purposes */
-    public Status(boolean active, GlobalRouting globalRouting) {
+    public Status(boolean active, RoutingStatus routingStatus) {
         this.active = active;
-        this.globalRouting = Objects.requireNonNull(globalRouting, "globalRouting must be non-null");
+        this.routingStatus = Objects.requireNonNull(routingStatus, "globalRouting must be non-null");
     }
 
     /** Returns whether this is considered active according to the load balancer status */
@@ -26,14 +26,14 @@ public class Status {
         return active;
     }
 
-    /** Return status of global routing */
-    public GlobalRouting globalRouting() {
-        return globalRouting;
+    /** Return status of routing */
+    public RoutingStatus routingStatus() {
+        return routingStatus;
     }
 
-    /** Returns a copy of this with global routing changed */
-    public Status with(GlobalRouting globalRouting) {
-        return new Status(active, globalRouting);
+    /** Returns a copy of this with routing status changed */
+    public Status with(RoutingStatus routingStatus) {
+        return new Status(active, routingStatus);
     }
 
     @Override
@@ -42,12 +42,12 @@ public class Status {
         if (o == null || getClass() != o.getClass()) return false;
         Status status = (Status) o;
         return active == status.active &&
-               globalRouting.equals(status.globalRouting);
+               routingStatus.equals(status.routingStatus);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(active, globalRouting);
+        return Objects.hash(active, routingStatus);
     }
 
 }

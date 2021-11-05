@@ -29,7 +29,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
-import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
@@ -535,7 +535,7 @@ public class CuratorDb {
 
     public ZoneRoutingPolicy readZoneRoutingPolicy(ZoneId zone) {
         return readSlime(zoneRoutingPolicyPath(zone)).map(data -> zoneRoutingPolicySerializer.fromSlime(zone, data))
-                                                     .orElse(new ZoneRoutingPolicy(zone, GlobalRouting.DEFAULT_STATUS));
+                                                     .orElse(new ZoneRoutingPolicy(zone, RoutingStatus.DEFAULT));
     }
 
     // -------------- Application endpoint certificates ----------------------------
