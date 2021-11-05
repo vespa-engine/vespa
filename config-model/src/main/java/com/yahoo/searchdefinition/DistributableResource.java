@@ -13,7 +13,7 @@ import java.util.Objects;
 
 public class DistributableResource {
 
-    public enum PathType { FILE, URI, BLOB };
+    public enum PathType { FILE, URI, BLOB }
 
     /** The search definition-unique name of this constant */
     private final String name;
@@ -56,9 +56,9 @@ public class DistributableResource {
         this.pathType = PathType.URI;
     }
 
-    /** Initiate sending of this constant to some services over file distribution */
-    public void sendTo(Collection<? extends AbstractService> services) {
-        FileSender.send(fileReference, services);
+    /** Registers this constant to services for file distribution */
+    public void registerFileReference(Collection<? extends AbstractService> services) {
+        FileSender.registerFileReference(fileReference, services);
     }
 
     public String getName() { return name; }

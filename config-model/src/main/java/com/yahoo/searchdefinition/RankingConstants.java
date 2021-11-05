@@ -79,6 +79,6 @@ public class RankingConstants {
 
     /** Initiate sending of these constants to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
-        asMap().values().forEach(constant -> constant.sendTo(services));
+        asMap().values().forEach(constant -> constant.registerFileReference(services));
     }
 }

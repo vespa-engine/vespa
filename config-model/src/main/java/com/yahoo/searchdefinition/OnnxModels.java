@@ -68,7 +68,7 @@ public class OnnxModels {
 
     /** Initiate sending of these models to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
-        asMap().values().forEach(model -> model.sendTo(services));
+        asMap().values().forEach(model -> model.registerFileReference(services));
     }
 
 }

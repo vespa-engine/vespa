@@ -88,7 +88,7 @@ public class FileSenderTest {
         builder.setField("fileVal", "foo.txt");
         builder.setField("stringVal", "foo.txt");
         fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+        fileSender().registerUserConfiguredFiles(producer);
         assertThat(builder.getObject("fileVal").getValue(), is("fooshash"));
         assertThat(builder.getObject("stringVal").getValue(), is("foo.txt"));
     }
@@ -100,7 +100,7 @@ public class FileSenderTest {
         builder.setField("fileVal", "foo.txt");
         builder.setField("stringVal", "foo.txt");
         fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+        fileSender().registerUserConfiguredFiles(producer);
         assertThat(builder.getObject("fileVal").getValue(), is("fooshash"));
         assertThat(builder.getObject("stringVal").getValue(), is("foo.txt"));
     }
@@ -113,7 +113,7 @@ public class FileSenderTest {
         inner.setField("fileVal", "bar.txt");
         inner.setField("stringVal", "bar.txt");
         fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+        fileSender().registerUserConfiguredFiles(producer);
         assertThat(builder.getArray("inner").get(0).getObject("fileVal").getValue(), is("barhash"));
         assertThat(builder.getArray("inner").get(0).getObject("stringVal").getValue(), is("bar.txt"));
     }
@@ -130,7 +130,7 @@ public class FileSenderTest {
         fileRegistry.pathToRef.put("foo.txt", new FileNode("foohash").value());
         fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
         fileRegistry.pathToRef.put("path.txt", new FileNode("pathhash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+        fileSender().registerUserConfiguredFiles(producer);
         assertThat(builder.getArray("fileArray").get(0).getValue(), is("foohash"));
         assertThat(builder.getArray("fileArray").get(1).getValue(), is("barhash"));
         assertThat(builder.getArray("pathArray").get(0).getValue(), is("pathhash"));
@@ -144,7 +144,7 @@ public class FileSenderTest {
         builder.getObject("struct").setField("fileVal", "foo.txt");
         builder.getObject("struct").setField("stringVal", "foo.txt");
         fileRegistry.pathToRef.put("foo.txt", new FileNode("foohash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+        fileSender().registerUserConfiguredFiles(producer);
         assertThat(builder.getObject("struct").getObject("fileVal").getValue(), is("foohash"));
         assertThat(builder.getObject("struct").getObject("stringVal").getValue(), is("foo.txt"));
     }
@@ -161,7 +161,7 @@ public class FileSenderTest {
         fileRegistry.pathToRef.put("foo.txt", new FileNode("foohash").value());
         fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
         fileRegistry.pathToRef.put("path.txt", new FileNode("pathhash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+        fileSender().registerUserConfiguredFiles(producer);
         assertThat(builder.getMap("fileMap").get("foo").getValue(), is("foohash"));
         assertThat(builder.getMap("fileMap").get("bar").getValue(), is("barhash"));
         assertThat(builder.getMap("pathMap").get("path").getValue(), is("pathhash"));
@@ -176,7 +176,7 @@ public class FileSenderTest {
         inner.setField("fileVal", "bar.txt");
         inner.setField("stringVal", "bar.txt");
         fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+        fileSender().registerUserConfiguredFiles(producer);
         assertThat(builder.getMap("inner").get("foo").getObject("fileVal").getValue(), is("barhash"));
         assertThat(builder.getMap("inner").get("foo").getObject("stringVal").getValue(), is("bar.txt"));
     }
@@ -185,7 +185,7 @@ public class FileSenderTest {
     public void require_that_null_files_are_not_sent() {
         def.addFileDef("fileVal");
         fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
-        fileSender().sendUserConfiguredFiles(producer);
+        fileSender().registerUserConfiguredFiles(producer);
     }
 
 

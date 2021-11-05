@@ -454,11 +454,11 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     }
 
     /**
-     * Add the given file to the application's file distributor.
+     * Adds the given file reference to the file reference repository.
      *
      * @param reference file reference (hash)
      */
-    public void send(FileReference reference) {
+    public void registerFileReference(FileReference reference) {
         getRoot().fileReferencesRepository().add(reference);
     }
 

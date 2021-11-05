@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 /**
- * Utility methods for sending files to a collection of nodes.
+ * Utility methods for registering files to a service.
  *
  * @author gjoranv
  */
@@ -36,28 +36,25 @@ public class FileSender implements Serializable {
     }
 
     /**
-     * Send the given file to all given services.
+     * Registers the given file reference to the given services.
      *
      * @param fileReference  The file reference to send.
      * @param services  The services to send the file to.
      * @throws IllegalStateException if services is empty.
      */
-    public static void send(FileReference fileReference, Collection<? extends AbstractService> services) {
+    public static void registerFileReference(FileReference fileReference, Collection<? extends AbstractService> services) {
         if (services.isEmpty()) {
             throw new IllegalStateException("No service instances. Probably a standalone cluster setting up <nodes> " +
                                             "using 'count' instead of <node> tags.");
         }
 
-        for (AbstractService service : services) {
-            // The same reference will be returned from each call.
-            service.send(fileReference);
-        }
+        services.forEach(s -> s.registerFileReference(fileReference));
     }
 
     /**
-     * Sends all user configured files for a producer to all given services.
+     * Register all user configured files for a producer to all given services.
      */
-    public <PRODUCER extends AbstractConfigProducer<?>> void sendUserConfiguredFiles(PRODUCER producer) {
+    public <PRODUCER extends AbstractConfigProducer<?>> void registerUserConfiguredFiles(PRODUCER producer) {
         if (services.isEmpty())
             return;
 
@@ -66,14 +63,14 @@ public class FileSender implements Serializable {
         for (ConfigDefinitionKey key : userConfigs.configsProduced()) {
             ConfigPayloadBuilder builder = userConfigs.get(key);
             try {
-                sendUserConfiguredFiles(builder, sentFiles, key);
+                registerUserConfiguredFiles(builder, sentFiles, key);
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Unable to send file specified in " + key, e);
             }
         }
     }
 
-    private void sendUserConfiguredFiles(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles, ConfigDefinitionKey key) {
+    private void registerUserConfiguredFiles(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles, ConfigDefinitionKey key) {
         ConfigDefinition configDefinition = builder.getConfigDefinition();
         if (configDefinition == null) {
             // TODO: throw new IllegalArgumentException("Not able to find config definition for " + builder);
@@ -82,38 +79,38 @@ public class FileSender implements Serializable {
             return;
         }
         // Inspect fields at this level
-        sendEntries(builder, sentFiles, configDefinition.getFileDefs());
-        sendEntries(builder, sentFiles, configDefinition.getPathDefs());
+        registerEntries(builder, sentFiles, configDefinition.getFileDefs());
+        registerEntries(builder, sentFiles, configDefinition.getPathDefs());
 
         // Inspect arrays
         for (Map.Entry<String, ConfigDefinition.ArrayDef> entry : configDefinition.getArrayDefs().entrySet()) {
             if (isFileOrPathArray(entry)) {
                 ConfigPayloadBuilder.Array array = builder.getArray(entry.getKey());
-                sendFileEntries(array.getElements(), sentFiles);
+                registerFileEntries(array.getElements(), sentFiles);
             }
         }
         // Maps
         for (Map.Entry<String, ConfigDefinition.LeafMapDef> entry : configDefinition.getLeafMapDefs().entrySet()) {
             if (isFileOrPathMap(entry)) {
                 ConfigPayloadBuilder.MapBuilder map = builder.getMap(entry.getKey());
-                sendFileEntries(map.getElements(), sentFiles);
+                registerFileEntries(map.getElements(), sentFiles);
             }
         }
 
         // Inspect inner fields
         for (String name : configDefinition.getStructDefs().keySet()) {
-            sendUserConfiguredFiles(builder.getObject(name), sentFiles, key);
+            registerUserConfiguredFiles(builder.getObject(name), sentFiles, key);
         }
         for (String name : configDefinition.getInnerArrayDefs().keySet()) {
             ConfigPayloadBuilder.Array array = builder.getArray(name);
             for (ConfigPayloadBuilder element : array.getElements()) {
-                sendUserConfiguredFiles(element, sentFiles, key);
+                registerUserConfiguredFiles(element, sentFiles, key);
             }
         }
         for (String name : configDefinition.getStructMapDefs().keySet()) {
             ConfigPayloadBuilder.MapBuilder map = builder.getMap(name);
             for (ConfigPayloadBuilder element : map.getElements()) {
-                sendUserConfiguredFiles(element, sentFiles, key);
+                registerUserConfiguredFiles(element, sentFiles, key);
             }
         }
 
@@ -129,29 +126,28 @@ public class FileSender implements Serializable {
         return ("file".equals(arrayType) || "path".equals(arrayType));
     }
 
-    private void sendEntries(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles, Map<String, ? extends DefaultValued<String>> entries) {
+    private void registerEntries(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles, Map<String, ? extends DefaultValued<String>> entries) {
         for (String name : entries.keySet()) {
             ConfigPayloadBuilder fileEntry = builder.getObject(name);
             if (fileEntry.getValue() == null) {
                 throw new IllegalArgumentException("Unable to send file for field '" + name + "': Invalid config value " + fileEntry.getValue());
             }
-            sendFileEntry(fileEntry, sentFiles);
+            registerFileEntry(fileEntry, sentFiles);
         }
     }
 
-    private void sendFileEntries(Collection<ConfigPayloadBuilder> builders, Map<String, FileReference> sentFiles) {
+    private void registerFileEntries(Collection<ConfigPayloadBuilder> builders, Map<String, FileReference> sentFiles) {
         for (ConfigPayloadBuilder builder : builders) {
-            sendFileEntry(builder, sentFiles);
+            registerFileEntry(builder, sentFiles);
         }
     }
 
-    private void sendFileEntry(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles) {
+    private void registerFileEntry(ConfigPayloadBuilder builder, Map<String, FileReference> sentFiles) {
         String path = builder.getValue();
         FileReference reference = sentFiles.get(path);
         if (reference == null) {
-
             reference = fileRegistry.addFile(path);
-            send(reference, services);
+            registerFileReference(reference, services);
             sentFiles.put(path, reference);
         }
         builder.setValue(reference.value());
