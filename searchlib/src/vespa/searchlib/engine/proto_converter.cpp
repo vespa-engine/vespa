@@ -103,18 +103,6 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
                 asked_hits, asked_offset, got_hits, reply.totalHitCount);
         }
     }
-    size_t num_match_features = reply.match_features.names.size();
-    using FeatureValuesIterator = std::vector<search::FeatureValues::Value>::const_iterator;
-    FeatureValuesIterator mfv_iter;
-    bool has_match_features = (num_match_features > 0 && reply.hits.size() > 0);
-    if (has_match_features) {
-        size_t num_match_feature_values = reply.match_features.values.size();
-        assert(num_match_feature_values == reply.hits.size() * num_match_features);
-        for (const auto & name : reply.match_features.names) {
-            *proto.add_match_feature_names() = name;
-        }
-        mfv_iter = reply.match_features.values.begin();
-    }
     for (size_t i = 0; i < reply.hits.size(); ++i) {
         auto *hit = proto.add_hits();
         hit->set_global_id(reply.hits[i].gid.get(), document::GlobalId::LENGTH);
@@ -125,7 +113,15 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
             assert((sort_data_offset + sort_data_size) <= reply.sortData.size());
             hit->set_sort_data(&reply.sortData[sort_data_offset], sort_data_size);
         }
-        if (has_match_features) {
+    }
+    if (reply.match_features.values.size() > 0) {
+        size_t num_match_features = reply.match_features.names.size();
+        for (const auto & name : reply.match_features.names) {
+            *proto.add_match_feature_names() = name;
+        }
+        auto mfv_iter = reply.match_features.values.begin();
+        for (size_t i = 0; i < reply.hits.size(); ++i) {
+            auto *hit = proto.mutable_hits(i);
             for (size_t j = 0; j < num_match_features; ++j) {
                 auto * obj = hit->add_match_features();
                 const auto & feature_value = *mfv_iter++;
@@ -137,8 +133,6 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
                 }
             }
         }
-    }
-    if (has_match_features) {
         assert(mfv_iter == reply.match_features.values.end());
     }
     proto.set_grouping_blob(&reply.groupResult[0], reply.groupResult.size());
