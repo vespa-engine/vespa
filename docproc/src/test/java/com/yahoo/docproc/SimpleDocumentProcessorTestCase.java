@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
-import com.yahoo.container.StatisticsConfig;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
@@ -13,7 +12,6 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.statistics.StatisticsImpl;
 import org.junit.Test;
 
 import java.util.Map;
@@ -28,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 public class SimpleDocumentProcessorTestCase {
 
     private static DocprocService setupDocprocService(SimpleDocumentProcessor processor, Metric metric) {
-        CallStack stack = new CallStack("default", new StatisticsImpl(new StatisticsConfig(new StatisticsConfig.Builder())), metric);
+        CallStack stack = new CallStack("default", metric);
         stack.addLast(processor);
         DocprocService service = new DocprocService("default");
         service.setCallStack(stack);

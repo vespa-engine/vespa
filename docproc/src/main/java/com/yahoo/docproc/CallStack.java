@@ -31,29 +31,33 @@ public class CallStack {
     /** The last element popped from the call stack, if any */
     private Call lastPopped = null;
 
-    /** Used for creating counters in Call */
-    private final Statistics statistics;
-
     /** Used for metrics in Call */
     private final Metric metric;
 
     public CallStack() {
-        this(null, Statistics.nullImplementation, new NullMetric());
+        this(new NullMetric());
     }
 
     public CallStack(String name) {
-        this(name, Statistics.nullImplementation, new NullMetric());
+        this(name, new NullMetric());
     }
 
     /** Creates an empty stack */
+    public CallStack(Metric metric) {
+        this.name = null;
+        this.metric = metric;
+    }
+    @Deprecated
     public CallStack(Statistics statistics, Metric metric) {
-        this(null, statistics, metric);
+        this(metric);
     }
 
-    /** Creates an empty stack with a name */
     public CallStack(String name, Statistics manager, Metric metric) {
+        this(name, metric);
+    }
+    /** Creates an empty stack with a name */
+    public CallStack(String name, Metric metric) {
         this.name = name;
-        this.statistics = manager;
         this.metric = metric;
     }
 
@@ -67,7 +71,6 @@ public class CallStack {
             Call callToCopy = i.next();
             elements.add((Call) callToCopy.clone());
         }
-        this.statistics = stackToCopy.statistics;
         this.metric = stackToCopy.metric;
     }
 
@@ -111,7 +114,7 @@ public class CallStack {
      * @return this for convenience
      */
     public CallStack addNext(DocumentProcessor processor) {
-        return addNext(new Call(processor, name, statistics, metric));
+        return addNext(new Call(processor, name, metric));
     }
 
     /**
@@ -140,7 +143,7 @@ public class CallStack {
      * @return this for convenience
      */
     public CallStack addLast(DocumentProcessor processor) {
-        return addLast(new Call(processor, name, statistics, metric));
+        return addLast(new Call(processor, name, metric));
     }
 
     /**
@@ -186,7 +189,7 @@ public class CallStack {
      * @return this for convenience
      */
     public CallStack addBefore(Call before, DocumentProcessor processor) {
-        return addBefore(before, new Call(processor, name, statistics, metric));
+        return addBefore(before, new Call(processor, name, metric));
     }
 
     /**
@@ -240,7 +243,7 @@ public class CallStack {
      * @return this for convenience
      */
     public CallStack addAfter(Call after, DocumentProcessor processor) {
-        return addAfter(after, new Call(processor, name, statistics, metric));
+        return addAfter(after, new Call(processor, name, metric));
     }
 
     /**
@@ -378,7 +381,7 @@ public class CallStack {
     }
 
     public Statistics getStatistics() {
-        return statistics;
+        return null;
     }
 
     public Metric getMetric() {

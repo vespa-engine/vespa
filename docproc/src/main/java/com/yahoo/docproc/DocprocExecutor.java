@@ -5,7 +5,6 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.statistics.Counter;
 import com.yahoo.text.Utf8;
 
 import java.util.HashMap;
@@ -32,7 +31,6 @@ public class DocprocExecutor {
 
     private final String name;
     private final String docCounterName;
-    private final Counter docCounter;
     private final Metric metric;
     private Function<String, Metric.Context> contexts;
     private final CallStack callStack;
@@ -47,7 +45,6 @@ public class DocprocExecutor {
         this.name = name;
         String chainDimension = name != null ? name.replaceAll("[^\\p{Alnum}]", "_") : name;
         docCounterName = "chain_" + chainDimension + "_documents";
-        docCounter = new Counter(docCounterName, callStack.getStatistics(), false);
         this.metric = callStack.getMetric();
         this.callStack = callStack;
         this.callStack.setName(name);
@@ -64,7 +61,6 @@ public class DocprocExecutor {
     public DocprocExecutor(DocprocExecutor oldExecutor, CallStack callStack) {
         this.name = oldExecutor.name;
         this.docCounterName = oldExecutor.docCounterName;
-        this.docCounter = oldExecutor.docCounter;
         this.metric = oldExecutor.metric;
         this.contexts = oldExecutor.contexts;
         this.callStack = callStack;
@@ -81,7 +77,6 @@ public class DocprocExecutor {
     private void incrementNumDocsProcessed(Processing processing) {
         List<DocumentOperation> operations = processing.getOnceOperationsToBeProcessed();
         if ( ! operations.isEmpty()) {
-            docCounter.increment(operations.size());
             metric.add(docCounterName, operations.size(), null);
             operations.stream()
                       .collect(groupingBy(operation -> operation.getId().getDocType(), counting()))
@@ -114,7 +109,6 @@ public class DocprocExecutor {
                 return progress;
             }
 
-            progress = DocumentProcessor.Progress.DONE;
             //might throw exception, which is OK:
             progress = call.call(processing);
 
