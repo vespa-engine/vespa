@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
-import com.yahoo.vespa.hosted.controller.routing.Status;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -88,8 +87,8 @@ public class RoutingPolicySerializer {
                                                SlimeUtils.optionalString(inspect.field(dnsZoneField)),
                                                instanceEndpoints,
                                                applicationEndpoints,
-                                               new Status(inspect.field(loadBalancerActiveField).asBool(),
-                                                          globalRoutingFromSlime(inspect.field(globalRoutingField)))));
+                                               new RoutingPolicy.Status(inspect.field(loadBalancerActiveField).asBool(),
+                                                                        globalRoutingFromSlime(inspect.field(globalRoutingField)))));
         });
         return Collections.unmodifiableMap(policies);
     }

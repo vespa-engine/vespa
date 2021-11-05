@@ -6,7 +6,8 @@ import com.yahoo.config.provision.zone.ZoneId;
 import java.util.Objects;
 
 /**
- * Represents the DNS routing policy for a zone. This takes precedence over of an individual {@link RoutingPolicy}.
+ * Represents the DNS routing policy for a zone. This takes precedence over of a deployment-specific
+ * {@link RoutingPolicy}.
  *
  * This is immutable.
  *
@@ -27,8 +28,8 @@ public class ZoneRoutingPolicy {
         return zone;
     }
 
-    /** The status of global routing */
-    public RoutingStatus globalRouting() {
+    /** Routing status of this policy */
+    public RoutingStatus routingStatus() {
         return routingStatus;
     }
 

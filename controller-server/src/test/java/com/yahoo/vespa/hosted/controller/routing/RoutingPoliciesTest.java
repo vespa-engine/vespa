@@ -572,15 +572,15 @@ public class RoutingPoliciesTest {
             assertTrue("Global routing status for policy remains " + RoutingStatus.Value.in,
                        policies.values().stream()
                                .map(RoutingPolicy::status)
-                               .map(Status::routingStatus)
+                               .map(RoutingPolicy.Status::routingStatus)
                                .map(RoutingStatus::value)
                                .allMatch(status -> status == RoutingStatus.Value.in));
         }
         var changedAt = tester.controllerTester().clock().instant();
         var zonePolicy = tester.controllerTester().controller().curator().readZoneRoutingPolicy(zone2);
-        assertEquals(RoutingStatus.Value.out, zonePolicy.globalRouting().value());
-        assertEquals(RoutingStatus.Agent.operator, zonePolicy.globalRouting().agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), zonePolicy.globalRouting().changedAt());
+        assertEquals(RoutingStatus.Value.out, zonePolicy.routingStatus().value());
+        assertEquals(RoutingStatus.Agent.operator, zonePolicy.routingStatus().agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), zonePolicy.routingStatus().changedAt());
 
         // Setting status per deployment does not affect status as entire zone is out
         tester.routingPolicies().setRoutingStatus(context1.deploymentIdIn(zone2), RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
@@ -668,7 +668,7 @@ public class RoutingPoliciesTest {
         // Setting zone (containing active deployment) out puts all deployments in
         tester.routingPolicies().setRoutingStatus(zone1, RoutingStatus.Value.out);
         context.flushDnsUpdates();
-        assertEquals(RoutingStatus.Value.out, tester.routingPolicies().get(zone1).globalRouting().value());
+        assertEquals(RoutingStatus.Value.out, tester.routingPolicies().get(zone1).routingStatus().value());
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 0L, zone2, 0L));
 
         // Setting zone back in removes the currently inactive deployment

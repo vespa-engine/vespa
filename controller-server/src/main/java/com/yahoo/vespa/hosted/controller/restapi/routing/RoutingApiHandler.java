@@ -230,7 +230,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     private void toSlime(ZoneId zone, Cursor zoneObject) {
         if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
             var zonePolicy = controller.routing().policies().get(zone);
-            zoneStatusToSlime(zoneObject, zonePolicy.zone(), zonePolicy.globalRouting(), RoutingMethod.exclusive);
+            zoneStatusToSlime(zoneObject, zonePolicy.zone(), zonePolicy.routingStatus(), RoutingMethod.exclusive);
         } else {
             // Rotation status per zone only exposes in/out status, no agent or time of change.
             var in = controller.serviceRegistry().configServer().getGlobalRotationStatus(zone);

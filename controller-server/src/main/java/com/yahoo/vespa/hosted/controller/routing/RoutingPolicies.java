@@ -248,7 +248,7 @@ public class RoutingPolicies {
             var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname().get(), loadBalancer.dnsZone(),
                                               allocation.instanceEndpointsOf(loadBalancer),
                                               allocation.applicationEndpointsOf(loadBalancer),
-                                              new Status(isActive(loadBalancer), RoutingStatus.DEFAULT));
+                                              new RoutingPolicy.Status(isActive(loadBalancer), RoutingStatus.DEFAULT));
             // Preserve global routing status for existing policy
             if (existingPolicy != null) {
                 newPolicy = newPolicy.with(newPolicy.status().with(existingPolicy.status().routingStatus()));
@@ -389,7 +389,7 @@ public class RoutingPolicies {
         // - zone level (ZoneRoutingPolicy, only applies to global endpoints)
         // - deployment level (RoutingPolicy)
         // - application package level (deployment.xml)
-        return (zonePolicy.isPresent() && zonePolicy.get().globalRouting().value() == RoutingStatus.Value.out) ||
+        return (zonePolicy.isPresent() && zonePolicy.get().routingStatus().value() == RoutingStatus.Value.out) ||
                policy.status().routingStatus().value() == RoutingStatus.Value.out ||
                inactiveZones.contains(policy.id().zone());
     }

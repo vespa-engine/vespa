@@ -38,7 +38,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
-import com.yahoo.vespa.hosted.controller.routing.Status;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -245,7 +244,7 @@ public class DeploymentContext {
                                            Optional.empty(),
                                            Set.of(EndpointId.of("default")),
                                            Set.of(),
-                                           new Status(false, RoutingStatus.DEFAULT)));
+                                           new RoutingPolicy.Status(false, RoutingStatus.DEFAULT)));
         tester.controller().curator().writeRoutingPolicies(instanceId, policies);
         return this;
     }
