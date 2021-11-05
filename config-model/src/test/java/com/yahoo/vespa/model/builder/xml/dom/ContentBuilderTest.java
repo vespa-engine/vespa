@@ -34,6 +34,7 @@ import java.util.List;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
+import static com.yahoo.vespa.config.search.core.ProtonConfig.Feeding.Shared_field_writer_executor;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -821,6 +822,31 @@ public class ContentBuilderTest extends DomBuilderTest {
             props.setFeedTaskLimit(value);
         }
         return resolveProtonConfig(props, singleNodeContentXml()).indexing().tasklimit();
+    }
+
+    @Test
+    public void shared_field_writer_executor_is_controlled_by_feature_flag() {
+
+        assertEquals(Shared_field_writer_executor.Enum.NONE,
+                resolveSharedFieldWriterExecutorConfigWithFeatureFlag(null));
+        assertEquals(Shared_field_writer_executor.Enum.NONE,
+                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("NONE"));
+        assertEquals(Shared_field_writer_executor.Enum.INDEX,
+                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("INDEX"));
+        assertEquals(Shared_field_writer_executor.Enum.INDEX_AND_ATTRIBUTE,
+                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("INDEX_AND_ATTRIBUTE"));
+        assertEquals(Shared_field_writer_executor.Enum.DOCUMENT_DB,
+                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("DOCUMENT_DB"));
+        assertEquals(Shared_field_writer_executor.Enum.NONE,
+                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("invalid"));
+    }
+
+    private ProtonConfig.Feeding.Shared_field_writer_executor.Enum resolveSharedFieldWriterExecutorConfigWithFeatureFlag(String value) {
+        var props = new TestProperties();
+        if (value != null) {
+            props.setSharedFieldWriterExecutor(value);
+        }
+        return resolveProtonConfig(props, singleNodeContentXml()).feeding().shared_field_writer_executor();
     }
 
     private void verifyThatFeatureFlagControlsVisibilityDelayDefault(Double xmlOverride, double expected) {
