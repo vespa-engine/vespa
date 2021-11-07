@@ -34,12 +34,17 @@ CTestTestfile.cmake
 cmake_install.cmake
 Makefile
 Testing
+/.mvn/
 /.ninja_deps
 /.ninja_log
 /build.ninja
 /rules.ninja
 *_test_app
 /hadoop/dependency-reduced-pom.xml
+/mvnw
+/mvnw.cmd
+/mvnwDebug
+/mvnwDebug.cmd
 /vespa-hadoop/dependency-reduced-pom.xml
 .preprocessed/
 .DS_Store
