@@ -114,6 +114,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.joining;
@@ -213,11 +214,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued,
                                                executorConfig.resendDelayMillis(),
                                                executorConfig.resendDelayMillis(),
-                                               TimeUnit.MILLISECONDS);
+                                               MILLISECONDS);
         this.visitDispatcher.scheduleWithFixedDelay(this::dispatchVisitEnqueued,
                                                     executorConfig.resendDelayMillis(),
                                                     executorConfig.resendDelayMillis(),
-                                                    TimeUnit.MILLISECONDS);
+                                                    MILLISECONDS);
     }
 
     // ------------------------------------------------ Requests -------------------------------------------------
@@ -235,7 +236,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             // Set a higher HTTP layer timeout than the document API timeout, to prefer triggering the latter.
             request.setTimeout(  getProperty(request, TIMEOUT, timeoutMillisParser).orElse(defaultTimeout.toMillis())
                                + handlerTimeout.toMillis(),
-                               TimeUnit.MILLISECONDS);
+                               MILLISECONDS);
 
             Path requestPath = new Path(request.getUri());
             for (String path : handlers.keySet())
@@ -262,7 +263,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     @Override
     public void handleTimeout(Request request, ResponseHandler responseHandler) {
-        timeout((HttpRequest) request, "Timeout after " + (request.getTimeout(TimeUnit.MILLISECONDS) - handlerTimeout.toMillis()) + "ms", responseHandler);
+        timeout((HttpRequest) request, "Timeout after " + (request.getTimeout(MILLISECONDS) - handlerTimeout.toMillis()) + "ms", responseHandler);
     }
 
     @Override
@@ -292,10 +293,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             while (outstanding.get() > 0 && clock.instant().isBefore(doom))
                 Thread.sleep(Math.max(1, Duration.between(clock.instant(), doom).toMillis()));
 
-            if ( ! dispatcher.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), TimeUnit.MILLISECONDS))
+            if ( ! dispatcher.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), MILLISECONDS))
                 dispatcher.shutdownNow();
 
-            if ( ! visitDispatcher.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), TimeUnit.MILLISECONDS))
+            if ( ! visitDispatcher.awaitTermination(Duration.between(clock.instant(), doom).toMillis(), MILLISECONDS))
                 visitDispatcher.shutdownNow();
         }
         catch (InterruptedException e) {
@@ -1064,7 +1065,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.visitInconsistentBuckets(true);
-        long timeoutMs = Math.max(1, request.getTimeout(TimeUnit.MILLISECONDS) - handlerTimeout.toMillis());
+        long timeoutMs = Math.max(1, request.getTimeout(MILLISECONDS) - handlerTimeout.toMillis());
         if (streamed) {
             StaticThrottlePolicy throttlePolicy = new DynamicThrottlePolicy().setMinWindowSize(1).setWindowSizeIncrement(1);
             concurrency.ifPresent(throttlePolicy::setMaxPendingCount);
@@ -1084,7 +1085,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         VisitorParameters parameters = parseCommonParameters(request, path, Optional.of(requireProperty(request, CLUSTER)));
         parameters.setThrottlePolicy(new DynamicThrottlePolicy().setMinWindowSize(1).setWindowSizeIncrement(1));
         long timeChunk = getProperty(request, TIME_CHUNK, timeoutMillisParser).orElse(60_000L);
-        parameters.setSessionTimeoutMs(Math.max(1, Math.min(timeChunk, request.getTimeout(TimeUnit.MILLISECONDS) - handlerTimeout.toMillis())));
+        parameters.setSessionTimeoutMs(Math.max(1, Math.min(timeChunk, request.getTimeout(MILLISECONDS) - handlerTimeout.toMillis())));
         return parameters;
     }
 
@@ -1231,7 +1232,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             AtomicReference<String> error = new AtomicReference<>(); // Set if error occurs during processing of visited documents.
             callback.onStart(response);
             VisitorControlHandler controller = new VisitorControlHandler() {
-                final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, request.getTimeout(TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS) : null;
+                final ScheduledFuture<?> abort = streaming ? visitDispatcher.schedule(this::abort, request.getTimeout(MILLISECONDS), MILLISECONDS) : null;
                 @Override public void onDone(CompletionCode code, String message) {
                     super.onDone(code, message);
                     loggingException(() -> {
