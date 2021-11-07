@@ -60,7 +60,8 @@ createScheduler(uint32_t numThreads, uint32_t numSearchPartitions, uint32_t numD
     return std::make_unique<TaskDocidRangeScheduler>(numThreads, numSearchPartitions, numDocs);
 }
 
-auto make_reply(const MatchToolsFactory &mtf, ResultProcessor &processor, ThreadBundle &bundle, auto full_result) {
+template <class FullResult>
+auto make_reply(const MatchToolsFactory &mtf, ResultProcessor &processor, ThreadBundle &bundle, FullResult full_result) {
     if (mtf.has_match_features()) {
         auto docs = processor.extract_docid_ordering(*full_result);
         auto reply = processor.makeReply(std::move(std::move(full_result)));
