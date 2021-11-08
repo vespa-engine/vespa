@@ -193,7 +193,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     }
 
     private void allowConfigRpcRequests(RpcServer rpcServer) {
-        log.log(Level.INFO, "Allowing RPC config requests");
+        log.log(Level.FINE, "Allowing RPC config requests");
         rpcServer.setUpGetConfigHandlers();
     }
 
