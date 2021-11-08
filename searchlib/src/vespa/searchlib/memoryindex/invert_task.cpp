@@ -26,7 +26,7 @@ InvertTask::InvertTask(const DocumentInverterContext& inv_context, const InvertC
     for (uint32_t uri_field_id : _context.get_uri_fields()) {
         uint32_t field_id = schema_index_fields._uriFields[uri_field_id]._all;
         _uri_field_values.emplace_back(_inv_context.get_field_value(doc, field_id));
-    }                                       
+    }
 }
 
 InvertTask::~InvertTask() = default;

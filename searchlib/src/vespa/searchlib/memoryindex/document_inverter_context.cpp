@@ -26,10 +26,12 @@ void make_contexts(const SchemaIndexFields& schema_index_fields, ISequencedTaskE
     using IdMapping = std::vector<std::tuple<ExecutorId, bool, uint32_t>>;
     IdMapping map;
     for (uint32_t field_id : schema_index_fields._textFields) {
+        // TODO: Add bias when sharing sequenced task executor between document types
         map.emplace_back(executor.getExecutorId(field_id), false, field_id);
     }
     uint32_t uri_field_id = 0;
     for (auto& uri_field : schema_index_fields._uriFields) {
+        // TODO: Add bias when sharing sequenced task executor between document types
         map.emplace_back(executor.getExecutorId(uri_field._all), true, uri_field_id);
         ++uri_field_id;
     }
@@ -62,7 +64,7 @@ public:
             opt_pusher = pusher_id;
         }
     }
-    
+
     void use_mapping(const std::vector<uint32_t>& fields, std::vector<uint32_t>& pushers) {
         for (auto field_id : fields) {
             assert(field_id < _pushers.size());
@@ -79,7 +81,16 @@ PusherMapping::PusherMapping(size_t size)
 }
 
 PusherMapping::~PusherMapping() = default;
-                       
+
+/*
+ * Connect contexts for inverting to contexts for pushing. If we use
+ * different sequenced task executors or adds different biases to the
+ * getExecutorId() argument (to enable double buffering) then contexts
+ * for inverting and contexts for pushing will bundle different sets
+ * of fields, preventing a 1:1 mapping.  If we use the same sequenced
+ * task executor and drop double buffering then we can simplify this
+ * to a 1:1 mapping.
+ */
 void connect_contexts(std::vector<InvertContext>& invert_contexts,
                       const std::vector<PushContext>& push_contexts,
                       uint32_t num_fields,
