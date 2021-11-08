@@ -113,42 +113,11 @@ LidStateVector::clearBit(unsigned int idx)
     maybeUpdateHighest();
 }
 
-
-bool
-LidStateVector::empty() const
-{
-    return _count == 0u;
-}
-
-
-unsigned int
-LidStateVector::getLowest() const
-{
-    return _lowest;
-}
-
-
-unsigned int
-LidStateVector::getHighest() const
-{
-    return _highest;
-}
-
-
 uint32_t
 LidStateVector::internalCount()
 {
     // Called by document db executor thread.
     return _bv.countTrueBits();
 }
-
-
-uint32_t
-LidStateVector::count() const
-{
-    // Called by document db executor thread or metrics related threads
-    return _count;
-}
-
 
 }  // namespace proton

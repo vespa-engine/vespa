@@ -32,7 +32,7 @@ LidAllocator::LidAllocator(uint32_t size,
 
 }
 
-LidAllocator::~LidAllocator() {}
+LidAllocator::~LidAllocator() = default;
 
 LidAllocator::DocId
 LidAllocator::getFreeLid(DocId lidLimit)
@@ -77,18 +77,6 @@ LidAllocator::unregisterLid(DocId lid)
         _activeLids.clearBit(lid);
         _numActiveLids = _activeLids.count();
     }
-}
-
-size_t
-LidAllocator::getUsedLidsSize() const
-{
-    return _usedLids.byteSize();
-}
-
-void
-LidAllocator::trimHoldLists(generation_t firstUsed)
-{
-    _holdLids.trimHoldLists(firstUsed, _freeLids);
 }
 
 void
@@ -266,12 +254,6 @@ void
 LidAllocator::shrinkLidSpace(DocId committedDocIdLimit)
 {
     ensureSpace(committedDocIdLimit, committedDocIdLimit);
-}
-
-uint32_t
-LidAllocator::getNumUsedLids() const
-{
-    return _usedLids.count();
 }
 
 }

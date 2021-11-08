@@ -48,15 +48,18 @@ public:
     unsigned int byteSize() const {
         return _bv.extraByteSize() + sizeof(LidStateVector);
     }
-    bool empty() const;
-    unsigned int getLowest() const;
-    unsigned int getHighest() const;
+    bool empty() const { return _count == 0u; }
+    unsigned int getLowest() const { return _lowest; }
+    unsigned int getHighest() const { return _highest; }
 
     /**
      * Get cached number of bits set in vector.  Called by read or
      * write thread.  Write thread must updated cached number as needed.
      */
-    uint32_t count() const;
+    uint32_t count() const {
+        // Called by document db executor thread or metrics related threads
+        return _count;
+    }
 
     unsigned int getNextTrueBit(unsigned int idx) const {
         return _bv.getNextTrueBit(idx);
