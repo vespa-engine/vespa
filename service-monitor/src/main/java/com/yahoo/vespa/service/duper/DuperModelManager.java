@@ -102,7 +102,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
                 lockedRunnable(() -> {
                     if (!superModelIsComplete) {
                         superModelIsComplete = true;
-                        logger.log(Level.INFO, "All bootstrap tenant applications have been activated");
+                        logger.log(Level.FINE, "All bootstrap tenant applications have been activated");
                         maybeSetDuperModelAsComplete();
                     }
                 });
