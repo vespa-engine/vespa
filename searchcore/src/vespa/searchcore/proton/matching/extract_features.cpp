@@ -24,6 +24,32 @@ using OrderedDocs = ExtractFeatures::OrderedDocs;
 
 namespace {
 
+auto extract_names(const FeatureResolver &resolver) {
+    std::vector<vespalib::string> result;
+    result.reserve(resolver.num_features());
+    for (size_t i = 0; i < resolver.num_features(); ++i) {
+        result.emplace_back(resolver.name_of(i));
+    }
+    return result;
+}
+
+void extract_values(const FeatureResolver &resolver, uint32_t docid, FeatureSet::Value *dst) {
+    for (uint32_t i = 0; i < resolver.num_features(); ++i) {
+        if (resolver.is_object(i)) {
+            auto obj = resolver.resolve(i).as_object(docid);
+            if (!obj.get().type().is_double()) {
+                vespalib::nbostream buf;
+                encode_value(obj.get(), buf);
+                dst[i].set_data(vespalib::Memory(buf.peek(), buf.size()));
+            } else {
+                dst[i].set_double(obj.get().as_double());
+            }
+        } else {
+            dst[i].set_double(resolver.resolve(i).as_number(docid));
+        }
+    }
+}
+
 struct MyChunk : Runnable {
     const std::pair<uint32_t,uint32_t> *begin;
     const std::pair<uint32_t,uint32_t> *end;
@@ -32,41 +58,26 @@ struct MyChunk : Runnable {
            const std::pair<uint32_t,uint32_t> *end_in,
            FeatureValues &result_in)
       : begin(begin_in), end(end_in), result(result_in) {}
-    void calculate_features(SearchIterator &search, FeatureResolver &resolver) {
-        size_t num_features = result.names.size();
+    void calculate_features(SearchIterator &search, const FeatureResolver &resolver) {
         assert(end > begin);
-        assert(num_features == resolver.num_features());
+        assert(resolver.num_features() == result.names.size());
         search.initRange(begin[0].first, end[-1].first + 1);
         for (auto pos = begin; pos != end; ++pos) {
-            uint32_t docid = pos->first;
-            search.unpack(docid);
-            auto * f = &result.values[pos->second * num_features];
-            for (uint32_t i = 0; i < num_features; ++i) {
-                if (resolver.is_object(i)) {
-                    auto obj = resolver.resolve(i).as_object(docid);
-                    if (!obj.get().type().is_double()) {
-                        vespalib::nbostream buf;
-                        encode_value(obj.get(), buf);
-                        f[i].set_data(vespalib::Memory(buf.peek(), buf.size()));
-                    } else {
-                        f[i].set_double(obj.get().as_double());
-                    }
-                } else {
-                    f[i].set_double(resolver.resolve(i).as_number(docid));
-                }
-            }
+            search.unpack(pos->first);
+            auto *dst = &result.values[pos->second * resolver.num_features()];
+            extract_values(resolver, pos->first, dst);
         }
     }
 };
 
 struct FirstChunk : MyChunk {
     SearchIterator &search;
-    FeatureResolver &resolver;
+    const FeatureResolver &resolver;
     FirstChunk(const std::pair<uint32_t,uint32_t> *begin_in,
                const std::pair<uint32_t,uint32_t> *end_in,
                FeatureValues &result_in,
                SearchIterator &search_in,
-               FeatureResolver &resolver_in)
+               const FeatureResolver &resolver_in)
       : MyChunk(begin_in, end_in, result_in),
         search(search_in),
         resolver(resolver_in) {}
@@ -110,32 +121,14 @@ struct MyWork {
 FeatureSet::UP
 ExtractFeatures::get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs)
 {
-    std::vector<vespalib::string> featureNames;
     FeatureResolver resolver(rank_program.get_seeds(false));
-    featureNames.reserve(resolver.num_features());
-    for (size_t i = 0; i < resolver.num_features(); ++i) {
-        featureNames.emplace_back(resolver.name_of(i));
-    }
-    auto result = std::make_unique<FeatureSet>(featureNames, docs.size());
+    auto result = std::make_unique<FeatureSet>(extract_names(resolver), docs.size());
     if (!docs.empty()) {
         search.initRange(docs.front(), docs.back()+1);
         for (uint32_t docid: docs) {
             search.unpack(docid);
-            auto * f = result->getFeaturesByIndex(result->addDocId(docid));
-            for (uint32_t i = 0; i < featureNames.size(); ++i) {
-                if (resolver.is_object(i)) {
-                    auto obj = resolver.resolve(i).as_object(docid);
-                    if (!obj.get().type().is_double()) {
-                        vespalib::nbostream buf;
-                        encode_value(obj.get(), buf);
-                        f[i].set_data(vespalib::Memory(buf.peek(), buf.size()));
-                    } else {
-                        f[i].set_double(obj.get().as_double());
-                    }
-                } else {
-                    f[i].set_double(resolver.resolve(i).as_number(docid));
-                }
-            }
+            auto *dst = result->getFeaturesByIndex(result->addDocId(docid));
+            extract_values(resolver, docid, dst);
         }
     }
     return result;
@@ -148,10 +141,7 @@ ExtractFeatures::get_match_features(const MatchToolsFactory &mtf, const OrderedD
     auto tools = mtf.createMatchTools();
     tools->setup_match_features();
     FeatureResolver resolver(tools->rank_program().get_seeds(false));
-    result.names.reserve(resolver.num_features());
-    for (size_t i = 0; i < resolver.num_features(); ++i) {
-        result.names.emplace_back(resolver.name_of(i));
-    }
+    result.names = extract_names(resolver);
     result.values.resize(result.names.size() * docs.size());
     MyWork work(thread_bundle);
     size_t per_thread = docs.size() / work.num_threads;
