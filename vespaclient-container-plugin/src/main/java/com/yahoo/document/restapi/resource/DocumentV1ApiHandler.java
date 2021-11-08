@@ -594,7 +594,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final AtomicLong documentsWritten = new AtomicLong();
         private final AtomicLong documentsFlushed = new AtomicLong();
         private final AtomicLong documentsAcked = new AtomicLong();
-        private final AtomicBoolean ackAll = new AtomicBoolean();
         private boolean documentsDone = false;
         private boolean first = true;
         private ContentChannel channel;
@@ -731,13 +730,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
         }
 
-        void ackAll() {
-            ackAll.set(true);
-            ackDocuments();
-        }
-
         void ackDocuments() {
-            while (documentsAcked.incrementAndGet() <= documentsFlushed.get() + FLUSH_SIZE || ackAll.get()) {
+            while (documentsAcked.incrementAndGet() <= documentsFlushed.get() + FLUSH_SIZE) {
                 CompletionHandler ack = acks.poll();
                 if (ack != null)
                     ack.completed();
@@ -1274,10 +1268,6 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         visits.remove(this).destroy();
                     });
 
-                }
-                @Override public void abort() {
-                    super.abort();
-                    response.ackAll();
                 }
             };
             if (parameters.getRemoteDataHandler() == null) {
