@@ -67,9 +67,8 @@ func (c *Cli) IsLoggedIn() bool {
 		return false
 	}
 
-	// TODO: fix our custom token to be compatible with jwt.Validate format
 	// Check if token is valid.
-	if err = jwt.Validate(t, jwt.WithIssuer("https://auth0.auth0.com/")); err != nil {
+	if err = jwt.Validate(t, jwt.WithIssuer("https://vespa-cd.auth0.com/")); err != nil {
 		return false
 	}
 
