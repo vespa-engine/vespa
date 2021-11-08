@@ -212,7 +212,7 @@ public class RoutingPolicies {
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
             EndpointList endpoints = controller.routing().readDeclaredEndpointsOf(routingId.application())
-                                               .scope(Endpoint.Scope.region)
+                                               .scope(Endpoint.Scope.application)
                                                .named(routingId.endpointId());
             if (endpoints.isEmpty()) continue;
             if (endpoints.size() > 1) {
