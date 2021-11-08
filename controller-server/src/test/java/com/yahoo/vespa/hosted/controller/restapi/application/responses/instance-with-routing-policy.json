@@ -12,7 +12,6 @@
   "commit": "commit1",
   "projectId": 1000,
   "changeBlockers": [],
-  "globalRotations": [],
   "instances": [
     {
       "environment": "prod",

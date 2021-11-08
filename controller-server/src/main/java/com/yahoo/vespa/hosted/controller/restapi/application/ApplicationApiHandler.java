@@ -137,7 +137,6 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1164,9 +1163,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             }));
         }
 
-        // Global endpoints
-        globalEndpointsToSlime(object, instance);
-
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = deploymentSpec.instance(instance.name())
                                                      .map(spec -> new DeploymentSteps(spec, controller::system))
@@ -1193,30 +1189,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                            request.getUri()).toString());
             }
         }
-    }
-
-    // TODO(mpolden): Remove once legacy dashboard and integration tests stop expecting these fields
-    private void globalEndpointsToSlime(Cursor object, Instance instance) {
-        var globalEndpointUrls = new LinkedHashSet<String>();
-
-        // Add global endpoints backed by rotations
-        controller.routing().endpointsOf(instance.id())
-                  .requiresRotation()
-                  .not().legacy() // Hide legacy names
-                  .asList().stream()
-                  .map(Endpoint::url)
-                  .map(URI::toString)
-                  .forEach(globalEndpointUrls::add);
-
-
-        var globalRotationsArray = object.setArray("globalRotations");
-        globalEndpointUrls.forEach(globalRotationsArray::addString);
-
-        // Legacy field. Identifies the first assigned rotation, if any.
-        instance.rotations().stream()
-                .map(AssignedRotation::rotationId)
-                .findFirst()
-                .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
     }
 
     private void toSlime(Cursor object, Instance instance, DeploymentStatus status, HttpRequest request) {
@@ -1266,9 +1238,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
-
-        // Global endpoint
-        globalEndpointsToSlime(object, instance);
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments =
