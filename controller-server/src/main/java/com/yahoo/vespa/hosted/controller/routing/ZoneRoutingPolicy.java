@@ -6,7 +6,8 @@ import com.yahoo.config.provision.zone.ZoneId;
 import java.util.Objects;
 
 /**
- * Represents the DNS routing policy for a zone. This takes precedence over of an individual {@link RoutingPolicy}.
+ * Represents the DNS routing policy for a zone. This takes precedence over of a deployment-specific
+ * {@link RoutingPolicy}.
  *
  * This is immutable.
  *
@@ -15,11 +16,11 @@ import java.util.Objects;
 public class ZoneRoutingPolicy {
 
     private final ZoneId zone;
-    private final GlobalRouting globalRouting;
+    private final RoutingStatus routingStatus;
 
-    public ZoneRoutingPolicy(ZoneId zone, GlobalRouting globalRouting) {
+    public ZoneRoutingPolicy(ZoneId zone, RoutingStatus routingStatus) {
         this.zone = Objects.requireNonNull(zone, "zone must be non-null");
-        this.globalRouting = Objects.requireNonNull(globalRouting, "globalRouting must be non-null");
+        this.routingStatus = Objects.requireNonNull(routingStatus, "globalRouting must be non-null");
     }
 
     /** The zone this applies to */
@@ -27,9 +28,9 @@ public class ZoneRoutingPolicy {
         return zone;
     }
 
-    /** The status of global routing */
-    public GlobalRouting globalRouting() {
-        return globalRouting;
+    /** Routing status of this policy */
+    public RoutingStatus routingStatus() {
+        return routingStatus;
     }
 
     @Override
@@ -38,12 +39,12 @@ public class ZoneRoutingPolicy {
         if (o == null || getClass() != o.getClass()) return false;
         ZoneRoutingPolicy that = (ZoneRoutingPolicy) o;
         return zone.equals(that.zone) &&
-               globalRouting.equals(that.globalRouting);
+               routingStatus.equals(that.routingStatus);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(zone, globalRouting);
+        return Objects.hash(zone, routingStatus);
     }
 
 }

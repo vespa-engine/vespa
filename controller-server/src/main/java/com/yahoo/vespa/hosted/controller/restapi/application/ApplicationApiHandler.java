@@ -100,7 +100,7 @@ import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
-import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
@@ -1561,16 +1561,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     /** Set the global endpoint status for given deployment. This only applies to global endpoints backed by a cloud service */
     private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
-        var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
-        var status = inService ? GlobalRouting.Status.in : GlobalRouting.Status.out;
-        controller.routing().policies().setGlobalRoutingStatus(deployment, status, agent);
+        var agent = isOperator(request) ? RoutingStatus.Agent.operator : RoutingStatus.Agent.tenant;
+        var status = inService ? RoutingStatus.Value.in : RoutingStatus.Value.out;
+        controller.routing().policies().setRoutingStatus(deployment, status, agent);
     }
 
     /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */
     private void setGlobalRotationStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
         var requestData = toSlime(request.getData()).get();
         var reason = mandatory("reason", requestData).asString();
-        var agent = isOperator(request) ? GlobalRouting.Agent.operator : GlobalRouting.Agent.tenant;
+        var agent = isOperator(request) ? RoutingStatus.Agent.operator : RoutingStatus.Agent.tenant;
         long timestamp = controller.clock().instant().getEpochSecond();
         var status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
         var endpointStatus = new EndpointStatus(status, reason, agent.name(), timestamp);

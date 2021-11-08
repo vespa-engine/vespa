@@ -5,34 +5,35 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Represents the global routing status of a {@link RoutingPolicy} or {@link ZoneRoutingPolicy}. This contains the
- * time global routing status was last changed and who changed it.
+ * Represents the routing status of a {@link RoutingPolicy} or {@link ZoneRoutingPolicy}.
+ *
+ * This describes which agent last changed the routing status and at which time.
  *
  * This is immutable.
  *
  * @author mpolden
  */
-public class GlobalRouting {
+public class RoutingStatus {
 
-    public static final GlobalRouting DEFAULT_STATUS = new GlobalRouting(Status.in, Agent.system, Instant.EPOCH);
+    public static final RoutingStatus DEFAULT = new RoutingStatus(Value.in, Agent.system, Instant.EPOCH);
 
-    private final Status status;
+    private final Value value;
     private final Agent agent;
     private final Instant changedAt;
 
     /** DO NOT USE. Public for serialization purposes */
-    public GlobalRouting(Status status, Agent agent, Instant changedAt) {
-        this.status = Objects.requireNonNull(status, "status must be non-null");
+    public RoutingStatus(Value value, Agent agent, Instant changedAt) {
+        this.value = Objects.requireNonNull(value, "value must be non-null");
         this.agent = Objects.requireNonNull(agent, "agent must be non-null");
         this.changedAt = Objects.requireNonNull(changedAt, "changedAt must be non-null");
     }
 
     /**
-     * The wanted status of this. The system will try to set this status, but there are constraints that may lead to
-     * the effective status not matching this. See {@link RoutingPolicies}.
+     * The wanted value of this. The system will try to set this value, but there are constraints that may lead to
+     * the effective value not matching this. See {@link RoutingPolicies}.
      */
-    public Status status() {
-        return status;
+    public Value value() {
+        return value;
     }
 
     /** The agent who last changed this */
@@ -49,28 +50,28 @@ public class GlobalRouting {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        GlobalRouting that = (GlobalRouting) o;
-        return status == that.status &&
+        RoutingStatus that = (RoutingStatus) o;
+        return value == that.value &&
                agent == that.agent &&
                changedAt.equals(that.changedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(status, agent, changedAt);
+        return Objects.hash(value, agent, changedAt);
     }
 
     @Override
     public String toString() {
-        return "status " + status + ", changed by " + agent + " @ " + changedAt;
+        return "status " + value + ", changed by " + agent + " @ " + changedAt;
     }
 
-    public static GlobalRouting status(Status status, Agent agent, Instant instant) {
-        return new GlobalRouting(status, agent, instant);
+    public static RoutingStatus create(Value value, Agent agent, Instant instant) {
+        return new RoutingStatus(value, agent, instant);
     }
 
     // Used in serialization. Do not change.
-    public enum Status {
+    public enum Value {
         /** Status is determined by health checks **/
         in,
 
@@ -83,7 +84,7 @@ public class GlobalRouting {
         operator,
         tenant,
         system,
-        unknown, // For compatibility old values from /routing/v1 on config server, which may contain a specific user name.
+        unknown, // For compatibility old values from /routing/v1 on config server, which may contain a specific username.
     }
 
 }

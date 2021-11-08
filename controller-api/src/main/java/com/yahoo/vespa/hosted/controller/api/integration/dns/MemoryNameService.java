@@ -108,7 +108,7 @@ public class MemoryNameService implements NameService {
 
     @Override
     public void removeRecords(List<Record> records) {
-        this.records.removeAll(records);
+        records.forEach(this.records::remove);
     }
 
     /**

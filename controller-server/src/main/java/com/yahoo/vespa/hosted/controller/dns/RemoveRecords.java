@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
+import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -12,7 +13,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Permanently removes all matching records by type and name or data.
+ * Permanently removes all matching records by type and matching either:
+ *
+ * - name and data
+ * - only name
+ * - only data
  *
  * @author mpolden
  */
@@ -30,13 +35,17 @@ public class RemoveRecords implements NameServiceRequest {
         this(type, Optional.empty(), Optional.of(data));
     }
 
+    public RemoveRecords(Record.Type type, RecordName name, RecordData data) {
+        this(type, Optional.of(name), Optional.of(data));
+    }
+
     /** DO NOT USE. Public for serialization purposes */
     public RemoveRecords(Record.Type type, Optional<RecordName> name, Optional<RecordData> data) {
         this.type = Objects.requireNonNull(type, "type must be non-null");
         this.name = Objects.requireNonNull(name, "name must be non-null");
         this.data = Objects.requireNonNull(data, "data must be non-null");
-        if (name.isPresent() == data.isPresent()) {
-            throw new IllegalArgumentException("exactly one of name or data must be non-empty");
+        if (name.isEmpty() && data.isEmpty()) {
+            throw new IllegalArgumentException("at least one of name and data must be non-empty");
         }
     }
 
@@ -55,8 +64,23 @@ public class RemoveRecords implements NameServiceRequest {
     @Override
     public void dispatchTo(NameService nameService) {
         List<Record> records = new ArrayList<>();
-        name.ifPresent(n -> records.addAll(nameService.findRecords(type, n)));
-        data.ifPresent(d -> records.addAll(nameService.findRecords(type, d)));
+        if (name.isPresent() && data.isPresent()) {
+            nameService.findRecords(type, name.get())
+                       .stream()
+                       .filter(record -> {
+                           // Records to remove must match both name and data fields
+                           String dataValue = record.data().asString();
+                           // If we're comparing an ALIAS record we have to unpack it to access the target name
+                           if (record.type() == Record.Type.ALIAS) {
+                               dataValue = AliasTarget.unpack(record.data()).name().value();
+                           }
+                           return fqdn(dataValue).equals(fqdn(data.get().asString()));
+                       })
+                       .forEach(records::add);
+        } else {
+            name.ifPresent(n -> records.addAll(nameService.findRecords(type, n)));
+            data.ifPresent(d -> records.addAll(nameService.findRecords(type, d)));
+        }
         nameService.removeRecords(records);
     }
 
@@ -80,6 +104,10 @@ public class RemoveRecords implements NameServiceRequest {
     @Override
     public int hashCode() {
         return Objects.hash(type, name, data);
+    }
+
+    private static String fqdn(String name) {
+        return name.endsWith(".") ? name : name + ".";
     }
 
 }

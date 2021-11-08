@@ -73,6 +73,11 @@ public class NameServiceForwarder {
         forward(new RemoveRecords(type, data), priority);
     }
 
+    /** Remove all records of given type, name and data */
+    public void removeRecords(Record.Type type, RecordName name, RecordData data, NameServiceQueue.Priority priority) {
+        forward(new RemoveRecords(type, name, data), priority);
+    }
+
     protected void forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
         try (Lock lock = db.lockNameServiceQueue()) {
             NameServiceQueue queue = db.readNameServiceQueue();

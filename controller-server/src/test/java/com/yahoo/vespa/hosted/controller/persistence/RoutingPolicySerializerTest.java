@@ -7,10 +7,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
-import com.yahoo.vespa.hosted.controller.routing.Status;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -43,16 +42,16 @@ public class RoutingPolicySerializerTest {
                                                               Optional.of("zone1"),
                                                               instanceEndpoints,
                                                               applicationEndpoints,
-                                                              new Status(true, GlobalRouting.DEFAULT_STATUS)),
+                                                              new RoutingPolicy.Status(true, RoutingStatus.DEFAULT)),
                                        id2, new RoutingPolicy(id2,
                                                               HostName.from("long-and-ugly-name-2"),
                                                               Optional.empty(),
                                                               instanceEndpoints,
                                                               Set.of(),
-                                                              new Status(false,
-                                                                         new GlobalRouting(GlobalRouting.Status.out,
-                                                                                           GlobalRouting.Agent.tenant,
-                                                                                           Instant.ofEpochSecond(123)))));
+                                                              new RoutingPolicy.Status(false,
+                                                                                       new RoutingStatus(RoutingStatus.Value.out,
+                                                                                                         RoutingStatus.Agent.tenant,
+                                                                                                         Instant.ofEpochSecond(123)))));
         var serialized = serializer.fromSlime(owner, serializer.toSlime(policies));
         assertEquals(policies.size(), serialized.size());
         for (Iterator<RoutingPolicy> it1 = policies.values().iterator(), it2 = serialized.values().iterator(); it1.hasNext();) {

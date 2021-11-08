@@ -75,6 +75,12 @@ public class RoutingPolicy {
         return status;
     }
 
+    /** Returns whether this policy applies to given deployment */
+    public boolean appliesTo(DeploymentId deployment) {
+        return id.owner().equals(deployment.applicationId()) &&
+               id.zone().equals(deployment.zoneId());
+    }
+
     /** Returns a copy of this with status set to given status */
     public RoutingPolicy with(Status status) {
         return new RoutingPolicy(id, canonicalName, dnsZone, instanceEndpoints, applicationEndpoints, status);
@@ -134,6 +140,49 @@ public class RoutingPolicy {
         return Endpoint.of(id.owner())
                        .on(Port.fromRoutingMethod(routingMethod))
                        .routingMethod(routingMethod);
+    }
+
+    /** The status of a routing policy */
+    public static class Status {
+
+        private final boolean active;
+        private final RoutingStatus routingStatus;
+
+        /** DO NOT USE. Public for serialization purposes */
+        public Status(boolean active, RoutingStatus routingStatus) {
+            this.active = active;
+            this.routingStatus = Objects.requireNonNull(routingStatus, "globalRouting must be non-null");
+        }
+
+        /** Returns whether this is considered active according to the load balancer status */
+        public boolean isActive() {
+            return active;
+        }
+
+        /** Return status of routing */
+        public RoutingStatus routingStatus() {
+            return routingStatus;
+        }
+
+        /** Returns a copy of this with routing status changed */
+        public Status with(RoutingStatus routingStatus) {
+            return new Status(active, routingStatus);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Status status = (Status) o;
+            return active == status.active &&
+                   routingStatus.equals(status.routingStatus);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(active, routingStatus);
+        }
+
     }
 
 }

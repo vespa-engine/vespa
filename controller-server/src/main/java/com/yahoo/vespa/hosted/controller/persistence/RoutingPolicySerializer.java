@@ -11,10 +11,9 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
-import com.yahoo.vespa.hosted.controller.routing.Status;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -66,7 +65,7 @@ public class RoutingPolicySerializer {
             var applicationEndpointsArray = policyObject.setArray(applicationEndpointsField);
             policy.applicationEndpoints().forEach(endpointId -> applicationEndpointsArray.addString(endpointId.id()));
             policyObject.setBool(loadBalancerActiveField, policy.status().isActive());
-            globalRoutingToSlime(policy.status().globalRouting(), policyObject.setObject(globalRoutingField));
+            globalRoutingToSlime(policy.status().routingStatus(), policyObject.setObject(globalRoutingField));
         });
         return slime;
     }
@@ -88,23 +87,23 @@ public class RoutingPolicySerializer {
                                                SlimeUtils.optionalString(inspect.field(dnsZoneField)),
                                                instanceEndpoints,
                                                applicationEndpoints,
-                                               new Status(inspect.field(loadBalancerActiveField).asBool(),
-                                                          globalRoutingFromSlime(inspect.field(globalRoutingField)))));
+                                               new RoutingPolicy.Status(inspect.field(loadBalancerActiveField).asBool(),
+                                                                        globalRoutingFromSlime(inspect.field(globalRoutingField)))));
         });
         return Collections.unmodifiableMap(policies);
     }
 
-    public void globalRoutingToSlime(GlobalRouting globalRouting, Cursor object) {
-        object.setString(statusField, globalRouting.status().name());
-        object.setString(agentField, globalRouting.agent().name());
-        object.setLong(changedAtField, globalRouting.changedAt().toEpochMilli());
+    public void globalRoutingToSlime(RoutingStatus routingStatus, Cursor object) {
+        object.setString(statusField, routingStatus.value().name());
+        object.setString(agentField, routingStatus.agent().name());
+        object.setLong(changedAtField, routingStatus.changedAt().toEpochMilli());
     }
 
-    public GlobalRouting globalRoutingFromSlime(Inspector object) {
-        var status = GlobalRouting.Status.valueOf(object.field(statusField).asString());
-        var agent = GlobalRouting.Agent.valueOf(object.field(agentField).asString());
+    public RoutingStatus globalRoutingFromSlime(Inspector object) {
+        var status = RoutingStatus.Value.valueOf(object.field(statusField).asString());
+        var agent = RoutingStatus.Agent.valueOf(object.field(agentField).asString());
         var changedAt = SlimeUtils.optionalInstant(object.field(changedAtField)).orElse(Instant.EPOCH);
-        return new GlobalRouting(status, agent, changedAt);
+        return new RoutingStatus(status, agent, changedAt);
     }
 
 }
