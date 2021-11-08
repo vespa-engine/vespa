@@ -12,7 +12,7 @@ import static org.junit.Assert.fail;
  *
  * @author Steinar Knutsen
  */
-
+@SuppressWarnings("deprecation")
 public class HistogramTestCase {
 
     @Test
