@@ -175,18 +175,28 @@ public class ConfiguratorTest {
         validateConfigFile(cfgFile, expected);
     }
 
+    private String cipherSuites() {
+        // TODO: Remove when Vespa is only built with JDK 17
+        int jdkVersion = Integer.parseInt(System.getProperty("java.version").split("\\.")[0]);
+        if (jdkVersion < 12)
+            return "TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384";
+
+        return "TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256," +
+                "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256," +
+                "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256";
+    }
+
     private String tlsQuorumConfig() {
         return "ssl.quorum.context.supplier.class=com.yahoo.vespa.zookeeper.VespaSslContextProvider\n" +
-                "ssl.quorum.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
-                "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
+                "ssl.quorum.ciphersuites=" + cipherSuites() + "\n" +
                 "ssl.quorum.enabledProtocols=TLSv1.2\n" +
                 "ssl.quorum.clientAuth=NEED\n";
     }
 
     private String tlsClientServerConfig() {
         return "ssl.context.supplier.class=com.yahoo.vespa.zookeeper.VespaSslContextProvider\n" +
-                "ssl.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
-                "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
+                "ssl.ciphersuites=" + cipherSuites() + "\n" +
                 "ssl.enabledProtocols=TLSv1.2\n" +
                 "ssl.clientAuth=NEED\n";
     }
