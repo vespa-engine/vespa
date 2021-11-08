@@ -60,11 +60,11 @@ public class Endpoint {
             if (scope == Scope.zone && id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
             if (targets.size() != 1) throw new IllegalArgumentException("A single target must be given for " + scope + " endpoints");
         }
-        if (scope != Scope.region && instanceName.isEmpty()) {
+        if (scope != Scope.application && instanceName.isEmpty()) {
             throw new IllegalArgumentException("Instance must be set for scope " + scope);
         }
         for (var target : targets) {
-            if (scope == Scope.region) {
+            if (scope == Scope.application) {
                 TenantAndApplicationId owner = TenantAndApplicationId.from(target.deployment().applicationId());
                 if (!owner.equals(application)) {
                     throw new IllegalArgumentException(id + " has target owned by " + owner +
@@ -261,14 +261,14 @@ public class Endpoint {
                 case zone: return "z";
                 case weighted: return "w";
                 case global: return "g";
-                case region: return "r";
+                case application: return "r";
             }
         }
         switch (scope) {
             case zone: return "";
             case weighted: return "w";
             case global: return "global";
-            case region: return "r";
+            case application: return "r";
         }
         throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system);
     }
@@ -360,7 +360,7 @@ public class Endpoint {
          *
          * Traffic is routed across instances according to weights specified in deployment.xml
          */
-        region,
+        application,
 
         /** Endpoint points to one or more zones. Traffic is routed to the zone closest to the client */
         global,
@@ -377,7 +377,7 @@ public class Endpoint {
 
         /** Returns whether this scope may span multiple deployments */
         public boolean multiDeployment() {
-            return this == region || this == global;
+            return this == application || this == global;
         }
 
     }
@@ -539,7 +539,7 @@ public class Endpoint {
             this.targets = deployments.entrySet().stream()
                                       .map(kv -> new Target(kv.getKey(), kv.getValue()))
                                       .collect(Collectors.toUnmodifiableList());
-            this.scope = Scope.region;
+            this.scope = Scope.application;
             return this;
         }
 
