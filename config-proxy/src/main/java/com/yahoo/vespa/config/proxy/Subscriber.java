@@ -43,8 +43,13 @@ public class Subscriber {
 
     public Optional<RawConfig> nextGeneration() {
         try {
-            if (subscriber.nextGeneration(0, true))// Proxy should never skip config due to not initializing
-                return Optional.of(handle.getRawConfig());
+            // 'isInitializing' argument to nextGeneration() is true, config proxy should never skip config due to not initializing
+            if (subscriber.nextGeneration(0, true)) {
+                RawConfig rawConfig = handle.getRawConfig();
+                if (rawConfig == null)
+                    log.log(Level.SEVERE, "Config for " + config.getKey() + " is null");
+                return Optional.ofNullable(rawConfig);
+            }
         } catch (Exception e) {  // To avoid thread throwing exception and loop never running this again
             log.log(Level.WARNING, "Got exception: " + Exceptions.toMessageString(e));
         } catch (Throwable e) {
