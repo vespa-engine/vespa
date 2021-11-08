@@ -38,8 +38,10 @@ public:
     void ensureSpace(uint32_t newSize, uint32_t newCapacity);
     void registerLid(DocId lid) { _usedLids.setBit(lid); }
     void unregisterLid(DocId lid);
-    size_t getUsedLidsSize() const;
-    void trimHoldLists(generation_t firstUsed);
+    size_t getUsedLidsSize() const { return _usedLids.byteSize(); }
+    void trimHoldLists(generation_t firstUsed) {
+        _holdLids.trimHoldLists(firstUsed, _freeLids);
+    }
     void moveLidBegin(DocId fromLid, DocId toLid);
     void moveLidEnd(DocId fromLid, DocId toLid);
     void holdLid(DocId lid, DocId lidLimit, generation_t currentGeneration);
@@ -51,7 +53,7 @@ public:
     void updateActiveLids(DocId lid, bool active);
     void clearDocs(DocId lidLow, DocId lidLimit);
     void shrinkLidSpace(DocId committedDocIdLimit);
-    uint32_t getNumUsedLids() const;
+    uint32_t getNumUsedLids() const { return _usedLids.count(); }
     uint32_t getNumActiveLids() const {
         return _numActiveLids;
     }
