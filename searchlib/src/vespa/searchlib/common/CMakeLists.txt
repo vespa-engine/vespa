@@ -25,6 +25,7 @@ vespa_add_library(searchlib_common OBJECT
     packets.cpp
     partialbitvector.cpp
     resultset.cpp
+    schedule_sequenced_task_callback.cpp
     serialnumfileheadercontext.cpp
     sort.cpp
     sortdata.cpp
