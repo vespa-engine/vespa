@@ -277,6 +277,7 @@ public class RoutingController {
             // Include rotation ID as a valid name of this container endpoint (required by global routing health checks)
             names.add(assignedRotation.rotationId().asString());
             containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(),
+                                                         asString(Endpoint.Scope.global),
                                                          names));
         }
         // Add endpoints not backed by a rotation (i.e. other routing methods so that the config server always knows
@@ -287,6 +288,7 @@ public class RoutingController {
                        .groupingBy(Endpoint::cluster)
                        .forEach((clusterId, clusterEndpoints) -> {
                            containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
+                                                                        asString(Endpoint.Scope.global),
                                                                         clusterEndpoints.mapToList(Endpoint::dnsName)));
                        });
         return Collections.unmodifiableSet(containerEndpoints);
@@ -411,5 +413,14 @@ public class RoutingController {
         return endpoints;
     }
 
+    private static String asString(Endpoint.Scope scope) {
+        switch (scope) {
+            case application: return "application";
+            case global: return "global";
+            case weighted: return "weighted";
+            case zone: return "zone";
+        }
+        throw new IllegalArgumentException("Unknown scope " + scope);
+    }
 
 }
