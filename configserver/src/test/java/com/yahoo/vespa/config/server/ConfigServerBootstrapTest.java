@@ -24,7 +24,6 @@ import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,8 +54,6 @@ import static org.junit.Assert.assertTrue;
 public class ConfigServerBootstrapTest {
 
     private final MockCurator curator = new MockCurator();
-    private final FlagSource flagSource = new InMemoryFlagSource();
-    private final ConfigConvergenceChecker convergenceChecker = new ConfigConvergenceChecker();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -69,29 +66,22 @@ public class ConfigServerBootstrapTest {
                 .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        VersionState versionState = createVersionState();
-        assertTrue(versionState.isUpgraded());
-
         RpcServer rpcServer = createRpcServer(configserverConfig);
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().values().iterator().next().remove(0);
-        StateMonitor stateMonitor = StateMonitor.createForTesting();
-        VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY,
-                                                                    flagSource, convergenceChecker);
-        assertFalse(vipStatus.isInRotation());
+        ConfigServerBootstrap bootstrap = createBootstrap(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
+        assertFalse(bootstrap.vipStatus().isInRotation());
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
-        waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
+        waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
 
         bootstrap.deconstruct();
         assertEquals(StateMonitor.Status.down, bootstrap.status());
         assertFalse(rpcServer.isRunning());
         assertTrue(rpcServer.isServingConfigRequests());
-        assertFalse(vipStatus.isInRotation());
+        assertFalse(bootstrap.vipStatus().isInRotation());
     }
 
     // Just tests setup, the actual response of accessing /status.html depends on the status
@@ -104,27 +94,15 @@ public class ConfigServerBootstrapTest {
                 .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        VersionState versionState = createVersionState();
-        assertTrue(versionState.isUpgraded());
-
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = StateMonitor.createForTesting();
-        VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
-                                                                    rpcServer,
-                                                                    versionState,
-                                                                    stateMonitor,
-                                                                    vipStatus,
-                                                                    VIP_STATUS_FILE,
-                                                                    flagSource,
-                                                                    convergenceChecker);
-        assertTrue(vipStatus.isInRotation()); // default is in rotation when using status file
+        ConfigServerBootstrap bootstrap = createBootstrap(tester, rpcServer, VIP_STATUS_FILE);
+        assertTrue(bootstrap.vipStatus().isInRotation()); // default is in rotation when using status file
 
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
-        waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
+        waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
         bootstrap.deconstruct();
     }
 
@@ -135,9 +113,6 @@ public class ConfigServerBootstrapTest {
                 .configserverConfig(configserverConfig).build();
         tester.deployApp("src/test/apps/hosted/");
 
-        VersionState versionState = createVersionState();
-        assertTrue(versionState.isUpgraded());
-
         // Manipulate application package so that it will fail deployment when config server starts
         java.nio.file.Files.delete(Paths.get(configserverConfig.configServerDBDir())
                                            .resolve("tenants/")
@@ -145,25 +120,16 @@ public class ConfigServerBootstrapTest {
                                            .resolve("sessions/2/services.xml"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = StateMonitor.createForTesting();
-        VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
-                                                                    rpcServer,
-                                                                    versionState,
-                                                                    stateMonitor,
-                                                                    vipStatus,
-                                                                    VIP_STATUS_PROGRAMMATICALLY,
-                                                                    flagSource,
-                                                                    convergenceChecker);
-        assertFalse(vipStatus.isInRotation());
+        ConfigServerBootstrap bootstrap = createBootstrap(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
+        assertFalse(bootstrap.vipStatus().isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.start();
         // App is invalid, bootstrapping was unsuccessful. Status should be 'initializing',
         // rpc server should not be running and it should be out of rotation
-        assertEquals(StateMonitor.Status.initializing, stateMonitor.status());
+        assertEquals(StateMonitor.Status.initializing, bootstrap.status());
         assertTrue(rpcServer.isRunning());
         assertFalse(rpcServer.isServingConfigRequests());
-        assertFalse(vipStatus.isInRotation());
+        assertFalse(bootstrap.vipStatus().isInRotation());
 
         bootstrap.deconstruct();
     }
@@ -186,30 +152,34 @@ public class ConfigServerBootstrapTest {
         tester.deployApp("src/test/apps/app/", vespaVersion);
         ApplicationId applicationId = tester.applicationId();
 
-        VersionState versionState = createVersionState();
-        assertTrue(versionState.isUpgraded());
-
         // Ugly hack, but I see no other way of doing it:
         // Manipulate application version in zookeeper so that it is an older version than the model we know, which is
         // the case when upgrading on non-hosted installations
         curator.set(Path.fromString("/config/v2/tenants/" + applicationId.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
-        StateMonitor stateMonitor = StateMonitor.createForTesting();
-        VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
-                                                                    rpcServer,
-                                                                    versionState,
-                                                                    stateMonitor,
-                                                                    vipStatus,
-                                                                    VIP_STATUS_PROGRAMMATICALLY,
-                                                                    flagSource,
-                                                                    convergenceChecker);
+        ConfigServerBootstrap bootstrap = createBootstrap(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
-        waitUntil(vipStatus::isInRotation, "failed waiting for server to be in rotation");
+        waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
+    }
+
+    private ConfigServerBootstrap createBootstrap(DeployTester tester, RpcServer rpcServer, ConfigServerBootstrap.VipStatusMode vipStatusProgrammatically) throws IOException {
+        VersionState versionState = createVersionState();
+        assertTrue(versionState.isUpgraded());
+
+        StateMonitor stateMonitor = StateMonitor.createForTesting();
+        VipStatus vipStatus = createVipStatus(stateMonitor);
+        return new ConfigServerBootstrap(tester.applicationRepository(),
+                                         rpcServer,
+                                         versionState,
+                                         stateMonitor,
+                                         vipStatus,
+                                         vipStatusProgrammatically,
+                                         new InMemoryFlagSource(),
+                                         new ConfigConvergenceChecker());
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {

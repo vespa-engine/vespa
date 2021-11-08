@@ -176,6 +176,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         return stateMonitor.status();
     }
 
+    VipStatus vipStatus() {
+        return vipStatus;
+    }
+
     private void up() {
         vipStatus.setInRotation(true);
     }
