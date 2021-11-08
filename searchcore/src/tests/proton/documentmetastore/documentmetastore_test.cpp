@@ -109,6 +109,7 @@ assertPut(const BucketId &bucketId,
     Result inspect = dms.inspect(gid, 0u);
     uint32_t docSize = 1;
     PutRes putRes = dms.put(gid, bucketId, timestamp, docSize, inspect.getLid(), 0u);
+    dms.commit();
     EXPECT_TRUE(putRes.ok());
     EXPECT_EQ(lid, putRes.getLid());
 }
@@ -197,7 +198,7 @@ assertSearchResult(const SimpleResult &exp, const DocumentMetaStore &dms,
                    bool strict, uint32_t docIdLimit = 100)
 {
     AttributeVector::SearchContext::UP sc =
-            dms.getSearch(QueryTermSimple::UP(new QueryTermSimple(term, termType)), SearchContextParams());
+            dms.getSearch(std::make_unique<QueryTermSimple>(term, termType), SearchContextParams());
     TermFieldMatchData tfmd;
     SearchIterator::UP sb = sc->createIterator(&tfmd, strict);
     SimpleResult act;
@@ -249,6 +250,7 @@ addGid(DocumentMetaStore &dms, const GlobalId &gid, const BucketId &bid, Timesta
     Result inspect = dms.inspect(gid, 0u);
     PutRes putRes;
     EXPECT_TRUE((putRes = dms.put(gid, bid, timestamp, docSize, inspect.getLid(), 0u)).ok());
+    dms.commit();
     return putRes.getLid();
 }
 
@@ -265,6 +267,7 @@ putGid(DocumentMetaStore &dms, const GlobalId &gid, uint32_t lid, Timestamp time
     BucketId bid(minNumBits, gid.convertToBucketId().getRawId());
     uint32_t docSize = 1;
     EXPECT_TRUE(dms.put(gid, bid, timestamp, docSize, lid, 0u).ok());
+    dms.commit();
 }
 
 TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
@@ -285,6 +288,7 @@ TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
     assertPut(bucketId2, time2, 2, gid2, dms);
     EXPECT_EQ(bucketId2, dms.getBucketOf(guard, 2));
     EXPECT_TRUE(dms.remove(1, 0u));
+    dms.commit();
     EXPECT_EQ(BucketId(), dms.getBucketOf(guard, 1));
     EXPECT_EQ(bucketId2, dms.getBucketOf(guard, 2));
 }
@@ -352,8 +356,7 @@ TEST(DocumentMetaStore, gids_can_be_cleared)
 
 TEST(DocumentMetaStore, generation_handling_is_working)
 {
-    AttributeVector::SP av(new DocumentMetaStore(createBucketDB()));
-    DocumentMetaStore * dms = static_cast<DocumentMetaStore *>(av.get());
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
     dms->constructFreeList();
     const GenerationHandler & gh = dms->getGenerationHandler();
     EXPECT_EQ(1u, gh.getCurrentGeneration());
@@ -361,10 +364,10 @@ TEST(DocumentMetaStore, generation_handling_is_working)
     EXPECT_EQ(2u, gh.getCurrentGeneration());
     EXPECT_EQ(0u, gh.getGenerationRefCount());
     {
-        AttributeGuard g1(av);
+        AttributeGuard g1(dms);
         EXPECT_EQ(1u, gh.getGenerationRefCount());
         {
-            AttributeGuard g2(av);
+            AttributeGuard g2(dms);
             EXPECT_EQ(2u, gh.getGenerationRefCount());
         }
         EXPECT_EQ(1u, gh.getGenerationRefCount());
@@ -372,7 +375,7 @@ TEST(DocumentMetaStore, generation_handling_is_working)
     EXPECT_EQ(0u, gh.getGenerationRefCount());
     dms->remove(1, 0u);
     dms->removeComplete(1);
-    EXPECT_EQ(4u, gh.getCurrentGeneration());
+    EXPECT_EQ(3u, gh.getCurrentGeneration());
 }
 
 TEST(DocumentMetaStoreTest, basic_free_list_is_working)
@@ -494,8 +497,7 @@ TEST(DocumentMetaStoreTest, lid_state_vector_resizing_is_working)
 
 TEST(DocumentMetaStoreTest, lid_and_gid_space_is_reused)
 {
-    AttributeVector::SP av(new DocumentMetaStore(createBucketDB()));
-    DocumentMetaStore * dms = static_cast<DocumentMetaStore *>(av.get());
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
     dms->constructFreeList();
     EXPECT_EQ(1u, dms->getNumDocs());
     EXPECT_EQ(0u, dms->getNumUsedLids());
@@ -515,7 +517,7 @@ TEST(DocumentMetaStoreTest, lid_and_gid_space_is_reused)
     EXPECT_EQ(2u, dms->getNumUsedLids()); // reuse
     assertGid(gid3, 2, *dms);
     {
-        AttributeGuard g1(av); // guard on gen 5
+        AttributeGuard g1(dms); // guard on gen 5
         dms->remove(2, 0u);
         dms->removeComplete(2);
         EXPECT_EQ(3u, dms->getNumDocs());
@@ -704,13 +706,16 @@ TEST(DocumentMetaStoreTest, can_put_and_remove_before_free_list_construct)
 {
     DocumentMetaStore dms(createBucketDB());
     EXPECT_TRUE(dms.put(gid4, bucketId4, time4, docSize4, 4, 0u).ok());
+    dms.commit();
     assertLid(4, gid4, dms);
     assertGid(gid4, 4, dms);
     EXPECT_EQ(1u, dms.getNumUsedLids());
     EXPECT_EQ(5u, dms.getNumDocs());
     EXPECT_TRUE(dms.put(gid1, bucketId1, time1, docSize1, 1, 0u).ok());
+    dms.commit();
     // already there, nothing changes
     EXPECT_TRUE(dms.put(gid1, bucketId1, time1, docSize1, 1, 0u).ok());
+    dms.commit();
     assertLid(1, gid1, dms);
     assertGid(gid1, 1, dms);
     EXPECT_EQ(2u, dms.getNumUsedLids());
@@ -725,6 +730,7 @@ TEST(DocumentMetaStoreTest, can_put_and_remove_before_free_list_construct)
     EXPECT_EQ(2u, dms.getNumUsedLids());
     EXPECT_EQ(5u, dms.getNumDocs());
     EXPECT_TRUE(dms.remove(4, 0u)); // -> goes to free list. cleared and re-applied in constructFreeList().
+    dms.commit();
     uint32_t lid;
     GlobalId gid;
     EXPECT_TRUE(!dms.getLid(gid4, lid));
@@ -1189,6 +1195,7 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
                                 docSize,
                                 gids[i].lid, 0u).ok());
         }
+        dms.commit();
     }
     void insertGids2() {
         uint32_t docSize = 1;
@@ -1197,6 +1204,7 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
                                 docSize,
                                 gids[i].lid, 0u).ok());
         }
+        dms.commit();
     }
 
     void
@@ -1208,6 +1216,7 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
             BucketId b(g.bid3 == alt ? g.bid2 : g.bid1);
             EXPECT_TRUE(dms.put(g.gid, b, Timestamp(0), docSize, g.lid, 0u).ok());
         }
+        dms.commit();
     }
 
     void
@@ -1219,6 +1228,7 @@ struct SplitAndJoinFixture : public SplitAndJoinEmptyFixture {
             BucketId b(g.bid3 == alt ? g.bid1 : g.bid2);
             EXPECT_TRUE(dms.put(g.gid, b, Timestamp(0), docSize, g.lid, 0u).ok());
         }
+        dms.commit();
     }
 };
 
@@ -1786,6 +1796,7 @@ TEST(DocumentMetaStoreTest, move_works)
     EXPECT_EQ(gid1, gid);
     EXPECT_EQ(2u, lid);
     EXPECT_TRUE(dms.remove(1, 0u));
+    dms.commit();
     EXPECT_FALSE(dms.getGid(1u, gid));
     EXPECT_FALSE(dms.getGidEvenIfMoved(1u, gid));
     EXPECT_TRUE(dms.getGid(2u, gid));
@@ -1795,6 +1806,7 @@ TEST(DocumentMetaStoreTest, move_works)
     EXPECT_TRUE(dms.getGid(2u, gid));
     EXPECT_EQ(1u, dms.getNumUsedLids());
     dms.move(2u, 1u, 0u);
+    dms.commit();
     EXPECT_TRUE(dms.getGid(1u, gid));
     EXPECT_FALSE(dms.getGid(2u, gid));
     EXPECT_TRUE(dms.getGidEvenIfMoved(2u, gid));
@@ -1864,7 +1876,7 @@ TEST(DocumentMetaStoreTest, shrink_works)
 
 TEST(DocumentMetaStoreTest, shrink_via_flush_target_works)
 {
-    DocumentMetaStore::SP dms(new DocumentMetaStore(createBucketDB()));
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
     dms->constructFreeList();
     TuneFileAttributes tuneFileAttributes;
     DummyFileHeaderContext fileHeaderContext;
@@ -1888,7 +1900,7 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works)
     assertLidSpace(10, shrinkTarget, shrinkTarget - 1, true, false, *dms);
     EXPECT_EQ(ft->getApproxMemoryGain().getBefore(),
               ft->getApproxMemoryGain().getAfter());
-    AttributeGuard::UP g(new AttributeGuard(dms));
+    auto g = std::make_shared<AttributeGuard>(dms);
 
     dms->holdUnblockShrinkLidSpace();
     assertLidSpace(10, shrinkTarget, shrinkTarget - 1, true, false, *dms);
@@ -2092,6 +2104,7 @@ TEST(DocumentMetaStoreTest, call_to_remove_is_notified)
     addLid(dms, 1);
 
     dms.remove(1, 0u);
+    dms.commit();
     EXPECT_EQ(1, listener->remove_cnt);
 }
 
