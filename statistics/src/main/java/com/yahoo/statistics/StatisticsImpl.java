@@ -21,6 +21,7 @@ import com.yahoo.container.StatisticsConfig;
  *
  * @author Steinar Knutsen
  */
+@SuppressWarnings("deprecation")
 public final class StatisticsImpl extends AbstractComponent implements Statistics {
 
     private final Timer worker;

@@ -14,7 +14,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.yahoo.statistics.Value.Parameters;
 import org.junit.Test;
 
 /**
@@ -22,6 +21,7 @@ import org.junit.Test;
  *
  * @author Steinar Knutsen
  */
+@SuppressWarnings("deprecation")
 public class ValueTestCase {
 
     private static final double delta = 0.0000000001;
@@ -46,7 +46,7 @@ public class ValueTestCase {
 
     @Test
     public void testMean() {
-        Value v = new Value("thingie", Statistics.nullImplementation, new Parameters().setLogMean(true));
+        Value v = new Value("thingie", Statistics.nullImplementation, new Value.Parameters().setLogMean(true));
         v.put(1.0);
         v.put(2.0);
         v.put(4.0);
@@ -59,7 +59,7 @@ public class ValueTestCase {
 
     @Test
     public void testMin() {
-        Value v = new Value("thingie", Statistics.nullImplementation, new Parameters().setLogMin(true));
+        Value v = new Value("thingie", Statistics.nullImplementation, new Value.Parameters().setLogMin(true));
         v.put(2.0);
         assertTrue("Min should be 2.0", 2.0 == v.getMin());
         v.put(1.0);
@@ -71,7 +71,7 @@ public class ValueTestCase {
 
     @Test
     public void testMax() {
-        Value v = new Value("thingie", Statistics.nullImplementation, new Parameters().setLogMax(true));
+        Value v = new Value("thingie", Statistics.nullImplementation, new Value.Parameters().setLogMax(true));
         v.put(-1.0);
         assertTrue("Max should be -1.0", -1.0 == v.getMax());
         v.put(1.0);
@@ -84,7 +84,7 @@ public class ValueTestCase {
 
     @Test
     public void testHistogram() {
-        Value v = new Value("thingie", Statistics.nullImplementation, new Parameters()
+        Value v = new Value("thingie", Statistics.nullImplementation, new Value.Parameters()
                 .setLogHistogram(true).setHistogramId(HistogramType.REGULAR)
                 .setLimits(new Limits(new double[] { 0.0, 1.0, 2.0 })));
         v.put(-1.0);
@@ -101,7 +101,7 @@ public class ValueTestCase {
         Logger logger = Logger.getLogger(Value.class.getName());
         boolean initUseParentHandlers = logger.getUseParentHandlers();
         logger.setUseParentHandlers(false);
-        Value v = new Value("thingie", Statistics.nullImplementation, new Parameters()
+        Value v = new Value("thingie", Statistics.nullImplementation, new Value.Parameters()
                 .setLogRaw(true).setCallback(new TrivialCallback()));
         v.run();
         assertEquals(FIRST, v.get(), delta);

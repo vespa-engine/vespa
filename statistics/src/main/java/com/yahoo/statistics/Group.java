@@ -7,6 +7,7 @@ package com.yahoo.statistics;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 abstract class Group extends Handle {
     Group(String name, Statistics manager, Callback parametrizedCallback) {
         super(name, manager, parametrizedCallback);

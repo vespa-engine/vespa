@@ -3,7 +3,6 @@ package com.yahoo.statistics;
 
 
 import com.yahoo.log.event.Event;
-import com.yahoo.statistics.Value.Parameters;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -14,6 +13,7 @@ import java.util.HashMap;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 public class ValueGroup extends Group {
     // A map for names of subevents and Value instances
     private Map<String, Value> subEvents = new HashMap<>();
@@ -67,7 +67,7 @@ public class ValueGroup extends Group {
     }
 
     private Value getNewValue(String subName) {
-        Value v = Value.initializeUnregisteredValue(subName, new Parameters().setLogRaw(true));
+        Value v = Value.initializeUnregisteredValue(subName, new Value.Parameters().setLogRaw(true));
         subEvents.put(subName, v);
         return v;
     }

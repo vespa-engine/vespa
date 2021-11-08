@@ -4,13 +4,12 @@ package com.yahoo.statistics;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.yahoo.statistics.SampleSet.Sampling;
-
 /**
  * Book-keeping class to know which SampleSet instances have unlogged data.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 final class SampleDirectory {
     private final Object directoryLock = new Object();
     private List<SampleSet> directory = new ArrayList<>(200);
@@ -27,11 +26,11 @@ final class SampleDirectory {
      * generation. This does the memory barrier two-step for the
      * client.
      */
-    Sampling[] fetchValues() {
-        Sampling[] copyToReturn;
+    SampleSet.Sampling[] fetchValues() {
+        SampleSet.Sampling[] copyToReturn;
         synchronized (directoryLock) {
             List<SampleSet> tmpDir = directory;
-            copyToReturn = new Sampling[tmpDir.size()];
+            copyToReturn = new SampleSet.Sampling[tmpDir.size()];
             List<SampleSet> newDir = new ArrayList<>(200);
             for (int i = 0; i < copyToReturn.length; ++i) {
                 copyToReturn[i] = tmpDir.get(i).getAndReset();
@@ -45,10 +44,10 @@ final class SampleDirectory {
      * Return a view of the current generation of data. This does the memory
      * barrier two-step for the client.
      */
-    Sampling[] viewValues() {
-        Sampling[] copy;
+    SampleSet.Sampling[] viewValues() {
+        SampleSet.Sampling[] copy;
         synchronized (directoryLock) {
-            copy = new Sampling[directory.size()];
+            copy = new SampleSet.Sampling[directory.size()];
             for (int i = 0; i < copy.length; ++i) {
                 copy[i] = directory.get(i).values;
             }

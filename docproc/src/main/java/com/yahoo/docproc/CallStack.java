@@ -51,7 +51,7 @@ public class CallStack {
     public CallStack(Statistics statistics, Metric metric) {
         this(metric);
     }
-
+    @Deprecated
     public CallStack(String name, Statistics manager, Metric metric) {
         this(name, metric);
     }
@@ -81,11 +81,15 @@ public class CallStack {
      * @param name the name of the stack
      * @param docprocs the document processors to call
      */
-    public CallStack(String name, Collection<DocumentProcessor> docprocs, Statistics manager, Metric metric) {
-        this(name, manager, metric);
+    public CallStack(String name, Collection<DocumentProcessor> docprocs, Metric metric) {
+        this(name, metric);
         for (DocumentProcessor docproc : docprocs) {
             addLast(docproc);
         }
+    }
+    @Deprecated
+    public CallStack(String name, Collection<DocumentProcessor> docprocs, Statistics manager, Metric metric) {
+        this(name, docprocs, metric);
     }
 
     /** Returns the name of this stack, or null if it is not named */
@@ -380,6 +384,7 @@ public class CallStack {
         return b.toString();
     }
 
+    @Deprecated
     public Statistics getStatistics() {
         return null;
     }

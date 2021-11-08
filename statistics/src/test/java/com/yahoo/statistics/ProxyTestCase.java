@@ -12,6 +12,7 @@ import org.junit.Test;
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@SuppressWarnings("deprecation")
 public class ProxyTestCase {
     private static final double MAX = 2.0d;
     private static final double MEAN = 1.0d;

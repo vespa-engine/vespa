@@ -15,7 +15,7 @@ import static org.junit.Assert.assertFalse;
  *
  * @author Steinar Knutsen
  */
-
+@SuppressWarnings("deprecation")
 public class CounterTestCase {
 
     @Test

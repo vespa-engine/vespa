@@ -113,6 +113,7 @@ public class HandlersConfigurerDi {
                                                       isInitializing);
     }
 
+    @SuppressWarnings("deprecation")
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {
         return discInjector.createChildInjector(new AbstractModule() {
             @Override

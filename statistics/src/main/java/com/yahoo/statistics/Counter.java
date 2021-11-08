@@ -11,6 +11,7 @@ import com.yahoo.container.StatisticsConfig;
  *
  * @author  Steinar Knutsen
  */
+@Deprecated
 public class Counter extends Handle {
     // The current value of this counter
     private AtomicLong current = new AtomicLong(0L);

@@ -15,6 +15,7 @@ import java.util.Iterator;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 public class CounterGroup extends Group {
     private final boolean resetCounter;
 

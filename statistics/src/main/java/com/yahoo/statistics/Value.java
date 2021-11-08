@@ -16,6 +16,7 @@ import com.yahoo.statistics.SampleSet.Sampling;
  *
  * @author Steinar Knutsen
  */
+@Deprecated
 public class Value extends Handle {
 
     // For accumulated values, SampleSet instances are mem barriers between {n

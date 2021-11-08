@@ -8,6 +8,7 @@ package com.yahoo.statistics;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 abstract class Proxy {
     private long timestamp;
     private String name;
