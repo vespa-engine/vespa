@@ -98,6 +98,8 @@ public class RankProfile implements Cloneable {
     private String inheritedSummaryFeatures;
 
     private Set<ReferenceNode> matchFeatures;
+    private String inheritedMatchFeatures;
+
     private Set<ReferenceNode> rankFeatures;
 
     /** The properties of this - a multimap */
@@ -519,8 +521,30 @@ public class RankProfile implements Cloneable {
         this.inheritedSummaryFeatures = parentProfile;
     }
 
+    /**
+     * Sets the name of a profile this should inherit the match features of.
+     * Without setting this, this will either have the match features of the parent,
+     * or if match features are set in this, only have the match features in this.
+     * With this set the resulting match features of this will be the superset of those defined in this and
+     * the final (with inheritance included) summary features of the given parent.
+     * The profile must be the profile which is directly inherited by this.
+     *
+     */
+    public void setInheritedMatchFeatures(String parentProfile) {
+        if ( ! parentProfile.equals(inheritedName))
+            throw new IllegalArgumentException("This rank profile ("+name+") can only inherit the match features of its parent, '" +
+                                               inheritedName + ", but attemtping to inherit '" + parentProfile);
+        this.inheritedMatchFeatures = parentProfile;
+    }
+
     /** Returns a read-only view of the match features to use in this profile. This is never null */
     public Set<ReferenceNode> getMatchFeatures() {
+        if (inheritedMatchFeatures != null && matchFeatures != null) {
+            Set<ReferenceNode> combined = new HashSet<>();
+            combined.addAll(getInherited().getMatchFeatures());
+            combined.addAll(matchFeatures);
+            return Collections.unmodifiableSet(combined);
+        }
         if (matchFeatures != null) return Collections.unmodifiableSet(matchFeatures);
         if (getInherited() != null) return getInherited().getMatchFeatures();
         return Set.of();
