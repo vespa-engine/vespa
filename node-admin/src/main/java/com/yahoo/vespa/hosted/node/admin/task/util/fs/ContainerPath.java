@@ -44,7 +44,7 @@ public class ContainerPath implements Path {
     public Path pathOnHost() { return pathOnHost; }
     public String pathInContainer() { return '/' + String.join("/", parts); }
     public ContainerPath withUser(UnixUser user) { return new ContainerPath(containerFs, pathOnHost, parts, user); }
-    UnixUser user() { return user; }
+    public UnixUser user() { return user; }
 
     @Override
     public ContainerFileSystem getFileSystem() {
