@@ -74,6 +74,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final ExecutorService rpcServerExecutor;
     private final ConfigServerMaintenance configServerMaintenance;
 
+    @SuppressWarnings("unused") //  Injected component
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
@@ -113,7 +114,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                                                               applicationRepository.tenantRepository().getCurator(),
                                                               flagSource,
                                                               convergence);
-
+        configServerMaintenance.startBeforeBootstrap();
         log.log(Level.FINE, () -> "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);
 
@@ -170,15 +171,14 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         applicationRepository.bootstrappingDone();
         allowConfigRpcRequests(server);
         up();
+        configServerMaintenance.startAfterBootstrap();
     }
 
-    StateMonitor.Status status() {
-        return stateMonitor.status();
-    }
+    StateMonitor.Status status() { return stateMonitor.status(); }
 
-    VipStatus vipStatus() {
-        return vipStatus;
-    }
+    VipStatus vipStatus() { return vipStatus; }
+
+    public ConfigServerMaintenance configServerMaintenance() { return configServerMaintenance; }
 
     private void up() {
         vipStatus.setInRotation(true);

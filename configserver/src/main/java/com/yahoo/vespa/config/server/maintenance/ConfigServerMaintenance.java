@@ -25,29 +25,44 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ConfigServerMaintenance {
 
     private final List<Maintainer> maintainers = new CopyOnWriteArrayList<>();
+    private final ConfigserverConfig configserverConfig;
+    private final ApplicationRepository applicationRepository;
+    private final Curator curator;
+    private final FlagSource flagSource;
+    private final ConfigConvergenceChecker convergenceChecker;
 
     public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
                                    ApplicationRepository applicationRepository,
                                    Curator curator,
                                    FlagSource flagSource,
-                                   ConfigConvergenceChecker convergence) {
-        DefaultTimes defaults = new DefaultTimes(configserverConfig);
-        // Does not need ConfigServerBootstrap
-        maintainers.add(new TenantsMaintainer(applicationRepository, curator, flagSource, defaults.defaultInterval, Clock.systemUTC()));
-        // Needs ConfigServerBootstrap
-        maintainers.add(new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource));
-        // Needs ConfigServerBootstrap
-        maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
-        // Does not need ConfigServerBootstrap
+                                   ConfigConvergenceChecker convergenceChecker) {
+        this.configserverConfig = configserverConfig;
+        this.applicationRepository = applicationRepository;
+        this.curator = curator;
+        this.flagSource = flagSource;
+        this.convergenceChecker = convergenceChecker;
+    }
+
+    public void startBeforeBootstrap() {
         maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
-        // Needs ConfigServerBootstrap
-        maintainers.add(new ReindexingMaintainer(applicationRepository, curator, flagSource, Duration.ofMinutes(3), convergence, Clock.systemUTC()));
+        maintainers.add(new TenantsMaintainer(applicationRepository, curator, flagSource,
+                                              new DefaultTimes(configserverConfig).defaultInterval, Clock.systemUTC()));
+    }
+
+    public void startAfterBootstrap() {
+        maintainers.add(new FileDistributionMaintainer(applicationRepository, curator,
+                                                       new DefaultTimes(configserverConfig).defaultInterval, flagSource));
+        maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
+        maintainers.add(new ReindexingMaintainer(applicationRepository, curator, flagSource,
+                                                 Duration.ofMinutes(3), convergenceChecker, Clock.systemUTC()));
     }
 
     public void shutdown() {
         maintainers.forEach(Maintainer::shutdown);
         maintainers.forEach(Maintainer::awaitShutdown);
     }
+
+    public List<Maintainer> maintainers() { return List.copyOf(maintainers); }
 
     /*
      * Default values from config. If one of the values needs to be changed, add the value to

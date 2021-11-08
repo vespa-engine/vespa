@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -39,6 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_FILE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.VipStatusMode.VIP_STATUS_PROGRAMMATICALLY;
@@ -70,12 +72,21 @@ public class ConfigServerBootstrapTest {
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
         provisioner.allocations().values().iterator().next().remove(0);
         ConfigServerBootstrap bootstrap = createBootstrap(tester, rpcServer, VIP_STATUS_PROGRAMMATICALLY);
+        assertEquals(List.of("ApplicationPackageMaintainer", "TenantsMaintainer"),
+                     bootstrap.configServerMaintenance().maintainers().stream()
+                              .map(Maintainer::name)
+                              .sorted().collect(Collectors.toList()));
         assertFalse(bootstrap.vipStatus().isInRotation());
+
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         assertTrue(rpcServer.isServingConfigRequests());
         waitUntil(() -> bootstrap.status() == StateMonitor.Status.up, "failed waiting for status 'up'");
         waitUntil(() -> bootstrap.vipStatus().isInRotation(), "failed waiting for server to be in rotation");
+        assertEquals(List.of("ApplicationPackageMaintainer", "FileDistributionMaintainer", "ReindexingMaintainer", "SessionsMaintainer", "TenantsMaintainer"),
+                     bootstrap.configServerMaintenance().maintainers().stream()
+                              .map(Maintainer::name)
+                              .sorted().collect(Collectors.toList()));
 
         bootstrap.deconstruct();
         assertEquals(StateMonitor.Status.down, bootstrap.status());
