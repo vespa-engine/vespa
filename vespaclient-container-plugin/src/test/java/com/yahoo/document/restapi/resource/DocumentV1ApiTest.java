@@ -257,7 +257,7 @@ public class DocumentV1ApiTest {
             assertEquals(1, ((StaticThrottlePolicy) parameters.getThrottlePolicy()).getMaxPendingCount());
             assertEquals("[id]", parameters.getFieldSet());
             assertEquals("(all the things)", parameters.getDocumentSelection());
-            assertEquals(6000, parameters.getSessionTimeoutMs());
+            assertEquals(6000, parameters.getTimeoutMs());
             assertEquals(4, parameters.getSlices());
             assertEquals(1, parameters.getSliceId());
             // Put some documents in the response
