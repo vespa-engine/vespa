@@ -36,6 +36,7 @@ public class Endpoint {
 
     private final EndpointId id;
     private final ClusterSpec.Id cluster;
+    private final Optional<InstanceName> instance;
     private final URI url;
     private final List<Target> targets;
     private final Scope scope;
@@ -81,6 +82,7 @@ public class Endpoint {
         }
         this.id = id;
         this.cluster = cluster;
+        this.instance = instanceName;
         this.url = url;
         this.targets = List.copyOf(targets);
         this.scope = scope;
@@ -122,6 +124,11 @@ public class Endpoint {
     /** Returns the cluster ID to which this routes traffic */
     public ClusterSpec.Id cluster() {
         return cluster;
+    }
+
+    /** The specific instance this endpoint points to, if any */
+    public Optional<InstanceName> instance() {
+        return instance;
     }
 
     /** Returns the URL used to access this */
