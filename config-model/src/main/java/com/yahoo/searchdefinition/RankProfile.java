@@ -526,7 +526,7 @@ public class RankProfile implements Cloneable {
      * Without setting this, this will either have the match features of the parent,
      * or if match features are set in this, only have the match features in this.
      * With this set the resulting match features of this will be the superset of those defined in this and
-     * the final (with inheritance included) summary features of the given parent.
+     * the final (with inheritance included) match features of the given parent.
      * The profile must be the profile which is directly inherited by this.
      *
      */
@@ -556,7 +556,7 @@ public class RankProfile implements Cloneable {
         matchFeatures.add(feature);
     }
 
-    /** Adds the content of the given feature list to the internal list of summary features. */
+    /** Adds the content of the given feature list to the internal list of match features. */
     public void addMatchFeatures(FeatureList features) {
         for (ReferenceNode feature : features) {
             addMatchFeature(feature);
