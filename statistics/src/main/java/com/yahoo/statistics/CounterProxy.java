@@ -8,6 +8,7 @@ package com.yahoo.statistics;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 class CounterProxy extends Proxy {
     private long raw;
     private boolean hasRaw = false;

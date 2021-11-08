@@ -12,6 +12,7 @@ import java.util.ArrayList;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 public class Limits {
     private final List<Axis> axes = new ArrayList<>(1);
     private boolean frozen = false;

@@ -14,13 +14,19 @@ import com.yahoo.statistics.Handle;
 import com.yahoo.statistics.Statistics;
 import com.yahoo.statistics.Value;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * Aggregate peak qps and expose through meta hits and/or log events.
  *
  * @author Steinar Knutsen
+ * @deprecated Will be removed on Vespa 8
  */
+@Deprecated
 public class PeakQpsSearcher extends Searcher {
 
     private final ThreadLocalDirectory<Deque<QueryRatePerSecond>, Long> directory;

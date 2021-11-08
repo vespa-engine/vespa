@@ -11,6 +11,7 @@ package com.yahoo.statistics;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  * @since 5.1.4
  */
+@Deprecated
 public interface Callback {
     /**
      * Invoked each logging cycle right before the events for a Handle are

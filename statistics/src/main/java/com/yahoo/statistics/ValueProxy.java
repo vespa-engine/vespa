@@ -8,6 +8,7 @@ package com.yahoo.statistics;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 class ValueProxy extends Proxy {
     private double raw;
     private boolean hasRaw = false;

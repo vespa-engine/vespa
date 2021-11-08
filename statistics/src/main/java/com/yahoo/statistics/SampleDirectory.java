@@ -11,6 +11,7 @@ import com.yahoo.statistics.SampleSet.Sampling;
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 final class SampleDirectory {
     private final Object directoryLock = new Object();
     private List<SampleSet> directory = new ArrayList<>(200);

@@ -8,7 +8,9 @@ import com.yahoo.container.StatisticsConfig;
  *
  * @author steinar
  * @author Tony Vaagenes
+ * @deprecated Will be removed on Vespa 8. If required by a method, there exists an alternative to be used instead.
  */
+@Deprecated
 public interface Statistics {
     /**
      * Add a new handle to be scheduled for periodic logging. If a handle

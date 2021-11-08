@@ -18,6 +18,7 @@ import static org.junit.Assert.assertFalse;
  *
  * @author Steinar Knutsen
  */
+@SuppressWarnings("deprecation")
 public class CounterGroupTestCase {
 
     private volatile boolean gotRecord = false;

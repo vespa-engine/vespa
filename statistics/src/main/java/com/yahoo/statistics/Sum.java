@@ -10,6 +10,7 @@ import java.util.List;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 class Sum implements Bucket {
     private long sum = 0L;
     private double lower;

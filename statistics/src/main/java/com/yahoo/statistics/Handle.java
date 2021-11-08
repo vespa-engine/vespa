@@ -8,6 +8,7 @@ import java.util.TimerTask;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 public abstract class Handle {
 
     private TimerTask task;

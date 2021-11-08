@@ -106,6 +106,7 @@
       "public void <init>(java.lang.String, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
       "public void <init>(java.lang.String, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.docproc.CallStack)",
+      "public void <init>(java.lang.String, java.util.Collection, com.yahoo.jdisc.Metric)",
       "public void <init>(java.lang.String, java.util.Collection, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
       "public java.lang.String getName()",
       "public void setName(java.lang.String)",

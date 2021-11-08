@@ -10,6 +10,7 @@ import java.util.Arrays;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 class Axis {
     private final double[] limits;
     private final String name;

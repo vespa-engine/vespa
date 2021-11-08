@@ -8,12 +8,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 
-
 /**
  * A set of sums or other histograms.
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 public class Histogram implements Bucket {
     // The upper and lower limit for the bucket in another histogram
     // this histogram represents. The "outermost" histogram in a

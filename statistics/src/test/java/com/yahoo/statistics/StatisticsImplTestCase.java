@@ -16,6 +16,7 @@ import com.yahoo.container.StatisticsConfig;
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@SuppressWarnings("deprecation")
 public class StatisticsImplTestCase {
     private static class TestHandle extends Handle {
 

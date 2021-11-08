@@ -9,6 +9,7 @@ import java.util.List;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@Deprecated
 interface Bucket {
     void put(double[] value, int dim);
     void reset();

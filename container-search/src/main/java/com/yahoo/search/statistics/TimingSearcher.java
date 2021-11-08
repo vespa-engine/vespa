@@ -19,8 +19,10 @@ import com.yahoo.statistics.Value;
  * measuring time consumption a search chain.
  *
  * @author Steinar Knutsen
+ * @deprecated Will be removed on Vespa 8
  */
 @Before("rawQuery")
+@Deprecated
 public class TimingSearcher extends PingableSearcher {
 
     private Value measurements;
