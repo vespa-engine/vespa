@@ -15,11 +15,18 @@ schema parent1 {
       expression: attribute(field1) + 5
     }
 
+    function function1b() {
+      expression: attribute(field1) + 42
+    }
+
     summary-features {
       function1
       attribute(field1)
     }
 
+    match-features {
+      function1b
+    }      
   }
 
 }

@@ -20,6 +20,10 @@ schema child {
       attribute(field3)
     }
 
+    match-features inherits profile1 {
+      function3
+    }
+
   }
 
   rank-profile profile4 inherits profile2 {
