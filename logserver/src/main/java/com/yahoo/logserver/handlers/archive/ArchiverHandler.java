@@ -1,10 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.handlers.archive;
 
-import java.util.logging.Level;
 import com.yahoo.log.LogMessage;
-import com.yahoo.logserver.filter.LogFilter;
-import com.yahoo.logserver.filter.LogFilterManager;
 import com.yahoo.logserver.handlers.AbstractLogHandler;
 
 import java.io.File;
@@ -14,6 +11,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.TimeZone;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -44,7 +42,7 @@ public class ArchiverHandler extends AbstractLogHandler {
     /**
      * Max number of log files open at any given time
      */
-    private final int maxFilesOpen = 100;
+    private static final int maxFilesOpen = 100;
 
     /**
      * The maximum number of bytes we allow a file to grow to
@@ -68,11 +66,6 @@ public class ArchiverHandler extends AbstractLogHandler {
      */
     private final LogWriterLRUCache logWriterLRUCache;
 
-    /**
-     * Filtering
-     */
-    private LogFilter filter = null;
-
     private FilesArchived filesArchived;
 
     /**
@@ -83,17 +76,10 @@ public class ArchiverHandler extends AbstractLogHandler {
         dateformat = new SimpleDateFormat("yyyy/MM/dd/HH");
         dateformat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        // Set up filtering
-        String archiveMetrics = System.getProperty("vespa_log_server__archive_metric");
-        if ("off".equals(archiveMetrics)) {
-            filter = LogFilterManager.getLogFilter("system.nometricsevents");
-        }
-
-        setLogFilter(filter);
+        setLogFilter(null);
 
         // set up LRU for files
-        logWriterLRUCache = new LogWriterLRUCache(maxFilesOpen,
-                                                  (float) 0.75);
+        logWriterLRUCache = new LogWriterLRUCache(maxFilesOpen, (float) 0.75);
     }
 
     /**
