@@ -85,7 +85,7 @@ BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
 BuildRequires: vespa-openssl-devel >= 1.1.1l-1
 %define _use_vespa_openssl 1
-BuildRequires: vespa-protobuf-devel = 3.17.3
+BuildRequires: vespa-protobuf-devel = 3.19.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
@@ -112,7 +112,7 @@ BuildRequires: vespa-gtest = 1.11.0
 %define _use_vespa_gtest 1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
-BuildRequires: vespa-protobuf-devel = 3.17.3
+BuildRequires: vespa-protobuf-devel = 3.19.1
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?fedora}
@@ -161,14 +161,14 @@ BuildRequires: gmock-devel
 %if 0%{?el7} && 0%{?amzn2}
 BuildRequires: vespa-xxhash-devel = 0.8.0
 %define _use_vespa_xxhash 1
-BuildRequires: vespa-openblas-devel = 0.3.17
+BuildRequires: vespa-openblas-devel = 0.3.18
 %define _use_vespa_openblas 1
 BuildRequires: vespa-re2-devel = 20210801
 %define _use_vespa_re2 1
 %else
 BuildRequires: xxhash-devel >= 0.8.0
 %if 0%{?el7} || 0%{?el8}
-BuildRequires: vespa-openblas-devel = 0.3.17
+BuildRequires: vespa-openblas-devel = 0.3.18
 %define _use_vespa_openblas 1
 %else
 BuildRequires: openblas-devel
@@ -335,7 +335,7 @@ Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-libzstd >= 1.4.5-2
 %if 0%{?el8} || 0%{?el7}
-Requires: vespa-openblas = 0.3.17
+Requires: vespa-openblas = 0.3.18
 %else
 Requires: openblas-serial
 %endif
@@ -360,7 +360,7 @@ Requires: %{name}-base-libs = %{version}-%{release}
 %if 0%{?el7}
 Requires: llvm7.0-libs
 Requires: vespa-icu >= 65.1.0-1
-Requires: vespa-protobuf = 3.17.3
+Requires: vespa-protobuf = 3.19.1
 %else
 Requires: libicu
 %endif
@@ -379,7 +379,7 @@ Requires: (llvm-libs >= 11.0.0 and llvm-libs < 12)
 %else
 Requires: (llvm-libs >= 10.0.1 and llvm-libs < 11)
 %endif
-Requires: vespa-protobuf = 3.17.3
+Requires: vespa-protobuf = 3.19.1
 %endif
 %if 0%{?fedora}
 Requires: protobuf
