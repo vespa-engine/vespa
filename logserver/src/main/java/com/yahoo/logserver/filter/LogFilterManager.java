@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver.filter;
 
+import com.yahoo.log.LogLevel;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import com.yahoo.log.LogLevel;
 
 /**
  * The LogFilterManager keeps track of associations between
@@ -23,8 +23,6 @@ public class LogFilterManager {
         LevelFilter allEvents = new LevelFilter();
         allEvents.addLevel(LogLevel.EVENT);
         instance.addLogFilterInternal("system.allevents", allEvents);
-        instance.addLogFilterInternal("system.metricsevents", new MetricsFilter());
-        instance.addLogFilterInternal("system.nometricsevents", new NoMetricsFilter());
         instance.addLogFilterInternal("system.all", new NullFilter());
         instance.addLogFilterInternal("system.mute", MuteFilter.getInstance());
     }
