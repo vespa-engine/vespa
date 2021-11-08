@@ -18,7 +18,6 @@
   "instances": [
     {
       "instance": "default",
-      "globalRotations": [],
       "deployments": []
     },
     {
@@ -40,10 +39,6 @@
         }
       },
       "changeBlockers": [],
-      "globalRotations": [
-        "https://instance1--application2--tenant2.global.vespa.oath.cloud:4443/"
-      ],
-      "rotationId": "rotation-id-2",
       "deployments": []
     }
   ],
