@@ -18,11 +18,14 @@ import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -52,6 +55,8 @@ import static org.junit.Assert.assertTrue;
 public class ConfigServerBootstrapTest {
 
     private final MockCurator curator = new MockCurator();
+    private final FlagSource flagSource = new InMemoryFlagSource();
+    private final ConfigConvergenceChecker convergenceChecker = new ConfigConvergenceChecker();
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -73,7 +78,8 @@ public class ConfigServerBootstrapTest {
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
+                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY,
+                                                                    flagSource, convergenceChecker);
         assertFalse(vipStatus.isInRotation());
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
@@ -104,8 +110,14 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_FILE);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
+                                                                    rpcServer,
+                                                                    versionState,
+                                                                    stateMonitor,
+                                                                    vipStatus,
+                                                                    VIP_STATUS_FILE,
+                                                                    flagSource,
+                                                                    convergenceChecker);
         assertTrue(vipStatus.isInRotation()); // default is in rotation when using status file
 
         bootstrap.start();
@@ -135,8 +147,14 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
+                                                                    rpcServer,
+                                                                    versionState,
+                                                                    stateMonitor,
+                                                                    vipStatus,
+                                                                    VIP_STATUS_PROGRAMMATICALLY,
+                                                                    flagSource,
+                                                                    convergenceChecker);
         assertFalse(vipStatus.isInRotation());
         // Call method directly, to be sure that it is finished redeploying all applications and we can check status
         bootstrap.start();
@@ -179,8 +197,14 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         StateMonitor stateMonitor = StateMonitor.createForTesting();
         VipStatus vipStatus = createVipStatus(stateMonitor);
-        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState,
-                                                                    stateMonitor, vipStatus, VIP_STATUS_PROGRAMMATICALLY);
+        ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(),
+                                                                    rpcServer,
+                                                                    versionState,
+                                                                    stateMonitor,
+                                                                    vipStatus,
+                                                                    VIP_STATUS_PROGRAMMATICALLY,
+                                                                    flagSource,
+                                                                    convergenceChecker);
         bootstrap.start();
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
         assertTrue(rpcServer.isServingConfigRequests());
