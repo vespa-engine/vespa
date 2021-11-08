@@ -17,8 +17,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * This code mimics provisioning load balancers that already exist in the routing layer.
- * It will just map the load balancer request to the proxy nodes available in the node repository.
+ * This implementation of {@link LoadBalancerService} returns the load balancer(s) that exists by default in the shared
+ * routing layer.
+ *
+ * Since such load balancers always exist, we can return the hostname of the routing layer VIP and the networks of the
+ * proxy nodes directly. Nothing has to be provisioned.
  *
  * @author ogronnesby
  */
@@ -27,32 +30,26 @@ public class SharedLoadBalancerService implements LoadBalancerService {
     private static final Comparator<Node> hostnameComparator = Comparator.comparing(Node::hostname);
 
     private final NodeRepository nodeRepository;
+    private final String vipHostname;
 
-    public SharedLoadBalancerService(NodeRepository nodeRepository) {
+    public SharedLoadBalancerService(NodeRepository nodeRepository, String vipHostname) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
+        this.vipHostname = Objects.requireNonNull(vipHostname);
     }
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
         NodeList proxyNodes = nodeRepository.nodes().list().nodeType(NodeType.proxy).sortedBy(hostnameComparator);
-
-        if (proxyNodes.size() == 0) {
-            throw new IllegalStateException("Missing proxy nodes in node repository");
-        }
-
-        Node firstProxyNode = proxyNodes.first().get();
+        if (proxyNodes.isEmpty()) throw new IllegalStateException("No proxy nodes found in node-repository");
         Set<String> networks = proxyNodes.stream()
                                          .flatMap(node -> node.ipConfig().primary().stream())
                                          .map(SharedLoadBalancerService::withPrefixLength)
                                          .collect(Collectors.toSet());
-
-        return new LoadBalancerInstance(
-                HostName.from(firstProxyNode.hostname()),
-                Optional.empty(),
-                Set.of(4080, 4443),
-                networks,
-                spec.reals()
-        );
+        return new LoadBalancerInstance(HostName.from(vipHostname),
+                                        Optional.empty(),
+                                        Set.of(4080, 4443),
+                                        networks,
+                                        spec.reals());
     }
 
     @Override

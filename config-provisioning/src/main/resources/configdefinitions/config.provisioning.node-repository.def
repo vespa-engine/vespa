@@ -4,7 +4,7 @@ namespace=config.provisioning
 # Default container image to use for nodes.
 containerImage string default="registry.example.com:9999/myorg/vespa"
 
-# Default container image to use for tenant nodes. If this is unset (empty), it defaults to containerImage
+# Default container image to use for tenant nodes. If this is unset (empty), it defaults to containerImage.
 tenantContainerImage string default=""
 
 # Whether to cache data read from ZooKeeper in-memory.
