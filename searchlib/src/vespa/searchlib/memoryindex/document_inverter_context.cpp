@@ -50,6 +50,13 @@ void make_contexts(const SchemaIndexFields& schema_index_fields, ISequencedTaskE
     }
 }
 
+void switch_to_alternate_ids(ISequencedTaskExecutor& executor, std::vector<PushContext>& contexts, uint32_t bias)
+{
+    for (auto& context : contexts) {
+        context.set_id(executor.get_alternate_executor_id(context.get_id(), bias));
+    }
+}
+
 class PusherMapping {
     std::vector<std::optional<uint32_t>> _pushers;
 public:
@@ -195,6 +202,10 @@ DocumentInverterContext::setup_contexts()
 {
     make_contexts(_schema_index_fields, _invert_threads, _invert_contexts);
     make_contexts(_schema_index_fields, _push_threads, _push_contexts);
+    if (&_invert_threads == &_push_threads) {
+        uint32_t bias = _schema_index_fields._textFields.size() + _schema_index_fields._uriFields.size();
+        switch_to_alternate_ids(_push_threads, _push_contexts, bias);
+    }
     connect_contexts(_invert_contexts, _push_contexts, _schema.getNumIndexFields(), _schema_index_fields._uriFields.size());
 }
 

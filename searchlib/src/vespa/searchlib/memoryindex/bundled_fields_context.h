@@ -22,6 +22,7 @@ protected:
 public:
     void add_field(uint32_t field_id);
     void add_uri_field(uint32_t uri_field_id);
+    void set_id(vespalib::ISequencedTaskExecutor::ExecutorId id) { _id = id; }
     vespalib::ISequencedTaskExecutor::ExecutorId get_id() const noexcept { return _id; }
     const std::vector<uint32_t>& get_fields() const noexcept { return _fields; }
     const std::vector<uint32_t>& get_uri_fields() const noexcept { return _uri_fields; }

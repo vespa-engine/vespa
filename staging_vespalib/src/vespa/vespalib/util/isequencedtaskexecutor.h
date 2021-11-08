@@ -43,6 +43,15 @@ public:
     ExecutorId getExecutorIdFromName(vespalib::stringref componentId) const;
 
     /**
+     * Returns an executor id that is NOT equal to the given executor id,
+     * using the given bias to offset the new id.
+     *
+     * This is relevant for pipelining operations on the same component,
+     * by doing pipeline steps in different executors.
+     */
+    ExecutorId get_alternate_executor_id(ExecutorId id, uint32_t bias) const;
+
+    /**
      * Schedule a task to run after all previously scheduled tasks with
      * same id.
      *
