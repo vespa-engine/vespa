@@ -237,7 +237,11 @@ void  __libc_free(void* ptr)                         __THROW __attribute__((leaf
 void  __libc_cfree(void* ptr)                        __THROW __attribute__((leaf)) ALIAS("cfree");
 #endif
 size_t  __libc_malloc_usable_size(void *ptr)         __THROW  ALIAS("malloc_usable_size");
+#if __GLIBC_PREREQ(2, 34)
+void* __libc_memalign(size_t align, size_t s)        __THROW __attribute__((leaf, malloc, alloc_align(1), alloc_size(2))) ALIAS("memalign");
+#else
 void* __libc_memalign(size_t align, size_t s)        __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("memalign");
+#endif
 int   __posix_memalign(void** r, size_t a, size_t s) __THROW __nonnull((1)) ALIAS("posix_memalign");
 #if __GLIBC_PREREQ(2, 33)
 struct mallinfo2 __libc_mallinfo2()                  __THROW  ALIAS("mallinfo2");
