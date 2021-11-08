@@ -178,7 +178,7 @@ DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetaData &metaDat
     std::atomic_thread_fence(std::memory_order_release);
     _lidAlloc.registerLid(lid);
     updateUncommittedDocIdLimit(lid);
-    incGeneration();
+    _changesSinceCommit++;
     const BucketState &state =
         _bucketDB->takeGuard()->add(metaData.getGid(),
                       metaData.getBucketId().stripUnused(),
@@ -208,8 +208,11 @@ DocumentMetaStore::onCommit()
         _gidToLidMap.compact_worst();
         _gid_to_lid_map_write_itr_prepare_serial_num = 0u;
         _gid_to_lid_map_write_itr.begin(_gidToLidMap.getRoot());
-        this->incGeneration();
-        this->updateStat(true);
+        incGeneration();
+        updateStat(true);
+    } else if (_changesSinceCommit > 0) {
+        incGeneration();
+        _changesSinceCommit = 0;
     }
 }
 
@@ -415,6 +418,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),
       _trackDocumentSizes(true),
+      _changesSinceCommit(0),
       _op_listener(),
       _cached_gid_to_lid_map_memory_usage()
 {
@@ -590,7 +594,7 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
     RawDocumentMetaData meta = removeInternal(lid, prepare_serial_num);
     _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(),
                                    meta.getTimestamp(), meta.getDocSize(), _subDbType);
-    incGeneration();
+    _changesSinceCommit++;
     if (_op_listener) {
         _op_listener->notify_remove();
     }
@@ -629,7 +633,7 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
     _gidToLidMap.thaw(itr);
     itr.writeKey(GidToLidMapKey(toLid, find_key.get_gid_key()));
     _lidAlloc.moveLidEnd(fromLid, toLid);
-    incGeneration();
+    _changesSinceCommit++;
 }
 
 void

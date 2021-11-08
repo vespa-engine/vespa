@@ -343,6 +343,7 @@ struct Fixture {
         Result inspect = meta_store.get().inspect(gid, 0u);
         uint32_t docSize = 1;
         Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid(), 0u));
+        meta_store.get().commit(search::CommitParam(0));
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());
         schema::CollectionType ct = schema::CollectionType::SINGLE;
