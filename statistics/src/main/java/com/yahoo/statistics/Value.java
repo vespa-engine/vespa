@@ -8,7 +8,6 @@ import java.util.logging.Logger;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.StatisticsConfig.Values.Operations;
 import java.util.logging.Level;
-import com.yahoo.statistics.SampleSet.Sampling;
 
 /**
  * A statistical variable, typically representing a sampling of an
@@ -531,10 +530,10 @@ public class Value extends Handle {
      * Get mean value since last reset.
      */
     public double getMean() {
-        Sampling[] values = directory.viewValues();
+        SampleSet.Sampling[] values = directory.viewValues();
         long insertions = 0L;
         double sum = 0.0d;
-        for (Sampling x : values) {
+        for (var x : values) {
             insertions += x.insertions;
             sum += x.sum;
         }
@@ -548,10 +547,10 @@ public class Value extends Handle {
      * Get minimal value logged since last reset.
      */
     public double getMin() {
-        Sampling[] values = directory.viewValues();
+        SampleSet.Sampling[] values = directory.viewValues();
         long insertions = 0L;
         double min = 0.0d;
-        for (Sampling x : values) {
+        for (var x : values) {
             if (x.insertions == 0) {
                 continue;
             }
@@ -569,10 +568,10 @@ public class Value extends Handle {
      * Get maximum value logged since last reset.
      */
     public double getMax() {
-        Sampling[] values = directory.viewValues();
+        SampleSet.Sampling[] values = directory.viewValues();
         long insertions = 0L;
         double max = 0.0d;
-        for (Sampling x : values) {
+        for (var x : values) {
             if (x.insertions == 0) {
                 continue;
             }
@@ -590,9 +589,9 @@ public class Value extends Handle {
         if (histogram == null) {
             return null;
         } else {
-            Sampling[] values = directory.viewValues();
+            SampleSet.Sampling[] values = directory.viewValues();
             Histogram merged = new Histogram(histogram);
-            for (Sampling s : values) {
+            for (var s : values) {
                 merged.merge(s.histogram);
             }
             return merged;
@@ -707,11 +706,11 @@ public class Value extends Handle {
             lastRaw = lastValue;
         }
         if (logComposite()) {
-            Sampling[] lastInterval = directory.fetchValues();
+            SampleSet.Sampling[] lastInterval = directory.fetchValues();
             if (histogram != null) {
                 mergedHistogram = new Histogram(histogram);
             }
-            for (Sampling threadData : lastInterval) {
+            for (var threadData : lastInterval) {
                 if (threadData.insertions == 0) {
                     continue;
                 }
