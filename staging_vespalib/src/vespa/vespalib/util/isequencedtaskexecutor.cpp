@@ -18,4 +18,13 @@ ISequencedTaskExecutor::getExecutorIdFromName(vespalib::stringref componentId) c
     return getExecutorId(hashfun(componentId));
 }
 
+ISequencedTaskExecutor::ExecutorId
+ISequencedTaskExecutor::get_alternate_executor_id(ExecutorId id, uint32_t bias) const
+{
+    if ((bias % _numExecutors) == 0) {
+        bias = 1;
+    }
+    return ExecutorId((id.getId() + bias) % _numExecutors);
+}
+
 }
