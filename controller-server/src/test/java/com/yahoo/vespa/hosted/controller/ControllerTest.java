@@ -255,7 +255,7 @@ public class ControllerTest {
         assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
-        List<String> globalDnsNames = tester.controller().routing().endpointsOf(context.instanceId())
+        List<String> globalDnsNames = tester.controller().routing().readEndpointsOf(context.instanceId())
                                             .scope(Endpoint.Scope.global)
                                             .mapToList(Endpoint::dnsName);
         assertEquals(List.of("app1--tenant1.global.vespa.oath.cloud"), globalDnsNames);
@@ -299,7 +299,7 @@ public class ControllerTest {
         assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
-        List<String> globalDnsNames = tester.controller().routing().endpointsOf(context.instanceId())
+        List<String> globalDnsNames = tester.controller().routing().readEndpointsOf(context.instanceId())
                                             .scope(Endpoint.Scope.global)
                                             .mapToList(Endpoint::dnsName);
         assertEquals(List.of("app1--tenant1.global.vespa.oath.cloud",
@@ -610,7 +610,7 @@ public class ControllerTest {
         assertEquals("DeploymentSpec is not stored", DeploymentSpec.empty, context.application().deploymentSpec());
 
         // Verify zone supports shared layer 4 and shared routing methods
-        Set<RoutingMethod> routingMethods = tester.controller().routing().endpointsOf(context.deploymentIdIn(zone))
+        Set<RoutingMethod> routingMethods = tester.controller().routing().readEndpointsOf(context.deploymentIdIn(zone))
                 .asList()
                 .stream()
                 .map(Endpoint::routingMethod)
@@ -875,7 +875,7 @@ public class ControllerTest {
         tester.controllerTester().zoneRegistry()
               .setRoutingMethod(ZoneApiMock.from(zone1), RoutingMethod.shared, RoutingMethod.sharedLayer4)
               .setRoutingMethod(ZoneApiMock.from(zone2), RoutingMethod.shared, RoutingMethod.sharedLayer4);
-        Supplier<Set<RoutingMethod>> routingMethods = () -> tester.controller().routing().endpointsOf(context.deploymentIdIn(zone1))
+        Supplier<Set<RoutingMethod>> routingMethods = () -> tester.controller().routing().readEndpointsOf(context.deploymentIdIn(zone1))
                                                                   .asList()
                                                                   .stream()
                                                                   .map(Endpoint::routingMethod)
@@ -901,7 +901,7 @@ public class ControllerTest {
                                 "application--tenant.global.vespa.oath.cloud"),
                          tester.configServer().containerEndpoints().get(context.deploymentIdIn(zone)));
         }
-        List<String> zoneDnsNames = tester.controller().routing().endpointsOf(context.deploymentIdIn(zone1))
+        List<String> zoneDnsNames = tester.controller().routing().readEndpointsOf(context.deploymentIdIn(zone1))
                                           .scope(Endpoint.Scope.zone)
                                           .mapToList(Endpoint::dnsName);
         assertEquals(List.of("application--tenant.us-west-1.vespa.oath.cloud",

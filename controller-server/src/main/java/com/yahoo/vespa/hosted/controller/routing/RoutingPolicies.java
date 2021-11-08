@@ -133,7 +133,7 @@ public class RoutingPolicies {
         Map<RoutingId, List<RoutingPolicy>> routingTable = instanceRoutingTable(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
-            controller.routing().endpointsOf(routingId.instance())
+            controller.routing().readDeclaredEndpointsOf(routingId.instance())
                       .named(routingId.endpointId())
                       .not().requiresRotation()
                       .forEach(endpoint -> updateGlobalDnsOf(endpoint, inactiveZones, routeEntry.getValue()));
@@ -211,7 +211,8 @@ public class RoutingPolicies {
         Map<String, Set<AliasTarget>> targetsByEndpoint = new LinkedHashMap<>();
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
-            EndpointList endpoints = controller.routing().endpointsOf(routingId.application())
+            EndpointList endpoints = controller.routing().readDeclaredEndpointsOf(routingId.application())
+                                               .scope(Endpoint.Scope.region)
                                                .named(routingId.endpointId());
             if (endpoints.isEmpty()) continue;
             if (endpoints.size() > 1) {
@@ -294,7 +295,7 @@ public class RoutingPolicies {
         Set<RoutingId> activeRoutingIds = instanceRoutingIds(allocation);
         removalCandidates.removeAll(activeRoutingIds);
         for (var id : removalCandidates) {
-            EndpointList endpoints = controller.routing().endpointsOf(id.instance())
+            EndpointList endpoints = controller.routing().readDeclaredEndpointsOf(id.instance())
                                                .not().requiresRotation()
                                                .named(id.endpointId());
             NameServiceForwarder forwarder = nameServiceForwarderIn(allocation.deployment.zoneId());
@@ -315,7 +316,7 @@ public class RoutingPolicies {
         for (var id : removalCandidates) {
             TenantAndApplicationId application = TenantAndApplicationId.from(id.instance());
             EndpointList endpoints = controller.routing()
-                                               .endpointsOf(application)
+                                               .readDeclaredEndpointsOf(application)
                                                .named(id.endpointId());
             List<RoutingPolicy> policies = routingTable.get(id);
             for (var policy : policies) {
