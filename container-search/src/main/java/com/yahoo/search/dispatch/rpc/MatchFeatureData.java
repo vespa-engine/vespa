@@ -20,7 +20,7 @@ import java.util.Map;
  * for the field names.
  * @author arnej
  */
-public class MatchFeatureData {
+class MatchFeatureData {
 
     private final Hashlet<String,Integer> hashlet;
 
@@ -38,10 +38,9 @@ public class MatchFeatureData {
         private final Hashlet<String,Integer> hashlet;
         private final byte[][] dataValues;
         private final double[] doubleValues;
-        private int index = 0;
 
         public Type type() { return Type.OBJECT; }
-        public boolean valid() { return index == doubleValues.length; }
+        public boolean valid() { return true; }
         public int fieldCount() { return hashlet.size(); }
         public void traverse(ObjectTraverser ot) {
             for (int i = 0; i < hashlet.size(); i++) {
@@ -52,13 +51,12 @@ public class MatchFeatureData {
         }
         public Inspector field(String name) {
             int offset = hashlet.getIndexOfKey(name);
-            if (offset < 0 || ! valid()) {
+            if (offset < 0) {
                 return invalid();
             }
             return valueAt(offset);
         }
         public Iterable<Map.Entry<String,Inspector>> fields() {
-            if (! valid()) { return List.of(); }
             var list = new ArrayList<Map.Entry<String,Inspector>>(hashlet.size());
             for (int i = 0; i < hashlet.size(); i++) {
                 String fn = hashlet.key(i);
@@ -76,10 +74,10 @@ public class MatchFeatureData {
         }
 
         // package-private:
-        void add(byte[] data) {
+        void set(int index, byte[] data) {
             dataValues[index++] = data;
         }
-        void add(double value) {
+        void set(int index, double value) {
             doubleValues[index++] = value;
         }
 

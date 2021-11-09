@@ -231,12 +231,13 @@ public class ProtobufSerialization {
                 var hitFeatures = matchFeatures.addHit();
                 var featureList = replyHit.getMatchFeaturesList();
                 if (featureList.size() == featureNames.size()) {
+                    int idx = 0;
                     for (SearchProtocol.Feature value : featureList) {
                         ByteString tensorBlob = value.getTensor();
                         if (tensorBlob.isEmpty()) {
-                            hitFeatures.add(value.getNumber());
+                            hitFeatures.set(idx++, value.getNumber());
                         } else {
-                            hitFeatures.add(tensorBlob.toByteArray());
+                            hitFeatures.set(idx++, tensorBlob.toByteArray());
                         }
                     }
                     hit.addMatchFeatures(hitFeatures);
