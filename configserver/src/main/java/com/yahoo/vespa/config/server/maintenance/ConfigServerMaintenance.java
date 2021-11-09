@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
-import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.ConfigServerBootstrap;
@@ -24,30 +22,47 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author hmusum
  */
-public class ConfigServerMaintenance extends AbstractComponent {
+public class ConfigServerMaintenance {
 
     private final List<Maintainer> maintainers = new CopyOnWriteArrayList<>();
+    private final ConfigserverConfig configserverConfig;
+    private final ApplicationRepository applicationRepository;
+    private final Curator curator;
+    private final FlagSource flagSource;
+    private final ConfigConvergenceChecker convergenceChecker;
 
-    @Inject
-    public ConfigServerMaintenance(ConfigServerBootstrap configServerBootstrap,
-                                   ConfigserverConfig configserverConfig,
+    public ConfigServerMaintenance(ConfigserverConfig configserverConfig,
                                    ApplicationRepository applicationRepository,
                                    Curator curator,
                                    FlagSource flagSource,
-                                   ConfigConvergenceChecker convergence) {
-        DefaultTimes defaults = new DefaultTimes(configserverConfig);
-        maintainers.add(new TenantsMaintainer(applicationRepository, curator, flagSource, defaults.defaultInterval, Clock.systemUTC()));
-        maintainers.add(new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, flagSource));
-        maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
-        maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
-        maintainers.add(new ReindexingMaintainer(applicationRepository, curator, flagSource, Duration.ofMinutes(3), convergence, Clock.systemUTC()));
+                                   ConfigConvergenceChecker convergenceChecker) {
+        this.configserverConfig = configserverConfig;
+        this.applicationRepository = applicationRepository;
+        this.curator = curator;
+        this.flagSource = flagSource;
+        this.convergenceChecker = convergenceChecker;
     }
 
-    @Override
-    public void deconstruct() {
+    public void startBeforeBootstrap() {
+        maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
+        maintainers.add(new TenantsMaintainer(applicationRepository, curator, flagSource,
+                                              new DefaultTimes(configserverConfig).defaultInterval, Clock.systemUTC()));
+    }
+
+    public void startAfterBootstrap() {
+        maintainers.add(new FileDistributionMaintainer(applicationRepository, curator,
+                                                       new DefaultTimes(configserverConfig).defaultInterval, flagSource));
+        maintainers.add(new SessionsMaintainer(applicationRepository, curator, Duration.ofSeconds(30), flagSource));
+        maintainers.add(new ReindexingMaintainer(applicationRepository, curator, flagSource,
+                                                 Duration.ofMinutes(3), convergenceChecker, Clock.systemUTC()));
+    }
+
+    public void shutdown() {
         maintainers.forEach(Maintainer::shutdown);
         maintainers.forEach(Maintainer::awaitShutdown);
     }
+
+    public List<Maintainer> maintainers() { return List.copyOf(maintainers); }
 
     /*
      * Default values from config. If one of the values needs to be changed, add the value to
