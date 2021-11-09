@@ -1,4 +1,21 @@
 {
+  "ai.vespa.cloud.ApplicationId": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
+      "public java.lang.String tenant()",
+      "public java.lang.String application()",
+      "public java.lang.String instance()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "ai.vespa.cloud.Cluster": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -55,7 +72,9 @@
       "public"
     ],
     "methods": [
+      "public void <init>(ai.vespa.cloud.ApplicationId, ai.vespa.cloud.Zone, ai.vespa.cloud.Cluster, ai.vespa.cloud.Node)",
       "public void <init>(ai.vespa.cloud.Zone, ai.vespa.cloud.Cluster, ai.vespa.cloud.Node)",
+      "public ai.vespa.cloud.ApplicationId application()",
       "public ai.vespa.cloud.Zone zone()",
       "public ai.vespa.cloud.Cluster cluster()",
       "public ai.vespa.cloud.Node node()"
