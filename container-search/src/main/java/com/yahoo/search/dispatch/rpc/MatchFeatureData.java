@@ -24,7 +24,6 @@ class MatchFeatureData {
 
     private final Hashlet<String,Integer> hashlet;
 
-    // package-private:
     MatchFeatureData(List<String> keys) {
         this.hashlet = new Hashlet<>();
         hashlet.reserve(keys.size());
@@ -67,18 +66,17 @@ class MatchFeatureData {
         }
 
         // use from enclosing class only
-        HitValue(Hashlet<String,Integer> hashlet) {
+        private HitValue(Hashlet<String,Integer> hashlet) {
             this.hashlet = hashlet;
             this.dataValues = new byte[hashlet.size()][];
             this.doubleValues = new double[hashlet.size()];
         }
 
-        // package-private:
         void set(int index, byte[] data) {
-            dataValues[index++] = data;
+            dataValues[index] = data;
         }
         void set(int index, double value) {
-            doubleValues[index++] = value;
+            doubleValues[index] = value;
         }
 
         private Inspector valueAt(int index) {
