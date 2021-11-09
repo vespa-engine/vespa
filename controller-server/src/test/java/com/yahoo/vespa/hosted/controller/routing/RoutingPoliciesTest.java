@@ -789,7 +789,7 @@ public class RoutingPoliciesTest {
                              Map.of(betaZone1, 1));
         assertTrue("Endpoint removed",
                    tester.controllerTester().controller().routing()
-                         .readDeclaredEndpointsOf(application)
+                         .endpointsOf(application)
                          .named(EndpointId.of("a1")).isEmpty());
     }
 
@@ -916,7 +916,7 @@ public class RoutingPoliciesTest {
                                    int loadBalancerId, Map<DeploymentId, Integer> deploymentWeights) {
             Map<String, List<DeploymentId>> deploymentsByDnsName = new HashMap<>();
             for (var deployment : deploymentWeights.keySet()) {
-                EndpointList applicationEndpoints = tester.controller().routing().readDeclaredEndpointsOf(application)
+                EndpointList applicationEndpoints = tester.controller().routing().endpointsOf(application)
                                                           .named(endpointId)
                                                           .targets(deployment)
                                                           .cluster(cluster);
@@ -944,7 +944,7 @@ public class RoutingPoliciesTest {
             Map<String, List<ZoneId>> zonesByRegionEndpoint = new HashMap<>();
             for (var zone : zoneWeights.keySet()) {
                 DeploymentId deployment = new DeploymentId(instance, zone);
-                EndpointList regionEndpoints = tester.controller().routing().readEndpointsOf(deployment)
+                EndpointList regionEndpoints = tester.controller().routing().endpointsOf(deployment)
                                                     .cluster(cluster)
                                                     .scope(Endpoint.Scope.weighted);
                 Endpoint regionEndpoint = regionEndpoints.first().orElseThrow(() -> new IllegalArgumentException("No region endpoint found for " + cluster + " in " + deployment));
@@ -965,7 +965,7 @@ public class RoutingPoliciesTest {
                 latencyTargets.add(latencyTarget);
             });
             List<DeploymentId> deployments = zoneWeights.keySet().stream().map(z -> new DeploymentId(instance, z)).collect(Collectors.toList());
-            String globalEndpoint = tester.controller().routing().readDeclaredEndpointsOf(instance)
+            String globalEndpoint = tester.controller().routing().endpointsOf(instance)
                                           .named(endpointId)
                                           .targets(deployments)
                                           .primary()
