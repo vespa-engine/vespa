@@ -587,11 +587,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return orchestrator.getAllSuspendedApplications().contains(application);
     }
 
-    public HttpResponse filedistributionStatus(ApplicationId applicationId, Duration timeout) {
+    public HttpResponse fileDistributionStatus(ApplicationId applicationId, Duration timeout) {
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public List<String> deleteUnusedFiledistributionReferences(File fileReferencesPath,
+    public List<String> deleteUnusedFileDistributionReferences(File fileReferencesPath,
                                                                Duration keepFileReferencesDuration,
                                                                int numberToAlwaysKeep) {
         log.log(Level.FINE, () -> "Keep unused file references for " + keepFileReferencesDuration);
@@ -632,8 +632,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
-                .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
-                .sorted((a, b) -> lastModified(new File(fileReferencesPath, a)).isBefore(lastModified(new File(fileReferencesPath, b))) ? -1 : 1)
+                .filter(fileReference -> isLastFileAccessBefore(new File(fileReferencesPath, fileReference), instant))
+                .sorted((a, b) -> lastAccessed(new File(fileReferencesPath, a)).isBefore(lastAccessed(new File(fileReferencesPath, b))) ? -1 : 1)
                 .collect(Collectors.toList());
     }
 
@@ -688,15 +688,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .collect(Collectors.toList());
     }
 
-    private boolean isFileLastModifiedBefore(File fileReference, Instant instant) {
-        return lastModified(fileReference).isBefore(instant);
+    private boolean isLastFileAccessBefore(File fileReference, Instant instant) {
+        return lastAccessed(fileReference).isBefore(instant);
     }
 
-    private Instant lastModified(File fileReference) {
+    private Instant lastAccessed(File fileReference) {
         BasicFileAttributes fileAttributes;
         try {
             fileAttributes = readAttributes(fileReference.toPath(), BasicFileAttributes.class);
-            return fileAttributes.lastModifiedTime().toInstant();
+            return fileAttributes.lastAccessTime().toInstant();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
