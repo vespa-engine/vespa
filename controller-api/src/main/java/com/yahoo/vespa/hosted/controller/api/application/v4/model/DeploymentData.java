@@ -64,13 +64,13 @@ public class DeploymentData {
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
         this.platform = requireNonNull(platform);
-        this.containerEndpoints = requireNonNull(containerEndpoints);
+        this.containerEndpoints = Set.copyOf(requireNonNull(containerEndpoints));
         this.endpointCertificateMetadata = requireNonNull(endpointCertificateMetadata);
         this.dockerImageRepo = requireNonNull(dockerImageRepo);
         this.athenzDomain = athenzDomain;
         this.quota = quota;
-        this.tenantSecretStores = tenantSecretStores;
-        this.operatorCertificates = operatorCertificates;
+        this.tenantSecretStores = List.copyOf(requireNonNull(tenantSecretStores));
+        this.operatorCertificates = List.copyOf(requireNonNull(operatorCertificates));
         this.dryRun = dryRun;
     }
 

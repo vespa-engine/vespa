@@ -1371,7 +1371,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         // Add zone endpoints
         boolean legacyEndpoints = request.getBooleanProperty("includeLegacyEndpoints");
         var endpointArray = response.setArray("endpoints");
-        EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId)
+        EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId)
                                                .scope(Endpoint.Scope.zone);
         if (!legacyEndpoints) {
             zoneEndpoints = zoneEndpoints.not().legacy();
@@ -1379,13 +1379,13 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
             toSlime(endpoint, endpointArray.addObject());
         }
-        // Add global endpoints
-        EndpointList globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
-                                                 .targets(deploymentId);
+        // Add declared endpoints
+        EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application)
+                                                   .targets(deploymentId);
         if (!legacyEndpoints) {
-            globalEndpoints = globalEndpoints.not().legacy();
+            declaredEndpoints = declaredEndpoints.not().legacy();
         }
-        for (var endpoint : controller.routing().directEndpoints(globalEndpoints, deploymentId.applicationId())) {
+        for (var endpoint : controller.routing().directEndpoints(declaredEndpoints, deploymentId.applicationId())) {
             toSlime(endpoint, endpointArray.addObject());
         }
 
@@ -2061,7 +2061,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
-                                                                      controller.routing().zoneEndpointsOf(deployments),
+                                                                      controller.routing().readZoneEndpointsOf(deployments),
                                                                       controller.applications().reachableContentClustersByZone(deployments)));
     }
 

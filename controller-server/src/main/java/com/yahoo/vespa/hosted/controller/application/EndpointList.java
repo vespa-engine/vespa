@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.util.Collection;
@@ -39,6 +40,12 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
     /** Returns the subset of endpoints pointing to given cluster */
     public EndpointList cluster(ClusterSpec.Id cluster) {
         return matching(endpoint -> endpoint.cluster().equals(cluster));
+    }
+
+    /** Returns the subset of endpoints pointing to given instance */
+    public EndpointList instance(InstanceName instance) {
+        return matching(endpoint -> endpoint.instance().isPresent() &&
+                                    endpoint.instance().get().equals(instance));
     }
 
     /** Returns the subset of endpoints which target all of the given deployments */
