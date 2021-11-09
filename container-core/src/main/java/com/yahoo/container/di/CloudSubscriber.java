@@ -60,11 +60,6 @@ public class CloudSubscriber  implements Subscriber {
         if (handles.isEmpty())
             throw new IllegalStateException("No config keys registered");
 
-        // Catch and just log config exceptions due to missing config values for parameters that do
-        // not have a default value. These exceptions occur when the user has removed a component
-        // from services.xml, and the component takes a config that has parameters without a
-        // default value in the def-file. There is a new 'components' config underway, where the
-        // component is removed, so this old config generation will soon be replaced by a new one.
         boolean gotNextGen = false;
         while ( ! gotNextGen) {
             try {
