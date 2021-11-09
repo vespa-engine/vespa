@@ -39,7 +39,7 @@ SequencedTaskExecutor::create(vespalib::Runnable::init_fun_t func, uint32_t thre
         executors->reserve(threads);
         for (uint32_t id = 0; id < threads; ++id) {
             if (optimize == OptimizeFor::THROUGHPUT) {
-                uint32_t watermark = kindOfWatermark == 0 ? taskLimit / 10 : kindOfWatermark;
+                uint32_t watermark = kindOfWatermark == 0 ? taskLimit / 2 : kindOfWatermark;
                 executors->push_back(std::make_unique<SingleExecutor>(func, taskLimit, watermark, reactionTime));
             } else {
                 executors->push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, func));

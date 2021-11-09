@@ -5,7 +5,6 @@
 #include "sessionmanager.h"
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchlib/common/docstamp.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/engine/searchreply.h>
 
