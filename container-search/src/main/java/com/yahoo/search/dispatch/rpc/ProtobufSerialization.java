@@ -197,7 +197,7 @@ public class ProtobufSerialization {
     }
 
     static InvokerResult convertToResult(Query query, SearchProtocol.SearchReply protobuf,
-                                                 DocumentDatabase documentDatabase, int partId, int distKey)
+                                         DocumentDatabase documentDatabase, int partId, int distKey)
     {
         InvokerResult result = new InvokerResult(query, protobuf.getHitsCount());
 
@@ -206,7 +206,8 @@ public class ProtobufSerialization {
 
         convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList());
         List<String> featureNames = protobuf.getMatchFeatureNamesList();
-
+        var haveMatchFeatures = ! featureNames.isEmpty();
+        MatchFeatureData matchFeatures = haveMatchFeatures ? new MatchFeatureData(featureNames) : null;
         var haveGrouping = ! protobuf.getGroupingBlob().isEmpty();
         if (haveGrouping) {
             BufferSerializer buf = new BufferSerializer(new GrowableByteBuffer(protobuf.getGroupingBlob().asReadOnlyByteBuffer()));
@@ -221,27 +222,27 @@ public class ProtobufSerialization {
             hit.setQuery(query);
             result.getResult().hits().add(hit);
         }
-
         for (var replyHit : protobuf.getHitsList()) {
             LeanHit hit = (replyHit.getSortData().isEmpty())
                     ? new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance())
                     : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance(), replyHit.getSortData().toByteArray());
-            if (! featureNames.isEmpty()) {
-                List<SearchProtocol.Feature> featureValues = replyHit.getMatchFeaturesList();
-                var object = new Value.ObjectValue();
-                var nameIter = featureNames.iterator();
-                var valueIter = featureValues.iterator();
-                while (nameIter.hasNext() && valueIter.hasNext()) {
-                    String name = nameIter.next();
-                    SearchProtocol.Feature value = valueIter.next();
-                    ByteString tensorBlob = value.getTensor();
-                    if (tensorBlob.isEmpty()) {
-                        object.put(name, value.getNumber());
-                    } else {
-                        object.put(name, new Value.DataValue(tensorBlob.toByteArray()));
+            if (haveMatchFeatures) {
+                var hitFeatures = matchFeatures.addHit();
+                var featureList = replyHit.getMatchFeaturesList();
+                if (featureList.size() == featureNames.size()) {
+                    int idx = 0;
+                    for (SearchProtocol.Feature value : featureList) {
+                        ByteString tensorBlob = value.getTensor();
+                        if (tensorBlob.isEmpty()) {
+                            hitFeatures.set(idx++, value.getNumber());
+                        } else {
+                            hitFeatures.set(idx++, tensorBlob.toByteArray());
+                        }
                     }
+                    hit.addMatchFeatures(hitFeatures);
+                } else {
+                    result.getResult().hits().addError(ErrorMessage.createBackendCommunicationError("mismatch in match feature sizes"));
                 }
-                hit.addMatchFeatures(object);
             }
             result.getLeanHits().add(hit);
         }
