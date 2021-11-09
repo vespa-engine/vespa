@@ -281,6 +281,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addCloudSecretStore(ApplicationContainerCluster cluster, Element secretStoreElement, DeployState deployState) {
         if ( ! deployState.isHosted()) return;
+        if ( ! cluster.getZone().system().isPublic())
+            throw new RuntimeException("cloud secret store is not supported in non-public system, please see documentation");
         CloudSecretStore cloudSecretStore = new CloudSecretStore();
         Map<String, TenantSecretStore> secretStoresByName = deployState.getProperties().tenantSecretStores()
                 .stream()
