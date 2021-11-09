@@ -39,6 +39,7 @@
         }
       },
       "changeBlockers": [],
+      "rotationId": "rotation-id-2",
       "deployments": []
     }
   ],
