@@ -230,6 +230,14 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public Optional<String> getVipHostname(ZoneId zoneId) {
+        if (routingMethods(zoneId).stream().anyMatch(RoutingMethod::isShared)) {
+            return Optional.of("vip." + zoneId.value());
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public Optional<Duration> getDeploymentTimeToLive(ZoneId zoneId) {
         return Optional.ofNullable(deploymentTimeToLive.get(zoneId));
     }

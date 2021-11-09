@@ -42,6 +42,9 @@ public interface ZoneRegistry {
     /** Returns the URI for the config server VIP in the given zone */
     URI getConfigServerVipUri(ZoneId zoneId);
 
+    /** Returns the VIP hostname for the shared routing layer in given zone, if any */
+    Optional<String> getVipHostname(ZoneId zoneId);
+
     /** Returns the time to live for deployments in the given zone, or empty if this is infinite */
     Optional<Duration> getDeploymentTimeToLive(ZoneId zoneId);
 

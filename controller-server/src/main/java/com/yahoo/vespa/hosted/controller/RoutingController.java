@@ -289,6 +289,30 @@ public class RoutingController {
                                                                         asString(Endpoint.Scope.global),
                                                                         clusterEndpoints.mapToList(Endpoint::dnsName)));
                        });
+        // Add application endpoints
+        EndpointList applicationEndpoints = endpoints.scope(Endpoint.Scope.application)
+                                                     .not().direct() // These are handled by RoutingPolicies
+                                                     .targets(deployment);
+        for (var endpoint : applicationEndpoints) {
+            Set<ZoneId> targetZones = endpoint.targets().stream()
+                                              .map(t -> t.deployment().zoneId())
+                                              .collect(Collectors.toUnmodifiableSet());
+            if (targetZones.size() != 1) throw new IllegalArgumentException("Endpoint '" + endpoint.name() +
+                                                                            "' must target a single zone, got " +
+                                                                            targetZones);
+            ZoneId targetZone = targetZones.iterator().next();
+            String vipHostname = controller.zoneRegistry().getVipHostname(targetZone)
+                                           .orElseThrow(() -> new IllegalArgumentException("No VIP configured for zone " + targetZone));
+            controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
+                                                          RecordData.fqdn(vipHostname),
+                                                          Priority.normal);
+        }
+        applicationEndpoints.groupingBy(Endpoint::cluster)
+                            .forEach((clusterId, clusterEndpoints) -> {
+                                containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
+                                                                             asString(Endpoint.Scope.application),
+                                                                             clusterEndpoints.mapToList(Endpoint::dnsName)));
+                            });
         return Collections.unmodifiableSet(containerEndpoints);
     }
 
