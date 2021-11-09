@@ -31,14 +31,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -129,28 +127,45 @@ public class DeploymentTrigger {
     /**
      * Finds and triggers jobs that can and should run but are currently not, and returns the number of triggered jobs.
      *
-     * Only one job is triggered each run for test jobs, since their environments have limited capacity.
+     * Only one job per type is triggered each run for test jobs, since their environments have limited capacity.
      */
     public long triggerReadyJobs() {
-        return computeReadyJobs().stream()
-                                 .collect(partitioningBy(job -> job.jobType().environment().isTest()))
-                                 .entrySet().stream()
-                                 .flatMap(entry -> (entry.getKey()
-                                         // True for capacity constrained zones -- sort by priority and make a task for each job type.
-                                         ? entry.getValue().stream()
-                                                .sorted(comparing(Job::isRetry)
-                                                                .thenComparing(Job::applicationUpgrade)
-                                                                .reversed()
-                                                                .thenComparing(Job::availableSince))
-                                                .collect(groupingBy(Job::jobType))
-                                         // False for production jobs -- keep step order and make a task for each application.
-                                         : entry.getValue().stream()
-                                                .collect(groupingBy(Job::applicationId)))
-                                         .values().stream()
-                                         .map(jobs -> (Supplier<Long>) jobs.stream()
-                                                                           .peek(this::trigger)
-                                                                           .limit(entry.getKey() ? 1 : Long.MAX_VALUE)::count))
-                                 .parallel().map(Supplier::get).reduce(0L, Long::sum);
+        List<Job> readyJobs = computeReadyJobs();
+
+        var prodJobs = new ArrayList<Job>();
+        var testJobs = new ArrayList<Job>();
+        for (Job job : readyJobs) {
+            if (job.jobType.isTest()) testJobs.add(job);
+            else prodJobs.add(job);
+        }
+
+        // Flat list of prod jobs, grouped by application id, retaining the step order
+        List<Job> sortedProdJobs = prodJobs.stream()
+                .collect(groupingBy(Job::applicationId))
+                .values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toUnmodifiableList());
+
+        // Map of test jobs, a list for each job type. Jobs in each list are sorted by priority.
+        Map<JobType, List<Job>> sortedTestJobsByType = testJobs.stream()
+                .sorted(comparing(Job::isRetry)
+                                .thenComparing(Job::applicationUpgrade)
+                                .reversed()
+                                .thenComparing(Job::availableSince))
+                .collect(groupingBy(Job::jobType));
+
+        // Trigger all prod jobs
+        sortedProdJobs.forEach(this::trigger);
+        long triggeredJobs = sortedProdJobs.size();
+
+        // Trigger max one test job per type
+        for (var jobs : sortedTestJobsByType.values()) {
+            if (jobs.size() > 0) {
+                trigger(jobs.get(0));
+                triggeredJobs++;
+            }
+        }
+        return triggeredJobs;
     }
 
     /** Attempts to trigger the given job. */

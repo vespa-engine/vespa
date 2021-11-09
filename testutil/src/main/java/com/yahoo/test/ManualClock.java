@@ -60,4 +60,10 @@ public class ManualClock extends Clock {
         return LocalDateTime.parse(utcIsoTime, DateTimeFormatter.ISO_DATE_TIME).atZone(ZoneOffset.UTC).toInstant();
     }
 
+    @Override
+    public String toString() {
+        return "ManualClock{" +
+                "currentTime=" + currentTime +
+                '}';
+    }
 }
