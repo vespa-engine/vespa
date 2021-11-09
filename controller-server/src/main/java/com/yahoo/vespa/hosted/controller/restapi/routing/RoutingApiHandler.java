@@ -96,7 +96,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse endpoints(Path path) {
         var instanceId = instanceFrom(path);
-        var endpoints = controller.routing().readDeclaredEndpointsOf(instanceId)
+        var endpoints = controller.routing().endpointsOf(instanceId)
                 .sortedBy(Comparator.comparing(Endpoint::name))
                 .asList();
 

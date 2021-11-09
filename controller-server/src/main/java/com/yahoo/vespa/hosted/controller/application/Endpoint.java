@@ -36,7 +36,6 @@ public class Endpoint {
 
     private final EndpointId id;
     private final ClusterSpec.Id cluster;
-    private final Optional<InstanceName> instance;
     private final URI url;
     private final List<Target> targets;
     private final Scope scope;
@@ -60,11 +59,11 @@ public class Endpoint {
             if (scope == Scope.zone && id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
             if (targets.size() != 1) throw new IllegalArgumentException("A single target must be given for " + scope + " endpoints");
         }
-        if (scope != Scope.application && instanceName.isEmpty()) {
+        if (scope != Scope.region && instanceName.isEmpty()) {
             throw new IllegalArgumentException("Instance must be set for scope " + scope);
         }
         for (var target : targets) {
-            if (scope == Scope.application) {
+            if (scope == Scope.region) {
                 TenantAndApplicationId owner = TenantAndApplicationId.from(target.deployment().applicationId());
                 if (!owner.equals(application)) {
                     throw new IllegalArgumentException(id + " has target owned by " + owner +
@@ -82,7 +81,6 @@ public class Endpoint {
         }
         this.id = id;
         this.cluster = cluster;
-        this.instance = instanceName;
         this.url = url;
         this.targets = List.copyOf(targets);
         this.scope = scope;
@@ -124,11 +122,6 @@ public class Endpoint {
     /** Returns the cluster ID to which this routes traffic */
     public ClusterSpec.Id cluster() {
         return cluster;
-    }
-
-    /** The specific instance this endpoint points to, if any */
-    public Optional<InstanceName> instance() {
-        return instance;
     }
 
     /** Returns the URL used to access this */
@@ -261,14 +254,14 @@ public class Endpoint {
                 case zone: return "z";
                 case weighted: return "w";
                 case global: return "g";
-                case application: return "r";
+                case region: return "r";
             }
         }
         switch (scope) {
             case zone: return "";
             case weighted: return "w";
             case global: return "global";
-            case application: return "r";
+            case region: return "r";
         }
         throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system);
     }
@@ -360,7 +353,7 @@ public class Endpoint {
          *
          * Traffic is routed across instances according to weights specified in deployment.xml
          */
-        application,
+        region,
 
         /** Endpoint points to one or more zones. Traffic is routed to the zone closest to the client */
         global,
@@ -377,7 +370,7 @@ public class Endpoint {
 
         /** Returns whether this scope may span multiple deployments */
         public boolean multiDeployment() {
-            return this == application || this == global;
+            return this == region || this == global;
         }
 
     }
@@ -539,7 +532,7 @@ public class Endpoint {
             this.targets = deployments.entrySet().stream()
                                       .map(kv -> new Target(kv.getKey(), kv.getValue()))
                                       .collect(Collectors.toUnmodifiableList());
-            this.scope = Scope.application;
+            this.scope = Scope.region;
             return this;
         }
 
