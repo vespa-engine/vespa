@@ -45,9 +45,9 @@ public class RateLimitingSearcherTestCase {
         ManualClock clock = new ManualClock();
         MetricReceiver.MockReceiver metric = new MetricReceiver.MockReceiver();
 
-        Chain<Searcher> chain = new Chain<Searcher>("test", new RateLimitingSearcher(new RateLimitingConfig(rateLimitingConfig),
-                                                                              new ClusterInfoConfig(clusterInfoConfig),
-                                                                              metric, clock),
+        Chain<Searcher> chain = new Chain<>("test", new RateLimitingSearcher(new RateLimitingConfig(rateLimitingConfig),
+                                                                             new ClusterInfoConfig(clusterInfoConfig),
+                                                                             metric, clock),
                                                      new CostSettingSearcher());
         assertEquals("'rate' request are available initially", 2, tryRequests(chain, "id1"));
         assertTrue("However, don't reject if we dryRun", executeWasAllowed(chain, "id1", true));
