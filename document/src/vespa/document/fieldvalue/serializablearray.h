@@ -80,11 +80,9 @@ public:
 
     using CP = vespalib::CloneablePtr<SerializableArray>;
     using UP = std::unique_ptr<SerializableArray>;
-    using ByteBufferUP = std::unique_ptr<ByteBuffer>;
     using CompressionConfig = vespalib::compression::CompressionConfig;
-    using CompressionInfo = vespalib::compression::CompressionInfo;
 
-    SerializableArray() = default;
+    SerializableArray();
     SerializableArray(const SerializableArray&);
     SerializableArray& operator=(const SerializableArray&);
     SerializableArray(SerializableArray &&) noexcept;
@@ -129,57 +127,22 @@ public:
     /** Deletes all stored attributes. */
     void clear();
 
-    CompressionConfig::Type getCompression() const {
-        return _unlikely ? _unlikely->_serializedCompression : CompressionConfig::NONE;
-    }
-    CompressionInfo getCompressionInfo() const;
-
     bool empty() const { return _entries.empty(); }
 
     const ByteBuffer* getSerializedBuffer() const {
-        return CompressionConfig::isCompressed(getCompression())
-            ? &_unlikely->_compSerData
-            : &_uncompSerData;
+        return &_uncompSerData;
     }
 
     const EntryMap & getEntries() const { return _entries; }
 private:
-    bool shouldDecompress() const {
-        return _unlikely && (_unlikely->_compSerData.getRemaining() != 0) && (_uncompSerData.getBuffer() == 0);
-    }
-    bool maybeDecompressAndCatch() const {
-        if ( shouldDecompress() ) {
-            return deCompressAndCatch();
-        }
-        return false;
-    }
-
-    bool deCompressAndCatch() const;
-    void maybeDecompress() const {
-        if ( shouldDecompress() ) {
-            const_cast<SerializableArray *>(this)->deCompress();
-        }
-    }
-    void deCompress(); // throw (DeserializeException);
-
-    struct RarelyUsedBuffers {
-        /** The buffers we own. */
-        RarelyUsedBuffers();
-        RarelyUsedBuffers(const RarelyUsedBuffers &);
-        ~RarelyUsedBuffers();
-        std::unique_ptr<serializablearray::BufferMap> _owned;
-        ByteBuffer               _compSerData;
-        CompressionConfig::Type  _serializedCompression;
-        uint32_t                 _uncompressedLength;
-    };
     /** Contains the stored attributes, with reference to the real data.. */
     EntryMap                  _entries;
     /** Data we deserialized from, if applicable. */
     ByteBuffer                _uncompSerData;
-    std::unique_ptr<RarelyUsedBuffers> _unlikely;
+    std::unique_ptr<serializablearray::BufferMap> _owned;
 
 
-    VESPA_DLL_LOCAL void invalidate();
+    static ByteBuffer deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength, ByteBuffer compressed); // throw (DeserializeException);
     VESPA_DLL_LOCAL EntryMap::const_iterator find(int id) const;
     VESPA_DLL_LOCAL EntryMap::iterator find(int id);
 };

@@ -496,7 +496,7 @@ TEST("requireThatCompressedStructFieldValueCanBeSerialized") {
     checkStructSerialization(value, CompressionConfig::LZ4);
 }
 
-TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
+TEST("requireThatReserializationIsUnompressedIfUnmodified") {
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
     const_cast<StructDataType *>(static_cast<const StructDataType *>(value.getDataType()))
@@ -514,7 +514,7 @@ TEST("requireThatReserializationPreservesCompressionIfUnmodified") {
     deserializer.read(value2);
     TEST_DO(checkStructSerialization(value, CompressionConfig::LZ4));
     // Lazy serialization of structs....
-    TEST_DO(checkStructSerialization(value2, CompressionConfig::LZ4));
+    TEST_DO(checkStructSerialization(value2, CompressionConfig::NONE));
     EXPECT_EQUAL(value, value2);
 }
 
