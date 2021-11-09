@@ -132,6 +132,14 @@ void MultiThreadedStripeAccessGuard::clear_read_only_bucket_repo_databases() {
     });
 }
 
+void MultiThreadedStripeAccessGuard::update_node_supported_features_repo(
+        std::shared_ptr<const NodeSupportedFeaturesRepo> features_repo)
+{
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.update_node_supported_features_repo(features_repo);
+    });
+}
+
 void MultiThreadedStripeAccessGuard::report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
     for_each_stripe([&](TickableStripe& stripe) {
         stripe.report_bucket_db_status(bucket_space, out);

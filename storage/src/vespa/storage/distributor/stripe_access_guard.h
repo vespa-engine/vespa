@@ -20,6 +20,8 @@ namespace vespalib::xml { class XmlOutputStream; }
 
 namespace storage::distributor {
 
+class NodeSupportedFeaturesRepo;
+
 /**
  * A stripe access guard guarantees that the holder of a guard can access underlying
  * stripes via it in a thread safe manner. In particular, while any access guard is
@@ -56,6 +58,8 @@ public:
     virtual void update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) = 0;
     virtual void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) = 0;
     virtual void clear_read_only_bucket_repo_databases() = 0;
+
+    virtual void update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo> features_repo) = 0;
 
     struct PendingOperationStats {
         size_t external_load_operations;

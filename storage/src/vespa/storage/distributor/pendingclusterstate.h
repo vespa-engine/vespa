@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "node_supported_features.h"
 #include "pending_bucket_space_db_transition_entry.h"
 #include "clusterinformation.h"
 #include <vespa/storage/common/storagelink.h>
@@ -9,6 +10,7 @@
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/util/xmlserializable.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include "outdated_nodes_map.h"
 #include <unordered_map>
 #include <deque>
@@ -151,9 +153,14 @@ public:
     // Get pending transition for a specific bucket space. Only used by unit test.
     PendingBucketSpaceDbTransition &getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace);
 
+    // May be a subset of the nodes in the cluster, depending on how many nodes were consulted
+    // as part of the pending cluster state. Caller must take care to aggregate features.
+    const vespalib::hash_map<uint16_t, NodeSupportedFeatures>& gathered_node_supported_features() const noexcept {
+        return _node_features;
+    }
+
     void printXml(vespalib::XmlOutputStream&) const override;
     Summary getSummary() const;
-    std::string requestNodesToString() const;
 
 private:
     // With 100ms resend timeout, this requires a particular node to have failed
@@ -170,7 +177,7 @@ private:
             DistributorMessageSender& sender,
             const BucketSpaceStateMap& bucket_space_states,
             const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-            const OutdatedNodesMap &outdatedNodesMap,
+            const OutdatedNodesMap& outdatedNodesMap,
             api::Timestamp creationTimestamp);
 
     /**
@@ -213,6 +220,7 @@ private:
     std::string getNewClusterStateBundleString() const;
     std::string getPrevClusterStateBundleString() const;
     void update_reply_failure_statistics(const api::ReturnCode& result, const BucketSpaceAndNode& source);
+    void update_node_supported_features_from_reply(uint16_t node, const api::RequestBucketInfoReply& reply);
 
     std::shared_ptr<api::SetSystemStateCommand> _cmd;
 
@@ -233,6 +241,7 @@ private:
     bool _isVersionedTransition;
     bool _bucketOwnershipTransfer;
     std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash> _pendingTransitions;
+    vespalib::hash_map<uint16_t, NodeSupportedFeatures> _node_features;
 };
 
 }

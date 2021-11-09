@@ -15,6 +15,8 @@ namespace vespalib::xml { class XmlOutputStream; }
 
 namespace storage::distributor {
 
+class NodeSupportedFeaturesRepo;
+
 /**
  * A tickable stripe is the minimal binding glue between the stripe's worker thread and
  * the actual implementation. Primarily allows for easier testing without having to
@@ -58,6 +60,8 @@ public:
     virtual void update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) = 0;
     virtual void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) = 0;
     virtual void clear_read_only_bucket_repo_databases() = 0;
+    virtual void update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo> features_repo) = 0;
+
     // Functions used for state reporting
     virtual void report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const = 0;
     virtual StripeAccessGuard::PendingOperationStats pending_operation_stats() const = 0;

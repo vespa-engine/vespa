@@ -26,6 +26,7 @@ class DocumentSelectionParser;
 class ExternalOperationHandler;
 class IdealStateManager;
 class IdealStateMetricSet;
+class NodeSupportedFeatures;
 class Operation;
 class StripeBucketDBUpdater;
 
@@ -150,6 +151,7 @@ public:
     [[nodiscard]] const PendingMessageTracker& pending_message_tracker() const noexcept;
     [[nodiscard]] PendingMessageTracker& pending_message_tracker() noexcept;
     [[nodiscard]] std::chrono::steady_clock::duration db_memory_sample_interval() const noexcept;
+    void set_node_supported_features(uint16_t node, const NodeSupportedFeatures& features);
 
     const lib::Distribution& getDistribution() const;
 

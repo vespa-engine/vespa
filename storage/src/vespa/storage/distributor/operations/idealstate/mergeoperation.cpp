@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/node_supported_features_repo.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -137,9 +138,8 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
                            getBucketId(),
                            _limiter,
                            nodes);
-    for (uint32_t i=0; i<nodes.size(); ++i) {
-        _mnodes.push_back(api::MergeBucketCommand::Node(
-                nodes[i]._nodeIndex, nodes[i]._sourceOnly));
+    for (const auto& node : nodes) {
+        _mnodes.emplace_back(node._nodeIndex, node._sourceOnly);
     }
 
     if (_mnodes.size() > 1) {
@@ -148,11 +148,16 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
                 _mnodes,
                 _manager->operation_context().generate_unique_timestamp(),
                 clusterState.getVersion());
-
-        // Due to merge forwarding/chaining semantics, we must always send
-        // the merge command to the lowest indexed storage node involved in
-        // the merge in order to avoid deadlocks.
-        std::sort(_mnodes.begin(), _mnodes.end(), NodeIndexComparator());
+        const bool may_send_unordered = (_manager->operation_context().distributor_config().use_unordered_merge_chaining()
+                                         && all_involved_nodes_support_unordered_merge_chaining());
+        if (!may_send_unordered) {
+            // Due to merge forwarding/chaining semantics, we must always send
+            // the merge command to the lowest indexed storage node involved in
+            // the merge in order to avoid deadlocks.
+            std::sort(_mnodes.begin(), _mnodes.end(), NodeIndexComparator());
+        } else {
+            msg->set_use_unordered_forwarding(true);
+        }
 
         LOG(debug, "Sending %s to storage node %u", msg->toString().c_str(),
             _mnodes[0].index);
@@ -262,7 +267,7 @@ void
 MergeOperation::onReceive(DistributorStripeMessageSender& sender,
                           const std::shared_ptr<api::StorageReply> & msg)
 {
-    if (_removeOperation.get()) {
+    if (_removeOperation) {
         if (_removeOperation->onReceiveInternal(msg)) {
             _ok = _removeOperation->ok();
             if (!_ok) {
@@ -277,7 +282,7 @@ MergeOperation::onReceive(DistributorStripeMessageSender& sender,
         return;
     }
 
-    api::MergeBucketReply& reply(dynamic_cast<api::MergeBucketReply&>(*msg));
+    auto& reply = dynamic_cast<api::MergeBucketReply&>(*msg);
     LOG(debug,
         "Merge operation for bucket %s finished",
         getBucketId().toString().c_str());
@@ -365,6 +370,16 @@ bool MergeOperation::isBlocked(const DistributorStripeOperationContext& ctx,
 
 bool MergeOperation::is_global_bucket_merge() const noexcept {
     return getBucket().getBucketSpace() == document::FixedBucketSpaces::global_space();
+}
+
+bool MergeOperation::all_involved_nodes_support_unordered_merge_chaining() const noexcept {
+    const auto& features_repo = _manager->operation_context().node_supported_features_repo();
+    for (uint16_t node : getNodes()) {
+        if (!features_repo.node_supported_features(node).unordered_merge_chaining) {
+            return false;
+        }
+    }
+    return true;
 }
 
 MergeBucketMetricSet*

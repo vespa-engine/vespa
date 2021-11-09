@@ -17,7 +17,7 @@ class DistributorBucketSpaceRepo;
  */
 class DistributorOperationContext {
 public:
-    virtual ~DistributorOperationContext() {}
+    virtual ~DistributorOperationContext() = default;
     virtual api::Timestamp generate_unique_timestamp() = 0;
     virtual const BucketSpaceStateMap& bucket_space_states() const noexcept = 0;
     virtual BucketSpaceStateMap& bucket_space_states() noexcept = 0;

@@ -38,6 +38,7 @@ message MergeBucketRequest {
     uint64             max_timestamp         = 3;
     repeated MergeNode nodes                 = 4;
     repeated uint32    node_chain            = 5;
+    bool               unordered_forwarding  = 6;
 }
 
 message MergeBucketResponse {
@@ -108,8 +109,14 @@ message BucketAndBucketInfo {
     BucketInfo bucket_info = 2;
 }
 
+message SupportedNodeFeatures {
+    bool unordered_merge_chaining = 1;
+}
+
 message RequestBucketInfoResponse {
     repeated BucketAndBucketInfo bucket_infos = 1;
+    // Only present for full bucket info fetches (not for explicit buckets)
+    SupportedNodeFeatures supported_node_features = 2;
 }
 
 message NotifyBucketChangeRequest {

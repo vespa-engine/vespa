@@ -766,6 +766,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::MergeBucketCommand&
         set_merge_nodes(*req.mutable_nodes(), msg.getNodes());
         req.set_max_timestamp(msg.getMaxTimestamp());
         req.set_cluster_state_version(msg.getClusterStateVersion());
+        req.set_unordered_forwarding(msg.use_unordered_forwarding());
         for (uint16_t chain_node : msg.getChain()) {
             req.add_node_chain(chain_node);
         }
@@ -787,6 +788,7 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeMergeBucketCommand(BBuf&
             chain.emplace_back(node);
         }
         cmd->setChain(std::move(chain));
+        cmd->set_use_unordered_forwarding(req.unordered_forwarding());
         return cmd;
     });
 }
@@ -999,6 +1001,10 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RequestBucketInfoRe
             bucket_and_info->set_raw_bucket_id(entry._bucketId.getRawId());
             set_bucket_info(*bucket_and_info->mutable_bucket_info(), entry._info);
         }
+        // We mark features as available at protocol level. Only included for full bucket fetch responses.
+        if (msg.full_bucket_fetch()) {
+            res.mutable_supported_node_features()->set_unordered_merge_chaining(true);
+        }
     });
 }
 
@@ -1034,6 +1040,11 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeRequestBucketInfoReply(con
             const auto& proto_entry = res.bucket_infos(i);
             dest_entries[i]._bucketId = document::BucketId(proto_entry.raw_bucket_id());
             dest_entries[i]._info     = get_bucket_info(proto_entry.bucket_info());
+        }
+        if (res.has_supported_node_features()) {
+            const auto& src_features  = res.supported_node_features();
+            auto&       dest_features = reply->supported_node_features();
+            dest_features.unordered_merge_chaining = src_features.unordered_merge_chaining();
         }
         return reply;
     });

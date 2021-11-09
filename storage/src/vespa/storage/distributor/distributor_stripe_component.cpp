@@ -277,6 +277,12 @@ DistributorStripeComponent::storage_node_is_up(document::BucketSpace bucket_spac
     return ns.getState().oneOf(storage_node_up_states());
 }
 
+const NodeSupportedFeaturesRepo&
+DistributorStripeComponent::node_supported_features_repo() const noexcept
+{
+    return _distributor.node_supported_features_repo();
+}
+
 std::unique_ptr<document::select::Node>
 DistributorStripeComponent::parse_selection(const vespalib::string& selection) const
 {

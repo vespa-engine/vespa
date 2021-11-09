@@ -267,6 +267,12 @@ public:
     [[nodiscard]] bool implicitly_clear_priority_on_schedule() const noexcept {
         return _implicitly_clear_priority_on_schedule;
     }
+    void set_use_unordered_merge_chaining(bool unordered) noexcept {
+        _use_unordered_merge_chaining = unordered;
+    }
+    [[nodiscard]] bool use_unordered_merge_chaining() const noexcept {
+        return _use_unordered_merge_chaining;
+    }
 
     uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
 
@@ -324,6 +330,7 @@ private:
     bool _prioritize_global_bucket_merges;
     bool _enable_revert;
     bool _implicitly_clear_priority_on_schedule;
+    bool _use_unordered_merge_chaining;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
 

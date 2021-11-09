@@ -70,7 +70,7 @@ public:
      */
     void update_bucket_database(const document::Bucket& bucket,
                                 const BucketCopy& changed_node,
-                                uint32_t update_flags = 0) override {
+                                uint32_t update_flags) override {
         update_bucket_database(bucket,
                                toVector<BucketCopy>(changed_node),
                                update_flags);
@@ -79,9 +79,9 @@ public:
     /**
      * Adds the given copies to the bucket database.
      */
-    virtual void update_bucket_database(const document::Bucket& bucket,
-                                        const std::vector<BucketCopy>& changed_nodes,
-                                        uint32_t update_flags = 0) override;
+    void update_bucket_database(const document::Bucket& bucket,
+                                const std::vector<BucketCopy>& changed_nodes,
+                                uint32_t update_flags) override;
 
     /**
      * Removes a copy from the given bucket from the bucket database.
@@ -164,6 +164,8 @@ public:
     const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const override {
         return getDistributor().getBucketIdHasher();
     }
+
+    const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept override;
 
     // Implements DocumentSelectionParser
     std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;
