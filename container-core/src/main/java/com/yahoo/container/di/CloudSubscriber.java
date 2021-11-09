@@ -51,7 +51,14 @@ public class CloudSubscriber  implements Subscriber {
     @Override
     public Map<ConfigKey<ConfigInstance>, ConfigInstance> config() {
         Map<ConfigKey<ConfigInstance>, ConfigInstance> ret = new HashMap<>();
-        handles.forEach((k, v) -> ret.put(k, v.getConfig()));
+        handles.forEach((k, v) -> {
+            ConfigInstance config = v.getConfig();
+            if (config == null) {
+                throw new IllegalArgumentException("Got a null config from the config system for key: " + k +
+                        "\nConfig handle: " + v);
+            }
+            ret.put(k, config);
+        });
         return ret;
     }
 
