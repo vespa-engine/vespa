@@ -15,11 +15,13 @@ public class SystemInfoTest {
 
     @Test
     public void testSystemInfo() {
+        ApplicationId application = new ApplicationId("tenant1", "application1", "instance1");
         Zone zone = new Zone(Environment.dev, "us-west-1");
         Cluster cluster = new Cluster(1, List.of());
         Node node = new Node(0);
 
-        SystemInfo info = new SystemInfo(zone, cluster, node);
+        SystemInfo info = new SystemInfo(application, zone, cluster, node);
+        assertEquals(application, info.application());
         assertEquals(zone, info.zone());
         assertEquals(cluster, info.cluster());
         assertEquals(node, info.node());

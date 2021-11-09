@@ -11,18 +11,26 @@ import java.util.Objects;
  */
 public class SystemInfo {
 
+    private final ApplicationId application;
     private final Zone zone;
     private final Cluster cluster;
     private final Node node;
 
-    public SystemInfo(Zone zone, Cluster cluster, Node node) {
-        Objects.requireNonNull(zone, "Zone cannot be null!");
-        Objects.requireNonNull(cluster, "Cluster cannot be null!");
-        Objects.requireNonNull(node, "Node cannot be null!");
-        this.zone = zone;
-        this.cluster = cluster;
-        this.node = node;
+    public SystemInfo(ApplicationId application, Zone zone, Cluster cluster, Node node) {
+        this.application = Objects.requireNonNull(application, "Application cannot be null");
+        this.zone = Objects.requireNonNull(zone, "Zone cannot be null");
+        this.cluster = Objects.requireNonNull(cluster, "Cluster cannot be null");
+        this.node = Objects.requireNonNull(node, "Node cannot be null");
     }
+
+    /** @deprecated pass an application id */
+    @Deprecated // Remove on Vespa 8
+    public SystemInfo(Zone zone, Cluster cluster, Node node) {
+        this(new ApplicationId("default", "default", "default"), zone, cluster, node);
+    }
+
+    /** Returns the application this is running as a part of */
+    public ApplicationId application() { return application; }
 
     /** Returns the zone this is running in */
     public Zone zone() { return zone; }

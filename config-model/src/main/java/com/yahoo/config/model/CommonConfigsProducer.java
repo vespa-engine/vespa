@@ -21,7 +21,6 @@ import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
  * This interface describes the configs that are produced by the model producer root.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public interface CommonConfigsProducer extends DocumentmanagerConfig.Producer,
                                                DocumenttypesConfig.Producer,
