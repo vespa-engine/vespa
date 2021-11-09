@@ -5,6 +5,7 @@ import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchdefinition.processing.ImportedFieldsResolver;
 import com.yahoo.searchdefinition.processing.OnnxModelTypeResolver;
+import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
@@ -243,6 +244,16 @@ public class SchemaTestCase {
         assertNotNull(child2.getUniqueNamedSummaryFields().get("c2f1"));
         assertNotNull(child2.temporaryImportedFields().get().fields().get("parent_imported"));
         assertNotNull(child2.temporaryImportedFields().get().fields().get("child2_imported"));
+        DocumentSummary child2DefaultSummary = child2.getSummary("default");
+        assertEquals(6, child2DefaultSummary.getSummaryFields().size());
+        assertTrue(child2DefaultSummary.getSummaryFields().containsKey("child2_field"));
+        assertTrue(child2DefaultSummary.getSummaryFields().containsKey("parent_field"));
+        assertTrue(child2DefaultSummary.getSummaryFields().containsKey("pf1"));
+        assertTrue(child2DefaultSummary.getSummaryFields().containsKey("c2f1"));
+        DocumentSummary child2AttributeprefetchSummary = child2.getSummary("attributeprefetch");
+        assertEquals(4, child2AttributeprefetchSummary.getSummaryFields().size());
+        assertTrue(child2AttributeprefetchSummary.getSummaryFields().containsKey("child2_field"));
+        assertTrue(child2AttributeprefetchSummary.getSummaryFields().containsKey("parent_field"));
     }
 
     @Test

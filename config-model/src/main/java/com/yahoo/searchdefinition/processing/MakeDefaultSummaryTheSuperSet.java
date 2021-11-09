@@ -35,7 +35,7 @@ public class MakeDefaultSummaryTheSuperSet extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        DocumentSummary defaultSummary= schema.getSummary("default");
+        DocumentSummary defaultSummary= schema.getSummariesInThis().get("default");
         for (SummaryField summaryField : schema.getUniqueNamedSummaryFields().values() ) {
             if (defaultSummary.getSummaryField(summaryField.getName()) != null) continue;
             if (summaryField.getTransform() == SummaryTransform.ATTRIBUTE) continue;

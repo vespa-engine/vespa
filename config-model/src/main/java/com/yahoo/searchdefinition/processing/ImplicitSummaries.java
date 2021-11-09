@@ -64,7 +64,7 @@ public class ImplicitSummaries extends Processor {
         }
         if (fieldSummaryField != null) {
             for (String dest : fieldSummaryField.getDestinations()) {
-                DocumentSummary summary = schema.getSummary(dest);
+                DocumentSummary summary = schema.getSummariesInThis().get(dest);
                 if (summary != null) {
                     summary.add(fieldSummaryField);
                 }
@@ -209,7 +209,7 @@ public class ImplicitSummaries extends Processor {
     }
 
     private void addToDestination(String destinationName, SummaryField summaryField, Schema schema) {
-        DocumentSummary destination = schema.getSummary(destinationName);
+        DocumentSummary destination = schema.getSummariesInThis().get(destinationName);
         if (destination == null) {
             destination = new DocumentSummary(destinationName, schema);
             schema.addSummary(destination);

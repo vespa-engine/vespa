@@ -51,7 +51,7 @@ public class ReferenceFieldsProcessor extends Processor {
     }
 
     private void removeFromAttributePrefetchSummaryClass(SDField field) {
-        DocumentSummary summary = schema.getSummary("attributeprefetch");
+        DocumentSummary summary = schema.getSummariesInThis().get("attributeprefetch");
         if (summary != null) {
             summary.remove(field.getName());
         }

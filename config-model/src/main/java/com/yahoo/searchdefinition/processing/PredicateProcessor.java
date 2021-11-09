@@ -68,7 +68,7 @@ public class PredicateProcessor extends Processor {
                         attribute.setDensePostingListThreshold(threshold);
                         addPredicateOptimizationIlScript(field, booleanDefinition);
                     }
-                    DocumentSummary summary = schema.getSummary("attributeprefetch");
+                    DocumentSummary summary = schema.getSummariesInThis().get("attributeprefetch");
                     if (summary != null) {
                         summary.remove(attribute.getName());
                     }
