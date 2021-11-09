@@ -136,7 +136,7 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse filedistributionStatus(ApplicationId applicationId, HttpRequest request) {
-        return applicationRepository.filedistributionStatus(applicationId, getTimeoutFromRequest(request));
+        return applicationRepository.fileDistributionStatus(applicationId, getTimeoutFromRequest(request));
     }
 
     private HttpResponse logs(ApplicationId applicationId, HttpRequest request) {

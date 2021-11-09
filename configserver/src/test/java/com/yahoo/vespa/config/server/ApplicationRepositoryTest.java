@@ -269,23 +269,23 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void deleteUnusedFileReferences() throws IOException {
+    public void deleteUnusedFileReferences() throws IOException, InterruptedException {
         File fileReferencesDir = temporaryFolder.newFolder();
-        Duration keepFileReferences = Duration.ofHours(48);
+        Duration keepFileReferencesDuration = Duration.ofSeconds(4);
 
-        // Add file reference that is not in use and should be deleted (older than 'keepFileReferences')
+        // Add file reference that is not in use and should be deleted (older than 'keepFileReferencesDuration')
+        File filereferenceDirOldest = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"));
+        //Thread.sleep(Duration.ofSeconds(1).toMillis());
 
-        Instant now = Instant.now();
-        File filereferenceDirOldest = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"),
-                                                                now.minus(keepFileReferences.plus(Duration.ofHours(2))));
+        // Add file references that are not in use and could be deleted
+        IntStream.range(0, 3).forEach(i -> {
+            createFilereferenceOnDisk(new File(fileReferencesDir, "bar" + i));
+            try { Thread.sleep(Duration.ofSeconds(1).toMillis()); } catch (InterruptedException e) { /* ignore */ }
+        });
+        Thread.sleep(keepFileReferencesDuration.toMillis());
 
-        // Add file references that are not in use and some of them should be deleted (all are older than 'keepFileReferences')
-        IntStream.range(0, 6)
-                 .forEach(i -> createFilereferenceOnDisk(new File(fileReferencesDir, "bar" + i),
-                                                         now.minus(keepFileReferences.plus(Duration.ofHours(1).minus(Duration.ofMinutes(i))))));
-
-        // Add file reference that is not in use, but should not be deleted (newer than 'keepFileReferences')
-        File filereferenceDirNewest = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), now);
+        // Add file reference that is not in use, but should not be deleted (newer than 'keepFileReferencesDuration')
+        File filereferenceDirNewest = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"));
 
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
@@ -298,22 +298,21 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        List<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir,
-                                                                                                keepFileReferences,
-                                                                                                5);
+        List<String> toBeDeleted = applicationRepository.deleteUnusedFileDistributionReferences(fileReferencesDir,
+                                                                                                keepFileReferencesDuration,
+                                                                                                2);
         Collections.sort(toBeDeleted);
         assertEquals(List.of("bar0", "foo"), toBeDeleted);
-        // bar0 and foo are the only ones that will be deleted (keeps 5 newest no matter how old they are)
+        // bar0 and foo are the only ones that will be deleted (keeps 2 newest no matter how old they are)
         assertFalse(filereferenceDirOldest.exists());
         assertFalse(new File(fileReferencesDir, "bar0").exists());
         assertTrue(filereferenceDirNewest.exists());
     }
 
-    private File createFilereferenceOnDisk(File filereferenceDir, Instant lastModifiedTime) {
+    private File createFilereferenceOnDisk(File filereferenceDir) {
         assertTrue(filereferenceDir.mkdir());
         File bar = new File(filereferenceDir, "file");
         IOUtils.writeFile(bar, Utf8.toBytes("test"));
-        assertTrue(filereferenceDir.setLastModified(lastModifiedTime.toEpochMilli()));
         return filereferenceDir;
     }
 
