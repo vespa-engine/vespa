@@ -153,7 +153,7 @@ ensureLidSpace(SerialNum serialNum, DocumentIdT lid, AttributeVector &attr)
 
 void
 applyPutToAttribute(SerialNum serialNum, const FieldValue::UP &fieldValue, DocumentIdT lid,
-                    AttributeVector &attr, AttributeWriter::OnWriteDoneType)
+                    AttributeVector &attr)
 {
     ensureLidSpace(serialNum, lid, attr);
     if (fieldValue.get()) {
@@ -208,7 +208,7 @@ complete_put_to_attribute(SerialNum serial_num,
 
 void
 applyRemoveToAttribute(SerialNum serialNum, DocumentIdT lid,
-                       AttributeVector &attr, AttributeWriter::OnWriteDoneType)
+                       AttributeVector &attr)
 {
     ensureLidSpace(serialNum, lid, attr);
     attr.clearDoc(lid);
@@ -241,7 +241,7 @@ applyHeartBeat(SerialNum serialNum, AttributeVector &attr)
 }
 
 void
-applyCommit(CommitParam param, AttributeWriter::OnWriteDoneType , AttributeVector &attr)
+applyCommit(CommitParam param, AttributeVector &attr)
 {
     SerialNum serialNum = param.lastSerialNum();
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
@@ -368,7 +368,7 @@ PutTask::run()
             AttributeVector &attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
                 auto fv = field_extractor.getFieldValue(field.getFieldPath());
-                applyPutToAttribute(_serialNum, fv, _lid, attr, _onWriteDone);
+                applyPutToAttribute(_serialNum, fv, _lid, attr);
             }
         }
     }
@@ -516,7 +516,7 @@ RemoveTask::run()
         AttributeVector &attr = field.getAttribute();
         // Must use <= due to how move operations are handled
         if (attr.getStatus().getLastSyncToken() <= _serialNum) {
-            applyRemoveToAttribute(_serialNum, _lid, attr, _onWriteDone);
+            applyRemoveToAttribute(_serialNum, _lid, attr);
         }
     }
 }
@@ -544,7 +544,7 @@ public:
             auto &attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
                 for (auto lidToRemove : _lidsToRemove) {
-                    applyRemoveToAttribute(_serialNum, lidToRemove, attr, _onWriteDone);
+                    applyRemoveToAttribute(_serialNum, lidToRemove, attr);
                 }
                 attr.commit(false);
             }
@@ -581,7 +581,7 @@ CommitTask::run()
     const auto &fields = _wc.getFields();
     for (auto &field : fields) {
         AttributeVector &attr = field.getAttribute();
-        applyCommit(_param, _onWriteDone, attr);
+        applyCommit(_param, attr);
     }
 }
 
