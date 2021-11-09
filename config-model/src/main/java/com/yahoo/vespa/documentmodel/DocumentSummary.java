@@ -88,7 +88,7 @@ public class DocumentSummary extends FieldView {
                 String sourceName = j.next().getName();
                 if (sourceName.equals(summaryField.getName())) continue;
                 SummaryField sourceField=getSummaryField(sourceName);
-                if (sourceField==null) continue;
+                if (sourceField == null) continue;
                 if (!sourceField.isImplicit()) continue;
                 falseImplicits.add(sourceField);
             }

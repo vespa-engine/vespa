@@ -29,17 +29,16 @@ public class ImplicitSummaries extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        DocumentSummary defaultSummary = schema.getSummary("default");
+        DocumentSummary defaultSummary = schema.getSummariesInThis().get("default");
         if (defaultSummary == null) {
             defaultSummary = new DocumentSummary("default", schema);
-            defaultSummary.setFromDisk(true);
+            defaultSummary.setFromDisk(true); // As we add documentid to this
             schema.addSummary(defaultSummary);
         }
 
         for (SDField field : schema.allConcreteFields()) {
             collectSummaries(field, schema, validate);
         }
-
         for (DocumentSummary documentSummary : schema.getSummaries().values()) {
             documentSummary.purgeImplicits();
         }
@@ -50,7 +49,7 @@ public class ImplicitSummaries extends Processor {
     }
 
     private void collectSummaries(SDField field , Schema schema, boolean validate) {
-        SummaryField addedSummaryField=null;
+        SummaryField addedSummaryField = null;
 
         // Implicit
         String fieldName = field.getName();
@@ -65,7 +64,7 @@ public class ImplicitSummaries extends Processor {
         }
         if (fieldSummaryField != null) {
             for (String dest : fieldSummaryField.getDestinations()) {
-                DocumentSummary summary = schema.getSummary(dest);
+                DocumentSummary summary = schema.getSummariesInThis().get(dest);
                 if (summary != null) {
                     summary.add(fieldSummaryField);
                 }
@@ -114,7 +113,7 @@ public class ImplicitSummaries extends Processor {
     }
 
     private DocumentSummary getOrCreateAttributePrefetchSummary(Schema schema) {
-        DocumentSummary summary = schema.getSummary("attributeprefetch");
+        DocumentSummary summary = schema.getSummariesInThis().get("attributeprefetch");
         if (summary == null) {
             summary = new DocumentSummary("attributeprefetch", schema);
             schema.addSummary(summary);
@@ -165,13 +164,13 @@ public class ImplicitSummaries extends Processor {
             throw newProcessException(schema, summaryField, "Source field '" + fieldName + "' does not exist.");
         }
         if (! sourceField.doesSummarying() &&
-            ! summaryField.getTransform().equals(SummaryTransform.ATTRIBUTE) &&
-            ! summaryField.getTransform().equals(SummaryTransform.GEOPOS))
+            summaryField.getTransform() != SummaryTransform.ATTRIBUTE &&
+            summaryField.getTransform() != SummaryTransform.GEOPOS)
         {
             // Summary transform attribute may indicate that the ilscript was rewritten to remove summary
             // by another search that uses this same field in inheritance.
             deployLogger.logApplicationPackage(Level.WARNING, "Ignoring " + summaryField + ": " + sourceField +
-                                           " is not creating a summary value in its indexing statement");
+                                                              " is not creating a summary value in its indexing statement");
             return false;
         }
 
@@ -210,7 +209,7 @@ public class ImplicitSummaries extends Processor {
     }
 
     private void addToDestination(String destinationName, SummaryField summaryField, Schema schema) {
-        DocumentSummary destination = schema.getSummary(destinationName);
+        DocumentSummary destination = schema.getSummariesInThis().get(destinationName);
         if (destination == null) {
             destination = new DocumentSummary(destinationName, schema);
             schema.addSummary(destination);

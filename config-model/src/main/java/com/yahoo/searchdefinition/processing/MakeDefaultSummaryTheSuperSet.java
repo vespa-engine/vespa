@@ -10,20 +10,20 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
- * <p>All summary fields which are not attributes
+ * All summary fields which are not attributes
  * must currently be present in the default summary class,
  * since the default summary class also defines the docsum.dat format.
  * This processor adds any missing summaries to the default summary.
  * When that is decoupled from the actual summaries returned, this
  * processor can be removed. Note: the StreamingSummary also takes advantage of
- * the fact that default is the superset.</p>
+ * the fact that default is the superset.
  *
- * <p>All other summary logic should work unchanged without this processing step
+ * All other summary logic should work unchanged without this processing step
  * except that IndexStructureValidator.validateSummaryFields must be changed to
  * consider all summaries, not just the default, i.e change to
- * if (search.getSummaryField(expr.getFieldName()) == null)</p>
+ * if (search.getSummaryField(expr.getFieldName()) == null)
  *
- * <p>This must be done after other summary processors.</p>
+ * This must be done after other summary processors.
  *
  * @author bratseth
  */
@@ -35,7 +35,7 @@ public class MakeDefaultSummaryTheSuperSet extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        DocumentSummary defaultSummary= schema.getSummary("default");
+        DocumentSummary defaultSummary= schema.getSummariesInThis().get("default");
         for (SummaryField summaryField : schema.getUniqueNamedSummaryFields().values() ) {
             if (defaultSummary.getSummaryField(summaryField.getName()) != null) continue;
             if (summaryField.getTransform() == SummaryTransform.ATTRIBUTE) continue;

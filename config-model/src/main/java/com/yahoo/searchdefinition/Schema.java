@@ -514,21 +514,14 @@ public class Schema implements ImmutableSchema {
         return Collections.unmodifiableList(allIndices);
     }
 
-    /**
-     * Adds an explicitly defined summary to this search definition
-     *
-     * @param summary The summary to add.
-     */
+    /** Adds an explicitly defined summary to this search definition */
     public void addSummary(DocumentSummary summary) {
         summaries.put(summary.getName(), summary);
     }
 
     /**
-     * <p>Returns a summary class defined by this search definition, or null if no summary with this name is defined.
-     * The default summary, named "default" is always present.</p>
-     *
-     * @param name the name of the summary to get.
-     * @return Summary found.
+     * Returns a summary class defined by this search definition, or null if no summary with this name is defined.
+     * The default summary, named "default" is always present.
      */
     public DocumentSummary getSummary(String name) {
         var summary = summaries.get(name);
@@ -540,9 +533,6 @@ public class Schema implements ImmutableSchema {
     /**
      * Returns the first explicit instance found of a summary field with this name, or null if not present (implicitly
      * or explicitly) in any summary class.
-     *
-     * @param name The name of the summaryfield to get.
-     * @return SummaryField to return.
      */
     public SummaryField getSummaryField(String name) {
         for (DocumentSummary summary : summaries.values()) {

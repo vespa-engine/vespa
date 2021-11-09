@@ -43,7 +43,7 @@ public class SummaryConsistency extends Processor {
 
     private void assertConsistency(SummaryField summaryField, Schema schema, boolean validate) {
         // Compare to default:
-        SummaryField existingDefault = schema.getSummary("default").getSummaryField(summaryField.getName());
+        SummaryField existingDefault = schema.getSummariesInThis().get("default").getSummaryField(summaryField.getName());
         if (existingDefault != null) {
             if (validate)
                 assertConsistentTypes(existingDefault, summaryField);

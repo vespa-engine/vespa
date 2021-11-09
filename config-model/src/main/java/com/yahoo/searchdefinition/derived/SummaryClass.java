@@ -31,9 +31,9 @@ public class SummaryClass extends Derived {
     private final boolean omitSummaryFeatures;
 
     /** The summary fields of this indexed by name */
-    private Map<String,SummaryClassField> fields = new java.util.LinkedHashMap<>();
+    private final Map<String,SummaryClassField> fields = new java.util.LinkedHashMap<>();
 
-    private DeployLogger deployLogger;
+    private final DeployLogger deployLogger;
 
     private final Random random = new Random(7);
 
@@ -78,9 +78,9 @@ public class SummaryClass extends Derived {
     private void addField(String name, DataType type, SummaryTransform transform) {
         if (fields.containsKey(name)) {
             SummaryClassField sf = fields.get(name);
-            if (!SummaryClassField.convertDataType(type, transform, rawAsBase64).equals(sf.getType())) {
-                deployLogger.logApplicationPackage(Level.WARNING, "Conflicting definition of field " + name + ". " +
-                               "Declared as type " + sf.getType() + " and " + type);
+            if ( SummaryClassField.convertDataType(type, transform, rawAsBase64) != sf.getType()) {
+                deployLogger.logApplicationPackage(Level.WARNING, "Conflicting definition of field " + name +
+                                                                  ". " + "Declared as type " + sf.getType() + " and " + type);
             }
         } else {
             fields.put(name, new SummaryClassField(name, type, transform, rawAsBase64));
@@ -106,6 +106,7 @@ public class SummaryClass extends Derived {
 
     public int getFieldCount() { return fields.size(); }
 
+    @Override
     public int hashCode() {
         int number = 1;
         int hash = getName().hashCode();
@@ -143,6 +144,7 @@ public class SummaryClass extends Derived {
     @Override
     protected String getDerivedName() { return "summary"; }
 
+    @Override
     public String toString() {
         return "summary class " + getName();
     }
