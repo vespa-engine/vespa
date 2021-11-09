@@ -42,6 +42,11 @@ public class TensorTestCase {
     }
 
     @Test
+    public void testTmp() {
+        System.out.println(Tensor.from("tensor(x[3]):[1, 2, 3]").join(Tensor.from("tensor(y[3]):[4, 5, 6]"), (x,y) -> x*y).map(v -> v*3));
+    }
+
+    @Test
     public void testValueTypes() {
         assertEquals(Tensor.from("tensor<double>(x[1]):{{x:0}:5}").getClass(), IndexedDoubleTensor.class);
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<double>(x[1])")).cell(5.0, 0).build().getClass(),

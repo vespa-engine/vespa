@@ -145,7 +145,7 @@ public class OperationProcessor {
 
         if (retryThisOperation) {
             int waitTime = (int) (minTimeBetweenRetriesMs * (1 + random.nextDouble() / 3));
-            log.finest("Retrying due to " + detail.toString() + " attempt " + retries + " in " + waitTime + " ms.");
+            log.finest("Retrying due to " + detail + " attempt " + retries + " in " + waitTime + " ms.");
             timeoutExecutor.schedule(() -> postToCluster(clusters.get(clusterId), documentSendInfo.getDocument()),
                                      waitTime,
                                      TimeUnit.MILLISECONDS);

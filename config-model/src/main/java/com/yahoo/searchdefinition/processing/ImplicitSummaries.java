@@ -29,17 +29,16 @@ public class ImplicitSummaries extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        DocumentSummary defaultSummary = schema.getSummary("default");
+        DocumentSummary defaultSummary = schema.getSummariesInThis().get("default");
         if (defaultSummary == null) {
             defaultSummary = new DocumentSummary("default", schema);
-            defaultSummary.setFromDisk(true);
+            defaultSummary.setFromDisk(true); // TODO: Not necessarily
             schema.addSummary(defaultSummary);
         }
 
         for (SDField field : schema.allConcreteFields()) {
             collectSummaries(field, schema, validate);
         }
-
         for (DocumentSummary documentSummary : schema.getSummaries().values()) {
             documentSummary.purgeImplicits();
         }
@@ -50,7 +49,7 @@ public class ImplicitSummaries extends Processor {
     }
 
     private void collectSummaries(SDField field , Schema schema, boolean validate) {
-        SummaryField addedSummaryField=null;
+        SummaryField addedSummaryField = null;
 
         // Implicit
         String fieldName = field.getName();
@@ -114,7 +113,7 @@ public class ImplicitSummaries extends Processor {
     }
 
     private DocumentSummary getOrCreateAttributePrefetchSummary(Schema schema) {
-        DocumentSummary summary = schema.getSummary("attributeprefetch");
+        DocumentSummary summary = schema.getSummariesInThis().get("attributeprefetch");
         if (summary == null) {
             summary = new DocumentSummary("attributeprefetch", schema);
             schema.addSummary(summary);
