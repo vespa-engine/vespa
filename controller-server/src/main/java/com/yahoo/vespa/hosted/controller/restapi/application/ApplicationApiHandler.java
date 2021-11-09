@@ -1163,6 +1163,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             }));
         }
 
+        // Rotation ID
+        addRotationId(object, instance);
+
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = deploymentSpec.instance(instance.name())
                                                      .map(spec -> new DeploymentSteps(spec, controller::system))
@@ -1189,6 +1192,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                            request.getUri()).toString());
             }
         }
+    }
+
+    // TODO(mpolden): Remove once MultiRegionTest stops expecting this field
+    private void addRotationId(Cursor object, Instance instance) {
+        // Legacy field. Identifies the first assigned rotation, if any.
+        instance.rotations().stream()
+                .map(AssignedRotation::rotationId)
+                .findFirst()
+                .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
     }
 
     private void toSlime(Cursor object, Instance instance, DeploymentStatus status, HttpRequest request) {
@@ -1238,6 +1250,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
+
+        // Rotation ID
+        addRotationId(object, instance);
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments =

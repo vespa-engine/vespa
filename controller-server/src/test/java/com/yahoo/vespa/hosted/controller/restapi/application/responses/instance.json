@@ -49,6 +49,7 @@
       ]
     }
   ],
+  "rotationId": "rotation-id-1",
   "instances": [
     {
       "environment": "dev",

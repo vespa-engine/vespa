@@ -49,6 +49,7 @@
       ]
     }
   ],
+  "rotationId": "rotation-id-1",
   "instances": [
     @include(dev-us-east-1.json),
     @include(prod-us-central-1.json),
