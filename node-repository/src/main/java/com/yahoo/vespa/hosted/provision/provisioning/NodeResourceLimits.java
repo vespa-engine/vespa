@@ -73,7 +73,7 @@ public class NodeResourceLimits {
     private double minAdvertisedMemoryGb(ClusterSpec.Type clusterType) {
         if (zone().system() == SystemName.dev) return 1; // Allow small containers in dev system
         if (clusterType == ClusterSpec.Type.admin) return 1;
-        return 2;
+        return 4;
     }
 
     private double minAdvertisedDiskGb(NodeResources requested, boolean exclusive) {
