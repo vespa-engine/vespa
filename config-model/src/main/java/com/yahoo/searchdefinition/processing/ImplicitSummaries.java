@@ -32,7 +32,7 @@ public class ImplicitSummaries extends Processor {
         DocumentSummary defaultSummary = schema.getSummariesInThis().get("default");
         if (defaultSummary == null) {
             defaultSummary = new DocumentSummary("default", schema);
-            defaultSummary.setFromDisk(true); // TODO: Not necessarily
+            defaultSummary.setFromDisk(true); // As we add documentid to this
             schema.addSummary(defaultSummary);
         }
 
@@ -164,13 +164,13 @@ public class ImplicitSummaries extends Processor {
             throw newProcessException(schema, summaryField, "Source field '" + fieldName + "' does not exist.");
         }
         if (! sourceField.doesSummarying() &&
-            ! summaryField.getTransform().equals(SummaryTransform.ATTRIBUTE) &&
-            ! summaryField.getTransform().equals(SummaryTransform.GEOPOS))
+            summaryField.getTransform() != SummaryTransform.ATTRIBUTE &&
+            summaryField.getTransform() != SummaryTransform.GEOPOS)
         {
             // Summary transform attribute may indicate that the ilscript was rewritten to remove summary
             // by another search that uses this same field in inheritance.
             deployLogger.logApplicationPackage(Level.WARNING, "Ignoring " + summaryField + ": " + sourceField +
-                                           " is not creating a summary value in its indexing statement");
+                                                              " is not creating a summary value in its indexing statement");
             return false;
         }
 
