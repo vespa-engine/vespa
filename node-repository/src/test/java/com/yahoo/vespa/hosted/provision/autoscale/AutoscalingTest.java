@@ -470,9 +470,9 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 6, 1, hostResources.withVcpu(hostResources.vcpu() / 2));
         tester.clock().advance(Duration.ofDays(2));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.addMemMeasurements(0.01f, 0.95f, 120, application1);
+        tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
         tester.assertResources("Scaling down",
-                               7, 1, 2.5, 2.0, 79.2,
+                               6, 1, 2.9, 4.0, 95.0,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -500,7 +500,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
         tester.assertResources("Scaling down",
-                               8, 1, 1.0, 2.2, 67.9,
+                               6, 1, 1.4, 4.0, 95.0,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
