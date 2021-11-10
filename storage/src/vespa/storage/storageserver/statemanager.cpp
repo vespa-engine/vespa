@@ -577,21 +577,6 @@ StateManager::sendGetNodeStateReplies(framework::MilliSecTime olderThanTime, uin
     return true;
 }
 
-namespace {
-    std::string getHostInfoFilename(bool advanceCount) {
-        static uint32_t fileCounter = 0;
-        static pid_t pid = getpid();
-        if (advanceCount) {
-            ++fileCounter;
-        }
-        uint32_t fileIndex = fileCounter % 8;
-        std::ostringstream fileName;
-        fileName << vespa::Defaults::underVespaHome("tmp/hostinfo")
-                 << "." << pid << "." << fileIndex << ".report";
-        return fileName.str();
-    }
-}
-
 std::string
 StateManager::getNodeInfo() const
 {
@@ -631,15 +616,6 @@ StateManager::getNodeInfo() const
     stream << End();
     stream.finalize();
 
-    // Dump report to new report file.
-    std::string oldFile(getHostInfoFilename(false));
-    std::string newFile(getHostInfoFilename(true));
-    std::ofstream of(newFile.c_str());
-    of << json.str();
-    of.close();
-    // If dumping went ok, delete old report file
-    vespalib::unlink(oldFile);
-    // Return report
     return json.str();
 }
 
