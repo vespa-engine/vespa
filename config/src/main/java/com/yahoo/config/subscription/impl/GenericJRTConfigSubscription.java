@@ -49,6 +49,17 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
         }
     }
 
+    // Need to override this method, since we use RawConfig in this class,
+    @Override
+    protected void setNewConfigAndGeneration(JRTClientConfigRequest jrtReq) {
+        // Set generation first, as RawConfig contains generation and that
+        // will make configChanged in ConfigState always true otherwise
+        // (see equals usage in setConfigAndGeneration())
+        setGeneration(jrtReq.getNewGeneration());
+        RawConfig rawConfig = RawConfig.createFromResponseParameters(jrtReq);
+        setConfigAndGeneration(jrtReq.getNewGeneration(), jrtReq.responseIsApplyOnRestart(), rawConfig, jrtReq.getNewChecksums());
+    }
+
     // Override to propagate internal redeploy into the config value in addition to the config state
     @Override
     void setApplyOnRestart(boolean applyOnRestart) {
