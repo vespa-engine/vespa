@@ -61,7 +61,6 @@ DocumentInverter::~DocumentInverter()
 void
 DocumentInverter::invertDocument(uint32_t docId, const Document &doc)
 {
-    _context.set_data_type(doc);
     auto& invert_threads = _context.get_invert_threads();
     auto& invert_contexts = _context.get_invert_contexts();
     for (auto& invert_context : invert_contexts) {
