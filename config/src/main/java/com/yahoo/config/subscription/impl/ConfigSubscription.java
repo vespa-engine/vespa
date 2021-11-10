@@ -16,7 +16,9 @@ import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.DefContent;
 
 import java.io.File;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
@@ -203,6 +205,18 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.config.set(new ConfigState<>(true, generation, applyOnRestart, true, config, payloadChecksums));
     }
 
+    void setConfigAndGeneration(Long generation, boolean applyOnRestart, T config, PayloadChecksums payloadChecksums) {
+        ConfigState<T> prev = this.config.get();
+        boolean configChanged = !Objects.equals(prev.getConfig(), config);
+        String message = "Config has changed unexpectedly for " + key + ", generation " + generation;
+        if (configChanged) {
+            if (log.isLoggable(Level.FINE))
+                message = message + ", config in state :" + prev.getConfig() + ", new config: " + config;
+            log.log(Level.WARNING, message);
+        }
+        this.config.set(new ConfigState<>(true, generation, applyOnRestart, configChanged, config, payloadChecksums));
+    }
+
     /**
      * Used by {@link FileConfigSubscription} and {@link ConfigSetSubscription}
      */
@@ -213,7 +227,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
 
     protected void setConfigIfChanged(T config) {
         ConfigState<T> prev = this.config.get();
-        this.config.set(new ConfigState<>(true, prev.getGeneration(), prev.applyOnRestart(), !config.equals(prev.getConfig()), config, prev.payloadChecksums));
+        this.config.set(new ConfigState<>(true, prev.getGeneration(), prev.applyOnRestart(), !Objects.equals(prev.getConfig(), config), config, prev.payloadChecksums));
     }
 
     void setGeneration(Long generation) {
