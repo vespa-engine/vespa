@@ -211,7 +211,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         String message = "Config has changed unexpectedly for " + key + ", generation " + generation;
         if (configChanged) {
             if (log.isLoggable(Level.FINE))
-                message = message + ", config in state :" + prev.toString() + ", new config: " + config;
+                message = message + ", config in state :" + prev.getConfig() + ", new config: " + config;
             log.log(Level.WARNING, message);
         }
         this.config.set(new ConfigState<>(true, generation, applyOnRestart, configChanged, config, payloadChecksums));
