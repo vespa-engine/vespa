@@ -3,10 +3,12 @@ package com.yahoo.vespa.hosted.controller.routing;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
@@ -28,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -208,10 +211,14 @@ public class RoutingPolicies {
         // application-level endpoint. However, to allow this in the future the routing table remains
         // Map<RoutingId, List<RoutingPolicy>> instead of Map<RoutingId, RoutingPolicy>.
         Map<RoutingId, List<RoutingPolicy>> routingTable = applicationRoutingTable(routingPolicies);
+        if (routingTable.isEmpty()) return;
+
+        Application application = controller.applications().requireApplication(routingTable.keySet().iterator().next().application());
+        Map<DeploymentId, Map<EndpointId, Integer>> targetWeights = targetWeights(application);
         Map<String, Set<AliasTarget>> targetsByEndpoint = new LinkedHashMap<>();
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
-            EndpointList endpoints = controller.routing().readDeclaredEndpointsOf(routingId.application())
+            EndpointList endpoints = controller.routing().declaredEndpointsOf(application)
                                                .scope(Endpoint.Scope.application)
                                                .named(routingId.endpointId());
             if (endpoints.isEmpty()) continue;
@@ -224,7 +231,7 @@ public class RoutingPolicies {
                 for (var target : endpoint.targets()) {
                     if (!policy.appliesTo(target.deployment())) continue;
                     int weight = target.weight();
-                    if (isConfiguredOut(policy, inactiveZones)) {
+                    if (isConfiguredOut(policy, inactiveZones) && removableFromApplicationEndpoint(policy, application, targetWeights)) {
                         weight = 0;
                     }
                     WeightedAliasTarget weightedAliasTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
@@ -328,6 +335,42 @@ public class RoutingPolicies {
                                                                       Priority.normal));
             }
         }
+    }
+
+    /** Returns whether we disable given policy from its application endpoints, taking weights and status of other instances into account */
+    private boolean removableFromApplicationEndpoint(RoutingPolicy policy, Application application, Map<DeploymentId, Map<EndpointId, Integer>> targetWeights) {
+        List<RoutingPolicy> relatedPolicies = application.productionInstances().keySet().stream()
+                                                         .filter(instanceName -> !policy.id().owner().instance().equals(instanceName))
+                                                         .map(instanceName -> application.id().instance(instanceName))
+                                                         .flatMap(instance -> get(instance).values().stream())
+                                                         .filter(relatedPolicy -> relatedPolicy.id().zone().equals(policy.id().zone()) &&
+                                                                                  relatedPolicy.id().cluster().equals(policy.id().cluster()))
+                                                         .collect(Collectors.toUnmodifiableList());
+        for (var endpointId : policy.applicationEndpoints()) {
+            boolean anyIn = relatedPolicies.stream()
+                                           .anyMatch(rp -> rp.applicationEndpoints().contains(endpointId) &&
+                                                           rp.status().routingStatus().value() == RoutingStatus.Value.in &&
+                                                           targetWeights.get(rp.id().deployment())
+                                                                        .get(endpointId) > 0);
+            if (!anyIn) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Returns target weights of application endpoints in given application, grouped by deployment */
+    private Map<DeploymentId, Map<EndpointId, Integer>> targetWeights(Application application) {
+        Map<DeploymentId, Map<EndpointId, Integer>> weights = new HashMap<>();
+        for (var endpoint : application.deploymentSpec().endpoints()) {
+            for (var target : endpoint.targets()) {
+                weights.computeIfAbsent(new DeploymentId(application.id().instance(target.instance()),
+                                                         ZoneId.from(Environment.prod, target.region())),
+                                        (k) -> new HashMap<>())
+                       .put(EndpointId.of(endpoint.endpointId()), target.weight());
+            }
+        }
+        return weights;
     }
 
     private Set<RoutingId> instanceRoutingIds(LoadBalancerAllocation allocation) {

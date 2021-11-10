@@ -762,18 +762,6 @@ public class RoutingPoliciesTest {
                              Map.of(betaZone2, 1,
                                     mainZone2, 9));
 
-        // Changing routing status updates weight
-        tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
-        betaContext.flushDnsUpdates();
-        tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
-                             Map.of(betaZone2, 1,
-                                    mainZone2, 0));
-        tester.routingPolicies().setRoutingStatus(mainZone2, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
-        betaContext.flushDnsUpdates();
-        tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
-                             Map.of(betaZone2, 1,
-                                    mainZone2, 9));
-
         // An endpoint is removed
         applicationPackage = applicationPackageBuilder()
                 .instances("beta,main")
@@ -791,6 +779,68 @@ public class RoutingPoliciesTest {
                    tester.controllerTester().controller().routing()
                          .readDeclaredEndpointsOf(application)
                          .named(EndpointId.of("a1")).isEmpty());
+    }
+
+    @Test
+    public void application_endpoint_routing_status() {
+        RoutingPoliciesTester tester = new RoutingPoliciesTester();
+        TenantAndApplicationId application = TenantAndApplicationId.from("tenant1", "app1");
+        ApplicationId betaInstance = application.instance("beta");
+        ApplicationId mainInstance = application.instance("main");
+
+        DeploymentContext betaContext = tester.newDeploymentContext(betaInstance);
+        DeploymentContext mainContext = tester.newDeploymentContext(mainInstance);
+        var applicationPackage = applicationPackageBuilder()
+                .instances("beta,main")
+                .region(zone1.region())
+                .region(zone2.region())
+                .applicationEndpoint("a0", "c0", "us-west-1",
+                                     Map.of(betaInstance.instance(), 2,
+                                            mainInstance.instance(), 8))
+                .applicationEndpoint("a1", "c1", "us-central-1",
+                                     Map.of(betaInstance.instance(), 4,
+                                            mainInstance.instance(), 0))
+                .build();
+        for (var zone : List.of(zone1, zone2)) {
+            tester.provisionLoadBalancers(2, betaInstance, zone);
+            tester.provisionLoadBalancers(2, mainInstance, zone);
+        }
+
+        // Deploy both instances
+        betaContext.submit(applicationPackage).deploy();
+
+        // Application endpoint points to both instances with correct weights
+        DeploymentId betaZone1 = betaContext.deploymentIdIn(zone1);
+        DeploymentId mainZone1 = mainContext.deploymentIdIn(zone1);
+        DeploymentId betaZone2 = betaContext.deploymentIdIn(zone2);
+        DeploymentId mainZone2 = mainContext.deploymentIdIn(zone2);
+        tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
+                             Map.of(betaZone1, 2,
+                                    mainZone1, 8));
+        tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
+                             Map.of(betaZone2, 4,
+                                    mainZone2, 0));
+
+        // Changing routing status updates weight
+        tester.routingPolicies().setRoutingStatus(mainZone1, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
+        betaContext.flushDnsUpdates();
+        tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
+                             Map.of(betaZone1, 2,
+                                    mainZone1, 0));
+        tester.routingPolicies().setRoutingStatus(mainZone1, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
+        betaContext.flushDnsUpdates();
+        tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
+                             Map.of(betaZone1, 2,
+                                    mainZone1, 8));
+
+        // Changing routing status preserves weights if change in routing status would result in a zero weight sum
+        // Otherwise this would result in both targets have weight 0 and thus traffic would be distributed evenly across
+        // all targets which does not match intention of taking out a deployment
+        tester.routingPolicies().setRoutingStatus(betaZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
+        betaContext.flushDnsUpdates();
+        tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
+                             Map.of(betaZone2, 4,
+                                    mainZone2, 0));
     }
 
     /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
