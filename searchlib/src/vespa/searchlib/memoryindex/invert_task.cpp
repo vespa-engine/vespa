@@ -29,20 +29,10 @@ InvertTask::InvertTask(const DocumentInverterContext& inv_context, const InvertC
       _context(context),
       _inverters(inverters),
       _uri_inverters(uri_inverters),
-      _field_values(),
-      _uri_field_values(),
+      _doc(doc),
       _lid(lid),
       _on_write_done(on_write_done)
 {
-    _context.set_data_type(_inv_context, doc);
-    _field_values.reserve(_context.get_fields().size());
-    _uri_field_values.reserve(_context.get_uri_fields().size());
-    for (auto& document_field : _context.get_document_fields()) {
-        _field_values.emplace_back(get_field_value(doc, document_field));
-    }
-    for (auto& document_uri_field : _context.get_document_uri_fields()) {
-        _uri_field_values.emplace_back(get_field_value(doc, document_uri_field));
-    }
 }
 
 InvertTask::~InvertTask() = default;
@@ -50,17 +40,16 @@ InvertTask::~InvertTask() = default;
 void
 InvertTask::run()
 {
-    assert(_field_values.size() == _context.get_fields().size());
-    assert(_uri_field_values.size() == _context.get_uri_fields().size());
-    auto fv_itr = _field_values.begin();
+    _context.set_data_type(_inv_context, _doc);
+    auto document_field_itr = _context.get_document_fields().begin();
     for (auto field_id : _context.get_fields()) {
-        _inverters[field_id]->invertField(_lid, *fv_itr);
-        ++fv_itr;
+        _inverters[field_id]->invertField(_lid, get_field_value(_doc, *document_field_itr));
+        ++document_field_itr;
     }
-    auto uri_fv_itr = _uri_field_values.begin();
+    auto document_uri_field_itr = _context.get_document_uri_fields().begin();
     for (auto uri_field_id : _context.get_uri_fields()) {
-        _uri_inverters[uri_field_id]->invertField(_lid, *uri_fv_itr);
-        ++uri_fv_itr;
+        _uri_inverters[uri_field_id]->invertField(_lid, get_field_value(_doc, *document_uri_field_itr));
+        ++document_uri_field_itr;
     }
 }
 
