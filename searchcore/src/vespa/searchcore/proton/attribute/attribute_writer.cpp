@@ -339,6 +339,7 @@ class PutTask : public vespalib::Executor::Task
     const bool           _allAttributes;
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
     const Document&      _doc;
+    DocumentFieldExtractor _field_extractor;
     std::vector<FieldValue::UP> _fieldValues;
 public:
     PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document& doc, uint32_t lid, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone);
@@ -353,15 +354,15 @@ PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, c
       _allAttributes(allAttributes),
       _onWriteDone(onWriteDone),
       _doc(doc),
+      _field_extractor(_doc),
       _fieldValues()
 {
     _wc.consider_build_field_paths(_doc);
-    DocumentFieldExtractor field_extractor(_doc);
     const auto &fields = _wc.getFields();
     _fieldValues.reserve(fields.size());
     for (const auto& field : fields) {
         if (_allAttributes || field.isStructFieldAttribute()) {
-            FieldValue::UP fv = field_extractor.getFieldValue(field.getFieldPath());
+            FieldValue::UP fv = _field_extractor.getFieldValue(field.getFieldPath());
             _fieldValues.emplace_back(std::move(fv));
         }
     }
