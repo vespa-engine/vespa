@@ -192,7 +192,7 @@ IndexManagerTest::addDocument(uint32_t id)
     Document::UP doc = buildDocument(_builder, id, "foo");
     SerialNum serialNum = ++_serial_num;
     vespalib::Gate gate;
-    runAsIndex([&]() { _index_manager->putDocument(id, *doc, serialNum);
+    runAsIndex([&]() { _index_manager->putDocument(id, *doc, serialNum, {});
                           _index_manager->commit(serialNum,
                                                  std::make_shared<vespalib::GateCallback>(gate)); });
     gate.await();
@@ -416,7 +416,7 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
     EXPECT_EQ(0u, _index_manager->getMaintainer().getFlushStats().cpu_time_required);
 
     Document::UP doc = addDocument(docid);
-    inverter.invertDocument(docid, *doc);
+    inverter.invertDocument(docid, *doc, {});
     push_documents_and_wait(inverter);
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
 
@@ -431,9 +431,9 @@ TEST_F(IndexManagerTest, require_that_flush_stats_are_calculated)
               _index_manager->getMaintainer().getFlushStats().cpu_time_required);
 
     doc = addDocument(docid + 10);
-    inverter.invertDocument(docid + 10, *doc);
-    doc = addDocument(docid + 100);
-    inverter.invertDocument(docid + 100, *doc);
+    inverter.invertDocument(docid + 10, *doc, {});
+    auto doc100 = addDocument(docid + 100);
+    inverter.invertDocument(docid + 100, *doc100, {});
     push_documents_and_wait(inverter);
     index_size = fic.getMemoryUsage().allocatedBytes() - fixed_index_size;
     /// Must account for both docid 0 being reserved and the extra after.

@@ -19,11 +19,11 @@ void push_inverter(Inverter& inverter)
 }
 
 
-PushTask::PushTask(const PushContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters,  const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters, std::shared_ptr<vespalib::IDestructorCallback> on_write_done, std::shared_ptr<vespalib::RetainGuard> retain)
+PushTask::PushTask(const PushContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters,  const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters, OnWriteDoneType on_write_done, std::shared_ptr<vespalib::RetainGuard> retain)
     : _context(context),
       _inverters(inverters),
       _uri_inverters(uri_inverters),
-      _on_write_done(std::move(on_write_done)),
+      _on_write_done(on_write_done),
       _retain(std::move(retain))
 {
 }

@@ -49,7 +49,7 @@ struct MyIndexManager : public test::MockIndexManager
         return toString(removes[lid]);
     }
     // Implements IIndexManager
-    void putDocument(uint32_t lid, const Document &, SerialNum serialNum) override {
+    void putDocument(uint32_t lid, const Document &, SerialNum serialNum, OnWriteDoneType) override {
         puts[lid].push_back(serialNum);
     }
     void removeDocuments(LidVector lids, SerialNum serialNum) override {
@@ -94,7 +94,7 @@ struct Fixture
         return builder.endDocument();
     }
     void put(SerialNum serialNum, const search::DocumentIdT lid) {
-        iw.put(serialNum, *dummyDoc, lid);
+        iw.put(serialNum, *dummyDoc, lid, {});
         iw.commit(serialNum, std::shared_ptr<IDestructorCallback>());
     }
     void remove(SerialNum serialNum, const search::DocumentIdT lid) {

@@ -107,7 +107,7 @@ struct Index {
     Document::UP commit() {
         closeField();
         Document::UP d = builder.endDocument();
-        index.insertDocument(docid, *d);
+        index.insertDocument(docid, *d, {});
         internalSyncCommit();
         return d;
     }

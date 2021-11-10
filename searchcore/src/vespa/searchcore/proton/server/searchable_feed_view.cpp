@@ -61,7 +61,7 @@ SearchableFeedView::performIndexPut(SerialNum serialNum, search::DocumentIdT lid
          "database(%s): performIndexPut: serialNum(%" PRIu64 "), docId(%s), lid(%d)",
          _params._docTypeName.toString().c_str(), serialNum, doc.getId().toString().c_str(), lid);
 
-    _indexWriter->put(serialNum, doc, lid);
+    _indexWriter->put(serialNum, doc, lid, onWriteDone);
 }
 
 void

@@ -24,14 +24,15 @@ get_field_value(const Document& doc, const std::unique_ptr<const Field>& field)
 
 }
 
-InvertTask::InvertTask(const DocumentInverterContext& inv_context, const InvertContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters,  const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters, uint32_t lid, const document::Document& doc)
+InvertTask::InvertTask(const DocumentInverterContext& inv_context, const InvertContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters,  const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters, uint32_t lid, const document::Document& doc, OnWriteDoneType on_write_done)
     : _inv_context(inv_context),
       _context(context),
       _inverters(inverters),
       _uri_inverters(uri_inverters),
       _field_values(),
       _uri_field_values(),
-      _lid(lid)
+      _lid(lid),
+      _on_write_done(on_write_done)
 {
     _context.set_data_type(_inv_context, doc);
     _field_values.reserve(_context.get_fields().size());

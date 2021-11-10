@@ -332,7 +332,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     Document::UP doc;
 
     doc = make_doc10(b);
-    inv.invertDocument(10, *doc);
+    inv.invertDocument(10, *doc, {});
     myPushDocument(inv);
 
     b.startDocument("id:ns:searchdocument::11").
@@ -340,7 +340,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         startElement(-27).addStr("zz").endElement().
         endField();
     doc = b.endDocument();
-    inv.invertDocument(11, *doc);
+    inv.invertDocument(11, *doc, {});
     myPushDocument(inv);
 
     b.startDocument("id:ns:searchdocument::12").
@@ -348,7 +348,7 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         startElement(0).addStr("zz0").endElement().
         endField();
     doc = b.endDocument();
-    inv.invertDocument(12, *doc);
+    inv.invertDocument(12, *doc, {});
     myPushDocument(inv);
 
     IndexBuilder ib(schema);
@@ -466,7 +466,8 @@ FusionTest::make_simple_index(const vespalib::string &dump_dir, const IFieldLeng
     DocumentInverterContext inv_context(_schema, *invertThreads, *pushThreads, fic);
     DocumentInverter inv(inv_context);
 
-    inv.invertDocument(10, *make_doc10(b));
+    auto doc10 = make_doc10(b);
+    inv.invertDocument(10, *doc10, {});
     myPushDocument(inv);
 
     IndexBuilder ib(_schema);

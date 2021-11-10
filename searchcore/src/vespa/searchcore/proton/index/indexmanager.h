@@ -86,8 +86,8 @@ public:
     /**
      * Implements searchcorespi::IIndexManager
      **/
-    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum) override {
-        _maintainer.putDocument(lid, doc, serialNum);
+    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done) override {
+        _maintainer.putDocument(lid, doc, serialNum, on_write_done);
     }
 
     void removeDocuments(LidVector lids, SerialNum serialNum) override {

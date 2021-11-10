@@ -43,7 +43,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
      * @param lid the local document id.
      * @param doc the document to insert.
      */
-    virtual void insertDocument(uint32_t lid, const document::Document &doc) = 0;
+    virtual void insertDocument(uint32_t lid, const document::Document &doc, OnWriteDoneType on_write_done) = 0;
 
     /**
      * Removes the given document from this memory index.

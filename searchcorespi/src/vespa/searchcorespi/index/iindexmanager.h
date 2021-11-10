@@ -94,7 +94,7 @@ public:
      * @param serialNum       The unique monotoninc increasing serial number
      *                        for this operation.
      **/
-    virtual void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum) = 0;
+    virtual void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done) = 0;
 
     /**
      * Removes the given document from the index. This method is

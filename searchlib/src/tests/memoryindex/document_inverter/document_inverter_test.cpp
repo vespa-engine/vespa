@@ -140,7 +140,8 @@ struct DocumentInverterTest : public ::testing::Test {
 
 TEST_F(DocumentInverterTest, require_that_fresh_insert_works)
 {
-    _inv.invertDocument(10, *makeDoc10(_b));
+    auto doc10 = makeDoc10(_b);
+    _inv.invertDocument(10, *doc10, {});
     pushDocuments();
     EXPECT_EQ("f=0,w=a,a=10,"
               "w=b,a=10,"
@@ -151,8 +152,10 @@ TEST_F(DocumentInverterTest, require_that_fresh_insert_works)
 
 TEST_F(DocumentInverterTest, require_that_multiple_docs_work)
 {
-    _inv.invertDocument(10, *makeDoc10(_b));
-    _inv.invertDocument(11, *makeDoc11(_b));
+    auto doc10 = makeDoc10(_b);
+    auto doc11 = makeDoc11(_b);
+    _inv.invertDocument(10, *doc10, {});
+    _inv.invertDocument(11, *doc11, {});
     pushDocuments();
     EXPECT_EQ("f=0,w=a,a=10,a=11,"
               "w=b,a=10,a=11,"
@@ -181,8 +184,10 @@ TEST_F(DocumentInverterTest, require_that_remove_works)
 
 TEST_F(DocumentInverterTest, require_that_reput_works)
 {
-    _inv.invertDocument(10, *makeDoc10(_b));
-    _inv.invertDocument(10, *makeDoc11(_b));
+    auto doc10 = makeDoc10(_b);
+    auto doc11 = makeDoc11(_b);
+    _inv.invertDocument(10, *doc10, {});
+    _inv.invertDocument(10, *doc11, {});
     pushDocuments();
     EXPECT_EQ("f=0,w=a,a=10,"
               "w=b,a=10,"
@@ -201,8 +206,8 @@ TEST_F(DocumentInverterTest, require_that_abort_pending_doc_works)
     auto doc13 = makeDoc13(_b);
     auto doc14 = makeDoc14(_b);
 
-    _inv.invertDocument(10, *doc10);
-    _inv.invertDocument(11, *doc11);
+    _inv.invertDocument(10, *doc10, {});
+    _inv.invertDocument(11, *doc11, {});
     _inv.removeDocument(10);
     pushDocuments();
     EXPECT_EQ("f=0,w=a,a=11,"
@@ -213,11 +218,11 @@ TEST_F(DocumentInverterTest, require_that_abort_pending_doc_works)
               "w=g,a=11",
               _inserter_backend.toStr());
 
-    _inv.invertDocument(10, *doc10);
-    _inv.invertDocument(11, *doc11);
-    _inv.invertDocument(12, *doc12);
-    _inv.invertDocument(13, *doc13);
-    _inv.invertDocument(14, *doc14);
+    _inv.invertDocument(10, *doc10, {});
+    _inv.invertDocument(11, *doc11, {});
+    _inv.invertDocument(12, *doc12, {});
+    _inv.invertDocument(13, *doc13, {});
+    _inv.invertDocument(14, *doc14, {});
     _inv.removeDocument(11);
     _inv.removeDocument(13);
     _inserter_backend.reset();
@@ -232,11 +237,11 @@ TEST_F(DocumentInverterTest, require_that_abort_pending_doc_works)
               "w=j,a=14",
               _inserter_backend.toStr());
 
-    _inv.invertDocument(10, *doc10);
-    _inv.invertDocument(11, *doc11);
-    _inv.invertDocument(12, *doc12);
-    _inv.invertDocument(13, *doc13);
-    _inv.invertDocument(14, *doc14);
+    _inv.invertDocument(10, *doc10, {});
+    _inv.invertDocument(11, *doc11, {});
+    _inv.invertDocument(12, *doc12, {});
+    _inv.invertDocument(13, *doc13, {});
+    _inv.invertDocument(14, *doc14, {});
     _inv.removeDocument(11);
     _inv.removeDocument(12);
     _inv.removeDocument(13);
@@ -256,7 +261,8 @@ TEST_F(DocumentInverterTest, require_that_mix_of_add_and_remove_works)
     _inv.getInverter(0)->remove("c", 9);
     _inv.getInverter(0)->remove("d", 10);
     _inv.getInverter(0)->remove("z", 12);
-    _inv.invertDocument(10, *makeDoc10(_b));
+    auto doc10 = makeDoc10(_b);
+    _inv.invertDocument(10, *doc10, {});
     pushDocuments();
     EXPECT_EQ("f=0,w=a,a=10,r=11,"
               "w=b,a=10,"
@@ -268,7 +274,8 @@ TEST_F(DocumentInverterTest, require_that_mix_of_add_and_remove_works)
 
 TEST_F(DocumentInverterTest, require_that_empty_document_can_be_inverted)
 {
-    _inv.invertDocument(15, *makeDoc15(_b));
+    auto doc15 = makeDoc15(_b);
+    _inv.invertDocument(15, *doc15, {});
     pushDocuments();
     EXPECT_EQ("",
               _inserter_backend.toStr());

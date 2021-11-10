@@ -324,7 +324,7 @@ public:
     vespalib::system_time getLastFlushTime() const { return _lastFlushTime; }
 
     // Implements IIndexManager
-    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum) override;
+    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done) override;
     void removeDocuments(LidVector lids, SerialNum serialNum) override;
     void commit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
     void heartBeat(search::SerialNum serialNum) override;
