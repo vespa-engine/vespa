@@ -22,22 +22,19 @@ IMPLEMENT_IDENTIFIABLE(StructDataType, StructuredDataType);
 StructDataType::StructDataType() :
     StructuredDataType(),
     _nameFieldMap(),
-    _idFieldMap(),
-    _compressionConfig()
+    _idFieldMap()
 { }
 
 StructDataType::StructDataType(vespalib::stringref name)
     : StructuredDataType(name),
       _nameFieldMap(),
-      _idFieldMap(),
-      _compressionConfig()
+      _idFieldMap()
 { }
 
 StructDataType::StructDataType(vespalib::stringref name, int32_t dataTypeId)
     : StructuredDataType(name, dataTypeId),
       _nameFieldMap(),
-      _idFieldMap(),
-      _compressionConfig()
+      _idFieldMap()
 { }
 
 StructDataType::~StructDataType() = default;
@@ -54,11 +51,6 @@ StructDataType::print(std::ostream& out, bool verbose,
     out << "StructDataType(" << getName();
     if (verbose) {
         out << ", id " << getId();
-        if (_compressionConfig.type != CompressionConfig::NONE) {
-            out << ", Compression(" << _compressionConfig.type << ","
-                << int(_compressionConfig.compressionLevel) << ","
-                << int(_compressionConfig.threshold) << ")";
-        }
     }
     out << ")";
     if (verbose) {

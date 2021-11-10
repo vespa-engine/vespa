@@ -44,6 +44,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 
 using document::DocumenttypesConfig;
 using vespalib::File;
@@ -488,21 +489,11 @@ TEST("requireThatUncompressedStructFieldValueCanBeSerialized") {
     checkStructSerialization(value, CompressionConfig::NONE);
 }
 
-TEST("requireThatCompressedStructFieldValueCanBeSerialized") {
-    StructDataType structType(getStructDataType());
-    StructFieldValue value = getStructFieldValue(structType);
-    const_cast<StructDataType *>(static_cast<const StructDataType *>(value.getDataType()))
-            ->setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
-    checkStructSerialization(value, CompressionConfig::LZ4);
-}
-
 TEST("requireThatReserializationIsUnompressedIfUnmodified") {
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
-    const_cast<StructDataType *>(static_cast<const StructDataType *>(value.getDataType()))
-            ->setCompressionConfig(CompressionConfig(CompressionConfig::LZ4, 0, 95));
 
-    TEST_DO(checkStructSerialization(value, CompressionConfig::LZ4));
+    TEST_DO(checkStructSerialization(value, CompressionConfig::NONE));
 
     nbostream os;
     VespaDocumentSerializer serializer(os);
@@ -512,7 +503,7 @@ TEST("requireThatReserializationIsUnompressedIfUnmodified") {
     StructFieldValue value2(struct_type);
     VespaDocumentDeserializer deserializer(repo, os, serialization_version);
     deserializer.read(value2);
-    TEST_DO(checkStructSerialization(value, CompressionConfig::LZ4));
+    TEST_DO(checkStructSerialization(value, CompressionConfig::NONE));
     // Lazy serialization of structs....
     TEST_DO(checkStructSerialization(value2, CompressionConfig::NONE));
     EXPECT_EQUAL(value, value2);

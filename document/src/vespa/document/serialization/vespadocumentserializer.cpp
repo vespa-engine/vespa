@@ -235,36 +235,6 @@ serializeFields(const StructFieldValue &value, nbostream &stream,
     }
 }
 
-bool compressionSufficient(const CompressionConfig &config, uint64_t old_size, size_t new_size)
-{
-    return (new_size + 8) < (old_size * config.threshold / 100);
-}
-
-bool bigEnough(size_t size, const CompressionConfig &config)
-{
-    return (size >= config.minSize);
-}
-
-vespalib::ConstBufferRef
-compressStream(const CompressionConfig &config, nbostream &stream, vespalib::DataBuffer & compressed_data)
-{
-    using vespalib::compression::compress;
-    vespalib::ConstBufferRef buf(stream.data(), stream.size());
-    if (config.useCompression() && bigEnough(stream.size(), config)) {
-        CompressionConfig::Type compressedType = compress(config,
-                                                          vespalib::ConstBufferRef(stream.data(), stream.size()),
-                                                          compressed_data, false);
-        if (compressedType != config.type ||
-            ! compressionSufficient(config, stream.size(), compressed_data.getDataLen()))
-        {
-            compressed_data.clear();
-        } else {
-            buf = vespalib::ConstBufferRef(compressed_data.getData(), compressed_data.getDataLen());
-        }
-    }
-    return buf;
-}
-
 void
 putFieldInfo(nbostream &output, const vector<pair<uint32_t, uint32_t> > &field_info) {
     putInt1_4Bytes(output, field_info.size());
@@ -293,14 +263,11 @@ VespaDocumentSerializer::structNeedsReserialization(const StructFieldValue &valu
         return true;
     }
 
-    if (value.getCompressionConfig().type == CompressionConfig::NONE) {
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
-void VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
+void
+VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
     vector<pair<uint32_t, uint32_t> > field_info;
     const std::vector<SerializableArray::Entry>& entries = value.getEntries();
 
@@ -321,28 +288,18 @@ void VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
     }
 }
 
-void VespaDocumentSerializer::write(const StructFieldValue &value, const FieldSet& fieldSet)
+void
+VespaDocumentSerializer::write(const StructFieldValue &value, const FieldSet& fieldSet)
 {
     nbostream value_stream;
     vector<pair<uint32_t, uint32_t> > field_info;
     serializeFields(value, value_stream, field_info, fieldSet);
 
-    const CompressionConfig &comp_config = value.getCompressionConfig();
-    vespalib::DataBuffer compressed_data;
-    vespalib::ConstBufferRef toSerialize = compressStream(comp_config, value_stream, compressed_data);
-
-    uint8_t comp_type = (compressed_data.getDataLen() == 0)
-                        ? (comp_config.type == CompressionConfig::NONE
-                           ? CompressionConfig::NONE
-                           : CompressionConfig::UNCOMPRESSABLE)
-                        : comp_config.type;
-    _stream << static_cast<uint32_t>(toSerialize.size());
+    uint8_t comp_type = CompressionConfig::NONE;
+    _stream << static_cast<uint32_t>(value_stream.size());
     _stream << comp_type;
-    if (compressed_data.getDataLen() != 0) {
-        putInt2_4_8Bytes(_stream, value_stream.size());
-    }
     putFieldInfo(_stream, field_info);
-    _stream.write(toSerialize.c_str(), toSerialize.size());
+    _stream.write(value_stream.data(), value_stream.size());
 }
 
 void

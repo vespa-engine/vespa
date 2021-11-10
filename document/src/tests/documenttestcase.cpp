@@ -19,7 +19,6 @@
 #include <gmock/gmock.h>
 
 using vespalib::nbostream;
-using vespalib::compression::CompressionConfig;
 using namespace ::testing;
 
 using namespace document::config_builder;
@@ -699,7 +698,6 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         doc.setValue("rawfield", RawFieldValue("RAW DATA", 8));
         Document docInDoc(*docInDocType, DocumentId("id:ns:docindoc::http://doc.in.doc/"));
         docInDoc.set("stringindocfield", "Elvis is dead");
-        //docInDoc.setCompression(CompressionConfig(CompressionConfig::NONE, 0, 0));
         doc.setValue("docfield", docInDoc);
         ArrayFieldValue floatArray(*arrayOfFloatDataType);
         floatArray.add(1.0);
@@ -713,7 +711,6 @@ TEST(DocumentTest,testReadSerializedAllVersions)
         // Write document to disk, (when you bump version and alter stuff,
         // you can copy this current to new test for new version)
         {
-            //doc.setCompression(CompressionConfig(CompressionConfig::NONE, 0, 0));
             nbostream buf = doc.serialize();
             int fd = open(TEST_PATH("data/document-cpp-currentversion-uncompressed.dat").c_str(),
                           O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -721,20 +718,6 @@ TEST(DocumentTest,testReadSerializedAllVersions)
             size_t len = write(fd, buf.peek(), buf.size());
             EXPECT_EQ(buf.size(), len);
             close(fd);
-        }
-        {
-            CompressionConfig oldCfg(doc.getType().getFieldsType().getCompressionConfig());
-            CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
-            const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
-            nbostream buf = doc.serialize();
-            EXPECT_TRUE(buf.size() <= buf.capacity());
-            int fd = open(TEST_PATH("data/document-cpp-currentversion-lz4-9.dat").c_str(),
-                          O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            EXPECT_TRUE(fd > 0);
-            size_t len = write(fd, buf.peek(), buf.size());
-            EXPECT_EQ(buf.size(), len);
-            close(fd);
-            const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(oldCfg);
         }
     }
 
@@ -877,18 +860,6 @@ TEST(DocumentTest, testGenerateSerializedFile)
         throw vespalib::Exception("write failed");
     }
     close(fd);
-
-    CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
-    const_cast<StructDataType &>(doc.getType().getFieldsType()).setCompressionConfig(newCfg);
-
-    nbostream lz4buf = doc.serialize();
-
-    fd = open((serializedDir + "/serializecpp-lz4-level9.dat").c_str(),
-              O_WRONLY | O_TRUNC | O_CREAT, 0644);
-    if (write(fd, lz4buf.data(), lz4buf.size()) != (ssize_t)lz4buf.size()) {
-        throw vespalib::Exception("write failed");
-    }
-    close(fd);
 }
 
 TEST(DocumentTest, testBogusserialize)
@@ -1011,84 +982,6 @@ TEST(DocumentTest, testSliceSerialize)
 
     EXPECT_EQ(*doc, doc3);
     EXPECT_EQ(*doc2, doc4);
-}
-
-TEST(DocumentTest, testCompression)
-{
-    TestDocMan testDocMan;
-    Document::UP doc = testDocMan.createDocument();
-
-    std::string bigString("compress me");
-    for (int i = 0; i < 8; ++i) { bigString += bigString; }
-
-    doc->setValue("hstringval", StringFieldValue(bigString));
-
-    nbostream buf_uncompressed = doc->serialize();
-
-    CompressionConfig oldCfg(doc->getType().getFieldsType().getCompressionConfig());
-
-    CompressionConfig newCfg(CompressionConfig::LZ4, 9, 95);
-    const_cast<StructDataType &>(doc->getType().getFieldsType()).setCompressionConfig(newCfg);
-    nbostream buf_lz4 = doc->serialize();
-
-    const_cast<StructDataType &>(doc->getType().getFieldsType()).setCompressionConfig(oldCfg);
-
-    EXPECT_TRUE(buf_lz4.size() < buf_uncompressed.size());
-
-    Document doc_lz4(testDocMan.getTypeRepo(), buf_lz4);
-
-    EXPECT_EQ(*doc, doc_lz4);
-}
-
-TEST(DocumentTest, testCompressionConfigured)
-{
-    DocumenttypesConfigBuilderHelper builder;
-    builder.document(43, "serializetest",
-                     Struct("serializetest.header").setId(44),
-                     Struct("serializetest.body").setId(45)
-                     .addField("stringfield", DataType::T_STRING));
-    DocumentTypeRepo repo(builder.config());
-    Document doc_uncompressed(*repo.getDocumentType("serializetest"),
-                              DocumentId("id:ns:serializetest::1"));
-
-    std::string bigString("compress me");
-    for (int i = 0; i < 8; ++i) { bigString += bigString; }
-
-    doc_uncompressed.setValue("stringfield", StringFieldValue(bigString));
-    nbostream buf_uncompressed;
-    doc_uncompressed.serialize(buf_uncompressed);
-
-    size_t uncompressedSize = buf_uncompressed.size();
-
-    DocumenttypesConfigBuilderHelper builder2;
-    builder2.document(43, "serializetest",
-                      Struct("serializetest.header").setId(44),
-                      Struct("serializetest.body").setId(45)
-                      .addField("stringfield", DataType::T_STRING)
-                      .setCompression(DocumenttypesConfig::Documenttype::
-                                      Datatype::Sstruct::Compression::Type::LZ4,
-                                      9, 99, 0));
-    DocumentTypeRepo repo2(builder2.config());
-
-    Document doc(repo2, buf_uncompressed);
-
-    nbostream buf_compressed;
-    doc.serialize(buf_compressed);
-    size_t compressedSize = buf_compressed.size();
-
-    EXPECT_TRUE(compressedSize < uncompressedSize);
-
-    Document doc2(repo2, buf_compressed);
-
-    nbostream buf_compressed2;
-    doc2.serialize(buf_compressed2);
-
-    EXPECT_EQ(compressedSize, buf_compressed2.size());
-
-    Document doc3(repo2, buf_compressed2);
-
-    EXPECT_EQ(doc2, doc_uncompressed);
-    EXPECT_EQ(doc2, doc3);
 }
 
 TEST(DocumentTest, testUnknownEntries)

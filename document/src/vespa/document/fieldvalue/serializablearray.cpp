@@ -2,11 +2,9 @@
 #include "serializablearray.h"
 #include <vespa/document/util/serializableexceptions.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/data/databuffer.h>
 #include <algorithm>
-
+#include <cassert>
 #include <vespa/log/log.h>
 LOG_SETUP(".document.serializable-array");
 
@@ -27,15 +25,10 @@ public:
 }
 
 void
-SerializableArray::set(EntryMap entries, ByteBuffer buffer,
-                       CompressionConfig::Type comp_type, uint32_t uncompressed_length)
+SerializableArray::set(EntryMap entries, ByteBuffer buffer)
 {
     _entries = std::move(entries);
-    if (CompressionConfig::isCompressed(comp_type)) {
-        _uncompSerData = deCompress(comp_type, uncompressed_length, std::move(buffer));
-    } else {
-        _uncompSerData = std::move(buffer);
-    }
+    _uncompSerData = std::move(buffer);
 }
 
 SerializableArray::SerializableArray() = default;
@@ -146,41 +139,6 @@ SerializableArray::clear(int id)
     if (it != _entries.end()) {
         _entries.erase(it);
     }
-}
-
-ByteBuffer
-SerializableArray::deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength, ByteBuffer compressed)
-{
-    using vespalib::compression::decompress;
-    // will only do this once
-
-    assert(compressed.getRemaining() != 0);
-    assert(CompressionConfig::isCompressed(compression));
-
-    ByteBuffer newSerialization(vespalib::alloc::Alloc::alloc(uncompressedLength), uncompressedLength);
-    vespalib::DataBuffer unCompressed(newSerialization.getBuffer(), newSerialization.getLength());
-    unCompressed.clear();
-    try {
-        decompress(compression,
-                   uncompressedLength,
-                   vespalib::ConstBufferRef(compressed.getBufferAtPos(), compressed.getRemaining()),
-                   unCompressed,
-                   false);
-    } catch (const std::runtime_error & e) {
-        throw DeserializeException(
-            make_string( "Document was compressed with code unknown code %d", compression),
-            VESPA_STRLOC);
-    }
-
-    if (unCompressed.getDataLen() != (size_t)uncompressedLength) {
-        throw DeserializeException(
-                make_string("Did not decompress to the expected length: had %u, wanted %d, got %zu",
-                            compressed.getRemaining(), uncompressedLength, unCompressed.getDataLen()),
-                VESPA_STRLOC);
-    }
-    assert(newSerialization.getBuffer() == unCompressed.getData());
-    LOG_ASSERT(uncompressedLength == newSerialization.getRemaining());
-    return newSerialization;
 }
 
 const char *

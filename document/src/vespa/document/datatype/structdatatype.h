@@ -11,7 +11,6 @@
 
 #include <vespa/document/datatype/structureddatatype.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/util/compressionconfig.h>
 #include <memory>
 
 namespace document {
@@ -20,7 +19,6 @@ class StructDataType final : public StructuredDataType {
 public:
     using UP = std::unique_ptr<StructDataType>;
     using SP = std::shared_ptr<StructDataType>;
-    using CompressionConfig = vespalib::compression::CompressionConfig;
 
     StructDataType();
     StructDataType(vespalib::stringref name);
@@ -65,9 +63,6 @@ public:
     Field::Set getFieldSet() const override;
     StructDataType* clone() const override;
 
-    void setCompressionConfig(const CompressionConfig& cfg) { _compressionConfig = cfg; };
-    const CompressionConfig& getCompressionConfig() const { return _compressionConfig; }
-
     DECLARE_IDENTIFIABLE(StructDataType);
 
 private:
@@ -75,7 +70,6 @@ private:
     using IntFieldMap = vespalib::hash_map<int32_t, Field::SP>;
     StringFieldMap    _nameFieldMap;
     IntFieldMap       _idFieldMap;
-    CompressionConfig _compressionConfig;
 
     /** @return "" if not conflicting. Error message otherwise. */
     vespalib::string containsConflictingField(const Field& field) const;
