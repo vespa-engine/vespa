@@ -42,6 +42,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
      *
      * @param lid the local document id.
      * @param doc the document to insert.
+     * @param on_write_done shared object that notifies write done when destructed.
      */
     virtual void insertDocument(uint32_t lid, const document::Document &doc, OnWriteDoneType on_write_done) = 0;
 
