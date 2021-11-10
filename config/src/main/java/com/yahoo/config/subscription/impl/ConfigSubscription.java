@@ -203,6 +203,11 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         this.config.set(new ConfigState<>(true, generation, applyOnRestart, true, config, payloadChecksums));
     }
 
+    void setConfigAndGeneration(Long generation, boolean applyOnRestart, T config, PayloadChecksums payloadChecksums) {
+        ConfigState<T> prev = this.config.get();
+        this.config.set(new ConfigState<>(true, generation, applyOnRestart, !config.equals(prev.getConfig()), config, payloadChecksums));
+    }
+
     /**
      * Used by {@link FileConfigSubscription} and {@link ConfigSetSubscription}
      */
