@@ -3,7 +3,7 @@
  * <p>Provides classes and interfaces for implementing a {@link com.yahoo.jdisc.service.ClientProvider ClientProvider} or
  * a {@link com.yahoo.jdisc.service.ServerProvider ServerProvider}.</p>
  *
- * <h3>ServerProvider</h3>
+ * <h2>ServerProvider</h2>
  * <p>All {@link com.yahoo.jdisc.Request Requests} that are processed in a jDISC application are created by
  * ServerProviders. These are components created by the {@link com.yahoo.jdisc.application.Application Application}, and
  * they are the parts of jDISC that accept incoming connections. The ServerProvider creates and dispatches Request

@@ -3,7 +3,8 @@
  * <p>Provides classes and interfaces for implementing an {@link com.yahoo.jdisc.application.Application
  * Application}.</p>
  *
- * <h3>Application</h3>
+ * <h2>Application</h2>
+ *
  * <p>In every jDISC process there is exactly one Application instance, it is created during jDISC startup, and it is
  * destroyed during jDISC shutdown. The Application uses the {@link com.yahoo.jdisc.application.ContainerBuilder
  * ContainerBuilder} interface to load OSGi {@link org.osgi.framework.Bundle Bundles}, install Guice {@link
@@ -52,7 +53,7 @@ void reconfigureApplication() {
 }
 </pre>
  *
- * <h3>Application and OSGi</h3>
+ * <h2>Application and OSGi</h2>
  * <p>At the heart of jDISC is an OSGi framework. An Application is always packaged as an OSGi bundle. The OSGi
  * technology itself is a set of specifications that define a dynamic component system for Java. These specifications
  * enable a development model where applications are (dynamically) composed of many different (reusable) components. The
@@ -105,7 +106,7 @@ void reconfigureApplication() {
  * into the application itself. Unless incompatible API changes are made to 3rd party jDISC components, it should be
  * possible to upgrade dependencies without having to recompile and redeploy the Application.</p>
  *
- * <h3>Application deployment</h3>
+ * <h2>Application deployment</h2>
  * <p>jDISC allows a single binary to execute any application without having to change the command line parameters.
  * Instead of
  * modifying the parameters of the single application binary, changing the application is achieved by setting a single

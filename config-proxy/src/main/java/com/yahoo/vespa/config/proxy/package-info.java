@@ -14,7 +14,7 @@
     the config client library.
     </p>
 
-    <h3>Why Vespa needs a config proxy</h3>
+    <h2>Why Vespa needs a config proxy</h2>
 
     <p>It is possible for a client to subscribe
     to config from the config server directly. However, if all Vespa

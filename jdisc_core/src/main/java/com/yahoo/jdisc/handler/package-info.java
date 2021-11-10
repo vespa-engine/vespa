@@ -3,7 +3,7 @@
  * <p>Provides classes and interfaces for implementing a {@link com.yahoo.jdisc.handler.RequestHandler
  * RequestHandler}.</p>
  *
- * <h3>RequestHandler</h3>
+ * <h2>RequestHandler</h2>
  * <p>All {@link com.yahoo.jdisc.Request Requests} in a jDISC application are processed by RequestHandlers. These are
  * components created by the {@link com.yahoo.jdisc.application.Application Application}, and bound to one or more URI
  * patterns through the {@link com.yahoo.jdisc.application.ContainerBuilder ContainerBuilder} API. Upon receiving a
@@ -39,7 +39,7 @@ MyApplication(ContainerActivator activator, CurrentContainer container) {
  * otherwise, a jDISC application that is intended to forward large streams of data can do so without having to make any
  * copies of that data as it is passing through.</p>
  *
- * <h3>ResponseHandler</h3>
+ * <h2>ResponseHandler</h2>
  * <p>The complement of the Request is the Response. A Response is a numeric status code and a set of header fields.
  * Just as Requests are processed by RequestHandlers, Responses are processed by ResponseHandlers. The ResponseHandler
  * interface is fully asynchronous, and uses the ContentChannel class to encapsulate the asynchronous passing of
