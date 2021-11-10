@@ -281,6 +281,7 @@ public class DeploymentSpecXmlReader {
             List<Endpoint.Target> targets = new ArrayList<>();
             if (level == Endpoint.Level.application) {
                 String region = requireStringAttribute("region", endpointElement);
+                int weightSum = 0;
                 for (var instanceElement : XML.getChildren(endpointElement, "instance")) {
                     String instanceName = instanceElement.getTextContent();
                     String weightFromAttribute = requireStringAttribute("weight", instanceElement);
@@ -291,10 +292,12 @@ public class DeploymentSpecXmlReader {
                     } catch (NumberFormatException e) {
                         throw new IllegalArgumentException(msgPrefix + "invalid weight value '" + weightFromAttribute + "'");
                     }
+                    weightSum += weight;
                     targets.add(new Endpoint.Target(RegionName.from(region),
                                                     InstanceName.from(instanceName),
                                                     weight));
                 }
+                if (weightSum == 0) illegal(msgPrefix + "sum of all weights must be positive, got " + weightSum);
             } else {
                 if (stringAttribute("region", endpointElement).isPresent()) illegal(msgPrefix + "invalid 'region' attribute");
                 for (var regionElement : XML.getChildren(endpointElement, "region")) {
