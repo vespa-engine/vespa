@@ -49,7 +49,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -118,36 +117,35 @@ public class RoutingController {
     /** Returns endpoints declared in {@link DeploymentSpec} for given application */
     public EndpointList declaredEndpointsOf(Application application) {
         Set<Endpoint> endpoints = new LinkedHashSet<>();
-        for (var instance : application.instances().values()) {
-            DeploymentSpec deploymentSpec = application.deploymentSpec();
-            Optional<DeploymentInstanceSpec> spec = application.deploymentSpec().instance(instance.name());
-            if (spec.isEmpty()) return EndpointList.EMPTY;
+        DeploymentSpec deploymentSpec = application.deploymentSpec();
+        for (var spec : deploymentSpec.instances()) {
+            ApplicationId instance = application.id().instance(spec.name());
             // Add endpoint declared with legacy syntax
-            spec.get().globalServiceId().ifPresent(clusterId -> {
-                List<DeploymentId> deployments = spec.get().zones().stream()
+            spec.globalServiceId().ifPresent(clusterId -> {
+                List<DeploymentId> deployments = spec.zones().stream()
                                                      .filter(zone -> zone.concerns(Environment.prod))
-                                                     .map(zone -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, zone.region().get())))
+                                                     .map(zone -> new DeploymentId(instance, ZoneId.from(Environment.prod, zone.region().get())))
                                                      .collect(Collectors.toList());
-                RoutingId routingId = RoutingId.of(instance.id(), EndpointId.defaultId());
+                RoutingId routingId = RoutingId.of(instance, EndpointId.defaultId());
                 endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), deployments, deploymentSpec));
             });
             // Add endpoints declared with current syntax
-            spec.get().endpoints().forEach(declaredEndpoint -> {
-                RoutingId routingId = RoutingId.of(instance.id(), EndpointId.of(declaredEndpoint.endpointId()));
+            spec.endpoints().forEach(declaredEndpoint -> {
+                RoutingId routingId = RoutingId.of(instance, EndpointId.of(declaredEndpoint.endpointId()));
                 List<DeploymentId> deployments = declaredEndpoint.regions().stream()
-                                                                 .map(region -> new DeploymentId(instance.id(),
+                                                                 .map(region -> new DeploymentId(instance,
                                                                                                  ZoneId.from(Environment.prod, region)))
                                                                  .collect(Collectors.toList());
                 endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), deployments, deploymentSpec));
             });
         }
         // Add application endpoints
-        for (var declaredEndpoint : application.deploymentSpec().endpoints()) {
+        for (var declaredEndpoint : deploymentSpec.endpoints()) {
             Map<DeploymentId, Integer> deployments = declaredEndpoint.targets().stream()
                                                                      .collect(Collectors.toMap(t -> new DeploymentId(application.id().instance(t.instance()),
                                                                                                                      ZoneId.from(Environment.prod, t.region())),
                                                                                                t -> t.weight()));
-            List<RoutingMethod> availableRoutingMethods = routingMethodsOfAll(deployments.keySet(), application.deploymentSpec());
+            List<RoutingMethod> availableRoutingMethods = routingMethodsOfAll(deployments.keySet(), deploymentSpec);
             for (var routingMethod : availableRoutingMethods) {
                 endpoints.add(Endpoint.of(application.id())
                                       .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
