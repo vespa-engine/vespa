@@ -70,7 +70,11 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         // ConfigSubscriber clears it
         if (jrtReq.hasUpdatedGeneration()) {
             setApplyOnRestart(jrtReq.responseIsApplyOnRestart());
-            setNewConfig(jrtReq);
+            if (jrtReq.hasUpdatedConfig()) {
+                setNewConfig(jrtReq);
+            } else {
+                setGeneration(jrtReq.getNewGeneration());
+            }
         }
 
         return newConfigOrException();
