@@ -339,8 +339,6 @@ class PutTask : public vespalib::Executor::Task
     const bool           _allAttributes;
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
     const Document&      _doc;
-    DocumentFieldExtractor _field_extractor;
-    std::vector<FieldValue::UP> _fieldValues;
 public:
     PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document& doc, uint32_t lid, bool allAttributes, AttributeWriter::OnWriteDoneType onWriteDone);
     ~PutTask() override;
@@ -353,19 +351,8 @@ PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, c
       _lid(lid),
       _allAttributes(allAttributes),
       _onWriteDone(onWriteDone),
-      _doc(doc),
-      _field_extractor(_doc),
-      _fieldValues()
+      _doc(doc)
 {
-    _wc.consider_build_field_paths(_doc);
-    const auto &fields = _wc.getFields();
-    _fieldValues.reserve(fields.size());
-    for (const auto& field : fields) {
-        if (_allAttributes || field.isStructFieldAttribute()) {
-            FieldValue::UP fv = _field_extractor.getFieldValue(field.getFieldPath());
-            _fieldValues.emplace_back(std::move(fv));
-        }
-    }
 }
 
 PutTask::~PutTask() = default;
@@ -373,15 +360,16 @@ PutTask::~PutTask() = default;
 void
 PutTask::run()
 {
-    uint32_t fieldId = 0;
+    _wc.consider_build_field_paths(_doc);
+    DocumentFieldExtractor field_extractor(_doc);
     const auto &fields = _wc.getFields();
     for (auto field : fields) {
         if (_allAttributes || field.isStructFieldAttribute()) {
             AttributeVector &attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
-                applyPutToAttribute(_serialNum, _fieldValues[fieldId], _lid, attr, _onWriteDone);
+                auto fv = field_extractor.getFieldValue(field.getFieldPath());
+                applyPutToAttribute(_serialNum, fv, _lid, attr, _onWriteDone);
             }
-            ++fieldId;
         }
     }
 }
@@ -427,10 +415,6 @@ PreparePutTask::PreparePutTask(SerialNum serial_num,
       _field_value(),
       _result_promise()
 {
-    if (_field_path) {
-        DocumentFieldExtractor field_extractor(*_doc);
-        _field_value = field_extractor.getFieldValue(*_field_path);
-    }
 }
 
 PreparePutTask::PreparePutTask(SerialNum serial_num,
@@ -453,6 +437,10 @@ void
 PreparePutTask::run()
 {
     if (_attr.getStatus().getLastSyncToken() < _serial_num) {
+        if (_field_path) {
+            DocumentFieldExtractor field_extractor(*_doc);
+            _field_value = field_extractor.getFieldValue(*_field_path);
+        }
         if (_field_value.get()) {
             auto& fv = *_field_value;
             _result_promise.set_value(FieldValueAndPrepareResult(std::move(_field_value), AttributeUpdater::prepare_set_value(_attr, _docid, fv)));
