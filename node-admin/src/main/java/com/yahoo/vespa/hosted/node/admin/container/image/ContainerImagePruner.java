@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.container.image;
 
-import com.google.common.base.Strings;
 import com.yahoo.collections.Pair;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.ContainerEngine;
@@ -10,12 +9,11 @@ import com.yahoo.vespa.hosted.node.admin.container.PartialContainer;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -78,61 +76,39 @@ public class ContainerImagePruner {
 
         Map<String, Image> imageByImageId = images.stream().collect(Collectors.toMap(Image::id, Function.identity()));
 
-        // Find all the ancestors for every local image id, this includes the image id itself
-        Map<String, Set<String>> ancestorsByImageId = images.stream()
-                                                            .map(Image::id)
-                                                            .collect(Collectors.toMap(
-                                                                    Function.identity(),
-                                                                    imageId -> {
-                                                                        Set<String> ancestors = new HashSet<>();
-                                                                        while (!Strings.isNullOrEmpty(imageId)) {
-                                                                            ancestors.add(imageId);
-                                                                            imageId = Optional.of(imageId).map(imageByImageId::get).flatMap(Image::parentId).orElse(null);
-                                                                        }
-                                                                        return ancestors;
-                                                                    }
-                                                            ));
-
         // The set of images that we want to keep is:
         // 1. The images that were recently used
         // 2. The images that were explicitly excluded
-        // 3. All of the ancestors of from images in 1 & 2
         Set<String> imagesToKeep = Stream
                 .concat(
                         updateRecentlyUsedImageIds(images, containers, minAge).stream(), // 1
                         referencesToImages(excludedRefs, images).stream()) // 2
-                .flatMap(imageId -> ancestorsByImageId.getOrDefault(imageId, Collections.emptySet()).stream()) // 3
                 .collect(Collectors.toSet());
 
         // Now take all the images we have locally
-        return imageByImageId.keySet().stream()
+        List<Image> imagesToRemove = imageByImageId.keySet().stream()
+                // filter out images we want to keep
+                .filter(imageId -> !imagesToKeep.contains(imageId))
+                .map(imageByImageId::get)
+                .collect(Collectors.toCollection(ArrayList::new));
 
-                             // filter out images we want to keep
-                             .filter(imageId -> !imagesToKeep.contains(imageId))
+        // We cannot delete an image that is referenced by other images as parent. Computing parent image is complicated, see
+        // https://github.com/containers/podman/blob/d7b2f03f8a5d0e3789ac185ea03989463168fb76/vendor/github.com/containers/common/libimage/layer_tree.go#L235:L299
+        // https://github.com/containers/podman/blob/d7b2f03f8a5d0e3789ac185ea03989463168fb76/vendor/github.com/containers/common/libimage/oci.go#L30:L97
+        // In practice, our images do not have any parents on prod machines, so we should be able to delete in any
+        // order. In case we ever do get a parent on a host somehow, we could get stuck if we always attempt to delete
+        // in wrong order, so shuffle first to ensure this eventually converges
+        Collections.shuffle(imagesToRemove);
 
-                             // Sort images in an order is safe to delete (children before parents)
-                             .sorted((o1, o2) -> {
-                                 // If image2 is parent of image1, image1 comes before image2
-                                 if (imageIsDescendantOf(imageByImageId, o1, o2)) return -1;
-                                     // If image1 is parent of image2, image2 comes before image1
-                                 else if (imageIsDescendantOf(imageByImageId, o2, o1)) return 1;
-                                     // Otherwise, sort lexicographically by image name (For testing)
-                                 else return o1.compareTo(o2);
-                             })
-
-                             // Map back to image
-                             .map(imageByImageId::get)
-
-                             // Delete image, if successful also remove last usage time to prevent re-download being instantly deleted
-                             .peek(image -> {
-                                 // Deleting an image by image ID with multiple tags will fail -> delete by tags instead
-                                 referencesOf(image).forEach(imageReference -> {
-                                     LOG.info("Deleting unused image " + imageReference);
-                                     containerEngine.removeImage(context, imageReference);
-                                 });
-                                 lastTimeUsedByImageId.remove(image.id());
-                             })
-                             .count() > 0;
+        imagesToRemove.forEach(image -> {
+            // Deleting an image by image ID with multiple tags will fail -> delete by tags instead
+                    referencesOf(image).forEach(imageReference -> {
+                        LOG.info("Deleting unused image " + imageReference);
+                        containerEngine.removeImage(context, imageReference);
+                    });
+                    lastTimeUsedByImageId.remove(image.id());
+        });
+        return !imagesToRemove.isEmpty();
     }
 
     private Set<String> updateRecentlyUsedImageIds(List<Image> images, List<PartialContainer> containers, Duration minImageAgeToDelete) {
@@ -166,18 +142,6 @@ public class ContainerImagePruner {
         return references.stream()
                          .map(ref -> imageIdByImageTag.getOrDefault(ref, ref))
                          .collect(Collectors.toUnmodifiableSet());
-    }
-
-    /**
-     * @return true if ancestor is a parent or grand-parent or grand-grand-parent, etc. of img
-     */
-    private boolean imageIsDescendantOf(Map<String, Image> imageIdToImage, String img, String ancestor) {
-        while (imageIdToImage.containsKey(img)) {
-            img = imageIdToImage.get(img).parentId().orElse(null);
-            if (img == null) return false;
-            if (ancestor.equals(img)) return true;
-        }
-        return false;
     }
 
     /**

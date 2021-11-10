@@ -120,7 +120,7 @@ public class ContainerEngineMock implements ContainerEngine {
     @Override
     public void pullImage(TaskContext context, DockerImage image, RegistryCredentials registryCredentials) {
         String imageId = image.asString();
-        ImageDownload imageDownload = images.computeIfAbsent(imageId, (ignored) -> new ImageDownload(new Image(imageId, Optional.empty(), List.of(imageId))));
+        ImageDownload imageDownload = images.computeIfAbsent(imageId, (ignored) -> new ImageDownload(new Image(imageId, List.of(imageId))));
         if (!asyncImageDownload) {
             imageDownload.complete();
         }
