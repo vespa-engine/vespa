@@ -8,6 +8,22 @@
 
 namespace search::memoryindex {
 
+using document::Document;
+using document::Field;
+
+namespace {
+
+std::unique_ptr<document::FieldValue>
+get_field_value(const Document& doc, const std::unique_ptr<const Field>& field)
+{
+    if (field) {
+        return doc.getValue(*field);
+    }
+    return {};
+}
+
+}
+
 InvertTask::InvertTask(const DocumentInverterContext& inv_context, const InvertContext& context, const std::vector<std::unique_ptr<FieldInverter>>& inverters,  const std::vector<std::unique_ptr<UrlFieldInverter>>& uri_inverters, uint32_t lid, const document::Document& doc)
     : _inv_context(inv_context),
       _context(context),
@@ -17,15 +33,14 @@ InvertTask::InvertTask(const DocumentInverterContext& inv_context, const InvertC
       _uri_field_values(),
       _lid(lid)
 {
+    _context.set_data_type(_inv_context, doc);
     _field_values.reserve(_context.get_fields().size());
     _uri_field_values.reserve(_context.get_uri_fields().size());
-    for (uint32_t field_id : _context.get_fields()) {
-        _field_values.emplace_back(_inv_context.get_field_value(doc, field_id));
+    for (auto& document_field : _context.get_document_fields()) {
+        _field_values.emplace_back(get_field_value(doc, document_field));
     }
-    const auto& schema_index_fields = _inv_context.get_schema_index_fields();
-    for (uint32_t uri_field_id : _context.get_uri_fields()) {
-        uint32_t field_id = schema_index_fields._uriFields[uri_field_id]._all;
-        _uri_field_values.emplace_back(_inv_context.get_field_value(doc, field_id));
+    for (auto& document_uri_field : _context.get_document_uri_fields()) {
+        _uri_field_values.emplace_back(get_field_value(doc, document_uri_field));
     }
 }
 
