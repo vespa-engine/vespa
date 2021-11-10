@@ -168,10 +168,10 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     DocBuilder doc_builder(schema);
 
     Document::UP doc = buildDocument(doc_builder, doc_id1, word1);
-    memory_index.insertDocument(doc_id1, *doc.get());
+    memory_index.insertDocument(doc_id1, *doc, {});
 
-    doc = buildDocument(doc_builder, doc_id2, word2);
-    memory_index.insertDocument(doc_id2, *doc.get());
+    auto doc2 = buildDocument(doc_builder, doc_id2, word2);
+    memory_index.insertDocument(doc_id2, *doc2, {});
     commit_memory_index_and_wait(memory_index);
 
     testSearch(memory_index, word1, doc_id1);

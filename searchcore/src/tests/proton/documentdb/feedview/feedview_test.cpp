@@ -144,7 +144,7 @@ struct MyIndexWriter : public test::MockIndexWriter
           _wantedLidLimit(0),
           _tracer(tracer)
     {}
-    void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid) override {
+    void put(SerialNum serialNum, const document::Document &doc, const DocumentIdT lid, OnWriteDoneType) override {
         (void) doc;
         _tracer.tracePut(indexAdapterTypeName, serialNum, lid);
     }

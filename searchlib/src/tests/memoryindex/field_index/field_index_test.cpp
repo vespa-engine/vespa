@@ -956,7 +956,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         addStr("a").addStr("b").addStr("c").addStr("d").
         endField();
     doc = _b.endDocument();
-    _inv.invertDocument(10, *doc);
+    _inv.invertDocument(10, *doc, {});
     myPushDocument(_inv);
 
     _b.startDocument("id:ns:searchdocument::20");
@@ -964,7 +964,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         addStr("a").addStr("a").addStr("b").addStr("c").addStr("d").
         endField();
     doc = _b.endDocument();
-    _inv.invertDocument(20, *doc);
+    _inv.invertDocument(20, *doc, {});
     myPushDocument(_inv);
 
     _b.startDocument("id:ns:searchdocument::30");
@@ -993,7 +993,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         endElement().
         endField();
     doc = _b.endDocument();
-    _inv.invertDocument(30, *doc);
+    _inv.invertDocument(30, *doc, {});
     myPushDocument(_inv);
 
     _b.startDocument("id:ns:searchdocument::40");
@@ -1002,7 +1002,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         addStr("e").addStr("f").
         endField();
     doc = _b.endDocument();
-    _inv.invertDocument(40, *doc);
+    _inv.invertDocument(40, *doc, {});
     myPushDocument(_inv);
 
     _b.startDocument("id:ns:searchdocument::999");
@@ -1030,7 +1030,7 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         endField();
     doc = _b.endDocument();
     for (uint32_t docId = 10000; docId < 20000; ++docId) {
-        _inv.invertDocument(docId, *doc);
+        _inv.invertDocument(docId, *doc, {});
         myPushDocument(_inv);
     }
 
@@ -1144,13 +1144,13 @@ TEST_F(BasicInverterTest, require_that_inverter_handles_remove_via_document_remo
     _b.startIndexField("f0").addStr("a").addStr("b").endField();
     _b.startIndexField("f1").addStr("a").addStr("c").endField();
     Document::UP doc1 = _b.endDocument();
-    _inv.invertDocument(1, *doc1.get());
+    _inv.invertDocument(1, *doc1.get(), {});
     myPushDocument(_inv);
 
     _b.startDocument("id:ns:searchdocument::2");
     _b.startIndexField("f0").addStr("b").addStr("c").endField();
     Document::UP doc2 = _b.endDocument();
-    _inv.invertDocument(2, *doc2.get());
+    _inv.invertDocument(2, *doc2.get(), {});
     myPushDocument(_inv);
 
     EXPECT_TRUE(assertPostingList("[1]", find("a", 0)));
@@ -1308,7 +1308,7 @@ TEST_F(UriInverterTest, require_that_uri_indexing_is_working)
         endElement().
         endField();
     doc = _b.endDocument();
-    _inv.invertDocument(10, *doc);
+    _inv.invertDocument(10, *doc, {});
     myPushDocument(_inv);
 
     SimpleMatchData match_data;
@@ -1381,7 +1381,7 @@ TEST_F(CjkInverterTest, require_that_cjk_indexing_is_working)
         setAutoSpace(true).
         endField();
     doc = _b.endDocument();
-    _inv.invertDocument(10, *doc);
+    _inv.invertDocument(10, *doc, {});
     myPushDocument(_inv);
 
     SimpleMatchData match_data;

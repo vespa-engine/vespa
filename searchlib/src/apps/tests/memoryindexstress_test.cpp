@@ -48,6 +48,7 @@ using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
 using search::index::test::MockFieldLengthInspector;
+using vespalib::IDestructorCallback;
 using vespalib::asciistream;
 using vespalib::makeLambdaTask;
 
@@ -190,6 +191,16 @@ Node::UP makePhrase(const std::string &term1, const std::string &term2) {
     return node;
 }
 
+class HoldDoc : public IDestructorCallback {
+    std::unique_ptr<Document> _doc;
+public:
+    HoldDoc(std::unique_ptr<Document> doc) noexcept
+        : _doc(std::move(doc))
+    {
+    }
+    ~HoldDoc() override = default;
+};
+
 }  // namespace
 
 struct Fixture {
@@ -224,7 +235,8 @@ struct Fixture {
         gate.await();
     }
     void put(uint32_t id, Document::UP doc) {
-        index.insertDocument(id, *doc);
+        auto& docref = *doc;
+        index.insertDocument(id, docref, std::make_shared<HoldDoc>(std::move(doc)));
     }
      void remove(uint32_t id) {
         std::vector<uint32_t> lids;

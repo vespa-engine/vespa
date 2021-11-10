@@ -1165,12 +1165,12 @@ IndexMaintainer::getNumFrozenMemoryIndexes(void) const
 }
 
 void
-IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serialNum)
+IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, OnWriteDoneType on_write_done)
 {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     try {
-        _current_index->insertDocument(lid, doc);
+        _current_index->insertDocument(lid, doc, on_write_done);
     } catch (const vespalib::IllegalStateException & e) {
         vespalib::string s = "Failed inserting document :\n"  + doc.toXml("  ") + "\n";
         LOG(error, "%s", s.c_str());

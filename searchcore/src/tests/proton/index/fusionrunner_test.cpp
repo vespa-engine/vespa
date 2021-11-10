@@ -157,7 +157,7 @@ Document::UP buildDocument(DocBuilder & doc_builder, int id, const string &word)
 void addDocument(DocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &selector,
                  uint8_t index_id, uint32_t docid, const string &word) {
     Document::UP doc = buildDocument(doc_builder, docid, word);
-    index.insertDocument(docid, *doc);
+    index.insertDocument(docid, *doc, {});
     vespalib::Gate gate;
     index.commit(std::make_shared<vespalib::GateCallback>(gate));
     selector.setSource(docid, index_id);

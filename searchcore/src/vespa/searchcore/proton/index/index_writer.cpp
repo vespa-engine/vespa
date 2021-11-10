@@ -23,7 +23,7 @@ IndexWriter::ignoreOperation(search::SerialNum serialNum) const {
 }
 
 void
-IndexWriter::put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid)
+IndexWriter::put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid, OnWriteDoneType on_write_done)
 {
     if (ignoreOperation(serialNum)) {
         return;
@@ -39,7 +39,7 @@ IndexWriter::put(search::SerialNum serialNum, const document::Document &doc, con
                 serialNum, doc.getId().toString().c_str()+accum, lid, s1.size(), accum, std::min(accum+chunksize, s1.size()), s1.c_str());
         }
     }
-    _mgr->putDocument(lid, doc, serialNum);
+    _mgr->putDocument(lid, doc, serialNum, on_write_done);
 }
 
 void
