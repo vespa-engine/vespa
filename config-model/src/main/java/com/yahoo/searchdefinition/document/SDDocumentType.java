@@ -127,6 +127,14 @@ public class SDDocumentType implements Cloneable, Serializable {
         return list;
     }
 
+    public Map<NewDocumentType.Name, SDDocumentType> allTypes() {
+        Map<NewDocumentType.Name, SDDocumentType> map = new LinkedHashMap<>();
+        for (SDDocumentType inherited : inheritedTypes.values())
+            map.putAll(inherited.allTypes());
+        map.putAll(ownedTypes);
+        return map;
+    }
+
     /**
      * Creates a new document type.
      * The document type id will be generated as a hash from the document type name.
@@ -145,10 +153,9 @@ public class SDDocumentType implements Cloneable, Serializable {
      * Creates a new document type.
      * The document type id will be generated as a hash from the document type name.
      *
-     * @param name The name of the new document type
+     * @param name the name of the new document type
      * @param schema check for type ID collisions in this search definition
      */
-    @SuppressWarnings("deprecation")
     public SDDocumentType(String name, Schema schema) {
         docType = new DocumentType(name);
         docType.contentStruct().setCompressionConfig(new CompressionConfig());
@@ -161,7 +168,7 @@ public class SDDocumentType implements Cloneable, Serializable {
     public SDDocumentType setStruct(DataType structType) {
         if (structType != null) {
             this.structType = structType;
-            inheritedTypes.clear();
+            inheritedTypes.remove(VESPA_DOCUMENT.getDocumentName());
         } else {
             if (docType.contentStruct() != null) {
                 this.structType = docType.contentStruct();
@@ -200,7 +207,7 @@ public class SDDocumentType implements Cloneable, Serializable {
         if (schema.getDocument(getName()) == null) return;
         SDDocumentType doc = schema.getDocument();
         throw new IllegalArgumentException("Failed creating document type '" + getName() + "', " +
-                "document type '" + doc.getName() + "' already uses ID '" + doc.getName() + "'");
+                                           "document type '" + doc.getName() + "' already uses ID '" + doc.getName() + "'");
     }
 
     public void setFieldId(SDField field, int id) {
@@ -293,6 +300,8 @@ public class SDDocumentType implements Cloneable, Serializable {
         return fieldSet().iterator();
     }
 
+    /** Returns the number of fields in this only, not including inherited fields */
+    // TODO: Remove
     public int getFieldCount() {
         return docType.getFieldCount();
     }

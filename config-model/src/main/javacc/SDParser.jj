@@ -840,14 +840,13 @@ void structOutside(Schema schema) :
 SDDocumentType structDefinition(Schema schema, SDDocumentType repo) :
 {
     String name;
+    String inherited = null;
     SDDocumentType struct;
 }
 {
-    <STRUCT> name = identifier()
-    {
-        struct = new SDDocumentType(name, schema);
-    }
-    lbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE>
+    ( <STRUCT> name = identifier() (<NL>)* { struct = new SDDocumentType(name, schema); }
+    [ inheritsDocument(struct) (<NL>)* ]
+    lbrace() (structFieldDefinition(struct) (<NL>)*)* <RBRACE> )
     {
         try {
             docMan.getDataType(name);

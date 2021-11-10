@@ -368,9 +368,9 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         @Override
         public String toString() { return name; }
 
-        public final String getName() { return name; }
+        public String getName() { return name; }
 
-        public final int getId() { return id; }
+        public int getId() { return id; }
 
         @Override
         public int hashCode() { return name.hashCode(); }

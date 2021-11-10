@@ -5,12 +5,18 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DataTypeName;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
+import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchdefinition.processing.ImportedFieldsResolver;
+import com.yahoo.searchdefinition.processing.OnnxModelTypeResolver;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
 import java.util.Iterator;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.*;
 
 /**
@@ -95,8 +101,43 @@ public class SDDocumentTypeTestCase extends AbstractSchemaTestCase {
 
         field = (SDField) fields.next();
         assertEquals("childfield", field.getName());
+    }
 
-        // TODO: Test uninheriting
+    @Test
+    public void testStructInheritance() throws ParseException {
+        String schemaLines = joinLines(
+                "schema test {" +
+                "  document test {" +
+                "    struct parent_struct {" +
+                "      field parent_struct_field_1 type string {}" +
+                "    }" +
+                "    struct child_struct inherits parent_struct {" +
+                "      field child_struct_field_1 type string {}" +
+                "    }" +
+                "    field child_array type array<child_struct> {" +
+                "      indexing: summary\n" +
+                "      struct-field child_struct_field_1 { indexing: attribute }" +
+                "      struct-field parent_struct_field_1  { indexing: attribute }" +
+                "    }" +
+                "  }" +
+                "}");
+
+        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
+        builder.importString(schemaLines);
+        builder.build(true);
+        var application = builder.application();
+
+        SDDocumentType type = application.schemas().get("test").getDocument();
+
+        SDDocumentType parent_struct = type.getOwnedType("parent_struct");
+        assertEquals(1, parent_struct.fieldSet().size());
+        assertNotNull(parent_struct.getField("parent_struct_field_1"));
+
+        SDDocumentType child_struct = type.getOwnedType("child_struct");
+        assertTrue(child_struct.inheritedTypes().containsKey(parent_struct.getDocumentName()));
+        assertEquals(2, child_struct.fieldSet().size());
+        assertNotNull(child_struct.getField("child_struct_field_1"));
+        assertNotNull(child_struct.getField("parent_struct_field_1"));
     }
 
 }
