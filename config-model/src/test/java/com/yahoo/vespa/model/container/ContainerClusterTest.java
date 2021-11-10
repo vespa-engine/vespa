@@ -385,6 +385,7 @@ public class ContainerClusterTest {
                 .zone(Zone.defaultZone())
                 .endpoints(globalEndpoints)
                 .properties(new TestProperties()
+                                    .setHostedVespa(true)
                                     .setApplicationId(appId)
                                     .setZoneDnsSuffixes(List.of(".endpoint.suffix")))
                 .build();

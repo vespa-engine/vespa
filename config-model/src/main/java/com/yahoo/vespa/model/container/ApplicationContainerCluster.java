@@ -198,8 +198,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
       Create list of endpoints, these will be consumed later by the LBservicesProducer
      */
     private void createEndpointList(DeployState deployState) {
-
-        if( deployState.getProperties().applicationId().instance().isTester()) return;
+        if(!deployState.isHosted()) return;
+        if(deployState.getProperties().applicationId().instance().isTester()) return;
         List<ApplicationClusterEndpoint> endpoints = new ArrayList<>();
         // Add zone local endpoints using zone dns suffixes, tenant, application and cluster id.
         // For now support both L7 and L4 routing
