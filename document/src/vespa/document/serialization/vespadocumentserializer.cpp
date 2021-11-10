@@ -26,7 +26,6 @@
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/update/updates.h>
 #include <vespa/document/util/bytebuffer.h>
-#include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
@@ -298,8 +297,7 @@ VespaDocumentSerializer::structNeedsReserialization(const StructFieldValue &valu
         return false;
     }
 
-    return (value.getFields().getCompression() != value.getCompressionConfig().type &&
-        value.getFields().getCompression() != CompressionConfig::UNCOMPRESSABLE);
+    return true;
 }
 
 void VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
@@ -316,10 +314,7 @@ void VespaDocumentSerializer::writeUnchanged(const SerializableArray &value) {
     size_t estimatedRequiredSpace = sz + 4 + 1 + 8 + 4 + field_info.size()*12;
     _stream.reserve(_stream.size() + estimatedRequiredSpace);
     _stream << sz;
-    _stream << static_cast<uint8_t>(value.getCompression());
-    if (CompressionConfig::isCompressed(value.getCompression())) {
-        putInt2_4_8Bytes(_stream, value.getCompressionInfo().getUncompressedSize());
-    }
+    _stream << static_cast<uint8_t>(CompressionConfig::NONE);
     putFieldInfo(_stream, field_info);
     if (sz) {
         _stream.write(buffer->getBuffer(), buffer->getLength());
