@@ -23,7 +23,6 @@ using std::vector;
 using vespalib::nbostream;
 using vespalib::nbostream_longlivedbuf;
 using vespalib::make_string;
-using vespalib::compression::CompressionConfig;
 using namespace vespalib::xml;
 
 namespace document {
@@ -50,24 +49,14 @@ StructFieldValue::getStructType() const {
     return static_cast<const StructDataType &>(getType());
 }
 
-const CompressionConfig &
-StructFieldValue::getCompressionConfig() const {
-    return getStructType().getCompressionConfig();
-}
-
 void
-StructFieldValue::lazyDeserialize(const FixedTypeRepo &repo,
-                                  uint16_t version,
-                                  SerializableArray::EntryMap && fm,
-                                  ByteBuffer buffer,
-                                  CompressionConfig::Type comp_type,
-                                  int32_t uncompressed_length)
+StructFieldValue::lazyDeserialize(const FixedTypeRepo &repo, uint16_t version, SerializableArray::EntryMap && fm, ByteBuffer buffer)
 {
     _repo = &repo.getDocumentTypeRepo();
     _doc_type = &repo.getDocumentType();
     _version = version;
 
-    _fields.set(std::move(fm), std::move(buffer), comp_type, uncompressed_length);
+    _fields.set(std::move(fm), std::move(buffer));
     _hasChanged = false;
 }
 

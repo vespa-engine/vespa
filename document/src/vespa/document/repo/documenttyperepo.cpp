@@ -31,7 +31,6 @@ using vespalib::hash_map;
 using vespalib::make_string;
 using vespalib::string;
 using vespalib::stringref;
-using vespalib::compression::CompressionConfig;
 
 namespace document {
 
@@ -303,14 +302,6 @@ void addStruct(int32_t id, const Datatype::Sstruct &s, Repo &repo) {
             return;
         }
     }
-
-    CompressionConfig::Type type = CompressionConfig::NONE;
-    if (s.compression.type == Datatype::Sstruct::Compression::Type::LZ4) {
-        type = CompressionConfig::LZ4;
-    }
-
-    struct_type->setCompressionConfig(
-            CompressionConfig(type, s.compression.level, s.compression.threshold, s.compression.minsize));
 
     for (size_t i = 0; i < s.field.size(); ++i) {
         addField(s.field[i], repo, *struct_type);

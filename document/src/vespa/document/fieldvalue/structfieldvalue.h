@@ -34,7 +34,6 @@ private:
 
 public:
     using UP = std::unique_ptr<StructFieldValue>;
-    using CompressionConfig = vespalib::compression::CompressionConfig;
 
     StructFieldValue(const DataType &type);
     StructFieldValue(const StructFieldValue & rhs);
@@ -48,12 +47,7 @@ public:
     void setDocumentType(const DocumentType & docType) { _doc_type = & docType; }
     const SerializableArray & getFields() const { return _fields; }
 
-    void lazyDeserialize(const FixedTypeRepo &repo,
-                         uint16_t version,
-                         SerializableArray::EntryMap && fields,
-                         ByteBuffer buffer,
-                         CompressionConfig::Type comp_type,
-                         int32_t uncompressed_length);
+    void lazyDeserialize(const FixedTypeRepo &repo, uint16_t version, SerializableArray::EntryMap && fields, ByteBuffer buffer);
 
     // returns false if the field could not be serialized.
     bool serializeField(int raw_field_id, uint16_t version, FieldValueWriter &writer) const;
@@ -69,8 +63,6 @@ public:
     bool hasField(vespalib::stringref name) const override;
     const Field& getField(vespalib::stringref name) const override;
     void clear() override;
-
-    const CompressionConfig &getCompressionConfig() const;
 
     // FieldValue implementation.
     FieldValue& assign(const FieldValue&) override;

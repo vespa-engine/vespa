@@ -22,6 +22,8 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/backtrace.h>
+#include <vespa/vespalib/util/compressor.h>
+#include <vespa/vespalib/data/databuffer.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value.h>
@@ -42,6 +44,8 @@ using vespalib::nbostream;
 using vespalib::Memory;
 using vespalib::stringref;
 using vespalib::compression::CompressionConfig;
+using vespalib::ConstBufferRef;
+using vespalib::make_string_short::fmt;
 using vespalib::eval::FastValueBuilderFactory;
 
 namespace document {
@@ -274,7 +278,8 @@ typedef SerializableArray::EntryMap FieldInfo;
 
 void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) __attribute__((noinline));
 
-void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) {
+void
+readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) {
     size_t field_count = getInt1_4Bytes(input);
     field_info.reserve(field_count);
     uint32_t offset = 0;
@@ -285,6 +290,36 @@ void readFieldInfo(nbostream& input, SerializableArray::EntryMap & field_info) {
         offset += size;
     }
 }
+
+ByteBuffer
+deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength, vespalib::ConstBufferRef compressed) __attribute__((noinline));
+
+ByteBuffer
+deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength, vespalib::ConstBufferRef compressed)
+{
+    using vespalib::compression::decompress;
+
+    assert(compressed.size() != 0);
+
+    ByteBuffer newSerialization(vespalib::alloc::Alloc::alloc(uncompressedLength), uncompressedLength);
+    vespalib::DataBuffer unCompressed(newSerialization.getBuffer(), newSerialization.getLength());
+    unCompressed.clear();
+    try {
+        decompress(compression, uncompressedLength, compressed,unCompressed,false);
+    } catch (const std::runtime_error & e) {
+        throw DeserializeException(fmt( "Document was compressed with code unknown code %d", compression), VESPA_STRLOC);
+    }
+
+    if (unCompressed.getDataLen() != (size_t)uncompressedLength) {
+        throw DeserializeException(fmt("Did not decompress to the expected length: had %lu, wanted %d, got %zu",
+                                       compressed.size(), uncompressedLength, unCompressed.getDataLen()),
+                                   VESPA_STRLOC);
+    }
+    assert(newSerialization.getBuffer() == unCompressed.getData());
+    LOG_ASSERT(uncompressedLength == newSerialization.getRemaining());
+    return newSerialization;
+}
+
 }  // namespace
 
 void VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
@@ -308,19 +343,18 @@ void VespaDocumentDeserializer::readStructNoReset(StructFieldValue &value) {
     }
 
     if (data_size > 0) {
-        ByteBuffer buffer(_stream.isLongLivedBuffer()
-                          ? ByteBuffer(_stream.peek(), data_size)
-                          : ByteBuffer::copyBuffer(_stream.peek(), data_size));
+        ByteBuffer buffer = CompressionConfig::isCompressed(compression_type)
+                            ? deCompress(compression_type, uncompressed_size, ConstBufferRef(_stream.peek(), data_size))
+                            : _stream.isLongLivedBuffer()
+                                ? ByteBuffer(_stream.peek(), data_size)
+                                : ByteBuffer::copyBuffer(_stream.peek(), data_size);
         if (value.getFields().empty()) {
-            LOG(spam, "Lazy deserializing into %s with _version %u",
-                value.getDataType()->getName().c_str(), _version);
-            value.lazyDeserialize(_repo, _version, std::move(field_info),
-                                  std::move(buffer), compression_type, uncompressed_size);
+            LOG(spam, "Lazy deserializing into %s with _version %u", value.getDataType()->getName().c_str(), _version);
+            value.lazyDeserialize(_repo, _version, std::move(field_info), std::move(buffer));
         } else {
             LOG(debug, "Legacy dual header/body format. -> Merging.");
             StructFieldValue tmp(*value.getDataType());
-            tmp.lazyDeserialize(_repo, _version, std::move(field_info),
-                                std::move(buffer), compression_type, uncompressed_size);
+            tmp.lazyDeserialize(_repo, _version, std::move(field_info), std::move(buffer));
             for (const auto & entry : tmp) {
                 try {
                     FieldValue::UP decoded = tmp.getValue(entry);
@@ -367,7 +401,7 @@ VespaDocumentDeserializer::readTensor()
 {
     size_t length = _stream.getInt1_4Bytes();
     if (length > _stream.size()) {
-        throw DeserializeException(vespalib::make_string("Stream failed size(%zu), needed(%zu) to deserialize tensor field value", _stream.size(), length),
+        throw DeserializeException(fmt("Stream failed size(%zu), needed(%zu) to deserialize tensor field value", _stream.size(), length),
                                    VESPA_STRLOC);
     }
     std::unique_ptr<vespalib::eval::Value> tensor;

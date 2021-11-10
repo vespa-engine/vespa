@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/buffer.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vespa/document/util/bytebuffer.h>
@@ -80,7 +79,6 @@ public:
 
     using CP = vespalib::CloneablePtr<SerializableArray>;
     using UP = std::unique_ptr<SerializableArray>;
-    using CompressionConfig = vespalib::compression::CompressionConfig;
 
     SerializableArray();
     SerializableArray(const SerializableArray&);
@@ -89,8 +87,7 @@ public:
     SerializableArray& operator=(SerializableArray &&) noexcept;
     ~SerializableArray();
 
-    void set(EntryMap entries, ByteBuffer buffer,
-             CompressionConfig::Type comp_type, uint32_t uncompressed_length);
+    void set(EntryMap entries, ByteBuffer buffer);
     /**
      * Stores a value in the array.
      *
@@ -141,8 +138,6 @@ private:
     ByteBuffer                _uncompSerData;
     std::unique_ptr<serializablearray::BufferMap> _owned;
 
-
-    static ByteBuffer deCompress(CompressionConfig::Type compression, uint32_t uncompressedLength, ByteBuffer compressed); // throw (DeserializeException);
     VESPA_DLL_LOCAL EntryMap::const_iterator find(int id) const;
     VESPA_DLL_LOCAL EntryMap::iterator find(int id);
 };
