@@ -5,7 +5,7 @@
 #include <vespa/searchlib/common/featureset.h>
 #include <vector>
 
-namespace vespalib { class ThreadBundle; };
+namespace vespalib { struct ThreadBundle; };
 namespace search::queryeval { class SearchIterator; }
 namespace search::fef { class RankProgram; }
 
