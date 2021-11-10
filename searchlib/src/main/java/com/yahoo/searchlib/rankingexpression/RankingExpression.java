@@ -32,7 +32,7 @@ import java.util.Map;
  * <p>The identity of a ranking expression is decided by both its name and expression tree. Two expressions which
  * looks the same in string form are the same.</p>
  *
- * <h3>Simple usage</h3>
+ * <h2>Simple usage</h2>
 <pre><code>
 try {
     MapContext context = new MapContext();

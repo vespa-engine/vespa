@@ -36,7 +36,7 @@ com.yahoo.config.model.producer.AbstractConfigProducer
     allocation</a>.
     </p>
 
-    <h3>Config Generation</h3>
+    <h2>Config Generation</h2>
 
     <p>The method {@link
     com.yahoo.vespa.model.VespaModel#getConfig(com.yahoo.config.ConfigInstance.Builder, String)
@@ -61,7 +61,7 @@ com.yahoo.config.model.producer.AbstractConfigProducer
     method and by user defined config.
     </p>
 
-    <h4>Example:</h4>
+    <h3>Example:</h3>
     <p>
     Say we have a config named 'sample' with an integer parameter
     named 'v'. If the VespaModel root node's {@link
@@ -99,7 +99,7 @@ com.yahoo.config.model.producer.AbstractConfigProducer
     </p>
 
 
-    <h3 id="plugin_loading">Plugin Loading</h3>
+    <h2 id="plugin_loading">Plugin Loading</h2>
 
     <p>Each highest-level node in the setup file from the user's
     application specification corresponds to a {@link
@@ -116,7 +116,7 @@ com.yahoo.config.model.builder.xml.ConfigModelBuilder ConfigModelBuilder}. The
     <p>The built models are given to other models that depends on it.
     </p>
 
-    <h4>Important notes for plugin developers:</h4>
+    <h3>Important notes for plugin developers:</h3>
     <ul>
 
     <li>The constructors of all child classes of {@link
@@ -138,7 +138,7 @@ com.yahoo.config.model.producer.AbstractConfigProducer
     </ul>
 
 
-    <h3 id="port_allocation">Port Allocation</h3>
+    <h2 id="port_allocation">Port Allocation</h2>
 
     <p>Each {@link com.yahoo.vespa.model.Host Host} has an available
     dynamic port range running from {@link
