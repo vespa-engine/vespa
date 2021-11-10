@@ -2,6 +2,7 @@
 
 #include "document_inverter_context.h"
 #include <cassert>
+#include <optional>
 
 namespace search::memoryindex {
 
