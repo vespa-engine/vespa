@@ -119,7 +119,6 @@
         <module>service-monitor</module>
         <module>socket_test</module>
         <module>standalone-container</module>
-        <module>statistics</module>
         <module>storage</module>
         <module>tenant-base</module>
         <module>tenant-cd-api</module>
