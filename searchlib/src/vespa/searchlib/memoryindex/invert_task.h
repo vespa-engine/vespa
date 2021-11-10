@@ -5,10 +5,7 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vector>
 
-namespace document {
-class Document;
-class FieldValue;
-}
+namespace document { class Document; }
 namespace vespalib { class IDestructorCallback; }
 
 namespace search::memoryindex {
@@ -29,8 +26,7 @@ class InvertTask : public vespalib::Executor::Task
     const InvertContext&                                  _context;
     const std::vector<std::unique_ptr<FieldInverter>>&    _inverters;
     const std::vector<std::unique_ptr<UrlFieldInverter>>& _uri_inverters;
-    std::vector<std::unique_ptr<document::FieldValue>>    _field_values;
-    std::vector<std::unique_ptr<document::FieldValue>>    _uri_field_values;
+    const document::Document&                             _doc;
     uint32_t                                              _lid;
     std::remove_reference_t<OnWriteDoneType>              _on_write_done;
 public:
