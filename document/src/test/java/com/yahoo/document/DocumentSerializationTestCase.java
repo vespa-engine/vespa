@@ -112,19 +112,9 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             weightedSet.put(new StringFieldValue("Weighted 1"), 199);
             doc.setFieldValue("wsfield", weightedSet);
 
-            CompressionConfig noncomp = new CompressionConfig();
-            CompressionConfig lz4comp = new CompressionConfig(CompressionType.LZ4);
             {
-                doc.getDataType().contentStruct().setCompressionConfig(noncomp);
                 FileOutputStream fout = new FileOutputStream(path + "document-java-currentversion-uncompressed.dat", false);
                 doc.serialize(fout);
-                fout.close();
-            }
-            {
-                doc.getDataType().contentStruct().setCompressionConfig(lz4comp);
-                FileOutputStream fout = new FileOutputStream(path + "document-java-currentversion-lz4-9.dat", false);
-                doc.serialize(fout);
-                doc.getDataType().contentStruct().setCompressionConfig(noncomp);
                 fout.close();
             }
         }

@@ -117,13 +117,6 @@ public class DocumentManager {
             Datatype.Structtype.Builder structBuilder = new Datatype.Structtype.Builder();
             builder.structtype(structBuilder);
             structBuilder.name(structType.getName());
-            if (structType.getCompressionConfig().type.getCode() != 0) {
-                structBuilder.
-                    compresstype(Datatype.Structtype.Compresstype.Enum.valueOf(structType.getCompressionConfig().type.toString())).
-                    compresslevel(structType.getCompressionConfig().compressionLevel).
-                    compressthreshold((int)structType.getCompressionConfig().threshold).
-                    compressminsize((int)structType.getCompressionConfig().minsize);
-            }
             for (com.yahoo.document.Field field : structType.getFieldsThisTypeOnly()) {
                 Datatype.Structtype.Field.Builder fieldBuilder = new Datatype.Structtype.Field.Builder();
                 structBuilder.field(fieldBuilder);

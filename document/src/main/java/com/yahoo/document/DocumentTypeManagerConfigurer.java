@@ -10,7 +10,6 @@ import java.util.logging.Level;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -24,17 +23,14 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
 
     private final static Logger log = Logger.getLogger(DocumentTypeManagerConfigurer.class.getName());
 
-    private DocumentTypeManager managerToConfigure;
+    private final DocumentTypeManager managerToConfigure;
 
     public DocumentTypeManagerConfigurer(DocumentTypeManager manager) {
         this.managerToConfigure = manager;
     }
 
-    private static CompressionConfig makeCompressionConfig(DocumentmanagerConfig.Datatype.Structtype cfg) {
-        return new CompressionConfig(toCompressorType(cfg.compresstype()), cfg.compresslevel(),
-                                     cfg.compressthreshold(), cfg.compressminsize());
-    }
-
+    /** Deprecated and will go away on Vespa 8 */
+    @Deprecated
     public static CompressionType toCompressorType(DocumentmanagerConfig.Datatype.Structtype.Compresstype.Enum value) {
         switch (value) {
             case NONE: return CompressionType.NONE;
@@ -43,7 +39,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         }
         throw new IllegalArgumentException("Compression type " + value + " is not supported");
     }
-
     /**
      * <p>Makes the DocumentTypeManager subscribe on its config.</p>
      *
@@ -73,8 +68,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         setupAnnotationRefTypes(config, manager);
 
         log.log(Level.FINE, "Configuring document manager with " + config.datatype().size() + " data types.");
-        ArrayList<DocumentmanagerConfig.Datatype> failed = new ArrayList<>();
-        failed.addAll(config.datatype());
+        ArrayList<DocumentmanagerConfig.Datatype> failed = new ArrayList<>(config.datatype());
         while (!failed.isEmpty()) {
             ArrayList<DocumentmanagerConfig.Datatype> tmp = failed;
             failed = new ArrayList<>();
@@ -82,7 +76,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 DocumentmanagerConfig.Datatype thisDataType = tmp.get(i);
                 int id = thisDataType.id();
                 try {
-                    registerTypeIdMapping(config, manager, thisDataType, id);
+                    registerTypeIdMapping(manager, thisDataType, id);
                 } catch (IllegalArgumentException e) {
                     failed.add(thisDataType);
                 }
@@ -95,24 +89,24 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         manager.replaceTemporaryTypes();
     }
 
-    private static void registerTypeIdMapping(DocumentmanagerConfig config, DocumentTypeManager manager, DocumentmanagerConfig.Datatype thisDataType, int id) {
-        for (Object o : thisDataType.arraytype()) {
-            registerArrayType(manager, id, (DocumentmanagerConfig.Datatype.Arraytype) o);
+    private static void registerTypeIdMapping(DocumentTypeManager manager, DocumentmanagerConfig.Datatype thisDataType, int id) {
+        for (var o : thisDataType.arraytype()) {
+            registerArrayType(manager, id, o);
         }
-        for (Object o : thisDataType.maptype()) {
-            registerMapType(manager, id, (DocumentmanagerConfig.Datatype.Maptype) o);
+        for (var o : thisDataType.maptype()) {
+            registerMapType(manager, id, o);
         }
-        for (Object o : thisDataType.weightedsettype()) {
-            registerWeightedSetType(manager, id, (DocumentmanagerConfig.Datatype.Weightedsettype) o);
+        for (var o : thisDataType.weightedsettype()) {
+            registerWeightedSetType(manager, id, o);
         }
-        for (Object o : thisDataType.structtype()) {
-            registerStructType(config, manager, id, (DocumentmanagerConfig.Datatype.Structtype) o);
+        for (var o : thisDataType.structtype()) {
+            registerStructType(manager, id, o);
         }
-        for (Object o : thisDataType.documenttype()) {
-            registerDocumentType(manager, (DocumentmanagerConfig.Datatype.Documenttype) o);
+        for (var o : thisDataType.documenttype()) {
+            registerDocumentType(manager, o);
         }
-        for (Object o : thisDataType.referencetype()) {
-            registerReferenceType(manager, id, (DocumentmanagerConfig.Datatype.Referencetype) o);
+        for (var o : thisDataType.referencetype()) {
+            registerReferenceType(manager, id, o);
         }
     }
 
@@ -139,20 +133,17 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         manager.register(type);
     }
 
-    @SuppressWarnings("deprecation")
     private static void registerDocumentType(DocumentTypeManager manager, DocumentmanagerConfig.Datatype.Documenttype doc) {
         StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
         var importedFields = doc.importedfield().stream()
                 .map(f -> f.name())
                 .collect(Collectors.toUnmodifiableSet());
         DocumentType type = new DocumentType(doc.name(), header, importedFields);
-        for (Object j : doc.inherits()) {
-            DocumentmanagerConfig.Datatype.Documenttype.Inherits parent =
-                    (DocumentmanagerConfig.Datatype.Documenttype.Inherits) j;
+        for (var parent : doc.inherits()) {
             DataTypeName name = new DataTypeName(parent.name());
             DocumentType parentType = manager.getDocumentType(name);
             if (parentType == null) {
-                throw new IllegalArgumentException("Could not find document type '" + name.toString() + "'.");
+                throw new IllegalArgumentException("Could not find document type '" + name + "'.");
             }
             type.inherit(parentType);
         }
@@ -164,18 +155,11 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         manager.register(type);
     }
 
-    private static void registerStructType(DocumentmanagerConfig config, DocumentTypeManager manager, int id,
+    private static void registerStructType(DocumentTypeManager manager, int id,
                                            DocumentmanagerConfig.Datatype.Structtype struct) {
         StructDataType type = new StructDataType(id, struct.name());
 
-        if (config.enablecompression()) {
-            CompressionConfig comp = makeCompressionConfig(struct);
-            type.setCompressionConfig(comp);
-        }
-
-        for (Object j : struct.field()) {
-            DocumentmanagerConfig.Datatype.Structtype.Field field =
-                    (DocumentmanagerConfig.Datatype.Structtype.Field) j;
+        for (var field : struct.field()) {
             DataType fieldType = (field.datatype() == id)
                                ? manager.getDataTypeAndReturnTemporary(field.datatype(), field.detailedtype())
                                : manager.getDataType(field.datatype(), field.detailedtype());
@@ -231,8 +215,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         for (int i = 0; i < config.datatype().size(); i++) {
             DocumentmanagerConfig.Datatype thisDataType = config.datatype(i);
             int id = thisDataType.id();
-            for (Object o : thisDataType.annotationreftype()) {
-                DocumentmanagerConfig.Datatype.Annotationreftype annRefType = (DocumentmanagerConfig.Datatype.Annotationreftype) o;
+            for (var annRefType : thisDataType.annotationreftype()) {
                 AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annRefType.annotation());
                 if (annotationType == null) {
                     throw new IllegalArgumentException("Found reference to " + annRefType.annotation() + ", which does not exist!");
@@ -275,11 +258,10 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         for (int i = 0; i < config.datatype().size(); i++) {
             DocumentmanagerConfig.Datatype thisDataType = config.datatype(i);
             int id = thisDataType.id();
-            for (Object o : thisDataType.structtype()) {
-                DocumentmanagerConfig.Datatype.Structtype struct = (DocumentmanagerConfig.Datatype.Structtype) o;
+            for (var struct : thisDataType.structtype()) {
                 StructDataType thisStruct = (StructDataType) manager.getDataType(id, "");
 
-                for (DocumentmanagerConfig.Datatype.Structtype.Inherits parent : struct.inherits()) {
+                for (var parent : struct.inherits()) {
                     StructDataType parentStruct = (StructDataType) manager.getDataType(parent.name());
                     thisStruct.inherit(parentStruct);
                 }

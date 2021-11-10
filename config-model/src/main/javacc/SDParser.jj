@@ -154,26 +154,6 @@ public class SDParser {
                                                       token_source.input_stream.getBeginColumn() + ".").initCause(e);
         }
     }
-
-    /**
-     * Sets the compression threshold in each item in the compression config array.
-     *
-     * @param cfg The array of configs to modify.
-     * @param val The compression threshold to set.
-     */
-    private void setCompressionThreshold(CompressionConfig cfg, int val) {
-        cfg.threshold = val;
-    }
-
-    /**
-     * Sets the compression level in each item in the compression config array.
-     *
-     * @param cfg The array of configs to modify.
-     * @param val The compression level to set.
-     */
-    private void setCompressionLevel(CompressionConfig cfg, int val) {
-        cfg.compressionLevel = val;
-    }
 }
 
 PARSER_END(SDParser)
@@ -569,7 +549,7 @@ Object documentBody(SDDocumentType document, Schema schema) :
 }
 {
     ( annotation(schema, document)
-      | compression(document, null)
+      | compression(document)
       | headercfg(document)
       | bodycfg(document)
       | structInside(document, schema)
@@ -590,7 +570,7 @@ void rawAsBase64(Schema schema) :
  */
 void headercfg(SDDocumentType document) : { }
 {
-    <HEADER> lbrace() [compression(document, "header") (<NL>)*] <RBRACE>
+    <HEADER> lbrace() [compression(document) (<NL>)*] <RBRACE>
 }
 
 /**
@@ -600,46 +580,35 @@ void headercfg(SDDocumentType document) : { }
  */
 void bodycfg(SDDocumentType document) : { }
 {
-    <BODY> lbrace() [compression(document, "body") (<NL>)*] <RBRACE>
+    <BODY> lbrace() [compression(document) (<NL>)*] <RBRACE>
 }
 
 /**
  * Consumes a compression block. This can be set in both document header and -body block.
  *
  * @param document The document type to modify.
- * @param name     The name of the document block to modify.
  */
-void compression(SDDocumentType document, String name) :
+void compression(SDDocumentType document) :
 {
     deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
-    CompressionConfig cfg = new CompressionConfig(CompressionType.LZ4);
 }
 {
-    <COMPRESSION> lbrace() (cfg = compressionItem(cfg) (<NL>)*)* <RBRACE>
-    {
-        if (name == null || name.equals("header")) {
-            document.getDocumentType().contentStruct().setCompressionConfig(cfg);
-        }
-    }
+    <COMPRESSION> lbrace() ( compressionItem() (<NL>)*)* <RBRACE>  { }
 }
 
 /**
  * Consumes the body of a compression block.
  *
- * @param cfg The compression config to modify.
  */
-CompressionConfig compressionItem(CompressionConfig cfg) :
+void compressionItem() :
 {
     int val = -1;
 }
 {
-    ( ( <TYPE> <COLON> <LZ4> { cfg = new CompressionConfig(CompressionType.LZ4, cfg.compressionLevel, cfg.threshold); } )
-      | (<COMPRESSIONTHRESHOLD> <COLON> val = integer()) { setCompressionThreshold(cfg, val); }
-      | (<COMPRESSIONLEVEL>   <COLON> val = integer())  { setCompressionLevel(cfg, val); }
-    )
-    {
-       return cfg;
-    }
+    ( ( <TYPE> <COLON> <LZ4> )
+      | (<COMPRESSIONTHRESHOLD> <COLON> val = integer())
+      | (<COMPRESSIONLEVEL>   <COLON> val = integer())
+    ) { }
 }
 
 /**

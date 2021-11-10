@@ -18,8 +18,6 @@ public abstract class BaseStructDataType extends StructuredDataType {
     protected Map<Integer, Field> fieldIds = new LinkedHashMap<>();
     protected Map<String, Field> fields = new LinkedHashMap<>();
 
-    protected Compressor compressor = new Compressor(CompressionType.NONE);
-
     BaseStructDataType(String name) {
         super(name);
     }
@@ -101,27 +99,25 @@ public abstract class BaseStructDataType extends StructuredDataType {
         return fields.size();
     }
 
-    /** Returns the compressor to use to compress data of this type */
-    public Compressor getCompressor() { return compressor; }
+    /** Returns the compressor to use to compress data of this type
+     * @deprecated Will go away on Vespa 8
+     */
+    @Deprecated
+    public Compressor getCompressor() { return new Compressor(CompressionType.NONE); }
 
-    /** Returns a view of the configuration of the compressor used to compress this type */
+    /** Returns a view of the configuration of the compressor used to compress this type
+     * @deprecated Will go away on Vespa 8
+     */
+    @Deprecated
     public CompressionConfig getCompressionConfig() {
-        // CompressionConfig accepts a percentage (but exposes a factor) ...
-        float compressionThresholdPercentage = (float)compressor.compressionThresholdFactor() * 100;
-
-        return new CompressionConfig(compressor.type(),
-                                     compressor.level(),
-                                     compressionThresholdPercentage,
-                                     compressor.compressMinSizeBytes());
+        return new CompressionConfig();
     }
 
-    /** Set the config to the compressor used to compress data of this type */
-    public void setCompressionConfig(CompressionConfig config) {
-        CompressionType type = config.type;
-        compressor = new Compressor(type,
-                                    config.compressionLevel,
-                                    config.thresholdFactor(),
-                                    (int)config.minsize);
-    }
+    /**
+     *  Set the config to the compressor used to compress data of this type
+     * @deprecated Ignored and will go away on Vespa 8
+     */
+    @Deprecated
+    public void setCompressionConfig(CompressionConfig config) { }
 
 }

@@ -65,25 +65,20 @@ public class Struct extends StructuredFieldValue {
         return this.version;
     }
 
+    /** @deprecated Will go away on Vespa 8 */
+    @Deprecated
     public com.yahoo.compress.CompressionType getCompressionType() {
-        if (getDataType().getCompressionConfig() == null) {
-            return com.yahoo.compress.CompressionType.NONE;
-        }
-        return getDataType().getCompressionConfig().type;
+        return com.yahoo.compress.CompressionType.NONE;
     }
 
-    public int getCompressionLevel() {
-        if ( getDataType().getCompressionConfig() == null) {
-            return 9;
-        }
-        return getDataType().getCompressionConfig().compressionLevel;
-    }
+    /** @deprecated Will go away on Vespa 8 */
+    @Deprecated
+    public int getCompressionLevel() { return 9; }
 
+    /** @deprecated Will go away on Vespa 8 */
+    @Deprecated
     public float getCompressionThreshold() {
-        if (getDataType().getCompressionConfig() == null) {
-            return .95f;
-        }
-        return getDataType().getCompressionConfig().threshold;
+        return .95f;
     }
 
     @Override

@@ -428,7 +428,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         }
     }
 
-    class ModifyIteratorHandler extends FieldPathIteratorHandler {
+    static class ModifyIteratorHandler extends FieldPathIteratorHandler {
 
         public ModificationStatus doModify(FieldValue fv) {
             if (fv instanceof StringFieldValue) {
@@ -444,7 +444,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         }
     }
 
-    class AddIteratorHandler extends FieldPathIteratorHandler {
+    static class AddIteratorHandler extends FieldPathIteratorHandler {
 
         @SuppressWarnings("unchecked")
         public ModificationStatus doModify(FieldValue fv) {
@@ -658,7 +658,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         validateCppDoc(doc);
     }
 
-    public void validateCppDoc(Document doc) throws IOException {
+    public void validateCppDoc(Document doc) {
         validateCppDocNotMap(doc);
         MapFieldValue map = (MapFieldValue)doc.getFieldValue("mapfield");
         assertEquals(map.get(new StringFieldValue("foo1")), new StringFieldValue("bar1"));
@@ -666,7 +666,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @SuppressWarnings("unchecked")
-    public void validateCppDocNotMap(Document doc) throws IOException {
+    public void validateCppDocNotMap(Document doc) {
         // in practice to validate v6 serialization
         assertEquals("id:ns:serializetest::http://test.doc.id/", doc.getId().toString());
         assertEquals(new IntegerFieldValue(5), doc.getFieldValue("intfield"));
@@ -694,7 +694,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testGenerateSerializedFile() throws IOException {
 
         docMan = setUpCppDocType();
@@ -744,18 +743,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         FileOutputStream fos = new FileOutputStream("src/tests/data/serializejava.dat");
         fos.write(buf.array(), 0, size);
         fos.close();
-
-        CompressionConfig noncomp = new CompressionConfig();
-        CompressionConfig lz4comp = new CompressionConfig(CompressionType.LZ4);
-
-        doc.getDataType().contentStruct().setCompressionConfig(lz4comp);
-        buf = new GrowableByteBuffer(size, 2.0f);
-
-        doc.serialize(buf);
-        doc.getDataType().contentStruct().setCompressionConfig(noncomp);
-        fos = new FileOutputStream("src/tests/data/serializejava-compressed.dat");
-        fos.write(buf.array(), 0, buf.position());
-        fos.close();
     }
 
     @Test
@@ -782,53 +769,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         Document doc2 = docMan.createDocument(data);
 
         assertEquals(doc.getFieldValue("myboolfield"), doc2.getFieldValue("myboolfield"));
-        assertEquals(doc.getFieldValue("mailid"), doc2.getFieldValue("mailid"));
-        assertEquals(doc.getFieldValue("date"), doc2.getFieldValue("date"));
-        assertEquals(doc.getFieldValue("from"), doc2.getFieldValue("from"));
-        assertEquals(doc.getFieldValue("to"), doc2.getFieldValue("to"));
-        assertEquals(doc.getFieldValue("subject"), doc2.getFieldValue("subject"));
-        assertEquals(doc.getFieldValue("body"), doc2.getFieldValue("body"));
-        assertEquals(doc.getFieldValue("attachmentcount"), doc2.getFieldValue("attachmentcount"));
-        assertEquals(doc.getFieldValue("attachments"), doc2.getFieldValue("attachments"));
-        byte[] docRawBytes = ((Raw)doc.getFieldValue("rawfield")).getByteBuffer().array();
-        byte[] doc2RawBytes = ((Raw)doc2.getFieldValue("rawfield")).getByteBuffer().array();
-        assertEquals(docRawBytes.length, doc2RawBytes.length);
-        for (int i = 0; i < docRawBytes.length; i++) {
-            assertEquals(docRawBytes[i], doc2RawBytes[i]);
-        }
-        assertEquals(doc.getFieldValue("weightedfield"), doc2.getFieldValue("weightedfield"));
-        assertEquals(doc.getFieldValue("mapfield"), doc2.getFieldValue("mapfield"));
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testSerializeDeserializeCompressed() {
-        setUpSertestDocType();
-        Document doc = getSertestDocument();
-
-        CompressionConfig noncomp = new CompressionConfig();
-        CompressionConfig lz4comp = new CompressionConfig(CompressionType.LZ4);
-
-        doc.getDataType().contentStruct().setCompressionConfig(lz4comp);
-
-        GrowableByteBuffer data = new GrowableByteBuffer();
-        doc.serialize(data);
-        int size = doc.getSerializedSize();
-        doc.getDataType().contentStruct().setCompressionConfig(noncomp);
-
-        assertEquals(size, data.position());
-
-        data.flip();
-
-        try {
-            FileOutputStream fos = new FileOutputStream("src/test/files/testser.dat");
-            fos.write(data.array(), 0, data.remaining());
-            fos.close();
-        } catch (Exception e) {
-        }
-
-        Document doc2 = docMan.createDocument(data);
-
         assertEquals(doc.getFieldValue("mailid"), doc2.getFieldValue("mailid"));
         assertEquals(doc.getFieldValue("date"), doc2.getFieldValue("date"));
         assertEquals(doc.getFieldValue("from"), doc2.getFieldValue("from"));
@@ -937,7 +877,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
-    public void testCompressionConfigured() {
+    public void testCompressionConfiguredIsIgnored() {
 
         int size_uncompressed;
         {
@@ -966,7 +906,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         doc.serialize(data);
         int size_compressed = data.position();
 
-        assertTrue(size_compressed + " < " + size_uncompressed, size_compressed < size_uncompressed);
+        assertEquals(size_compressed, size_uncompressed);
     }
 
     @Test
