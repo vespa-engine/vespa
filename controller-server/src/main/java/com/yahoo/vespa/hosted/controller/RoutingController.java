@@ -275,6 +275,7 @@ public class RoutingController {
             // Include rotation ID as a valid name of this container endpoint (required by global routing health checks)
             names.add(assignedRotation.rotationId().asString());
             containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(),
+                                                         asString(Endpoint.Scope.global),
                                                          names));
         }
         // Add endpoints not backed by a rotation (i.e. other routing methods so that the config server always knows
@@ -285,8 +286,33 @@ public class RoutingController {
                        .groupingBy(Endpoint::cluster)
                        .forEach((clusterId, clusterEndpoints) -> {
                            containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
+                                                                        asString(Endpoint.Scope.global),
                                                                         clusterEndpoints.mapToList(Endpoint::dnsName)));
                        });
+        // Add application endpoints
+        EndpointList applicationEndpoints = endpoints.scope(Endpoint.Scope.application)
+                                                     .not().direct() // These are handled by RoutingPolicies
+                                                     .targets(deployment);
+        for (var endpoint : applicationEndpoints) {
+            Set<ZoneId> targetZones = endpoint.targets().stream()
+                                              .map(t -> t.deployment().zoneId())
+                                              .collect(Collectors.toUnmodifiableSet());
+            if (targetZones.size() != 1) throw new IllegalArgumentException("Endpoint '" + endpoint.name() +
+                                                                            "' must target a single zone, got " +
+                                                                            targetZones);
+            ZoneId targetZone = targetZones.iterator().next();
+            String vipHostname = controller.zoneRegistry().getVipHostname(targetZone)
+                                           .orElseThrow(() -> new IllegalArgumentException("No VIP configured for zone " + targetZone));
+            controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
+                                                          RecordData.fqdn(vipHostname),
+                                                          Priority.normal);
+        }
+        applicationEndpoints.groupingBy(Endpoint::cluster)
+                            .forEach((clusterId, clusterEndpoints) -> {
+                                containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
+                                                                             asString(Endpoint.Scope.application),
+                                                                             clusterEndpoints.mapToList(Endpoint::dnsName)));
+                            });
         return Collections.unmodifiableSet(containerEndpoints);
     }
 
@@ -409,5 +435,14 @@ public class RoutingController {
         return endpoints;
     }
 
+    private static String asString(Endpoint.Scope scope) {
+        switch (scope) {
+            case application: return "application";
+            case global: return "global";
+            case weighted: return "weighted";
+            case zone: return "zone";
+        }
+        throw new IllegalArgumentException("Unknown scope " + scope);
+    }
 
 }

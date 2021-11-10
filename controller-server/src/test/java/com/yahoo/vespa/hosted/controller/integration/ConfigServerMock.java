@@ -40,8 +40,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
@@ -90,7 +90,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<ZoneId, Set<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Set<Environment> deferLoadBalancerProvisioning = new HashSet<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
-    private final Map<DeploymentId, Set<String>> containerEndpoints = new HashMap<>();
+    private final Map<DeploymentId, Set<ContainerEndpoint>> containerEndpoints = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private List<ProtonMetrics> protonMetrics;
@@ -280,8 +280,15 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         warnings.put(deployment, List.copyOf(logs));
     }
 
-    public Map<DeploymentId, Set<String>> containerEndpoints() {
+    public Map<DeploymentId, Set<ContainerEndpoint>> containerEndpoints() {
         return Collections.unmodifiableMap(containerEndpoints);
+    }
+
+    public Set<String> containerEndpointNames(DeploymentId deployment) {
+        return containerEndpoints.getOrDefault(deployment, Set.of()).stream()
+                                 .map(ContainerEndpoint::names)
+                                 .flatMap(Collection::stream)
+                                 .collect(Collectors.toUnmodifiableSet());
     }
 
     public void setMetrics(DeploymentId deployment, ClusterMetrics clusterMetrics) {
@@ -386,13 +393,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(id.zoneId(), NodeFilter.all().applications(id.applicationId())).isEmpty())
             provision(id.zoneId(), id.applicationId(), cluster);
 
-        this.containerEndpoints.put(
-                id,
-                deployment.containerEndpoints().stream()
-                          .map(ContainerEndpoint::names)
-                          .flatMap(Collection::stream)
-                          .collect(Collectors.toSet())
-        );
+        this.containerEndpoints.put(id, deployment.containerEndpoints());
 
         if (!deferLoadBalancerProvisioning.contains(id.zoneId().environment())) {
             putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
