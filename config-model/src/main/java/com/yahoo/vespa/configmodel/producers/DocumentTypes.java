@@ -136,13 +136,6 @@ public class DocumentTypes {
         DocumenttypesConfig.Documenttype.Datatype.Sstruct.Builder structBuilder = new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Builder();
         dataTypeBuilder.sstruct(structBuilder);
         structBuilder.name(type.getName());
-        if (type.getCompressionConfig().type.getCode() != 0) {
-            structBuilder.compression(new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Compression.Builder().
-                    type(DocumenttypesConfig.Documenttype.Datatype.Sstruct.Compression.Type.Enum.valueOf(type.getCompressionConfig().type.toString())).
-                    level(type.getCompressionConfig().compressionLevel).
-                    threshold((int) type.getCompressionConfig().threshold).
-                    minsize((int) type.getCompressionConfig().minsize));
-        }
         for (com.yahoo.document.Field field : type.getFields()) {
             DocumenttypesConfig.Documenttype.Datatype.Sstruct.Field.Builder builder =
                     new DocumenttypesConfig.Documenttype.Datatype.Sstruct.Field.Builder();

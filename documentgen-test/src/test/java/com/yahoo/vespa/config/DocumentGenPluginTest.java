@@ -863,7 +863,6 @@ public class DocumentGenPluginTest {
     public void testSerialization() {
         final Book book = getBook();
         assertEquals(book.getMystruct().getD1(), (Double)56.777);
-        assertEquals(book.getMystruct().getCompressionType(), CompressionType.NONE);
         assertEquals(book.getFieldCount(), 13);
         assertEquals(book.getMystruct().getFieldCount(), 4);
         assertEquals(book.getContent().get(0), 3);

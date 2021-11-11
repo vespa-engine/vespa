@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.serialization;
 
-import com.yahoo.compress.Compressor;
+import com.yahoo.compress.CompressionType;
 
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
@@ -53,7 +53,6 @@ import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.FieldBase;
 
@@ -344,19 +343,10 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         buffer.flip();
         buf = bigBuffer;
 
-        int uncompressedSize = buffer.remaining();
-        Compressor.Compression compression =
-            s.getDataType().getCompressor().compress(buffer.getByteBuffer().array(), buffer.remaining());
-
         // Actual serialization starts here.
         int lenPos = buf.position();
         putInt(null, 0); // Move back to this after compression is done.
-        buf.put(compression.type().getCode());
-
-        if (compression.data() != null && compression.type().isCompressed()) {
-            buf.putInt2_4_8Bytes(uncompressedSize);
-        }
-
+        buf.put(CompressionType.NONE.getCode());
         buf.putInt1_4Bytes(s.getFieldCount());
 
         for (int i = 0; i < s.getFieldCount(); ++i) {
@@ -365,11 +355,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         }
 
         int pos = buf.position();
-        if (compression.data() != null && compression.type().isCompressed()) {
-            put(null, compression.data());
-        } else {
-            put(null, buffer.getByteBuffer());
-        }
+        put(null, buffer.getByteBuffer());
         int dataLength = buf.position() - pos;
 
         int posNow = buf.position();

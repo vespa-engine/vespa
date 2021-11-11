@@ -51,8 +51,7 @@
     ],
     "fields": [
       "protected java.util.Map fieldIds",
-      "protected java.util.Map fields",
-      "protected com.yahoo.compress.Compressor compressor"
+      "protected java.util.Map fields"
     ]
   },
   "com.yahoo.document.BucketDistribution": {

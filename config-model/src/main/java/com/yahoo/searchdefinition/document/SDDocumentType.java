@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
-import com.yahoo.document.CompressionConfig;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DataTypeName;
 import com.yahoo.document.DocumentType;
@@ -158,7 +157,6 @@ public class SDDocumentType implements Cloneable, Serializable {
      */
     public SDDocumentType(String name, Schema schema) {
         docType = new DocumentType(name);
-        docType.contentStruct().setCompressionConfig(new CompressionConfig());
         validateId(schema);
         inherit(VESPA_DOCUMENT);
     }
