@@ -189,19 +189,29 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private void updateNodeRepoWithCurrentAttributes(NodeAgentContext context) {
+    private void updateNodeRepoWithCurrentAttributes(NodeAgentContext context, Optional<Instant> containerCreatedAt) {
         final NodeAttributes currentNodeAttributes = new NodeAttributes();
         final NodeAttributes newNodeAttributes = new NodeAttributes();
+        boolean changed = false;
 
         if (context.node().wantedRestartGeneration().isPresent() &&
                 !Objects.equals(context.node().currentRestartGeneration(), currentRestartGeneration)) {
             currentNodeAttributes.withRestartGeneration(context.node().currentRestartGeneration());
             newNodeAttributes.withRestartGeneration(currentRestartGeneration);
+            changed = true;
         }
 
-        if (!Objects.equals(context.node().currentRebootGeneration(), currentRebootGeneration)) {
+        boolean createdAtAfterRebootedEvent = context.node().events().stream()
+                .filter(event -> event.type().equals("rebooted"))
+                .map(event -> containerCreatedAt
+                        .map(createdAt -> createdAt.isAfter(event.at()))
+                        .orElse(false)) // Container not created
+                .findFirst()
+                .orElse(containerCreatedAt.isPresent()); // No rebooted event
+        if (!Objects.equals(context.node().currentRebootGeneration(), currentRebootGeneration) || createdAtAfterRebootedEvent) {
             currentNodeAttributes.withRebootGeneration(context.node().currentRebootGeneration());
             newNodeAttributes.withRebootGeneration(currentRebootGeneration);
+            changed = true;
         }
 
         Optional<DockerImage> actualDockerImage = context.node().wantedDockerImage().filter(n -> containerState == UNKNOWN);
@@ -213,16 +223,13 @@ public class NodeAgentImpl implements NodeAgent {
             currentNodeAttributes.withVespaVersion(currentImage.tagAsVersion());
             newNodeAttributes.withDockerImage(newImage);
             newNodeAttributes.withVespaVersion(newImage.tagAsVersion());
+            changed = true;
         }
 
-        publishStateToNodeRepoIfChanged(context, currentNodeAttributes, newNodeAttributes);
-    }
-
-    private void publishStateToNodeRepoIfChanged(NodeAgentContext context, NodeAttributes currentAttributes, NodeAttributes newAttributes) {
-        if (!currentAttributes.equals(newAttributes)) {
+        if (changed) {
             context.log(logger, "Publishing new set of attributes to node repo: %s -> %s",
-                    currentAttributes, newAttributes);
-            nodeRepository.updateNodeAttributes(context.hostname().value(), newAttributes);
+                    currentNodeAttributes, newNodeAttributes);
+            nodeRepository.updateNodeAttributes(context.hostname().value(), newNodeAttributes);
         }
     }
 
@@ -454,7 +461,7 @@ public class NodeAgentImpl implements NodeAgent {
             case inactive:
             case parked:
                 removeContainerIfNeededUpdateContainerState(context, container);
-                updateNodeRepoWithCurrentAttributes(context);
+                updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 stopServicesIfNeeded(context);
                 break;
             case active:
@@ -501,7 +508,7 @@ public class NodeAgentImpl implements NodeAgent {
                 //    has been successfully rolled out.
                 //  - Slobrok and internal orchestrator state is used to determine whether
                 //    to allow upgrade (suspend).
-                updateNodeRepoWithCurrentAttributes(context);
+                updateNodeRepoWithCurrentAttributes(context, container.map(Container::createdAt));
                 if (suspendedInOrchestrator || node.orchestratorStatus().isSuspended()) {
                     context.log(logger, "Call resume against Orchestrator");
                     orchestrator.resume(context.hostname().value());
@@ -517,7 +524,7 @@ public class NodeAgentImpl implements NodeAgent {
                 credentialsMaintainers.forEach(maintainer -> maintainer.clearCredentials(context));
                 storageMaintainer.syncLogs(context, false);
                 storageMaintainer.archiveNodeStorage(context);
-                updateNodeRepoWithCurrentAttributes(context);
+                updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
                 break;
             default:

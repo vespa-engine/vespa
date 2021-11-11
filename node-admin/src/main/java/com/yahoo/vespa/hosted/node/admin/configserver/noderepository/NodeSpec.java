@@ -791,7 +791,8 @@ public class NodeSpec {
                     .type(NodeType.tenant)
                     .flavor("d-2-8-50")
                     .resources(new NodeResources(2, 8, 50, 10))
-                    .realResources(new NodeResources(2, 8, 50, 10));
+                    .realResources(new NodeResources(2, 8, 50, 10))
+                    .events(List.of(new Event("operator", "rebooted", Instant.EPOCH)));
 
             // Set the required allocated fields
             if (EnumSet.of(NodeState.active, NodeState.inactive, NodeState.reserved).contains(state)) {
