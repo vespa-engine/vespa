@@ -187,7 +187,7 @@ public class NodeAgentImplTest {
         inOrder.verify(containerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(healthChecker, times(1)).verifyHealth(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()));
+                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()).withRebootGeneration(0));
         inOrder.verify(orchestrator, never()).resume(hostName);
     }
 
@@ -285,7 +285,7 @@ public class NodeAgentImplTest {
         inOrder.verify(containerOperations).removeContainer(eq(secondContext), any());
         inOrder.verify(containerOperations, never()).updateContainer(any(), any(), any());
         inOrder.verify(containerOperations, never()).restartVespa(any());
-        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withRestartGeneration(2)));
+        inOrder.verify(nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withRestartGeneration(2).withRebootGeneration(0)));
 
         nodeAgent.doConverge(secondContext);
         inOrder.verify(orchestrator).resume(any(String.class));
@@ -610,7 +610,7 @@ public class NodeAgentImplTest {
         inOrder.verify(aclMaintainer, times(1)).converge(eq(context));
         inOrder.verify(containerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()));
+                hostName, new NodeAttributes().withDockerImage(dockerImage).withVespaVersion(dockerImage.tagAsVersion()).withRebootGeneration(0));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -765,6 +765,7 @@ public class NodeAgentImplTest {
                     Optional.of(new Container(
                             containerId,
                             ContainerName.fromHostname(hostName),
+                            clock.instant(),
                             isRunning ? Container.State.running : Container.State.exited,
                             "image-id-1",
                             dockerImage,

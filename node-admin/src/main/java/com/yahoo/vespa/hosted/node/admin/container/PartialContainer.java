@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.container;
 
 import com.yahoo.config.provision.DockerImage;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 
@@ -15,6 +16,7 @@ public class PartialContainer {
 
     private final ContainerId id;
     private final ContainerName name;
+    private final Instant createdAt;
     private final State state;
     private final String imageId;
     private final DockerImage image;
@@ -22,10 +24,11 @@ public class PartialContainer {
     private final int pid;
     private final boolean managed;
 
-    public PartialContainer(ContainerId id, ContainerName name, State state, String imageId,
+    public PartialContainer(ContainerId id, ContainerName name, Instant createdAt, State state, String imageId,
                             DockerImage image, Map<String, String> labels, int pid, boolean managed) {
         this.id = Objects.requireNonNull(id);
         this.name = Objects.requireNonNull(name);
+        this.createdAt = Objects.requireNonNull(createdAt);
         this.state = Objects.requireNonNull(state);
         this.imageId = Objects.requireNonNull(imageId);
         this.image = Objects.requireNonNull(image);
@@ -42,6 +45,11 @@ public class PartialContainer {
     /** The given name of this */
     public ContainerName name() {
         return name;
+    }
+
+    /** Timestamp when this container was created */
+    public Instant createdAt() {
+        return createdAt;
     }
 
     /** Current state of this */
@@ -86,12 +94,12 @@ public class PartialContainer {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PartialContainer that = (PartialContainer) o;
-        return pid == that.pid && managed == that.managed && id.equals(that.id) && name.equals(that.name) && state == that.state && imageId.equals(that.imageId) && image.equals(that.image) && labels.equals(that.labels);
+        return pid == that.pid && managed == that.managed && id.equals(that.id) && name.equals(that.name) && createdAt.equals(that.createdAt) && state == that.state && imageId.equals(that.imageId) && image.equals(that.image) && labels.equals(that.labels);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, state, imageId, image, labels, pid, managed);
+        return Objects.hash(id, name, createdAt, state, imageId, image, labels, pid, managed);
     }
 
     /** The state of a container */
