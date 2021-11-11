@@ -38,18 +38,22 @@ public:
     /**
      * For testing only
      */
-    uint32_t getComponentHashSize() const { return _component2Id.size(); }
+    uint32_t getComponentHashSize() const { return _component2IdImperfect.size(); }
     uint32_t getComponentEffectiveHashSize() const { return _nextId; }
     const vespalib::SyncableThreadExecutor* first_executor() const;
 
 private:
-    explicit SequencedTaskExecutor(std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> executor);
+    explicit SequencedTaskExecutor(std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> executor);
+    ExecutorId getExecutorIdPerfect(uint64_t componentId) const;
+    ExecutorId getExecutorIdImPerfect(uint64_t componentId) const;
 
-    std::unique_ptr<std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>>> _executors;
-    const bool                   _lazyExecutors;
-    mutable std::vector<uint8_t> _component2Id;
-    mutable std::mutex           _mutex;
-    mutable uint32_t             _nextId;
+    std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> _executors;
+    using PerfectKeyT = uint16_t;
+    const bool                       _lazyExecutors;
+    mutable std::vector<PerfectKeyT> _component2IdPerfect;
+    mutable std::vector<uint8_t>     _component2IdImperfect;
+    mutable std::mutex               _mutex;
+    mutable uint32_t                 _nextId;
 
 };
 
