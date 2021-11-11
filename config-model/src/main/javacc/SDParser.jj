@@ -601,13 +601,11 @@ void compression(SDDocumentType document) :
  *
  */
 void compressionItem() :
-{
-    int val = -1;
-}
+{ }
 {
     ( ( <TYPE> <COLON> <LZ4> )
-      | (<COMPRESSIONTHRESHOLD> <COLON> val = integer())
-      | (<COMPRESSIONLEVEL>   <COLON> val = integer())
+      | (<COMPRESSIONTHRESHOLD> <COLON> <INTEGER>)
+      | (<COMPRESSIONLEVEL> <COLON> <INTEGER>)
     ) { }
 }
 
