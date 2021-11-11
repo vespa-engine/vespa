@@ -36,11 +36,8 @@ public class UserManagementMaintainer extends ControllerMaintainer {
     @Override
     protected double maintain() {
         findLeftoverRoles().forEach(role -> {
-            /*
-                Log discrepancy now
-                TODO: userManagement.deleteRole(role);
-             */
-            logger.warning(String.format("Found unexpected role %s - Please investigate", role.toString()));
+            logger.warning(String.format("Found unexpected %s - Deleting", role.toString()));
+            userManagement.deleteRole(role);
         });
         return 1.0;
     }
