@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.container.image;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * This represents a container image that exists locally.
@@ -13,23 +12,16 @@ import java.util.Optional;
 public class Image {
 
     private final String id;
-    private final Optional<String> parentId;
     private final List<String> names;
 
-    public Image(String id, Optional<String> parentId, List<String> names) {
+    public Image(String id, List<String> names) {
         this.id = Objects.requireNonNull(id);
-        this.parentId = Objects.requireNonNull(parentId);
         this.names = List.copyOf(Objects.requireNonNull(names));
     }
 
     /** The identifier of this image */
     public String id() {
         return id;
-    }
-
-    /** ID of the parent image of this, if any */
-    public Optional<String> parentId() {
-        return parentId;
     }
 
     /** Names for this image, such as tags or digests */
@@ -42,12 +34,12 @@ public class Image {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Image image = (Image) o;
-        return id.equals(image.id) && parentId.equals(image.parentId) && names.equals(image.names);
+        return id.equals(image.id) && names.equals(image.names);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, parentId, names);
+        return Objects.hash(id, names);
     }
 
     @Override
