@@ -1200,7 +1200,7 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void applicationLevelEndpointRequiresAttributes() {
+    public void applicationLevelEndpointValidation() {
         String xmlForm = "<deployment>\n" +
                          "  <instance id=\"beta\">\n" +
                          "    <prod>\n" +
@@ -1226,6 +1226,7 @@ public class DeploymentSpecTest {
         assertInvalid(String.format(xmlForm, "region='invalid'", "weight='1'", "main", ""), "Application-level endpoint 'foo': targets undeclared region 'invalid' in instance 'main'");
         assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='foo'", "main", ""), "Application-level endpoint 'foo': invalid weight value 'foo'");
         assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='1'", "main", "<region>us-east-3</region>"), "Application-level endpoint 'foo': invalid element 'region'");
+        assertInvalid(String.format(xmlForm, "region='us-west-1'", "weight='0'", "main", ""), "Application-level endpoint 'foo': sum of all weights must be positive, got 0");
     }
 
     @Test

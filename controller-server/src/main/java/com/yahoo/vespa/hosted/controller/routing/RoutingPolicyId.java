@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.routing;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.util.Objects;
 
@@ -32,6 +33,11 @@ public class RoutingPolicyId {
     /** The zone this applies to */
     public ZoneId zone() {
         return zone;
+    }
+
+    /** The deployment this applies to */
+    public DeploymentId deployment() {
+        return new DeploymentId(owner, zone);
     }
 
     /** The cluster this applies to */
