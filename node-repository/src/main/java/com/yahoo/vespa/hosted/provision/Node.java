@@ -432,10 +432,12 @@ public final class Node implements Nodelike {
 
     /** Returns a copy of this node with the current reboot generation set to the given number at the given instant */
     public Node withCurrentRebootGeneration(long generation, Instant instant) {
+        if (generation < status.reboot().current())
+            throw new IllegalArgumentException("Cannot set reboot generation to " + generation +
+                    ": lower than current generation: " + status.reboot().current());
+
         Status newStatus = status().withReboot(status().reboot().withCurrent(generation));
-        History newHistory = history();
-        if (generation > status().reboot().current())
-            newHistory = history.with(new History.Event(History.Event.Type.rebooted, Agent.system, instant));
+        History newHistory = history.with(new History.Event(History.Event.Type.rebooted, Agent.system, instant));
         return this.with(newStatus).with(newHistory);
     }
 
