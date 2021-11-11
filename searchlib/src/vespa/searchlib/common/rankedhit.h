@@ -11,8 +11,7 @@ namespace search {
 struct RankedHit {
     RankedHit() noexcept : _docId(0), _rankValue(zero_rank_value) { }
     RankedHit(unsigned int docId, HitRank rank = zero_rank_value) noexcept : _docId(docId), _rankValue(rank) { }
-    unsigned int getDocId() const { return _docId & 0x7fffffff; }
-    bool hasMore()          const { return _docId & 0x80000000; }
+    unsigned int getDocId() const { return _docId; }
     HitRank getRank()       const { return _rankValue; }
 //:private
     unsigned int _docId;
