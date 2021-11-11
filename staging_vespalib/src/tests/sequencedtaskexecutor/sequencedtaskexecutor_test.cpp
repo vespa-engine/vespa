@@ -252,6 +252,30 @@ TEST("require that you distribute well") {
     EXPECT_EQUAL(97u, seq.getComponentEffectiveHashSize());
 }
 
+TEST("require that similar names get perfect distribution with 4 executors") {
+    auto four = SequencedTaskExecutor::create(sequenced_executor, 4);
+    EXPECT_EQUAL(0u, four->getExecutorIdFromName("f1").getId());
+    EXPECT_EQUAL(1u, four->getExecutorIdFromName("f2").getId());
+    EXPECT_EQUAL(2u, four->getExecutorIdFromName("f3").getId());
+    EXPECT_EQUAL(3u, four->getExecutorIdFromName("f4").getId());
+    EXPECT_EQUAL(0u, four->getExecutorIdFromName("f5").getId());
+    EXPECT_EQUAL(1u, four->getExecutorIdFromName("f6").getId());
+    EXPECT_EQUAL(2u, four->getExecutorIdFromName("f7").getId());
+    EXPECT_EQUAL(3u, four->getExecutorIdFromName("f8").getId());
+}
+
+TEST("require that similar names gets 7/8 unique ids with 8 executors") {
+    auto four = SequencedTaskExecutor::create(sequenced_executor, 8);
+    EXPECT_EQUAL(0u, four->getExecutorIdFromName("f1").getId());
+    EXPECT_EQUAL(1u, four->getExecutorIdFromName("f2").getId());
+    EXPECT_EQUAL(2u, four->getExecutorIdFromName("f3").getId());
+    EXPECT_EQUAL(3u, four->getExecutorIdFromName("f4").getId());
+    EXPECT_EQUAL(4u, four->getExecutorIdFromName("f5").getId());
+    EXPECT_EQUAL(5u, four->getExecutorIdFromName("f6").getId());
+    EXPECT_EQUAL(2u, four->getExecutorIdFromName("f7").getId());
+    EXPECT_EQUAL(6u, four->getExecutorIdFromName("f8").getId());
+}
+
 TEST("Test creation of different types") {
     auto iseq = SequencedTaskExecutor::create(sequenced_executor, 1);
 
