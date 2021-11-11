@@ -3,6 +3,8 @@ package com.yahoo.vespa.config.server.model;
 
 import com.google.common.base.Joiner;
 import com.yahoo.cloud.config.LbServicesConfig;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -71,13 +73,39 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     private LbServicesConfig.Tenants.Applications.Builder getAppConfig(ApplicationInfo app) {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
+
+        // TODO: read active rotation from ApplicationClusterInfo
         ab.activeRotation(getActiveRotation(app));
         ab.usePowerOfTwoChoicesLb(true);
         ab.generateNonMtlsEndpoint(generateNonMtlsEndpoint(app));
+
+        // TODO: Remove when endpoints-config is read by all load balancers
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
                 .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));
+
+        Set<ApplicationClusterInfo> applicationClusterInfos = app.getModel().applicationClusterInfo();
+        List<LbServicesConfig.Tenants.Applications.Endpoints.Builder> endpointBuilder = applicationClusterInfos.stream()
+                .map(ApplicationClusterInfo::endpoints)
+                .flatMap(endpoints -> getEndpointConfig(endpoints).stream())
+                .collect(Collectors.toList());
+        ab.endpoints(endpointBuilder);
         return ab;
+    }
+
+    private List<LbServicesConfig.Tenants.Applications.Endpoints.Builder> getEndpointConfig(List<ApplicationClusterEndpoint> clusterEndpoints) {
+        return clusterEndpoints.stream()
+                .map(this::getEndpointConfig)
+                .collect(Collectors.toList());
+    }
+
+    private LbServicesConfig.Tenants.Applications.Endpoints.Builder getEndpointConfig(ApplicationClusterEndpoint clusterEndpoints) {
+        LbServicesConfig.Tenants.Applications.Endpoints.Builder builder = new LbServicesConfig.Tenants.Applications.Endpoints.Builder();
+        return builder.dnsName(clusterEndpoints.dnsName().value())
+                .scope(LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.valueOf(clusterEndpoints.scope().name()))
+                .routingMethod(LbServicesConfig.Tenants.Applications.Endpoints.RoutingMethod.Enum.valueOf(clusterEndpoints.routingMethod().name()))
+                .weight(clusterEndpoints.weight())
+                .hosts(clusterEndpoints.hostNames());
     }
 
     private boolean getActiveRotation(ApplicationInfo app) {

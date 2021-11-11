@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
@@ -87,10 +88,10 @@ public class PrepareParamsTest {
 
     @Test
     public void testCorrectParsingWithContainerEndpoints() throws IOException {
-        var endpoints = List.of(new ContainerEndpoint("qrs1",
+        var endpoints = List.of(new ContainerEndpoint("qrs1", ApplicationClusterEndpoint.Scope.global,
                                                       List.of("c1.example.com",
                                                               "c2.example.com")),
-                                new ContainerEndpoint("qrs2",
+                                new ContainerEndpoint("qrs2",ApplicationClusterEndpoint.Scope.global,
                                                       List.of("c3.example.com",
                                                               "c4.example.com")));
         var param = "[\n" +

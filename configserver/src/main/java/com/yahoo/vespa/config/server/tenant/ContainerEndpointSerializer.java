@@ -1,11 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,16 +28,24 @@ public class ContainerEndpointSerializer {
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     private static final String clusterIdField = "clusterId";
+    private static final String scopeField = "scope";
     private static final String namesField = "names";
 
     private ContainerEndpointSerializer() {}
 
     public static ContainerEndpoint endpointFromSlime(Inspector inspector) {
         final var clusterId = inspector.field(clusterIdField).asString();
+        // Currently assigned endpoints that do not have scope should be interpreted as global endpoints
+        // TODO: Remove default assignment after 7.500
+        final var scope = SlimeUtils.optionalString(inspector.field(scopeField)).orElse(ApplicationClusterEndpoint.Scope.global.name());
         final var namesInspector = inspector.field(namesField);
 
         if (clusterId.isEmpty()) {
             throw new IllegalStateException("'clusterId' missing on serialized ContainerEndpoint");
+        }
+
+        if (scope.isEmpty()) {
+            throw new IllegalStateException("'scope' missing on serialized ContainerEndpoint");
         }
 
         if (! namesInspector.valid()) {
@@ -49,7 +59,7 @@ public class ContainerEndpointSerializer {
             names.add(containerName);
         });
 
-        return new ContainerEndpoint(clusterId, names);
+        return new ContainerEndpoint(clusterId, ApplicationClusterEndpoint.Scope.valueOf(scope), names);
     }
 
     public static List<ContainerEndpoint> endpointListFromSlime(Slime slime) {
@@ -70,6 +80,7 @@ public class ContainerEndpointSerializer {
 
     public static void endpointToSlime(Cursor cursor, ContainerEndpoint endpoint) {
         cursor.setString(clusterIdField, endpoint.clusterId());
+        cursor.setString(scopeField, endpoint.scope().name());
 
         final var namesInspector = cursor.setArray(namesField);
         endpoint.names().forEach(namesInspector::addString);

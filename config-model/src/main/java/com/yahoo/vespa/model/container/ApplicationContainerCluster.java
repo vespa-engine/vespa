@@ -7,10 +7,14 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ApplicationClusterInfo;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
@@ -26,6 +30,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
+import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Component;
@@ -39,6 +44,7 @@ import com.yahoo.vespa.model.utils.FileSender;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -60,7 +66,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         ServletPathsConfig.Producer,
         ContainerMbusConfig.Producer,
         MetricsProxyApiConfig.Producer,
-        ZookeeperServerConfig.Producer {
+        ZookeeperServerConfig.Producer,
+        ApplicationClusterInfo {
 
     public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
     public static final BindingPattern METRICS_V2_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(MetricsV2Handler.V2_PATH);
@@ -87,6 +94,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private boolean messageBusEnabled = true;
 
     private Integer memoryPercentage = null;
+
+    private List<ApplicationClusterEndpoint> endpointList = List.of();
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true);
@@ -115,6 +124,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     protected void doPrepare(DeployState deployState) {
         addAndSendApplicationBundles(deployState);
         sendUserConfiguredFiles(deployState);
+        createEndpointList(deployState);
     }
 
     private void addAndSendApplicationBundles(DeployState deployState) {
@@ -183,6 +193,60 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
      * or empty if this is not specified by the application.
      */
     public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
+
+    /*
+      Create list of endpoints, these will be consumed later by the LBservicesProducer
+     */
+    private void createEndpointList(DeployState deployState) {
+        if(!deployState.isHosted()) return;
+        if(deployState.getProperties().applicationId().instance().isTester()) return;
+        List<ApplicationClusterEndpoint> endpoints = new ArrayList<>();
+        // Add zone local endpoints using zone dns suffixes, tenant, application and cluster id.
+        // For now support both L7 and L4 routing
+
+        List<String> hosts = getContainers().stream()
+                .map(AbstractService::getHostName)
+                .collect(Collectors.toList());
+        for(String suffix : deployState.getProperties().zoneDnsSuffixes()) {
+            // L4
+            ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
+                    ClusterSpec.Id.from(getName()),
+                    deployState.getProperties().applicationId(),
+                    suffix);
+            endpoints.add(ApplicationClusterEndpoint.builder()
+                                  .zoneScope()
+                                  .sharedL4Routing()
+                                  .dnsName(l4Name)
+                                  .hosts(hosts)
+                                  .build());
+
+            // L7
+            ApplicationClusterEndpoint.DnsName l7Name = ApplicationClusterEndpoint.DnsName.sharedNameFrom(
+                    ClusterSpec.Id.from(getName()),
+                    deployState.getProperties().applicationId(),
+                    suffix);
+            endpoints.add(ApplicationClusterEndpoint.builder()
+                                  .zoneScope()
+                                  .sharedRouting()
+                                  .dnsName(l7Name)
+                                  .hosts(hosts)
+                                  .build());
+        }
+
+        // Then get all endpoints provided by controller. Can be created with L4 routing only
+        Set<ContainerEndpoint> endpointsFromController = deployState.getEndpoints();
+        endpointsFromController.stream()
+                .filter(ce -> ce.clusterId().equals(getName()))
+                .forEach(ce -> ce.names().forEach(
+                        name -> endpoints.add(ApplicationClusterEndpoint.builder()
+                                                      .scope(ce.scope())
+                                                      .sharedL4Routing()
+                                                      .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
+                                                      .hosts(hosts)
+                                                      .build())
+                ));
+        endpointList = List.copyOf(endpoints);
+    }
 
     @Override
     public void getConfig(ApplicationBundlesConfig.Builder builder) {
@@ -291,6 +355,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                         serviceId,
                         ComponentSpecification.fromString(MbusServerProvider.class.getName()),
                         null))));
+    }
+
+    @Override
+    public List<ApplicationClusterEndpoint> endpoints() {
+        return endpointList;
     }
 
     public static class MbusParams {

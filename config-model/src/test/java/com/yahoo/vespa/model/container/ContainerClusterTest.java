@@ -7,6 +7,8 @@ import com.yahoo.cloud.config.CuratorConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
@@ -36,8 +38,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertEquals;
@@ -349,6 +354,49 @@ public class ContainerClusterTest {
         assertEquals(List.of("host-c1", "host-c2", "host-c3"),
                      configBuilder.build().server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toList()));
 
+    }
+
+    @Test
+    public void generatesCorrectRoutingInfo() {
+
+        assertNames(ApplicationId.from("t1", "a1", "i1"),
+                    Set.of(),
+                    List.of("search-cluster.i1.a1.t1.endpoint.suffix", "search-cluster--i1--a1--t1.endpoint.suffix"));
+
+        assertNames(ApplicationId.from("t1", "a1", "default"),
+                    Set.of(),
+                    List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix"));
+
+        assertNames(ApplicationId.from("t1", "default", "default"),
+                    Set.of(),
+                    List.of("search-cluster.default.t1.endpoint.suffix", "search-cluster--default--t1.endpoint.suffix"));
+
+        assertNames(ApplicationId.from("t1", "a1", "default"),
+                    Set.of(new ContainerEndpoint("not-in-this-cluster", ApplicationClusterEndpoint.Scope.global, List.of("foo", "bar"))),
+                    List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix"));
+
+        assertNames(ApplicationId.from("t1", "a1", "default"),
+                    Set.of(new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z")),
+                           new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.application, List.of("app-rotation.x.y.z"))),
+                    List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
+    }
+
+    private void assertNames(ApplicationId appId, Set<ContainerEndpoint> globalEndpoints, List<String> expectedNames) {
+        DeployState state = new DeployState.Builder()
+                .zone(Zone.defaultZone())
+                .endpoints(globalEndpoints)
+                .properties(new TestProperties()
+                                    .setHostedVespa(true)
+                                    .setApplicationId(appId)
+                                    .setZoneDnsSuffixes(List.of(".endpoint.suffix")))
+                .build();
+        MockRoot root = new MockRoot("foo", state);
+        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
+        addContainer(root, cluster, "c1", "host-c1");
+        cluster.doPrepare(state);
+        List<ApplicationClusterEndpoint> endpoints = cluster.endpoints();
+        assertEquals(expectedNames.size(), endpoints.size());
+        expectedNames.forEach(expected -> assertTrue("Endpoint not matched " + expected, endpoints.stream().anyMatch(e -> Objects.equals(e.dnsName().value(), expected))));
     }
 
     private void verifyTesterApplicationInstalledBundles(Zone zone, List<String> expectedBundleNames) {

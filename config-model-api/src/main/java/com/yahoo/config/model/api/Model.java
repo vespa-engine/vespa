@@ -79,4 +79,6 @@ public interface Model {
     /** Returns the set of document types in each cluster, that have an index for one of more fields. */
     default Map<String, Set<String>> indexedDocumentTypesByCluster() { return Map.of(); }
 
+    /** Returns the set of container clusters */
+    default Set<ApplicationClusterInfo> applicationClusterInfo() { return Set.of(); }
 }

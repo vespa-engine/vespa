@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.path.Path;
@@ -17,7 +18,7 @@ public class ContainerEndpointsCacheTest {
     public void readWriteFromCache() {
         final var cache = new ContainerEndpointsCache(Path.createRoot(), new MockCurator());
         final var endpoints = List.of(
-                new ContainerEndpoint("the-cluster-1", List.of("a", "b", "c"))
+                new ContainerEndpoint("the-cluster-1", ApplicationClusterEndpoint.Scope.global, List.of("a", "b", "c"))
         );
 
         cache.write(ApplicationId.defaultId(), endpoints);
