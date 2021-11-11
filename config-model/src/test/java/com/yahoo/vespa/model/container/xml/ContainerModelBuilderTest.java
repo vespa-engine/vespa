@@ -797,6 +797,34 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    public void cloud_secret_store_fails_to_set_up_in_non_public_zone() {
+        try {
+            Element clusterElem = DomBuilderTest.parse(
+                    "<container version='1.0'>",
+                    "  <secret-store type='cloud'>",
+                    "    <store id='store'>",
+                    "      <aws-parameter-store account='store1' region='eu-north-1'/>",
+                    "    </store>",
+                    "  </secret-store>",
+                    "</container>");
+
+            DeployState state = new DeployState.Builder()
+                    .properties(
+                            new TestProperties()
+                                    .setHostedVespa(true)
+                                    .setTenantSecretStores(List.of(new TenantSecretStore("store1", "1234", "role", Optional.of("externalid")))))
+                    .zone(new Zone(SystemName.main, Environment.prod, RegionName.defaultName()))
+                    .build();
+            createModel(root, state, null, clusterElem);
+        } catch (RuntimeException e) {
+            assertEquals("cloud secret store is not supported in non-public system, please see documentation",
+                         e.getMessage());
+            return;
+        }
+        fail();
+    }
+
+    @Test
     public void missing_security_clients_pem_fails_in_public() {
         Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
 
