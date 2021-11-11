@@ -7,11 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/joeshaw/envdecode"
 	"github.com/pkg/browser"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"sync"
@@ -75,26 +77,53 @@ func (c *Cli) IsLoggedIn() bool {
 	return true
 }
 
+// default to vespa-cd.auth0.com
+var (
+	authCfg struct {
+		Audience           string `env:"AUTH0_AUDIENCE,default=https://vespa-cd.auth0.com/api/v2/"`
+		ClientID           string `env:"AUTH0_CLIENT_ID,default=4wYWA496zBP28SLiz0PuvCt8ltL11DZX"`
+		DeviceCodeEndpoint string `env:"AUTH0_DEVICE_CODE_ENDPOINT,default=https://vespa-cd.auth0.com/oauth/device/code"`
+		OauthTokenEndpoint string `env:"AUTH0_OAUTH_TOKEN_ENDPOINT,default=https://vespa-cd.auth0.com/oauth/token"`
+	}
+)
+
+func ContextWithCancel() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt)
+	go func() {
+		<-ch
+		defer cancel()
+		os.Exit(0)
+	}()
+	return ctx
+}
+
 // Setup will try to initialize the config context, as well as figure out if
 // there's a readily available tenant.
-func (c *Cli) Setup(ctx context.Context) error {
-	if err := c.init(); err != nil {
-		return err
+func GetCli(configPath string) (*Cli, error) {
+	c := Cli{}
+	c.Path = configPath
+	if err := envdecode.StrictDecode(&authCfg); err != nil {
+		return nil, fmt.Errorf("could not decode env: %w", err)
 	}
-
-	_, err := c.prepareTenant(ctx)
-	if err != nil {
-		return err
+	c.Authenticator = &auth.Authenticator{
+		Audience:           authCfg.Audience,
+		ClientID:           authCfg.ClientID,
+		DeviceCodeEndpoint: authCfg.DeviceCodeEndpoint,
+		OauthTokenEndpoint: authCfg.OauthTokenEndpoint,
 	}
-
-	return nil
+	return &c, nil
 }
 
 // prepareTenant loads the Tenant, refreshing its token if necessary.
 // The Tenant access token needs a refresh if:
 // 1. the Tenant scopes are different from the currently required scopes.
 // 2. the access token is expired.
-func (c *Cli) prepareTenant(ctx context.Context) (Tenant, error) {
+func (c *Cli) PrepareTenant(ctx context.Context) (Tenant, error) {
+	if err := c.init(); err != nil {
+		return Tenant{}, err
+	}
 	t, err := c.getTenant()
 	if err != nil {
 		return Tenant{}, err
