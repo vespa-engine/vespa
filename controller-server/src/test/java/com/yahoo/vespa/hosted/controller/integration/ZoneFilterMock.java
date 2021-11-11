@@ -56,11 +56,6 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
-    public ZoneList directlyRouted() {
-        return routingMethod(RoutingMethod.exclusive);
-    }
-
-    @Override
     public ZoneList routingMethod(RoutingMethod method) {
         return filter(zone -> zoneRoutingMethods.getOrDefault(zone, List.of()).contains(method));
     }

@@ -209,7 +209,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse setZoneStatus(Path path, boolean in) {
         var zone = zoneFrom(path);
-        if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
+        if (controller.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).ids().contains(zone)) {
             var status = in ? RoutingStatus.Value.in : RoutingStatus.Value.out;
             controller.routing().policies().setRoutingStatus(zone, status);
         } else {
@@ -228,7 +228,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     }
 
     private void toSlime(ZoneId zone, Cursor zoneObject) {
-        if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
+        if (controller.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).ids().contains(zone)) {
             var zonePolicy = controller.routing().policies().get(zone);
             zoneStatusToSlime(zoneObject, zonePolicy.zone(), zonePolicy.routingStatus(), RoutingMethod.exclusive);
         } else {
