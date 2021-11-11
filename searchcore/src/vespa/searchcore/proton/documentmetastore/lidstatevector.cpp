@@ -13,7 +13,6 @@ LidStateVector::LidStateVector(unsigned int newSize, unsigned int newCapacity,
     : _bv(newSize, newCapacity, generationHolder),
       _lowest(trackLowest ? newSize : 0u),
       _highest(0),
-      _count(0u),
       _trackLowest(trackLowest),
       _trackHighest(trackHighest)
 {
@@ -29,16 +28,12 @@ LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity)
     bool nolowest(_lowest == _bv.size());
     if (_bv.size() > newSize) {
         _bv.shrink(newSize);
-        assert(_count >= internalCount());
-        _count = internalCount();
     }
     if (_bv.capacity() < newCapacity) {
         _bv.reserve(newCapacity);
-        assert(_count == internalCount());
     }
     if (_bv.size() < newSize) {
         _bv.extend(newSize);
-        assert(_count == internalCount());
     }
     if (_trackLowest) {
         if (nolowest) {
@@ -57,7 +52,6 @@ LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity)
     maybeUpdateHighest();
 }
 
-
 void
 LidStateVector::updateLowest()
 {
@@ -69,7 +63,6 @@ LidStateVector::updateLowest()
     assert(lowest <= _bv.size());
     _lowest = lowest;
 }
-
 
 void
 LidStateVector::updateHighest()
@@ -83,7 +76,6 @@ LidStateVector::updateHighest()
     _highest = highest;
 }
 
-
 void
 LidStateVector::setBit(unsigned int idx)
 {
@@ -96,10 +88,7 @@ LidStateVector::setBit(unsigned int idx)
     }
     assert(!_bv.testBit(idx));
     _bv.setBitAndMaintainCount(idx);
-    ++_count;
-    assert(_count == internalCount());
 }
-
 
 void
 LidStateVector::clearBit(unsigned int idx)
@@ -107,17 +96,8 @@ LidStateVector::clearBit(unsigned int idx)
     assert(idx < _bv.size());
     assert(_bv.testBit(idx));
     _bv.clearBitAndMaintainCount(idx);
-    --_count;
-    assert(_count == internalCount());
     maybeUpdateLowest();
     maybeUpdateHighest();
-}
-
-uint32_t
-LidStateVector::internalCount()
-{
-    // Called by document db executor thread.
-    return _bv.countTrueBits();
 }
 
 }  // namespace proton

@@ -11,9 +11,8 @@ class LidStateVector
     search::GrowableBitVector _bv;
     uint32_t _lowest;
     uint32_t _highest;
-    uint32_t _count;
-    bool _trackLowest;
-    bool _trackHighest;
+    bool     _trackLowest;
+    bool     _trackHighest;
 
     void updateLowest();
     void updateHighest(); 
@@ -26,12 +25,6 @@ class LidStateVector
         if (_trackHighest && _highest != 0 && !_bv.testBit(_highest))
             updateHighest();
     }
-
-    /**
-     * Get number of bits set in vector.  Should only be called by
-     * write thread.
-     */
-    uint32_t internalCount();
 public:
     
     LidStateVector(unsigned int newSize, unsigned int newCapacity,
@@ -48,7 +41,7 @@ public:
     unsigned int byteSize() const {
         return _bv.extraByteSize() + sizeof(LidStateVector);
     }
-    bool empty() const { return _count == 0u; }
+    bool empty() const { return count() == 0u; }
     unsigned int getLowest() const { return _lowest; }
     unsigned int getHighest() const { return _highest; }
 
@@ -58,7 +51,7 @@ public:
      */
     uint32_t count() const {
         // Called by document db executor thread or metrics related threads
-        return _count;
+        return _bv.countTrueBits();
     }
 
     unsigned int getNextTrueBit(unsigned int idx) const {
