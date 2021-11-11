@@ -42,6 +42,8 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -50,6 +52,8 @@ import java.util.stream.Collectors;
  * @author havardpe
  */
 public class RPCNetwork implements Network, MethodHandler {
+
+    private static Logger log = Logger.getLogger(RPCNetwork.class.getName());
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final Identity identity;
@@ -84,7 +88,7 @@ public class RPCNetwork implements Network, MethodHandler {
      * @param params        a complete set of parameters
      * @param slobrokConfig subscriber for slobroks config
      */
-    public RPCNetwork(RPCNetworkParams params, SlobrokConfigSubscriber slobrokConfig) {
+    private RPCNetwork(RPCNetworkParams params, SlobrokConfigSubscriber slobrokConfig) {
         this.slobroksConfig = slobrokConfig;
         identity = params.getIdentity();
         orb = new Supervisor(new Transport("mbus-rpc-" + identity.getServicePrefix(), params.getNumNetworkThreads(),
@@ -146,6 +150,10 @@ public class RPCNetwork implements Network, MethodHandler {
         for (int i = 0; i < seconds * 100; ++i) {
             if (mirror.ready()) {
                 return true;
+            }
+            if ((i % 100) == 0) {
+                log.log(Level.INFO, "waiting for network to become ready ("+(i/100)+" of "+((int)seconds)+" seconds)");
+                mirror.dumpState();
             }
             try {
                 Thread.sleep(10);

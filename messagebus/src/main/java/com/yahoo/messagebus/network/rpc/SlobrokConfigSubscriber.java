@@ -5,6 +5,9 @@ import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.cloud.config.SlobroksConfig;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * This class implements subscription to slobrok config.
  *
@@ -12,6 +15,7 @@ import com.yahoo.cloud.config.SlobroksConfig;
  */
 public class SlobrokConfigSubscriber implements ConfigSubscriber.SingleSubscriber<SlobroksConfig>{
 
+    private static final Logger log = Logger.getLogger(SlobrokConfigSubscriber.class.getName());
     private final SlobrokList slobroks = new SlobrokList();
     private ConfigSubscriber subscriber;
 
@@ -21,11 +25,13 @@ public class SlobrokConfigSubscriber implements ConfigSubscriber.SingleSubscribe
      * @param configId the id of the config to subscribe to
      */
     public SlobrokConfigSubscriber(String configId) {
+        log.log(Level.FINE, "new slobrok config subscriber with config id: "+configId);
         subscriber = new ConfigSubscriber();
         subscriber.subscribe(this, SlobroksConfig.class, configId);
     }
 
     public SlobrokConfigSubscriber(SlobroksConfig slobroksConfig) {
+        log.log(Level.FINE, "new slobrok config subscriber with fixed list: "+slobroksConfig);
         configure(slobroksConfig);
     }
 
