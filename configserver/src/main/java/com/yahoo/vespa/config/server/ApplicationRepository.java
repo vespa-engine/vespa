@@ -633,7 +633,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
                 .filter(fileReference -> isLastFileAccessBefore(new File(fileReferencesPath, fileReference), instant))
-                .sorted((a, b) -> lastAccessed(new File(fileReferencesPath, a)).isBefore(lastAccessed(new File(fileReferencesPath, b))) ? -1 : 1)
+                .sorted((a, b) -> {
+                    if (a.equals(b))
+                        return 0;
+                    else if (lastAccessed(new File(fileReferencesPath, a))
+                            .isBefore(lastAccessed(new File(fileReferencesPath, b))))
+                        return -1;
+                    else
+                        return 1;
+                })
                 .collect(Collectors.toList());
     }
 
