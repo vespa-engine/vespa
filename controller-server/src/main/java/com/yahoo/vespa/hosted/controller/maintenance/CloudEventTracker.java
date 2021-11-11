@@ -55,7 +55,7 @@ public class CloudEventTracker extends ControllerMaintainer {
     private void deprovisionAffectedHosts(String region, CloudEvent event) {
         for (var zone : zonesByCloudNativeRegion.get(region)) {
             for (var node : nodeRepository.list(zone.getId(), NodeFilter.all())) {
-                if (!affects(node, event)) continue;
+                if (!deprovision(node, event)) continue;
                 log.info("Retiring and deprovisioning " + node.hostname().value() + " in " + zone.getId() +
                          ": Affected by maintenance event " + event.instanceEventId);
                 nodeRepository.retire(zone.getId(), node.hostname().value(), true, true);
@@ -63,8 +63,9 @@ public class CloudEventTracker extends ControllerMaintainer {
         }
     }
 
-    private static boolean affects(Node node, CloudEvent event) {
+    private static boolean deprovision(Node node, CloudEvent event) {
         if (!node.type().isHost()) return false; // Non-hosts are never affected
+        if (node.wantToRetire() && node.wantToDeprovision()) return false; // Already deprovisioning
         return event.affectedInstances.stream()
                                       .anyMatch(instance -> node.hostname().value().contains(instance));
     }

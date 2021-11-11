@@ -31,7 +31,6 @@ public class CloudEventTrackerTest {
     private final ZoneApiMock zone1 = createZone("prod.zone1", "region-1", "aws");
     private final ZoneApiMock zone2 = createZone("prod.zone2", "region-2", "aws");
 
-
     /**
      * Test scenario: Consider three zones, two of which are supported
      *
