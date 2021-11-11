@@ -30,7 +30,7 @@ public class NetworkMultiplexerProvider {
     }
 
     public NetworkMultiplexerProvider(NetworkMultiplexerHolder net, ContainerMbusConfig mbusConfig, String identity) {
-        this.nets = () -> net.get(asParameters(mbusConfig, identity).setSlobrokConfigId(identity));
+        this.nets = () -> net.get(asParameters(mbusConfig, identity));
     }
 
     public static RPCNetworkParams asParameters(ContainerMbusConfig mbusConfig, SlobroksConfig slobroksConfig, String identity) {

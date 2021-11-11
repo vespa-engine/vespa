@@ -64,8 +64,9 @@ public class MessageBusDocumentAccess extends DocumentAccess {
                 bus = new NetworkMessageBus(network, new MessageBus(network, mbusParams));
             }
             else {
-                if (params.getRPCNetworkParams().getSlobroksConfig() != null && mbusParams.getMessageBusConfig() != null)
+                if (mbusParams.getMessageBusConfig() != null) {
                     bus = new RPCMessageBus(mbusParams, params.getRPCNetworkParams());
+                }
                 else {
                     log.log(Level.FINE, () -> "Setting up self-subscription to config because explicit config was missing; try to avoid this in containers");
                     bus = new RPCMessageBus(mbusParams, params.getRPCNetworkParams(), params.getRoutingConfigId());
