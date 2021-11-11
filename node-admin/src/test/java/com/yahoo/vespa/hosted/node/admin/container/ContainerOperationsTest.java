@@ -7,6 +7,7 @@ import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.nio.file.FileSystem;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +59,7 @@ public class ContainerOperationsTest {
     }
 
     private Container createContainer(String name, boolean managed) {
-        return new Container(new ContainerId("id-of-" + name), new ContainerName(name), PartialContainer.State.running,
+        return new Container(new ContainerId("id-of-" + name), new ContainerName(name), Instant.EPOCH, PartialContainer.State.running,
                              "image-id", DockerImage.EMPTY, Map.of(), 42, 43, name,
                              ContainerResources.UNLIMITED, List.of(), managed);
     }

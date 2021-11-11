@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.node.admin.container.ContainerResources;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,7 +120,7 @@ public class ContainerImagePrunerTest {
     }
 
     private static Container container(String name, String imageId) {
-        return new Container(new ContainerId("id-of-" + name), new ContainerName(name),
+        return new Container(new ContainerId("id-of-" + name), new ContainerName(name), Instant.EPOCH,
                              Container.State.running, imageId, DockerImage.EMPTY, Map.of(),
                              42, 43, name + ".example.com", ContainerResources.UNLIMITED,
                              List.of(), true);

@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -84,7 +85,7 @@ public class ContainerEngineMock implements ContainerEngine {
     @Override
     public void updateContainer(NodeAgentContext context, ContainerId containerId, ContainerResources containerResources) {
         Container container = requireContainer(context.containerName());
-        containers.put(container.name(), new Container(containerId, container.name(), container.state(),
+        containers.put(container.name(), new Container(containerId, container.name(), container.createdAt(), container.state(),
                                                        container.imageId(), container.image(),
                                                        container.labels(), container.pid(),
                                                        container.conmonPid(), container.hostname(),
@@ -160,6 +161,7 @@ public class ContainerEngineMock implements ContainerEngine {
     public Container createContainer(NodeAgentContext context, PartialContainer.State state, ContainerResources containerResources) {
         return new Container(new ContainerId("id-of-" + context.containerName()),
                              context.containerName(),
+                             Instant.EPOCH,
                              state,
                              "image-id",
                              context.node().wantedDockerImage().get(),

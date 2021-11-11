@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.container;
 
 import com.yahoo.config.provision.DockerImage;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,10 +20,10 @@ public class Container extends PartialContainer {
     private final int conmonPid;
     private final List<Network> networks;
 
-    public Container(ContainerId id, ContainerName name, State state, String imageId, DockerImage image,
+    public Container(ContainerId id, ContainerName name, Instant createdAt, State state, String imageId, DockerImage image,
                      Map<String, String> labels, int pid, int conmonPid, String hostname,
                      ContainerResources resources, List<Network> networks, boolean managed) {
-        super(id, name, state, imageId, image, labels, pid, managed);
+        super(id, name, createdAt, state, imageId, image, labels, pid, managed);
         this.hostname = Objects.requireNonNull(hostname);
         this.resources = Objects.requireNonNull(resources);
         this.conmonPid = conmonPid;

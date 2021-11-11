@@ -765,6 +765,7 @@ public class NodeAgentImplTest {
                     Optional.of(new Container(
                             containerId,
                             ContainerName.fromHostname(hostName),
+                            Instant.EPOCH,
                             isRunning ? Container.State.running : Container.State.exited,
                             "image-id-1",
                             dockerImage,
