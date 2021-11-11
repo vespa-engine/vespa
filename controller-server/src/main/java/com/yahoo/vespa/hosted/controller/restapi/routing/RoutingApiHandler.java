@@ -250,17 +250,17 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var agent = isOperator(request) ? RoutingStatus.Agent.operator : RoutingStatus.Agent.tenant;
         requireDeployment(deployment, instance);
 
-        // Set rotation status if rotations can route to this zone
         if (sharedRoutingIn(deployment.zoneId())) {
+            // Set rotation status
             var endpointStatus = new EndpointStatus(in ? EndpointStatus.Status.in : EndpointStatus.Status.out,
                                                     "",
                                                     agent.name(),
                                                     controller.clock().instant().getEpochSecond());
             controller.routing().setGlobalRotationStatus(deployment, endpointStatus);
+        } else {
+            // Set policy status
+            controller.routing().policies().setRoutingStatus(deployment, status, agent);
         }
-
-        // Set policy status
-        controller.routing().policies().setRoutingStatus(deployment, status, agent);
         return new MessageResponse("Set global routing status for " + deployment + " to " + (in ? "IN" : "OUT"));
     }
 

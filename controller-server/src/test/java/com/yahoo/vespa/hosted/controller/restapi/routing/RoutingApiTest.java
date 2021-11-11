@@ -251,48 +251,6 @@ public class RoutingApiTest extends ControllerContainerTest {
                               new File("rotation/zone-status-in.json"));
     }
 
-    // TODO(mpolden): Remove this once a zone supports either of routing policy and rotation
-    @Test
-    public void mixed_routing_single_zone() {
-        var westZone = ZoneId.from("prod", "us-west-1");
-        var eastZone = ZoneId.from("prod", "us-east-3");
-
-        // One zone supports multiple routing methods
-        deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(westZone),
-                                                                            RoutingMethod.shared,
-                                                                            RoutingMethod.exclusive);
-
-        // Deploy application
-        var context = deploymentTester.newDeploymentContext();
-        var applicationPackage = new ApplicationPackageBuilder()
-                .region(westZone.region())
-                .region(eastZone.region())
-                .endpoint("default", "default", eastZone.region().value(), westZone.region().value())
-                .build();
-        context.submit(applicationPackage).deploy();
-
-        // GET status with both policy and rotation assigned
-        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
-                                              "", Request.Method.GET),
-                              new File("multi-status-initial.json"));
-
-        // POST sets deployment out
-        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
-                                              "", Request.Method.POST),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to OUT\"}");
-        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
-                                              "", Request.Method.GET),
-                              new File("multi-status-out.json"));
-
-        // DELETE sets deployment in
-        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/inactive/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
-                                              "", Request.Method.DELETE),
-                              "{\"message\":\"Set global routing status for tenant.application in prod.us-west-1 to IN\"}");
-        tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
-                                              "", Request.Method.GET),
-                              new File("multi-status-in.json"));
-    }
-
     @Test
     public void mixed_routing_multiple_zones() {
         var westZone = ZoneId.from("prod", "us-west-1");
