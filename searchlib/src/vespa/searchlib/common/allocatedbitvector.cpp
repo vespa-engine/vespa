@@ -157,8 +157,9 @@ AllocatedBitVector::grow(Index newSize, Index newCapacity)
             setSize(newSize);
             clearIntervalNoInvalidation(clearRange);
         } else {
-            clearInterval(newSize, size());
+            clearIntervalNoInvalidation(Range(newSize, size()));
             setSize(newSize);
+            updateCount();
         }
     }
     return ret;
