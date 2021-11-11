@@ -72,11 +72,7 @@ MemoryIndex::MemoryIndex(const Schema& schema,
 {
 }
 
-MemoryIndex::~MemoryIndex()
-{
-    _invertThreads.sync_all();
-    _pushThreads.sync_all();
-}
+MemoryIndex::~MemoryIndex() = default;
 
 void
 MemoryIndex::insertDocument(uint32_t docId, const document::Document &doc, OnWriteDoneType on_write_done)

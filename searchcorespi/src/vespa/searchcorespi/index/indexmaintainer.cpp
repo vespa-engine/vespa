@@ -16,6 +16,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/time.h>
@@ -940,9 +941,8 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
     IMemoryIndex::SP new_index(_operations.createMemoryIndex(getSchema(), *_current_index, _current_serial_num));
     FlushArgs args;
     args.stats = stats;
-    scheduleCommit();
     // Ensure that all index thread tasks accessing memory index have completed.
-    _ctx.getThreadingService().sync();
+    commit_and_wait();
     // Call reconfig closure for this change
     auto configure = makeLambdaConfigure([this, argsP=&args, indexP=&new_index]() {
         return doneInitFlush(argsP, indexP);
@@ -1197,20 +1197,22 @@ IndexMaintainer::removeDocuments(LidVector lids, SerialNum serialNum)
 }
 
 void
-IndexMaintainer::scheduleCommit()
+IndexMaintainer::commit_and_wait()
 {
     assert(_ctx.getThreadingService().master().isCurrentThread());
-    _ctx.getThreadingService().index().execute(makeLambdaTask([this]() { commit(); }));
+    vespalib::Gate gate;
+    _ctx.getThreadingService().index().execute(makeLambdaTask([this, &gate]() { commit(gate); }));
+    // Ensure that all index thread tasks accessing memory index have completed.
+    gate.await();
 }
 
 void
-IndexMaintainer::commit()
+IndexMaintainer::commit(vespalib::Gate& gate)
 {
-    // only triggered via scheduleCommit()
+    // only triggered via commit_and_wait()
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
-    _current_index->commit({}, _current_serial_num);
-    // caller calls _ctx.getThreadingService().sync()
+    _current_index->commit(std::make_shared<vespalib::GateCallback>(gate), _current_serial_num);
 }
 
 void
@@ -1260,9 +1262,8 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
     SetSchemaArgs args;
 
     args._newSchema = schema;
-    scheduleCommit();
     // Ensure that all index thread tasks accessing memory index have completed.
-    _ctx.getThreadingService().sync();
+    commit_and_wait();
     // Everything should be quiet now.
     doneSetSchema(args, new_index);
     // Source collection has now changed, caller must reconfigure further
@@ -1287,8 +1288,7 @@ IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum serialNum)
         new_source_list = std::make_shared<IndexCollection>(_selector, *_source_list);
     }
     if (reopenDiskIndexes(*new_source_list)) {
-        scheduleCommit();
-        _ctx.getThreadingService().sync();
+        commit_and_wait();
         // Everything should be quiet now.
         LockGuard state_lock(_state_lock);
         LockGuard lock(_new_search_lock);
