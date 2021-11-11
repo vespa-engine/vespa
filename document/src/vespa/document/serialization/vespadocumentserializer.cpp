@@ -295,9 +295,8 @@ VespaDocumentSerializer::write(const StructFieldValue &value, const FieldSet& fi
     vector<pair<uint32_t, uint32_t> > field_info;
     serializeFields(value, value_stream, field_info, fieldSet);
 
-    uint8_t comp_type = CompressionConfig::NONE;
     _stream << static_cast<uint32_t>(value_stream.size());
-    _stream << comp_type;
+    _stream << static_cast<uint8_t>(CompressionConfig::NONE);
     putFieldInfo(_stream, field_info);
     _stream.write(value_stream.data(), value_stream.size());
 }
