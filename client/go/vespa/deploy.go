@@ -327,12 +327,12 @@ func Submit(opts DeploymentOpts) error {
 		Header: make(http.Header),
 	}
 	request.Header.Set("Content-Type", writer.FormDataContentType())
-	signer := NewRequestSigner(opts.Deployment.Application.SerializedForm(), opts.APIKey)
-	if err := signer.SignRequest(request); err != nil {
+	serviceDescription := "Submit service"
+	sigKeyId := opts.Deployment.Application.SerializedForm()
+	if err := opts.Target.PrepareApiRequest(request, sigKeyId); err != nil {
 		return err
 	}
-	serviceDescription := "Submit service"
-	response, err := util.HttpDo(request, time.Minute*10, serviceDescription)
+	response, err := util.HttpDo(request, time.Minute*10, sigKeyId)
 	if err != nil {
 		return err
 	}
@@ -344,7 +344,7 @@ func checkDeploymentOpts(opts DeploymentOpts) error {
 	if !opts.ApplicationPackage.HasCertificate() {
 		return fmt.Errorf("%s: missing certificate in package", opts)
 	}
-	if opts.APIKey == nil {
+	if !Auth0AccessTokenEnabled() && opts.APIKey == nil {
 		return fmt.Errorf("%s: missing api key", opts.String())
 	}
 	return nil
@@ -363,13 +363,11 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 		Header: header,
 		Body:   ioutil.NopCloser(zipReader),
 	}
-	if opts.APIKey != nil {
-		signer := NewRequestSigner(opts.Deployment.Application.SerializedForm(), opts.APIKey)
-		if err := signer.SignRequest(request); err != nil {
-			return 0, err
-		}
-	}
 	serviceDescription := "Deploy service"
+	sigKeyId := opts.Deployment.Application.SerializedForm()
+	if err := opts.Target.PrepareApiRequest(request, sigKeyId); err != nil {
+		return 0, err
+	}
 	response, err := util.HttpDo(request, time.Minute*10, serviceDescription)
 	if err != nil {
 		return 0, err
