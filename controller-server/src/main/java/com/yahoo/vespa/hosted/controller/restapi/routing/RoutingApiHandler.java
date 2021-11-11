@@ -209,7 +209,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse setZoneStatus(Path path, boolean in) {
         var zone = zoneFrom(path);
-        if (controller.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).ids().contains(zone)) {
+        if (exclusiveRoutingIn(zone)) {
             var status = in ? RoutingStatus.Value.in : RoutingStatus.Value.out;
             controller.routing().policies().setRoutingStatus(zone, status);
         } else {
@@ -228,7 +228,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     }
 
     private void toSlime(ZoneId zone, Cursor zoneObject) {
-        if (controller.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).ids().contains(zone)) {
+        if (exclusiveRoutingIn(zone)) {
             var zonePolicy = controller.routing().policies().get(zone);
             zoneStatusToSlime(zoneObject, zonePolicy.zone(), zonePolicy.routingStatus(), RoutingMethod.exclusive);
         } else {
@@ -247,9 +247,10 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         var agent = RoutingStatus.Agent.operator; // Always operator as this is an operator API
         requireDeployment(deployment, instance);
 
-        // Set rotation status, if rotations can route to this zone
-        if (rotationCanRouteTo(deployment.zoneId())) {
-            var endpointStatus = new EndpointStatus(in ? EndpointStatus.Status.in : EndpointStatus.Status.out, "",
+        // Set rotation status if rotations can route to this zone
+        if (sharedRoutingIn(deployment.zoneId())) {
+            var endpointStatus = new EndpointStatus(in ? EndpointStatus.Status.in : EndpointStatus.Status.out,
+                                                    "",
                                                     agent.name(),
                                                     controller.clock().instant().getEpochSecond());
             controller.routing().setGlobalRotationStatus(deployment, endpointStatus);
@@ -298,7 +299,7 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     }
 
     private Optional<RoutingStatus> sharedGlobalRoutingStatus(DeploymentId deploymentId) {
-        if (rotationCanRouteTo(deploymentId.zoneId())) {
+        if (sharedRoutingIn(deploymentId.zoneId())) {
             var rotationStatus = controller.routing().globalRotationStatus(deploymentId);
             // Status is equal across all global endpoints, as the status is per deployment, not per endpoint.
             var endpointStatus = rotationStatus.values().stream().findFirst();
@@ -322,16 +323,18 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     private List<RoutingStatus> directGlobalRoutingStatus(DeploymentId deploymentId) {
         return controller.routing().policies().get(deploymentId).values().stream()
                          .filter(p -> ! p.instanceEndpoints().isEmpty())  // This policy does not apply to a global endpoint
-                         .filter(p -> controller.zoneRegistry().routingMethods(p.id().zone()).contains(RoutingMethod.exclusive))
+                         .filter(p -> exclusiveRoutingIn(p.id().zone()))
                          .map(p -> p.status().routingStatus())
                          .collect(Collectors.toList());
     }
 
-    /** Returns whether a rotation can route traffic to given zone */
-    private boolean rotationCanRouteTo(ZoneId zone) {
-        // A system may support multiple routing methods, i.e. it has both exclusively routed zones and zones using
-        // shared routing. When changing or reading routing status in the context of a specific deployment, rotation
-        // status should only be considered if the zone supports shared routing.
+    /** Returns whether given zone uses exclusive routing */
+    private boolean exclusiveRoutingIn(ZoneId zone) {
+        return controller.zoneRegistry().routingMethods(zone).contains(RoutingMethod.exclusive);
+    }
+
+    /** Returns whether given zone uses shared routing */
+    private boolean sharedRoutingIn(ZoneId zone) {
         return controller.zoneRegistry().routingMethods(zone).stream().anyMatch(RoutingMethod::isShared);
     }
 
