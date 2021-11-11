@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -101,7 +102,7 @@ public class EndpointCertificatesTest {
     @Before
     public void setUp() {
         tester.zoneRegistry().exclusiveRoutingIn(tester.zoneRegistry().zones().all().zones());
-        testZone = tester.zoneRegistry().zones().directlyRouted().in(Environment.prod).zones().stream().findFirst().orElseThrow().getId();
+        testZone = tester.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).in(Environment.prod).zones().stream().findFirst().orElseThrow().getId();
         clock.setInstant(Instant.EPOCH);
         testCertificate = makeTestCert(expectedSans);
         testCertificate2 = makeTestCert(expectedCombinedSans);
@@ -109,7 +110,7 @@ public class EndpointCertificatesTest {
 
     @Test
     public void provisions_new_certificate_in_dev() {
-        ZoneId testZone = tester.zoneRegistry().zones().directlyRouted().in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
+        ZoneId testZone = tester.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
@@ -183,7 +184,7 @@ public class EndpointCertificatesTest {
 
     @Test
     public void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
-        ZoneId testZone = tester.zoneRegistry().zones().directlyRouted().in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
+        ZoneId testZone = tester.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
 
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", expectedSans, "mockCa", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), -1);
