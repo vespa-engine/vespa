@@ -83,11 +83,13 @@ public class MockConnection implements ConnectionPool, Connection {
 
     static class OKResponseHandler extends AbstractResponseHandler {
 
+        long generation = 1;
+
         protected void createResponse() {
             JRTServerConfigRequestV3 jrtReq = JRTServerConfigRequestV3.createFromRequest(request);
             Payload payload = Payload.from(ConfigPayload.empty());
-            long generation = 1;
             jrtReq.addOkResponse(payload, generation, false, PayloadChecksums.fromPayload(payload));
+            generation++;
         }
 
     }
