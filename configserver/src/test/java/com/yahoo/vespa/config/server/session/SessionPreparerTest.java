@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -264,9 +265,11 @@ public class SessionPreparerTest {
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
         var expected = List.of(new ContainerEndpoint("foo",
+                                                     ApplicationClusterEndpoint.Scope.global,
                                                      List.of("foo.app1.tenant1.global.vespa.example.com",
                                                              "rotation-042.vespa.global.routing")),
                                new ContainerEndpoint("bar",
+                                                     ApplicationClusterEndpoint.Scope.global,
                                                      List.of("bar.app1.tenant1.global.vespa.example.com",
                                                              "rotation-043.vespa.global.routing")));
         assertEquals(expected, readContainerEndpoints(applicationId));

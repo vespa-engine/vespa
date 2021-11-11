@@ -372,12 +372,13 @@ public class ContainerClusterTest {
                     List.of("search-cluster.default.t1.endpoint.suffix", "search-cluster--default--t1.endpoint.suffix"));
 
         assertNames(ApplicationId.from("t1", "a1", "default"),
-                    Set.of(new ContainerEndpoint("not-in-this-cluster", List.of("foo", "bar"))),
+                    Set.of(new ContainerEndpoint("not-in-this-cluster", ApplicationClusterEndpoint.Scope.global, List.of("foo", "bar"))),
                     List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix"));
 
         assertNames(ApplicationId.from("t1", "a1", "default"),
-                    Set.of(new ContainerEndpoint("search-cluster", List.of("rotation-1.x.y.z", "rotation-2.x.y.z"))),
-                    List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z"));
+                    Set.of(new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z")),
+                           new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.application, List.of("app-rotation.x.y.z"))),
+                    List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
     }
 
     private void assertNames(ApplicationId appId, Set<ContainerEndpoint> globalEndpoints, List<String> expectedNames) {

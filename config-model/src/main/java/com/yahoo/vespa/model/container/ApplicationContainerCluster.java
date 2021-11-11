@@ -239,11 +239,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 .filter(ce -> ce.clusterId().equals(getName()))
                 .forEach(ce -> ce.names().forEach(
                         name -> endpoints.add(ApplicationClusterEndpoint.builder()
-                                .globalScope()
-                                .sharedL4Routing()
-                                .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
-                                .hosts(hosts)
-                                .build())
+                                                      .scope(ce.scope())
+                                                      .sharedL4Routing()
+                                                      .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
+                                                      .hosts(hosts)
+                                                      .build())
                 ));
         endpointList = List.copyOf(endpoints);
     }

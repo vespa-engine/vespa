@@ -2,6 +2,7 @@
 package com.yahoo.config.model.deploy;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
@@ -111,7 +112,7 @@ public class DeployStateTest {
     @Test
     public void testContainerEndpoints() {
         assertTrue(new DeployState.Builder().endpoints(Set.of()).build().getEndpoints().isEmpty());
-        var endpoints = Set.of(new ContainerEndpoint("c1", List.of("c1.example.com", "c1-alias.example.com")));
+        var endpoints = Set.of(new ContainerEndpoint("c1", ApplicationClusterEndpoint.Scope.global, List.of("c1.example.com", "c1-alias.example.com")));
         assertEquals(endpoints, new DeployState.Builder().endpoints(endpoints).build().getEndpoints());
     }
 

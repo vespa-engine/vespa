@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
@@ -41,7 +42,7 @@ public class ModelContextImplTest {
     @Test
     public void testModelContextTest() {
 
-        ContainerEndpoint endpoint = new ContainerEndpoint("foo", List.of("a", "b"));
+        ContainerEndpoint endpoint = new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.global, List.of("a", "b"));
         Set<ContainerEndpoint> endpoints = Collections.singleton(endpoint);
         InMemoryFlagSource flagSource = new InMemoryFlagSource();
 

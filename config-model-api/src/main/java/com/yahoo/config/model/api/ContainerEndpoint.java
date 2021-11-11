@@ -14,10 +14,12 @@ import java.util.Objects;
 public class ContainerEndpoint {
 
     private final String clusterId;
+    private final ApplicationClusterEndpoint.Scope scope;
     private final List<String> names;
 
-    public ContainerEndpoint(String clusterId, List<String> names) {
+    public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names) {
         this.clusterId = Objects.requireNonNull(clusterId);
+        this.scope = Objects.requireNonNull(scope);
         this.names = List.copyOf(Objects.requireNonNull(names));
     }
 
@@ -29,23 +31,28 @@ public class ContainerEndpoint {
         return names;
     }
 
+    public ApplicationClusterEndpoint.Scope scope() {
+        return scope;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ContainerEndpoint that = (ContainerEndpoint) o;
         return Objects.equals(clusterId, that.clusterId) &&
+               Objects.equals(scope, that.scope) &&
                 Objects.equals(names, that.names);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(clusterId, names);
+        return Objects.hash(clusterId, names, scope);
     }
 
     @Override
     public String toString() {
-        return String.format("container endpoint %s -> %s", clusterId, names);
+        return String.format("container endpoint %s -> %s [scope=%s]", clusterId, names, scope);
     }
 
 }

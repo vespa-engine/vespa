@@ -17,22 +17,22 @@ import java.util.stream.Stream;
  * @author mortent
  */
 public class ApplicationClusterEndpoint {
-    public enum Scope {APPLICATION, GLOBAL, ZONE}
+    public enum Scope {application, global, zone}
 
-    public enum RoutingMethod {SHARED, SHAREDLAYER4}
+    public enum RoutingMethod {shared, sharedLayer4}
 
     private final DnsName dnsName;
     private final Scope scope;
     private final RoutingMethod routingMethod;
     private final int weight;
-    private final List<String> hosts;
+    private final List<String> hostNames;
 
-    public ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hosts) {
+    public ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hostNames) {
         this.dnsName = dnsName;
         this.scope = scope;
         this.routingMethod = routingMethod;
         this.weight = weight;
-        this.hosts = List.copyOf(hosts);
+        this.hostNames = List.copyOf(hostNames);
     }
 
     public DnsName dnsName() {
@@ -51,8 +51,8 @@ public class ApplicationClusterEndpoint {
         return weight;
     }
 
-    public List<String> hosts() {
-        return hosts;
+    public List<String> hostNames() {
+        return hostNames;
     }
 
     public static Builder builder() {
@@ -73,27 +73,22 @@ public class ApplicationClusterEndpoint {
         }
 
         public Builder zoneScope() {
-            this.scope = Scope.ZONE;
+            this.scope = Scope.zone;
             return this;
         }
 
-        public Builder applicationScope() {
-            this.scope = Scope.APPLICATION;
-            return this;
-        }
-
-        public Builder globalScope() {
-            this.scope = Scope.GLOBAL;
+        public Builder scope(Scope scope) {
+            this.scope = scope;
             return this;
         }
 
         public Builder sharedRouting() {
-            this.routingMethod = RoutingMethod.SHARED;
+            this.routingMethod = RoutingMethod.shared;
             return this;
         }
 
         public Builder sharedL4Routing() {
-            this.routingMethod = RoutingMethod.SHAREDLAYER4;
+            this.routingMethod = RoutingMethod.sharedLayer4;
             return this;
         }
 

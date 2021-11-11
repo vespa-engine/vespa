@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.Model;
@@ -39,8 +40,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.GLOBAL;
-import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.ZONE;
+import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.RoutingMethod.Enum.sharedLayer4;
+import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.application;
+import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.global;
+import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.zone;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -62,7 +65,8 @@ public class LbServicesProducerTest {
     private static final String rotation1 = "rotation-1";
     private static final String rotation2 = "rotation-2";
     private static final Set<ContainerEndpoint> endpoints = Set.of(
-            new ContainerEndpoint("mydisc", List.of("rotation-1", "rotation-2"))
+            new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.global, List.of("rotation-1", "rotation-2")),
+            new ContainerEndpoint("mydisc", ApplicationClusterEndpoint.Scope.application, List.of("app-endpoint"))
     );
     private static final List<String> zoneDnsSuffixes = List.of(".endpoint1.suffix", ".endpoint2.suffix");
 
@@ -165,19 +169,23 @@ public class LbServicesProducerTest {
         assertThat("Missing endpoints in list: " + services.endpointaliases(), services.endpointaliases(), containsInAnyOrder("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2));
 
         List<Endpoints> endpointList = config.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").endpoints();
-        // Expect 4 zone endpoints (2 suffixes) and 2 global rotations
-        assertEquals(6, endpointList.size());
-        List<Endpoints> zoneEndpoints = endpointList.stream().filter(e -> e.scope() == ZONE).collect(Collectors.toList());
+        // Expect 4 zone endpoints (2 suffixes), 2 global endpoints and 1 application endpoint
+        assertEquals(7, endpointList.size());
+        List<Endpoints> zoneEndpoints = endpointList.stream().filter(e -> e.scope() == zone).collect(Collectors.toList());
         assertEquals(4, zoneEndpoints.size());
         assertThat(zoneEndpoints.stream()
-                           .filter(e -> e.routingMethod() == Endpoints.RoutingMethod.Enum.SHAREDLAYER4)
+                           .filter(e -> e.routingMethod() == sharedLayer4)
                            .map(Endpoints::dnsName).collect(Collectors.toList()),
                    containsInAnyOrder("mydisc.foo.foo.endpoint1.suffix", "mydisc.foo.foo.endpoint2.suffix"));
 
-        List<Endpoints> globalEndpoints = endpointList.stream().filter(e -> e.scope() == GLOBAL).collect(Collectors.toList());
+        List<Endpoints> globalEndpoints = endpointList.stream().filter(e -> e.scope() == global).collect(Collectors.toList());
         assertEquals(2, globalEndpoints.size());
         assertThat(globalEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()), containsInAnyOrder("rotation-1", "rotation-2"));
-                   
+
+        List<Endpoints> applicationEndpoints = endpointList.stream().filter(e -> e.scope() == application).collect(Collectors.toList());
+        assertEquals(1, applicationEndpoints.size());
+        assertThat(applicationEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()), containsInAnyOrder("app-endpoint"));
+
     }
 
 
