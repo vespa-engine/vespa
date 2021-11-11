@@ -5,7 +5,6 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
@@ -614,7 +613,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         final var deployState = new DeployState.Builder()
                 .applicationPackage(applicationPackage)
                 .zone(new Zone(Environment.prod, RegionName.from("us-east-1")))
-                .endpoints(Set.of(new ContainerEndpoint("comics-search", ApplicationClusterEndpoint.Scope.global, List.of("nalle", "balle"))))
+                .endpoints(Set.of(new ContainerEndpoint("comics-search", List.of("nalle", "balle"))))
                 .properties(new TestProperties().setHostedVespa(true))
                 .build();
 

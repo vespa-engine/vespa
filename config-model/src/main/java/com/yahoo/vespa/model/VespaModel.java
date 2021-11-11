@@ -18,7 +18,6 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.NullConfigModelRegistry;
-import com.yahoo.config.model.api.ApplicationClusterInfo;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.Provisioned;
@@ -697,8 +696,4 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                       .collect(Collectors.toSet());
     }
 
-    @Override
-    public Set<ApplicationClusterInfo> applicationClusterInfo() {
-        return Set.copyOf(getContainerClusters().values());
-    }
 }

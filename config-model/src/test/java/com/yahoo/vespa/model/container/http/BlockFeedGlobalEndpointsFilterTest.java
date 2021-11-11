@@ -2,7 +2,6 @@
 
 package com.yahoo.vespa.model.container.http;
 
-import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig;
 import org.hamcrest.Matchers;
@@ -20,7 +19,7 @@ public class BlockFeedGlobalEndpointsFilterTest {
 
     @Test
     public void setup_blocking_rule_when_endpoints_is_non_empty() {
-        var endpoints = Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.global, List.of("foo", "bar")));
+        var endpoints = Set.of(new ContainerEndpoint("default", List.of("foo", "bar")));
         var filter = new BlockFeedGlobalEndpointsFilter(endpoints, true);
         var config = getConfig(filter);
         assertEquals(1, config.rule().size());
