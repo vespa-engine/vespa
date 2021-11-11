@@ -21,6 +21,9 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
@@ -38,8 +41,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * This implements the /routing/v1 API, which provides operator with global routing control at both zone- and
- * deployment-level.
+ * This implements the /routing/v1 API, which provides operators and tenants routing control at both zone- (operator
+ * only) and deployment-level.
  *
  * @author mpolden
  */
@@ -58,8 +61,8 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             var path = new Path(request.getUri());
             switch (request.getMethod()) {
                 case GET: return get(path, request);
-                case POST: return post(path);
-                case DELETE: return delete(path);
+                case POST: return post(path, request);
+                case DELETE: return delete(path, request);
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
         } catch (IllegalArgumentException e) {
@@ -70,14 +73,14 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         }
     }
 
-    private HttpResponse delete(Path path) {
-        if (path.matches("/routing/v1/inactive/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return setDeploymentStatus(path, true);
+    private HttpResponse delete(Path path, HttpRequest request) {
+        if (path.matches("/routing/v1/inactive/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return setDeploymentStatus(path, true, request);
         if (path.matches("/routing/v1/inactive/environment/{environment}/region/{region}")) return setZoneStatus(path, true);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse post(Path path) {
-        if (path.matches("/routing/v1/inactive/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return setDeploymentStatus(path, false);
+    private HttpResponse post(Path path, HttpRequest request) {
+        if (path.matches("/routing/v1/inactive/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return setDeploymentStatus(path, false, request);
         if (path.matches("/routing/v1/inactive/environment/{environment}/region/{region}")) return setZoneStatus(path, false);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
@@ -240,11 +243,11 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
         }
     }
 
-    private HttpResponse setDeploymentStatus(Path path, boolean in) {
+    private HttpResponse setDeploymentStatus(Path path, boolean in, HttpRequest request) {
         var deployment = deploymentFrom(path);
         var instance = controller.applications().requireInstance(deployment.applicationId());
         var status = in ? RoutingStatus.Value.in : RoutingStatus.Value.out;
-        var agent = RoutingStatus.Agent.operator; // Always operator as this is an operator API
+        var agent = isOperator(request) ? RoutingStatus.Agent.operator : RoutingStatus.Agent.tenant;
         requireDeployment(deployment, instance);
 
         // Set rotation status if rotations can route to this zone
@@ -398,6 +401,16 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("No such deployment: " + deployment);
         }
         return deployment;
+    }
+
+    private static boolean isOperator(HttpRequest request) {
+        SecurityContext securityContext = Optional.ofNullable(request.getJDiscRequest().context().get(SecurityContext.ATTRIBUTE_NAME))
+                                                  .filter(SecurityContext.class::isInstance)
+                                                  .map(SecurityContext.class::cast)
+                                                  .orElseThrow(() -> new IllegalArgumentException("Attribute '" + SecurityContext.ATTRIBUTE_NAME + "' was not set on request"));
+        return securityContext.roles().stream()
+                              .map(Role::definition)
+                              .anyMatch(definition -> definition == RoleDefinition.hostedOperator);
     }
 
     private static boolean isRecursive(HttpRequest request) {
