@@ -33,11 +33,12 @@ public class Mirror implements IMirror {
 
     private static final Logger log = Logger.getLogger(Mirror.class.getName());
 
-    private final Supervisor  orb;
+    private final Supervisor orb;
     private final SlobrokList slobroks;
     private String currSlobrok;
     private final BackOffPolicy backOff;
     private volatile int updates = 0;
+    private volatile long iterations = 0;
     private boolean requestDone = false;
     private boolean logOnSuccess = true;
     private final AtomicReference<Entry[]> specs = new AtomicReference<>(new Entry[0]);
@@ -169,6 +170,7 @@ public class Mirror implements IMirror {
      * Invoked by the update task.
      */
     private void checkForUpdate() {
+        ++iterations;
         if (requestDone) {
             handleUpdate();
             requestDone = false;
@@ -327,4 +329,12 @@ public class Mirror implements IMirror {
 
     }
 
+    public void dumpState() {
+        log.log(Level.INFO, "location broker mirror state: " +
+                " iterations: " + iterations +
+                ", connected to: " + target +
+                ", seen " + updates + " updates" +
+                ", current server: "+ currSlobrok +
+                ", list of servers: " + slobroks);
+    }
 }
