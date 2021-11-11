@@ -27,7 +27,7 @@ public class ApplicationClusterEndpoint {
     private final int weight;
     private final List<String> hostNames;
 
-    public ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hostNames) {
+    private ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hostNames) {
         this.dnsName = dnsName;
         this.scope = scope;
         this.routingMethod = routingMethod;
@@ -64,7 +64,7 @@ public class ApplicationClusterEndpoint {
         private DnsName dnsName;
         private Scope scope;
         private RoutingMethod routingMethod;
-        private int weigth = 0;
+        private int weigth = 1;
         private List<String> hosts;
 
         public Builder dnsName(DnsName name) {
