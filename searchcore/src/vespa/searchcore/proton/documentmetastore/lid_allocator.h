@@ -38,6 +38,7 @@ public:
     void ensureSpace(uint32_t newSize, uint32_t newCapacity);
     void registerLid(DocId lid) { _usedLids.setBit(lid); }
     void unregisterLid(DocId lid);
+    void unregister_lids(const std::vector<DocId>& lids);
     size_t getUsedLidsSize() const { return _usedLids.byteSize(); }
     void trimHoldLists(generation_t firstUsed) {
         _holdLids.trimHoldLists(firstUsed, _freeLids);

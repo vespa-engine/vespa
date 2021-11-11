@@ -80,6 +80,14 @@ LidAllocator::unregisterLid(DocId lid)
 }
 
 void
+LidAllocator::unregister_lids(const std::vector<DocId>& lids)
+{
+    for (auto lid : lids) {
+        unregisterLid(lid);
+    }
+}
+
+void
 LidAllocator::moveLidBegin(DocId fromLid, DocId toLid)
 {
     (void) fromLid;

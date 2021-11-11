@@ -637,20 +637,54 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
 }
 
 void
+DocumentMetaStore::remove_batch_internal_btree(std::vector<LidAndRawDocumentMetaData>& removed)
+{
+    // Sort removed array to same order as entries in gid to lid map b-tree
+    GlobalId::BucketOrderCmp cmp;
+    std::sort(removed.begin(), removed.end(), [cmp](auto& lhs, auto& rhs) { return cmp(lhs.second.getGid(), rhs.second.getGid()); });
+
+    _gid_to_lid_map_write_itr_prepare_serial_num = 0u;
+    auto& itr = _gid_to_lid_map_write_itr;
+    itr.begin(_gidToLidMap.getRoot());
+    for (const auto& lid_and_meta : removed) {
+        auto lid = lid_and_meta.first;
+        auto& meta = lid_and_meta.second;
+        const GlobalId& gid = meta.getGid();
+        KeyComp comp(gid, _metaDataStore);
+        GidToLidMapKey find_key(lid, gid);
+        if (itr.valid() && comp(itr.getKey(), find_key)) {
+            itr.binarySeek(find_key, comp);
+        }
+        if (!itr.valid() || comp(find_key, itr.getKey())) {
+            throw IllegalStateException(make_string(
+                            "document meta data store corrupted,"
+                            " cannot remove"
+                            " document with lid '%u' and gid '%s'",
+                            lid, gid.toString().c_str()));
+        }
+        _gidToLidMap.remove(itr);
+    }
+}
+
+void
 DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uint32_t docIdLimit)
 {
-    std::vector<RawDocumentMetaData> removed;
+    std::vector<LidAndRawDocumentMetaData> removed;
     removed.reserve(lidsToRemove.size());
     for (const auto &lid : lidsToRemove) {
         assert(lid > 0 && lid < docIdLimit);
         (void) docIdLimit;
 
         assert(validLid(lid));
-        removed.push_back(removeInternal(lid, 0u));
+        removed.emplace_back(lid, _metaDataStore[lid]);
     }
+    remove_batch_internal_btree(removed);
+    _lidAlloc.unregister_lids(lidsToRemove);
     {
         bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
-        for (const auto &meta: removed) {
+        // TODO: add remove_batch() method to BucketDB
+        for (const auto& lid_and_meta : removed) {
+            auto& meta = lid_and_meta.second;
             bucketGuard->remove(meta.getGid(), meta.getBucketId().stripUnused(),
                                 meta.getTimestamp(), meta.getDocSize(), _subDbType);
         }

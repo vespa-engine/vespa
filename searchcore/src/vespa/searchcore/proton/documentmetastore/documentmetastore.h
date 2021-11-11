@@ -64,6 +64,7 @@ private:
     // using the metadata store.
     using TreeType =  vespalib::btree::BTree<documentmetastore::GidToLidMapKey, vespalib::btree::BTreeNoLeafData,
                                              vespalib::btree::NoAggregated, const KeyComp &>;
+    using LidAndRawDocumentMetaData = std::pair<uint32_t, RawDocumentMetaData>;
 
     MetaDataStore       _metaDataStore;
     TreeType            _gidToLidMap;
@@ -128,6 +129,7 @@ private:
     VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder);
 
     RawDocumentMetaData removeInternal(DocId lid, uint64_t cached_iterator_sequence_id);
+    void remove_batch_internal_btree(std::vector<LidAndRawDocumentMetaData>& removed);
 
 public:
     typedef TreeType::Iterator Iterator;
