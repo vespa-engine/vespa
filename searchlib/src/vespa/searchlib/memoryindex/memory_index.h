@@ -121,8 +121,6 @@ public:
      * Commits the inserts and removes since the last commit, making them searchable.
      *
      * When commit is completed, 'on_write_done' goes out of scope, scheduling completion callback.
-     *
-     * Callers can call pushThreads.sync() to wait for push completion.
      */
     void commit(OnWriteDoneType on_write_done);
 

@@ -54,8 +54,7 @@ DocumentInverter::DocumentInverter(DocumentInverterContext& context)
 
 DocumentInverter::~DocumentInverter()
 {
-    _context.get_invert_threads().sync_all();
-    _context.get_push_threads().sync_all();
+    wait_for_zero_ref_count();
 }
 
 void

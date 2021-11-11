@@ -22,6 +22,7 @@
 namespace document { class Document; }
 
 namespace search::common { class FileHeaderContext; }
+namespace vespalib { class Gate; }
 
 namespace searchcorespi::index {
 
@@ -258,8 +259,8 @@ class IndexMaintainer : public IIndexManager,
     bool reconfigure(std::unique_ptr<Configure> configure);
     void warmupDone(ISearchableIndexCollection::SP current) override;
     bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
-    void scheduleCommit();
-    void commit();
+    void commit_and_wait();
+    void commit(vespalib::Gate& gate);
     void pruneRemovedFields(const Schema &schema, SerialNum serialNum);
 
 public:
