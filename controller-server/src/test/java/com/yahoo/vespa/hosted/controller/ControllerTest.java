@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudName;
@@ -233,35 +234,58 @@ public class ControllerTest {
 
     @Test
     public void testDnsUpdatesForGlobalEndpoint() {
-        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        var betaContext = tester.newDeploymentContext("tenant1", "app1", "beta");
+        var defaultContext = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("beta,default")
                 .endpoint("default", "foo")
                 .region("us-west-1")
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
                 .build();
-        context.submit(applicationPackage).deploy();
+        betaContext.submit(applicationPackage).deploy();
 
-        Collection<Deployment> deployments = context.instance().deployments().values();
-        assertFalse(deployments.isEmpty());
-        for (Deployment deployment : deployments) {
-            assertEquals("Rotation names are passed to config server in " + deployment.zone(),
-                         Set.of("rotation-id-01",
-                                "app1--tenant1.global.vespa.oath.cloud"),
-                         tester.configServer().containerEndpointNames(context.deploymentIdIn(deployment.zone())));
+        { // Expected rotation names are passed to beta instance deployments
+            Collection<Deployment> betaDeployments = betaContext.instance().deployments().values();
+            assertFalse(betaDeployments.isEmpty());
+            for (Deployment deployment : betaDeployments) {
+                assertEquals("Rotation names are passed to config server in " + deployment.zone(),
+                             Set.of("rotation-id-01",
+                                    "beta--app1--tenant1.global.vespa.oath.cloud"),
+                             tester.configServer().containerEndpointNames(betaContext.deploymentIdIn(deployment.zone())));
+            }
+            betaContext.flushDnsUpdates();
         }
-        context.flushDnsUpdates();
 
-        assertEquals(1, tester.controllerTester().nameService().records().size());
+        { // Expected rotation names are passed to default instance deployments
+            Collection<Deployment> defaultDeployments = defaultContext.instance().deployments().values();
+            assertFalse(defaultDeployments.isEmpty());
+            for (Deployment deployment : defaultDeployments) {
+                assertEquals("Rotation names are passed to config server in " + deployment.zone(),
+                             Set.of("rotation-id-02",
+                                    "app1--tenant1.global.vespa.oath.cloud"),
+                             tester.configServer().containerEndpointNames(defaultContext.deploymentIdIn(deployment.zone())));
+            }
+            defaultContext.flushDnsUpdates();
+        }
 
-        var record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
-        assertTrue(record.isPresent());
-        assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
-        assertEquals("rotation-fqdn-01.", record.get().data().asString());
+        Map<String, String> rotationCnames = Map.of("beta--app1--tenant1.global.vespa.oath.cloud", "rotation-fqdn-01.",
+                                                    "app1--tenant1.global.vespa.oath.cloud", "rotation-fqdn-02.");
+        rotationCnames.forEach((cname, data) -> {
+            var record = tester.controllerTester().findCname(cname);
+            assertTrue(record.isPresent());
+            assertEquals(cname, record.get().name().asString());
+            assertEquals(data, record.get().data().asString());
+        });
 
-        List<String> globalDnsNames = tester.controller().routing().readDeclaredEndpointsOf(context.instanceId())
-                                            .scope(Endpoint.Scope.global)
-                                            .mapToList(Endpoint::dnsName);
-        assertEquals(List.of("app1--tenant1.global.vespa.oath.cloud"), globalDnsNames);
+        Map<ApplicationId, List<String>> globalDnsNamesByInstance = Map.of(betaContext.instanceId(), List.of("beta--app1--tenant1.global.vespa.oath.cloud"),
+                                                                           defaultContext.instanceId(), List.of("app1--tenant1.global.vespa.oath.cloud"));
+
+        globalDnsNamesByInstance.forEach((instance, dnsNames) -> {
+            List<String> actualDnsNames = tester.controller().routing().readDeclaredEndpointsOf(instance)
+                                                .scope(Endpoint.Scope.global)
+                                                .mapToList(Endpoint::dnsName);
+            assertEquals("Global DNS names for " + instance, dnsNames, actualDnsNames);
+        });
     }
 
     @Test

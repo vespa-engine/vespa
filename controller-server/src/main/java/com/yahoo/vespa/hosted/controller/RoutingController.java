@@ -243,7 +243,8 @@ public class RoutingController {
         Instance instance = application.require(instanceName);
         boolean registerLegacyNames = requiresLegacyNames(application.deploymentSpec(), instanceName);
         Set<ContainerEndpoint> containerEndpoints = new HashSet<>();
-        EndpointList endpoints = declaredEndpointsOf(application);
+        DeploymentId deployment = new DeploymentId(instance.id(), zone);
+        EndpointList endpoints = declaredEndpointsOf(application).targets(deployment);
         EndpointList globalEndpoints = endpoints.scope(Endpoint.Scope.global);
         // Add endpoints backed by a rotation, and register them in DNS if necessary
         for (var assignedRotation : instance.rotations()) {
@@ -280,9 +281,7 @@ public class RoutingController {
         }
         // Add endpoints not backed by a rotation (i.e. other routing methods so that the config server always knows
         // about global names, even when not using rotations)
-        DeploymentId deployment = new DeploymentId(instance.id(), zone);
         globalEndpoints.not().requiresRotation()
-                       .targets(deployment)
                        .groupingBy(Endpoint::cluster)
                        .forEach((clusterId, clusterEndpoints) -> {
                            containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
@@ -291,8 +290,7 @@ public class RoutingController {
                        });
         // Add application endpoints
         EndpointList applicationEndpoints = endpoints.scope(Endpoint.Scope.application)
-                                                     .not().direct() // These are handled by RoutingPolicies
-                                                     .targets(deployment);
+                                                     .not().direct(); // These are handled by RoutingPolicies
         for (var endpoint : applicationEndpoints) {
             Set<ZoneId> targetZones = endpoint.targets().stream()
                                               .map(t -> t.deployment().zoneId())
