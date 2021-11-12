@@ -7,6 +7,8 @@
 #include <vespa/persistence/spi/result.h>
 #include <map>
 
+namespace proton::bucketdb { class RemoveBatchEntry; }
+
 namespace proton {
 
 class BucketDB
@@ -41,6 +43,8 @@ public:
     void remove(const GlobalId &gid,
                 const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize,
                 SubDbType subDbType);
+
+    void remove_batch(const std::vector<bucketdb::RemoveBatchEntry> &removed, SubDbType sub_db_type);
 
     void modify(const GlobalId &gid,
                 const BucketId &oldBucketId, const Timestamp &oldTimestamp, uint32_t oldDocSize,
