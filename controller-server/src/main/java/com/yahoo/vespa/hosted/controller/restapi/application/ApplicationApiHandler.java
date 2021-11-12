@@ -2678,7 +2678,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static String endpointScopeString(Endpoint.Scope scope) {
         switch (scope) {
-            case weighted: return "region";
+            case weighted: return "weighted";
+            case application: return "application";
             case global: return "global";
             case zone: return "zone";
         }

@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -140,6 +141,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .region("us-east-3")
             .region("us-west-1")
             .blockChange(false, true, "mon-fri", "0-8", "UTC")
+            .applicationEndpoint("a0", "foo", "us-central-1", Map.of(InstanceName.from("instance1"), 1))
             .build();
 
     private static final AthenzDomain ATHENZ_TENANT_DOMAIN = new AthenzDomain("domain1");
