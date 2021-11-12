@@ -289,9 +289,8 @@ public class RoutingController {
                                                                         clusterEndpoints.mapToList(Endpoint::dnsName)));
                        });
         // Add application endpoints
-        EndpointList applicationEndpoints = endpoints.scope(Endpoint.Scope.application)
-                                                     .not().direct(); // These are handled by RoutingPolicies
-        for (var endpoint : applicationEndpoints) {
+        EndpointList applicationEndpoints = endpoints.scope(Endpoint.Scope.application);
+        for (var endpoint : applicationEndpoints.shared()) { // DNS for non-shared endpoints is handled by RoutingPolicies
             Set<ZoneId> targetZones = endpoint.targets().stream()
                                               .map(t -> t.deployment().zoneId())
                                               .collect(Collectors.toUnmodifiableSet());
