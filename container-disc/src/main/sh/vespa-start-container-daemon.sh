@@ -129,9 +129,14 @@ configure_memory() {
         available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
         if hash cgget 2>/dev/null; then
             # TODO: Create vespa_cgget for this and remove dependency on libcgroup-tools
-            available_cgroup_bytes=$(cgget -nv -r memory.limit_in_bytes /)
+            available_cgroup_bytes=$(cgget -nv -r memory.limit_in_bytes / 2>&1)
             if [ $? -ne 0 ]; then
-                available_cgroup_bytes=$(vespa_cg2get memory.max)
+                if [[ "$available_cgroup_bytes" =~ "Cgroup is not mounted" ]]; then
+                    available_cgroup_bytes=$(vespa_cg2get memory.max)
+                else
+                    echo "$available_cgroup_bytes" >&2
+                fi
+
                 # If command failed or returned value is 'max' assign a big value (default in CGroup v1)
                 if ! [[ "$available_cgroup_bytes" =~ ^[0-9]+$ ]]; then
                    available_cgroup_bytes=$(((1 << 63) -1))
