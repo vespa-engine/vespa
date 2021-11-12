@@ -575,8 +575,19 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> 
 {
     for (const auto &attr : _attributes) {
         if (attr.second.isExtra()) {
+            // TODO Why skip extra ?
             continue;
         }
+        AttributeVector::SP attrsp = attr.second.getAttribute();
+        _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
+                                      [attrsp, func]() { (*func)(*attrsp); });
+    }
+}
+
+void
+AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
+{
+    for (const auto &attr : _attributes) {
         AttributeVector::SP attrsp = attr.second.getAttribute();
         _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
                                       [attrsp, func]() { (*func)(*attrsp); });

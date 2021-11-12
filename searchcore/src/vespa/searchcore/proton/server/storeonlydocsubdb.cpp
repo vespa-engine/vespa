@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "storeonlydocsubdb.h"
 #include "docstorevalidator.h"
 #include "document_subdb_initializer.h"
 #include "document_subdb_initializer_result.h"
@@ -7,7 +8,7 @@
 #include "i_document_subdb_owner.h"
 #include "minimal_document_retriever.h"
 #include "reconfig_params.h"
-#include "storeonlydocsubdb.h"
+#include "ibucketstatecalculator.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
@@ -111,6 +112,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _dmsFlushTarget(),
       _dmsShrinkTarget(),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
+      _nodeRetired(false),
       _subDbId(cfg._subDbId),
       _subDbType(cfg._subDbType),
       _fileHeaderContext(ctx._fileHeaderContext, _docTypeName, _baseDir),
@@ -426,9 +428,37 @@ StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, 
     _rSummaryMgr->reconfigure(config);
 }
 
+namespace {
+
+constexpr double RETIRED_DEAD_RATIO = 0.5;
+
+struct UpdateConfig : public search::attribute::IAttributeFunctor {
+    void operator()(search::attribute::IAttributeVector &iAttributeVector) override {
+        auto attributeVector = dynamic_cast<search::AttributeVector *>(&iAttributeVector);
+        if (attributeVector != nullptr) {
+            auto cfg = attributeVector->getConfig();
+            cfg.setCompactionStrategy(search::CompactionStrategy(RETIRED_DEAD_RATIO, RETIRED_DEAD_RATIO));
+            attributeVector->update_config(cfg);
+        }
+    }
+};
+
+}
+
 void
-StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &)
+StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> & calc)
 {
+    _nodeRetired = calc->nodeRetired();
+    if (isNodeRetired()) {
+        auto cfg = _dms->getConfig();
+        cfg.setCompactionStrategy(search::CompactionStrategy(RETIRED_DEAD_RATIO, RETIRED_DEAD_RATIO));
+        _dms->update_config(cfg);
+
+        auto attrMan = getAttributeManager();
+        if (attrMan) {
+            attrMan->asyncForEachAttribute(std::make_shared<UpdateConfig>());
+        }
+    }
 }
 
 proton::IAttributeManager::SP

@@ -98,6 +98,7 @@ struct IAttributeManager : public search::IAttributeManager
     virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const = 0;
 
     virtual void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const = 0;
+    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const = 0;
 
     virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const = 0;
 

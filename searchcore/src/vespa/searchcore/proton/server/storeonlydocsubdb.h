@@ -152,6 +152,7 @@ private:
     DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
     std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
     std::shared_ptr<PendingLidTrackerBase>     _pendingLidsForCommit;
+    bool                                       _nodeRetired;
 
     IFlushTargetList getFlushTargets() override;
 protected:
@@ -180,9 +181,8 @@ protected:
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot);
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
     vespalib::string getSubDbName() const;
-
-    void reconfigure(const search::LogDocumentStore::Config & protonConfig,
-                     const AllocStrategy& alloc_strategy);
+    bool isNodeRetired() const { return _nodeRetired; }
+    void reconfigure(const search::LogDocumentStore::Config & protonConfig, const AllocStrategy& alloc_strategy);
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
     ~StoreOnlyDocSubDB() override;
