@@ -184,6 +184,7 @@ protected:
     vespalib::string getSubDbName() const;
     bool isNodeRetired() const { return _nodeRetired; }
     void reconfigure(const search::LogDocumentStore::Config & protonConfig, const AllocStrategy& alloc_strategy);
+    void reconfigureAttributesConsideringNodeState();
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
     ~StoreOnlyDocSubDB() override;
@@ -234,6 +235,7 @@ public:
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
     PendingLidTrackerBase & getUncommittedLidsTracker() override { return *_pendingLidsForCommit; }
+    search::CompactionStrategy computeCompactionStrategy(search::CompactionStrategy strategy) const;
 };
 
 }
