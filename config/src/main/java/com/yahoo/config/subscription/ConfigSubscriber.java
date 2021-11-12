@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
@@ -293,10 +294,13 @@ public class ConfigSubscriber implements AutoCloseable {
             // Keep on polling the subscriptions until we have a new generation across the board, or it times out
             for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
                 ConfigSubscription<? extends ConfigInstance> subscription = h.subscription();
+                log.log(Level.FINEST, () -> "Calling nextConfig for " + subscription.getKey());
                 if ( ! subscription.nextConfig(timeLeftMillis)) {
                     // This subscriber has no new state and we know it has exhausted all time
+                    log.log(Level.FINEST, () -> "No new config for " + subscription.getKey());
                     return false;
                 }
+                log.log(Level.FINEST, () -> "Got new generation or config for " + subscription.getKey());
                 throwIfExceptionSet(subscription);
                 ConfigSubscription.ConfigState<? extends ConfigInstance> config = subscription.getConfigState();
                 if (currentGen == null) currentGen = config.getGeneration();
@@ -322,6 +326,7 @@ public class ConfigSubscriber implements AutoCloseable {
         if (reconfigDue) {
             // This indicates the clients will possibly reconfigure their services, so "reset" changed-logic in subscriptions.
             // Also if appropriate update the changed flag on the handler, which clients use.
+            log.log(Level.FINE, () -> "Reconfig will happen for generation " + generation);
             markSubsChangedSeen(currentGen);
             synchronized (monitor) {
                 generation = currentGen;
