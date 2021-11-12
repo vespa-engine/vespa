@@ -205,13 +205,13 @@ void Grouping::postProcess()
 
 void Grouping::aggregateWithoutClock(const RankedHit * rankedHit, unsigned int len) {
     for(unsigned int i(0); i < len; i++) {
-        aggregate(rankedHit[i]._docId, rankedHit[i]._rankValue);
+        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
     }
 }
 
 void Grouping::aggregateWithClock(const RankedHit * rankedHit, unsigned int len) {
     for(unsigned int i(0); (i < len) && !hasExpired(); i++) {
-        aggregate(rankedHit[i]._docId, rankedHit[i]._rankValue);
+        aggregate(rankedHit[i].getDocId(), rankedHit[i].getRank());
     }
 }
 

@@ -105,7 +105,7 @@ public:
         hit._rankValue = rank;
         _hits.push_back(hit);
         for (uint32_t pos = (_hits.size() - 1);
-             pos > 0 && (_hits[pos]._rankValue > _hits[pos - 1]._rankValue);
+             pos > 0 && (_hits[pos].getRank() > _hits[pos - 1].getRank());
              --pos)
         {
             std::swap(_hits[pos], _hits[pos - 1]);

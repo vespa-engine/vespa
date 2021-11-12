@@ -23,7 +23,7 @@ void checkMerge(const std::vector<double> &a, const std::vector<double> &b,
     EXPECT_EQUAL(a.size() + b.size(), res_a.totalHits());
     ASSERT_EQUAL(expect.size(), res_a.size());
     for (size_t i = 0; i < expect.size(); ++i) {
-        EXPECT_EQUAL(expect[i], res_a.hit(i)._rankValue);
+        EXPECT_EQUAL(expect[i], res_a.hit(i).getRank());
     }
 }
 
@@ -70,10 +70,10 @@ TEST("require that partial results can be created without sort data") {
     res.totalHits(1000);
     EXPECT_EQUAL(1000u, res.totalHits());
     ASSERT_EQUAL(2u, res.size());
-    EXPECT_EQUAL(1u, res.hit(0)._docId);
-    EXPECT_EQUAL(10.0, res.hit(0)._rankValue);
-    EXPECT_EQUAL(2u, res.hit(1)._docId);
-    EXPECT_EQUAL(5.0, res.hit(1)._rankValue);
+    EXPECT_EQUAL(1u, res.hit(0).getDocId());
+    EXPECT_EQUAL(10.0, res.hit(0).getRank());
+    EXPECT_EQUAL(2u, res.hit(1).getDocId());
+    EXPECT_EQUAL(5.0, res.hit(1).getRank());
 }
 
 TEST("require that partial results can be created with sort data") {
@@ -90,12 +90,12 @@ TEST("require that partial results can be created with sort data") {
     res.totalHits(1000);
     EXPECT_EQUAL(1000u, res.totalHits());
     ASSERT_EQUAL(2u, res.size());
-    EXPECT_EQUAL(1u, res.hit(0)._docId);
-    EXPECT_EQUAL(10.0, res.hit(0)._rankValue);
+    EXPECT_EQUAL(1u, res.hit(0).getDocId());
+    EXPECT_EQUAL(10.0, res.hit(0).getRank());
     EXPECT_EQUAL(str1.data(), res.sortData(0).first);
     EXPECT_EQUAL(str1.size(), res.sortData(0).second);
-    EXPECT_EQUAL(2u, res.hit(1)._docId);
-    EXPECT_EQUAL(5.0, res.hit(1)._rankValue);
+    EXPECT_EQUAL(2u, res.hit(1).getDocId());
+    EXPECT_EQUAL(5.0, res.hit(1).getRank());
     EXPECT_EQUAL(str2.data(), res.sortData(1).first);
     EXPECT_EQUAL(str2.size(), res.sortData(1).second);
 }
@@ -133,10 +133,10 @@ TEST("require that lower docid is preferred when sorting on rank") {
     res_c.add(search::RankedHit(1, 1.0));
     res_a.merge(res_b);
     ASSERT_EQUAL(1u, res_a.size());
-    EXPECT_EQUAL(2u, res_a.hit(0)._docId);
+    EXPECT_EQUAL(2u, res_a.hit(0).getDocId());
     res_a.merge(res_c);
     ASSERT_EQUAL(1u, res_a.size());
-    EXPECT_EQUAL(1u, res_a.hit(0)._docId);
+    EXPECT_EQUAL(1u, res_a.hit(0).getDocId());
 }
 
 TEST("require that lower docid is preferred when using sortspec") {
@@ -149,10 +149,10 @@ TEST("require that lower docid is preferred when using sortspec") {
     res_c.add(search::RankedHit(1, 1.0), PartialResult::SortRef(foo.data(), foo.size()));
     res_a.merge(res_b);
     ASSERT_EQUAL(1u, res_a.size());
-    EXPECT_EQUAL(2u, res_a.hit(0)._docId);
+    EXPECT_EQUAL(2u, res_a.hit(0).getDocId());
     res_a.merge(res_c);
     ASSERT_EQUAL(1u, res_a.size());
-    EXPECT_EQUAL(1u, res_a.hit(0)._docId);
+    EXPECT_EQUAL(1u, res_a.hit(0).getDocId());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

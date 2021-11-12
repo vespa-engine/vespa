@@ -103,9 +103,10 @@ public:
         T        _value;
         uint32_t _eidx;
     };
+
     uint32_t                         _docId;
     uint32_t                         _idx;
-    vespalib::datastore::EntryRef                  _pidx;
+    vespalib::datastore::EntryRef    _pidx;
 private:
     int32_t                          _weight;
     Value                            _value;

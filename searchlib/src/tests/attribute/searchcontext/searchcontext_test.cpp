@@ -487,7 +487,7 @@ SearchContextTest::checkResultSet(const ResultSet & rs, const DocSet & expected,
             ASSERT_TRUE(array != nullptr);
             uint32_t i = 0;
             for (auto iter = expected.begin(); iter != expected.end(); ++iter, ++i) {
-                EXPECT_TRUE(array[i]._docId == *iter);
+                EXPECT_TRUE(array[i].getDocId() == *iter);
             }
         }
     }
@@ -1517,10 +1517,10 @@ SearchContextTest::requireThatSearchIsWorkingAfterClearDoc(const vespalib::strin
         EXPECT_EQUAL(4u, rs->getNumHits());
         ASSERT_TRUE(4u == rs->getNumHits());
         const RankedHit * array = rs->getArray();
-        EXPECT_EQUAL(1u, array[0]._docId);
-        EXPECT_EQUAL(2u, array[1]._docId);
-        EXPECT_EQUAL(3u, array[2]._docId);
-        EXPECT_EQUAL(4u, array[3]._docId);
+        EXPECT_EQUAL(1u, array[0].getDocId());
+        EXPECT_EQUAL(2u, array[1].getDocId());
+        EXPECT_EQUAL(3u, array[2].getDocId());
+        EXPECT_EQUAL(4u, array[3].getDocId());
     }
     a->clearDoc(1);
     a->clearDoc(3);
@@ -1529,8 +1529,8 @@ SearchContextTest::requireThatSearchIsWorkingAfterClearDoc(const vespalib::strin
         ResultSetPtr rs = performSearch(v, term);
         EXPECT_EQUAL(2u, rs->getNumHits());
         const RankedHit * array = rs->getArray();
-        EXPECT_EQUAL(2u, array[0]._docId);
-        EXPECT_EQUAL(4u, array[1]._docId);
+        EXPECT_EQUAL(2u, array[0].getDocId());
+        EXPECT_EQUAL(4u, array[1].getDocId());
     }
 }
 
@@ -1578,9 +1578,9 @@ SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const vespalib
         const RankedHit * array = rs->getArray();
         for (uint32_t i = 0; i < 14; ++i) {
             if (i < 5) {
-                EXPECT_EQUAL(i + 1, array[i]._docId);
+                EXPECT_EQUAL(i + 1, array[i].getDocId());
             } else
-                EXPECT_EQUAL(i + 2, array[i]._docId);
+                EXPECT_EQUAL(i + 2, array[i].getDocId());
         }
     }
     ValueType buf;
@@ -1682,15 +1682,15 @@ SearchContextTest::requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded()
         {
             ResultSetPtr rs = performSearch(fa, "<24");
             EXPECT_EQUAL(2u, rs->getNumHits());
-            EXPECT_EQUAL(1u, rs->getArray()[0]._docId);
-            EXPECT_EQUAL(2u, rs->getArray()[1]._docId);
+            EXPECT_EQUAL(1u, rs->getArray()[0].getDocId());
+            EXPECT_EQUAL(2u, rs->getArray()[1].getDocId());
         }
         {
             ResultSetPtr rs = performSearch(fa, "24");
             EXPECT_EQUAL(3u, rs->getNumHits());
-            EXPECT_EQUAL(1u, rs->getArray()[0]._docId);
-            EXPECT_EQUAL(2u, rs->getArray()[1]._docId);
-            EXPECT_EQUAL(4u, rs->getArray()[2]._docId);
+            EXPECT_EQUAL(1u, rs->getArray()[0].getDocId());
+            EXPECT_EQUAL(2u, rs->getArray()[1].getDocId());
+            EXPECT_EQUAL(4u, rs->getArray()[2].getDocId());
         }
     }
     {
@@ -1717,15 +1717,15 @@ SearchContextTest::requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded()
                 EXPECT_EQUAL(exp50.size(), rs1->getNumHits());
                 EXPECT_EQUAL(exp50.size(), rs2->getNumHits());
                 for (size_t j = 0; j < exp50.size(); ++j) {
-                    EXPECT_EQUAL(exp50[j], rs1->getArray()[j]._docId);
-                    EXPECT_EQUAL(exp50[j], rs2->getArray()[j]._docId);
+                    EXPECT_EQUAL(exp50[j], rs1->getArray()[j].getDocId());
+                    EXPECT_EQUAL(exp50[j], rs2->getArray()[j].getDocId());
                 }
             }
             {
                 ResultSetPtr rs = performSearch(fa, "60");
                 EXPECT_EQUAL(exp60.size(), rs->getNumHits());
                 for (size_t j = 0; j < exp60.size(); ++j) {
-                    EXPECT_EQUAL(exp60[j], rs->getArray()[j]._docId);
+                    EXPECT_EQUAL(exp60[j], rs->getArray()[j].getDocId());
                 }
             }
         }
