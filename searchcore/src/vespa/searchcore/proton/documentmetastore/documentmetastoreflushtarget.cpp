@@ -56,8 +56,9 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
       _syncToken(syncToken),
       _flushDir("")
 {
-    DocumentMetaStore &dms = *_dmsft._dms;
     // Called by document db executor
+    DocumentMetaStore &dms = *_dmsft._dms;
+    dms.commit(CommitParam(syncToken));
     _flushDir = writer.getSnapshotDir(syncToken);
     vespalib::string newBaseFileName(_flushDir + "/" + dms.getName());
     _saver = dms.initSave(newBaseFileName);
