@@ -41,17 +41,17 @@ test_sort(unsigned int caseNum, unsigned int n, unsigned int ntop)
     }
     FastS_SortResults(array, n, ntop);
 
-    minmax = array[ntop - 1]._rankValue;
+    minmax = array[ntop - 1].getRank();
     for(i = 0; i < n; i++) {
         if (i < ntop && i > 0
-            && array[i]._rankValue > array[i - 1]._rankValue) {
+            && array[i].getRank() > array[i - 1].getRank()) {
             printf("ERROR: rank(%d) > rank(%d)\n",
                    i, i - 1);
             ok = false;
             break;
         }
         if (i >= ntop &&
-            array[i]._rankValue > minmax) {
+            array[i].getRank() > minmax) {
             printf("ERROR: rank(%d) > rank(%d)\n",
                    i, ntop - 1);
             ok = false;

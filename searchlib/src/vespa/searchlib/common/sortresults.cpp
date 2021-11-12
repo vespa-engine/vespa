@@ -51,7 +51,7 @@ FastS_insertion_sort(RankedHit a[], uint32_t n)
     for (i=1; i<n ; i++) {
         swap = a[i];
         j = i;
-        while (R(swap._rankValue) > R(a[j-1]._rankValue)) {
+        while (R(swap.getRank()) > R(a[j-1].getRank())) {
             a[j] = a[j-1];
             if (!(--j)) break;;
         }
@@ -74,13 +74,13 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
     memset(cnt, 0, 256*sizeof(uint32_t));
     // Count occurrences [NB: will fail with n < 3]
     for(i = 0; i < n - 3; i += 4) {
-        cnt[(R(a[i]._rankValue) >> SHIFT) & 0xFF]++;
-        cnt[(R(a[i + 1]._rankValue) >> SHIFT) & 0xFF]++;
-        cnt[(R(a[i + 2]._rankValue) >> SHIFT) & 0xFF]++;
-        cnt[(R(a[i + 3]._rankValue) >> SHIFT) & 0xFF]++;
+        cnt[(R(a[i].getRank()) >> SHIFT) & 0xFF]++;
+        cnt[(R(a[i + 1].getRank()) >> SHIFT) & 0xFF]++;
+        cnt[(R(a[i + 2].getRank()) >> SHIFT) & 0xFF]++;
+        cnt[(R(a[i + 3].getRank()) >> SHIFT) & 0xFF]++;
     }
     for(; i < n; i++)
-        cnt[(R(a[i]._rankValue) >> SHIFT) & 0xFF]++;
+        cnt[(R(a[i].getRank()) >> SHIFT) & 0xFF]++;
 
     // Accumulate cnt positions
     sorted = (cnt[0]==n);
@@ -109,14 +109,14 @@ FastS_radixsort(RankedHit a[], uint32_t n, uint32_t ntop)
             // Grab first element to move
             j = ptr[i];
             swap = a[j];
-            k = (R(swap._rankValue) >> SHIFT) & 0xFF;
+            k = (R(swap.getRank()) >> SHIFT) & 0xFF;
 
             // Swap into correct class until cycle completed
             if (i!=k) {
                 do {
                     temp = a[ptr[k]];
                     a[ptr[k]++] = swap;
-                    k = (R((swap = temp)._rankValue) >> SHIFT) & 0xFF;
+                    k = (R((swap = temp).getRank()) >> SHIFT) & 0xFF;
                     remain--;
                 } while (i!=k);
                 // Place last element in cycle
@@ -265,11 +265,11 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
                     written = sizeof(hits->_docId) + sizeof(_partitionId);
                     break;
                 case ASC_RANK:
-                    serializeForSort<convertForSort<search::HitRank, true> >(hits[i]._rankValue, mySortData);
+                    serializeForSort<convertForSort<search::HitRank, true> >(hits[i].getRank(), mySortData);
                     written = sizeof(hits->_rankValue);
                     break;
                 case DESC_RANK:
-                    serializeForSort<convertForSort<search::HitRank, false> >(hits[i]._rankValue, mySortData);
+                    serializeForSort<convertForSort<search::HitRank, false> >(hits[i].getRank(), mySortData);
                     written = sizeof(hits->_rankValue);
                     break;
                 case ASC_VECTOR:

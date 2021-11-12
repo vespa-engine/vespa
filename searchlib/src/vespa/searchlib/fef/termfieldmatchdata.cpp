@@ -18,7 +18,7 @@ TermFieldMatchData::TermFieldMatchData() :
 }
 
 TermFieldMatchData::TermFieldMatchData(const TermFieldMatchData & rhs) :
-    _docId(rhs._docId),
+    _docId(rhs.getDocId()),
     _fieldId(rhs._fieldId),
     _flags(rhs._flags),
     _sz(0),
