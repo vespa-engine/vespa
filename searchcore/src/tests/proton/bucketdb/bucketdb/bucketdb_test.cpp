@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/document/base/documentid.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_explorer.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdb.h>
+#include <vespa/searchcore/proton/bucketdb/remove_batch_entry.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -28,6 +31,24 @@ constexpr uint32_t DOCSIZE_2(10000u);
 
 typedef BucketInfo::ReadyState RS;
 typedef SubDbType SDT;
+
+namespace {
+
+constexpr uint32_t bucket_bits = 16;
+
+uint32_t num_buckets() { return (1u << bucket_bits); }
+
+BucketId make_bucket_id(uint32_t n) {
+    return BucketId(bucket_bits, n & (num_buckets() - 1));
+}
+
+GlobalId make_gid(uint32_t n, uint32_t i)
+{
+    DocumentId id(vespalib::make_string("id::test:n=%u:%u", n & (num_buckets() - 1), i));
+    return id.getGlobalId();
+}
+
+}
 
 void
 assertDocCount(uint32_t ready,
@@ -70,11 +91,19 @@ struct Fixture
     Fixture()
         : _db()
     {}
+    void add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
+        BucketId bucket(bucket_bits, gid.convertToBucketId().getRawId());
+        _db.add(gid, bucket, timestamp, docSize, subDbType);
+    }
     const BucketState &add(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         return _db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType);
     }
     const BucketState &add(const Timestamp &timestamp, SubDbType subDbType) {
         return add(timestamp, DOCSIZE_1, subDbType);
+    }
+    void remove(const GlobalId& gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
+        BucketId bucket(bucket_bits, gid.convertToBucketId().getRawId());
+        _db.remove(gid, bucket, timestamp, docSize, subDbType);
     }
     BucketState remove(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         _db.remove(GID_1, BUCKET_1, timestamp, docSize, subDbType);
@@ -83,8 +112,14 @@ struct Fixture
     BucketState remove(const Timestamp &timestamp, SubDbType subDbType) {
         return remove(timestamp, DOCSIZE_1, subDbType);
     }
+    void remove_batch(const std::vector<RemoveBatchEntry> &removed, SubDbType sub_db_type) {
+        _db.remove_batch(removed, sub_db_type);
+    }
+    BucketState get(BucketId bucket_id) const {
+        return _db.get(bucket_id);
+    }
     BucketState get() const {
-        return _db.get(BUCKET_1);
+        return get(BUCKET_1);
     }
     BucketChecksum getChecksum(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
         BucketDB db;
@@ -179,6 +214,36 @@ TEST_F("require that bucket checksum ignores document sizes", Fixture)
     f.remove(TIME_1, DOCSIZE_2, SDT::READY);
     EXPECT_NOT_EQUAL(state1.getReadyDocSizes(), state2.getReadyDocSizes());
     EXPECT_EQUAL(state1.getChecksum(), state2.getChecksum());
+}
+
+TEST_F("require that remove batch works", Fixture)
+{
+    f.add(make_gid(4, 1), Timestamp(10), 100, SDT::READY);
+    f.add(make_gid(4, 2), Timestamp(11), 104, SDT::READY);
+    f.add(make_gid(4, 3), Timestamp(12), 102, SDT::READY);
+    f.add(make_gid(5, 4), Timestamp(13), 200, SDT::READY);
+    f.add(make_gid(5, 5), Timestamp(14), 270, SDT::READY);
+    f.add(make_gid(5, 6), Timestamp(15), 1000, SDT::READY);
+    auto state1 = f.get(make_bucket_id(4));
+    EXPECT_EQUAL(306u, state1.getReadyDocSizes());
+    EXPECT_EQUAL(3u, state1.getReadyCount());
+    auto state2 = f.get(make_bucket_id(5));
+    EXPECT_EQUAL(1470u, state2.getReadyDocSizes());
+    EXPECT_EQUAL(3u, state2.getReadyCount());
+    std::vector<RemoveBatchEntry> removed;
+    removed.emplace_back(make_gid(4, 1), make_bucket_id(4), Timestamp(10), 100);
+    removed.emplace_back(make_gid(4, 3), make_bucket_id(4), Timestamp(12), 102);
+    removed.emplace_back(make_gid(5, 5), make_bucket_id(5), Timestamp(14), 270);
+    f.remove_batch(removed, SDT::READY);
+    auto state3 = f.get(make_bucket_id(4));
+    EXPECT_EQUAL(104u, state3.getReadyDocSizes());
+    EXPECT_EQUAL(1u, state3.getReadyCount());
+    auto state4 = f.get(make_bucket_id(5));
+    EXPECT_EQUAL(1200u, state4.getReadyDocSizes());
+    EXPECT_EQUAL(2u, state4.getReadyCount());
+    f.remove(make_gid(4, 2), Timestamp(11), 104, SDT::READY);
+    f.remove(make_gid(5, 4), Timestamp(13), 200, SDT::READY);
+    f.remove(make_gid(5, 6), Timestamp(15), 1000, SDT::READY);
 }
 
 TEST("require that bucket db can be explored")
