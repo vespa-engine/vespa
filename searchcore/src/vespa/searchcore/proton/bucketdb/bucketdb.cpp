@@ -4,6 +4,7 @@
 #include "remove_batch_entry.h"
 #include <cassert>
 #include <algorithm>
+#include <optional>
 
 using document::GlobalId;
 using storage::spi::BucketChecksum;
