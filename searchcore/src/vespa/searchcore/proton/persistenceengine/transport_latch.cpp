@@ -67,7 +67,7 @@ TransportLatch::send(ResultUP result, bool documentWasFound)
     _latch.countDown();
 }
 
-AsyncTranportContext::AsyncTranportContext(uint32_t cnt, OperationComplete::UP onComplete)
+AsyncTransportContext::AsyncTransportContext(uint32_t cnt, OperationComplete::UP onComplete)
     : TransportMerger(cnt > 1),
       _countDown(cnt),
       _onComplete(std::move(onComplete))
@@ -78,17 +78,17 @@ AsyncTranportContext::AsyncTranportContext(uint32_t cnt, OperationComplete::UP o
 }
 
 void
-AsyncTranportContext::completeIfDone() {
+AsyncTransportContext::completeIfDone() {
     _countDown--;
     if (_countDown == 0) {
         _onComplete->onComplete(std::move(_result));
     }
 
 }
-AsyncTranportContext::~AsyncTranportContext() = default;
+AsyncTransportContext::~AsyncTransportContext() = default;
 
 void
-AsyncTranportContext::send(ResultUP result, bool documentWasFound)
+AsyncTransportContext::send(ResultUP result, bool documentWasFound)
 {
     mergeResult(std::move(result), documentWasFound);
 }
