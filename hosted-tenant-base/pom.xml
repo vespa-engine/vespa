@@ -130,6 +130,10 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven-surefire-plugin.version}</version>
                         <configuration>
+                            <!-- Illegal reflective access by LogFileHandler via com.yahoo.io.NativeIO -->
+                            <argLine>
+                                --add-opens=java.base/java.io=ALL-UNNAMED
+                            </argLine>
                             <groups>${test.categories}</groups>
                             <redirectTestOutputToFile>false</redirectTestOutputToFile>
                             <trimStackTrace>false</trimStackTrace>
@@ -353,8 +357,10 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${target_jdk_version}</source>
-                    <target>${target_jdk_version}</target>
+                    <jdkToolchain>
+                        <version>${target_jdk_version}</version>
+                    </jdkToolchain>
+                    <release>${target_jdk_version}</release>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>
                     <compilerArgs>
