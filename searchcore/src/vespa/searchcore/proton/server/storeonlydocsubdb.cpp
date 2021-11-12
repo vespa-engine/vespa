@@ -113,6 +113,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _dmsShrinkTarget(),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _nodeRetired(false),
+      _lastConfiguredCompactionStrategy(),
       _subDbId(cfg._subDbId),
       _subDbType(cfg._subDbType),
       _fileHeaderContext(ctx._fileHeaderContext, _docTypeName, _baseDir),
@@ -282,6 +283,7 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
     _dmsShrinkTarget = std::make_shared<ShrinkLidSpaceFlushTarget>("documentmetastore.shrink", Type::GC,
                                                                    Component::ATTRIBUTE, _flushedDocumentMetaStoreSerialNum,
                                                                    _dmsFlushTarget->getLastFlushTime(), dms);
+    _lastConfiguredCompactionStrategy = dms->getConfig().getCompactionStrategy();
 }
 
 DocumentSubDbInitializer::UP
@@ -415,19 +417,6 @@ StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const 
     return IReprocessingTask::List();
 }
 
-void
-StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, const AllocStrategy& alloc_strategy)
-{
-    auto cfg = _dms->getConfig();
-    GrowStrategy grow = alloc_strategy.get_grow_strategy();
-    // Amortize memory spike cost over N docs
-    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
-    cfg.setGrowStrategy(grow);
-    cfg.setCompactionStrategy(alloc_strategy.get_compaction_strategy());
-    _dms->update_config(cfg); // Update grow and compaction config
-    _rSummaryMgr->reconfigure(config);
-}
-
 namespace {
 
 constexpr double RETIRED_DEAD_RATIO = 0.5;
@@ -443,15 +432,37 @@ struct UpdateConfig : public search::attribute::IAttributeFunctor {
     }
 };
 
+search::CompactionStrategy
+computeCompactionStrategy(search::CompactionStrategy strategy, bool isNodeRetired) {
+    return isNodeRetired
+        ? search::CompactionStrategy(RETIRED_DEAD_RATIO, RETIRED_DEAD_RATIO)
+        : strategy;
+}
+
+}
+
+void
+StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, const AllocStrategy& alloc_strategy)
+{
+    _lastConfiguredCompactionStrategy = alloc_strategy.get_compaction_strategy();
+    auto cfg = _dms->getConfig();
+    GrowStrategy grow = alloc_strategy.get_grow_strategy();
+    // Amortize memory spike cost over N docs
+    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
+    cfg.setGrowStrategy(grow);
+    cfg.setCompactionStrategy(computeCompactionStrategy(alloc_strategy.get_compaction_strategy(), isNodeRetired()));
+    _dms->update_config(cfg); // Update grow and compaction config
+    _rSummaryMgr->reconfigure(config);
 }
 
 void
 StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> & calc)
 {
+    bool wasNodeRetired = isNodeRetired();
     _nodeRetired = calc->nodeRetired();
-    if (isNodeRetired()) {
+    if (wasNodeRetired != isNodeRetired()) {
         auto cfg = _dms->getConfig();
-        cfg.setCompactionStrategy(search::CompactionStrategy(RETIRED_DEAD_RATIO, RETIRED_DEAD_RATIO));
+        cfg.setCompactionStrategy(computeCompactionStrategy(_lastConfiguredCompactionStrategy, isNodeRetired()));
         _dms->update_config(cfg);
 
         auto attrMan = getAttributeManager();

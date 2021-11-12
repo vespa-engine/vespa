@@ -153,6 +153,7 @@ private:
     std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
     std::shared_ptr<PendingLidTrackerBase>     _pendingLidsForCommit;
     bool                                       _nodeRetired;
+    search::CompactionStrategy                 _lastConfiguredCompactionStrategy;
 
     IFlushTargetList getFlushTargets() override;
 protected:
