@@ -580,6 +580,37 @@ TEST_F("require that subdb reflect retirement", FastAccessFixture)
     EXPECT_TRUE(cfg == unretired_cfg);
 }
 
+TEST_F("require that attribute compaction config reflect retirement", FastAccessFixture) {
+    search::CompactionStrategy default_cfg(0.05, 0.2);
+    search::CompactionStrategy retired_cfg(0.5, 0.5);
+
+    auto guard = f._subDb.getAttributeManager()->getAttribute("attr1");
+    EXPECT_EQUAL(default_cfg, (*guard)->getConfig().getCompactionStrategy());
+    EXPECT_EQUAL(default_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
+
+    auto calc = std::make_shared<proton::test::BucketStateCalculator>();
+    calc->setNodeRetired(true);
+    f._subDb.setBucketStateCalculator(calc);
+    f._writeService.sync();
+    guard = f._subDb.getAttributeManager()->getAttribute("attr1");
+    EXPECT_EQUAL(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
+    EXPECT_EQUAL(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
+
+    f.basicReconfig(10);
+    f._writeService.sync();
+    guard = f._subDb.getAttributeManager()->getAttribute("attr1");
+    EXPECT_EQUAL(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
+    EXPECT_EQUAL(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
+
+    calc->setNodeRetired(false);
+    f._subDb.setBucketStateCalculator(calc);
+    f._writeService.sync();
+    guard = f._subDb.getAttributeManager()->getAttribute("attr1");
+    EXPECT_EQUAL(default_cfg, (*guard)->getConfig().getCompactionStrategy());
+    EXPECT_EQUAL(default_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
+
+}
+
 template <typename Fixture>
 void
 requireThatReconfiguredAttributesAreAccessibleViaFeedView(Fixture &f)
