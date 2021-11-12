@@ -5,7 +5,6 @@
 #include "document_subdb_initializer.h"
 #include "reconfig_params.h"
 #include "i_document_subdb_owner.h"
-#include "ibucketstatecalculator.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
@@ -43,8 +42,7 @@ SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
                   getSubDbName(), ctx._fastUpdCtx._storeOnlyCtx._owner.getDistributionKey()),
       _warmupExecutor(ctx._warmupExecutor),
       _realGidToLidChangeHandler(std::make_shared<GidToLidChangeHandler>()),
-      _flushConfig(),
-      _nodeRetired(false)
+      _flushConfig()
 {
     _gidToLidChangeHandler = _realGidToLidChangeHandler;
 }
@@ -177,14 +175,14 @@ SearchableDocSubDB::applyFlushConfig(const DocumentDBFlushConfig &flushConfig)
 void
 SearchableDocSubDB::propagateFlushConfig()
 {
-    uint32_t maxFlushed = _nodeRetired ? _flushConfig.getMaxFlushedRetired() : _flushConfig.getMaxFlushed();
+    uint32_t maxFlushed = isNodeRetired() ? _flushConfig.getMaxFlushedRetired() : _flushConfig.getMaxFlushed();
     _indexMgr->setMaxFlushed(maxFlushed);
 }
 
 void
 SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc)
 {
-    _nodeRetired = calc->nodeRetired();
+    FastAccessDocSubDB::setBucketStateCalculator(calc);
     propagateFlushConfig();
 }
 

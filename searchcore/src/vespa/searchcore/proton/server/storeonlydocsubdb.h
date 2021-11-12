@@ -152,6 +152,8 @@ private:
     DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
     std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
     std::shared_ptr<PendingLidTrackerBase>     _pendingLidsForCommit;
+    bool                                       _nodeRetired;
+    search::CompactionStrategy                 _lastConfiguredCompactionStrategy;
 
     IFlushTargetList getFlushTargets() override;
 protected:
@@ -180,9 +182,8 @@ protected:
     StoreOnlyFeedView::Context getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot);
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
     vespalib::string getSubDbName() const;
-
-    void reconfigure(const search::LogDocumentStore::Config & protonConfig,
-                     const AllocStrategy& alloc_strategy);
+    void reconfigure(const search::LogDocumentStore::Config & protonConfig, const AllocStrategy& alloc_strategy);
+    void reconfigureAttributesConsideringNodeState();
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
     ~StoreOnlyDocSubDB() override;
@@ -233,6 +234,9 @@ public:
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
     PendingLidTrackerBase & getUncommittedLidsTracker() override { return *_pendingLidsForCommit; }
+    search::CompactionStrategy computeCompactionStrategy(search::CompactionStrategy strategy) const;
+    bool isNodeRetired() const { return _nodeRetired; }
+
 };
 
 }

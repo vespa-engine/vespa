@@ -206,6 +206,22 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFun
 }
 
 void
+FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
+{
+    // Run by document db master thread
+    std::vector<AttributeGuard> completeList;
+    _mgr->getAttributeList(completeList);
+    vespalib::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
+    for (auto &guard : completeList) {
+        search::AttributeVector::SP attrsp = guard.getSP();
+        // Name must be extracted in document db master thread or attribute
+        // writer thread
+        attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
+                                     [attrsp, func]() { (*func)(*attrsp); });
+    }
+}
+
+void
 FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
     AttributeGuard::UP attr = _mgr->getAttribute(name);
     if (!attr) { return; }

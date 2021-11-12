@@ -81,7 +81,6 @@ private:
     vespalib::SyncableThreadExecutor           &_warmupExecutor;
     std::shared_ptr<GidToLidChangeHandler>      _realGidToLidChangeHandler;
     DocumentDBFlushConfig                       _flushConfig;
-    bool                                        _nodeRetired;
 
     // Note: lifetime of indexManager must be handled by caller.
     std::shared_ptr<initializer::InitializerTask>
