@@ -127,11 +127,17 @@ SequencedTaskExecutor::getExecutorId(uint64_t componentId) const {
 ISequencedTaskExecutor::ExecutorId
 SequencedTaskExecutor::getExecutorIdPerfect(uint64_t componentId) const {
     PerfectKeyT key = componentId;
-    std::lock_guard guard(_mutex);
+    std::unique_lock guard(_mutex);
     auto found = std::find(_component2IdPerfect.begin(), _component2IdPerfect.end(), key);
     if (found == _component2IdPerfect.end()) {
-        _component2IdPerfect.push_back(key);
-        found = _component2IdPerfect.end() - 1;
+        if ((_component2IdPerfect.size() < _component2IdPerfect.capacity())) {
+            _component2IdPerfect.push_back(key);
+            found = _component2IdPerfect.end() - 1;
+        } else {
+            // There was a race for the last spots
+            guard.unlock();
+            return getExecutorIdImPerfect(componentId);
+        }
     }
     return ExecutorId((found - _component2IdPerfect.begin()) % getNumExecutors());
 }
