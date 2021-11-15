@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -31,7 +33,9 @@ public class TestConfigSerializerTest {
                                                                                JobType.systemTest,
                                                                                true,
                                                                                Map.of(zone, List.of(Endpoint.of(ApplicationId.defaultId())
-                                                                                                            .target(EndpointId.of("ai"))
+                                                                                                            .target(EndpointId.of("ai"), ClusterSpec.Id.from("qrs"),
+                                                                                                                    List.of(new DeploymentId(ApplicationId.defaultId(),
+                                                                                                                                             ZoneId.defaultId())))
                                                                                                             .on(Endpoint.Port.tls())
                                                                                                             .in(SystemName.main))),
                                                                                Map.of(zone, List.of("facts")));

@@ -191,9 +191,10 @@ public class RoutingController {
         builders.add(Endpoint.of(deployment.applicationId()).target(ClusterSpec.Id.from("default"), deployment));
         builders.add(Endpoint.of(deployment.applicationId()).wildcard(deployment));
 
-        // Build all endpoints
+        // Build all certificate names
         for (var builder : builders) {
-            Endpoint endpoint = builder.routingMethod(RoutingMethod.exclusive)
+            Endpoint endpoint = builder.certificateName()
+                                       .routingMethod(RoutingMethod.exclusive)
                                        .on(Port.tls())
                                        .in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
