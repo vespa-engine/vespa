@@ -438,19 +438,19 @@ public class NodeAgentImpl implements NodeAgent {
     void doConverge(NodeAgentContext context) {
         NodeSpec node = context.node();
         Optional<Container> container = getContainer(context);
+
+        // Current reboot generation uninitialized or incremented from outside to cancel reboot
+        if (currentRebootGeneration < node.currentRebootGeneration())
+            currentRebootGeneration = node.currentRebootGeneration();
+
+        // Either we have changed allocation status (restart gen. only available to allocated nodes), or
+        // restart generation has been incremented from outside to cancel restart
+        if (currentRestartGeneration.isPresent() != node.currentRestartGeneration().isPresent() ||
+                currentRestartGeneration.map(current -> current < node.currentRestartGeneration().get()).orElse(false))
+            currentRestartGeneration = node.currentRestartGeneration();
+
         if (!node.equals(lastNode)) {
             logChangesToNodeSpec(context, lastNode, node);
-
-            // Current reboot generation uninitialized or incremented from outside to cancel reboot
-            if (currentRebootGeneration < node.currentRebootGeneration())
-                currentRebootGeneration = node.currentRebootGeneration();
-
-            // Either we have changed allocation status (restart gen. only available to allocated nodes), or
-            // restart generation has been incremented from outside to cancel restart
-            if (currentRestartGeneration.isPresent() != node.currentRestartGeneration().isPresent() ||
-                    currentRestartGeneration.map(current -> current < node.currentRestartGeneration().get()).orElse(false))
-                currentRestartGeneration = node.currentRestartGeneration();
-
             lastNode = node;
         }
 
