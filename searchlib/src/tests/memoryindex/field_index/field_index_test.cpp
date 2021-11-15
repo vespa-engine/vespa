@@ -478,14 +478,20 @@ getFeatureStoreMemStats(const FieldIndexCollection &fieldIndexes)
 void
 myCommit(FieldIndexCollection &fieldIndexes, ISequencedTaskExecutor &pushThreads)
 {
+    vespalib::Gate gate;
+    auto gate_callback = std::make_shared<vespalib::GateCallback>(gate);
     uint32_t fieldId = 0;
     for (auto &fieldIndex : fieldIndexes.getFieldIndexes()) {
         pushThreads.execute(fieldId,
-                            [fieldIndex(fieldIndex.get())]()
-                            { fieldIndex->commit(); });
+                            [fieldIndex(fieldIndex.get()), gate_callback]()
+                            {
+                                (void) gate_callback;
+                                fieldIndex->commit();
+                            });
         ++fieldId;
     }
-    pushThreads.sync_all();
+    gate_callback.reset();
+    gate.await();
 }
 
 void
