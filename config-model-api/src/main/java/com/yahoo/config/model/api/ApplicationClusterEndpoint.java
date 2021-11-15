@@ -26,13 +26,15 @@ public class ApplicationClusterEndpoint {
     private final RoutingMethod routingMethod;
     private final int weight;
     private final List<String> hostNames;
+    private final String clusterId;
 
-    private ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hostNames) {
-        this.dnsName = dnsName;
-        this.scope = scope;
-        this.routingMethod = routingMethod;
+    private ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hostNames, String clusterId) {
+        this.dnsName = Objects.requireNonNull(dnsName);
+        this.scope = Objects.requireNonNull(scope);
+        this.routingMethod = Objects.requireNonNull(routingMethod);
         this.weight = weight;
-        this.hostNames = List.copyOf(hostNames);
+        this.hostNames = List.copyOf(Objects.requireNonNull(hostNames));
+        this.clusterId = Objects.requireNonNull(clusterId);
     }
 
     public DnsName dnsName() {
@@ -55,6 +57,10 @@ public class ApplicationClusterEndpoint {
         return hostNames;
     }
 
+    public String clusterId() {
+        return clusterId;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -66,6 +72,7 @@ public class ApplicationClusterEndpoint {
         private RoutingMethod routingMethod;
         private int weigth = 1;
         private List<String> hosts;
+        private String clusterId;
 
         public Builder dnsName(DnsName name) {
             this.dnsName = name;
@@ -102,8 +109,13 @@ public class ApplicationClusterEndpoint {
             return this;
         }
 
+        public Builder clusterId(String clusterId) {
+            this.clusterId = clusterId;
+            return this;
+        }
+
         public ApplicationClusterEndpoint build() {
-            return new ApplicationClusterEndpoint(dnsName, scope, routingMethod, weigth, hosts);
+            return new ApplicationClusterEndpoint(dnsName, scope, routingMethod, weigth, hosts, clusterId);
         }
     }
 
