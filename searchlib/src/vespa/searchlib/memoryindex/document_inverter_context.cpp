@@ -12,19 +12,23 @@ using index::SchemaIndexFields;
 namespace {
 
 template <typename Context>
-void make_contexts(const SchemaIndexFields& schema_index_fields, ISequencedTaskExecutor& executor, std::vector<Context>& contexts)
+void make_contexts(const index::Schema& schema, const SchemaIndexFields& schema_index_fields, ISequencedTaskExecutor& executor, std::vector<Context>& contexts)
 {
     using ExecutorId = ISequencedTaskExecutor::ExecutorId;
     using IdMapping = std::vector<std::tuple<ExecutorId, bool, uint32_t>>;
     IdMapping map;
     for (uint32_t field_id : schema_index_fields._textFields) {
         // TODO: Add bias when sharing sequenced task executor between document types
-        map.emplace_back(executor.getExecutorId(field_id), false, field_id);
+        auto& name = schema.getIndexField(field_id).getName();
+        auto id = executor.getExecutorIdFromName(name);
+        map.emplace_back(id, false, field_id);
     }
     uint32_t uri_field_id = 0;
     for (auto& uri_field : schema_index_fields._uriFields) {
         // TODO: Add bias when sharing sequenced task executor between document types
-        map.emplace_back(executor.getExecutorId(uri_field._all), true, uri_field_id);
+        auto& name = schema.getIndexField(uri_field._all).getName();
+        auto id = executor.getExecutorIdFromName(name);
+        map.emplace_back(id, true, uri_field_id);
         ++uri_field_id;
     }
     std::sort(map.begin(), map.end());
@@ -140,8 +144,8 @@ DocumentInverterContext::~DocumentInverterContext() = default;
 void
 DocumentInverterContext::setup_contexts()
 {
-    make_contexts(_schema_index_fields, _invert_threads, _invert_contexts);
-    make_contexts(_schema_index_fields, _push_threads, _push_contexts);
+    make_contexts(_schema, _schema_index_fields, _invert_threads, _invert_contexts);
+    make_contexts(_schema, _schema_index_fields, _push_threads, _push_contexts);
     if (&_invert_threads == &_push_threads) {
         uint32_t bias = _schema_index_fields._textFields.size() + _schema_index_fields._uriFields.size();
         switch_to_alternate_ids(_push_threads, _push_contexts, bias);
