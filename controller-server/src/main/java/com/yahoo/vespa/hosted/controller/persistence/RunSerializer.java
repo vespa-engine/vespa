@@ -177,10 +177,7 @@ class RunSerializer {
         Optional<Instant> buildTime = SlimeUtils.optionalInstant(versionObject.field(buildTimeField));
         Optional<String> sourceUrl = SlimeUtils.optionalString(versionObject.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(versionObject.field(commitField));
-
-        // TODO (freva): Simplify once this has rolled out everywhere
-        Inspector deployedDirectlyInspector = versionObject.field(deployedDirectlyField);
-        boolean deployedDirectly = deployedDirectlyInspector.valid() && deployedDirectlyInspector.asBool();
+        boolean deployedDirectly = versionObject.field(deployedDirectlyField).asBool();
 
         return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail,
                                       compileVersion, buildTime, sourceUrl, commit, deployedDirectly);
