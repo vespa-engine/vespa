@@ -705,15 +705,16 @@ TEST("requireThatAttributesAreUsed")
     auto bjTensorAttr = dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
 
     vespalib::Gate gate;
-    auto on_write_done = std::make_shared<GateCallback>(gate);
-    attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(bjAttr->getNamePrefix()),
-                                 [&, on_write_done]() {
-                                     (void) on_write_done;
-                                     bjTensorAttr->setTensor(3, *make_tensor(TensorSpec("tensor(x{},y{})")
+    {
+        auto on_write_done = std::make_shared<GateCallback>(gate);
+        attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(bjAttr->getNamePrefix()),
+                                     [&, on_write_done]() {
+                                         (void) on_write_done;
+                                         bjTensorAttr->setTensor(3, *make_tensor(TensorSpec("tensor(x{},y{})")
                                                                              .add({{"x", "a"}, {"y", "b"}}, 4)));
-                                     bjTensorAttr->commit();
+                                         bjTensorAttr->commit();
                                  });
-    on_write_done.reset();
+    }
     gate.await();
 
     DocsumReply::UP rep2 = dc._ddb->getDocsums(req);
