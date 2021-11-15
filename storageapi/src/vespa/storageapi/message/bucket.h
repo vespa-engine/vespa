@@ -138,6 +138,7 @@ public:
         _use_unordered_forwarding = unordered_forwarding;
     }
     [[nodiscard]] bool use_unordered_forwarding() const noexcept { return _use_unordered_forwarding; }
+    [[nodiscard]] bool from_distributor() const noexcept { return _chain.empty(); }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(MergeBucketCommand, onMergeBucket)
 };

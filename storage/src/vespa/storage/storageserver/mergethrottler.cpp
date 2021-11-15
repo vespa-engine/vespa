@@ -411,7 +411,7 @@ MergeThrottler::enqueue_merge_for_later_processing(
         return;
     }
     // TODO remove once unordered merges are default, since forwarded unordered merges are never enqueued
-    const bool is_forwarded_merge = _disable_queue_limits_for_chained_merges && !mergeCmd.getChain().empty();
+    const bool is_forwarded_merge = _disable_queue_limits_for_chained_merges && !mergeCmd.from_distributor();
     _queue.emplace(msg, _queueSequence++, is_forwarded_merge);
     _metrics->queueSize.set(static_cast<int64_t>(_queue.size()));
 }
@@ -701,7 +701,7 @@ bool MergeThrottler::backpressure_mode_active() const {
 bool MergeThrottler::allow_merge_despite_full_window(const api::MergeBucketCommand& cmd) noexcept {
     // We cannot let forwarded unordered merges fall into the queue, as that might lead to a deadlock.
     // See comment in may_allow_into_queue() for rationale.
-    return (cmd.use_unordered_forwarding() && !cmd.getChain().empty());
+    return (cmd.use_unordered_forwarding() && !cmd.from_distributor());
 }
 
 bool MergeThrottler::may_allow_into_queue(const api::MergeBucketCommand& cmd) const noexcept {
@@ -717,10 +717,11 @@ bool MergeThrottler::may_allow_into_queue(const api::MergeBucketCommand& cmd) co
     //
     // We do, however, allow enqueueing unordered merges that come straight from the distributor, as
     // those cannot cause a deadlock at that point in time.
-    return (((_queue.size() < _maxQueueSize)
-             || (_disable_queue_limits_for_chained_merges && !cmd.getChain().empty()))
-            && (!cmd.use_unordered_forwarding()
-                || (cmd.use_unordered_forwarding() && cmd.getChain().empty())));
+    if (cmd.use_unordered_forwarding()) {
+        return cmd.from_distributor();
+    }
+    return ((_queue.size() < _maxQueueSize)
+            || (_disable_queue_limits_for_chained_merges && !cmd.from_distributor()));
 }
 
 // Must be run from worker thread
@@ -866,7 +867,7 @@ MergeThrottler::processNewMergeCommand(
     // index in the nodeset, immediately execute. Required for
     // backwards compatibility with older distributor versions.
     // TODO remove this
-    if (mergeCmd.getChain().empty()
+    if (mergeCmd.from_distributor()
         && !mergeCmd.use_unordered_forwarding()
         && (nodeSeq.getSortedNodes()[0].index != _component.getIndex()))
     {
