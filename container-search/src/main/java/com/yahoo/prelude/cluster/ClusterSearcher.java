@@ -23,6 +23,7 @@ import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
+import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -312,8 +313,9 @@ public class ClusterSearcher extends Searcher {
             mergedResult.mergeWith(result);
             mergedResult.hits().addAll(result.hits().asUnorderedHits());
         } catch (ExecutionException | InterruptedException e) {
-            mergedResult.mergeWith(new Result(query,
-                    ErrorMessage.createInternalServerError("Unable to query restrict='" + query.getModel().getRestrict() + "'\n" + e)));
+            mergedResult.hits().addError(ErrorMessage.createInternalServerError("Failed querying '" +
+                                                                                query.getModel().getRestrict() + "': " +
+                                                                                Exceptions.toMessageString(e)));
         }
     }
 
