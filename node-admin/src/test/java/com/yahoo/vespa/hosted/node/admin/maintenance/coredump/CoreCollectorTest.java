@@ -177,7 +177,7 @@ public class CoreCollectorTest {
     }
 
     private void mockExec(NodeAgentContext context, String[] cmd, String output, String error) {
-        when(docker.executeCommandInContainerAsRoot(context, cmd))
+        when(docker.executeCommandInContainer(context, context.users().root(), cmd))
                 .thenReturn(new CommandResult(null, error.isEmpty() ? 0 : 1, error.isEmpty() ? output : error));
     }
 }
