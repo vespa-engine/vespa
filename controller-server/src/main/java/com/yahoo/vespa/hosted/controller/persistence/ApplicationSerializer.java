@@ -423,10 +423,7 @@ public class ApplicationSerializer {
         Optional<Instant> buildTime = SlimeUtils.optionalInstant(object.field(buildTimeField));
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
-
-        // TODO (freva): Simplify once this has rolled out everywhere
-        Inspector deployedDirectlyInspector = object.field(deployedDirectlyField);
-        boolean deployedDirectly = deployedDirectlyInspector.valid() && deployedDirectlyInspector.asBool();
+        boolean deployedDirectly = object.field(deployedDirectlyField).asBool();
 
         return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly);
     }
