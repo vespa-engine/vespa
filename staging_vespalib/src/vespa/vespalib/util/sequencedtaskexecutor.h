@@ -43,17 +43,27 @@ public:
     const vespalib::SyncableThreadExecutor* first_executor() const;
 
 private:
+    class ValidId {
+    public:
+        ValidId() : _id(), _valid(false) { }
+        explicit ValidId(ExecutorId id_in) : _id(id_in), _valid(true) { }
+        ExecutorId id() const { return _id; }
+        bool valid() const { return _valid; }
+    private:
+        ExecutorId _id;
+        bool       _valid;
+    };
     explicit SequencedTaskExecutor(std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> executor);
-    ExecutorId getExecutorIdPerfect(uint64_t componentId) const;
+    ValidId getExecutorIdPerfect(uint64_t componentId) const;
     ExecutorId getExecutorIdImPerfect(uint64_t componentId) const;
 
     std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> _executors;
     using PerfectKeyT = uint16_t;
-    const bool                       _lazyExecutors;
-    mutable std::vector<PerfectKeyT> _component2IdPerfect;
-    mutable std::vector<uint8_t>     _component2IdImperfect;
-    mutable std::mutex               _mutex;
-    mutable uint32_t                 _nextId;
+    const bool                             _lazyExecutors;
+    mutable std::unique_ptr<PerfectKeyT[]> _component2IdPerfect;
+    mutable std::vector<uint8_t>           _component2IdImperfect;
+    mutable std::mutex                     _mutex;
+    mutable uint32_t                       _nextId;
 
 };
 

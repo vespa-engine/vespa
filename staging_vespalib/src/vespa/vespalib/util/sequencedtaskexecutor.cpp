@@ -14,6 +14,8 @@ namespace {
 
 constexpr uint32_t stackSize = 128_Ki;
 constexpr uint8_t MAGIC = 255;
+constexpr uint32_t NUM_PERFECT_PER_EXECUTOR = 8;
+constexpr uint16_t INVALID_KEY = 0x8000;
 
 bool
 isLazy(const std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> & executors) {
@@ -24,6 +26,16 @@ isLazy(const std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> & ex
     }
     return true;
 }
+
+ssize_t
+find(uint16_t key, const uint16_t values[], size_t numValues) {
+    for (size_t i(0); i < numValues; i++) {
+        if (key == values[i]) return i;
+        if (INVALID_KEY == values[i]) return -1;
+    }
+    return -1;
+}
+
 
 }
 
@@ -58,13 +70,16 @@ SequencedTaskExecutor::SequencedTaskExecutor(std::vector<std::unique_ptr<vespali
     : ISequencedTaskExecutor(executors.size()),
       _executors(std::move(executors)),
       _lazyExecutors(isLazy(_executors)),
-      _component2IdPerfect(),
-      _component2IdImperfect(vespalib::hashtable_base::getModuloStl(getNumExecutors()*8), MAGIC),
+      _component2IdPerfect(std::make_unique<PerfectKeyT[]>(getNumExecutors()*NUM_PERFECT_PER_EXECUTOR)),
+      _component2IdImperfect(vespalib::hashtable_base::getModuloStl(getNumExecutors()*NUM_PERFECT_PER_EXECUTOR), MAGIC),
       _mutex(),
       _nextId(0)
 {
     assert(getNumExecutors() < 256);
-    _component2IdPerfect.reserve(getNumExecutors()*8);
+
+    for (size_t i(0); i < getNumExecutors() * NUM_PERFECT_PER_EXECUTOR; i++) {
+        _component2IdPerfect[i] = INVALID_KEY;
+    }
 }
 
 void
@@ -113,33 +128,28 @@ SequencedTaskExecutor::getStats()
 
 ISequencedTaskExecutor::ExecutorId
 SequencedTaskExecutor::getExecutorId(uint64_t componentId) const {
-    PerfectKeyT key = componentId;
-    auto found = std::find(_component2IdPerfect.begin(), _component2IdPerfect.end(), key);
-    if (found != _component2IdPerfect.end()) {
-        return ExecutorId((found - _component2IdPerfect.begin()) % getNumExecutors());
-    } else if (_component2IdPerfect.size() < _component2IdPerfect.capacity()) {
-        return getExecutorIdPerfect(componentId);
-    } else {
-        return getExecutorIdImPerfect(componentId);
-    }
+    ValidId id = getExecutorIdPerfect(componentId);
+    return (id.valid()) ? id.id() : getExecutorIdImPerfect(componentId);
 }
 
-ISequencedTaskExecutor::ExecutorId
+SequencedTaskExecutor::ValidId
 SequencedTaskExecutor::getExecutorIdPerfect(uint64_t componentId) const {
-    PerfectKeyT key = componentId;
-    std::unique_lock guard(_mutex);
-    auto found = std::find(_component2IdPerfect.begin(), _component2IdPerfect.end(), key);
-    if (found == _component2IdPerfect.end()) {
-        if ((_component2IdPerfect.size() < _component2IdPerfect.capacity())) {
-            _component2IdPerfect.push_back(key);
-            found = _component2IdPerfect.end() - 1;
-        } else {
-            // There was a race for the last spots
-            guard.unlock();
-            return getExecutorIdImPerfect(componentId);
+    PerfectKeyT key = componentId & 0x7fff;
+    ssize_t pos = find(key, _component2IdPerfect.get(), getNumExecutors() * NUM_PERFECT_PER_EXECUTOR);
+    if (pos < 0) {
+        std::unique_lock guard(_mutex);
+        pos = find(key, _component2IdPerfect.get(), getNumExecutors() * NUM_PERFECT_PER_EXECUTOR);
+        if (pos < 0) {
+            pos = find(INVALID_KEY, _component2IdPerfect.get(), getNumExecutors() * NUM_PERFECT_PER_EXECUTOR);
+            if (pos >= 0) {
+                _component2IdPerfect[pos] = key;
+            } else {
+                // There was a race for the last spots
+                return ValidId();
+            }
         }
     }
-    return ExecutorId((found - _component2IdPerfect.begin()) % getNumExecutors());
+    return ValidId(ExecutorId(pos % getNumExecutors()));
 }
 
 ISequencedTaskExecutor::ExecutorId
