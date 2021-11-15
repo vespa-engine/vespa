@@ -54,6 +54,8 @@ public:
     void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) override;
     void clear_read_only_bucket_repo_databases() override;
 
+    void update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo> features_repo) override;
+
     void report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const override;
     PendingOperationStats pending_operation_stats() const override;
     void report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;

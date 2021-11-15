@@ -30,6 +30,7 @@ struct BucketSpaceDistributionConfigs;
 class BucketSpaceDistributionContext;
 class ClusterStateBundleActivationListener;
 class DistributorInterface;
+class NodeSupportedFeaturesRepo;
 class StripeAccessor;
 class StripeAccessGuard;
 
@@ -122,6 +123,7 @@ private:
     ChainedMessageSender& _chained_sender;
     OutdatedNodesMap         _outdated_nodes_map;
     framework::MilliSecTimer _transition_timer;
+    std::shared_ptr<const NodeSupportedFeaturesRepo> _node_supported_features_repo;
     std::atomic<bool> _stale_reads_enabled;
 };
 

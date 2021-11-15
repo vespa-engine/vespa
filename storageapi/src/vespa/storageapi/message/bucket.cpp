@@ -107,7 +107,8 @@ MergeBucketCommand::MergeBucketCommand(
       _nodes(nodes),
       _maxTimestamp(maxTimestamp),
       _clusterStateVersion(clusterStateVersion),
-      _chain(chain)
+      _chain(chain),
+      _use_unordered_forwarding(false)
 {}
 
 MergeBucketCommand::~MergeBucketCommand() = default;
@@ -128,6 +129,9 @@ MergeBucketCommand::print(std::ostream& out, bool verbose, const std::string& in
         out << _chain[i];
     }
     out << "]";
+    if (_use_unordered_forwarding) {
+        out << " (unordered forwarding)";
+    }
     out << ", reasons to start: " << _reason;
     out << ")";
     if (verbose) {

@@ -100,6 +100,9 @@ struct FakeDistributorStripeOperationContext : public DistributorStripeOperation
     const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const override {
         abort();
     }
+    const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept override {
+        abort();
+    }
 };
 
 struct BlockingOperationStarterTest : Test {

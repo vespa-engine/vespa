@@ -9,8 +9,10 @@
 #include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/ideal_state_total_metrics.h>
+#include <vespa/storage/distributor/node_supported_features_repo.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using document::test::makeBucketSpace;
 using document::test::makeDocumentBucket;
@@ -524,6 +526,13 @@ DistributorStripeTestUtil::pending_message_tracker() noexcept {
 std::chrono::steady_clock::duration
 DistributorStripeTestUtil::db_memory_sample_interval() const noexcept {
     return _stripe->db_memory_sample_interval();
+}
+
+void
+DistributorStripeTestUtil::set_node_supported_features(uint16_t node, const NodeSupportedFeatures& features) {
+    vespalib::hash_map<uint16_t, NodeSupportedFeatures> new_features;
+    new_features[node] = features;
+    _stripe->update_node_supported_features_repo(_stripe->node_supported_features_repo().make_union_of(new_features));
 }
 
 const lib::Distribution&

@@ -25,6 +25,7 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     mergelimitertest.cpp
     mergeoperationtest.cpp
     multi_thread_stripe_access_guard_test.cpp
+    node_supported_features_repo_test.cpp
     nodeinfotest.cpp
     nodemaintenancestatstrackertest.cpp
     operation_sequencer_test.cpp

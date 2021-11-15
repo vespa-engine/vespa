@@ -160,6 +160,8 @@ public:
         return *_bucketIdHasher;
     }
 
+    const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept override;
+
     StripeBucketDBUpdater& bucket_db_updater() { return _bucketDBUpdater; }
     const StripeBucketDBUpdater& bucket_db_updater() const { return _bucketDBUpdater; }
     IdealStateManager& ideal_state_manager() { return _idealStateManager; }
@@ -283,6 +285,7 @@ private:
     void update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) override;
     void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) override;
     void clear_read_only_bucket_repo_databases() override;
+    void update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo> features_repo) override;
     void report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const override;
     void report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
     void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
@@ -338,6 +341,7 @@ private:
     framework::ThreadWaitInfo _tickResult;
     BucketDBMetricUpdater _bucketDBMetricUpdater;
     std::unique_ptr<BucketGcTimeCalculator::BucketIdHasher> _bucketIdHasher;
+    std::shared_ptr<const NodeSupportedFeaturesRepo> _node_supported_features_repo;
     mutable std::mutex _metricLock;
     /**
      * Maintenance stats for last completed database scan iteration.

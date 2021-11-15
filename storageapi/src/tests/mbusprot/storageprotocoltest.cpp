@@ -410,6 +410,12 @@ TEST_P(StorageProtocolTest, request_bucket_info) {
         // "Last modified" not counted by operator== for some reason. Testing
         // separately until we can figure out if this is by design or not.
         EXPECT_EQ(lastMod, entries[0]._info.getLastModified());
+
+        if (GetParam().getMajor() >= 7) {
+            EXPECT_TRUE(reply2->supported_node_features().unordered_merge_chaining);
+        } else {
+            EXPECT_FALSE(reply2->supported_node_features().unordered_merge_chaining);
+        }
     }
 }
 
@@ -471,12 +477,18 @@ TEST_P(StorageProtocolTest, merge_bucket) {
     chain.push_back(14);
 
     auto cmd = std::make_shared<MergeBucketCommand>(_bucket, nodes, Timestamp(1234), 567, chain);
+    cmd->set_use_unordered_forwarding(true);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ(_bucket, cmd2->getBucket());
     EXPECT_EQ(nodes, cmd2->getNodes());
     EXPECT_EQ(Timestamp(1234), cmd2->getMaxTimestamp());
     EXPECT_EQ(uint32_t(567), cmd2->getClusterStateVersion());
     EXPECT_EQ(chain, cmd2->getChain());
+    if (GetParam().getMajor() >= 7) {
+        EXPECT_EQ(cmd2->use_unordered_forwarding(), cmd->use_unordered_forwarding());
+    } else {
+        EXPECT_FALSE(cmd2->use_unordered_forwarding());
+    }
 
     auto reply = std::make_shared<MergeBucketReply>(*cmd);
     auto reply2 = copyReply(reply);

@@ -113,21 +113,28 @@ MergeThrottler::MergeOperationMetrics::MergeOperationMetrics(const std::string& 
 }
 MergeThrottler::MergeOperationMetrics::~MergeOperationMetrics() = default;
 
-MergeThrottler::MergeNodeSequence::MergeNodeSequence(
-        const api::MergeBucketCommand& cmd,
-        uint16_t thisIndex)
+MergeThrottler::MergeNodeSequence::MergeNodeSequence(const api::MergeBucketCommand& cmd, uint16_t thisIndex)
     : _cmd(cmd),
       _sortedNodes(cmd.getNodes()),
-      _sortedIndex(std::numeric_limits<std::size_t>::max()),
-      _thisIndex(thisIndex)
+      _sortedIndex(UINT16_MAX),
+      _unordered_index(UINT16_MAX),
+      _thisIndex(thisIndex),
+      _use_unordered_forwarding(cmd.use_unordered_forwarding())
 {
     // Sort the node vector so that we can find out if we're the
     // last node in the chain or if we should forward the merge
     std::sort(_sortedNodes.begin(), _sortedNodes.end(), NodeComparator());
-    assert(!_sortedNodes.empty());
-    for (std::size_t i = 0; i < _sortedNodes.size(); ++i) {
+    assert(!_sortedNodes.empty() && (_sortedNodes.size() < UINT16_MAX));
+    for (uint16_t i = 0; i < static_cast<uint16_t>(_sortedNodes.size()); ++i) {
         if (_sortedNodes[i].index == _thisIndex) {
             _sortedIndex = i;
+            break;
+        }
+    }
+    const auto& nodes = unordered_nodes();
+    for (uint16_t i = 0; i < static_cast<uint16_t>(nodes.size()); ++i) {
+        if (nodes[i].index == _thisIndex) {
+            _unordered_index = i;
             break;
         }
     }
@@ -137,6 +144,9 @@ uint16_t
 MergeThrottler::MergeNodeSequence::getNextNodeInChain() const
 {
     assert(_cmd.getChain().size() < _sortedNodes.size());
+    if (_use_unordered_forwarding) {
+        return unordered_nodes()[_cmd.getChain().size() + 1].index;
+    }
     // assert(_sortedNodes[_cmd.getChain().size()].index == _thisIndex);
     if (_sortedNodes[_cmd.getChain().size()].index != _thisIndex) {
         // Some added paranoia output
@@ -153,7 +163,11 @@ MergeThrottler::MergeNodeSequence::isChainCompleted() const
 {
     if (_cmd.getChain().size() != _sortedNodes.size()) return false;
 
-    for (std::size_t i = 0; i < _cmd.getChain().size(); ++i) {
+    if (_use_unordered_forwarding) {
+        return true; // Expect chain to be correct if size matches node sequence size. TODO can't we always do this?
+    }
+
+    for (size_t i = 0; i < _cmd.getChain().size(); ++i) {
         if (_cmd.getChain()[i] != _sortedNodes[i].index) {
             return false;
         }
@@ -162,10 +176,10 @@ MergeThrottler::MergeNodeSequence::isChainCompleted() const
 }
 
 bool
-MergeThrottler::MergeNodeSequence::chainContainsIndex(uint16_t idx) const
+MergeThrottler::MergeNodeSequence::chain_contains_this_node() const noexcept
 {
-    for (std::size_t i = 0; i < _cmd.getChain().size(); ++i) {
-        if (_cmd.getChain()[i] == idx) {
+    for (size_t i = 0; i < _cmd.getChain().size(); ++i) {
+        if (_cmd.getChain()[i] == _thisIndex) {
             return true;
         }
     }
@@ -358,6 +372,7 @@ MergeThrottler::forwardCommandToNode(
     fwdMerge->setSourceIndex(mergeCmd.getSourceIndex());
     fwdMerge->setPriority(mergeCmd.getPriority());
     fwdMerge->setTimeout(mergeCmd.getTimeout());
+    fwdMerge->set_use_unordered_forwarding(mergeCmd.use_unordered_forwarding());
     msgGuard.sendUp(fwdMerge);
 }
 
@@ -374,7 +389,7 @@ api::StorageMessage::SP
 MergeThrottler::getNextQueuedMerge()
 {
     if (_queue.empty()) {
-        return api::StorageMessage::SP();
+        return {};
     }
 
     auto iter = _queue.begin();
@@ -385,7 +400,7 @@ MergeThrottler::getNextQueuedMerge()
 }
 
 void
-MergeThrottler::enqueueMerge(
+MergeThrottler::enqueue_merge_for_later_processing(
         const api::StorageMessage::SP& msg,
         MessageGuard& msgGuard)
 {
@@ -395,9 +410,10 @@ MergeThrottler::enqueueMerge(
     if (!validateNewMerge(mergeCmd, nodeSeq, msgGuard)) {
         return;
     }
-    const bool is_forwarded_merge = _disable_queue_limits_for_chained_merges && !mergeCmd.getChain().empty();
+    // TODO remove once unordered merges are default, since forwarded unordered merges are never enqueued
+    const bool is_forwarded_merge = _disable_queue_limits_for_chained_merges && !mergeCmd.from_distributor();
     _queue.emplace(msg, _queueSequence++, is_forwarded_merge);
-    _metrics->queueSize.set(_queue.size());
+    _metrics->queueSize.set(static_cast<int64_t>(_queue.size()));
 }
 
 bool
@@ -682,11 +698,30 @@ bool MergeThrottler::backpressure_mode_active() const {
     return backpressure_mode_active_no_lock();
 }
 
-bool MergeThrottler::allow_merge_with_queue_full(const api::MergeBucketCommand& cmd) const noexcept {
-    // We let any merge through that has already passed through at least one other node's merge
-    // window, as that has already taken up a logical resource slot on all those nodes. Busy-bouncing
-    // a merge at that point would undo a great amount of thumb-twiddling and waiting.
-    return (_disable_queue_limits_for_chained_merges && !cmd.getChain().empty());
+bool MergeThrottler::allow_merge_despite_full_window(const api::MergeBucketCommand& cmd) noexcept {
+    // We cannot let forwarded unordered merges fall into the queue, as that might lead to a deadlock.
+    // See comment in may_allow_into_queue() for rationale.
+    return (cmd.use_unordered_forwarding() && !cmd.from_distributor());
+}
+
+bool MergeThrottler::may_allow_into_queue(const api::MergeBucketCommand& cmd) const noexcept {
+    // We cannot let forwarded unordered merges fall into the queue, as that might lead to a deadlock.
+    // Consider the following scenario, with two nodes C0 and C1, each with a low window size of 1 (low
+    // limit chosen for demonstration purposes, but is entirely generalizable):
+    //  1. Node 0 receives merge M_x for nodes [0, 1], places in active window, forwards to node 1
+    //  2. Node 1 receives merge M_y for nodes [1, 0], places in active window, forwards to node 0
+    //  3. Node 0 receives merge M_y from node 1. Active window is full, so places in queue
+    //  4. Node 1 receives merge M_x from node 0. Active window is full, so places in queue
+    //  5. Neither M_x nor M_y will ever complete since they're waiting for resources that cannot be
+    //     freed up before they themselves complete. Classic deadlock(tm).
+    //
+    // We do, however, allow enqueueing unordered merges that come straight from the distributor, as
+    // those cannot cause a deadlock at that point in time.
+    if (cmd.use_unordered_forwarding()) {
+        return cmd.from_distributor();
+    }
+    return ((_queue.size() < _maxQueueSize)
+            || (_disable_queue_limits_for_chained_merges && !cmd.from_distributor()));
 }
 
 // Must be run from worker thread
@@ -716,10 +751,10 @@ MergeThrottler::handleMessageDown(
 
         if (isMergeAlreadyKnown(msg)) {
             processCycledMergeCommand(msg, msgGuard);
-        } else if (canProcessNewMerge()) {
+        } else if (canProcessNewMerge() || allow_merge_despite_full_window(mergeCmd)) {
             processNewMergeCommand(msg, msgGuard);
-        } else if ((_queue.size() < _maxQueueSize) || allow_merge_with_queue_full(mergeCmd)) {
-            enqueueMerge(msg, msgGuard); // Queue for later processing
+        } else if (may_allow_into_queue(mergeCmd)) {
+            enqueue_merge_for_later_processing(msg, msgGuard);
         } else {
             // No more room at the inn. Return BUSY so that the
             // distributor will wait a bit before retrying
@@ -773,7 +808,7 @@ MergeThrottler::validateNewMerge(
             << _component.getIndex()
             << ", which is not in its forwarding chain";
         LOG(error, "%s", oss.str().data());
-    } else if (mergeCmd.getChain().size() >= nodeSeq.getSortedNodes().size()) {
+    } else if (mergeCmd.getChain().size() >= nodeSeq.unordered_nodes().size()) {
         // Chain is full but we haven't seen the merge! This means
         // the node has probably gone down with a merge it previously
         // forwarded only now coming back to haunt it.
@@ -781,7 +816,7 @@ MergeThrottler::validateNewMerge(
             << " is not in node's internal state, but has a "
             << "full chain, meaning it cannot be forwarded.";
         LOG(debug, "%s", oss.str().data());
-    } else if (nodeSeq.chainContainsIndex(nodeSeq.getThisNodeIndex())) {
+    } else if (nodeSeq.chain_contains_this_node()) {
         oss << mergeCmd.toString()
             << " is not in node's internal state, but contains "
             << "this node in its non-full chain. This should not happen!";
@@ -831,7 +866,9 @@ MergeThrottler::processNewMergeCommand(
     // If chain is empty and this node is not the lowest
     // index in the nodeset, immediately execute. Required for
     // backwards compatibility with older distributor versions.
-    if (mergeCmd.getChain().empty()
+    // TODO remove this
+    if (mergeCmd.from_distributor()
+        && !mergeCmd.use_unordered_forwarding()
         && (nodeSeq.getSortedNodes()[0].index != _component.getIndex()))
     {
         LOG(debug, "%s has empty chain and was sent to node that "
@@ -1039,7 +1076,6 @@ bool
 MergeThrottler::onSetSystemState(
         const std::shared_ptr<api::SetSystemStateCommand>& stateCmd)
 {
-
     LOG(debug,
         "New cluster state arrived with version %u, flushing "
         "all outdated queued merges",

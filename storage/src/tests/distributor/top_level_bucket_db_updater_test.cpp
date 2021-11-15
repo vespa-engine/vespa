@@ -4,6 +4,7 @@
 #include <vespa/storage/distributor/top_level_bucket_db_updater.h>
 #include <vespa/storage/distributor/bucket_space_distribution_context.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/storage/distributor/node_supported_features_repo.h>
 #include <vespa/storage/distributor/pending_bucket_space_db_transition.h>
 #include <vespa/storage/distributor/outdated_nodes_map.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
@@ -119,6 +120,21 @@ public:
                                        invalid_bucket_count));
     }
 
+    void fake_bucket_reply(const lib::ClusterState &state,
+                           const api::StorageCommand &cmd,
+                           uint32_t bucket_count,
+                           const std::function<void(api::RequestBucketInfoReply&)>& reply_decorator)
+    {
+        ASSERT_EQ(cmd.getType(), MessageType::REQUESTBUCKETINFO);
+        const api::StorageMessageAddress& address(*cmd.getAddress());
+        auto reply = make_fake_bucket_reply(state,
+                                            dynamic_cast<const RequestBucketInfoCommand &>(cmd),
+                                            address.getIndex(),
+                                            bucket_count, 0);
+        reply_decorator(*reply);
+        bucket_db_updater().onRequestBucketInfoReply(reply);
+    }
+
     void send_fake_reply_for_single_bucket_request(
             const api::RequestBucketInfoCommand& rbi)
     {
@@ -232,7 +248,7 @@ public:
         }
     }
 
-    api::StorageMessageAddress storage_address(uint16_t node) {
+    static api::StorageMessageAddress storage_address(uint16_t node) {
         static vespalib::string _storage("storage");
         return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, node);
     }
@@ -1299,7 +1315,7 @@ TEST_F(TopLevelBucketDBUpdaterTest, merge_reply_node_down_after_request_sent) {
     add_nodes_to_stripe_bucket_db(bucket_id, "0=1234,1=1234,2=1234");
 
     for (uint32_t i = 0; i < 3; ++i) {
-        nodes.push_back(api::MergeBucketCommand::Node(i));
+        nodes.emplace_back(i);
     }
 
     api::MergeBucketCommand cmd(makeDocumentBucket(bucket_id), nodes, 0);
@@ -2660,6 +2676,39 @@ TEST_F(BucketDBUpdaterSnapshotTest, snapshot_is_unroutable_if_stale_reads_disabl
                                                                "version:2 distributor:2 .0.s:d storage:4", 0, 0));
     auto def_rs = stripe_of_bucket(default_bucket).bucket_db_updater().read_snapshot_for_bucket(default_bucket);
     EXPECT_FALSE(def_rs.is_routable());
+}
+
+TEST_F(BucketDBUpdaterSnapshotTest, node_feature_sets_are_aggregated_from_nodes_and_propagated_to_stripes) {
+    lib::ClusterState state("distributor:1 storage:3");
+    set_cluster_state(state);
+    uint32_t expected_msgs = message_count(3), dummy_buckets_to_return = 1;
+
+    // Known feature sets are initially empty.
+    auto stripes = distributor_stripes();
+    for (auto* s : stripes) {
+        for (uint16_t i : {0, 1, 2}) {
+            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).unordered_merge_chaining);
+        }
+    }
+
+    ASSERT_EQ(expected_msgs, _sender.commands().size());
+    for (uint32_t i = 0; i < _sender.commands().size(); i++) {
+        ASSERT_NO_FATAL_FAILURE(fake_bucket_reply(state, *_sender.command(i),
+                                                  dummy_buckets_to_return, [i](auto& reply) noexcept {
+            // Pretend nodes 1 and 2 are on a shiny version with unordered merge chaining supported.
+            // Node 0 does not support the fanciness.
+            if (i > 0) {
+                reply.supported_node_features().unordered_merge_chaining = true;
+            }
+        }));
+    }
+
+    // Node features should be propagated to all stripes
+    for (auto* s : stripes) {
+        EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).unordered_merge_chaining);
+        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).unordered_merge_chaining);
+        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).unordered_merge_chaining);
+    }
 }
 
 }

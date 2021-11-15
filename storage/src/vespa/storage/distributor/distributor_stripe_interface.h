@@ -16,6 +16,7 @@ namespace storage {
 namespace storage::distributor {
 
 class DistributorMetricSet;
+class NodeSupportedFeaturesRepo;
 class PendingMessageTracker;
 
 /**
@@ -61,6 +62,7 @@ public:
     virtual const DistributorConfiguration& getConfig() const = 0;
     virtual ChainedMessageSender& getMessageSender() = 0;
     virtual const BucketGcTimeCalculator::BucketIdHasher& getBucketIdHasher() const = 0;
+    virtual const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept = 0;
 };
 
 }

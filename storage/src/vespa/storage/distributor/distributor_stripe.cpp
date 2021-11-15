@@ -6,6 +6,7 @@
 #include "distributor_stripe.h"
 #include "distributormetricsset.h"
 #include "idealstatemetricsset.h"
+#include "node_supported_features_repo.h"
 #include "operation_sequencer.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include "storage_node_up_states.h"
@@ -68,6 +69,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _recoveryTimeStarted(_component.getClock()),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
       _bucketIdHasher(std::make_unique<BucketGcTimeCalculator::BucketIdIdentityHasher>()),
+      _node_supported_features_repo(std::make_shared<const NodeSupportedFeaturesRepo>()),
       _metricLock(),
       _maintenanceStats(),
       _bucketSpacesStats(),
@@ -872,6 +874,12 @@ DistributorStripe::clear_read_only_bucket_repo_databases()
 }
 
 void
+DistributorStripe::update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo> features_repo)
+{
+    _node_supported_features_repo = std::move(features_repo);
+}
+
+void
 DistributorStripe::report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const
 {
     ideal_state_manager().dump_bucket_space_db_status(bucket_space, out);
@@ -887,6 +895,12 @@ void
 DistributorStripe::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
 {
     bucket_db_updater().report_delayed_single_bucket_requests(xos);
+}
+
+const NodeSupportedFeaturesRepo&
+DistributorStripe::node_supported_features_repo() const noexcept
+{
+    return *_node_supported_features_repo;
 }
 
 }
