@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -153,6 +154,8 @@ public class FileServer {
     }
 
     public void serveFile(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
+        if (executor instanceof ThreadPoolExecutor)
+            log.log(Level.FINE, "Active threads is now " + ((ThreadPoolExecutor) executor).getActiveCount());
         executor.execute(() -> serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, request, receiver));
     }
 
