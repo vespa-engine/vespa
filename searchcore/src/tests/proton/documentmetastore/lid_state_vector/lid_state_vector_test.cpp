@@ -141,6 +141,33 @@ TEST_F(LidStateVectorTest, lid_state_vector_resizing_is_working)
     assertLidStateVector({}, 2000, 0, lids);
 }
 
+TEST_F(LidStateVectorTest, set_bits)
+{
+    LidStateVector lids(1000, 1000, _gen_hold, true, true);
+    EXPECT_EQ(100, lids.assert_not_set_bits({ 10, 40, 100 }));
+    assertLidStateVector({}, 1000, 0, lids);
+    EXPECT_EQ(100, lids.set_bits({ 10, 40, 100 }));
+    assertLidStateVector({ 10, 40, 100 }, 10, 100, lids);
+}
+
+TEST_F(LidStateVectorTest, clear_bits)
+{
+    LidStateVector lids(1000, 1000, _gen_hold, true, true);
+    lids.set_bits({ 10, 40, 100 });
+    lids.clear_bits({ 10, 100 });
+    assertLidStateVector({ 40 }, 40, 40, lids);
+}
+
+TEST_F(LidStateVectorTest, consider_clear_bits)
+{
+    LidStateVector lids(1000, 1000, _gen_hold, true, true);
+    lids.set_bits({ 40 });
+    lids.consider_clear_bits({ 10, 100 });
+    assertLidStateVector({ 40 }, 40, 40, lids);
+    lids.consider_clear_bits({ 10, 40, 100 });
+    assertLidStateVector({}, 1000, 0, lids);
+}
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
