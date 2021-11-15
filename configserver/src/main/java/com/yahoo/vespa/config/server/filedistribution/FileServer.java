@@ -95,10 +95,6 @@ public class FileServer {
         return hasFile(new FileReference(fileReference));
     }
 
-    FileDirectory getRootDir() {
-        return root;
-    }
-
     private boolean hasFile(FileReference reference) {
         try {
             return root.getFile(reference).exists();
@@ -107,6 +103,8 @@ public class FileServer {
         }
         return false;
     }
+
+    FileDirectory getRootDir() { return root; }
 
     void startFileServing(String fileName, Receiver target) {
         FileReference reference = new FileReference(fileName);
@@ -194,14 +192,12 @@ public class FileServer {
             FileReferenceDownload newDownload = new FileReferenceDownload(fileReference, false, fileReferenceDownload.client());
             return downloader.getFile(newDownload).isPresent();
         } else {
-            log.log(Level.FINE, "File not found, will not download from another source since request came from another config server");
+            log.log(Level.FINE, "File not found, will not download from another source, since request came from another config server");
             return false;
         }
     }
 
-    public FileDownloader downloader() {
-        return downloader;
-    }
+    public FileDownloader downloader() { return downloader; }
 
     public void close() {
         downloader.close();
@@ -212,11 +208,11 @@ public class FileServer {
         Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
         return new FileDownloader(configServers.isEmpty()
                                           ? FileDownloader.emptyConnectionPool()
-                                          : getConnectionPool(configServers, supervisor),
+                                          : createConnectionPool(configServers, supervisor),
                                   supervisor);
     }
 
-    private static ConnectionPool getConnectionPool(List<String> configServers, Supervisor supervisor) {
+    private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {
         return configServers.size() > 0
                 ? new JRTConnectionPool(new ConfigSourceSet(configServers), supervisor)
                 : FileDownloader.emptyConnectionPool();
