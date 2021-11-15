@@ -23,28 +23,6 @@
         <maven.compiler.release>8</maven.compiler.release>
     </properties>
 
-    <!-- This is a client jar and should be compilable with jdk8 -->
-    <profiles>
-        <profile>
-            <id>jdk11</id>
-            <activation>
-                <jdk>11</jdk>
-            </activation>
-            <properties>
-                <java.version>11</java.version>
-            </properties>
-        </profile>
-        <profile>
-            <id>jdk1.8</id>
-            <activation>
-                <jdk>1.8</jdk>
-            </activation>
-            <properties>
-                <java.version>8</java.version>
-            </properties>
-        </profile>
-    </profiles>
-
     <dependencies>
         <!-- Hadoop dependencies -->
         <dependency>
