@@ -12,4 +12,4 @@ groupId string default=com.yahoo.vespa
 
 # Artifact ID of the artifact to list versions for
 #
-artifactId string default=tenant-base
+artifactId string default=cloud-tenant-base
