@@ -107,7 +107,7 @@ public class FileReferenceDownloader {
         } else {
             log.log(logLevel, () -> "Downloading file " + fileReference + " from " + connection.getAddress() + " failed: " +
                                     request + ", error: " + request.errorMessage() + ", will use another config server for next request" +
-                                    " (retry count " + retryCount + ", rpc timeout " + rpcTimeout.getSeconds() + ")");
+                                    " (retry count " + retryCount + ", rpc timeout " + rpcTimeout.getSeconds() + " seconds)");
             connectionPool.switchConnection(connection);
             return false;
         }
