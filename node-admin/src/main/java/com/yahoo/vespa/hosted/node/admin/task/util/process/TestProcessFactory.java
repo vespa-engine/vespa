@@ -93,8 +93,10 @@ public class TestProcessFactory implements ProcessFactory {
         String actualCommandLineString = commandLine.toString();
         if (!Objects.equals(actualCommandLineString, expectedCommandLineString)) {
             muteVerifyAllCommandsExecuted = true;
-            throw new IllegalArgumentException("Expected command #" + commandSequenceNumber + " to be '" +
-                    expectedCommandLineString + "' but got '" + actualCommandLineString + "'");
+            throw new IllegalArgumentException("Expected command #" + commandSequenceNumber + " to be: \n" +
+                                               "  \"" + expectedCommandLineString + "\"\n" +
+                                               "but got:\n" +
+                                               "  \"" + actualCommandLineString + "\"");
         }
 
         return toReturn;
