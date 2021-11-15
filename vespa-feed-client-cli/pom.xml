@@ -12,11 +12,6 @@
   <packaging>jar</packaging>
   <version>7-SNAPSHOT</version>
 
-  <properties>
-    <!-- Used by internal properties that are still using JDK8-->
-    <maven.compiler.release>8</maven.compiler.release>
-  </properties>
-
   <dependencies>
     <!-- compile scope -->
     <dependency>
@@ -56,11 +51,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <jdkToolchain>
-            <version>${java.version}</version>
-          </jdkToolchain>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
+          <release>${vespaClients.jdk.releaseVersion}</release>
           <showDeprecation>true</showDeprecation>
           <compilerArgs>
             <arg>-Xlint:all</arg>
