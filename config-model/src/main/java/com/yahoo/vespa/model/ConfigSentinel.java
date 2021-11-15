@@ -19,6 +19,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
 
     private final ApplicationId applicationId;
     private final Zone zone;
+    private final boolean ignoreRequestedStackSizes;
 
     /**
      * Constructs a new ConfigSentinel for the given host.
@@ -31,6 +32,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
         super(host, "sentinel");
         this.applicationId = applicationId;
         this.zone = zone;
+        this.ignoreRequestedStackSizes = featureFlags.ignoreThreadStackSizes();
         portsMeta.on(0).tag("rpc").tag("admin");
         portsMeta.on(1).tag("telnet").tag("interactive").tag("http").tag("state");
         setProp("clustertype", "hosts");
@@ -73,6 +75,7 @@ public class ConfigSentinel extends AbstractService implements SentinelConfig.Pr
     @Override
     public void getConfig(SentinelConfig.Builder builder) {
         builder.application(getApplicationConfig());
+        builder.ignoreRequestedStackSizes(ignoreRequestedStackSizes);
         for (Service s : getHostResource().getServices()) {
             if (s.getStartupCommand() != null) {
                 builder.service(getServiceConfig(s));

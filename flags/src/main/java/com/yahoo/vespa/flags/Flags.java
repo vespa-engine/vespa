@@ -363,6 +363,14 @@ public class Flags {
             HOSTNAME,
             NODE_TYPE);
 
+    public static final UnboundBooleanFlag IGNORE_THREAD_STACK_SIZES = defineFeatureFlag(
+            "ignore-thread-stack-sizes", false,
+            List.of("arnej"), "2021-11-12", "2022-01-31",
+            "Whether C++ thread creation should ignore any requested stack size",
+            "Triggers restart, takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

@@ -71,7 +71,12 @@ bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
 #else
     adjusted_stack_size += PTHREAD_STACK_MIN;
 #endif
-    pthread_attr_setstacksize(&attr, adjusted_stack_size);
+    if (getenv("VESPA_IGNORE_REQUESTED_STACK_SIZES") == nullptr) {
+        //fprintf(stderr, "pthread_create: using adjusted stack size %zd\n", adjusted_stack_size);
+        pthread_attr_setstacksize(&attr, adjusted_stack_size);
+    } else {
+        //fprintf(stderr, "pthread_create: ignoring requested stack size %d\n", stackSize);
+    }
 
     rc = (0 == pthread_create(&_handle, &attr, FastOS_ThreadHook, this));
     if (rc)
