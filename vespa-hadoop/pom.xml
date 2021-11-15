@@ -189,7 +189,7 @@
                     <jdkToolchain>
                         <version>${java.version}</version>
                     </jdkToolchain>
-                    <release>${java.version}</release>
+                    <release>${maven.compiler.release}</release>
                 </configuration>
             </plugin>
         </plugins>
