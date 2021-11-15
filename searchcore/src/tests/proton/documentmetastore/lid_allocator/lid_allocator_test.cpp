@@ -2,9 +2,12 @@
 
 #include <vespa/searchcore/proton/documentmetastore/lid_allocator.h>
 #include <vespa/vespalib/util/generationholder.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <iostream>
 
 using vespalib::GenerationHolder;
+using vespalib::Timer;
 
 namespace proton {
 
@@ -117,6 +120,42 @@ TEST_F(LidAllocatorTest, unregister_lids)
     trim_hold_lists();
     EXPECT_EQ((std::vector<uint32_t>{1, 3, 5, 7, 8}), alloc_lids(5));
 }
+
+class LidAllocatorPerformanceTest : public LidAllocatorTest,
+                                    public testing::WithParamInterface<bool>
+{
+};
+
+TEST_P(LidAllocatorPerformanceTest, unregister_lids_performance)
+{
+    constexpr uint32_t test_size = 1000000;
+    _allocator.ensureSpace(test_size + 1, test_size + 1);
+    std::vector<std::vector<uint32_t>> buckets;
+    buckets.resize(1000);
+    auto reserve_size = (test_size + (buckets.size() - 1)) / buckets.size(); 
+for (auto& bucket : buckets) {
+    bucket.reserve(reserve_size);
+}
+    for (uint32_t i = 0; i < test_size; ++i) {
+        _allocator.registerLid(i + 1);
+        buckets[i % buckets.size()].emplace_back(i + 1);
+    }
+    construct_free_list();
+    Timer timer;
+    for (auto& bucket: buckets) {
+        if (GetParam()) {
+            unregister_lids(bucket);
+        } else {
+            for (auto lid : bucket) {
+                _allocator.unregisterLid(lid);
+            }
+        }
+    }
+    auto rate = test_size / vespalib::to_s(timer.elapsed());
+    std::cout << "Unregister rate: " << std::fixed << rate << std::endl;
+}
+
+VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(LidAllocatorParameterizedPerformanceTest, LidAllocatorPerformanceTest, testing::Values(false, true));
 
 }
 

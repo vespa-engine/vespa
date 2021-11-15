@@ -82,9 +82,15 @@ LidAllocator::unregisterLid(DocId lid)
 void
 LidAllocator::unregister_lids(const std::vector<DocId>& lids)
 {
-    for (auto lid : lids) {
-        unregisterLid(lid);
+    if (lids.empty()) {
+        return;
     }
+    auto high = isFreeListConstructed() ? _pendingHoldLids.set_bits(lids) : _pendingHoldLids.assert_not_set_bits(lids);
+    assert(high < _usedLids.size());
+    _usedLids.clear_bits(lids);
+    assert(high < _activeLids.size());
+    _activeLids.consider_clear_bits(lids);
+    _numActiveLids = _activeLids.count();
 }
 
 void
