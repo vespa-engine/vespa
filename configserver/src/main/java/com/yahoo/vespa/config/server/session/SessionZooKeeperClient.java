@@ -66,6 +66,7 @@ public class SessionZooKeeperClient {
 
     private final Curator curator;
     private final TenantName tenantName;
+    private final long sessionId;
     private final Path sessionPath;
     private final Path sessionStatusPath;
     private final String serverId;  // hostname
@@ -75,6 +76,7 @@ public class SessionZooKeeperClient {
     public SessionZooKeeperClient(Curator curator, TenantName tenantName, long sessionId, String serverId, AddFileInterface fileManager, int maxNodeSize) {
         this.curator = curator;
         this.tenantName = tenantName;
+        this.sessionId = sessionId;
         this.sessionPath = getSessionPath(tenantName, sessionId);
         this.serverId = serverId;
         this.sessionStatusPath = sessionPath.append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
@@ -105,6 +107,8 @@ public class SessionZooKeeperClient {
             return Session.Status.UNKNOWN;
         }
     }
+
+    public long sessionId() { return sessionId; }
 
     public CompletionWaiter createActiveWaiter() { return createCompletionWaiter(ACTIVE_BARRIER); }
 
