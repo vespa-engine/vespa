@@ -19,8 +19,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <hadoop.version>2.8.0</hadoop.version>
         <pig.version>0.14.0</pig.version>
-        <!-- This is a client jar and should be compilable with jdk8 -->
-        <maven.compiler.release>8</maven.compiler.release>
     </properties>
 
     <dependencies>
@@ -186,10 +184,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <jdkToolchain>
-                        <version>${java.version}</version>
-                    </jdkToolchain>
-                    <release>${maven.compiler.release}</release>
+                    <release>${vespaClients.jdk.releaseVersion}</release>
                 </configuration>
             </plugin>
         </plugins>
