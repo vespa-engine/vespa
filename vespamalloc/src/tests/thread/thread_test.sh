@@ -4,8 +4,8 @@ set -e
 
 echo "Trying to find limit for processes:"
 if ulimit -u; then
-    echo "Fixing limit to 31100"
-    ulimit -u 31100
+    echo "Fixing limit to 14100"
+    ulimit -u 14100
 elif [ "$RETRYEXEC" ]; then
     echo "Already tried to re-exec script, giving up."
     exit 1
