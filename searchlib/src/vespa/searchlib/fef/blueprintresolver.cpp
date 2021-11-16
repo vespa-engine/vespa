@@ -182,31 +182,31 @@ struct Compiler : public Blueprint::DependencyHandler {
     }
 
     FeatureRef resolve_feature(const vespalib::string &feature_name, Accept accept_type) {
-        FeatureNameParser parser(feature_name);
-        if (!parser.valid()) {
+        auto parser = std::make_unique<FeatureNameParser>(feature_name);
+        if (!parser->valid()) {
             return fail(feature_name, "malformed name");
         }
-        if (failed_set.count(parser.featureName()) > 0) {
-            return fail(parser.featureName(), "already failed");
+        if (failed_set.count(parser->featureName()) > 0) {
+            return fail(parser->featureName(), "already failed");
         }
-        auto old_feature = feature_map.find(parser.featureName());
+        auto old_feature = feature_map.find(parser->featureName());
         if (old_feature != feature_map.end()) {
-            return verify_type(parser, old_feature->second, accept_type);
+            return verify_type(*parser, old_feature->second, accept_type);
         }
         if ((resolve_stack.size() + 1) > BlueprintResolver::MAX_DEP_DEPTH) {
-            return fail(parser.featureName(), "dependency graph too deep");
+            return fail(parser->featureName(), "dependency graph too deep");
         }
         for (const Frame &frame: resolve_stack) {
-            if (frame.parser.executorName() == parser.executorName()) {
-                return fail(parser.featureName(), "dependency cycle detected");
+            if (frame.parser.executorName() == parser->executorName()) {
+                return fail(parser->featureName(), "dependency cycle detected");
             }
         }
-        setup_executor(parser);
-        auto new_feature = feature_map.find(parser.featureName());
+        setup_executor(*parser);
+        auto new_feature = feature_map.find(parser->featureName());
         if (new_feature != feature_map.end()) {
-            return verify_type(parser, new_feature->second, accept_type);
+            return verify_type(*parser, new_feature->second, accept_type);
         }
-        return fail(parser.featureName(), fmt("unknown output: '%s'", parser.output().c_str()));
+        return fail(parser->featureName(), fmt("unknown output: '%s'", parser->output().c_str()));
     }
 
     std::optional<FeatureType> resolve_input(const vespalib::string &feature_name, Accept accept_type) override {
