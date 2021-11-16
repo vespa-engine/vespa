@@ -526,9 +526,19 @@ public class Endpoint {
             return target(endpointId, ClusterSpec.Id.from("default"), List.of());
         }
 
+        /** Sets the application target with given ID and pointing to the default cluster */
+        public EndpointBuilder targetApplication(EndpointId endpointId, DeploymentId deployment) {
+            return targetApplication(endpointId, ClusterSpec.Id.from("default"), Map.of(deployment, 1));
+        }
+
         /** Sets the global wildcard target for this */
         public EndpointBuilder wildcard() {
             return target(EndpointId.of("*"), ClusterSpec.Id.from("*"), List.of());
+        }
+
+        /** Sets the application wildcard target for this */
+        public EndpointBuilder wildcardApplication(DeploymentId deployment) {
+            return targetApplication(EndpointId.of("*"), ClusterSpec.Id.from("*"), Map.of(deployment, 1));
         }
 
         /** Sets the zone wildcard target for this */
