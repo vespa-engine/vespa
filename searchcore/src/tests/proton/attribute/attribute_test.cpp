@@ -42,9 +42,11 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
 
 #include <vespa/log/log.h>
@@ -86,6 +88,7 @@ using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
+using vespalib::GateCallback;
 using vespalib::IDestructorCallback;
 
 using AVBasicType = search::attribute::BasicType;
@@ -199,8 +202,9 @@ public:
         EXPECT_EQ(includeCommit, _attributeFieldWriter->getExecuteHistory());
     }
     SerialNum test_force_commit(AttributeVector &attr, SerialNum serialNum) {
-        commit(serialNum);
-        _attributeFieldWriter->sync_all();
+        vespalib::Gate gate;
+        _aw->forceCommit(serialNum, std::make_shared<GateCallback>(gate));
+        gate.await();
         return attr.getStatus().getLastSyncToken();
     }
 };
