@@ -308,13 +308,6 @@ public class Flags {
             TENANT_ID
     );
 
-    public static final UnboundIntFlag MAX_CONNECTION_LIFE_IN_HOSTED = defineIntFlag(
-            "max-connection-life-in-hosted", 45,
-            List.of("bjorncs"), "2021-09-30", "2021-12-31",
-            "Max connection life for connections to jdisc endpoints in hosted",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_ROUTING_REUSE_PORT = defineFeatureFlag(
             "enable-routing-reuse-port", false,
             List.of("mortent"), "2021-09-29", "2021-12-31",

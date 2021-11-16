@@ -190,7 +190,6 @@ public class ModelContextImpl implements ModelContext {
         private final int metricsproxyNumThreads;
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final double containerShutdownTimeout;
-        private final int maxConnectionLifeInHosted;
         private final int distributorMergeBusyWait;
         private final int docstoreCompressionLevel;
         private final double diskBloatFactor;
@@ -226,7 +225,6 @@ public class ModelContextImpl implements ModelContext {
             this.metricsproxyNumThreads = flagValue(source, appId, Flags.METRICSPROXY_NUM_THREADS);
             this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
             this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
-            this.maxConnectionLifeInHosted = flagValue(source, appId, Flags.MAX_CONNECTION_LIFE_IN_HOSTED);
             this.distributorMergeBusyWait = flagValue(source, appId, Flags.DISTRIBUTOR_MERGE_BUSY_WAIT);
             this.docstoreCompressionLevel = flagValue(source, appId, Flags.DOCSTORE_COMPRESSION_LEVEL);
             this.diskBloatFactor = flagValue(source, appId, Flags.DISK_BLOAT_FACTOR);
@@ -264,7 +262,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int metricsproxyNumThreads() { return metricsproxyNumThreads; }
         @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
-        @Override public int maxConnectionLifeInHosted() { return maxConnectionLifeInHosted; }
         @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
         @Override public double diskBloatFactor() { return diskBloatFactor; }
         @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
