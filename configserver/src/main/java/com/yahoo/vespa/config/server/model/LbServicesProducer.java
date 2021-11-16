@@ -105,8 +105,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
                 .scope(LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.valueOf(clusterEndpoints.scope().name()))
                 .routingMethod(LbServicesConfig.Tenants.Applications.Endpoints.RoutingMethod.Enum.valueOf(clusterEndpoints.routingMethod().name()))
                 .weight(clusterEndpoints.weight())
-                .hosts(clusterEndpoints.hostNames())
-                .clusterId(clusterEndpoints.clusterId());
+                .hosts(clusterEndpoints.hostNames());
     }
 
     private boolean getActiveRotation(ApplicationInfo app) {
