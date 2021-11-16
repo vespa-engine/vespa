@@ -65,6 +65,7 @@ using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::SimpleValue;
+using vespalib::GateCallback;
 using vespalib::Slime;
 using namespace vespalib::slime;
 
@@ -253,8 +254,11 @@ public:
         dms.commit(CommitParam(0u));
         uint64_t serialNum = _ddb->getFeedHandler().inc_serial_num();
         _aw->put(serialNum, doc, lid, std::shared_ptr<IDestructorCallback>());
-        _aw->forceCommit(serialNum, std::shared_ptr<IDestructorCallback>());
-        _ddb->getReadySubDB()->getAttributeManager()->getAttributeFieldWriter().sync_all();
+        {
+            vespalib::Gate gate;
+            _aw->forceCommit(serialNum, std::make_shared<GateCallback>(gate));
+            gate.await();
+        }
         _sa->put(serialNum, lid, doc);
         const GlobalId &gid = docId.getGlobalId();
         BucketId bucketId(gid.convertToBucketId());
@@ -700,13 +704,18 @@ TEST("requireThatAttributesAreUsed")
     search::AttributeVector *bjAttr = attributeManager->getWritableAttribute("bj");
     auto bjTensorAttr = dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
 
-    attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(bjAttr->getNamePrefix()),
-                                 [&]() {
-                                     bjTensorAttr->setTensor(3, *make_tensor(TensorSpec("tensor(x{},y{})")
+    vespalib::Gate gate;
+    {
+        auto on_write_done = std::make_shared<GateCallback>(gate);
+        attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(bjAttr->getNamePrefix()),
+                                     [&, on_write_done]() {
+                                         (void) on_write_done;
+                                         bjTensorAttr->setTensor(3, *make_tensor(TensorSpec("tensor(x{},y{})")
                                                                              .add({{"x", "a"}, {"y", "b"}}, 4)));
-                                     bjTensorAttr->commit();
+                                         bjTensorAttr->commit();
                                  });
-    attributeFieldWriter.sync_all();
+    }
+    gate.await();
 
     DocsumReply::UP rep2 = dc._ddb->getDocsums(req);
     TEST_DO(assertTensor(make_tensor(TensorSpec("tensor(x{},y{})")
