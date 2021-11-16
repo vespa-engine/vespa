@@ -62,6 +62,8 @@ using storage::spi::Timestamp;
 using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
 using proton::initializer::TaskRunner;
+using vespalib::GateCallback;
+using vespalib::IDestructorCallback;
 using vespalib::makeLambdaTask;
 using searchcorespi::IFlushTarget;
 
@@ -375,9 +377,13 @@ void
 DocumentDB::enterOnlineState()
 {
     // Called by executor thread
-    // Ensure that all replayed operations are committed to memory structures
-    _feedView.get()->forceCommit(CommitParam(_feedHandler->getSerialNum()));
-    _writeService.sync_all_executors();
+    assert(_writeService.master().isCurrentThread());
+    {
+        vespalib::Gate gate;
+        // Ensure that all replayed operations are committed to memory structures
+        _feedView.get()->forceCommit(CommitParam(_feedHandler->getSerialNum()), std::make_shared<GateCallback>(gate));
+        gate.await();
+    }
 
     (void) _state.enterOnlineState();
     // Consider delayed pruning of transaction log and config history
@@ -463,10 +469,11 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     }
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
+        vespalib::Gate gate;
         // Flush changes to attributes and memory index, cf. visibilityDelay
         _feedView.get()->forceCommit(CommitParam(elidedConfigSave ? serialNum : serialNum - 1),
-                                     std::make_shared<vespalib::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
-        _writeService.sync_all_executors();
+                                     std::make_shared<vespalib::KeepAlive<std::pair<FeedHandler::CommitResult, std::shared_ptr<IDestructorCallback>>>>(std::make_pair(std::move(commit_result), std::make_shared<GateCallback>(gate))));
+        gate.await();
     }
     if (params.shouldMaintenanceControllerChange()) {
         _maintenanceController.killJobs();
