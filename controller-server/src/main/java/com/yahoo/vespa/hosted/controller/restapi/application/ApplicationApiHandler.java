@@ -2042,7 +2042,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new MessageResponse("Deactivated " + id);
     }
 
-    /** Returns test config for indicated job, with production deployments of the default instance. */
+    /** Returns test config for indicated job, with production deployments of the default instance if the given is not in deployment spec. */
     private HttpResponse testConfig(ApplicationId id, JobType type) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id));
         ApplicationId prodInstanceId = application.deploymentSpec().instance(id.instance()).isPresent()
