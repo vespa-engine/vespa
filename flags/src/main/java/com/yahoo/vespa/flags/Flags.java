@@ -363,6 +363,13 @@ public class Flags {
             HOSTNAME,
             NODE_TYPE);
 
+    public static final UnboundBooleanFlag IGNORE_THREAD_STACK_SIZES = defineFeatureFlag(
+            "ignore-thread-stack-sizes", false,
+            List.of("arnej"), "2021-11-12", "2022-01-31",
+            "Whether C++ thread creation should ignore any requested stack size",
+            "Triggers restart, takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_FILE_DISTRIBUTION_CONNECTION_POOL = defineFeatureFlag(
             "use-file-distribution-connection-pool", false,
             List.of("hmusum"), "2021-11-16", "2021-12-16",
