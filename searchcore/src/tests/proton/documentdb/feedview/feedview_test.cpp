@@ -516,11 +516,11 @@ struct FixtureBase
     }
 
     void syncIndex() {
-        _writeService.sync();
+        _writeService.sync_all_executors();
     }
 
     void sync() {
-        _writeServiceReal.sync();
+        _writeServiceReal.sync_all_executors();
     }
 
     const test::DocumentMetaStoreObserver &metaStoreObserver() {
@@ -701,7 +701,7 @@ FixtureBase::FixtureBase()
 }
 
 FixtureBase::~FixtureBase() {
-    _writeServiceReal.sync();
+    _writeServiceReal.sync_all_executors();
 }
 
 void

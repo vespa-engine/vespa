@@ -185,7 +185,7 @@ public:
         runInMaster([&] () { cycleLids(_lidReuseDelayer->getReuseLids()); });
     }
 
-    void sync() { _writeService.sync(); }
+    void sync() { _writeService.sync_all_executors(); }
 
 };
 

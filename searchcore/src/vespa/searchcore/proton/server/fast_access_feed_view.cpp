@@ -73,7 +73,7 @@ void
 FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 {
     // Drain pending PutDoneContext and ForceCommitContext objects
-    _writeService.sync();
+    _writeService.sync_all_executors();
     _docIdLimit.set(op.getLidLimit());
     getAttributeWriter()->compactLidSpace(op.getLidLimit(), op.getSerialNum());
     Parent::handleCompactLidSpace(op);

@@ -313,9 +313,9 @@ struct FixtureBase
         init();
     }
     ~FixtureBase() {
-        _writeService.sync();
+        _writeService.sync_all_executors();
             _writeService.master().execute(makeLambdaTask([this]() { _subDb.close(); }));
-        _writeService.sync();
+        _writeService.sync_all_executors();
     }
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
@@ -591,20 +591,20 @@ TEST_F("require that attribute compaction config reflect retirement", FastAccess
     auto calc = std::make_shared<proton::test::BucketStateCalculator>();
     calc->setNodeRetired(true);
     f._subDb.setBucketStateCalculator(calc);
-    f._writeService.sync();
+    f._writeService.sync_all_executors();
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
     EXPECT_EQUAL(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
     EXPECT_EQUAL(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
 
     f.basicReconfig(10);
-    f._writeService.sync();
+    f._writeService.sync_all_executors();
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
     EXPECT_EQUAL(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
     EXPECT_EQUAL(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
 
     calc->setNodeRetired(false);
     f._subDb.setBucketStateCalculator(calc);
-    f._writeService.sync();
+    f._writeService.sync_all_executors();
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
     EXPECT_EQUAL(default_cfg, (*guard)->getConfig().getCompactionStrategy());
     EXPECT_EQUAL(default_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());

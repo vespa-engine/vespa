@@ -455,7 +455,7 @@ struct FeedHandlerFixture
     }
 
     ~FeedHandlerFixture() {
-        writeService.sync();
+        writeService.sync_all_executors();
     }
     template <class FunctionType>
     inline void runAsMaster(FunctionType &&function) {

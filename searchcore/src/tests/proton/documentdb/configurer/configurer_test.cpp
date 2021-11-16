@@ -287,7 +287,7 @@ struct FastAccessFixture
         vespalib::mkdir(BASE_DIR);
     }
     ~FastAccessFixture() {
-        _writeService.sync();
+        _writeService.sync_all_executors();
     }
 };
 

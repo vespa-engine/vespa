@@ -49,7 +49,7 @@ public:
     /**
      * Implements vespalib::Syncable
      */
-    vespalib::Syncable &sync() override;
+    void sync_all_executors() override;
 
     void shutdown();
 

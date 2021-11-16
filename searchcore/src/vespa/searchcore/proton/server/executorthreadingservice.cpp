@@ -88,13 +88,12 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor & sh
 
 ExecutorThreadingService::~ExecutorThreadingService() = default;
 
-vespalib::Syncable &
-ExecutorThreadingService::sync() {
+void
+ExecutorThreadingService::sync_all_executors() {
     // We have multiple patterns where task A posts to B which post back to A
     for (size_t i = 0; i < 2; i++) {
         syncOnce();
     }
-    return *this;
 }
 
 void
