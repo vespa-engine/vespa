@@ -45,6 +45,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
     private final int maxActivationInhibitedOutOfSyncGroups;
     private final int mergeBusyWait;
     private final boolean enhancedMaintenanceScheduling;
+    private final boolean unorderedMergeChaining;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<DistributorCluster> {
 
@@ -109,12 +110,14 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             int maxInhibitedGroups = deployState.getProperties().featureFlags().maxActivationInhibitedOutOfSyncGroups();
             int mergeBusyWait = deployState.getProperties().featureFlags().distributorMergeBusyWait();
             boolean useEnhancedMaintenanceScheduling = deployState.getProperties().featureFlags().distributorEnhancedMaintenanceScheduling();
+            boolean unorderedMergeChaining = deployState.getProperties().featureFlags().unorderedMergeChaining();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType, useThreePhaseUpdates,
                     maxInhibitedGroups, mergeBusyWait,
-                    useEnhancedMaintenanceScheduling);
+                    useEnhancedMaintenanceScheduling,
+                    unorderedMergeChaining);
         }
     }
 
@@ -123,7 +126,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
                                boolean useThreePhaseUpdates,
                                int maxActivationInhibitedOutOfSyncGroups,
                                int mergeBusyWait,
-                               boolean enhancedMaintenanceScheduling)
+                               boolean enhancedMaintenanceScheduling,
+                               boolean unorderedMergeChaining)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -134,6 +138,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
         this.mergeBusyWait = mergeBusyWait;
         this.enhancedMaintenanceScheduling = enhancedMaintenanceScheduling;
+        this.unorderedMergeChaining = unorderedMergeChaining;
     }
 
     @Override
@@ -149,6 +154,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         builder.max_activation_inhibited_out_of_sync_groups(maxActivationInhibitedOutOfSyncGroups);
         builder.inhibit_merge_sending_on_busy_node_duration_sec(mergeBusyWait);
         builder.implicitly_clear_bucket_priority_on_schedule(enhancedMaintenanceScheduling);
+        builder.use_unordered_merge_chaining(unorderedMergeChaining);
 
         bucketSplitting.getConfig(builder);
     }

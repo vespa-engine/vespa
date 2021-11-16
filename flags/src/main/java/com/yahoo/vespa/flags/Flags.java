@@ -346,6 +346,13 @@ public class Flags {
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
+            "unordered-merge-chaining", false,
+            List.of("vekterli", "geirst"), "2021-11-15", "2022-03-01",
+            "Enables the use of unordered merge chains for data merge operations",
+            "Takes effect at redeploy",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
             "jdk-version", "11",
             List.of("hmusum"), "2021-10-25", "2021-11-25",

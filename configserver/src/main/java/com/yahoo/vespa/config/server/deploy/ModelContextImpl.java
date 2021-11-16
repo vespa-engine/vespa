@@ -198,6 +198,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean forwardIssuesAsErrors;
         private final boolean asyncApplyBucketDiff;
         private final boolean ignoreThreadStackSizes;
+        private final boolean unorderedMergeChaining;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -234,6 +235,7 @@ public class ModelContextImpl implements ModelContext {
             this.forwardIssuesAsErrors = flagValue(source, appId, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
             this.asyncApplyBucketDiff = flagValue(source, appId, Flags.ASYNC_APPLY_BUCKET_DIFF);
             this.ignoreThreadStackSizes = flagValue(source, appId, Flags.IGNORE_THREAD_STACK_SIZES);
+            this.unorderedMergeChaining = flagValue(source, appId, Flags.UNORDERED_MERGE_CHAINING);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -272,6 +274,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
         @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
         @Override public boolean ignoreThreadStackSizes() { return ignoreThreadStackSizes; }
+        @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

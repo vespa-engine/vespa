@@ -1119,6 +1119,23 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
+    public void unordered_merge_chaining_config_controlled_by_properties() throws Exception {
+        assertFalse(resolveUnorderedMergeChainingConfig(false));
+        assertTrue(resolveUnorderedMergeChainingConfig(true));
+    }
+
+    private boolean resolveUnorderedMergeChainingConfig(boolean unorderedMergeChaining) throws Exception {
+        var props = new TestProperties();
+        if (unorderedMergeChaining) {
+            props.setUnorderedMergeChaining(true);
+        }
+        var cluster = createOneNodeCluster(props);
+        var builder = new StorDistributormanagerConfig.Builder();
+        cluster.getDistributorNodes().getConfig(builder);
+        return (new StorDistributormanagerConfig(builder)).use_unordered_merge_chaining();
+    }
+
+    @Test
     public void testDedicatedClusterControllers() {
         VespaModel noContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                                                                              .setMultitenant(true),
