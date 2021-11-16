@@ -29,12 +29,12 @@ public class ApplicationClusterEndpoint {
     private final String clusterId;
 
     private ApplicationClusterEndpoint(DnsName dnsName, Scope scope, RoutingMethod routingMethod, int weight, List<String> hostNames, String clusterId) {
-        this.dnsName = Objects.requireNonNull(dnsName);
-        this.scope = Objects.requireNonNull(scope);
-        this.routingMethod = Objects.requireNonNull(routingMethod);
+        this.dnsName = dnsName;
+        this.scope = scope;
+        this.routingMethod = routingMethod;
         this.weight = weight;
-        this.hostNames = List.copyOf(Objects.requireNonNull(hostNames));
-        this.clusterId = Objects.requireNonNull(clusterId);
+        this.hostNames = List.copyOf(hostNames);
+        this.clusterId = clusterId;
     }
 
     public DnsName dnsName() {
