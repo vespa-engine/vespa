@@ -16,9 +16,9 @@ namespace vespamalloc {
  * but requires the double-word compare-and-swap instruction.
  * Very early Amd K7/8 CPUs are lacking this and will fail (Illegal Instruction).
  **/
-struct TaggedPtr {
-    TaggedPtr() noexcept : _ptr(nullptr), _tag(0) { }
-    TaggedPtr(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
+struct TaggedPtrT {
+    TaggedPtrT() noexcept : _ptr(nullptr), _tag(0) { }
+    TaggedPtrT(void *h, size_t t) noexcept : _ptr(h), _tag(t) {}
 
     void *_ptr;
     size_t _tag;
@@ -61,16 +61,20 @@ struct AtomicTaggedPtr {
     void *_ptr;
     size_t _tag;
 } __attribute__ ((aligned (16)));
+
+using TaggedPtr = AtomicTaggedPtr;
+
 #else
-    using AtomicTaggedPtr = TaggedPtr;
+    using TaggedPtr = TaggedPtrT;
+    using AtomicTaggedPtr = std::atomic<TaggedPtr>;
 #endif
 
 
 class AFListBase
 {
 public:
-    using HeadPtr = std::conditional<std::atomic<TaggedPtr>::is_always_lock_free, TaggedPtr, AtomicTaggedPtr>::type;
-    using AtomicHeadPtr = std::conditional<std::atomic<TaggedPtr>::is_always_lock_free, std::atomic<TaggedPtr>, AtomicTaggedPtr>::type;
+    using HeadPtr = TaggedPtr;
+    using AtomicHeadPtr = std::atomic<TaggedPtr>;
 
     AFListBase() : _next(nullptr) { }
     void setNext(AFListBase * csl)           { _next = csl; }
