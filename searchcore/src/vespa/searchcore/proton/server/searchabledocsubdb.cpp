@@ -244,7 +244,7 @@ SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure)
 {
     assert(_writeService.master().isCurrentThread());
 
-    _writeService.sync();
+    _writeService.sync_all_executors();
 
     // Everything should be quiet now.
 

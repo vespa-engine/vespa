@@ -303,7 +303,7 @@ void
 FeedHandler::performEof()
 {
     assert(_writeService.master().isCurrentThread());
-    _writeService.sync();
+    _writeService.sync_all_executors();
     LOG(debug, "Visiting done for transaction log domain '%s', eof received", _tlsMgr.getDomainName().c_str());
     // Replay must be complete
     if (_replay_end_serial_num != _serialNum) {

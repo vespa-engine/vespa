@@ -246,7 +246,7 @@ struct FixtureBase {
 
     void force_commit() {
         runInMaster([this] () { static_cast<IFeedView&>(*feedview).forceCommit(serial_num); });
-        writeService.sync();
+        writeService.sync_all_executors();
     }
 };
 
