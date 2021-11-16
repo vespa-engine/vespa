@@ -2042,19 +2042,20 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new MessageResponse("Deactivated " + id);
     }
 
-    /** Returns test config for indicated job, with production deployments of the default instance. */
+    /** Returns test config for indicated job, with production deployments of the default instance if the given is not in deployment spec. */
     private HttpResponse testConfig(ApplicationId id, JobType type) {
-        // TODO jonmv: Support non-default instances as well; requires API change in clients.
-        ApplicationId defaultInstanceId = TenantAndApplicationId.from(id).defaultInstance();
+        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id));
+        ApplicationId prodInstanceId = application.deploymentSpec().instance(id.instance()).isPresent()
+                                       ? id : TenantAndApplicationId.from(id).defaultInstance();
         HashSet<DeploymentId> deployments = controller.applications()
-                                    .getInstance(defaultInstanceId).stream()
-                                    .flatMap(instance -> instance.productionDeployments().keySet().stream())
-                                    .map(zone -> new DeploymentId(defaultInstanceId, zone))
-                                    .collect(Collectors.toCollection(HashSet::new));
-        var testedZone = type.zone(controller.system());
+                                                      .getInstance(prodInstanceId).stream()
+                                                      .flatMap(instance -> instance.productionDeployments().keySet().stream())
+                                                      .map(zone -> new DeploymentId(prodInstanceId, zone))
+                                                      .collect(Collectors.toCollection(HashSet::new));
+        ZoneId testedZone = type.zone(controller.system());
 
-        // If a production job is specified, the production deployment of the _default instance_ is the relevant one,
-        // as user instances should not exist in prod. TODO jonmv: Remove this when multiple instances are supported (above).
+        // If a production job is specified, the production deployment of the orchestrated instance is the relevant one,
+        // as user instances should not exist in prod.
         if ( ! type.isProduction())
             deployments.add(new DeploymentId(id, testedZone));
 
