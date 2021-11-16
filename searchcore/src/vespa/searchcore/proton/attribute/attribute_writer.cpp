@@ -14,6 +14,8 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/tensor/prepare_result.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <future>
@@ -27,6 +29,7 @@ using namespace search;
 using ExecutorId = vespalib::ISequencedTaskExecutor::ExecutorId;
 using search::attribute::ImportedAttributeVector;
 using search::tensor::PrepareResult;
+using vespalib::GateCallback;
 using vespalib::ISequencedTaskExecutor;
 
 namespace proton {
@@ -821,24 +824,38 @@ AttributeWriter::forceCommit(const CommitParam & param, OnWriteDoneType onWriteD
 void
 AttributeWriter::onReplayDone(uint32_t docIdLimit)
 {
-    for (auto entry : _attrMap) {
-        _attributeFieldWriter.execute(entry.second.executor_id,
-                                      [docIdLimit, attr = entry.second.attribute]()
-                                      { applyReplayDone(docIdLimit, *attr); });
+    vespalib::Gate gate;
+    {
+        auto on_write_done = std::make_shared<GateCallback>(gate);
+        for (auto entry : _attrMap) {
+            _attributeFieldWriter.execute(entry.second.executor_id,
+                                          [docIdLimit, attr = entry.second.attribute, on_write_done]()
+                                          {
+                                              (void) on_write_done;
+                                              applyReplayDone(docIdLimit, *attr);
+                                          });
+        }
     }
-    _attributeFieldWriter.sync_all();
+    gate.await();
 }
 
 
 void
 AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum)
 {
-    for (auto entry : _attrMap) {
-        _attributeFieldWriter.execute(entry.second.executor_id,
-                                      [wantedLidLimit, serialNum, attr=entry.second.attribute]()
-                                      { applyCompactLidSpace(wantedLidLimit, serialNum, *attr); });
+    vespalib::Gate gate;
+    {
+        auto on_write_done = std::make_shared<GateCallback>(gate);
+        for (auto entry : _attrMap) {
+            _attributeFieldWriter.execute(entry.second.executor_id,
+                                          [wantedLidLimit, serialNum, attr=entry.second.attribute, on_write_done]()
+                                          {
+                                              (void) on_write_done;
+                                              applyCompactLidSpace(wantedLidLimit, serialNum, *attr);
+                                          });
+        }
     }
-    _attributeFieldWriter.sync_all();
+    gate.await();
 }
 
 bool
