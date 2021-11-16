@@ -95,11 +95,11 @@ public class JRTConnectionPool implements ConnectionPool {
         return pickNewConnectionRandomly(getSources());
     }
 
-    private JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
+    protected JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
         return sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
     }
 
-    List<JRTConnection> getSources() {
+    protected List<JRTConnection> getSources() {
         List<JRTConnection> ret;
         synchronized (connections) {
             ret = new ArrayList<>(connections.values());
