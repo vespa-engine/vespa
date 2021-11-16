@@ -153,17 +153,10 @@ func getConsoleURL() string {
 }
 
 func getApiURL() string {
-	if vespa.Auth0AccessTokenEnabled() {
-		if getSystem() == "publiccd" {
-			return "https://api.vespa-external-cd.aws.oath.cloud:443"
-		}
-		return "https://api.vespa-external.aws.oath.cloud:443"
-	} else {
-		if getSystem() == "publiccd" {
-			return "https://api.vespa-external-cd.aws.oath.cloud:4443"
-		}
-		return "https://api.vespa-external.aws.oath.cloud:4443"
+	if getSystem() == "publiccd" {
+		return "https://api.vespa-external-cd.aws.oath.cloud:4443"
 	}
+	return "https://api.vespa-external.aws.oath.cloud:4443"
 }
 
 func getTarget() vespa.Target {
