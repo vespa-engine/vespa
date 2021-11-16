@@ -17,6 +17,8 @@
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.fast_access_doc_subdb");
 
@@ -314,9 +316,13 @@ FastAccessDocSubDB::onReprocessDone(SerialNum serialNum)
 {
     IFeedView::SP feedView = _iFeedView.get();
     IAttributeWriter::SP attrWriter = static_cast<FastAccessFeedView &>(*feedView).getAttributeWriter();
-    attrWriter->forceCommit(serialNum, std::shared_ptr<vespalib::IDestructorCallback>());
-    _writeService.attributeFieldWriter().sync_all();
-    _writeService.summary().sync();
+    vespalib::Gate gate;
+    {
+        auto onDone = std::make_shared<vespalib::GateCallback>(gate);
+        attrWriter->forceCommit(serialNum, onDone);
+        _writeService.summary().execute(vespalib::makeLambdaTask([done = std::move(onDone)]() { (void) done; }));
+    }
+    gate.await();
     Parent::onReprocessDone(serialNum);
 }
 
