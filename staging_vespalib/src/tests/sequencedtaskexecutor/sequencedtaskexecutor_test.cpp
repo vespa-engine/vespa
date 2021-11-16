@@ -269,7 +269,7 @@ TEST("require that similar names get perfect distribution with 4 executors") {
     EXPECT_EQUAL(3u, four->getExecutorIdFromName("f8").getId());
 }
 
-TEST("require that similar names gets 7/8 unique ids with 8 executors") {
+TEST("require that similar names get perfect distribution with 8 executors") {
     auto four = SequencedTaskExecutor::create(sequenced_executor, 8);
     EXPECT_EQUAL(0u, four->getExecutorIdFromName("f1").getId());
     EXPECT_EQUAL(1u, four->getExecutorIdFromName("f2").getId());
