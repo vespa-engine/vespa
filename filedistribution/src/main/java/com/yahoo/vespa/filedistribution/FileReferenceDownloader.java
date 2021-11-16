@@ -85,32 +85,40 @@ public class FileReferenceDownloader {
     }
 
     private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount) {
+        Request request = createRequest(fileReferenceDownload);
         Connection connection = connectionPool.getCurrent();
-        Request request = new Request("filedistribution.serveFile");
-        String fileReference = fileReferenceDownload.fileReference().value();
-        request.parameters().add(new StringValue(fileReference));
-        request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
-        double timeoutSecs = (double) rpcTimeout.getSeconds();
-        timeoutSecs += retryCount * 10.0;
-        connection.invokeSync(request, timeoutSecs);
+        connection.invokeSync(request, rpcTimeout(retryCount).getSeconds());
+
         Level logLevel = (retryCount > 3 ? Level.INFO : Level.FINE);
+        FileReference fileReference = fileReferenceDownload.fileReference();
         if (validateResponse(request)) {
             log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
             if (request.returnValues().get(0).asInt32() == 0) {
-                log.log(Level.FINE, () -> "Found file reference '" + fileReference + "' available at " + connection.getAddress());
+                log.log(Level.FINE, () -> "Found '" + fileReference + "' available at " + connection.getAddress());
                 return true;
             } else {
-                log.log(logLevel, "File reference '" + fileReference + "' not found at " + connection.getAddress());
+                log.log(logLevel, "'" + fileReference + "' not found at " + connection.getAddress());
                 connectionPool.switchConnection(connection);
                 return false;
             }
         } else {
-            log.log(logLevel, "Downloading file " + fileReference + " from " + connection.getAddress() + " failed: " +
-                                    request + ", error: " + request.errorMessage() + ", will use another config server for next request" +
-                                    " (retry " + retryCount + ", rpc timeout " + timeoutSecs + " seconds)");
+            log.log(logLevel, "Downloading " + fileReference + " from " + connection.getAddress() + " failed: " +
+                    request + ", error: " + request.errorMessage() + ", will switch config server for next request" +
+                    " (retry " + retryCount + ", rpc timeout " + rpcTimeout(retryCount));
             connectionPool.switchConnection(connection);
             return false;
         }
+    }
+
+    private Request createRequest(FileReferenceDownload fileReferenceDownload) {
+        Request request = new Request("filedistribution.serveFile");
+        request.parameters().add(new StringValue(fileReferenceDownload.fileReference().value()));
+        request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
+        return request;
+    }
+
+    private Duration rpcTimeout(int retryCount) {
+        return Duration.ofSeconds(rpcTimeout.getSeconds()).plus(Duration.ofSeconds(retryCount * 10L));
     }
 
     private boolean validateResponse(Request request) {
