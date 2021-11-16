@@ -76,6 +76,7 @@ class ServletOutputStreamWriter {
 
     void writeBuffer(ByteBuffer buf, CompletionHandler handler) {
         boolean thisThreadShouldWrite = false;
+        Throwable registrationFailure = null;
 
         synchronized (monitor) {
             if (state == State.FINISHED_OR_ERROR) {
@@ -85,8 +86,12 @@ class ServletOutputStreamWriter {
             responseContentQueue.addLast(new ResponseContentPart(buf, handler));
             switch (state) {
                 case NOT_STARTED:
-                    state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
-                    outputStream.setWriteListener(writeListener);
+                    try {
+                        outputStream.setWriteListener(writeListener);
+                        state = State.WAITING_FOR_WRITE_POSSIBLE_CALLBACK;
+                    } catch (Throwable t) {
+                        registrationFailure = t;
+                    }
                     break;
                 case WAITING_FOR_WRITE_POSSIBLE_CALLBACK:
                 case WRITING_BUFFERS:
@@ -98,6 +103,9 @@ class ServletOutputStreamWriter {
                 default:
                     throw new IllegalStateException("Invalid state " + state);
             }
+        }
+        if (registrationFailure != null) {
+            setFinished(registrationFailure);
         }
 
         if (thisThreadShouldWrite) {
