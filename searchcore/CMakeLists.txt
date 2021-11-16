@@ -102,6 +102,8 @@ vespa_define_module(
     src/tests/proton/documentdb/threading_service_config
     src/tests/proton/documentmetastore
     src/tests/proton/documentmetastore/lidreusedelayer
+    src/tests/proton/documentmetastore/lid_allocator
+    src/tests/proton/documentmetastore/lid_state_vector
     src/tests/proton/feed_and_search
     src/tests/proton/feedoperation
     src/tests/proton/feedtoken

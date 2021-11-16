@@ -195,7 +195,7 @@ mergeHitsIntoResultSet(const std::vector<HitCollector::Hit> &hits, ResultSet &re
     uint32_t rhCur(0);
     uint32_t rhEnd(result.getArrayUsed());
     for (const auto &hit : hits) {
-        while (rhCur != rhEnd && result[rhCur]._docId != hit.first) {
+        while (rhCur != rhEnd && result[rhCur].getDocId() != hit.first) {
             // just set the iterators right
             ++rhCur;
         }

@@ -150,8 +150,7 @@ add_subdirectory(vespajlib)
 add_subdirectory(vespalib)
 add_subdirectory(vespalog)
 if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND
-   NOT DEFINED VESPA_USE_SANITIZER AND
-   CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+   NOT DEFINED VESPA_USE_SANITIZER)
   add_subdirectory(vespamalloc)
 endif()
 add_subdirectory(vsm)

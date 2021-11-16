@@ -70,8 +70,8 @@ void checkResult(const ResultSet & rs, const std::vector<RankedHit> & exp)
         ASSERT_EQUAL(rs.getArrayUsed(), exp.size());
 
         for (uint32_t i = 0; i < exp.size(); ++i) {
-            EXPECT_EQUAL(rh[i]._docId, exp[i]._docId);
-            EXPECT_EQUAL(rh[i]._rankValue + 1.0, exp[i]._rankValue + 1.0);
+            EXPECT_EQUAL(rh[i].getDocId(), exp[i].getDocId());
+            EXPECT_EQUAL(rh[i].getRank() + 1.0, exp[i].getRank() + 1.0);
         }
     } else {
         ASSERT_TRUE(rs.getArray() == nullptr);

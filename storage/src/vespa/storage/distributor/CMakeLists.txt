@@ -32,6 +32,7 @@ vespa_add_library(storage_distributor
     messagetracker.cpp
     min_replica_provider.cpp
     multi_threaded_stripe_access_guard.cpp
+    node_supported_features_repo.cpp
     nodeinfo.cpp
     operation_routing_snapshot.cpp
     operation_sequencer.cpp

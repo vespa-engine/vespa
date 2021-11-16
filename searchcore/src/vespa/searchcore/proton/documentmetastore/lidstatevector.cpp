@@ -90,6 +90,50 @@ LidStateVector::setBit(unsigned int idx)
     _bv.setBitAndMaintainCount(idx);
 }
 
+template <bool do_set>
+uint32_t
+LidStateVector::assert_is_not_set_then_set_bits_helper(const std::vector<uint32_t>& idxs)
+{
+    uint32_t size = _bv.size();
+    uint32_t high = 0;
+    uint32_t low = size;
+    for (auto idx : idxs) {
+        assert(idx < size);
+        if (idx > high) {
+            high = idx;
+        }
+        assert(!_bv.testBit(idx));
+        if (do_set) {
+            if (idx < low) {
+                low = idx;
+            }
+            _bv.setBitAndMaintainCount(idx);
+        }
+    }
+    if (do_set) {
+        if (_trackLowest && low < _lowest) {
+            _lowest = low;
+        }
+        if (_trackHighest && high > _highest) {
+            _highest = high;
+        }
+    }
+    return high;
+}
+
+uint32_t
+LidStateVector::assert_not_set_bits(const std::vector<uint32_t>& idxs)
+{
+    return assert_is_not_set_then_set_bits_helper<false>(idxs);
+}
+
+uint32_t 
+LidStateVector::set_bits(const std::vector<uint32_t>& idxs)
+{
+    return assert_is_not_set_then_set_bits_helper<true>(idxs);
+}
+
+
 void
 LidStateVector::clearBit(unsigned int idx)
 {
@@ -98,6 +142,32 @@ LidStateVector::clearBit(unsigned int idx)
     _bv.clearBitAndMaintainCount(idx);
     maybeUpdateLowest();
     maybeUpdateHighest();
+}
+
+template <bool do_assert>
+void
+LidStateVector::assert_is_set_then_clear_bits_helper(const std::vector<uint32_t>& idxs)
+{
+    for (auto idx : idxs) {
+        if (do_assert) {
+            assert(_bv.testBit(idx));
+        }
+        _bv.clearBitAndMaintainCount(idx);
+    }
+    maybeUpdateLowest();
+    maybeUpdateHighest();
+}
+
+void 
+LidStateVector::consider_clear_bits(const std::vector<uint32_t>& idxs)
+{
+    assert_is_set_then_clear_bits_helper<false>(idxs);
+}
+
+void 
+LidStateVector::clear_bits(const std::vector<uint32_t>& idxs)
+{
+    assert_is_set_then_clear_bits_helper<true>(idxs);
 }
 
 }  // namespace proton

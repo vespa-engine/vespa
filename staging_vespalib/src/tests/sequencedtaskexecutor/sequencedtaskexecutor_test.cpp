@@ -242,11 +242,16 @@ TEST("require that you get correct number of executors") {
 TEST("require that you distribute well") {
     auto seven = SequencedTaskExecutor::create(sequenced_executor, 7);
     const SequencedTaskExecutor & seq = dynamic_cast<const SequencedTaskExecutor &>(*seven);
+    const uint32_t NUM_EXACT = 8 * seven->getNumExecutors();
     EXPECT_EQUAL(7u, seven->getNumExecutors());
     EXPECT_EQUAL(97u, seq.getComponentHashSize());
     EXPECT_EQUAL(0u, seq.getComponentEffectiveHashSize());
     for (uint32_t id=0; id < 1000; id++) {
-        EXPECT_EQUAL((id%97)%7, seven->getExecutorId(id).getId());
+        if (id < NUM_EXACT) {
+            EXPECT_EQUAL(id % seven->getNumExecutors(), seven->getExecutorId(id).getId());
+        } else {
+            EXPECT_EQUAL(((id - NUM_EXACT) % 97) % seven->getNumExecutors(), seven->getExecutorId(id).getId());
+        }
     }
     EXPECT_EQUAL(97u, seq.getComponentHashSize());
     EXPECT_EQUAL(97u, seq.getComponentEffectiveHashSize());
@@ -264,7 +269,7 @@ TEST("require that similar names get perfect distribution with 4 executors") {
     EXPECT_EQUAL(3u, four->getExecutorIdFromName("f8").getId());
 }
 
-TEST("require that similar names gets 7/8 unique ids with 8 executors") {
+TEST("require that similar names get perfect distribution with 8 executors") {
     auto four = SequencedTaskExecutor::create(sequenced_executor, 8);
     EXPECT_EQUAL(0u, four->getExecutorIdFromName("f1").getId());
     EXPECT_EQUAL(1u, four->getExecutorIdFromName("f2").getId());
@@ -272,8 +277,8 @@ TEST("require that similar names gets 7/8 unique ids with 8 executors") {
     EXPECT_EQUAL(3u, four->getExecutorIdFromName("f4").getId());
     EXPECT_EQUAL(4u, four->getExecutorIdFromName("f5").getId());
     EXPECT_EQUAL(5u, four->getExecutorIdFromName("f6").getId());
-    EXPECT_EQUAL(2u, four->getExecutorIdFromName("f7").getId());
-    EXPECT_EQUAL(6u, four->getExecutorIdFromName("f8").getId());
+    EXPECT_EQUAL(6u, four->getExecutorIdFromName("f7").getId());
+    EXPECT_EQUAL(7u, four->getExecutorIdFromName("f8").getId());
 }
 
 TEST("Test creation of different types") {

@@ -7,10 +7,10 @@ namespace proton::matching {
 namespace {
 
 bool before(const search::RankedHit &a, const search::RankedHit &b) {
-    if (a._rankValue != b._rankValue) {
-        return (a._rankValue > b._rankValue);
+    if (a.getRank() != b.getRank()) {
+        return (a.getRank() > b.getRank());
     }
-    return (a._docId < b._docId);
+    return (a.getDocId() < b.getDocId());
 }
 
 void mergeHits(size_t maxHits,

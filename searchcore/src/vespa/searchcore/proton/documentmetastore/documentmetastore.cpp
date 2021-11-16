@@ -9,6 +9,7 @@
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
+#include <vespa/searchcore/proton/bucketdb/remove_batch_entry.h>
 #include <vespa/searchcore/proton/bucketdb/splitbucketsession.h>
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
@@ -30,6 +31,7 @@ LOG_SETUP(".proton.documentmetastore");
 using document::BucketId;
 using document::GlobalId;
 using proton::bucketdb::BucketState;
+using proton::bucketdb::RemoveBatchEntry;
 using proton::documentmetastore::GidToLidMapKey;
 using search::AttributeVector;
 using search::FileReader;
@@ -681,13 +683,15 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
     remove_batch_internal_btree(removed);
     _lidAlloc.unregister_lids(lidsToRemove);
     {
-        bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
-        // TODO: add remove_batch() method to BucketDB
+        std::vector<RemoveBatchEntry> bdb_removed;
+        bdb_removed.reserve(removed.size());
         for (const auto& lid_and_meta : removed) {
             auto& meta = lid_and_meta.second;
-            bucketGuard->remove(meta.getGid(), meta.getBucketId().stripUnused(),
-                                meta.getTimestamp(), meta.getDocSize(), _subDbType);
+            bdb_removed.emplace_back(meta.getGid(), meta.getBucketId().stripUnused(),
+                                     meta.getTimestamp(), meta.getDocSize());
         }
+        bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
+        bucketGuard->remove_batch(bdb_removed, _subDbType);
     }
     incGeneration();
     if (_op_listener) {

@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.container.image.Image;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
 import java.time.Duration;
@@ -109,7 +110,7 @@ public class ContainerEngineMock implements ContainerEngine {
     }
 
     @Override
-    public CommandResult executeAsRoot(NodeAgentContext context, Duration timeout, String... command) {
+    public CommandResult execute(NodeAgentContext context, UnixUser user, Duration timeout, String... command) {
         return new CommandResult(null, 0, "");
     }
 

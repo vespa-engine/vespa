@@ -33,6 +33,10 @@ struct MockTickableStripe : TickableStripe {
     void update_read_snapshot_after_activation(const lib::ClusterStateBundle&) override { abort(); }
     void clear_read_only_bucket_repo_databases() override { abort(); }
 
+    void update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo>) override {
+        abort();
+    }
+
     void report_bucket_db_status(document::BucketSpace, std::ostream&) const override { abort(); }
     StripeAccessGuard::PendingOperationStats pending_operation_stats() const override { abort(); }
     void report_single_bucket_requests(vespalib::xml::XmlOutputStream&) const override { abort(); }

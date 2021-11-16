@@ -201,7 +201,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
 
         @Override
         public CommandResult executeCommandInNode(List<String> command, boolean logOutput) {
-            CommandResult result = container.executeCommandInContainerAsRoot(nodeAgentCtx, command.toArray(new String[0]));
+            CommandResult result = container.executeCommandInContainer(nodeAgentCtx, nodeAgentCtx.users().vespa(), command.toArray(new String[0]));
             String cmdString = command.stream().map(s -> "'" + s + "'").collect(Collectors.joining(" ", "\"", "\""));
             int exitCode = result.getExitCode();
             String output = result.getOutput().trim();

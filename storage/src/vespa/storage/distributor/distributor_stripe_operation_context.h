@@ -16,6 +16,7 @@ namespace storage::lib { class ClusterStateBundle; }
 namespace storage::distributor {
 
 class PendingMessageTracker;
+class NodeSupportedFeaturesRepo;
 
 /**
  * Interface with functionality that is used when handling distributor stripe operations.
@@ -57,6 +58,7 @@ public:
     virtual const lib::ClusterStateBundle& cluster_state_bundle() const = 0;
     virtual bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const = 0;
     virtual const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const = 0;
+    virtual const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept = 0;
 };
 
 }

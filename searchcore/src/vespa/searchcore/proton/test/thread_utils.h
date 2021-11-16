@@ -14,7 +14,7 @@ void
 runInMaster(searchcorespi::index::IThreadingService &writeService, FunctionType func)
 {
     writeService.master().execute(vespalib::makeLambdaTask(std::move(func)));
-    writeService.sync();
+    writeService.sync_all_executors();
 }
 
 }

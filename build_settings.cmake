@@ -35,6 +35,7 @@ endif()
 
 # Warnings that are specific to C++ compilation
 # Note: this is not a union of C_WARN_OPTS, since CMAKE_CXX_FLAGS already includes CMAKE_C_FLAGS, which in turn includes C_WARN_OPTS transitively
+set(VESPA_ATOMIC_LIB "atomic")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
   set(CXX_SPECIFIC_WARN_OPTS "-Wnon-virtual-dtor -Wformat-security -Wno-overloaded-virtual")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-delete-null-pointer-checks -fsized-deallocation")
@@ -43,7 +44,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
     set(VESPA_GCC_LIB "")
     set(VESPA_STDCXX_FS_LIB "")
   else()
-    set(VESPA_ATOMIC_LIB "atomic")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)
       set(VESPA_GCC_LIB "gcc")
       set(VESPA_STDCXX_FS_LIB "stdc++fs")
@@ -54,17 +54,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
   endif()
 else()
   set(CXX_SPECIFIC_WARN_OPTS "-Wnoexcept -Wsuggest-override -Wnon-virtual-dtor -Wformat-security")
-  if(VESPA_OS_DISTRO_COMBINED STREQUAL "centos 8" OR
-      (VESPA_OS_DISTRO STREQUAL "rocky" AND
-	VESPA_OS_DISTRO_VERSION VERSION_GREATER_EQUAL "8" AND
-	VESPA_OS_DISTRO_VERSION VERSION_LESS "9") OR
-      (VESPA_OS_DISTRO STREQUAL "rhel" AND
-	VESPA_OS_DISTRO_VERSION VERSION_GREATER_EQUAL "8" AND
-	VESPA_OS_DISTRO_VERSION VERSION_LESS "9"))
-    set(VESPA_ATOMIC_LIB "")
-  else()
-    set(VESPA_ATOMIC_LIB "atomic")
-  endif()
   set(VESPA_GCC_LIB "gcc")
   set(VESPA_STDCXX_FS_LIB "stdc++fs")
 endif()

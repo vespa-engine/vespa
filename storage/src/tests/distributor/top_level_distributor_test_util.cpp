@@ -115,13 +115,13 @@ TopLevelDistributorTestUtil::handle_top_level_message(const std::shared_ptr<api:
 void
 TopLevelDistributorTestUtil::close()
 {
-    _component.reset(0);
-    if (_distributor.get()) {
+    _component.reset();
+    if (_distributor) {
         _stripe_pool->stop_and_join(); // Must be tagged as stopped prior to onClose
         _distributor->onClose();
     }
     _sender.clear();
-    _node.reset(0);
+    _node.reset();
     _config = getStandardConfig(false);
 }
 

@@ -29,7 +29,7 @@ public:
         uint64_t
         operator()(const LoadedEnumAttribute &v)
         {
-            return (static_cast<uint64_t>(v._enum) << 32) | v._docId;
+            return (static_cast<uint64_t>(v._enum) << 32) | v.getDocId();
         } 
     };
 

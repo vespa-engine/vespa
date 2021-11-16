@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.container.image.ContainerImageDownloade
 import com.yahoo.vespa.hosted.node.admin.container.image.ContainerImagePruner;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 
@@ -66,13 +67,13 @@ public class ContainerOperations {
     }
 
     /** Executes a command inside container identified by given context. Does NOT throw on non-zero exit code */
-    public CommandResult executeCommandInContainerAsRoot(NodeAgentContext context, String... command) {
-        return executeCommandInContainerAsRoot(context, CommandLine.DEFAULT_TIMEOUT.toSeconds(), command);
+    public CommandResult executeCommandInContainer(NodeAgentContext context, UnixUser user, String... command) {
+        return executeCommandInContainer(context, user, CommandLine.DEFAULT_TIMEOUT, command);
     }
 
     /** Execute command inside container identified by given context. Does NOT throw on non-zero exit code */
-    public CommandResult executeCommandInContainerAsRoot(NodeAgentContext context, Long timeoutSeconds, String... command) {
-        return containerEngine.executeAsRoot(context, Duration.ofSeconds(timeoutSeconds), command);
+    public CommandResult executeCommandInContainer(NodeAgentContext context, UnixUser user, Duration timeout, String... command) {
+        return containerEngine.execute(context, user, timeout, command);
     }
 
     /** Execute command in inside containers network namespace, identified by given context. Throws on non-zero exit code */
@@ -142,7 +143,7 @@ public class ContainerOperations {
 
     private String executeNodeCtlInContainer(NodeAgentContext context, String program) {
         String[] command = new String[] {context.paths().underVespaHome("bin/vespa-nodectl").pathInContainer(), program};
-        return executeCommandInContainerAsRoot(context, command).getOutput();
+        return executeCommandInContainer(context, context.users().vespa(), command).getOutput();
     }
 
 }

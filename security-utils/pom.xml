@@ -12,12 +12,6 @@
   <packaging>bundle</packaging>
   <version>7-SNAPSHOT</version>
 
-  <properties>
-    <!-- vespa-http-client targets jdk8 and uses this library -->
-    <!-- TODO remove once vespa-http-client no longer builds against jdk8 -->
-    <maven.compiler.release>8</maven.compiler.release>
-  </properties>
-
   <dependencies>
     <!-- provided -->
     <dependency>
@@ -73,11 +67,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <jdkToolchain>
-            <version>${java.version}</version>
-          </jdkToolchain>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
+          <release>${vespaClients.jdk.releaseVersion}</release>
           <showDeprecation>true</showDeprecation>
           <compilerArgs>
             <arg>-Xlint:all</arg>

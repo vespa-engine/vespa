@@ -118,6 +118,7 @@ private:
     Timestamp _maxTimestamp;
     uint32_t _clusterStateVersion;
     std::vector<uint16_t> _chain;
+    bool _use_unordered_forwarding;
 
 public:
     MergeBucketCommand(const document::Bucket &bucket,
@@ -133,6 +134,11 @@ public:
     uint32_t getClusterStateVersion() const { return _clusterStateVersion; }
     void setClusterStateVersion(uint32_t version) { _clusterStateVersion = version; }
     void setChain(const std::vector<uint16_t>& chain) { _chain = chain; }
+    void set_use_unordered_forwarding(bool unordered_forwarding) noexcept {
+        _use_unordered_forwarding = unordered_forwarding;
+    }
+    [[nodiscard]] bool use_unordered_forwarding() const noexcept { return _use_unordered_forwarding; }
+    [[nodiscard]] bool from_distributor() const noexcept { return _chain.empty(); }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGECOMMAND(MergeBucketCommand, onMergeBucket)
 };
@@ -385,19 +391,30 @@ public:
             : _bucketId(id), _info(info) {}
         friend std::ostream& operator<<(std::ostream& os, const Entry&);
     };
-    typedef vespalib::Array<Entry> EntryVector;
+    struct SupportedNodeFeatures {
+        bool unordered_merge_chaining = false;
+    };
+    using EntryVector = vespalib::Array<Entry>;
 private:
-    EntryVector _buckets;
-    bool _full_bucket_fetch;
-    document::BucketId _super_bucket_id;
+    EntryVector           _buckets;
+    bool                  _full_bucket_fetch;
+    document::BucketId    _super_bucket_id;
+    SupportedNodeFeatures _supported_node_features;
 
 public:
 
     explicit RequestBucketInfoReply(const RequestBucketInfoCommand& cmd);
-    ~RequestBucketInfoReply();
+    ~RequestBucketInfoReply() override;
     const EntryVector & getBucketInfo() const { return _buckets; }
     EntryVector & getBucketInfo() { return _buckets; }
     [[nodiscard]] bool full_bucket_fetch() const noexcept { return _full_bucket_fetch; }
+    // Only contains useful information if full_bucket_fetch() == true
+    [[nodiscard]] const SupportedNodeFeatures& supported_node_features() const noexcept {
+        return _supported_node_features;
+    }
+    [[nodiscard]] SupportedNodeFeatures& supported_node_features() noexcept {
+        return _supported_node_features;
+    }
     const document::BucketId& super_bucket_id() const { return _super_bucket_id; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(RequestBucketInfoReply, onRequestBucketInfoReply)

@@ -7,6 +7,7 @@
 #include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
+#include "node_supported_features_repo.h"
 #include "simpleclusterinformation.h"
 #include "stripe_access_guard.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -47,11 +48,12 @@ TopLevelBucketDBUpdater::TopLevelBucketDBUpdater(const DistributorNodeContext& n
       _chained_sender(chained_sender),
       _outdated_nodes_map(),
       _transition_timer(_node_ctx.clock()),
+      _node_supported_features_repo(std::make_shared<const NodeSupportedFeaturesRepo>()),
       _stale_reads_enabled(false)
 {
     // FIXME STRIPE top-level Distributor needs a proper way to track the current cluster state bundle!
     propagate_active_state_bundle_internally(true); // We're just starting up so assume ownership transfer.
-    bootstrap_distribution_config(bootstrap_distribution);
+    bootstrap_distribution_config(std::move(bootstrap_distribution));
 }
 
 TopLevelBucketDBUpdater::~TopLevelBucketDBUpdater() = default;
@@ -392,6 +394,10 @@ TopLevelBucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard
         // initiated by the cluster controller!
         guard.notify_distribution_change_enabled();
     }
+
+    _node_supported_features_repo = _node_supported_features_repo->make_union_of(
+            _pending_cluster_state->gathered_node_supported_features());
+    guard.update_node_supported_features_repo(_node_supported_features_repo);
 
     guard.update_read_snapshot_after_activation(_pending_cluster_state->getNewClusterStateBundle());
     _pending_cluster_state.reset();

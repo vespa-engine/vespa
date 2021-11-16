@@ -1,13 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketdb.h"
+#include "remove_batch_entry.h"
 #include <cassert>
 #include <algorithm>
+#include <optional>
 
 using document::GlobalId;
 using storage::spi::BucketChecksum;
 
 namespace proton {
+
+using bucketdb::RemoveBatchEntry;
 
 BucketDB::BucketDB()
     : _map(),
@@ -62,6 +66,20 @@ BucketDB::remove(const GlobalId &gid,
 {
     BucketState &state = _map[bucketId];
     state.remove(gid, timestamp, docSize, subDbType);
+}
+
+void
+BucketDB::remove_batch(const std::vector<RemoveBatchEntry> &removed, SubDbType sub_db_type)
+{
+    std::optional<BucketId> prev_bucket_id;
+    BucketState* state = nullptr;
+    for (auto &entry : removed) {
+        if (!prev_bucket_id.has_value() || prev_bucket_id.value() != entry.get_bucket_id()) {
+            state = &_map[entry.get_bucket_id()];
+            prev_bucket_id = entry.get_bucket_id();
+        }
+        state->remove(entry.get_gid(), entry.get_timestamp(), entry.get_doc_size(), sub_db_type);
+    }
 }
 
 void

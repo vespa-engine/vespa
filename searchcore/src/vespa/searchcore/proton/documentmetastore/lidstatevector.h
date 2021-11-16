@@ -25,6 +25,10 @@ class LidStateVector
         if (_trackHighest && _highest != 0 && !_bv.testBit(_highest))
             updateHighest();
     }
+    template <bool do_set>
+    uint32_t assert_is_not_set_then_set_bits_helper(const std::vector<uint32_t>& idxs);
+    template <bool do_assert>
+    void assert_is_set_then_clear_bits_helper(const std::vector<uint32_t>& idxs);
 public:
     
     LidStateVector(unsigned int newSize, unsigned int newCapacity,
@@ -35,7 +39,11 @@ public:
 
     void resizeVector(uint32_t newSize, uint32_t newCapacity);
     void setBit(unsigned int idx);
+    uint32_t assert_not_set_bits(const std::vector<uint32_t>& idxs);
+    uint32_t set_bits(const std::vector<uint32_t>& idxs);
     void clearBit(unsigned int idx);
+    void consider_clear_bits(const std::vector<uint32_t>& idxs);
+    void clear_bits(const std::vector<uint32_t>& idxs);
     bool testBit(unsigned int idx) const { return _bv.testBit(idx); }
     unsigned int size() const { return _bv.size(); }
     unsigned int byteSize() const {

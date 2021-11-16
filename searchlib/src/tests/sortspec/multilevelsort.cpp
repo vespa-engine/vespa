@@ -275,21 +275,21 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
         for (uint32_t j = 0; j < spec.size(); ++j) {
             int cmp = 0;
             if (spec[j]._type == RANK) {
-                if (hits[i]._rankValue < hits[i+1]._rankValue) {
+                if (hits[i].getRank() < hits[i+1].getRank()) {
                     cmp = -1;
-                } else if (hits[i]._rankValue > hits[i+1]._rankValue) {
+                } else if (hits[i].getRank() > hits[i+1].getRank()) {
                     cmp = 1;
                 }
             } else if (spec[j]._type == DOCID) {
-                if (hits[i]._docId < hits[i+1]._docId) {
+                if (hits[i].getDocId() < hits[i+1].getDocId()) {
                     cmp = -1;
-                } else if (hits[i]._docId > hits[i+1]._docId) {
+                } else if (hits[i].getDocId() > hits[i+1].getDocId()) {
                     cmp = 1;
                 }
             } else {
                 AttributeVector *av = vec[spec[j]._name].get();
                 cmp = compare(av, spec[j]._type,
-                              hits[i]._docId, hits[i+1]._docId);
+                              hits[i].getDocId(), hits[i+1].getDocId());
             }
             if (spec[j]._asc) {
                 EXPECT_TRUE(cmp <= 0);

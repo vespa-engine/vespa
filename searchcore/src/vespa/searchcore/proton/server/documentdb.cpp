@@ -378,7 +378,7 @@ DocumentDB::enterOnlineState()
     // Called by executor thread
     // Ensure that all replayed operations are committed to memory structures
     _feedView.get()->forceCommit(CommitParam(_feedHandler->getSerialNum()));
-    _writeService.sync();
+    _writeService.sync_all_executors();
 
     (void) _state.enterOnlineState();
     // Consider delayed pruning of transaction log and config history
@@ -467,7 +467,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         // Flush changes to attributes and memory index, cf. visibilityDelay
         _feedView.get()->forceCommit(CommitParam(elidedConfigSave ? serialNum : serialNum - 1),
                                      std::make_shared<vespalib::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
-        _writeService.sync();
+        _writeService.sync_all_executors();
     }
     if (params.shouldMaintenanceControllerChange()) {
         _maintenanceController.killJobs();
@@ -575,15 +575,15 @@ DocumentDB::close()
     // Caller should have removed document DB from feed router.
     _refCount.waitForZeroRefCount();
 
-    _writeService.sync();
+    _writeService.sync_all_executors();
 
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics &metrics = getMetrics();
     _metricsWireService.cleanAttributes(metrics.ready.attributes);
     _metricsWireService.cleanAttributes(metrics.notReady.attributes);
-    _writeService.sync();
+    _writeService.sync_all_executors();
     masterExecute([this] () { closeSubDBs(); } );
-    _writeService.sync();
+    _writeService.sync_all_executors();
     // What about queued tasks ?
     _writeService.shutdown();
     _maintenanceController.kill();
@@ -920,7 +920,7 @@ DocumentDB::syncFeedView()
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
     _maintenanceController.killJobs();
-    _writeService.sync();
+    _writeService.sync_all_executors();
 
     _feedView.set(newFeedView);
     _feedHandler->setActiveFeedView(newFeedView.get());
@@ -994,7 +994,7 @@ void
 DocumentDB::stopMaintenance()
 {
     _maintenanceController.stop();
-    _writeService.sync();
+    _writeService.sync_all_executors();
 }
 
 void

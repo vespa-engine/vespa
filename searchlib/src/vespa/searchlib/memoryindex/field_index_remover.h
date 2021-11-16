@@ -21,6 +21,7 @@ private:
     struct WordFieldDocTuple {
         vespalib::datastore::EntryRef _wordRef;
         uint32_t _docId;
+
         WordFieldDocTuple() noexcept :
             _wordRef(0),
             _docId(0)

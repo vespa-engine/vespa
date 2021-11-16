@@ -161,7 +161,7 @@ private:
 
     ActiveMergeMap _merges;
     MergePriorityQueue _queue;
-    std::size_t _maxQueueSize;
+    size_t _maxQueueSize;
     mbus::StaticThrottlePolicy::UP _throttlePolicy;
     uint64_t _queueSequence; // TODO: move into a stable priority queue class
     mutable std::mutex _messageLock;
@@ -220,7 +220,7 @@ public:
     std::mutex& getStateLock() { return _stateLock; }
 
     Metrics& getMetrics() { return *_metrics; }
-    std::size_t getMaxQueueSize() const { return _maxQueueSize; }
+    size_t getMaxQueueSize() const { return _maxQueueSize; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 private:
@@ -230,17 +230,18 @@ private:
     struct MergeNodeSequence {
         const api::MergeBucketCommand& _cmd;
         std::vector<api::MergeBucketCommand::Node> _sortedNodes;
-        std::size_t _sortedIndex; // Index of current storage node in the sorted node sequence
+        uint16_t _sortedIndex; // Index of current storage node in the sorted node sequence
+        uint16_t _unordered_index;
         const uint16_t _thisIndex; // Index of the current storage node
+        bool _use_unordered_forwarding;
 
         MergeNodeSequence(const api::MergeBucketCommand& cmd, uint16_t thisIndex);
 
-        std::size_t getSortedIndex() const { return _sortedIndex; }
         const std::vector<api::MergeBucketCommand::Node>& getSortedNodes() const {
             return _sortedNodes;
         }
         bool isIndexUnknown() const {
-            return (_sortedIndex == std::numeric_limits<std::size_t>::max());
+            return (_sortedIndex == UINT16_MAX);
         }
         /**
          * This node is the merge executor if it's the first element in the
@@ -252,11 +253,17 @@ private:
         uint16_t getExecutorNodeIndex() const{
             return _cmd.getNodes()[0].index;
         }
-        bool isLastNode() const {
-            return (_sortedIndex == _sortedNodes.size() - 1);
+        const std::vector<api::MergeBucketCommand::Node>& unordered_nodes() const noexcept {
+            return _cmd.getNodes();
         }
-        bool chainContainsIndex(uint16_t idx) const;
-        uint16_t getThisNodeIndex() const { return _thisIndex; }
+        [[nodiscard]] bool isLastNode() const {
+            if (!_use_unordered_forwarding) {
+                return (_sortedIndex == _sortedNodes.size() - 1);
+            } else {
+                return (_unordered_index == (unordered_nodes().size() - 1));
+            }
+        }
+        [[nodiscard]] bool chain_contains_this_node() const noexcept;
         /**
          * Gets node to forward to in strictly increasing order.
          */
@@ -339,7 +346,7 @@ private:
      * @return Highest priority waiting merge or null SP if queue is empty
      */
     api::StorageMessage::SP getNextQueuedMerge();
-    void enqueueMerge(const api::StorageMessage::SP& msg, MessageGuard& msgGuard);
+    void enqueue_merge_for_later_processing(const api::StorageMessage::SP& msg, MessageGuard& msgGuard);
 
     /**
      * @return true if throttle policy says at least one additional
@@ -347,12 +354,13 @@ private:
      */
     bool canProcessNewMerge() const;
 
-    bool merge_is_backpressure_throttled(const api::MergeBucketCommand& cmd) const;
+    [[nodiscard]] bool merge_is_backpressure_throttled(const api::MergeBucketCommand& cmd) const;
     void bounce_backpressure_throttled_merge(const api::MergeBucketCommand& cmd, MessageGuard& guard);
-    bool merge_has_this_node_as_source_only_node(const api::MergeBucketCommand& cmd) const;
-    bool backpressure_mode_active_no_lock() const;
+    [[nodiscard]] bool merge_has_this_node_as_source_only_node(const api::MergeBucketCommand& cmd) const;
+    [[nodiscard]] bool backpressure_mode_active_no_lock() const;
     void backpressure_bounce_all_queued_merges(MessageGuard& guard);
-    bool allow_merge_with_queue_full(const api::MergeBucketCommand& cmd) const noexcept;
+    [[nodiscard]] static bool allow_merge_despite_full_window(const api::MergeBucketCommand& cmd) noexcept;
+    [[nodiscard]] bool may_allow_into_queue(const api::MergeBucketCommand& cmd) const noexcept;
 
     void sendReply(const api::MergeBucketCommand& cmd,
                    const api::ReturnCode& result,

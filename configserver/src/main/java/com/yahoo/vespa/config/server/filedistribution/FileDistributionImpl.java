@@ -41,8 +41,8 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
         return fileReferencesDir;
     }
 
-    // Notifies config proxy which file references it should start downloading. It's OK if the call does not succeed,
-    // as downloading will then start synchronously when a service requests a file reference instead
+    // Notifies client which file references it should start downloading. It's OK if the call does not succeed,
+    // as this is just a hint to the client to start downloading. Currently the only client is the config server
     private void startDownloadingFileReferences(String hostName, int port, Set<FileReference> fileReferences) {
         Target target = supervisor.connect(new Spec(hostName, port));
         Request request = new Request("filedistribution.setFileReferencesToDownload");

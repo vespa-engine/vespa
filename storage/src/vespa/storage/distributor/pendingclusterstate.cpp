@@ -9,6 +9,7 @@
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/xmlstream.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <climits>
 
 #include <vespa/log/bufferedlogger.h>
@@ -44,7 +45,8 @@ PendingClusterState::PendingClusterState(
       _clusterStateVersion(_cmd->getClusterStateBundle().getVersion()),
       _isVersionedTransition(true),
       _bucketOwnershipTransfer(false),
-      _pendingTransitions()
+      _pendingTransitions(),
+      _node_features()
 {
     logConstructionInformation();
     initializeBucketSpaceTransitions(false, outdatedNodesMap);
@@ -67,7 +69,8 @@ PendingClusterState::PendingClusterState(
       _clusterStateVersion(0),
       _isVersionedTransition(false),
       _bucketOwnershipTransfer(true),
-      _pendingTransitions()
+      _pendingTransitions(),
+      _node_features()
 {
     logConstructionInformation();
     initializeBucketSpaceTransitions(true, OutdatedNodesMap());
@@ -287,6 +290,9 @@ PendingClusterState::onRequestBucketInfoReply(const std::shared_ptr<api::Request
     auto transitionIter = _pendingTransitions.find(bucketSpaceAndNode.bucketSpace);
     assert(transitionIter != _pendingTransitions.end());
     transitionIter->second->onRequestBucketInfoReply(*reply, bucketSpaceAndNode.node);
+
+    update_node_supported_features_from_reply(iter->second.node, *reply);
+
     _sentMessages.erase(iter);
 
     return true;
@@ -302,21 +308,6 @@ PendingClusterState::resendDelayedMessages() {
         requestNode(_delayedRequests.front().second);
         _delayedRequests.pop_front();
     }
-}
-
-std::string
-PendingClusterState::requestNodesToString() const
-{
-    std::ostringstream ost;
-    for (uint32_t i = 0; i < _requestedNodes.size(); ++i) {
-        if (_requestedNodes[i]) {
-            if (ost.str().length() > 0) {
-                ost << ",";
-            }
-            ost << i;
-        }
-    }
-    return ost.str();
 }
 
 void
@@ -364,6 +355,16 @@ PendingClusterState::getNewClusterStateBundleString() const {
 std::string
 PendingClusterState::getPrevClusterStateBundleString() const {
     return _prevClusterStateBundle.getBaselineClusterState()->toString();
+}
+
+void
+PendingClusterState::update_node_supported_features_from_reply(uint16_t node, const api::RequestBucketInfoReply& reply)
+{
+    const auto& src_feat = reply.supported_node_features();
+    NodeSupportedFeatures dest_feat;
+    dest_feat.unordered_merge_chaining = src_feat.unordered_merge_chaining;
+    // This will overwrite per bucket-space reply, but does not matter since it's independent of bucket space.
+    _node_features.insert(std::make_pair(node, dest_feat));
 }
 
 }

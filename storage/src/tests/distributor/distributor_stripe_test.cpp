@@ -185,6 +185,12 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
         configure_stripe(builder);
     }
 
+    void configure_use_unordered_merge_chaining(bool use_unordered) {
+        ConfigBuilder builder;
+        builder.useUnorderedMergeChaining = use_unordered;
+        configure_stripe(builder);
+    }
+
     bool scheduler_has_implicitly_clear_priority_on_schedule_set() const noexcept {
         return _stripe->_scheduler->implicitly_clear_priority_on_schedule();
     }
@@ -980,6 +986,17 @@ TEST_F(DistributorStripeTest, closing_aborts_gets_started_outside_stripe_thread)
     _stripe->flush_and_close();
     ASSERT_EQ(1, _sender.replies().size());
     EXPECT_EQ(api::ReturnCode::ABORTED, _sender.reply(0)->getResult().getResult());
+}
+
+TEST_F(DistributorStripeTest, use_unordered_merge_chaining_config_is_propagated_to_internal_config)
+{
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_use_unordered_merge_chaining(true);
+    EXPECT_TRUE(getConfig().use_unordered_merge_chaining());
+
+    configure_use_unordered_merge_chaining(false);
+    EXPECT_FALSE(getConfig().use_unordered_merge_chaining());
 }
 
 }

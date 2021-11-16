@@ -10,13 +10,11 @@
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
-#include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
-#include <vespa/searchcore/proton/reprocessing/document_reprocessing_handler.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
 #include <vespa/log/log.h>
@@ -275,6 +273,9 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
             reconfigureAttributeMetrics(*newMgr, *oldMgr);
         }
         _iFeedView.set(_fastAccessFeedView.get());
+        if (isNodeRetired()) {
+            reconfigureAttributesConsideringNodeState();
+        }
     }
     return tasks;
 }

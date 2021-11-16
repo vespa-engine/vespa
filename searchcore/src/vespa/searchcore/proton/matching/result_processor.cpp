@@ -108,7 +108,7 @@ ResultProcessor::extract_docid_ordering(const PartialResult &result) const
     std::vector<std::pair<uint32_t,uint32_t>> list;
     list.reserve(est_size);
     for (size_t i = _offset; i < result.size(); ++i) {
-        list.emplace_back(result.hit(i)._docId, list.size());
+        list.emplace_back(result.hit(i).getDocId(), list.size());
     }
     std::sort(list.begin(), list.end(), [](const auto &a, const auto &b){ return (a.first < b.first); });
     return list;
@@ -142,11 +142,11 @@ ResultProcessor::makeReply(PartialResultUP full_result)
     for (size_t i = 0; i < hitcnt; ++i) {
         search::engine::SearchReply::Hit &dst = r.hits[i];
         const search::RankedHit &src = result.hit(hitOffset + i);
-        uint32_t docId = src._docId;
+        uint32_t docId = src.getDocId();
         if (metaStore.getGidEvenIfMoved(docId, gid)) {
             dst.gid = gid;
         }
-        dst.metric = src._rankValue;
+        dst.metric = src.getRank();
         LOG(debug, "convertLidToGid: hit[%zu]: lid(%u) -> gid(%s)", i, docId, dst.gid.toString().c_str());
     }
     if (result.hasSortData() && (hitcnt > 0)) {

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.servicedump;
 
-import com.yahoo.yolean.concurrent.Sleeper;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -12,6 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.test.file.TestFileSystem;
+import com.yahoo.yolean.concurrent.Sleeper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -62,7 +62,7 @@ class VespaServiceDumperImplTest {
     void invokes_perf_commands_when_generating_perf_report() {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainerAsRoot(any(), any()))
+        when(operations.executeCommandInContainer(any(), any(), any()))
                 .thenReturn(new CommandResult(null, 0, "12345"))
                 .thenReturn(new CommandResult(null, 0, ""))
                 .thenReturn(new CommandResult(null, 0, ""));
@@ -78,13 +78,13 @@ class VespaServiceDumperImplTest {
                 .build();
         reporter.processServiceDumpRequest(context);
 
-        verify(operations).executeCommandInContainerAsRoot(
-                context, "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
-        verify(operations).executeCommandInContainerAsRoot(
-                context, "perf", "record", "-g", "--output=/opt/vespa/tmp/vespa-service-dump/perf-record.bin",
+        verify(operations).executeCommandInContainer(
+                context, context.users().vespa(), "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
+        verify(operations).executeCommandInContainer(
+                context, context.users().vespa(), "perf", "record", "-g", "--output=/opt/vespa/tmp/vespa-service-dump/perf-record.bin",
                 "--pid=12345", "sleep", "45");
-        verify(operations).executeCommandInContainerAsRoot(
-                context, "bash", "-c", "perf report --input=/opt/vespa/tmp/vespa-service-dump/perf-record.bin" +
+        verify(operations).executeCommandInContainer(
+                context, context.users().vespa(), "bash", "-c", "perf report --input=/opt/vespa/tmp/vespa-service-dump/perf-record.bin" +
                         " > /opt/vespa/tmp/vespa-service-dump/perf-report.txt");
 
         String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000,\"completedAt\":1600001000000," +
@@ -103,7 +103,7 @@ class VespaServiceDumperImplTest {
     void invokes_jcmd_commands_when_creating_jfr_recording() {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainerAsRoot(any(), any()))
+        when(operations.executeCommandInContainer(any(), any(), any()))
                 .thenReturn(new CommandResult(null, 0, "12345"))
                 .thenReturn(new CommandResult(null, 0, "ok"))
                 .thenReturn(new CommandResult(null, 0, "name=host-admin success"));
@@ -120,12 +120,12 @@ class VespaServiceDumperImplTest {
                 .build();
         reporter.processServiceDumpRequest(context);
 
-        verify(operations).executeCommandInContainerAsRoot(
-                context, "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
-        verify(operations).executeCommandInContainerAsRoot(
-                context, "jcmd", "12345", "JFR.start", "name=host-admin", "path-to-gc-roots=true", "settings=profile",
+        verify(operations).executeCommandInContainer(
+                context, context.users().vespa(), "/opt/vespa/libexec/vespa/find-pid", "default/container.1");
+        verify(operations).executeCommandInContainer(
+                context, context.users().vespa(), "jcmd", "12345", "JFR.start", "name=host-admin", "path-to-gc-roots=true", "settings=profile",
                 "filename=/opt/vespa/tmp/vespa-service-dump/recording.jfr", "duration=30s");
-        verify(operations).executeCommandInContainerAsRoot(context, "jcmd", "12345", "JFR.check", "name=host-admin");
+        verify(operations).executeCommandInContainer(context, context.users().vespa(), "jcmd", "12345", "JFR.check", "name=host-admin");
 
         String expectedJson = "{\"createdMillis\":1600000000000,\"startedAt\":1600001000000," +
                 "\"completedAt\":1600001000000," +
@@ -142,7 +142,7 @@ class VespaServiceDumperImplTest {
     void handles_multiple_artifact_types() {
         // Setup mocks
         ContainerOperations operations = mock(ContainerOperations.class);
-        when(operations.executeCommandInContainerAsRoot(any(), any()))
+        when(operations.executeCommandInContainer(any(), any(), any()))
                 // For perf report:
                 .thenReturn(new CommandResult(null, 0, "12345"))
                 .thenReturn(new CommandResult(null, 0, ""))

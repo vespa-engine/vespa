@@ -77,8 +77,8 @@ public:
         bool operator<(const PendingOp &rhs) const {
             if (_wordIdx != rhs._wordIdx)
                 return _wordIdx < rhs._wordIdx;
-            if (_docId != rhs._docId)
-                return _docId < rhs._docId;
+            if (_docId != rhs.getDocId())
+                return _docId < rhs.getDocId();
             return _seq < rhs._seq;
         } 
     };

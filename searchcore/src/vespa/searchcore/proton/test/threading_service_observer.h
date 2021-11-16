@@ -43,8 +43,8 @@ public:
         return _attributeFieldWriter;
     }
 
-    vespalib::Syncable &sync() override {
-        return _service.sync();
+    void sync_all_executors() override {
+        _service.sync_all_executors();
     }
 
     searchcorespi::index::IThreadService &master() override {

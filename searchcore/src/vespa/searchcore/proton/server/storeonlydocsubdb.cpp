@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "storeonlydocsubdb.h"
 #include "docstorevalidator.h"
 #include "document_subdb_initializer.h"
 #include "document_subdb_initializer_result.h"
@@ -7,7 +8,7 @@
 #include "i_document_subdb_owner.h"
 #include "minimal_document_retriever.h"
 #include "reconfig_params.h"
-#include "storeonlydocsubdb.h"
+#include "ibucketstatecalculator.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/bucketdb/ibucketdbhandlerinitializer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
@@ -111,6 +112,8 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _dmsFlushTarget(),
       _dmsShrinkTarget(),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
+      _nodeRetired(false),
+      _lastConfiguredCompactionStrategy(),
       _subDbId(cfg._subDbId),
       _subDbType(cfg._subDbType),
       _fileHeaderContext(ctx._fileHeaderContext, _docTypeName, _baseDir),
@@ -280,6 +283,7 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
     _dmsShrinkTarget = std::make_shared<ShrinkLidSpaceFlushTarget>("documentmetastore.shrink", Type::GC,
                                                                    Component::ATTRIBUTE, _flushedDocumentMetaStoreSerialNum,
                                                                    _dmsFlushTarget->getLastFlushTime(), dms);
+    _lastConfiguredCompactionStrategy = dms->getConfig().getCompactionStrategy();
 }
 
 DocumentSubDbInitializer::UP
@@ -413,22 +417,68 @@ StoreOnlyDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const 
     return IReprocessingTask::List();
 }
 
+namespace {
+
+constexpr double RETIRED_DEAD_RATIO = 0.5;
+
+struct UpdateConfig : public search::attribute::IAttributeFunctor {
+    UpdateConfig(search::CompactionStrategy compactionStrategy) noexcept
+        : _compactionStrategy(compactionStrategy)
+    {}
+    void operator()(search::attribute::IAttributeVector &iAttributeVector) override {
+        auto attributeVector = dynamic_cast<search::AttributeVector *>(&iAttributeVector);
+        if (attributeVector != nullptr) {
+            auto cfg = attributeVector->getConfig();
+            cfg.setCompactionStrategy(_compactionStrategy);
+            attributeVector->update_config(cfg);
+        }
+    }
+    search::CompactionStrategy _compactionStrategy;
+};
+
+}
+
+search::CompactionStrategy
+StoreOnlyDocSubDB::computeCompactionStrategy(search::CompactionStrategy strategy) const {
+    return isNodeRetired()
+           ? search::CompactionStrategy(RETIRED_DEAD_RATIO, RETIRED_DEAD_RATIO)
+           : strategy;
+}
+
 void
 StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, const AllocStrategy& alloc_strategy)
 {
+    _lastConfiguredCompactionStrategy = alloc_strategy.get_compaction_strategy();
     auto cfg = _dms->getConfig();
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
     grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
     cfg.setGrowStrategy(grow);
-    cfg.setCompactionStrategy(alloc_strategy.get_compaction_strategy());
+    cfg.setCompactionStrategy(computeCompactionStrategy(alloc_strategy.get_compaction_strategy()));
     _dms->update_config(cfg); // Update grow and compaction config
     _rSummaryMgr->reconfigure(config);
 }
 
 void
-StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &)
-{
+StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> & calc) {
+    bool wasNodeRetired = isNodeRetired();
+    _nodeRetired = calc->nodeRetired();
+    if (wasNodeRetired != isNodeRetired()) {
+        search::CompactionStrategy compactionStrategy = computeCompactionStrategy(_lastConfiguredCompactionStrategy);
+        auto cfg = _dms->getConfig();
+        cfg.setCompactionStrategy(compactionStrategy);
+        _dms->update_config(cfg);
+        reconfigureAttributesConsideringNodeState();
+    }
+}
+
+void
+StoreOnlyDocSubDB::reconfigureAttributesConsideringNodeState() {
+    search::CompactionStrategy compactionStrategy = computeCompactionStrategy(_lastConfiguredCompactionStrategy);
+    auto attrMan = getAttributeManager();
+    if (attrMan) {
+        attrMan->asyncForEachAttribute(std::make_shared<UpdateConfig>(compactionStrategy));
+    }
 }
 
 proton::IAttributeManager::SP

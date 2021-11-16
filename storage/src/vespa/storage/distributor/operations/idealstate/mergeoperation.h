@@ -64,6 +64,7 @@ private:
     void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState,
                                DistributorStripeMessageSender& sender);
     bool is_global_bucket_merge() const noexcept;
+    bool all_involved_nodes_support_unordered_merge_chaining() const noexcept;
     MergeBucketMetricSet* get_merge_metrics();
 };
 

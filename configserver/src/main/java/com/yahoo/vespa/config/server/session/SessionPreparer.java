@@ -242,7 +242,8 @@ public class SessionPreparer {
             try {
                 this.preprocessedApplicationPackage = applicationPackage.preprocess(properties.zone(), logger);
             } catch (IOException | RuntimeException e) {
-                throw new IllegalArgumentException("Error preprocessing application package for " + applicationId, e);
+                throw new IllegalArgumentException("Error preprocessing application package for " + applicationId +
+                                                           ", session " + sessionZooKeeperClient.sessionId(), e);
             }
             checkTimeout("preprocess");
         }

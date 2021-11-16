@@ -128,7 +128,7 @@ struct IndexManagerTest : public ::testing::Test {
     {
         removeTestData();
         vespalib::mkdir(index_dir, false);
-        _writeService.sync();
+        _writeService.sync_all_executors();
         resetIndexManager();
     }
 
