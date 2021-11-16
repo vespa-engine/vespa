@@ -17,7 +17,7 @@ class ThreadingServiceConfig;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
-    vespalib::ThreadExecutor                   & _sharedExecutor;
+    vespalib::ThreadExecutor                           & _sharedExecutor;
     vespalib::ThreadStackExecutor                        _masterExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _indexExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;
@@ -46,9 +46,6 @@ public:
     ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor, uint32_t num_treads = 1);
     ~ExecutorThreadingService() override;
 
-    /**
-     * Implements vespalib::Syncable
-     */
     void sync_all_executors() override;
 
     void shutdown();
@@ -67,9 +64,6 @@ public:
         return *_summaryExecutor;
     }
 
-    /**
-     * Implements IThreadingService
-     */
     searchcorespi::index::IThreadService &master() override {
         return _masterService;
     }
@@ -90,6 +84,6 @@ public:
     ExecutorThreadingServiceStats getStats();
 };
 
-} // namespace proton
+}
 
 
