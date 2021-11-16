@@ -128,11 +128,11 @@ SequencedTaskExecutor::getStats()
 
 ISequencedTaskExecutor::ExecutorId
 SequencedTaskExecutor::getExecutorId(uint64_t componentId) const {
-    ValidId id = getExecutorIdPerfect(componentId);
-    return (id.valid()) ? id.id() : getExecutorIdImPerfect(componentId);
+    auto id = getExecutorIdPerfect(componentId);
+    return id ? id.value() : getExecutorIdImPerfect(componentId);
 }
 
-SequencedTaskExecutor::ValidId
+std::optional<ISequencedTaskExecutor::ExecutorId>
 SequencedTaskExecutor::getExecutorIdPerfect(uint64_t componentId) const {
     PerfectKeyT key = componentId & 0x7fff;
     ssize_t pos = find(key, _component2IdPerfect.get(), getNumExecutors() * NUM_PERFECT_PER_EXECUTOR);
@@ -145,11 +145,11 @@ SequencedTaskExecutor::getExecutorIdPerfect(uint64_t componentId) const {
                 _component2IdPerfect[pos] = key;
             } else {
                 // There was a race for the last spots
-                return ValidId();
+                return std::optional<ISequencedTaskExecutor::ExecutorId>();
             }
         }
     }
-    return ValidId(ExecutorId(pos % getNumExecutors()));
+    return std::optional<ISequencedTaskExecutor::ExecutorId>(ExecutorId(pos % getNumExecutors()));
 }
 
 ISequencedTaskExecutor::ExecutorId
