@@ -218,7 +218,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                   .sharedL4Routing()
                                   .dnsName(l4Name)
                                   .hosts(hosts)
-                                  .clusterId(getName())
                                   .build());
 
             // L7
@@ -231,7 +230,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                   .sharedRouting()
                                   .dnsName(l7Name)
                                   .hosts(hosts)
-                                  .clusterId(getName())
                                   .build());
         }
 
@@ -245,7 +243,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                                       .sharedL4Routing()
                                                       .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
                                                       .hosts(hosts)
-                                                      .clusterId(getName())
                                                       .build())
                 ));
         endpointList = List.copyOf(endpoints);
