@@ -25,16 +25,16 @@ type TokenRetriever struct {
 	Client        *http.Client
 }
 
-// Delete deletes the given tenant from the secrets' storage.
-func (t *TokenRetriever) Delete(tenant string) error {
-	return t.Secrets.Delete(SecretsNamespace, tenant)
+// Delete deletes the given system from the secrets' storage.
+func (t *TokenRetriever) Delete(system string) error {
+	return t.Secrets.Delete(SecretsNamespace, system)
 }
 
 // Refresh gets a new access token from the provided refresh token,
 // The request is used the default client_id and endpoint for device authentication.
-func (t *TokenRetriever) Refresh(ctx context.Context, tenant string) (TokenResponse, error) {
+func (t *TokenRetriever) Refresh(ctx context.Context, system string) (TokenResponse, error) {
 	// get stored refresh token:
-	refreshToken, err := t.Secrets.Get(SecretsNamespace, tenant)
+	refreshToken, err := t.Secrets.Get(SecretsNamespace, system)
 	if err != nil {
 		return TokenResponse{}, fmt.Errorf("cannot get the stored refresh token: %w", err)
 	}

@@ -24,7 +24,7 @@ var loginCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := cli.GetCli(cfg.AuthConfigPath())
+		c, err := cli.GetCli(cfg.AuthConfigPath(), getSystemName())
 		if err != nil {
 			return err
 		}

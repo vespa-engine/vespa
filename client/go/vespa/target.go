@@ -1,4 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package vespa
 
 import (
@@ -6,7 +7,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/vespa-engine/vespa/client/go/cli"
 	"io"
 	"io/ioutil"
 	"math"
@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vespa-engine/vespa/client/go/cli"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -211,6 +212,7 @@ type cloudTarget struct {
 	queryURL       string
 	documentURL    string
 	authConfigPath string
+	systemName     string
 }
 
 func (t *cloudTarget) Type() string { return t.targetType }
@@ -253,12 +255,12 @@ func (t *cloudTarget) PrepareApiRequest(req *http.Request, sigKeyId string) erro
 }
 
 func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
-	c, err := cli.GetCli(t.authConfigPath)
-	tenant, err := c.PrepareTenant(cli.ContextWithCancel())
+	c, err := cli.GetCli(t.authConfigPath, t.systemName)
+	system, err := c.PrepareSystem(cli.ContextWithCancel())
 	if err != nil {
 		return err
 	}
-	request.Header.Set("Authorization", "Bearer "+tenant.AccessToken)
+	request.Header.Set("Authorization", "Bearer "+system.AccessToken)
 	return nil
 }
 
@@ -446,8 +448,7 @@ func CustomTarget(baseURL string) Target {
 }
 
 // CloudTarget creates a Target for the Vespa Cloud platform.
-func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions TLSOptions, logOptions LogOptions,
-	authConfigPath string) Target {
+func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions TLSOptions, logOptions LogOptions, authConfigPath string, systemName string) Target {
 	return &cloudTarget{
 		apiURL:         apiURL,
 		targetType:     cloudTargetType,
@@ -456,6 +457,7 @@ func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions
 		tlsOptions:     tlsOptions,
 		logOptions:     logOptions,
 		authConfigPath: authConfigPath,
+		systemName:     systemName,
 	}
 }
 
