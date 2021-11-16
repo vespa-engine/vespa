@@ -112,7 +112,6 @@ private:
     std::unique_ptr<metrics::UpdateHook>            _metricsHook;
     vespalib::VarHolder<IFeedView::SP>              _feedView;
     vespalib::MonitoredRefCount                     _refCount;
-    bool                                            _syncFeedViewEnabled;
     IDocumentDBOwner                               &_owner;
     storage::spi::BucketExecutor                   &_bucketExecutor;
     DDBState                                        _state;

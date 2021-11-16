@@ -186,7 +186,6 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _metricsHook(std::make_unique<MetricsUpdateHook>(*this)),
       _feedView(),
       _refCount(),
-      _syncFeedViewEnabled(false),
       _owner(owner),
       _bucketExecutor(bucketExecutor),
       _state(),
@@ -313,9 +312,9 @@ void
 DocumentDB::initFinish(DocumentDBConfig::SP configSnapshot)
 {
     // Called by executor thread
+    assert(_writeService.master().isCurrentThread());
     _bucketHandler.setReadyBucketHandler(_subDBs.getReadySubDB()->getDocumentMetaStoreContext().get());
     _subDBs.initViews(*configSnapshot, _sessionManager);
-    _syncFeedViewEnabled = true;
     syncFeedView();
     // Check that feed view has been activated.
     assert(_feedView.get());
@@ -510,20 +509,11 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
 }
 
 
-namespace {
-void
-doNothing(IFeedView::SP)
-{
-    // Called by index executor, delays when feed view is dropped.
-}
-}  // namespace
-
 void
 DocumentDB::performDropFeedView(IFeedView::SP feedView)
 {
-    // Called by executor task, delays when feed view is dropped.
-    // Also called by DocumentDB::receive() method to keep feed view alive
-
+    // Delays when feed view is dropped.
+    assert(_writeService.master().isCurrentThread());
     _writeService.attributeFieldWriter().sync_all();
     _writeService.summary().sync();
 
@@ -534,11 +524,11 @@ DocumentDB::performDropFeedView(IFeedView::SP feedView)
 
 void
 DocumentDB::performDropFeedView2(IFeedView::SP feedView) {
-    // Called by executor task, delays when feed view is dropped.
-    // Also called by DocumentDB::receive() method to keep feed view alive
+    // Delays when feed view is dropped.
+    assert(_writeService.index().isCurrentThread());
     _writeService.indexFieldInverter().sync_all();
     _writeService.indexFieldWriter().sync_all();
-    masterExecute([feedView]() { doNothing(feedView); });
+    masterExecute([feedView]() { (void) feedView; });
 }
 
 
@@ -912,10 +902,7 @@ DocumentDB::getActiveGeneration() const {
 void
 DocumentDB::syncFeedView()
 {
-    // Called by executor or while in rendezvous with executor
-
-    if (!_syncFeedViewEnabled)
-        return;
+    assert(_writeService.master().isCurrentThread());
     IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
