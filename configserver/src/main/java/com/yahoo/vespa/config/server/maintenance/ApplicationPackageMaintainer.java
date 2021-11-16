@@ -16,7 +16,9 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
+import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.time.Duration;
@@ -40,6 +42,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private final File downloadDirectory;
     private final ConfigserverConfig configserverConfig;
     private final Supervisor supervisor;
+    private final boolean useFileDistributionConnectionPool;
+
 
     ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
                                  Curator curator,
@@ -49,7 +53,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         this.applicationRepository = applicationRepository;
         this.configserverConfig = applicationRepository.configserverConfig();
         this.supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
-        downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
+        this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
+        this.useFileDistributionConnectionPool = Flags.USE_FILE_DISTRIBUTION_CONNECTION_POOL.bindTo(flagSource).value();
     }
 
     @Override
@@ -90,7 +95,10 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     private FileDownloader createFileDownloader() {
-        return new FileDownloader(new JRTConnectionPool(new ConfigSourceSet(getOtherConfigServersInCluster(configserverConfig)), supervisor),
+        ConfigSourceSet configSourceSet = new ConfigSourceSet(getOtherConfigServersInCluster(configserverConfig));
+        return new FileDownloader(useFileDistributionConnectionPool
+                                          ? new FileDistributionConnectionPool(configSourceSet, supervisor)
+                                          : new JRTConnectionPool(configSourceSet, supervisor),
                                   supervisor,
                                   downloadDirectory);
     }
