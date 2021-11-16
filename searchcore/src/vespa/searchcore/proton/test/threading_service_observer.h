@@ -44,7 +44,7 @@ public:
     }
 
     void sync_all_executors() override {
-        return _service.sync_all_executors();
+        _service.sync_all_executors();
     }
 
     searchcorespi::index::IThreadService &master() override {
