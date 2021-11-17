@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.SortedMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -112,22 +113,30 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
         return builder;
     }
 
-    public synchronized void test(Suite suite, byte[] testConfig) {
+    @Override
+    public synchronized CompletableFuture<?> test(Suite suite, byte[] testConfig) {
         if (status == Status.RUNNING)
             throw new IllegalArgumentException("Tests are already running; should not receive this request now.");
 
         log.clear();
         status = Status.RUNNING;
 
-        new Thread(() -> runTests(toProfile(suite), testConfig)).start();
+        return CompletableFuture.runAsync(() -> runTests(toProfile(suite), testConfig));
     }
 
+    @Override
     public Collection<LogRecord> getLog(long after) {
         return log.tailMap(after + 1).values();
     }
 
+    @Override
     public synchronized Status getStatus() {
         return status;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return listFiles(artifactsPath).stream().anyMatch(file -> file.toString().endsWith("tests.jar"));
     }
 
     private void runTests(TestProfile testProfile, byte[] testConfig) {

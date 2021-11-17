@@ -2,6 +2,7 @@
 package com.yahoo.vespa.testrunner;
 
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.LogRecord;
 
 /**
@@ -14,9 +15,9 @@ public interface TestRunner {
 
     Status getStatus();
 
-    void test(Suite suite, byte[] config);
+    CompletableFuture<?> test(Suite suite, byte[] config);
 
-    default boolean isSupported() { return true; }
+    boolean isSupported();
 
     default TestReport getReport() { return null; }
 

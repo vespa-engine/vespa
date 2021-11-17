@@ -32,7 +32,6 @@ import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -48,7 +47,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     private final SortedMap<Long, LogRecord> logRecords = new ConcurrentSkipListMap<>();
     private final BundleContext bundleContext;
     private final TestRuntimeProvider testRuntimeProvider;
-    private volatile Future<TestReport> execution;
+    private volatile CompletableFuture<TestReport> execution;
 
     @Inject
     public JunitRunner(OsgiFramework osgiFramework,
@@ -97,7 +96,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     }
 
     @Override
-    public void test(TestRunner.Suite suite, byte[] testConfig) {
+    public CompletableFuture<?> test(Suite suite, byte[] testConfig) {
         if (execution != null && ! execution.isDone()) {
             throw new IllegalStateException("Test execution already in progress");
         }
@@ -117,6 +116,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         } catch (Exception e) {
             execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
         }
+        return execution;
     }
 
     @Override

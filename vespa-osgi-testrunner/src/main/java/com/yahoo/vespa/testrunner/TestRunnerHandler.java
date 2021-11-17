@@ -2,6 +2,7 @@
 package com.yahoo.vespa.testrunner;
 
 import com.google.inject.Inject;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -34,9 +35,13 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     private final TestRunner testRunner;
 
     @Inject
-    public TestRunnerHandler(Executor executor, TestRunner junitRunner, TestRunner testRunner) {
+    public TestRunnerHandler(Executor executor, ComponentRegistry<TestRunner> testRunners) {
+        this(executor, AggregateTestRunner.of(testRunners.allComponents()));
+    }
+
+    TestRunnerHandler(Executor executor, TestRunner testRunner) {
         super(executor);
-        this.testRunner = junitRunner.isSupported() ? junitRunner : testRunner;
+        this.testRunner = testRunner;
     }
 
     @Override
@@ -152,7 +157,6 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     }
 
     private static void serializeFailure(TestReport.Failure failure, Cursor slime) {
-        var testIdentifier = failure.testId();
         slime.setString("testName", failure.testId());
         slime.setString("testError",failure.exception().getMessage());
         slime.setString("exception", ExceptionUtils.getStackTraceAsString(failure.exception()));
