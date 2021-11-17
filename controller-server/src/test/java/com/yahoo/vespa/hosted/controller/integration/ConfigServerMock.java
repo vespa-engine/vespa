@@ -567,7 +567,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public ProxyResponse getApplicationPackageContent(DeploymentId deployment, String path, URI requestUri) {
-        return new ProxyResponse("{\"path\":\"" + path + "\"}", "application/json", 200);
+        return new ProxyResponse(("{\"path\":\"" + path + "\"}").getBytes(StandardCharsets.UTF_8), "application/json", 200);
     }
 
     public void setLogStream(Supplier<String> log) {
