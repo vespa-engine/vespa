@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vespa-engine/vespa/client/go/cli"
+	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/util"
 )
 
@@ -255,8 +255,8 @@ func (t *cloudTarget) PrepareApiRequest(req *http.Request, sigKeyId string) erro
 }
 
 func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
-	c, err := cli.GetCli(t.authConfigPath, t.systemName)
-	system, err := c.PrepareSystem(cli.ContextWithCancel())
+	a, err := auth0.GetAuth0(t.authConfigPath, t.systemName)
+	system, err := a.PrepareSystem(auth0.ContextWithCancel())
 	if err != nil {
 		return err
 	}
