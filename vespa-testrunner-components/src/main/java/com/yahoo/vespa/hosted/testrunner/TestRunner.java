@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.testrunner;
 
 import com.google.inject.Inject;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
+import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import org.fusesource.jansi.AnsiOutputStream;
 import org.fusesource.jansi.HtmlAnsiOutputStream;
 
@@ -36,7 +38,7 @@ import static java.util.logging.Level.SEVERE;
  * @author valerijf
  * @author jvenstad
  */
-public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
+public class TestRunner implements LegacyTestRunner {
 
     private static final Logger logger = Logger.getLogger(TestRunner.class.getName());
     private static final Level HTML = new Level("html", 1) { };
@@ -112,14 +114,14 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
         return builder;
     }
 
-    public synchronized void test(Suite suite, byte[] testConfig) {
+    public synchronized void test(TestProfile testProfile, byte[] testConfig) {
         if (status == Status.RUNNING)
             throw new IllegalArgumentException("Tests are already running; should not receive this request now.");
 
         log.clear();
         status = Status.RUNNING;
 
-        new Thread(() -> runTests(toProfile(suite), testConfig)).start();
+        new Thread(() -> runTests(testProfile, testConfig)).start();
     }
 
     public Collection<LogRecord> getLog(long after) {
@@ -206,16 +208,6 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
 
     static class NoTestsException extends RuntimeException {
         private NoTestsException(String message) { super(message); }
-    }
-
-    static TestProfile toProfile(Suite suite) {
-        switch (suite) {
-            case SYSTEM_TEST: return TestProfile.SYSTEM_TEST;
-            case STAGING_SETUP_TEST: return TestProfile.STAGING_SETUP_TEST;
-            case STAGING_TEST: return TestProfile.STAGING_TEST;
-            case PRODUCTION_TEST: return TestProfile.PRODUCTION_TEST;
-            default: throw new IllegalArgumentException("Unknown test suite '" + suite + "'");
-        }
     }
 
 }

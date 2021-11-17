@@ -11,6 +11,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
@@ -25,12 +26,10 @@ import org.osgi.framework.BundleContext;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -45,7 +44,6 @@ import java.util.stream.Stream;
 public class JunitRunner extends AbstractComponent implements TestRunner {
     private static final Logger logger = Logger.getLogger(JunitRunner.class.getName());
 
-    private final SortedMap<Long, LogRecord> logRecords = new ConcurrentSkipListMap<>();
     private final BundleContext bundleContext;
     private final TestRuntimeProvider testRuntimeProvider;
     private volatile Future<TestReport> execution;
@@ -86,23 +84,12 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         credentialsRoot.ifPresent(root -> System.setProperty("vespa.test.credentials.root", root));
     }
 
-    private static TestDescriptor.TestCategory toCategory(TestRunner.Suite testProfile) {
-        switch(testProfile) {
-            case SYSTEM_TEST: return TestDescriptor.TestCategory.systemtest;
-            case STAGING_SETUP_TEST: return TestDescriptor.TestCategory.stagingsetuptest;
-            case STAGING_TEST: return TestDescriptor.TestCategory.stagingtest;
-            case PRODUCTION_TEST: return TestDescriptor.TestCategory.productiontest;
-            default: throw new RuntimeException("Unknown test profile: " + testProfile.name());
-        }
-    }
-
     @Override
-    public void test(TestRunner.Suite suite, byte[] testConfig) {
-        if (execution != null && ! execution.isDone()) {
+    public void executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
+        if (execution != null && !execution.isDone()) {
             throw new IllegalStateException("Test execution already in progress");
         }
         try {
-            logRecords.clear();
             testRuntimeProvider.initialize(testConfig);
             Optional<Bundle> testBundle = findTestBundle();
             if (testBundle.isEmpty()) {
@@ -113,15 +100,10 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             if (testDescriptor.isEmpty()) {
                 throw new RuntimeException("Could not find test descriptor");
             }
-            execution = CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), toCategory(suite))));
+            execution =  CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), category)));
         } catch (Exception e) {
             execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
         }
-    }
-
-    @Override
-    public Collection<LogRecord> getLog(long after) {
-        return logRecords.tailMap(after + 1).values();
     }
 
     private static TestReport createReportWithFailedInitialization(Exception exception) {
@@ -193,7 +175,8 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         Launcher launcher = LauncherFactory.create(launcherConfig);
 
         // Create log listener:
-        var logListener = VespaJunitLogListener.forBiConsumer((t, m) -> log(logRecords, m.get(), t));
+        var logLines = new ArrayList<LogRecord>();
+        var logListener = VespaJunitLogListener.forBiConsumer((t, m) -> log(logLines, m.get(), t));
         // Create a summary listener:
         var summaryListener = new SummaryGeneratingListener();
         launcher.registerTestExecutionListeners(logListener, summaryListener);
@@ -210,14 +193,14 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                 .withIgnoredCount(report.getTestsSkippedCount())
                 .withFailedCount(report.getTestsFailedCount())
                 .withFailures(failures)
-                .withLogs(logRecords.values())
+                .withLogs(logLines)
                 .build();
     }
 
-    private void log(SortedMap<Long, LogRecord> logs, String message, Throwable t) {
+    private void log(List<LogRecord> logs, String message, Throwable t) {
         LogRecord logRecord = new LogRecord(Level.INFO, message);
         Optional.ofNullable(t).ifPresent(logRecord::setThrown);
-        logs.put(logRecord.getSequenceNumber(), logRecord);
+        logs.add(logRecord);
     }
 
     @Override
@@ -226,20 +209,20 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     }
 
     @Override
-    public TestRunner.Status getStatus() {
-        if (execution == null) return TestRunner.Status.NOT_STARTED;
-        if (!execution.isDone()) return TestRunner.Status.RUNNING;
+    public LegacyTestRunner.Status getStatus() {
+        if (execution == null) return LegacyTestRunner.Status.NOT_STARTED;
+        if (!execution.isDone()) return LegacyTestRunner.Status.RUNNING;
         try {
             TestReport report = execution.get();
             if (report.isSuccess()) {
-                return TestRunner.Status.SUCCESS;
+                return LegacyTestRunner.Status.SUCCESS;
             } else {
-                return TestRunner.Status.FAILURE;
+                return LegacyTestRunner.Status.FAILURE;
             }
         } catch (InterruptedException|ExecutionException e) {
             logger.log(Level.WARNING, "Error while getting test report", e);
             // Return FAILURE to enforce getting the test report from the caller.
-            return TestRunner.Status.FAILURE;
+            return LegacyTestRunner.Status.FAILURE;
         }
     }
 
@@ -259,4 +242,10 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         }
     }
 
+    @Override
+    public String getReportAsJson() {
+        return Optional.ofNullable(getReport())
+                .map(TestReport::toJson)
+                .orElse("");
+    }
 }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.testrunner;
 
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.testrunner.legacy.TestProfile;
 
 import java.nio.file.Path;
 import java.util.List;
