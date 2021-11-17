@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -44,14 +43,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.DeploymentQuotaCalculator;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
@@ -378,7 +377,7 @@ public class ApplicationController {
 
                 endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone, applicationPackage.deploymentSpec());
 
-                containerEndpoints = controller.routing().containerEndpointsOf(application.get(), job.application().instance(), zone);
+                containerEndpoints = controller.routing().containerEndpointsOf(application, job.application().instance(), zone);
 
             } // Release application lock while doing the deployment, which is a lengthy task.
 
@@ -433,10 +432,6 @@ public class ApplicationController {
         for (InstanceName name : existingInstances) {
             application = withoutDeletedDeployments(application, name);
         }
-
-        for (InstanceName instance : declaredInstances)
-            if (applicationPackage.deploymentSpec().requireInstance(instance).concerns(Environment.prod))
-                application = controller.routing().assignRotations(application, instance);
 
         // Validate new deployment spec thoroughly before storing it.
         controller.jobController().deploymentStatus(application.get());

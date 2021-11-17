@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
@@ -292,13 +293,32 @@ public class DeploymentContext {
 
     /** Fail current deployment in given job */
     private DeploymentContext failDeployment(JobType type, RuntimeException exception) {
+        configServer().throwOnNextPrepare(exception);
+        runJobExpectingFailure(type, Optional.empty());
+        return this;
+    }
+
+    /** Run given job and expect it to fail with given message, if any */
+    public DeploymentContext runJobExpectingFailure(JobType type, Optional<String> messagePart) {
         triggerJobs();
         var job = jobId(type);
         RunId id = currentRun(job).id();
-        configServer().throwOnNextPrepare(exception);
         runner.advance(currentRun(job));
-        assertTrue(jobs.run(id).get().hasFailed());
-        assertTrue(jobs.run(id).get().hasEnded());
+        Run run = jobs.run(id).get();
+        assertTrue(run.hasFailed());
+        assertTrue(run.hasEnded());
+        if (messagePart.isPresent()) {
+            Optional<Step> firstFailing = run.stepStatuses().entrySet().stream()
+                                             .filter(kv -> kv.getValue() == failed)
+                                             .map(Map.Entry::getKey)
+                                             .findFirst();
+            assertTrue("Found failing step", firstFailing.isPresent());
+            Optional<RunLog> details = jobs.details(id);
+            assertTrue("Found log entries for run " + id, details.isPresent());
+            assertTrue("Found log message containing '" + messagePart.get() + "'",
+                       details.get().get(firstFailing.get()).stream()
+                              .anyMatch(entry -> entry.message().contains(messagePart.get())));
+        }
         return this;
     }
 

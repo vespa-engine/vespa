@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 
 import java.security.cert.X509Certificate;
@@ -267,26 +266,26 @@ public class Run {
 
     /** Returns the list of unfinished steps whose prerequisites have all succeeded. */
     private List<Step> normalSteps() {
-        return ImmutableList.copyOf(steps.entrySet().stream()
-                                         .filter(entry ->    entry.getValue().status() == unfinished
-                                                          && entry.getKey().prerequisites().stream()
-                                                                  .allMatch(step ->    steps.get(step) == null
-                                                                                    || steps.get(step).status() == succeeded))
-                                         .map(Map.Entry::getKey)
-                                         .iterator());
+        return steps.entrySet().stream()
+                    .filter(entry -> entry.getValue().status() == unfinished
+                                     && entry.getKey().prerequisites().stream()
+                                             .allMatch(step -> steps.get(step) == null
+                                                               || steps.get(step).status() == succeeded))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns the list of not-yet-run run-always steps whose run-always prerequisites have all run. */
     private List<Step> forcedSteps() {
-        return ImmutableList.copyOf(steps.entrySet().stream()
-                                         .filter(entry ->    entry.getValue().status() == unfinished
-                                                          && entry.getKey().alwaysRun()
-                                                          && entry.getKey().prerequisites().stream()
-                                                                  .filter(Step::alwaysRun)
-                                                                  .allMatch(step ->    steps.get(step) == null
-                                                                                    || steps.get(step).status() != unfinished))
-                                         .map(Map.Entry::getKey)
-                                         .iterator());
+        return steps.entrySet().stream()
+                    .filter(entry -> entry.getValue().status() == unfinished
+                                     && entry.getKey().alwaysRun()
+                                     && entry.getKey().prerequisites().stream()
+                                             .filter(Step::alwaysRun)
+                                             .allMatch(step -> steps.get(step) == null
+                                                               || steps.get(step).status() != unfinished))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toUnmodifiableList());
     }
 
     private void requireActive() {
