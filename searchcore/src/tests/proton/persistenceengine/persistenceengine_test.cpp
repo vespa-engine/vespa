@@ -18,7 +18,6 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <algorithm>
 #include <set>
 
 using document::BucketId;
@@ -286,12 +285,6 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         auto it = frozen.find(bucket.getId());
         ASSERT_TRUE(it != frozen.end());
         frozen.erase(it);
-    }
-    bool isFrozen(const Bucket &bucket) {
-        return frozen.find(bucket.getBucketId().getId()) != frozen.end();
-    }
-    bool wasFrozen(const Bucket &bucket) {
-        return was_frozen.find(bucket.getBucketId().getId()) != was_frozen.end();
     }
 };
 
