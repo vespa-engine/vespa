@@ -55,7 +55,7 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     case api::MessageType::STATBUCKET_ID:
         return _processAllHandler.handleStatBucket(static_cast<api::StatBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::REMOVELOCATION_ID:
-        return _processAllHandler.handleRemoveLocation(static_cast<api::RemoveLocationCommand&>(msg), std::move(tracker));
+        return _asyncHandler.handleRemoveLocation(static_cast<api::RemoveLocationCommand&>(msg), std::move(tracker));
     case api::MessageType::MERGEBUCKET_ID:
         return _mergeHandler.handleMergeBucket(static_cast<api::MergeBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::GETBUCKETDIFF_ID:

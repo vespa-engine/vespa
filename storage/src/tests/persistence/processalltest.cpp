@@ -2,6 +2,7 @@
 
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/persistence/processallhandler.h>
+#include <vespa/storage/persistence/asynchandler.h>
 #include <vespa/storage/persistence/messages.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -36,7 +37,8 @@ TEST_F(ProcessAllHandlerTest, remove_location) {
 
     document::Bucket bucket = makeDocumentBucket(bucketId);
     auto cmd = std::make_shared<api::RemoveLocationCommand>("id.user == 4", bucket);
-    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    document::BucketIdFactory bucketIdFactory;
+    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, bucketIdFactory);
     auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
 
     EXPECT_EQ("DocEntry(1234, 1, id:mail:testdoctype1:n=4:3619.html)\n"
@@ -50,7 +52,8 @@ TEST_F(ProcessAllHandlerTest, remove_location) {
 
 TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
     document::BucketId bucketId(16, 4);
-    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    document::BucketIdFactory bucketIdFactory;
+    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, bucketIdFactory);
 
     document::TestDocMan docMan;
     for (int i = 0; i < 10; ++i) {
@@ -87,7 +90,8 @@ TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_unknown_doc_ty
     document::Bucket bucket = makeDocumentBucket(bucketId);
     auto cmd = std::make_shared<api::RemoveLocationCommand>("unknowndoctype.headerval % 2 == 0", bucket);
 
-    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    document::BucketIdFactory bucketIdFactory;
+    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, bucketIdFactory);
     ASSERT_THROW(handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket)), std::exception);
 
     EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n",
@@ -101,7 +105,8 @@ TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_bogus_selectio
     document::Bucket bucket = makeDocumentBucket(bucketId);
     auto cmd = std::make_shared<api::RemoveLocationCommand>("id.bogus != badgers", bucket);
 
-    ProcessAllHandler handler(getEnv(), getPersistenceProvider());
+    document::BucketIdFactory bucketIdFactory;
+    AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, bucketIdFactory);
     ASSERT_THROW(handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket)), std::exception);
 
     EXPECT_EQ("DocEntry(1234, 0, Doc(id:mail:testdoctype1:n=4:3619.html))\n",

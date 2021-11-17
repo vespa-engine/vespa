@@ -4,16 +4,21 @@
 #include "persistenceutil.h"
 #include "testandsethelper.h"
 #include "bucketownershipnotifier.h"
+#include "bucketprocessor.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/persistence/spi/catchresult.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/count_down_latch.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.persistence.asynchandler");
 
+using vespalib::make_string_short::fmt;
 namespace storage {
 
 namespace {
@@ -102,6 +107,20 @@ bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo
     // error logs and non-deleted buckets.
     return ((a.getChecksum() == b.getChecksum()) && (a.getDocumentCount() == b.getDocumentCount()));
 }
+
+class UnrevertableRemoveEntryProcessor : public BucketProcessor::EntryProcessor {
+public:
+    using DocumentIdsAndTimeStamps = std::vector<std::pair<spi::Timestamp, spi::DocumentId>>;
+    UnrevertableRemoveEntryProcessor(DocumentIdsAndTimeStamps & to_remove)
+            : _to_remove(to_remove)
+    {}
+
+    void process(spi::DocEntry& entry) override {
+        _to_remove.emplace_back(entry.getTimestamp(), *entry.getDocumentId());
+    }
+private:
+    DocumentIdsAndTimeStamps & _to_remove;
+};
 
 }
 
@@ -376,6 +395,40 @@ AsyncHandler::checkProviderBucketInfoMatches(const spi::Bucket& bucket, const ap
         return false;
     }
     return true;
+}
+
+MessageTracker::UP
+AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTracker::UP tracker) const
+{
+    tracker->setMetric(_env._metrics.removeLocation);
+
+    LOG(debug, "RemoveLocation(%s): using selection '%s'",
+        cmd.getBucketId().toString().c_str(),
+        cmd.getDocumentSelection().c_str());
+
+    spi::Bucket bucket(cmd.getBucket());
+    UnrevertableRemoveEntryProcessor::DocumentIdsAndTimeStamps to_remove;
+    UnrevertableRemoveEntryProcessor processor(to_remove);
+    BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
+                                std::make_shared<document::DocIdOnly>(),
+                                processor, spi::NEWEST_DOCUMENT_ONLY,tracker->context());
+
+    std::vector<std::future<std::unique_ptr<spi::Result>>> results;
+    results.reserve(to_remove.size());
+    for (auto & entry : to_remove) {
+        auto catcher = std::make_unique<spi::CatchResult>();
+        results.push_back(catcher->future_result());
+        _spi.removeAsync(bucket, entry.first, entry.second, tracker->context(), std::move(catcher));
+    }
+    for (auto & future : results) {
+        auto result = future.get();
+        if (result->getErrorCode() != spi::Result::ErrorType::NONE) {
+            throw std::runtime_error(fmt("Failed to do remove for removelocation: %s", result->getErrorMessage().c_str()));
+        }
+    }
+    tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, to_remove.size()));
+
+    return tracker;
 }
 
 }

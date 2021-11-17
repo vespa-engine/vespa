@@ -3,7 +3,6 @@
 
 #include "types.h"
 #include "messages.h"
-#include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
 
 namespace storage {
@@ -14,7 +13,6 @@ class PersistenceUtil;
 class ProcessAllHandler : public Types {
 public:
     ProcessAllHandler(const PersistenceUtil&, spi::PersistenceProvider&);
-    MessageTrackerUP handleRemoveLocation(api::RemoveLocationCommand&, MessageTrackerUP tracker) const;
     MessageTrackerUP handleStatBucket(api::StatBucketCommand&, MessageTrackerUP tracker) const;
 private:
     const PersistenceUtil    & _env;

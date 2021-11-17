@@ -25,14 +25,15 @@ public:
     /**
      * Constructor to use for a result where there is no error.
      */
-    Result() : _errorCode(ErrorType::NONE), _errorMessage() {}
+    Result() noexcept : _errorCode(ErrorType::NONE), _errorMessage() {}
 
     /**
      * Constructor to use when an error has been detected.
      */
-    Result(ErrorType error, const vespalib::string& errorMessage)
+    Result(ErrorType error, const vespalib::string& errorMessage) noexcept
         : _errorCode(error),
-          _errorMessage(errorMessage) {}
+          _errorMessage(errorMessage)
+    {}
 
     Result(const Result &);
     Result & operator = (const Result &);
@@ -130,21 +131,20 @@ public:
      * The service layer will not update the bucket information in this case,
      * so it should not be returned either.
      */
-    RemoveResult(ErrorType error, const vespalib::string& errorMessage)
+    RemoveResult(ErrorType error, const vespalib::string& errorMessage) noexcept
         : Result(error, errorMessage),
-          _wasFound(false)
+          _numRemoved(0)
     { }
 
-    /**
-     * Constructor to use when the remove was successful.
-     */
-    RemoveResult(bool foundDocument)
-        : _wasFound(foundDocument) { }
-
-    bool wasFound() const { return _wasFound; }
+    explicit RemoveResult(bool found) noexcept
+            : RemoveResult(found ? 1u : 0u) { }
+    explicit RemoveResult(uint32_t numRemoved) noexcept
+        : _numRemoved(numRemoved) { }
+    bool wasFound() const { return _numRemoved > 0; }
+    uint32_t num_removed() const { return _numRemoved; }
 
 private:
-    bool _wasFound;
+    uint32_t _numRemoved;
 };
 
 class GetResult : public Result {
@@ -257,14 +257,14 @@ public:
     /**
      * Constructor used when there was an error creating the iterator.
      */
-    CreateIteratorResult(ErrorType error, const vespalib::string& errorMessage)
+    CreateIteratorResult(ErrorType error, const vespalib::string& errorMessage) noexcept
         : Result(error, errorMessage),
           _iterator(0) { }
 
     /**
      * Constructor used when the iterator state was successfully created.
      */
-    CreateIteratorResult(const IteratorId& id)
+    CreateIteratorResult(const IteratorId& id) noexcept
         : _iterator(id)
     { }
 
@@ -299,8 +299,8 @@ public:
     { }
 
     IterateResult(const IterateResult &) = delete;
-    IterateResult(IterateResult &&rhs) = default;
-    IterateResult &operator=(IterateResult &&rhs) = default;
+    IterateResult(IterateResult &&rhs) noexcept = default;
+    IterateResult &operator=(IterateResult &&rhs) noexcept = default;
 
     ~IterateResult();
 
