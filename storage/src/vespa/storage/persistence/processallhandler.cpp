@@ -86,7 +86,7 @@ ProcessAllHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, Message
     spi::Bucket bucket(cmd.getBucket());
     UnrevertableRemoveEntryProcessor processor(_spi, bucket, tracker->context());
     BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
-                                std::make_shared<document::AllFields>(),
+                                std::make_shared<document::DocIdOnly>(),
                                 processor, spi::NEWEST_DOCUMENT_ONLY,tracker->context());
 
     tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, processor._n_removed));
@@ -104,7 +104,7 @@ ProcessAllHandler::handleStatBucket(api::StatBucketCommand& cmd, MessageTracker:
     spi::Bucket bucket(cmd.getBucket());
     StatEntryProcessor processor(ost);
     BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
-                                std::make_shared<document::AllFields>(),
+                                std::make_shared<document::DocIdOnly>(),
                                 processor, spi::ALL_VERSIONS,tracker->context());
 
     tracker->setReply(std::make_shared<api::StatBucketReply>(cmd, ost.str()));
