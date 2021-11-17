@@ -58,7 +58,10 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -462,10 +465,10 @@ public class ApplicationRepositoryTest {
         assertEquals(1, sessionRepository.getLocalSessions().size());
 
         // Create a local session without any data in zookeeper (corner case seen in production occasionally)
-        // and check that expiring local sessions still work
+        // and check that expiring local sessions still works
         int sessionId = 6;
         TenantName tenantName = tester.tenant().getName();
-        Files.createDirectory(new TenantFileSystemDirs(serverdb, tenantName).getUserApplicationDir(sessionId).toPath());
+        java.nio.file.Path dir = Files.createDirectory(new TenantFileSystemDirs(serverdb, tenantName).getUserApplicationDir(sessionId).toPath());
         LocalSession localSession2 = new LocalSession(tenant1,
                                                       sessionId,
                                                       FilesApplicationPackage.fromFile(testApp),
@@ -490,6 +493,12 @@ public class ApplicationRepositoryTest {
 
         // Check that trying to expire when there are no active sessions works
         tester.applicationRepository().deleteExpiredLocalSessions();
+        assertEquals(2, sessionRepository.getLocalSessions().size());
+
+        // Set older created timestamp for session dir for local session without any data in zookeeper, should be deleted
+        setCreatedTime(dir, Instant.now().minus(Duration.ofDays(31)));
+        tester.applicationRepository().deleteExpiredLocalSessions();
+        assertEquals(1, sessionRepository.getLocalSessions().size());
     }
 
     @Test
@@ -738,6 +747,16 @@ public class ApplicationRepositoryTest {
     private ApplicationMetaData getApplicationMetaData(ApplicationId applicationId, long sessionId) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         return applicationRepository.getMetadataFromLocalSession(tenant, sessionId);
+    }
+
+    private void setCreatedTime(java.nio.file.Path file, Instant createdTime) {
+        try {
+            BasicFileAttributeView attributes = Files.getFileAttributeView(file, BasicFileAttributeView.class);
+            FileTime time = FileTime.fromMillis(createdTime.toEpochMilli());
+            attributes.setTimes(time, time, time);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** Stores all added or set values for each metric and context. */
