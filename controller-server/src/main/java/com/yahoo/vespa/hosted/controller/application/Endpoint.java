@@ -46,7 +46,7 @@ public class Endpoint {
 
     private Endpoint(TenantAndApplicationId application, Optional<InstanceName> instanceName, EndpointId id,
                      ClusterSpec.Id cluster, URI url, List<Target> targets, Scope scope, Port port, boolean legacy,
-                     RoutingMethod routingMethod) {
+                     RoutingMethod routingMethod, boolean certificateName) {
         Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(instanceName, "instanceName must be non-null");
         Objects.requireNonNull(cluster, "cluster must be non-null");
@@ -56,6 +56,9 @@ public class Endpoint {
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
         if (scope.multiDeployment()) {
             if (id == null) throw new IllegalArgumentException("Endpoint ID must be set for multi-deployment endpoints");
+            if (!certificateName && targets.isEmpty()) {
+                throw new IllegalArgumentException("At least one target must be given for " + scope + " endpoints");
+            }
         } else {
             if (scope == Scope.zone && id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
             if (targets.size() != 1) throw new IllegalArgumentException("A single target must be given for " + scope + " endpoints");
@@ -89,11 +92,14 @@ public class Endpoint {
         this.legacy = legacy;
         this.routingMethod = routingMethod;
         this.tls = port.tls;
+        if (!certificateName && "*".equals(name())) {
+            throw new IllegalArgumentException("Wildcard found in endpoint that is not intended as a certificate name");
+        }
     }
 
     private Endpoint(EndpointId id, ClusterSpec.Id cluster, TenantAndApplicationId application,
                      Optional<InstanceName> instance, List<Target> targets, Scope scope, SystemName system, Port port,
-                     boolean legacy, RoutingMethod routingMethod) {
+                     boolean legacy, RoutingMethod routingMethod, boolean certificateName) {
         this(application,
              instance,
              id,
@@ -107,7 +113,7 @@ public class Endpoint {
                        Objects.requireNonNull(port, "port must be non-null"),
                        legacy,
                        routingMethod),
-             targets, scope, port, legacy, routingMethod);
+             targets, scope, port, legacy, routingMethod, certificateName);
     }
 
     /**
@@ -446,7 +452,7 @@ public class Endpoint {
                             ClusterSpec.Id.from("admin"),
                             url,
                             List.of(new Target(new DeploymentId(systemApplication.id(), zone))),
-                            Scope.zone, port, false, routingMethod);
+                            Scope.zone, port, false, routingMethod, false);
     }
 
     /** A target of an endpoint */
@@ -491,6 +497,7 @@ public class Endpoint {
         private Port port;
         private RoutingMethod routingMethod = RoutingMethod.shared;
         private boolean legacy = false;
+        private boolean certificateName = false;
 
         private EndpointBuilder(TenantAndApplicationId application, Optional<InstanceName> instance) {
             this.application = Objects.requireNonNull(application);
@@ -499,31 +506,39 @@ public class Endpoint {
 
         /** Sets the deployment target for this */
         public EndpointBuilder target(ClusterSpec.Id cluster, DeploymentId deployment) {
-            checkScope();
             this.cluster = cluster;
-            this.scope = Scope.zone;
+            this.scope = requireUnset(Scope.zone);
             this.targets = List.of(new Target(deployment));
+            return this;
+        }
+
+        /** Sets the global target with given ID, deployments and cluster (as defined in deployments.xml) */
+        public EndpointBuilder target(EndpointId endpointId, ClusterSpec.Id cluster, List<DeploymentId> deployments) {
+            this.endpointId = endpointId;
+            this.cluster = cluster;
+            this.targets = deployments.stream().map(Target::new).collect(Collectors.toUnmodifiableList());
+            this.scope = requireUnset(Scope.global);
             return this;
         }
 
         /** Sets the global target with given ID and pointing to the default cluster */
         public EndpointBuilder target(EndpointId endpointId) {
-           return target(endpointId, ClusterSpec.Id.from("default"), List.of());
+            return target(endpointId, ClusterSpec.Id.from("default"), List.of());
         }
 
-        /** Sets the global target with given ID, deployments and cluster (as defined in deployments.xml) */
-        public EndpointBuilder target(EndpointId endpointId, ClusterSpec.Id cluster, List<DeploymentId> deployments) {
-            checkScope();
-            this.endpointId = endpointId;
-            this.cluster = cluster;
-            this.targets = deployments.stream().map(Target::new).collect(Collectors.toUnmodifiableList());
-            this.scope = Scope.global;
-            return this;
+        /** Sets the application target with given ID and pointing to the default cluster */
+        public EndpointBuilder targetApplication(EndpointId endpointId, DeploymentId deployment) {
+            return targetApplication(endpointId, ClusterSpec.Id.from("default"), Map.of(deployment, 1));
         }
 
         /** Sets the global wildcard target for this */
         public EndpointBuilder wildcard() {
             return target(EndpointId.of("*"), ClusterSpec.Id.from("*"), List.of());
+        }
+
+        /** Sets the application wildcard target for this */
+        public EndpointBuilder wildcardApplication(DeploymentId deployment) {
+            return targetApplication(EndpointId.of("*"), ClusterSpec.Id.from("*"), Map.of(deployment, 1));
         }
 
         /** Sets the zone wildcard target for this */
@@ -533,7 +548,6 @@ public class Endpoint {
 
         /** Sets the application target with given ID, cluster, deployments and their weights */
         public EndpointBuilder targetApplication(EndpointId endpointId, ClusterSpec.Id cluster, Map<DeploymentId, Integer> deployments) {
-            checkScope();
             this.endpointId = endpointId;
             this.cluster = cluster;
             this.targets = deployments.entrySet().stream()
@@ -545,9 +559,8 @@ public class Endpoint {
 
         /** Sets the region target for this, deduced from given zone */
         public EndpointBuilder targetRegion(ClusterSpec.Id cluster, ZoneId zone) {
-            checkScope();
             this.cluster = cluster;
-            this.scope = Scope.weighted;
+            this.scope = requireUnset(Scope.weighted);
             this.targets = List.of(new Target(new DeploymentId(application.instance(instance.get()), effectiveZone(zone))));
             return this;
         }
@@ -570,6 +583,12 @@ public class Endpoint {
             return this;
         }
 
+        /** Sets whether we're building a name for inclusion in a certificate */
+        public EndpointBuilder certificateName() {
+            this.certificateName = true;
+            return this;
+        }
+
         /** Sets the system that owns this */
         public Endpoint in(SystemName system) {
             if (system.isPublic() && routingMethod != RoutingMethod.exclusive) {
@@ -578,13 +597,14 @@ public class Endpoint {
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            return new Endpoint(endpointId, cluster, application, instance, targets, scope, system, port, legacy, routingMethod);
+            return new Endpoint(endpointId, cluster, application, instance, targets, scope, system, port, legacy, routingMethod, certificateName);
         }
 
-        private void checkScope() {
-            if (scope != null) {
+        private Scope requireUnset(Scope scope) {
+            if (this.scope != null) {
                 throw new IllegalArgumentException("Cannot change endpoint scope. Already set to " + scope);
             }
+            return scope;
         }
 
     }

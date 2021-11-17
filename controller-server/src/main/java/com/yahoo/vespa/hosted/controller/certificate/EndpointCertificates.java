@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -52,9 +53,9 @@ public class EndpointCertificates {
     }
 
     /** Returns certificate metadata for endpoints of given instance and zone */
-    public Optional<EndpointCertificateMetadata> getMetadata(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
+    public Optional<EndpointCertificateMetadata> getMetadata(Instance instance, ZoneId zone, DeploymentSpec deploymentSpec) {
         Instant start = clock.instant();
-        Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone, instanceSpec);
+        Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone, deploymentSpec);
         metadata.ifPresent(m -> curator.writeEndpointCertificateMetadata(instance.id(), m.withLastRequested(clock.instant().getEpochSecond())));
         Duration duration = Duration.between(start, clock.instant());
         if (duration.toSeconds() > 30)
@@ -62,13 +63,12 @@ public class EndpointCertificates {
         return metadata;
     }
 
-    private Optional<EndpointCertificateMetadata> getOrProvision(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
-        final var currentCertificateMetadata = curator.readEndpointCertificateMetadata(instance.id());
-
+    private Optional<EndpointCertificateMetadata> getOrProvision(Instance instance, ZoneId zone, DeploymentSpec deploymentSpec) {
+        Optional<EndpointCertificateMetadata> currentCertificateMetadata = curator.readEndpointCertificateMetadata(instance.id());
         DeploymentId deployment = new DeploymentId(instance.id(), zone);
 
         if (currentCertificateMetadata.isEmpty()) {
-            var provisionedCertificateMetadata = provisionEndpointCertificate(deployment, Optional.empty(), instanceSpec);
+            var provisionedCertificateMetadata = provisionEndpointCertificate(deployment, Optional.empty(), deploymentSpec);
             // We do not verify the certificate if one has never existed before - because we do not want to
             // wait for it to be available before we deploy. This allows the config server to start
             // provisioning nodes ASAP, and the risk is small for a new deployment.
@@ -77,10 +77,10 @@ public class EndpointCertificates {
         }
 
         // Re-provision certificate if it is missing SANs for the zone we are deploying to
-        var requiredSansForZone = controller.routing().certificateDnsNames(deployment);
+        var requiredSansForZone = controller.routing().certificateDnsNames(deployment, deploymentSpec);
         if (!currentCertificateMetadata.get().requestedDnsSans().containsAll(requiredSansForZone)) {
             var reprovisionedCertificateMetadata =
-                    provisionEndpointCertificate(deployment, currentCertificateMetadata, instanceSpec)
+                    provisionEndpointCertificate(deployment, currentCertificateMetadata, deploymentSpec)
                             .withRequestId(currentCertificateMetadata.get().requestId()); // We're required to keep the original request ID
             curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
             // Verification is unlikely to succeed in this case, as certificate must be available first - controller will retry
@@ -94,12 +94,13 @@ public class EndpointCertificates {
 
     private EndpointCertificateMetadata provisionEndpointCertificate(DeploymentId deployment,
                                                                      Optional<EndpointCertificateMetadata> currentMetadata,
-                                                                     Optional<DeploymentInstanceSpec> instanceSpec) {
+                                                                     DeploymentSpec deploymentSpec) {
         List<ZoneId> zonesInSystem = controller.zoneRegistry().zones().controllerUpgraded().ids();
         Set<ZoneId> requiredZones = new LinkedHashSet<>();
         requiredZones.add(deployment.zoneId());
         if (!deployment.zoneId().environment().isManuallyDeployed()) {
             // If not deploying to a dev or perf zone, require all prod zones in deployment spec + test and staging
+            Optional<DeploymentInstanceSpec> instanceSpec = deploymentSpec.instance(deployment.applicationId().instance());
             zonesInSystem.stream()
                          .filter(zone -> zone.environment().isTest() ||
                                          (instanceSpec.isPresent() &&
@@ -107,14 +108,16 @@ public class EndpointCertificates {
                          .forEach(requiredZones::add);
         }
         Set<String> requiredNames = requiredZones.stream()
-                                                 .flatMap(zone -> controller.routing().certificateDnsNames(new DeploymentId(deployment.applicationId(), zone)).stream())
+                                                 .flatMap(zone -> controller.routing().certificateDnsNames(new DeploymentId(deployment.applicationId(), zone),
+                                                                                                           deploymentSpec)
+                                                                            .stream())
                                                  .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // Preserve any currently present names that are still valid
         List<String> currentNames = currentMetadata.map(EndpointCertificateMetadata::requestedDnsSans)
                                                    .orElseGet(List::of);
         zonesInSystem.stream()
-                     .map(zone -> controller.routing().certificateDnsNames(new DeploymentId(deployment.applicationId(), zone)))
+                     .map(zone -> controller.routing().certificateDnsNames(new DeploymentId(deployment.applicationId(), zone), deploymentSpec))
                      .filter(currentNames::containsAll)
                      .forEach(requiredNames::addAll);
 

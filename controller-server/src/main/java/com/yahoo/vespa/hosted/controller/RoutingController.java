@@ -173,27 +173,41 @@ public class RoutingController {
     }
 
     /** Returns certificate DNS names (CN and SAN values) for given deployment */
-    public List<String> certificateDnsNames(DeploymentId deployment) {
+    public List<String> certificateDnsNames(DeploymentId deployment, DeploymentSpec deploymentSpec) {
         List<String> endpointDnsNames = new ArrayList<>();
 
         // We add first an endpoint name based on a hash of the application ID,
         // as the certificate provider requires the first CN to be < 64 characters long.
         endpointDnsNames.add(commonNameHashOf(deployment.applicationId(), controller.system()));
 
-        // Add wildcard names for global endpoints when deploying to production
         List<Endpoint.EndpointBuilder> builders = new ArrayList<>();
         if (deployment.zoneId().environment().isProduction()) {
+            // Add default and wildcard names for global endpoints
             builders.add(Endpoint.of(deployment.applicationId()).target(EndpointId.defaultId()));
             builders.add(Endpoint.of(deployment.applicationId()).wildcard());
+
+            // Add default and wildcard names for each region targeted by application endpoints
+            List<DeploymentId> deploymentTargets = deploymentSpec.endpoints().stream()
+                                                                 .map(com.yahoo.config.application.api.Endpoint::targets)
+                                                                 .flatMap(Collection::stream)
+                                                                 .map(com.yahoo.config.application.api.Endpoint.Target::region)
+                                                                 .distinct()
+                                                                 .map(region -> new DeploymentId(deployment.applicationId(), ZoneId.from(Environment.prod, region)))
+                                                                 .collect(Collectors.toUnmodifiableList());
+            for (var targetDeployment : deploymentTargets) {
+                builders.add(Endpoint.of(targetDeployment.applicationId()).targetApplication(EndpointId.defaultId(), targetDeployment));
+                builders.add(Endpoint.of(targetDeployment.applicationId()).wildcardApplication(targetDeployment));
+            }
         }
 
-        // Add wildcard names for zone endpoints
+        // Add default and wildcard names for zone endpoints
         builders.add(Endpoint.of(deployment.applicationId()).target(ClusterSpec.Id.from("default"), deployment));
         builders.add(Endpoint.of(deployment.applicationId()).wildcard(deployment));
 
-        // Build all endpoints
+        // Build all certificate names
         for (var builder : builders) {
-            Endpoint endpoint = builder.routingMethod(RoutingMethod.exclusive)
+            Endpoint endpoint = builder.certificateName()
+                                       .routingMethod(RoutingMethod.exclusive)
                                        .on(Port.tls())
                                        .in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());

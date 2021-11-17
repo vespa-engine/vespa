@@ -5,6 +5,8 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -19,6 +21,8 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidatorImpl;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import org.junit.Before;
@@ -31,6 +35,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -111,7 +116,7 @@ public class EndpointCertificatesTest {
     @Test
     public void provisions_new_certificate_in_dev() {
         ZoneId testZone = tester.zoneRegistry().zones().routingMethod(RoutingMethod.exclusive).in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -121,7 +126,7 @@ public class EndpointCertificatesTest {
 
     @Test
     public void provisions_new_certificate_in_prod() {
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -145,7 +150,7 @@ public class EndpointCertificatesTest {
                 "default.default.aws-us-east-1c.staging.z.vespa-app.cloud",
                 "*.default.default.aws-us-east-1c.staging.z.vespa-app.cloud"
         );
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -164,7 +169,7 @@ public class EndpointCertificatesTest {
                 "", Optional.empty(), Optional.empty()));
         secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 7);
         secretStore.setSecret(testCertName, X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 7);
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(testKeyName, endpointCertificateMetadata.get().keyName());
         assertEquals(testCertName, endpointCertificateMetadata.get().certName());
@@ -176,7 +181,7 @@ public class EndpointCertificatesTest {
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 0);
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
@@ -193,7 +198,7 @@ public class EndpointCertificatesTest {
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate2) + X509CertificateUtils.toPem(testCertificate2), 0);
 
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
@@ -203,7 +208,6 @@ public class EndpointCertificatesTest {
 
     @Test
     public void includes_zones_in_deployment_spec_when_deploying_to_staging() {
-
         DeploymentSpec deploymentSpec = new DeploymentSpecXmlReader(true).read(
                 "<deployment version=\"1.0\">\n" +
                         "  <instance id=\"default\">\n" +
@@ -215,12 +219,57 @@ public class EndpointCertificatesTest {
                         "</deployment>\n");
 
         ZoneId testZone = tester.zoneRegistry().zones().all().in(Environment.staging).zones().stream().findFirst().orElseThrow().getId();
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.of(deploymentSpec.requireInstance("default")));
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, deploymentSpec);
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(Set.copyOf(expectedCombinedSans), Set.copyOf(endpointCertificateMetadata.get().requestedDnsSans()));
+    }
+
+    @Test
+    public void includes_application_endpoint_when_declared() {
+        Instance instance = new Instance(ApplicationId.from("t1", "a1", "default"));
+        ZoneId zone1 = ZoneId.from(Environment.prod, RegionName.from("aws-us-east-1c"));
+        ZoneId zone2 = ZoneId.from(Environment.prod, RegionName.from("aws-us-west-2a"));
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("beta,main")
+                .region(zone1.region())
+                .region(zone2.region())
+                .applicationEndpoint("a", "qrs", zone2.region().value(),
+                                     Map.of(InstanceName.from("beta"), 2,
+                                            InstanceName.from("main"), 8))
+                .applicationEndpoint("b", "qrs", zone2.region().value(),
+                                     Map.of(InstanceName.from("beta"), 1,
+                                            InstanceName.from("main"), 1))
+                .applicationEndpoint("c", "qrs", zone1.region().value(),
+                                     Map.of(InstanceName.from("beta"), 4,
+                                            InstanceName.from("main"), 6))
+                .build();
+        ControllerTester tester = new ControllerTester(SystemName.Public);
+        EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
+        EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
+        List<String> expectedSans = List.of(
+                "vlfms2wpoa4nyrka2s5lktucypjtxkqhv.internal.vespa-app.cloud",
+                "a1.t1.g.vespa-app.cloud",
+                "*.a1.t1.g.vespa-app.cloud",
+                "a1.t1.aws-us-west-2a.r.vespa-app.cloud",
+                "*.a1.t1.aws-us-west-2a.r.vespa-app.cloud",
+                "a1.t1.aws-us-east-1c.r.vespa-app.cloud",
+                "*.a1.t1.aws-us-east-1c.r.vespa-app.cloud",
+                "a1.t1.aws-us-east-1c.z.vespa-app.cloud",
+                "*.a1.t1.aws-us-east-1c.z.vespa-app.cloud",
+                "a1.t1.aws-us-east-1c.test.z.vespa-app.cloud",
+                "*.a1.t1.aws-us-east-1c.test.z.vespa-app.cloud",
+                "a1.t1.aws-us-east-1c.staging.z.vespa-app.cloud",
+                "*.a1.t1.aws-us-east-1c.staging.z.vespa-app.cloud"
+        );
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone1, applicationPackage.deploymentSpec());
+        assertTrue(endpointCertificateMetadata.isPresent());
+        assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.t1.a1.*-key"));
+        assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.t1.a1.*-cert"));
+        assertEquals(0, endpointCertificateMetadata.get().version());
+        assertEquals(expectedSans, endpointCertificateMetadata.get().requestedDnsSans());
     }
 
 }

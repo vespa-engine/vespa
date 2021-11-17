@@ -376,7 +376,7 @@ public class ApplicationController {
                     &&   run.testerCertificate().isPresent())
                     applicationPackage = applicationPackage.withTrustedCertificate(run.testerCertificate().get());
 
-                endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone, applicationPackage.deploymentSpec().instance(instance.name()));
+                endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone, applicationPackage.deploymentSpec());
 
                 containerEndpoints = controller.routing().containerEndpointsOf(application.get(), job.application().instance(), zone);
 
