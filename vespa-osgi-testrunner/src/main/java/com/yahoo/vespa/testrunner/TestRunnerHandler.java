@@ -13,24 +13,18 @@ import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
-import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.Response.Status;
 
@@ -105,14 +99,14 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         final String path = request.getUri().getPath();
         if (path.startsWith("/tester/v1/run/")) {
             String type = lastElement(path);
-            TestProfile testProfile = TestProfile.valueOf(type.toUpperCase() + "_TEST");
+            LegacyTestRunner.Suite testSuite = LegacyTestRunner.Suite.valueOf(type.toUpperCase() + "_TEST");
             byte[] config = request.getData().readAllBytes();
             if (useOsgiMode) {
-                junitRunner.executeTests(categoryFromProfile(testProfile), config);
+                junitRunner.executeTests(categoryFromProfile(testSuite), config);
                 log.info("Started tests of type " + type + " and status is " + junitRunner.getStatus());
                 return new Response("Successfully started " + type + " tests");
             } else {
-                testRunner.test(testProfile, config);
+                testRunner.test(testSuite, config);
                 log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());
                 return new Response("Successfully started " + type + " tests");
             }
@@ -120,7 +114,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
     }
 
-    TestDescriptor.TestCategory categoryFromProfile(TestProfile testProfile) {
+    TestDescriptor.TestCategory categoryFromProfile(LegacyTestRunner.Suite testProfile) {
         switch(testProfile) {
             case SYSTEM_TEST: return TestDescriptor.TestCategory.systemtest;
             case STAGING_SETUP_TEST: return TestDescriptor.TestCategory.stagingsetuptest;

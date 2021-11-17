@@ -13,10 +13,14 @@ public interface LegacyTestRunner {
 
     Status getStatus();
 
-    void test(TestProfile testProfile, byte[] config);
+    void test(Suite suite, byte[] config);
 
     enum Status {
         NOT_STARTED, RUNNING, FAILURE, ERROR, SUCCESS
+    }
+
+    enum Suite {
+        SYSTEM_TEST, STAGING_SETUP_TEST, STAGING_TEST, PRODUCTION_TEST
     }
 
 }
