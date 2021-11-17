@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.RoutingMethod.Enum.sharedLayer4;
 import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.application;
@@ -47,6 +46,7 @@ import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpo
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,7 +54,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -177,15 +176,19 @@ public class LbServicesProducerTest {
                            .filter(e -> e.routingMethod() == sharedLayer4)
                            .map(Endpoints::dnsName).collect(Collectors.toList()),
                    containsInAnyOrder("mydisc.foo.foo.endpoint1.suffix", "mydisc.foo.foo.endpoint2.suffix"));
+        assertContainsEndpoint(zoneEndpoints, "mydisc.foo.foo.endpoint1.suffix", "mydisc", zone, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
+        assertContainsEndpoint(zoneEndpoints, "mydisc.foo.foo.endpoint2.suffix", "mydisc", zone, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
 
         List<Endpoints> globalEndpoints = endpointList.stream().filter(e -> e.scope() == global).collect(Collectors.toList());
         assertEquals(2, globalEndpoints.size());
         assertThat(globalEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()), containsInAnyOrder("rotation-1", "rotation-2"));
+        assertContainsEndpoint(globalEndpoints, "rotation-1", "mydisc", global, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
+        assertContainsEndpoint(globalEndpoints, "rotation-2", "mydisc", global, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
 
         List<Endpoints> applicationEndpoints = endpointList.stream().filter(e -> e.scope() == application).collect(Collectors.toList());
         assertEquals(1, applicationEndpoints.size());
         assertThat(applicationEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()), containsInAnyOrder("app-endpoint"));
-
+        assertContainsEndpoint(applicationEndpoints, "app-endpoint", "mydisc", application, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
     }
 
 
@@ -203,6 +206,17 @@ public class LbServicesProducerTest {
         assertNull(getLbServicesConfig(Zone.defaultZone(), testModel)
                            .tenants("foo")
                            .applications("baz:prod:default:custom-t"));
+    }
+
+    private void assertContainsEndpoint(List<Endpoints> endpoints, String dnsName, String clusterId, Endpoints.Scope.Enum scope, Endpoints.RoutingMethod.Enum routingMethod, int weight, List<String> hosts) {
+        assertThat(endpoints, hasItem(new Endpoints.Builder()
+                                              .dnsName(dnsName)
+                                              .clusterId(clusterId)
+                                              .scope(scope)
+                                              .routingMethod(routingMethod)
+                                              .weight(weight)
+                                              .hosts(hosts)
+                                              .build()));
     }
 
     private Map<TenantName, Set<ApplicationInfo>> randomizeApplications(Map<TenantName, Set<ApplicationInfo>> testModel, int seed) {

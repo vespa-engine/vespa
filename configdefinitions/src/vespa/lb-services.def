@@ -23,6 +23,7 @@ tenants{}.applications{}.hosts{}.services{}.endpointaliases[]           string
 
 
 tenants{}.applications{}.endpoints[].dnsName         string
+tenants{}.applications{}.endpoints[].clusterId       string
 tenants{}.applications{}.endpoints[].scope           enum {application, global, zone}
 tenants{}.applications{}.endpoints[].routingMethod   enum {shared, sharedLayer4}
 tenants{}.applications{}.endpoints[].weight          int default=1
