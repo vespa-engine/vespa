@@ -9,7 +9,7 @@ NodeSupportedFeaturesRepo::NodeSupportedFeaturesRepo() = default;
 
 NodeSupportedFeaturesRepo::NodeSupportedFeaturesRepo(
         vespalib::hash_map<uint16_t, NodeSupportedFeatures> features,
-        PrivateCtorTag)
+        PrivateCtorTag) noexcept
     : _node_features(std::move(features))
 {}
 

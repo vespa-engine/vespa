@@ -20,7 +20,7 @@ class NodeSupportedFeaturesRepo {
 public:
     NodeSupportedFeaturesRepo();
 
-    NodeSupportedFeaturesRepo(vespalib::hash_map<uint16_t, NodeSupportedFeatures> features, PrivateCtorTag);
+    NodeSupportedFeaturesRepo(vespalib::hash_map<uint16_t, NodeSupportedFeatures> features, PrivateCtorTag) noexcept;
     ~NodeSupportedFeaturesRepo();
 
     // Returns supported node features for node with distribution key node_idx, or a default feature set
