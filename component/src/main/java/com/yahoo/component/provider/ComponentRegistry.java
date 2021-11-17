@@ -20,7 +20,7 @@ import java.util.Set;
  * <p>
  * This registry supports the <i>freeze</i> pattern - changes can be made
  * to this registry until {@link #freeze} is called. Subsequent change attempts will cause an
- * exception. Freezing a registry after building makes it possible toi avoid locking and memory
+ * exception. Freezing a registry after building makes it possible to avoid locking and memory
  * synchronization on lookups.
  *
  * @author bratseth

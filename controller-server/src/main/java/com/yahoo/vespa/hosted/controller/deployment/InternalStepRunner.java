@@ -640,6 +640,7 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.of(testFailure);
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
+                controller.jobController().updateTestReport(id);
                 return Optional.of(error);
             case SUCCESS:
                 logger.log("Tests completed successfully.");
@@ -919,24 +920,16 @@ public class InternalStepRunner implements StepRunner {
         String runtimeProviderClass = config.runtimeProviderClass();
         String tenantCdBundle = config.tenantCdBundle();
 
-        String handlerAndExtraComponents = useOsgiBasedTestRuntime
-                ?
+        String extraJUnitComponents =
+                "\n" +
                 "        <component id=\"" + runtimeProviderClass + "\" bundle=\"" + tenantCdBundle + "\" />\n" +
-                        "\n" +
-                        "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
-                        "            <config name=\"com.yahoo.vespa.testrunner.junit-test-runner\">\n" +
-                        "                <artifactsPath>artifacts</artifactsPath>\n" +
-                        "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
-                        "            </config>\n" +
-                        "        </component>\n" +
-                        "\n" +
-                        "        <handler id=\"com.yahoo.vespa.testrunner.TestRunnerHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
-                        "            <binding>http://*/tester/v1/*</binding>\n" +
-                        "        </handler>\n"
-                :
-                "        <handler id=\"com.yahoo.vespa.hosted.testrunner.TestRunnerHandler\" bundle=\"vespa-testrunner-components\">\n" +
-                        "            <binding>http://*/tester/v1/*</binding>\n" +
-                        "        </handler>\n";
+                "\n" +
+                "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
+                "            <config name=\"com.yahoo.vespa.testrunner.junit-test-runner\">\n" +
+                "                <artifactsPath>artifacts</artifactsPath>\n" +
+                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
+                "            </config>\n" +
+                "        </component>\n";
 
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
@@ -952,7 +945,10 @@ public class InternalStepRunner implements StepRunner {
                 "            </config>\n" +
                 "        </component>\n" +
                 "\n" +
-                handlerAndExtraComponents +
+                "        <handler id=\"com.yahoo.vespa.testrunner.TestRunnerHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
+                "            <binding>http://*/tester/v1/*</binding>\n" +
+                "        </handler>\n" +
+                (useOsgiBasedTestRuntime ? extraJUnitComponents : "") +
                 "\n" +
                 "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
                 "            " + resourceString + "\n" +
