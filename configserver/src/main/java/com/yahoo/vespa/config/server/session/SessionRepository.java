@@ -53,8 +53,10 @@ import org.apache.zookeeper.KeeperException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -80,6 +82,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
+import static java.nio.file.Files.readAttributes;
 
 /**
  *
@@ -593,9 +596,27 @@ public class SessionRepository {
         return candidate.getCreateTime().plus(sessionLifetime).isBefore(clock.instant());
     }
 
-    // Sessions with state other than UNKNOWN or ACTIVATE
+    // Sessions with state other than UNKNOWN or ACTIVATE or old sessions in UNKNOWN state
     private boolean canBeDeleted(LocalSession candidate) {
-        return  ! List.of(Session.Status.UNKNOWN, Session.Status.ACTIVATE).contains(candidate.getStatus());
+        return ! List.of(Session.Status.UNKNOWN, Session.Status.ACTIVATE).contains(candidate.getStatus())
+                || oldSessionDirWithNonExistingSession(candidate);
+    }
+
+    private boolean oldSessionDirWithNonExistingSession(LocalSession session) {
+        File sessionDir = tenantFileSystemDirs.getUserApplicationDir(session.getSessionId());
+        return sessionDir.exists()
+                && session.getStatus() == Session.Status.UNKNOWN
+                && created(sessionDir).plus(Duration.ofDays(30)).isBefore(clock.instant());
+    }
+
+    private Instant created(File file) {
+        BasicFileAttributes fileAttributes;
+        try {
+            fileAttributes = readAttributes(file.toPath(), BasicFileAttributes.class);
+            return fileAttributes.creationTime().toInstant();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private void ensureSessionPathDoesNotExist(long sessionId) {
