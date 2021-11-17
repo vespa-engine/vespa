@@ -238,8 +238,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             }
         } catch (InterruptedException|ExecutionException e) {
             logger.log(Level.WARNING, "Error while getting test report", e);
-            // Return FAILURE to enforce getting the test report from the caller.
-            return TestRunner.Status.FAILURE;
+            return TestRunner.Status.ERROR;
         }
     }
 

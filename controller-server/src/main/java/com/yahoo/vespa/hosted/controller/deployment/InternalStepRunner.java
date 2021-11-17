@@ -640,6 +640,7 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.of(testFailure);
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
+                controller.jobController().updateTestReport(id);
                 return Optional.of(error);
             case SUCCESS:
                 logger.log("Tests completed successfully.");
