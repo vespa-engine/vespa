@@ -11,7 +11,7 @@
             </config>
         </component>
 
-        <handler id="com.yahoo.vespa.hosted.testrunner.TestRunnerHandler" bundle="vespa-testrunner-components">
+        <handler id="com.yahoo.vespa.testrunner.TestRunnerHandler" bundle="vespa-osgi-testrunner">
             <binding>http://*/tester/v1/*</binding>
         </handler>
 

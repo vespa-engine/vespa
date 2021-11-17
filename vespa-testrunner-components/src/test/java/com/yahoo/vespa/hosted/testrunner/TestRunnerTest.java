@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.testrunner;
 
-import com.yahoo.vespa.testrunner.legacy.TestProfile;
 import org.fusesource.jansi.Ansi;
 import org.junit.Before;
 import org.junit.Rule;
@@ -14,6 +13,8 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.logging.LogRecord;
 
+import static com.yahoo.vespa.testrunner.TestRunner.Suite.STAGING_TEST;
+import static com.yahoo.vespa.testrunner.TestRunner.Suite.SYSTEM_TEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -48,7 +49,7 @@ public class TestRunnerTest {
     public void ansiCodesAreConvertedToHtml() throws InterruptedException {
         TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
                                            __ -> new ProcessBuilder("echo", Ansi.ansi().fg(Ansi.Color.RED).a("Hello!").reset().toString()));
-        runner.test(TestProfile.SYSTEM_TEST, new byte[0]);
+        runner.test(SYSTEM_TEST, new byte[0]);
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
             Thread.sleep(10);
         }
@@ -65,7 +66,7 @@ public class TestRunnerTest {
         Files.delete(artifactsPath.resolve("my-tests.jar"));
         TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
                                            __ -> new ProcessBuilder("This is a command that doesn't exist, for sure!"));
-        runner.test(TestProfile.SYSTEM_TEST, new byte[0]);
+        runner.test(SYSTEM_TEST, new byte[0]);
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
             Thread.sleep(10);
         }
@@ -81,7 +82,7 @@ public class TestRunnerTest {
     public void errorLeadsToError() throws InterruptedException {
         TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
                                            __ -> new ProcessBuilder("false"));
-        runner.test(TestProfile.SYSTEM_TEST, new byte[0]);
+        runner.test(SYSTEM_TEST, new byte[0]);
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
             Thread.sleep(10);
         }
@@ -93,7 +94,7 @@ public class TestRunnerTest {
     public void failureLeadsToFailure() throws InterruptedException {
         TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
                                            __ -> new ProcessBuilder("false"));
-        runner.test(TestProfile.SYSTEM_TEST, new byte[0]);
+        runner.test(SYSTEM_TEST, new byte[0]);
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
             Thread.sleep(10);
         }
@@ -105,7 +106,7 @@ public class TestRunnerTest {
     public void filesAreGenerated() throws InterruptedException, IOException {
         TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
                                            __ -> new ProcessBuilder("echo", "Hello!"));
-        runner.test(TestProfile.SYSTEM_TEST, "config".getBytes());
+        runner.test(SYSTEM_TEST, "config".getBytes());
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
             Thread.sleep(10);
         }
@@ -119,7 +120,7 @@ public class TestRunnerTest {
     public void runnerCanBeReused() throws InterruptedException, IOException {
         TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
                                            __ -> new ProcessBuilder("sleep", "0.1"));
-        runner.test(TestProfile.SYSTEM_TEST, "config".getBytes());
+        runner.test(SYSTEM_TEST, "config".getBytes());
         assertEquals(TestRunner.Status.RUNNING, runner.getStatus());
 
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
@@ -128,7 +129,7 @@ public class TestRunnerTest {
         assertEquals(1, runner.getLog(-1).size());
         assertEquals(TestRunner.Status.SUCCESS, runner.getStatus());
 
-        runner.test(TestProfile.STAGING_TEST, "newConfig".getBytes());
+        runner.test(STAGING_TEST, "newConfig".getBytes());
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
             Thread.sleep(10);
         }
