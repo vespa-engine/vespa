@@ -8,6 +8,7 @@ import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
  * @author mortent
  */
 public interface TestRunner {
+
     void executeTests(TestDescriptor.TestCategory category, byte[] testConfig);
 
     boolean isSupported();

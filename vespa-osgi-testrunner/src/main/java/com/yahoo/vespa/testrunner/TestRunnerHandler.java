@@ -73,21 +73,18 @@ public class TestRunnerHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
         if (path.equals("/tester/v1/log")) {
+            long fetchRecordsAfter = Optional.ofNullable(request.getProperty("after"))
+                                             .map(Long::parseLong)
+                                             .orElse(-1L);
             if (useOsgiMode) {
-                long fetchRecordsAfter = Optional.ofNullable(request.getProperty("after"))
-                        .map(Long::parseLong)
-                        .orElse(-1L);
-
                 List<LogRecord> logRecords = Optional.ofNullable(junitRunner.getReport())
                         .map(TestReport::logLines)
                         .orElse(Collections.emptyList()).stream()
-                        .filter(record -> record.getSequenceNumber()>fetchRecordsAfter)
+                        .filter(record -> record.getSequenceNumber() > fetchRecordsAfter)
                         .collect(Collectors.toList());
                 return new SlimeJsonResponse(logToSlime(logRecords));
             } else {
-                return new SlimeJsonResponse(logToSlime(testRunner.getLog(request.hasProperty("after")
-                        ? Long.parseLong(request.getProperty("after"))
-                        : -1)));
+                return new SlimeJsonResponse(logToSlime(testRunner.getLog(fetchRecordsAfter)));
             }
         } else if (path.equals("/tester/v1/status")) {
             if (useOsgiMode) {

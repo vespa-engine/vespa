@@ -86,7 +86,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
 
     @Override
     public void executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
-        if (execution != null && !execution.isDone()) {
+        if (execution != null && ! execution.isDone()) {
             throw new IllegalStateException("Test execution already in progress");
         }
         try {
@@ -100,7 +100,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             if (testDescriptor.isEmpty()) {
                 throw new RuntimeException("Could not find test descriptor");
             }
-            execution =  CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), category)));
+            execution = CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), category)));
         } catch (Exception e) {
             execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
         }

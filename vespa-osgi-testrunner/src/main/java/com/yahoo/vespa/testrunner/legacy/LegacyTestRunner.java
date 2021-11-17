@@ -19,4 +19,5 @@ public interface LegacyTestRunner {
     enum Status {
         NOT_STARTED, RUNNING, FAILURE, ERROR, SUCCESS
     }
+
 }

@@ -110,8 +110,8 @@ public class TestReport {
             return this;
         }
 
-        public Builder withLogs(List<LogRecord> logRecords) {
-            this.logLines = logRecords;
+        public Builder withLogs(Collection<LogRecord> logRecords) {
+            this.logLines = List.copyOf(logRecords);
             return this;
         }
     }
