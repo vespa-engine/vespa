@@ -17,5 +17,4 @@ public interface TestRunner {
 
     TestReport getReport();
 
-    String getReportAsJson();
 }

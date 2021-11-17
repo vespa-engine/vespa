@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
@@ -21,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -96,8 +98,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             }
         } else if (path.equals("/tester/v1/report")) {
             if (useOsgiMode) {
-                String report = junitRunner.getReportAsJson();
-                return new SlimeJsonResponse(SlimeUtils.jsonToSlime(report));
+                return new SlimeJsonResponse(toSlime(junitRunner.getReport()));
             } else {
                 return new EmptyResponse(200);
             }
@@ -218,4 +219,33 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             return CONTENT_TYPE_APPLICATION_JSON;
         }
     }
+
+    private static Slime toSlime(TestReport testReport) {
+        var slime = new Slime();
+        var root = slime.setObject();
+        if (testReport == null)
+            return slime;
+
+        var summary = root.setObject("summary");
+        summary.setLong("total", testReport.totalCount);
+        summary.setLong("success", testReport.successCount);
+        summary.setLong("failed", testReport.failedCount);
+        summary.setLong("ignored", testReport.ignoredCount);
+        summary.setLong("aborted", testReport.abortedCount);
+        var failureRoot = summary.setArray("failures");
+        testReport.failures.forEach(failure -> serializeFailure(failure, failureRoot.addObject()));
+
+        var output = root.setArray("output");
+        testReport.logLines.forEach(lr -> output.addString(lr.getMessage()));
+
+        return slime;
+    }
+
+    private static void serializeFailure(TestReport.Failure failure, Cursor slime) {
+        var testIdentifier = failure.testId();
+        slime.setString("testName", failure.testId());
+        slime.setString("testError",failure.exception().getMessage());
+        slime.setString("exception", ExceptionUtils.getStackTraceAsString(failure.exception()));
+    }
+
 }

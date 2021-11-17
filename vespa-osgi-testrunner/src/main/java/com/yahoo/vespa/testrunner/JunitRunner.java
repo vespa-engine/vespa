@@ -242,10 +242,4 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         }
     }
 
-    @Override
-    public String getReportAsJson() {
-        return Optional.ofNullable(getReport())
-                .map(TestReport::toJson)
-                .orElse("");
-    }
 }

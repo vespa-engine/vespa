@@ -145,9 +145,5 @@ public class TestRunnerHandlerTest {
             return testReport;
         }
 
-        @Override
-        public String getReportAsJson() {
-            return getReport().toJson();
-        }
     }
 }
