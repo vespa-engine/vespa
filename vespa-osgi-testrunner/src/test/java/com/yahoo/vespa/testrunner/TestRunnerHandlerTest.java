@@ -18,7 +18,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
-import static org.junit.Assert.assertEquals;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -56,7 +57,7 @@ public class TestRunnerHandlerTest {
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/report", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        JsonTestHelper.assertJsonEquals(new String(out.toByteArray()), "{\"summary\":{\"total\":10,\"success\":1,\"failed\":2,\"ignored\":3,\"aborted\":4,\"failures\":[{\"testName\":\"Foo.bar()\",\"testError\":\"org.junit.ComparisonFailure: expected:<foo> but was:<bar>\",\"exception\":\"java.lang.RuntimeException: org.junit.ComparisonFailure: expected:<foo> but was:<bar>\\n\\tat Foo.bar(Foo.java:1123)\\n\"}]},\"output\":[\"Tests started\"]}");
+        JsonTestHelper.assertJsonEquals(out.toString(UTF_8), "{\"summary\":{\"total\":10,\"success\":1,\"failed\":2,\"ignored\":3,\"aborted\":4,\"failures\":[{\"testName\":\"Foo.bar()\",\"testError\":\"org.junit.ComparisonFailure: expected:<foo> but was:<bar>\",\"exception\":\"java.lang.RuntimeException: org.junit.ComparisonFailure: expected:<foo> but was:<bar>\\n\\tat Foo.bar(Foo.java:1123)\\n\"}]},\"output\":[\"Tests started\"]}");
 
     }
 
@@ -65,13 +66,13 @@ public class TestRunnerHandlerTest {
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        JsonTestHelper.assertJsonEquals(new String(out.toByteArray()), "{\"logRecords\":[{\"id\":0,\"at\":1598432151660,\"type\":\"info\",\"message\":\"Tests started\"}]}");
+        JsonTestHelper.assertJsonEquals(out.toString(UTF_8), "{\"logRecords\":[{\"id\":0,\"at\":1598432151660,\"type\":\"info\",\"message\":\"Tests started\"}]}");
 
         // Should not get old log
         response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log?after=0", GET));
         out = new ByteArrayOutputStream();
         response.render(out);
-        assertEquals("{\"logRecords\":[]}", new String(out.toByteArray()));
+        assertEquals("{\"logRecords\":[]}", out.toString(UTF_8));
 
     }
 
@@ -87,7 +88,7 @@ public class TestRunnerHandlerTest {
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        assertEquals("{\"logRecords\":[]}", new String(out.toByteArray()));
+        assertEquals("{\"logRecords\":[]}", out.toString(UTF_8));
     }
 
     @Test
@@ -104,7 +105,7 @@ public class TestRunnerHandlerTest {
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        JsonTestHelper.assertJsonEquals(new String(out.toByteArray()), "{\"logRecords\":[{\"id\":0,\"at\":1598432151660,\"type\":\"info\",\"message\":\"Legacy log message\"}]}");
+        JsonTestHelper.assertJsonEquals(out.toString(UTF_8), "{\"logRecords\":[{\"id\":0,\"at\":1598432151660,\"type\":\"info\",\"message\":\"Legacy log message\"}]}");
     }
 
     /* Creates a LogRecord that has a known instant and sequence number to get predictable serialization format */
