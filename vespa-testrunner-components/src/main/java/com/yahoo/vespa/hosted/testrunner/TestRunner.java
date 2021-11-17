@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.testrunner;
 
 import com.google.inject.Inject;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import org.fusesource.jansi.AnsiOutputStream;
 import org.fusesource.jansi.HtmlAnsiOutputStream;
 
@@ -37,7 +36,7 @@ import static java.util.logging.Level.SEVERE;
  * @author valerijf
  * @author jvenstad
  */
-public class TestRunner implements LegacyTestRunner {
+public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
 
     private static final Logger logger = Logger.getLogger(TestRunner.class.getName());
     private static final Level HTML = new Level("html", 1) { };

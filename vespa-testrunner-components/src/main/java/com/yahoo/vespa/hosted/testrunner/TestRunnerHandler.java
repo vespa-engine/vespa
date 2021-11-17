@@ -11,7 +11,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
+import com.yahoo.vespa.testrunner.TestRunner;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -33,10 +33,10 @@ public class TestRunnerHandler extends LoggingRequestHandler {
 
     private static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
 
-    private final TestRunner testRunner;
+    private final com.yahoo.vespa.hosted.testrunner.TestRunner testRunner;
 
     @Inject
-    public TestRunnerHandler(Executor executor, TestRunner testRunner) {
+    public TestRunnerHandler(Executor executor, com.yahoo.vespa.hosted.testrunner.TestRunner testRunner) {
         super(executor);
         this.testRunner = testRunner;
     }
@@ -75,7 +75,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         final String path = request.getUri().getPath();
         if (path.startsWith("/tester/v1/run/")) {
             String type = lastElement(path);
-            LegacyTestRunner.Suite suite = LegacyTestRunner.Suite.valueOf(type.toUpperCase() + "_TEST");
+            TestRunner.Suite suite = TestRunner.Suite.valueOf(type.toUpperCase() + "_TEST");
             byte[] config = IOUtils.readBytes(request.getData(), 1 << 16);
             testRunner.test(suite, config);
             log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());

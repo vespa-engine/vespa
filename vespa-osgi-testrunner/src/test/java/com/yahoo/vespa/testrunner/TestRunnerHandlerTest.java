@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
-import ai.vespa.hosted.api.TestDescriptor;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.test.json.JsonTestHelper;
-import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +48,7 @@ public class TestRunnerHandlerTest {
 
         testRunnerHandler = new TestRunnerHandler(
                 Executors.newSingleThreadExecutor(),
-                new MockJunitRunner(LegacyTestRunner.Status.SUCCESS, testReport),
+                new MockJunitRunner(TestRunner.Status.SUCCESS, testReport),
                 null);
     }
 
@@ -98,7 +96,7 @@ public class TestRunnerHandlerTest {
             HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/report", GET));
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             response.render(out);
-            assertEquals("{}", out.toString(UTF_8));
+            assertEquals("", out.toString(UTF_8));
         }
     }
 
@@ -106,7 +104,7 @@ public class TestRunnerHandlerTest {
     public void usesLegacyTestRunnerWhenNotSupported() throws IOException {
         TestRunner testRunner = mock(TestRunner.class);
         when(testRunner.isSupported()).thenReturn(false);
-        LegacyTestRunner legacyTestRunner = mock(LegacyTestRunner.class);
+        TestRunner legacyTestRunner = mock(TestRunner.class);
         when(legacyTestRunner.getLog(anyLong())).thenReturn(List.of(logRecord("Legacy log message")));
 
         testRunnerHandler = new TestRunnerHandler(
@@ -129,18 +127,17 @@ public class TestRunnerHandlerTest {
 
     private static class MockJunitRunner implements TestRunner {
 
-        private final LegacyTestRunner.Status status;
+        private final TestRunner.Status status;
         private final TestReport testReport;
 
-        public MockJunitRunner(LegacyTestRunner.Status status, TestReport testReport) {
+        public MockJunitRunner(TestRunner.Status status, TestReport testReport) {
 
             this.status = status;
             this.testReport = testReport;
         }
 
         @Override
-        public void executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
-        }
+        public void test(Suite suite, byte[] testConfig) { }
 
         @Override
         public Collection<LogRecord> getLog(long after) {
@@ -155,7 +152,7 @@ public class TestRunnerHandlerTest {
         }
 
         @Override
-        public LegacyTestRunner.Status getStatus() {
+        public TestRunner.Status getStatus() {
             return status;
         }
 
@@ -165,4 +162,5 @@ public class TestRunnerHandlerTest {
         }
 
     }
+
 }

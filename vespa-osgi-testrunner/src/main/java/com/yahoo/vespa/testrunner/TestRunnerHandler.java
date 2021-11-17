@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
-import ai.vespa.hosted.api.TestDescriptor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
@@ -13,7 +12,6 @@ import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -37,16 +35,12 @@ public class TestRunnerHandler extends LoggingRequestHandler {
 
     private static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
 
-    private final TestRunner junitRunner;
-    private final LegacyTestRunner testRunner;
-    private final boolean useOsgiMode;
+    private final TestRunner testRunner;
 
     @Inject
-    public TestRunnerHandler(Executor executor, TestRunner junitRunner, LegacyTestRunner testRunner) {
+    public TestRunnerHandler(Executor executor, TestRunner junitRunner, TestRunner testRunner) {
         super(executor);
-        this.junitRunner = junitRunner;
-        this.testRunner = testRunner;
-        this.useOsgiMode = junitRunner.isSupported();
+        this.testRunner = junitRunner.isSupported() ? junitRunner : testRunner;
     }
 
     @Override
@@ -72,25 +66,16 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             long fetchRecordsAfter = Optional.ofNullable(request.getProperty("after"))
                                              .map(Long::parseLong)
                                              .orElse(-1L);
-            if (useOsgiMode) {
-                return new SlimeJsonResponse(logToSlime(junitRunner.getLog(fetchRecordsAfter)));
-            } else {
-                return new SlimeJsonResponse(logToSlime(testRunner.getLog(fetchRecordsAfter)));
-            }
+            return new SlimeJsonResponse(logToSlime(testRunner.getLog(fetchRecordsAfter)));
         } else if (path.equals("/tester/v1/status")) {
-            if (useOsgiMode) {
-                log.info("Responding with status " + junitRunner.getStatus());
-                return new Response(junitRunner.getStatus().name());
-            } else {
-                log.info("Responding with status " + testRunner.getStatus());
-                return new Response(testRunner.getStatus().name());
-            }
+            log.info("Responding with status " + testRunner.getStatus());
+            return new Response(testRunner.getStatus().name());
         } else if (path.equals("/tester/v1/report")) {
-            if (useOsgiMode) {
-                return new SlimeJsonResponse(toSlime(junitRunner.getReport()));
-            } else {
+            TestReport report = testRunner.getReport();
+            if (report == null)
                 return new EmptyResponse(200);
-            }
+
+            return new SlimeJsonResponse(toSlime(report));
         }
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
     }
@@ -99,29 +84,13 @@ public class TestRunnerHandler extends LoggingRequestHandler {
         final String path = request.getUri().getPath();
         if (path.startsWith("/tester/v1/run/")) {
             String type = lastElement(path);
-            LegacyTestRunner.Suite testSuite = LegacyTestRunner.Suite.valueOf(type.toUpperCase() + "_TEST");
+            TestRunner.Suite testSuite = TestRunner.Suite.valueOf(type.toUpperCase() + "_TEST");
             byte[] config = request.getData().readAllBytes();
-            if (useOsgiMode) {
-                junitRunner.executeTests(categoryFromProfile(testSuite), config);
-                log.info("Started tests of type " + type + " and status is " + junitRunner.getStatus());
-                return new Response("Successfully started " + type + " tests");
-            } else {
-                testRunner.test(testSuite, config);
-                log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());
-                return new Response("Successfully started " + type + " tests");
-            }
+            testRunner.test(testSuite, config);
+            log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());
+            return new Response("Successfully started " + type + " tests");
         }
         return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
-    }
-
-    TestDescriptor.TestCategory categoryFromProfile(LegacyTestRunner.Suite testProfile) {
-        switch(testProfile) {
-            case SYSTEM_TEST: return TestDescriptor.TestCategory.systemtest;
-            case STAGING_SETUP_TEST: return TestDescriptor.TestCategory.stagingsetuptest;
-            case STAGING_TEST: return TestDescriptor.TestCategory.stagingtest;
-            case PRODUCTION_TEST: return TestDescriptor.TestCategory.productiontest;
-            default: throw new RuntimeException("Unknown test profile: " + testProfile.name());
-        }
     }
 
     private static String lastElement(String path) {

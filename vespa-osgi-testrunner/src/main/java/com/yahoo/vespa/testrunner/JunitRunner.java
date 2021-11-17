@@ -11,7 +11,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
@@ -26,14 +25,11 @@ import org.osgi.framework.BundleContext;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -90,8 +86,18 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         credentialsRoot.ifPresent(root -> System.setProperty("vespa.test.credentials.root", root));
     }
 
+    private static TestDescriptor.TestCategory toCategory(TestRunner.Suite testProfile) {
+        switch(testProfile) {
+            case SYSTEM_TEST: return TestDescriptor.TestCategory.systemtest;
+            case STAGING_SETUP_TEST: return TestDescriptor.TestCategory.stagingsetuptest;
+            case STAGING_TEST: return TestDescriptor.TestCategory.stagingtest;
+            case PRODUCTION_TEST: return TestDescriptor.TestCategory.productiontest;
+            default: throw new RuntimeException("Unknown test profile: " + testProfile.name());
+        }
+    }
+
     @Override
-    public void executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
+    public void test(TestRunner.Suite suite, byte[] testConfig) {
         if (execution != null && ! execution.isDone()) {
             throw new IllegalStateException("Test execution already in progress");
         }
@@ -107,7 +113,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             if (testDescriptor.isEmpty()) {
                 throw new RuntimeException("Could not find test descriptor");
             }
-            execution = CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), category)));
+            execution = CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), toCategory(suite))));
         } catch (Exception e) {
             execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
         }
@@ -220,20 +226,20 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     }
 
     @Override
-    public LegacyTestRunner.Status getStatus() {
-        if (execution == null) return LegacyTestRunner.Status.NOT_STARTED;
-        if (!execution.isDone()) return LegacyTestRunner.Status.RUNNING;
+    public TestRunner.Status getStatus() {
+        if (execution == null) return TestRunner.Status.NOT_STARTED;
+        if (!execution.isDone()) return TestRunner.Status.RUNNING;
         try {
             TestReport report = execution.get();
             if (report.isSuccess()) {
-                return LegacyTestRunner.Status.SUCCESS;
+                return TestRunner.Status.SUCCESS;
             } else {
-                return LegacyTestRunner.Status.FAILURE;
+                return TestRunner.Status.FAILURE;
             }
         } catch (InterruptedException|ExecutionException e) {
             logger.log(Level.WARNING, "Error while getting test report", e);
             // Return FAILURE to enforce getting the test report from the caller.
-            return LegacyTestRunner.Status.FAILURE;
+            return TestRunner.Status.FAILURE;
         }
     }
 
