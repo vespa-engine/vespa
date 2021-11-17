@@ -11,8 +11,8 @@ public interface ConnectionPool extends AutoCloseable {
     Connection getCurrent();
 
     /**
-     * Switches to another (healthy, if one exists) Connection instance.
-     * Returns the resulting Connection.
+     * Switches to another (healthy, if possible) Connection instance. {@link #getCurrent()} will
+     * return this instance afterwards, which is also the return value.
      *
      * @return a Connection
      */

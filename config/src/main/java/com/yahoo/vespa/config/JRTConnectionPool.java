@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 /**
  * A pool of JRT connections to a config source (either a config server or a config proxy).
- * The current connection is chosen randomly when calling {#link {@link #switchConnection()}}
+ * The current connection is chosen randomly when calling {@link #switchConnection(Connection)}
  * (it will continue to use the same connection if there is only one source).
  * The current connection is available with {@link #getCurrent()}.
  *

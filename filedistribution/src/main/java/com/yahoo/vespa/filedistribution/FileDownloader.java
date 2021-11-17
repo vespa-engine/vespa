@@ -36,7 +36,6 @@ public class FileDownloader implements AutoCloseable {
     private final Supervisor supervisor;
     private final File downloadDirectory;
     private final Duration timeout;
-    private final Duration sleepBetweenRetries;
     private final FileReferenceDownloader fileReferenceDownloader;
     private final Downloads downloads = new Downloads();
 
@@ -61,7 +60,6 @@ public class FileDownloader implements AutoCloseable {
         this.supervisor = supervisor;
         this.downloadDirectory = downloadDirectory;
         this.timeout = timeout;
-        this.sleepBetweenRetries = sleepBetweenRetries;
         // Needed to receive RPC receiveFile* calls from server after starting download of file reference
         new FileReceiver(supervisor, downloads, downloadDirectory);
         this.fileReferenceDownloader = new FileReferenceDownloader(connectionPool,
