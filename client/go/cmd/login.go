@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/cli"
+	"github.com/vespa-engine/vespa/client/go/auth0"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -24,11 +24,11 @@ var loginCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		c, err := cli.GetCli(cfg.AuthConfigPath(), getSystemName())
+		a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName())
 		if err != nil {
 			return err
 		}
-		_, err = cli.RunLogin(ctx, c, false)
+		_, err = auth0.RunLogin(ctx, a, false)
 		return err
 	},
 }

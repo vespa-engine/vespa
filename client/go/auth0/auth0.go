@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-package cli
+package auth0
 
 import (
 	"context"
@@ -37,7 +37,7 @@ type System struct {
 	ExpiresAt   time.Time `json:"expires_at"`
 }
 
-type Cli struct {
+type Auth0 struct {
 	Authenticator *auth.Authenticator
 	system        string
 	initOnce      sync.Once
@@ -68,36 +68,36 @@ func ContextWithCancel() context.Context {
 	return ctx
 }
 
-// GetCli will try to initialize the config context, as well as figure out if
+// GetAuth0 will try to initialize the config context, as well as figure out if
 // there's a readily available system.
-func GetCli(configPath string, systemName string) (*Cli, error) {
-	c := Cli{}
-	c.Path = configPath
-	c.system = systemName
+func GetAuth0(configPath string, systemName string) (*Auth0, error) {
+	a := Auth0{}
+	a.Path = configPath
+	a.system = systemName
 	if err := envdecode.StrictDecode(&authCfg); err != nil {
 		return nil, fmt.Errorf("could not decode env: %w", err)
 	}
-	c.Authenticator = &auth.Authenticator{
+	a.Authenticator = &auth.Authenticator{
 		Audience:           authCfg.Audience,
 		ClientID:           authCfg.ClientID,
 		DeviceCodeEndpoint: authCfg.DeviceCodeEndpoint,
 		OauthTokenEndpoint: authCfg.OauthTokenEndpoint,
 	}
-	return &c, nil
+	return &a, nil
 }
 
 // IsLoggedIn encodes the domain logic for determining whether we're
 // logged in. This might check our config storage, or just in memory.
-func (c *Cli) IsLoggedIn() bool {
+func (a *Auth0) IsLoggedIn() bool {
 	// No need to check errors for initializing context.
-	_ = c.init()
+	_ = a.init()
 
-	if c.system == "" {
+	if a.system == "" {
 		return false
 	}
 
 	// Parse the access token for the system.
-	token, err := jwt.ParseString(c.config.Systems[c.system].AccessToken)
+	token, err := jwt.ParseString(a.config.Systems[a.system].AccessToken)
 	if err != nil {
 		return false
 	}
@@ -114,17 +114,17 @@ func (c *Cli) IsLoggedIn() bool {
 // The System access token needs a refresh if:
 // 1. the System scopes are different from the currently required scopes - (auth0 changes).
 // 2. the access token is expired.
-func (c *Cli) PrepareSystem(ctx context.Context) (System, error) {
-	if err := c.init(); err != nil {
+func (a *Auth0) PrepareSystem(ctx context.Context) (System, error) {
+	if err := a.init(); err != nil {
 		return System{}, err
 	}
-	s, err := c.getSystem()
+	s, err := a.getSystem()
 	if err != nil {
 		return System{}, err
 	}
 
 	if s.AccessToken == "" || scopesChanged(s) {
-		s, err = RunLogin(ctx, c, true)
+		s, err = RunLogin(ctx, a, true)
 		if err != nil {
 			return System{}, err
 		}
@@ -132,16 +132,16 @@ func (c *Cli) PrepareSystem(ctx context.Context) (System, error) {
 		// check if the stored access token is expired:
 		// use the refresh token to get a new access token:
 		tr := &auth.TokenRetriever{
-			Authenticator: c.Authenticator,
+			Authenticator: a.Authenticator,
 			Secrets:       &auth.Keyring{},
 			Client:        http.DefaultClient,
 		}
 
-		res, err := tr.Refresh(ctx, c.system)
+		res, err := tr.Refresh(ctx, a.system)
 		if err != nil {
 			// ask and guide the user through the login process:
 			fmt.Println(fmt.Errorf("failed to renew access token, %s", err))
-			s, err = RunLogin(ctx, c, true)
+			s, err = RunLogin(ctx, a, true)
 			if err != nil {
 				return System{}, err
 			}
@@ -152,7 +152,7 @@ func (c *Cli) PrepareSystem(ctx context.Context) (System, error) {
 				time.Duration(res.ExpiresIn) * time.Second,
 			)
 
-			err = c.AddSystem(s)
+			err = a.AddSystem(s)
 			if err != nil {
 				return System{}, err
 			}
@@ -193,14 +193,14 @@ func scopesChanged(s System) bool {
 	return false
 }
 
-func (c *Cli) getSystem() (System, error) {
-	if err := c.init(); err != nil {
+func (a *Auth0) getSystem() (System, error) {
+	if err := a.init(); err != nil {
 		return System{}, err
 	}
 
-	s, ok := c.config.Systems[c.system]
+	s, ok := a.config.Systems[a.system]
 	if !ok {
-		return System{}, fmt.Errorf("unable to find system: %s; run 'vespa login' to configure a new system", c.system)
+		return System{}, fmt.Errorf("unable to find system: %s; run 'vespa login' to configure a new system", a.system)
 	}
 
 	return s, nil
@@ -208,63 +208,63 @@ func (c *Cli) getSystem() (System, error) {
 
 // AddSystem assigns an existing, or new System. This is expected to be called
 // after a login has completed.
-func (c *Cli) AddSystem(s System) error {
-	_ = c.init()
+func (a *Auth0) AddSystem(s System) error {
+	_ = a.init()
 
 	// If we're dealing with an empty file, we'll need to initialize this map.
-	if c.config.Systems == nil {
-		c.config.Systems = map[string]System{}
+	if a.config.Systems == nil {
+		a.config.Systems = map[string]System{}
 	}
 
-	c.config.Systems[c.system] = s
+	a.config.Systems[a.system] = s
 
-	if err := c.persistConfig(); err != nil {
+	if err := a.persistConfig(); err != nil {
 		return fmt.Errorf("unexpected error persisting config: %w", err)
 	}
 
 	return nil
 }
 
-func (c *Cli) persistConfig() error {
-	dir := filepath.Dir(c.Path)
+func (a *Auth0) persistConfig() error {
+	dir := filepath.Dir(a.Path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0700); err != nil {
 			return err
 		}
 	}
 
-	buf, err := json.MarshalIndent(c.config, "", "    ")
+	buf, err := json.MarshalIndent(a.config, "", "    ")
 	if err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(c.Path, buf, 0600); err != nil {
+	if err := ioutil.WriteFile(a.Path, buf, 0600); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *Cli) init() error {
-	c.initOnce.Do(func() {
-		if c.errOnce = c.initContext(); c.errOnce != nil {
+func (a *Auth0) init() error {
+	a.initOnce.Do(func() {
+		if a.errOnce = a.initContext(); a.errOnce != nil {
 			return
 		}
 	})
-	return c.errOnce
+	return a.errOnce
 }
 
-func (c *Cli) initContext() (err error) {
-	if _, err := os.Stat(c.Path); os.IsNotExist(err) {
+func (a *Auth0) initContext() (err error) {
+	if _, err := os.Stat(a.Path); os.IsNotExist(err) {
 		return errUnauthenticated
 	}
 
 	var buf []byte
-	if buf, err = ioutil.ReadFile(c.Path); err != nil {
+	if buf, err = ioutil.ReadFile(a.Path); err != nil {
 		return err
 	}
 
-	if err := json.Unmarshal(buf, &c.config); err != nil {
+	if err := json.Unmarshal(buf, &a.config); err != nil {
 		return err
 	}
 
@@ -275,12 +275,12 @@ func (c *Cli) initContext() (err error) {
 // by showing the login instructions, opening the browser.
 // Use `expired` to run the login from other commands setup:
 // this will only affect the messages.
-func RunLogin(ctx context.Context, c *Cli, expired bool) (System, error) {
+func RunLogin(ctx context.Context, a *Auth0, expired bool) (System, error) {
 	if expired {
 		fmt.Println("Please sign in to re-authorize the CLI.")
 	}
 
-	state, err := c.Authenticator.Start(ctx)
+	state, err := a.Authenticator.Start(ctx)
 	if err != nil {
 		return System{}, fmt.Errorf("could not start the authentication process: %w", err)
 	}
@@ -297,7 +297,7 @@ func RunLogin(ctx context.Context, c *Cli, expired bool) (System, error) {
 
 	var res auth.Result
 	err = util.Spinner("Waiting for login to complete in browser", func() error {
-		res, err = c.Authenticator.Wait(ctx, state)
+		res, err = a.Authenticator.Wait(ctx, state)
 		return err
 	})
 
@@ -311,7 +311,7 @@ func RunLogin(ctx context.Context, c *Cli, expired bool) (System, error) {
 
 	// store the refresh token
 	secretsStore := &auth.Keyring{}
-	err = secretsStore.Set(auth.SecretsNamespace, c.system, res.RefreshToken)
+	err = secretsStore.Set(auth.SecretsNamespace, a.system, res.RefreshToken)
 	if err != nil {
 		// log the error but move on
 		fmt.Println("Could not store the refresh token locally, please expect to login again once your access token expired.")
@@ -322,7 +322,7 @@ func RunLogin(ctx context.Context, c *Cli, expired bool) (System, error) {
 		ExpiresAt:   time.Now().Add(time.Duration(res.ExpiresIn) * time.Second),
 		Scopes:      auth.RequiredScopes(),
 	}
-	err = c.AddSystem(s)
+	err = a.AddSystem(s)
 	if err != nil {
 		return System{}, fmt.Errorf("could not add system to config: %w", err)
 	}
