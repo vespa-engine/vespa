@@ -84,7 +84,7 @@ public class VespaCliTestRunner implements TestRunner {
 
                 log(Level.INFO, line, null);
             });
-            status.set(process.waitFor() == 0 ? SUCCESS : process.exitValue() == 3 ? FAILURE : ERROR);
+            status.set(process.waitFor() == 0 ? SUCCESS : process.waitFor() == 3 ? FAILURE : ERROR);
         }
         catch (Exception e) {
             if (process != null)
@@ -95,7 +95,7 @@ public class VespaCliTestRunner implements TestRunner {
         }
     }
 
-    private ProcessBuilder testRunProcessBuilder(Suite suite, String endpointsConfig) {
+    ProcessBuilder testRunProcessBuilder(Suite suite, String endpointsConfig) {
         Path suitePath = getChildDirectory(artifactsPath, "tests")
                 .flatMap(testsPath -> getChildDirectory(testsPath, toSuiteDirectoryName(suite)))
                 .orElseThrow(() -> new IllegalStateException("No tests found, for suite '" + suite + "'"));
