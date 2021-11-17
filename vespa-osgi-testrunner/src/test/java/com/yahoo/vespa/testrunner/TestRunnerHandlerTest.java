@@ -77,7 +77,7 @@ public class TestRunnerHandlerTest {
     }
 
     @Test
-    public void returnsEmptyLogWhenReportNotReady() throws IOException {
+    public void returnsEmptyResponsesWhenReportNotReady() throws IOException {
         TestRunner testRunner = mock(TestRunner.class);
         when(testRunner.isSupported()).thenReturn(true);
         when(testRunner.getReport()).thenReturn(null);
@@ -85,10 +85,19 @@ public class TestRunnerHandlerTest {
                 Executors.newSingleThreadExecutor(),
                 testRunner, null);
 
-        HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        response.render(out);
-        assertEquals("{\"logRecords\":[]}", out.toString(UTF_8));
+        {
+            HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            response.render(out);
+            assertEquals("{\"logRecords\":[]}", out.toString(UTF_8));
+        }
+
+        {
+            HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/report", GET));
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            response.render(out);
+            assertEquals("{}", out.toString(UTF_8));
+        }
     }
 
     @Test
