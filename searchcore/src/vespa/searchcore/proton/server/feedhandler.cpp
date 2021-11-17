@@ -736,7 +736,13 @@ FeedHandler::performOperation(FeedToken token, FeedOperation::UP op)
 void
 FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op)
 {
-    _writeService.master().execute(makeLambdaTask([this, token = std::move(token), op = std::move(op)]() mutable {
+    // This function is only called when handling external feed operations (see PersistenceHandlerProxy),
+    // and ensures that the calling thread (persistence thread) is blocked until the master thread has capacity to handle more tasks.
+    // This helps keeping feed operation latencies and memory usage in check.
+    // NOTE: Tasks that are created and executed from the master thread itself or some of its helpers
+    //       cannot use blocking_master_execute() as that could lead to deadlocks.
+    //       See FeedHandler::initiateCommit() for a concrete example.
+    _writeService.blocking_master_execute(makeLambdaTask([this, token = std::move(token), op = std::move(op)]() mutable {
         doHandleOperation(std::move(token), std::move(op));
     }));
 }

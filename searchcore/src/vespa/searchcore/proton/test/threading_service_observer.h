@@ -37,6 +37,10 @@ public:
         _service.sync_all_executors();
     }
 
+    void blocking_master_execute(vespalib::Executor::Task::UP task) override {
+        _service.blocking_master_execute(std::move(task));
+    }
+
     searchcorespi::index::IThreadService &master() override {
         return _master;
     }

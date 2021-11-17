@@ -503,6 +503,13 @@ feeding.concurrency double default = 0.2 restart
 ## TODO: Remove this when a shared executor is the default.
 feeding.shared_field_writer_executor enum {NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB} default = NONE restart
 
+## Maximum number of pending tasks for the master thread in each document db.
+##
+## This limit is only considered when executing tasks for handling external feed operations.
+## In that case the calling thread (persistence thread) is blocked until the master thread has capacity to handle more tasks.
+## When this limit is set to 0 it is ignored.
+feeding.master_task_limit int default = 0
+
 ## Adjustment to resource limit when determining if maintenance jobs can run.
 ##
 ## Currently used by 'lid_space_compaction' and 'move_buckets' jobs.
