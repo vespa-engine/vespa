@@ -11,10 +11,6 @@
             </config>
         </component>
 
-        <handler id="com.yahoo.vespa.testrunner.TestRunnerHandler" bundle="vespa-osgi-testrunner">
-            <binding>http://*/tester/v1/*</binding>
-        </handler>
-
         <component id="ai.vespa.hosted.cd.cloud.impl.VespaTestRuntimeProvider" bundle="cloud-tenant-cd" />
 
         <component id="com.yahoo.vespa.testrunner.JunitRunner" bundle="vespa-osgi-testrunner">
@@ -23,6 +19,10 @@
                 <useAthenzCredentials>true</useAthenzCredentials>
             </config>
         </component>
+
+        <handler id="com.yahoo.vespa.testrunner.TestRunnerHandler" bundle="vespa-osgi-testrunner">
+            <binding>http://*/tester/v1/*</binding>
+        </handler>
 
         <nodes count="1" allocated-memory="17%">
             <resources vcpu="2.00" memory="12.00Gb" disk="75.00Gb" disk-speed="fast" storage-type="local"/>
