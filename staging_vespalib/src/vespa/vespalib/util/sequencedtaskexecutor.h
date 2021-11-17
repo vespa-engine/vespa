@@ -4,6 +4,7 @@
 #include "isequencedtaskexecutor.h"
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/runnable.h>
+#include <optional>
 
 namespace vespalib {
 
