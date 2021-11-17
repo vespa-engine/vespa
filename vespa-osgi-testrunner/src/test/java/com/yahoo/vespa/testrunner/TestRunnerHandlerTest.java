@@ -12,10 +12,12 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -138,6 +140,13 @@ public class TestRunnerHandlerTest {
 
         @Override
         public void executeTests(TestDescriptor.TestCategory category, byte[] testConfig) {
+        }
+
+        @Override
+        public Collection<LogRecord> getLog(long after) {
+            return getReport().logLines().stream()
+                              .filter(entry -> entry.getSequenceNumber() > after)
+                              .collect(Collectors.toList());
         }
 
         @Override

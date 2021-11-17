@@ -79,12 +79,7 @@ public class TestRunnerHandler extends LoggingRequestHandler {
                                              .map(Long::parseLong)
                                              .orElse(-1L);
             if (useOsgiMode) {
-                List<LogRecord> logRecords = Optional.ofNullable(junitRunner.getReport())
-                        .map(TestReport::logLines)
-                        .orElse(Collections.emptyList()).stream()
-                        .filter(record -> record.getSequenceNumber() > fetchRecordsAfter)
-                        .collect(Collectors.toList());
-                return new SlimeJsonResponse(logToSlime(logRecords));
+                return new SlimeJsonResponse(logToSlime(junitRunner.getLog(fetchRecordsAfter)));
             } else {
                 return new SlimeJsonResponse(logToSlime(testRunner.getLog(fetchRecordsAfter)));
             }

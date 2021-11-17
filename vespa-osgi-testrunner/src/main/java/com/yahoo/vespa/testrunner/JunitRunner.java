@@ -27,9 +27,14 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -44,6 +49,7 @@ import java.util.stream.Stream;
 public class JunitRunner extends AbstractComponent implements TestRunner {
     private static final Logger logger = Logger.getLogger(JunitRunner.class.getName());
 
+    private final SortedMap<Long, LogRecord> logRecords = new ConcurrentSkipListMap<>();
     private final BundleContext bundleContext;
     private final TestRuntimeProvider testRuntimeProvider;
     private volatile Future<TestReport> execution;
@@ -90,6 +96,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             throw new IllegalStateException("Test execution already in progress");
         }
         try {
+            logRecords.clear();
             testRuntimeProvider.initialize(testConfig);
             Optional<Bundle> testBundle = findTestBundle();
             if (testBundle.isEmpty()) {
@@ -104,6 +111,11 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         } catch (Exception e) {
             execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
         }
+    }
+
+    @Override
+    public Collection<LogRecord> getLog(long after) {
+        return logRecords.tailMap(after + 1).values();
     }
 
     private static TestReport createReportWithFailedInitialization(Exception exception) {
@@ -175,8 +187,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         Launcher launcher = LauncherFactory.create(launcherConfig);
 
         // Create log listener:
-        var logLines = new ArrayList<LogRecord>();
-        var logListener = VespaJunitLogListener.forBiConsumer((t, m) -> log(logLines, m.get(), t));
+        var logListener = VespaJunitLogListener.forBiConsumer((t, m) -> log(logRecords, m.get(), t));
         // Create a summary listener:
         var summaryListener = new SummaryGeneratingListener();
         launcher.registerTestExecutionListeners(logListener, summaryListener);
@@ -193,14 +204,14 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                 .withIgnoredCount(report.getTestsSkippedCount())
                 .withFailedCount(report.getTestsFailedCount())
                 .withFailures(failures)
-                .withLogs(logLines)
+                .withLogs(logRecords.values())
                 .build();
     }
 
-    private void log(List<LogRecord> logs, String message, Throwable t) {
+    private void log(SortedMap<Long, LogRecord> logs, String message, Throwable t) {
         LogRecord logRecord = new LogRecord(Level.INFO, message);
         Optional.ofNullable(t).ifPresent(logRecord::setThrown);
-        logs.add(logRecord);
+        logs.put(logRecord.getSequenceNumber(), logRecord);
     }
 
     @Override
