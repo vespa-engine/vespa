@@ -79,7 +79,7 @@ if [ "$VESPA_USER" = "" ]; then
     VESPA_USER=$(id -run)
 fi
 if [ "$VESPA_GROUP" = "" ]; then
-    $VESPA_GROUP=$(id -rgn)
+    VESPA_GROUP=$(id -rgn)
 fi
 
 cd $VESPA_HOME || { echo "Cannot cd to $VESPA_HOME" 1>&2; exit 1; }
