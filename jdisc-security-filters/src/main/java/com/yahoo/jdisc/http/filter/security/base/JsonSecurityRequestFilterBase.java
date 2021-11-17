@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.http.filter.security.base;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.component.AbstractComponent;
@@ -11,10 +12,11 @@ import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import java.util.logging.Level;
 
 import java.io.UncheckedIOException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,16 +37,26 @@ public abstract class JsonSecurityRequestFilterBase extends AbstractComponent im
 
     protected abstract Optional<ErrorResponse> filter(DiscFilterRequest request);
 
+    protected ObjectMapper jsonMapper() { return mapper; }
+
     private void writeResponse(DiscFilterRequest request, ErrorResponse error, ResponseHandler responseHandler) {
-        ObjectNode errorMessage = mapper.createObjectNode();
-        errorMessage.put("code", error.errorCode);
-        errorMessage.put("message", error.message);
+        JsonNode json;
+        if (error.customJson != null) {
+            json = error.customJson;
+        } else {
+            ObjectNode o = mapper.createObjectNode();
+            if (error.errorCodeAsInt != null) o.put("code", error.errorCodeAsInt);
+            else if (error.errorCodeAsString != null) o.put("code", error.errorCodeAsString);
+            if (error.message != null) o.put("message", error.message);
+            json = o;
+        }
         error.response.headers().put("Content-Type", "application/json"); // Note: Overwrites header if already exists
         error.response.headers().put("Cache-Control", "must-revalidate,no-cache,no-store");
-        log.log(Level.FINE, () -> String.format("Error response for '%s': statusCode=%d, errorCode=%d, message='%s'",
-                                                    request, error.response.getStatus(), error.errorCode, error.message));
         try (FastContentWriter writer = ResponseDispatch.newInstance(error.response).connectFastWriter(responseHandler)) {
-            writer.write(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(errorMessage));
+            String jsonAsStr = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);
+            log.log(Level.FINE, () -> String.format("Error response for '%s': statusCode=%d, json='%s'",
+                    request, error.response.getStatus(), jsonAsStr));
+            writer.write(jsonAsStr);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
@@ -56,13 +68,22 @@ public abstract class JsonSecurityRequestFilterBase extends AbstractComponent im
      */
     protected static class ErrorResponse {
         private final Response response;
-        private final int errorCode;
+        private final JsonNode customJson;
+        private final Integer errorCodeAsInt;
+        private final String errorCodeAsString;
         private final String message;
 
-        public ErrorResponse(Response response, int errorCode, String message) {
-            this.response = response;
-            this.errorCode = errorCode;
+        private ErrorResponse(Response response, JsonNode customJson, Integer errorCodeAsInt, String errorCodeAsString,
+                              String message) {
+            this.response = Objects.requireNonNull(response);
+            this.customJson = customJson;
+            this.errorCodeAsInt = errorCodeAsInt;
+            this.errorCodeAsString = errorCodeAsString;
             this.message = message;
+        }
+
+        public ErrorResponse(Response response, int errorCode, String message) {
+            this(response, null, errorCode, null, message);
         }
 
         public ErrorResponse(Response response, String message) {
@@ -73,21 +94,23 @@ public abstract class JsonSecurityRequestFilterBase extends AbstractComponent im
             this(new Response(httpStatusCode), errorCode, message);
         }
 
+        public ErrorResponse(int httpStatusCode, String errorCode, String message) {
+            this(new Response(httpStatusCode), null, null, errorCode, message);
+        }
+
         public ErrorResponse(int httpStatusCode, String message) {
             this(new Response(httpStatusCode), message);
+        }
+
+        public ErrorResponse(Response response, JsonNode json) {
+            this(response, json, null, null, null);
         }
 
         public Response getResponse() {
             return response;
         }
 
-        public int getErrorCode() {
-            return errorCode;
-        }
-
-        public String getMessage() {
-            return message;
-        }
+        public Optional<String> getMessage() { return Optional.ofNullable(message); }
 
     }
 }
