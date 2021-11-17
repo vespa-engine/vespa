@@ -55,14 +55,20 @@ public class FileReferenceDownloader {
     private void waitUntilDownloadStarted(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();
         int retryCount = 0;
+        Connection connection = connectionPool.getCurrent();
         do {
             if (FileDownloader.fileReferenceExists(fileReference, downloadDirectory))
                 return;
-            if (startDownloadRpc(fileReferenceDownload, retryCount))
+            if (startDownloadRpc(fileReferenceDownload, retryCount, connection))
                 return;
 
             try { Thread.sleep(sleepBetweenRetries.toMillis()); } catch (InterruptedException e) { /* ignored */}
             retryCount++;
+
+            // There is no one connection that will always work for each file reference (each file reference might
+            // exist on just one config server, and which one could be different for each file reference), so we
+            // should get a new connection for every retry
+            connection = connectionPool.switchConnection(connection);
         } while (retryCount < 5);
 
         fileReferenceDownload.future().completeExceptionally(new RuntimeException("Failed getting " + fileReference));
@@ -84,28 +90,25 @@ public class FileReferenceDownloader {
         downloads.remove(fileReference);
     }
 
-    private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount) {
+    private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection) {
         Request request = createRequest(fileReferenceDownload);
-        Connection connection = connectionPool.getCurrent();
         connection.invokeSync(request, rpcTimeout(retryCount).getSeconds());
 
         Level logLevel = (retryCount > 3 ? Level.INFO : Level.FINE);
         FileReference fileReference = fileReferenceDownload.fileReference();
         if (validateResponse(request)) {
-            log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection + ", retry count " + retryCount);
+            log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
             if (request.returnValues().get(0).asInt32() == 0) {
                 log.log(Level.FINE, () -> "Found '" + fileReference + "' available at " + connection.getAddress());
                 return true;
             } else {
                 log.log(logLevel, "'" + fileReference + "' not found at " + connection.getAddress());
-                connectionPool.switchConnection(connection);
                 return false;
             }
         } else {
             log.log(logLevel, "Downloading " + fileReference + " from " + connection.getAddress() + " failed: " +
                     request + ", error: " + request.errorMessage() + ", will switch config server for next request" +
                     " (retry " + retryCount + ", rpc timeout " + rpcTimeout(retryCount));
-            connectionPool.switchConnection(connection);
             return false;
         }
     }
