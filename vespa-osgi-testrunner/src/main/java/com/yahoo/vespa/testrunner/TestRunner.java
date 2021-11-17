@@ -1,20 +1,31 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
-import ai.vespa.hosted.api.TestDescriptor;
-import com.yahoo.vespa.testrunner.legacy.LegacyTestRunner;
+import java.util.Collection;
+import java.util.logging.LogRecord;
 
 /**
+ * @author jonmv
  * @author mortent
  */
 public interface TestRunner {
-    void executeTests(TestDescriptor.TestCategory category, byte[] testConfig);
 
-    boolean isSupported();
+    Collection<LogRecord> getLog(long after);
 
-    LegacyTestRunner.Status getStatus();
+    Status getStatus();
 
-    TestReport getReport();
+    void test(Suite suite, byte[] config);
 
-    String getReportAsJson();
+    default boolean isSupported() { return true; }
+
+    default TestReport getReport() { return null; }
+
+    enum Status {
+        NOT_STARTED, RUNNING, FAILURE, ERROR, SUCCESS
+    }
+
+    enum Suite {
+        SYSTEM_TEST, STAGING_SETUP_TEST, STAGING_TEST, PRODUCTION_TEST
+    }
+
 }
