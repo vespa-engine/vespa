@@ -241,7 +241,7 @@ public class RoutingController {
      * Assigns one or more global rotations to given application, if eligible. The given application is implicitly
      * stored, ensuring that the assigned rotation(s) are persisted when this returns.
      */
-    public LockedApplication assignRotations(LockedApplication application, InstanceName instanceName) {
+    private LockedApplication assignRotations(LockedApplication application, InstanceName instanceName) {
         try (RotationLock rotationLock = rotationRepository.lock()) {
             var rotations = rotationRepository.getOrAssignRotations(application.get().deploymentSpec(),
                                                                     application.get().require(instanceName),
@@ -253,14 +253,21 @@ public class RoutingController {
     }
 
     /** Returns the global and application-level endpoints for given deployment, as container endpoints */
-    public Set<ContainerEndpoint> containerEndpointsOf(Application application, InstanceName instanceName, ZoneId zone) {
-        Instance instance = application.require(instanceName);
-        boolean registerLegacyNames = requiresLegacyNames(application.deploymentSpec(), instanceName);
+    public Set<ContainerEndpoint> containerEndpointsOf(LockedApplication application, InstanceName instanceName, ZoneId zone) {
+        // Assign rotations to application
+        for (var deploymentInstanceSpec : application.get().deploymentSpec().instances()) {
+            if (deploymentInstanceSpec.concerns(Environment.prod)) {
+                application = controller.routing().assignRotations(application, deploymentInstanceSpec.name());
+            }
+        }
+
+        // Add endpoints backed by a rotation, and register them in DNS if necessary
+        boolean registerLegacyNames = requiresLegacyNames(application.get().deploymentSpec(), instanceName);
+        Instance instance = application.get().require(instanceName);
         Set<ContainerEndpoint> containerEndpoints = new HashSet<>();
         DeploymentId deployment = new DeploymentId(instance.id(), zone);
-        EndpointList endpoints = declaredEndpointsOf(application).targets(deployment);
+        EndpointList endpoints = declaredEndpointsOf(application.get()).targets(deployment);
         EndpointList globalEndpoints = endpoints.scope(Endpoint.Scope.global);
-        // Add endpoints backed by a rotation, and register them in DNS if necessary
         for (var assignedRotation : instance.rotations()) {
             var names = new ArrayList<String>();
             EndpointList rotationEndpoints = globalEndpoints.named(assignedRotation.endpointId())

@@ -5,19 +5,20 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -30,22 +31,19 @@ import static org.junit.Assert.assertTrue;
  */
 public class RotationRepositoryTest {
 
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
-    private final RotationsConfig rotationsConfig = new RotationsConfig(
+    private static final RotationsConfig rotationsConfig = new RotationsConfig(
         new RotationsConfig.Builder()
             .rotations("foo-1", "foo-1.com")
             .rotations("foo-2", "foo-2.com")
     );
 
-    private final RotationsConfig rotationsConfigWhitespaces = new RotationsConfig(
+    private static final RotationsConfig rotationsConfigWhitespaces = new RotationsConfig(
             new RotationsConfig.Builder()
                 .rotations("foo-1", "\n  \t     foo-1.com      \n")
                 .rotations("foo-2", "foo-2.com")
         );
 
-    private final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+    private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .globalServiceId("foo")
             .region("us-east-3")
             .region("us-west-1")
@@ -57,8 +55,8 @@ public class RotationRepositoryTest {
 
     @Test
     public void assigns_and_reuses_rotation() {
-        // Submitting assigns a rotation
-        application.submit(applicationPackage);
+        // Deploying assigns a rotation
+        application.submit(applicationPackage).deploy();
         Rotation expected = new Rotation(new RotationId("foo-1"), "foo-1.com");
 
         assertEquals(List.of(expected.id()), rotationIds(application.instance().rotations()));
@@ -108,17 +106,16 @@ public class RotationRepositoryTest {
     @Test
     public void out_of_rotations() {
         // Assigns 1 rotation
-        application.submit(applicationPackage);
+        application.submit(applicationPackage).deploy();
 
         // Assigns 1 more
         var application2 = tester.newDeploymentContext("tenant2", "app2", "default");
-        application2.submit(applicationPackage);
+        application2.submit(applicationPackage).deploy();
 
-        // We're now out of rotations
-        thrown.expect(IllegalStateException.class);
-        thrown.expectMessage("out of rotations");
+        // We're now out of rotations and next deployment fails
         var application3 = tester.newDeploymentContext("tenant3", "app3", "default");
-        application3.submit(applicationPackage);
+        application3.submit(applicationPackage)
+                    .runJobExpectingFailure(JobType.systemTest, Optional.of("out of rotations"));
     }
 
     @Test
@@ -127,9 +124,7 @@ public class RotationRepositoryTest {
                 .globalServiceId("foo")
                 .region("us-east-3")
                 .build();
-        thrown.expect(RuntimeException.class);
-        thrown.expectMessage("less than 2 prod zones are defined");
-        application.submit(applicationPackage);
+        application.submit(applicationPackage).runJobExpectingFailure(JobType.systemTest, Optional.of("less than 2 prod zones are defined"));
     }
 
     @Test
@@ -149,13 +144,18 @@ public class RotationRepositoryTest {
                 .region("cd-us-east-1")
                 .region("cd-us-west-1")
                 .build();
-        var zones = List.of(ZoneApiMock.fromId("prod.cd-us-east-1"), ZoneApiMock.fromId("prod.cd-us-west-1"));
+        var zones = List.of(
+                ZoneApiMock.fromId("test.cd-us-west-1"),
+                ZoneApiMock.fromId("staging.cd-us-west-1"),
+                ZoneApiMock.fromId("prod.cd-us-east-1"),
+                ZoneApiMock.fromId("prod.cd-us-west-1"));
         tester.controllerTester().zoneRegistry()
               .setZones(zones)
               .setRoutingMethod(zones, RoutingMethod.shared)
               .setSystemName(SystemName.cd);
+        tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.notController());
         var application2 = tester.newDeploymentContext("tenant2", "app2", "default");
-        application2.submit(applicationPackage);
+        application2.submit(applicationPackage).deploy();
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(application2.instance().rotations()));
         assertEquals("https://cd--app2--tenant2.global.vespa.oath.cloud:4443/",
                      tester.controller().routing().readDeclaredEndpointsOf(application2.instanceId()).primary().get().url().toString());
@@ -169,7 +169,9 @@ public class RotationRepositoryTest {
                 .parallel("us-west-1", "us-east-3")
                 .globalServiceId("global")
                 .build();
-        var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1").submit(applicationPackage);
+        var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1")
+                              .submit(applicationPackage)
+                              .deploy();
         var instance2 = tester.newDeploymentContext("tenant1", "application1", "instance2");
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
         assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
@@ -187,7 +189,9 @@ public class RotationRepositoryTest {
                 .parallel("us-west-1", "us-east-3")
                 .endpoint("default", "foo", "us-central-1", "us-west-1")
                 .build();
-        var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1").submit(applicationPackage);
+        var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1")
+                              .submit(applicationPackage)
+                              .deploy();
         var instance2 = tester.newDeploymentContext("tenant1", "application1", "instance2");
 
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
