@@ -19,6 +19,7 @@ class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 private:
     vespalib::ThreadExecutor                           & _sharedExecutor;
     vespalib::ThreadStackExecutor                        _masterExecutor;
+    std::atomic<uint32_t>                                _master_task_limit;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _indexExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;
     ExecutorThreadService                                _masterService;
@@ -36,21 +37,27 @@ private:
 public:
     using OptimizeFor = vespalib::Executor::OptimizeFor;
     /**
-     * Constructor.
-     *
-     * @stackSize The size of the stack of the underlying executors.
-     * @cfg config used to set up all executors.
+     * Convenience constructor used in unit tests.
      */
-    ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor,
-                             const ThreadingServiceConfig & cfg, uint32_t stackSize = 128 * 1024);
-    ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor, uint32_t num_treads = 1);
+    ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor, uint32_t num_treads = 1);
+
+    ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor,
+                             const ThreadingServiceConfig& cfg,
+                             uint32_t stackSize = 128 * 1024);
     ~ExecutorThreadingService() override;
 
     void sync_all_executors() override;
 
+    void blocking_master_execute(vespalib::Executor::Task::UP task) override;
+
     void shutdown();
 
-    void setTaskLimit(uint32_t taskLimit, uint32_t summaryTaskLimit);
+    uint32_t master_task_limit() const {
+        return _master_task_limit.load(std::memory_order_relaxed);
+    }
+    void set_task_limits(uint32_t master_task_limit,
+                         uint32_t field_task_limit,
+                         uint32_t summary_task_limit);
 
     // Expose the underlying executors for stats fetching and testing.
     // TOD: Remove - This is only used for casting to check the underlying type

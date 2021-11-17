@@ -11,12 +11,14 @@ using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 
 ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
+                                               uint32_t master_task_limit_,
                                                uint32_t defaultTaskLimit_,
                                                OptimizeFor optimize_,
                                                uint32_t kindOfWatermark_,
                                                vespalib::duration reactionTime_,
                                                SharedFieldWriterExecutor shared_field_writer_)
     : _indexingThreads(indexingThreads_),
+      _master_task_limit(master_task_limit_),
       _defaultTaskLimit(defaultTaskLimit_),
       _optimize(optimize_),
       _kindOfWatermark(kindOfWatermark_),
@@ -59,7 +61,9 @@ ThreadingServiceConfig
 ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const HwInfo::Cpu &cpuInfo)
 {
     uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing, concurrency, cpuInfo);
-    return ThreadingServiceConfig(indexingThreads, cfg.indexing.tasklimit,
+    return ThreadingServiceConfig(indexingThreads,
+                                  cfg.feeding.masterTaskLimit,
+                                  cfg.indexing.tasklimit,
                                   selectOptimization(cfg.indexing.optimize),
                                   cfg.indexing.kindOfWatermark,
                                   vespalib::from_s(cfg.indexing.reactiontime),
@@ -68,12 +72,13 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
 
 ThreadingServiceConfig
 ThreadingServiceConfig::make(uint32_t indexingThreads, SharedFieldWriterExecutor shared_field_writer_) {
-    return ThreadingServiceConfig(indexingThreads, 100, OptimizeFor::LATENCY, 0, 10ms, shared_field_writer_);
+    return ThreadingServiceConfig(indexingThreads, 0, 100, OptimizeFor::LATENCY, 0, 10ms, shared_field_writer_);
 }
 
 void
 ThreadingServiceConfig::update(const ThreadingServiceConfig& cfg)
 {
+    _master_task_limit = cfg._master_task_limit;
     _defaultTaskLimit = cfg._defaultTaskLimit;
 }
 
@@ -81,6 +86,7 @@ bool
 ThreadingServiceConfig::operator==(const ThreadingServiceConfig &rhs) const
 {
     return _indexingThreads == rhs._indexingThreads &&
+        _master_task_limit == rhs._master_task_limit &&
         _defaultTaskLimit == rhs._defaultTaskLimit &&
         _optimize == rhs._optimize &&
         _kindOfWatermark == rhs._kindOfWatermark &&

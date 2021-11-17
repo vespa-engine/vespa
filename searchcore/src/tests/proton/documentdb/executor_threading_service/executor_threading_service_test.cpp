@@ -75,5 +75,17 @@ TEST_F(ExecutorThreadingServiceTest, shared_executor_for_index_and_attribute_fie
     assert_executor(index_inverter(), 12, 100);
 }
 
+TEST_F(ExecutorThreadingServiceTest, tasks_limits_can_be_updated)
+{
+    setup(4, SharedFieldWriterExecutor::NONE);
+    service->set_task_limits(5, 7, 11);
+    EXPECT_EQ(5, service->master_task_limit());
+    EXPECT_EQ(7, service->index().getTaskLimit());
+    EXPECT_EQ(11, service->summary().getTaskLimit());
+    EXPECT_EQ(7, index_inverter()->first_executor()->getTaskLimit());
+    EXPECT_EQ(7, index_writer()->first_executor()->getTaskLimit());
+    EXPECT_EQ(7, attribute_writer()->first_executor()->getTaskLimit());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
 

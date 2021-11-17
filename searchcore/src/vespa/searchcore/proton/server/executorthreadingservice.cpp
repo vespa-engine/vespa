@@ -42,11 +42,13 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor &sha
     : ExecutorThreadingService(sharedExecutor, ThreadingServiceConfig::make(num_treads))
 {}
 
-ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor & sharedExecutor,
-                                                   const ThreadingServiceConfig & cfg,  uint32_t stackSize)
+ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor,
+                                                   const ThreadingServiceConfig& cfg,
+                                                   uint32_t stackSize)
 
     : _sharedExecutor(sharedExecutor),
       _masterExecutor(1, stackSize, master_executor),
+      _master_task_limit(cfg.master_task_limit()),
       _indexExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), index_executor)),
       _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), summary_executor)),
       _masterService(_masterExecutor),
@@ -97,6 +99,16 @@ ExecutorThreadingService::sync_all_executors() {
 }
 
 void
+ExecutorThreadingService::blocking_master_execute(vespalib::Executor::Task::UP task)
+{
+    uint32_t limit = master_task_limit();
+    if (limit > 0) {
+        _masterExecutor.wait_for_task_count(limit);
+    }
+    _masterExecutor.execute(std::move(task));
+}
+
+void
 ExecutorThreadingService::syncOnce() {
     bool isMasterThread = _masterService.isCurrentThread();
     if (!isMasterThread) {
@@ -127,13 +139,16 @@ ExecutorThreadingService::shutdown()
 }
 
 void
-ExecutorThreadingService::setTaskLimit(uint32_t taskLimit, uint32_t summaryTaskLimit)
+ExecutorThreadingService::set_task_limits(uint32_t master_task_limit,
+                                          uint32_t field_task_limit,
+                                          uint32_t summary_task_limit)
 {
-    _indexExecutor->setTaskLimit(taskLimit);
-    _summaryExecutor->setTaskLimit(summaryTaskLimit);
-    _index_field_inverter_ptr->setTaskLimit(taskLimit);
-    _index_field_writer_ptr->setTaskLimit(taskLimit);
-    _attribute_field_writer_ptr->setTaskLimit(taskLimit);
+    _master_task_limit.store(master_task_limit, std::memory_order_release);
+    _indexExecutor->setTaskLimit(field_task_limit);
+    _summaryExecutor->setTaskLimit(summary_task_limit);
+    _index_field_inverter_ptr->setTaskLimit(field_task_limit);
+    _index_field_writer_ptr->setTaskLimit(field_task_limit);
+    _attribute_field_writer_ptr->setTaskLimit(field_task_limit);
 }
 
 ExecutorThreadingServiceStats

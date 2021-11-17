@@ -65,6 +65,12 @@ struct IThreadingService
 
     virtual void sync_all_executors() = 0;
 
+    /**
+     * Block the calling thread until the master thread has capacity to handle more tasks,
+     * and then execute the given task in the master thread.
+     */
+    virtual void blocking_master_execute(vespalib::Executor::Task::UP task) = 0;
+
     virtual IThreadService &master() = 0;
     virtual IThreadService &index() = 0;
     virtual IThreadService &summary() = 0;
