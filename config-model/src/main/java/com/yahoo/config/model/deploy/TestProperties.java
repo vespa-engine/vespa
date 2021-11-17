@@ -72,6 +72,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double diskBloatFactor = 0.2;
     private boolean distributorEnhancedMaintenanceScheduling = false;
     private boolean asyncApplyBucketDiff = false;
+    private boolean unorderedMergeChaining = false;
     private List<String> zoneDnsSuffixes = List.of();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -125,6 +126,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
+    @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -319,6 +321,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setAsyncApplyBucketDiff(boolean value) {
         asyncApplyBucketDiff = value;
+        return this;
+    }
+
+    public TestProperties setUnorderedMergeChaining(boolean unordered) {
+        unorderedMergeChaining = unordered;
         return this;
     }
 
