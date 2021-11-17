@@ -1,22 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.exception.ExceptionUtils;
+import com.yahoo.restapi.MessageResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.Optional;
@@ -33,8 +31,6 @@ import static com.yahoo.jdisc.Response.Status;
  */
 public class TestRunnerHandler extends LoggingRequestHandler {
 
-    private static final String CONTENT_TYPE_APPLICATION_JSON = "application/json";
-
     private final TestRunner testRunner;
 
     @Inject
@@ -50,34 +46,35 @@ public class TestRunnerHandler extends LoggingRequestHandler {
                 case GET: return handleGET(request);
                 case POST: return handlePOST(request);
 
-                default: return new Response(Status.METHOD_NOT_ALLOWED, "Method '" + request.getMethod() + "' is not supported");
+                default: return new MessageResponse(Status.METHOD_NOT_ALLOWED, "Method '" + request.getMethod() + "' is not supported");
             }
         } catch (IllegalArgumentException e) {
-            return new Response(Status.BAD_REQUEST, Exceptions.toMessageString(e));
+            return new MessageResponse(Status.BAD_REQUEST, Exceptions.toMessageString(e));
         } catch (Exception e) {
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
-            return new Response(Status.INTERNAL_SERVER_ERROR, Exceptions.toMessageString(e));
+            return new MessageResponse(Status.INTERNAL_SERVER_ERROR, Exceptions.toMessageString(e));
         }
     }
 
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
-        if (path.equals("/tester/v1/log")) {
-            long fetchRecordsAfter = Optional.ofNullable(request.getProperty("after"))
-                                             .map(Long::parseLong)
-                                             .orElse(-1L);
-            return new SlimeJsonResponse(logToSlime(testRunner.getLog(fetchRecordsAfter)));
-        } else if (path.equals("/tester/v1/status")) {
-            log.info("Responding with status " + testRunner.getStatus());
-            return new Response(testRunner.getStatus().name());
-        } else if (path.equals("/tester/v1/report")) {
-            TestReport report = testRunner.getReport();
-            if (report == null)
-                return new EmptyResponse(200);
+        switch (path) {
+            case "/tester/v1/log":
+                long fetchRecordsAfter = Optional.ofNullable(request.getProperty("after"))
+                                                 .map(Long::parseLong)
+                                                 .orElse(-1L);
+                return new SlimeJsonResponse(logToSlime(testRunner.getLog(fetchRecordsAfter)));
+            case "/tester/v1/status":
+                log.info("Responding with status " + testRunner.getStatus());
+                return new MessageResponse(testRunner.getStatus().name());
+            case "/tester/v1/report":
+                TestReport report = testRunner.getReport();
+                if (report == null)
+                    return new EmptyResponse(200);
 
-            return new SlimeJsonResponse(toSlime(report));
+                return new SlimeJsonResponse(toSlime(report));
         }
-        return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
+        return new MessageResponse(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
     }
 
     private HttpResponse handlePOST(HttpRequest request) throws IOException {
@@ -88,9 +85,9 @@ public class TestRunnerHandler extends LoggingRequestHandler {
             byte[] config = request.getData().readAllBytes();
             testRunner.test(testSuite, config);
             log.info("Started tests of type " + type + " and status is " + testRunner.getStatus());
-            return new Response("Successfully started " + type + " tests");
+            return new MessageResponse("Successfully started " + type + " tests");
         }
-        return new Response(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
+        return new MessageResponse(Status.NOT_FOUND, "Not found: " + request.getUri().getPath());
     }
 
     private static String lastElement(String path) {
@@ -131,51 +128,6 @@ public class TestRunnerHandler extends LoggingRequestHandler {
                 : level.intValue() < Level.WARNING.intValue() ? "info"
                 : level.intValue() < Level.SEVERE.intValue() ? "warning"
                 : "error";
-    }
-
-    private static class SlimeJsonResponse extends HttpResponse {
-        private final Slime slime;
-
-        private SlimeJsonResponse(Slime slime) {
-            super(200);
-            this.slime = slime;
-        }
-
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            new JsonFormat(true).encode(outputStream, slime);
-        }
-
-        @Override
-        public String getContentType() {
-            return CONTENT_TYPE_APPLICATION_JSON;
-        }
-    }
-
-    private static class Response extends HttpResponse {
-        private static final ObjectMapper objectMapper = new ObjectMapper();
-        private final String message;
-
-        private Response(String response) {
-            this(200, response);
-        }
-
-        private Response(int statusCode, String message) {
-            super(statusCode);
-            this.message = message;
-        }
-
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            ObjectNode objectNode = objectMapper.createObjectNode();
-            objectNode.put("message", message);
-            objectMapper.writeValue(outputStream, objectNode);
-        }
-
-        @Override
-        public String getContentType() {
-            return CONTENT_TYPE_APPLICATION_JSON;
-        }
     }
 
     private static Slime toSlime(TestReport testReport) {
