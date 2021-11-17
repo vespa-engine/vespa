@@ -32,16 +32,6 @@ public:
     const ThreadServiceObserver &summaryObserver() const {
         return _summary;
     }
-    const vespalib::SequencedTaskExecutorObserver &indexFieldInverterObserver() const {
-        return _indexFieldInverter;
-    }
-    const vespalib::SequencedTaskExecutorObserver &indexFieldWriterObserver() const {
-        return _indexFieldWriter;
-    }
-
-    const vespalib::SequencedTaskExecutorObserver &attributeFieldWriterObserver() const {
-        return _attributeFieldWriter;
-    }
 
     void sync_all_executors() override {
         _service.sync_all_executors();
