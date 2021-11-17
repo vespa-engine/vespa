@@ -4,7 +4,6 @@ package auth
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,7 +14,6 @@ import (
 )
 
 const (
-	audiencePath           = "/api/v2/"
 	waitThresholdInSeconds = 3
 	// SecretsNamespace namespace used to set/get values from the keychain
 	SecretsNamespace = "vespa-cli"
@@ -39,8 +37,6 @@ type SecretStore interface {
 }
 
 type Result struct {
-	Tenant       string
-	Domain       string
 	RefreshToken string
 	AccessToken  string
 	ExpiresIn    int64
@@ -114,17 +110,10 @@ func (a *Authenticator) Wait(ctx context.Context, state State) (Result, error) {
 				return Result{}, errors.New(res.ErrorDescription)
 			}
 
-			ten, domain, err := parseTenant(res.AccessToken)
-			if err != nil {
-				return Result{}, fmt.Errorf("cannot parse tenant from the given access token: %w", err)
-			}
-
 			return Result{
 				RefreshToken: res.RefreshToken,
 				AccessToken:  res.AccessToken,
 				ExpiresIn:    res.ExpiresIn,
-				Tenant:       ten,
-				Domain:       domain,
 			}, nil
 		}
 	}
@@ -147,29 +136,4 @@ func (a *Authenticator) getDeviceCode(ctx context.Context) (State, error) {
 		return State{}, fmt.Errorf("cannot decode response: %w", err)
 	}
 	return res, nil
-}
-
-func parseTenant(accessToken string) (tenant, domain string, err error) {
-	parts := strings.Split(accessToken, ".")
-	v, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return "", "", err
-	}
-	var payload struct {
-		AUDs []string `json:"aud"`
-	}
-	if err := json.Unmarshal(v, &payload); err != nil {
-		return "", "", err
-	}
-	for _, aud := range payload.AUDs {
-		u, err := url.Parse(aud)
-		if err != nil {
-			return "", "", err
-		}
-		if u.Path == audiencePath {
-			parts := strings.Split(u.Host, ".")
-			return parts[0], u.Host, nil
-		}
-	}
-	return "", "", fmt.Errorf("audience not found for %s", audiencePath)
 }

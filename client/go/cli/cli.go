@@ -7,9 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/joeshaw/envdecode"
-	"github.com/pkg/browser"
-	"github.com/vespa-engine/vespa/client/go/util"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -19,8 +16,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/joeshaw/envdecode"
 	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/pkg/browser"
 	"github.com/vespa-engine/vespa/client/go/auth"
+	"github.com/vespa-engine/vespa/client/go/util"
 )
 
 const accessTokenExpThreshold = 5 * time.Minute
@@ -28,53 +28,22 @@ const accessTokenExpThreshold = 5 * time.Minute
 var errUnauthenticated = errors.New("not logged in. Try 'vespa login'")
 
 type config struct {
-	InstallID     string            `json:"install_id,omitempty"`
-	DefaultTenant string            `json:"default_tenant"`
-	Tenants       map[string]Tenant `json:"tenants"`
+	Systems map[string]System `json:"systems"`
 }
 
-// Tenant is an auth0 Tenant.
-type Tenant struct {
-	Name         string    `json:"name"`
-	Domain       string    `json:"domain"`
-	AccessToken  string    `json:"access_token,omitempty"`
-	Scopes       []string  `json:"scopes,omitempty"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	ClientID     string    `json:"client_id"`
-	ClientSecret string    `json:"client_secret"`
+type System struct {
+	AccessToken string    `json:"access_token,omitempty"`
+	Scopes      []string  `json:"scopes,omitempty"`
+	ExpiresAt   time.Time `json:"expires_at"`
 }
 
 type Cli struct {
 	Authenticator *auth.Authenticator
-	tenant        string
+	system        string
 	initOnce      sync.Once
 	errOnce       error
 	Path          string
 	config        config
-}
-
-// IsLoggedIn encodes the domain logic for determining whether we're
-// logged in. This might check our config storage, or just in memory.
-func (c *Cli) IsLoggedIn() bool {
-	// No need to check errors for initializing context.
-	_ = c.init()
-
-	if c.tenant == "" {
-		return false
-	}
-
-	// Parse the access token for the tenant.
-	t, err := jwt.ParseString(c.config.Tenants[c.tenant].AccessToken)
-	if err != nil {
-		return false
-	}
-
-	// Check if token is valid.
-	if err = jwt.Validate(t, jwt.WithIssuer("https://vespa-cd.auth0.com/")); err != nil {
-		return false
-	}
-
-	return true
 }
 
 // default to vespa-cd.auth0.com
@@ -99,11 +68,12 @@ func ContextWithCancel() context.Context {
 	return ctx
 }
 
-// Setup will try to initialize the config context, as well as figure out if
-// there's a readily available tenant.
-func GetCli(configPath string) (*Cli, error) {
+// GetCli will try to initialize the config context, as well as figure out if
+// there's a readily available system.
+func GetCli(configPath string, systemName string) (*Cli, error) {
 	c := Cli{}
 	c.Path = configPath
+	c.system = systemName
 	if err := envdecode.StrictDecode(&authCfg); err != nil {
 		return nil, fmt.Errorf("could not decode env: %w", err)
 	}
@@ -116,29 +86,49 @@ func GetCli(configPath string) (*Cli, error) {
 	return &c, nil
 }
 
-// prepareTenant loads the Tenant, refreshing its token if necessary.
-// The Tenant access token needs a refresh if:
-// 1. the Tenant scopes are different from the currently required scopes.
-// 2. the access token is expired.
-func (c *Cli) PrepareTenant(ctx context.Context) (Tenant, error) {
-	if err := c.init(); err != nil {
-		return Tenant{}, err
+// IsLoggedIn encodes the domain logic for determining whether we're
+// logged in. This might check our config storage, or just in memory.
+func (c *Cli) IsLoggedIn() bool {
+	// No need to check errors for initializing context.
+	_ = c.init()
+
+	if c.system == "" {
+		return false
 	}
-	t, err := c.getTenant()
+
+	// Parse the access token for the system.
+	token, err := jwt.ParseString(c.config.Systems[c.system].AccessToken)
 	if err != nil {
-		return Tenant{}, err
+		return false
 	}
 
-	if t.ClientID != "" && t.ClientSecret != "" {
-		return t, nil
+	// Check if token is valid.
+	if err = jwt.Validate(token, jwt.WithIssuer("https://vespa-cd.auth0.com/")); err != nil {
+		return false
 	}
 
-	if t.AccessToken == "" || scopesChanged(t) {
-		t, err = RunLogin(ctx, c, true)
+	return true
+}
+
+// PrepareSystem loads the System, refreshing its token if necessary.
+// The System access token needs a refresh if:
+// 1. the System scopes are different from the currently required scopes - (auth0 changes).
+// 2. the access token is expired.
+func (c *Cli) PrepareSystem(ctx context.Context) (System, error) {
+	if err := c.init(); err != nil {
+		return System{}, err
+	}
+	s, err := c.getSystem()
+	if err != nil {
+		return System{}, err
+	}
+
+	if s.AccessToken == "" || scopesChanged(s) {
+		s, err = RunLogin(ctx, c, true)
 		if err != nil {
-			return Tenant{}, err
+			return System{}, err
 		}
-	} else if isExpired(t.ExpiresAt, accessTokenExpThreshold) {
+	} else if isExpired(s.ExpiresAt, accessTokenExpThreshold) {
 		// check if the stored access token is expired:
 		// use the refresh token to get a new access token:
 		tr := &auth.TokenRetriever{
@@ -147,29 +137,29 @@ func (c *Cli) PrepareTenant(ctx context.Context) (Tenant, error) {
 			Client:        http.DefaultClient,
 		}
 
-		res, err := tr.Refresh(ctx, t.Domain)
+		res, err := tr.Refresh(ctx, c.system)
 		if err != nil {
 			// ask and guide the user through the login process:
 			fmt.Println(fmt.Errorf("failed to renew access token, %s", err))
-			t, err = RunLogin(ctx, c, true)
+			s, err = RunLogin(ctx, c, true)
 			if err != nil {
-				return Tenant{}, err
+				return System{}, err
 			}
 		} else {
-			// persist the updated tenant with renewed access token
-			t.AccessToken = res.AccessToken
-			t.ExpiresAt = time.Now().Add(
+			// persist the updated system with renewed access token
+			s.AccessToken = res.AccessToken
+			s.ExpiresAt = time.Now().Add(
 				time.Duration(res.ExpiresIn) * time.Second,
 			)
 
-			err = c.AddTenant(t)
+			err = c.AddSystem(s)
 			if err != nil {
-				return Tenant{}, err
+				return System{}, err
 			}
 		}
 	}
 
-	return t, nil
+	return s, nil
 }
 
 // isExpired is true if now() + a threshold is after the given date
@@ -177,11 +167,11 @@ func isExpired(t time.Time, threshold time.Duration) bool {
 	return time.Now().Add(threshold).After(t)
 }
 
-// scopesChanged compare the Tenant scopes
+// scopesChanged compare the System scopes
 // with the currently required scopes.
-func scopesChanged(t Tenant) bool {
+func scopesChanged(s System) bool {
 	want := auth.RequiredScopes()
-	got := t.Scopes
+	got := s.Scopes
 
 	sort.Strings(want)
 	sort.Strings(got)
@@ -194,7 +184,7 @@ func scopesChanged(t Tenant) bool {
 		return true
 	}
 
-	for i := range t.Scopes {
+	for i := range s.Scopes {
 		if want[i] != got[i] {
 			return true
 		}
@@ -203,34 +193,30 @@ func scopesChanged(t Tenant) bool {
 	return false
 }
 
-func (c *Cli) getTenant() (Tenant, error) {
+func (c *Cli) getSystem() (System, error) {
 	if err := c.init(); err != nil {
-		return Tenant{}, err
+		return System{}, err
 	}
 
-	t, ok := c.config.Tenants[c.tenant]
+	s, ok := c.config.Systems[c.system]
 	if !ok {
-		return Tenant{}, fmt.Errorf("unable to find tenant: %s; run 'vespa login' to configure a new tenant", c.tenant)
+		return System{}, fmt.Errorf("unable to find system: %s; run 'vespa login' to configure a new system", c.system)
 	}
 
-	return t, nil
+	return s, nil
 }
 
-// AddTenant assigns an existing, or new Tenant. This is expected to be called
+// AddSystem assigns an existing, or new System. This is expected to be called
 // after a login has completed.
-func (c *Cli) AddTenant(ten Tenant) error {
+func (c *Cli) AddSystem(s System) error {
 	_ = c.init()
 
-	if c.config.DefaultTenant == "" {
-		c.config.DefaultTenant = ten.Domain
-	}
-
 	// If we're dealing with an empty file, we'll need to initialize this map.
-	if c.config.Tenants == nil {
-		c.config.Tenants = map[string]Tenant{}
+	if c.config.Systems == nil {
+		c.config.Systems = map[string]System{}
 	}
 
-	c.config.Tenants[ten.Domain] = ten
+	c.config.Systems[c.system] = s
 
 	if err := c.persistConfig(); err != nil {
 		return fmt.Errorf("unexpected error persisting config: %w", err)
@@ -282,14 +268,6 @@ func (c *Cli) initContext() (err error) {
 		return err
 	}
 
-	if c.tenant == "" && c.config.DefaultTenant == "" {
-		return errUnauthenticated
-	}
-
-	if c.tenant == "" {
-		c.tenant = c.config.DefaultTenant
-	}
-
 	return nil
 }
 
@@ -297,14 +275,14 @@ func (c *Cli) initContext() (err error) {
 // by showing the login instructions, opening the browser.
 // Use `expired` to run the login from other commands setup:
 // this will only affect the messages.
-func RunLogin(ctx context.Context, cli *Cli, expired bool) (Tenant, error) {
+func RunLogin(ctx context.Context, c *Cli, expired bool) (System, error) {
 	if expired {
 		fmt.Println("Please sign in to re-authorize the CLI.")
 	}
 
-	state, err := cli.Authenticator.Start(ctx)
+	state, err := c.Authenticator.Start(ctx)
 	if err != nil {
-		return Tenant{}, fmt.Errorf("could not start the authentication process: %w", err)
+		return System{}, fmt.Errorf("could not start the authentication process: %w", err)
 	}
 
 	fmt.Printf("Your Device Confirmation code is: %s\n\n", state.UserCode)
@@ -319,12 +297,12 @@ func RunLogin(ctx context.Context, cli *Cli, expired bool) (Tenant, error) {
 
 	var res auth.Result
 	err = util.Spinner("Waiting for login to complete in browser", func() error {
-		res, err = cli.Authenticator.Wait(ctx, state)
+		res, err = c.Authenticator.Wait(ctx, state)
 		return err
 	})
 
 	if err != nil {
-		return Tenant{}, fmt.Errorf("login error: %w", err)
+		return System{}, fmt.Errorf("login error: %w", err)
 	}
 
 	fmt.Print("\n")
@@ -333,23 +311,21 @@ func RunLogin(ctx context.Context, cli *Cli, expired bool) (Tenant, error) {
 
 	// store the refresh token
 	secretsStore := &auth.Keyring{}
-	err = secretsStore.Set(auth.SecretsNamespace, res.Domain, res.RefreshToken)
+	err = secretsStore.Set(auth.SecretsNamespace, c.system, res.RefreshToken)
 	if err != nil {
 		// log the error but move on
 		fmt.Println("Could not store the refresh token locally, please expect to login again once your access token expired.")
 	}
 
-	t := Tenant{
-		Name:        res.Tenant,
-		Domain:      res.Domain,
+	s := System{
 		AccessToken: res.AccessToken,
 		ExpiresAt:   time.Now().Add(time.Duration(res.ExpiresIn) * time.Second),
 		Scopes:      auth.RequiredScopes(),
 	}
-	err = cli.AddTenant(t)
+	err = c.AddSystem(s)
 	if err != nil {
-		return Tenant{}, fmt.Errorf("could not add tenant to config: %w", err)
+		return System{}, fmt.Errorf("could not add system to config: %w", err)
 	}
 
-	return t, nil
+	return s, nil
 }

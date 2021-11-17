@@ -144,6 +144,13 @@ func getService(service string, sessionOrRunID int64) *vespa.Service {
 
 func getSystem() string { return os.Getenv("VESPA_CLI_CLOUD_SYSTEM") }
 
+func getSystemName() string {
+	if getSystem() == "publiccd" {
+		return "publiccd"
+	}
+	return "public"
+}
+
 func getConsoleURL() string {
 	if getSystem() == "publiccd" {
 		return "https://console-cd.vespa.oath.cloud"
@@ -205,7 +212,8 @@ func getTarget() vespa.Target {
 				Writer: stdout,
 				Level:  vespa.LogLevel(logLevelArg),
 			},
-			cfg.AuthConfigPath())
+			cfg.AuthConfigPath(),
+			getSystemName())
 	}
 	fatalErrHint(fmt.Errorf("Invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
 	return nil
