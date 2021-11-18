@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
+import ai.vespa.hosted.api.TestConfig;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -19,34 +20,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class VespaCliTestRunnerTest {
 
-    @Test
-    void testEndpointsConfig() throws IOException {
-        byte[] testConfig = ("{\n" +
-                             "  \"application\": \"t:a:i\",\n" +
-                             "  \"zone\": \"dev.aws-us-east-1c\",\n" +
-                             "  \"system\": \"publiccd\",\n" +
-                             "  \"isCI\": true,\n" +
-                             "  \"zoneEndpoints\": {\n" +
-                             "    \"dev.aws-us-east-1c\": {\n" +
-                             "      \"default\": \"https://dev.endpoint:443/\"\n" +
-                             "    },\n" +
-                             "    \"prod.aws-us-east-1a\": {\n" +
-                             "      \"default\": \"https://prod.endpoint:443/\"\n" +
-                             "    }\n" +
-                             "  },\n" +
-                             "  \"clusters\": {\n" +
-                             "    \"prod.aws-us-east-1c\": [\n" +
-                             "      \"documents\"\n" +
-                             "    ]\n" +
-                             "  }\n" +
-                             "}\n").getBytes(StandardCharsets.UTF_8);
-
-        assertEquals("{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
-                     VespaCliTestRunner.toEndpointsConfig(testConfig));
-    }
+    static final TestConfig testConfig = TestConfig.fromJson(("{\n" +
+                                                              "  \"application\": \"t:a:i\",\n" +
+                                                              "  \"zone\": \"dev.aws-us-east-1c\",\n" +
+                                                              "  \"system\": \"publiccd\",\n" +
+                                                              "  \"isCI\": true,\n" +
+                                                              "  \"zoneEndpoints\": {\n" +
+                                                              "    \"dev.aws-us-east-1c\": {\n" +
+                                                              "      \"default\": \"https://dev.endpoint:443/\"\n" +
+                                                              "    },\n" +
+                                                              "    \"prod.aws-us-east-1a\": {\n" +
+                                                              "      \"default\": \"https://prod.endpoint:443/\"\n" +
+                                                              "    }\n" +
+                                                              "  },\n" +
+                                                              "  \"clusters\": {\n" +
+                                                              "    \"prod.aws-us-east-1c\": [\n" +
+                                                              "      \"documents\"\n" +
+                                                              "    ]\n" +
+                                                              "  }\n" +
+                                                              "}\n").getBytes(StandardCharsets.UTF_8));
 
     @Test
-    void testSuitePathDiscovery() throws IOException {
+    void testSetup() throws IOException {
         Path temp = Files.createTempDirectory("vespa-cli-test-runner-test-");
         temp.toFile().deleteOnExit();
         VespaCliTestRunner runner = new VespaCliTestRunner(temp);
@@ -54,14 +49,18 @@ class VespaCliTestRunnerTest {
 
         Path tests = Files.createDirectory(temp.resolve("tests"));
         assertTrue(runner.isSupported());
-        IllegalStateException expected = assertThrows(IllegalStateException.class,
-                                                      () -> runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, ""));
-        assertEquals("No tests found, for suite 'SYSTEM_TEST'", expected.getMessage());
+        IllegalStateException ise = assertThrows(IllegalStateException.class,
+                                                 () -> runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig));
+        assertEquals("No tests found, for suite 'SYSTEM_TEST'", ise.getMessage());
 
         Path systemTests = Files.createDirectory(tests.resolve("system-test"));
-        ProcessBuilder builder = runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, "config");
-        assertEquals(systemTests.toFile(), builder.directory());
-        assertEquals(List.of("vespa", "test", "--endpoints", "config"), builder.command());
+        ProcessBuilder builder = runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig);
+        assertEquals(List.of("vespa", "test", systemTests.toAbsolutePath().toString(),
+                             "--application", "t.a.i",
+                             "--endpoints", "{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
+                             "--data-plane-public-cert", temp.resolve("cert").toAbsolutePath().toString(),
+                             "--data-plane-private-key", temp.resolve("key").toAbsolutePath().toString()),
+                     builder.command());
     }
 
 }
