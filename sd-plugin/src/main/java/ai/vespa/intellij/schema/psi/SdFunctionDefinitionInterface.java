@@ -4,10 +4,12 @@ import com.intellij.psi.util.PsiTreeUtil;
 import ai.vespa.intellij.schema.SdUtil;
 
 /**
- * This interface represents a function's declaration in the SD language.
+ * A function's declaration in the SD language.
+ *
  * @author Shahar Ariel
  */
 public interface SdFunctionDefinitionInterface extends SdDeclaration {
+
     default boolean isOverride() {
         String macroName = this.getName();
         
@@ -24,6 +26,6 @@ public interface SdFunctionDefinitionInterface extends SdDeclaration {
             curRankProfile = (SdRankProfileDefinition) SdUtil.getRankProfileParent(curRankProfile);
         }
         return false;
-        
     }
+
 }

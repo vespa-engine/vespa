@@ -17,7 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * This class represents a Callee tree in the "Call Hierarchy" window.
+ * A Callee tree in the "Call Hierarchy" window.
+ *
  * @author Shahar Ariel
  */
 public class SdCalleeTreeStructure extends SdCallTreeStructure {

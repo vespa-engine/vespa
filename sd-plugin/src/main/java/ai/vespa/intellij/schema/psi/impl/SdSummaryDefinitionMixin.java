@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.psi.impl;
 
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
@@ -13,6 +14,7 @@ import javax.swing.Icon;
 /**
  * This class is used for methods' implementations for SdSummaryDefinition. Connected with "mixin" to SummaryDefinition
  * rule in sd.bnf
+ *
  * @author Shahar Ariel
  */
 public abstract class SdSummaryDefinitionMixin extends ASTWrapperPsiElement {
@@ -54,4 +56,5 @@ public abstract class SdSummaryDefinitionMixin extends ASTWrapperPsiElement {
             }
         };
     }
+
 }

@@ -23,6 +23,7 @@ import java.util.List;
 
 /**
  * This class is used for the presentation of an element in the "Structure View" window.
+ *
  * @author Shahar Ariel
  */
 public class SdStructureViewElement implements StructureViewTreeElement, SortableTreeElement {
@@ -91,4 +92,5 @@ public class SdStructureViewElement implements StructureViewTreeElement, Sortabl
         }
         return treeElements.toArray(new TreeElement[0]);
     }
+
 }

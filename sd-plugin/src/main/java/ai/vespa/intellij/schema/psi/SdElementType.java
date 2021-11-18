@@ -7,7 +7,8 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This class represent a SdElementType.
+ * An SdElementType.
+ *
  * @author Shahar Ariel
  */
 public class SdElementType extends IElementType {
@@ -15,4 +16,5 @@ public class SdElementType extends IElementType {
     public SdElementType(@NotNull @NonNls String debugName) {
         super(debugName, SdLanguage.INSTANCE);
     }
+
 }

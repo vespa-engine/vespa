@@ -7,7 +7,8 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This class represent a SdTokenType.
+ * An SdTokenType.
+ *
  * @author Shahar Ariel
  */
 public class SdTokenType extends IElementType {
@@ -20,4 +21,5 @@ public class SdTokenType extends IElementType {
     public String toString() {
         return "SdTokenType." + super.toString();
     }
+
 }

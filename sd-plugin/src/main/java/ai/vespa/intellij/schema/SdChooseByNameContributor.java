@@ -18,6 +18,7 @@ import java.util.List;
 
 /**
  * This class is used for the extension (in plugin.xml) to enable "Go To Symbol" feature.
+ *
  * @author Shahar Ariel
  */
 public class SdChooseByNameContributor implements ChooseByNameContributor {

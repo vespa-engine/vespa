@@ -17,7 +17,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 
 /**
- * This class defines the syntax highlighting of an SD file.
+ * Defines the syntax highlighting of an SD file.
+ *
  * @author Shahar Ariel
  */
 public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
@@ -204,8 +205,8 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
         constants.add(SdTypes.LOCALE);
         constants.add(SdTypes.CREATE_IF_NONEXISTENT);
         constants.add(SdTypes.REMOVE_IF_ZERO);
-    
         return constants;
     }
+
 }
 

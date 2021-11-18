@@ -19,7 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * This class represent a reference to a Psi Element.
+ * A reference to a Psi Element.
+ *
  * @author Shahar Ariel
  */
 public class SdReference extends PsiReferenceBase<PsiElement> implements PsiPolyVariantReference {

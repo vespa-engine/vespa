@@ -21,7 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.Icon;
 
 /**
- * This class represents a node descriptor to a node in a tree in the "Call Hierarchy" window.
+ * A node descriptor to a node in a tree in the "Call Hierarchy" window.
+ *
  * @author Shahar Ariel
  */
 public class SdCallHierarchyNodeDescriptor extends HierarchyNodeDescriptor {
@@ -68,10 +69,7 @@ public class SdCallHierarchyNodeDescriptor extends HierarchyNodeDescriptor {
         if (!Comparing.equal(myHighlightedText, oldText)) {
             changes = true;
         }
-        
-        
         return changes;
-
     }
     
 }

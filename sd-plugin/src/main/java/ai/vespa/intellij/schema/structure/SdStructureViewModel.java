@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class represents the "Structure View" window.
+ *
+ * @author Shahar Ariel
  */
 public class SdStructureViewModel extends StructureViewModelBase implements StructureViewModel.ElementInfoProvider {
     public SdStructureViewModel(PsiFile psiFile) {

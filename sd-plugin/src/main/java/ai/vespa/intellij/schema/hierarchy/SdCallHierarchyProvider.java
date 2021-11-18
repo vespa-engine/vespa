@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.hierarchy;
 
-
 import com.intellij.ide.hierarchy.CallHierarchyBrowserBase;
 import com.intellij.ide.hierarchy.HierarchyBrowser;
 import com.intellij.ide.hierarchy.HierarchyProvider;
@@ -20,6 +19,7 @@ import com.intellij.openapi.project.Project;
 
 /**
  * This class is used for the extension (in plugin.xml), to enable "Call Hierarchy" window using the plugin code.
+ *
  * @author Shahar Ariel
  */
 public class SdCallHierarchyProvider implements HierarchyProvider {
@@ -61,4 +61,5 @@ public class SdCallHierarchyProvider implements HierarchyProvider {
     public void browserActivated(@NotNull HierarchyBrowser hierarchyBrowser) {
         ((SdCallHierarchyBrowser) hierarchyBrowser).changeView(CallHierarchyBrowserBase.getCallerType());
     }
+
 }

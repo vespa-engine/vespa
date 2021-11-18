@@ -18,9 +18,11 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml), to enable "find Usages" window using the plugin code.
+ *
  * @author Shahar Ariel
  */
 public class SdFindUsagesProvider implements FindUsagesProvider {
+
     @Nullable
     @Override
     public WordsScanner getWordsScanner() {
@@ -71,4 +73,5 @@ public class SdFindUsagesProvider implements FindUsagesProvider {
             return "";
         }
     }
+
 }

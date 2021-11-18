@@ -5,7 +5,8 @@ import com.intellij.navigation.NavigationItem;
 import com.intellij.psi.PsiElement;
 
 /**
- * This interface represents a declaration in the SD language.
+ * A declaration in the SD language.
+ *
  * @author Shahar Ariel
  */
 public interface SdDeclaration extends PsiElement, NavigationItem, SdNamedElement {}

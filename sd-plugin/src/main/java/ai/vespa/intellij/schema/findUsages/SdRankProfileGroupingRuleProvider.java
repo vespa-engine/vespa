@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml) to the class SdRankProfileGroupingRule.
+ *
  * @author Shahar Ariel
  */
 public class SdRankProfileGroupingRuleProvider implements FileStructureGroupRuleProvider {
@@ -17,4 +18,5 @@ public class SdRankProfileGroupingRuleProvider implements FileStructureGroupRule
     public @Nullable UsageGroupingRule getUsageGroupingRule(@NotNull Project project) {
         return new SdRankProfileGroupingRule();
     }
+
 }

@@ -4,7 +4,8 @@ package ai.vespa.intellij.schema.lexer;
 import com.intellij.lexer.FlexAdapter;
 
 /**
- * This class adapts the JFlex lexer to the IntelliJ Platform Lexer API.
+ * Adapter of the JFlex lexer to the IntelliJ Platform Lexer API.
+ *
  * @author Shahar Ariel
  */
 public class SdLexerAdapter extends FlexAdapter {
@@ -12,4 +13,5 @@ public class SdLexerAdapter extends FlexAdapter {
     public SdLexerAdapter() {
         super(new SdLexer(null));
     }
+
 }

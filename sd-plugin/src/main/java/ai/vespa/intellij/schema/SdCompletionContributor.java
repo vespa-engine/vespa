@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for the extension (in plugin.xml) to enables Auto-Complete. Partially works for now.
+ *
  * @author Shahar Ariel
  */
 public class SdCompletionContributor extends CompletionContributor {

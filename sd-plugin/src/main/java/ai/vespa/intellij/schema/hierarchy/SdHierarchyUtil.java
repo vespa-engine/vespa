@@ -17,7 +17,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 
 /**
- * This class is util class to the Call Hierarchy feature.
+ * Call Hierarchy feature utilities.
+ *
  * @author Shahar Ariel
  */
 public class SdHierarchyUtil {

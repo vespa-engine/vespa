@@ -17,10 +17,12 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 
 /**
- * This class represent a group of elements in the "Find Usages" window.
+ * A group of elements in the "Find Usages" window.
+ *
  * @author Shahar Ariel
  */
 public class SdUsageGroup implements UsageGroup {
+
     private final VirtualFile myFile;
     private final SmartPsiElementPointer<SdDeclaration> myElementPointer;
     private final String myText;
@@ -107,4 +109,5 @@ public class SdUsageGroup implements UsageGroup {
     
     @Override
     public void update() {} 
+
 }

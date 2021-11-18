@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * This class represents a Caller tree in the "Call Hierarchy" window.
+ * A Caller tree in the "Call Hierarchy" window.
+ *
  * @author Shahar Ariel
  */
 public class SdCallerTreeStructure extends SdCallTreeStructure {

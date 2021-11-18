@@ -3,9 +3,11 @@ package ai.vespa.intellij.schema.psi;
 
 /**
  * This Enum describes the different declarations' types and their names.
+ *
  * @author Shahar Ariel
  */
 public enum SdDeclarationType {
+
     DOCUMENT("Document"),
     STRUCT("Struct"),
     ANNOTATION("Annotation"),
@@ -31,4 +33,5 @@ public enum SdDeclarationType {
     public String toString() {
         return typeName;
     }
+
 }

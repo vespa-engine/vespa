@@ -21,7 +21,8 @@ import java.util.Map;
 import javax.swing.JTree;
 
 /**
- * This class is a browser for the "Call Hierarchy" window.
+ * A browser for the "Call Hierarchy" window.
+ *
  * @author Shahar Ariel
  */
 public class SdCallHierarchyBrowser extends CallHierarchyBrowserBase {

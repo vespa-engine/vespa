@@ -9,6 +9,7 @@ import ai.vespa.intellij.schema.SdFileType;
 
 /**
  * This class is a factory of psi elements in the SD PSI tree.
+ *
  * @author Shahar Ariel
  */
 public class SdElementFactory {
@@ -32,4 +33,5 @@ public class SdElementFactory {
         return (SdFile) PsiFileFactory.getInstance(project).
             createFileFromText(name, SdFileType.INSTANCE, text);
     }
+
 }

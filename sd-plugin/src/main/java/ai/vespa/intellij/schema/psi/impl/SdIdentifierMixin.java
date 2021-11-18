@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.psi.impl;
 
 import com.intellij.lang.ASTNode;
@@ -11,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This abstract class is used for methods' implementations for SdIdentifier. Connected with "mixin" to IdentifierVal and 
  * IdentifierWithDashVal rules in sd.bnf
+ *
  * @author Shahar Ariel
  */
 public abstract class SdIdentifierMixin extends SdIdentifierMixinImpl implements PsiNamedElement {
@@ -40,7 +42,5 @@ public abstract class SdIdentifierMixin extends SdIdentifierMixinImpl implements
         }
         return this;
     }
-    
-
     
 }

@@ -14,7 +14,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * This class represent a Rank Profile that groups elements in the "Find Usages" window.
+ * A Rank Profile that groups elements in the "Find Usages" window.
+ *
  * @author Shahar Ariel
  */
 public class SdRankProfileGroupingRule extends SingleParentUsageGroupingRule implements DumbAware {
@@ -34,4 +35,5 @@ public class SdRankProfileGroupingRule extends SingleParentUsageGroupingRule imp
 
         return null;
     }
+
 }

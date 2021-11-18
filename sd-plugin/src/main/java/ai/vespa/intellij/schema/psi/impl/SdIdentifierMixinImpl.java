@@ -1,3 +1,4 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.psi.impl;
 
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for methods' implementations for SdIdentifier. The abstract class SdIdentifierMixin extents it.
+ *
  * @author Shahar Ariel
  */
 public class SdIdentifierMixinImpl extends ASTWrapperPsiElement implements SdIdentifier {
@@ -22,4 +24,5 @@ public class SdIdentifierMixinImpl extends ASTWrapperPsiElement implements SdIde
     public PsiReference getReference() {
         return new SdReference(this, new TextRange(0, getNode().getText().length()));
     }
+
 }

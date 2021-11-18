@@ -38,7 +38,8 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * This is the util class for the plugin's code.
+ * Util class for the plugin's code.
+ *
  * @author Shahar Ariel
  */
 public class SdUtil {
@@ -216,6 +217,5 @@ public class SdUtil {
     public static List<PsiElement> findDocumentSummaryChildren(PsiElement element) {
         return new ArrayList<>(PsiTreeUtil.collectElementsOfType(element, SdSummaryDefinition.class));
     }
-    
     
 }

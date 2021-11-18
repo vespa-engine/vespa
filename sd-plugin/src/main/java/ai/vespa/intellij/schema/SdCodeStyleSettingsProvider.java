@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml) to the class SdCodeStyleSettings.
+ *
  * @author Shahar Ariel
  */
 public class SdCodeStyleSettingsProvider extends CodeStyleSettingsProvider {

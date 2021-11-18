@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml) to the class SdFindUsagesHandler.
+ *
  * @author Shahar Ariel
  */
 public class SdFindUsagesHandlerFactory extends FindUsagesHandlerFactory {

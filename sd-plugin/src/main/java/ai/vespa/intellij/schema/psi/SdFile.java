@@ -9,7 +9,8 @@ import ai.vespa.intellij.schema.SdLanguage;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * This class represent an SD file.
+ * An SD file.
+ *
  * @author Shahar Ariel
  */
 public class SdFile extends PsiFileBase {
@@ -28,4 +29,5 @@ public class SdFile extends PsiFileBase {
     public String toString() {
         return "Sd File";
     }
+
 }
