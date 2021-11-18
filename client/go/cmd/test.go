@@ -14,22 +14,22 @@ import (
 )
 
 const (
-	endpointsFlag = "endpoints"
+	endpointsFlag     = "endpoints"
 	dataPlaneCertFlag = "data-plane-public-cert"
-	dataPlaneKeyFlag = "data-plane-private-key"
+	dataPlaneKeyFlag  = "data-plane-private-key"
 )
 
 var (
-	endpointsArg string
+	endpointsArg     string
 	dataPlaneCertArg string
-	dataPlaneKeyArg string
+	dataPlaneKeyArg  string
 )
 
 func init() {
 	rootCmd.AddCommand(testCmd)
-	testCmd.PersistentFlags().StringVar(&endpointsArg, endpointsFlag,"", "The endpoints to use, for each container cluster")
-	testCmd.PersistentFlags().StringVar(&dataPlaneCertArg, dataPlaneCertFlag,"", "Override for location of data plane public certificate")
-	testCmd.PersistentFlags().StringVar(&dataPlaneKeyArg, dataPlaneKeyFlag,"", "Override for location of data plane private key")
+	testCmd.PersistentFlags().StringVar(&endpointsArg, endpointsFlag, "", "The endpoints to use, for each container cluster")
+	testCmd.PersistentFlags().StringVar(&dataPlaneCertArg, dataPlaneCertFlag, "", "Override for location of data plane public certificate")
+	testCmd.PersistentFlags().StringVar(&dataPlaneKeyArg, dataPlaneKeyFlag, "", "Override for location of data plane private key")
 }
 
 var testCmd = &cobra.Command{
@@ -88,6 +88,7 @@ func getApplicationOrEndpoints(cfg *Config) (vespa.ApplicationID, map[string]str
 		return vespa.ApplicationID{}, urlsByCluster
 	}
 }
+
 type deploymentEndpoint struct {
 	Cluster string `json:"cluster"`
 	URL     string `json:"url"`
@@ -97,4 +98,3 @@ type deploymentEndpoint struct {
 type deploymentResponse struct {
 	Endpoints []deploymentEndpoint `json:"endpoints"`
 }
-
