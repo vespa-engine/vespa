@@ -65,6 +65,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final int feedTaskLimit;
+    private final int feedMasterTaskLimit;
     private final ProtonConfig.Feeding.Shared_field_writer_executor.Enum sharedFieldWriterExecutor;
     private final double defaultFeedConcurrency;
     private final double defaultDiskBloatFactor;
@@ -218,6 +219,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.combined = combined;
         this.feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         this.feedTaskLimit = featureFlags.feedTaskLimit();
+        this.feedMasterTaskLimit = featureFlags.feedMasterTaskLimit();
         this.sharedFieldWriterExecutor = convertSharedFieldWriterExecutor(featureFlags.sharedFieldWriterExecutor());
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultDiskBloatFactor = featureFlags.diskBloatFactor();
@@ -441,6 +443,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             builder.indexing.optimize(feedSequencerType);
         }
         builder.indexing.tasklimit(feedTaskLimit);
+        builder.feeding.master_task_limit(feedMasterTaskLimit);
         builder.feeding.shared_field_writer_executor(sharedFieldWriterExecutor);
     }
 
