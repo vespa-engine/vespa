@@ -43,7 +43,7 @@ public class VespaCliTestRunner implements TestRunner {
 
     @Inject
     public VespaCliTestRunner(VespaCliTestRunnerConfig config) {
-        this(config.artifactsPath().resolve("artifacts"));
+        this(config.artifactsPath());
     }
 
     VespaCliTestRunner(Path artifactsPath) {
