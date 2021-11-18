@@ -51,6 +51,7 @@ const (
 	waitFlag        = "wait"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
+	cloudAuthFlag   = "cloudAuth"
 )
 
 func isTerminal() bool {
