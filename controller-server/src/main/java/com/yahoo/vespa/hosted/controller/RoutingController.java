@@ -194,9 +194,10 @@ public class RoutingController {
                                                                  .distinct()
                                                                  .map(region -> new DeploymentId(deployment.applicationId(), ZoneId.from(Environment.prod, region)))
                                                                  .collect(Collectors.toUnmodifiableList());
+            TenantAndApplicationId application = TenantAndApplicationId.from(deployment.applicationId());
             for (var targetDeployment : deploymentTargets) {
-                builders.add(Endpoint.of(targetDeployment.applicationId()).targetApplication(EndpointId.defaultId(), targetDeployment));
-                builders.add(Endpoint.of(targetDeployment.applicationId()).wildcardApplication(targetDeployment));
+                builders.add(Endpoint.of(application).targetApplication(EndpointId.defaultId(), targetDeployment));
+                builders.add(Endpoint.of(application).wildcardApplication(targetDeployment));
             }
         }
 

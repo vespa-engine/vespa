@@ -224,7 +224,7 @@ public class EndpointTest {
     }
 
     @Test
-    public void wildcard_endpoints() {
+    public void certificate_endpoints() {
         var defaultCluster = ClusterSpec.Id.from("default");
         var prodZone = new DeploymentId(instance1, ZoneId.from("prod", "us-north-1"));
         var testZone = new DeploymentId(instance1, ZoneId.from("test", "us-north-2"));

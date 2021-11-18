@@ -50,70 +50,20 @@ public class Endpoint {
         Objects.requireNonNull(application, "application must be non-null");
         Objects.requireNonNull(instanceName, "instanceName must be non-null");
         Objects.requireNonNull(cluster, "cluster must be non-null");
+        Objects.requireNonNull(url, "url must be non-null");
         Objects.requireNonNull(targets, "deployment must be non-null");
         Objects.requireNonNull(scope, "scope must be non-null");
         Objects.requireNonNull(port, "port must be non-null");
         Objects.requireNonNull(routingMethod, "routingMethod must be non-null");
-        if (scope.multiDeployment()) {
-            if (id == null) throw new IllegalArgumentException("Endpoint ID must be set for multi-deployment endpoints");
-            if (!certificateName && targets.isEmpty()) {
-                throw new IllegalArgumentException("At least one target must be given for " + scope + " endpoints");
-            }
-        } else {
-            if (scope == Scope.zone && id != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
-            if (targets.size() != 1) throw new IllegalArgumentException("A single target must be given for " + scope + " endpoints");
-        }
-        if (scope != Scope.application && instanceName.isEmpty()) {
-            throw new IllegalArgumentException("Instance must be set for scope " + scope);
-        }
-        for (var target : targets) {
-            if (scope == Scope.application) {
-                TenantAndApplicationId owner = TenantAndApplicationId.from(target.deployment().applicationId());
-                if (!owner.equals(application)) {
-                    throw new IllegalArgumentException(id + " has target owned by " + owner +
-                                                       ", which does not match application of this endpoint: " +
-                                                       application);
-                }
-            } else {
-                ApplicationId owner = target.deployment.applicationId();
-                ApplicationId instance = application.instance(instanceName.get());
-                if (!owner.equals(instance)) {
-                    throw new IllegalArgumentException(id + " has target owned by " + owner +
-                                                       ", which does not match instance of this endpoint: " + instance);
-                }
-            }
-        }
-        this.id = id;
-        this.cluster = cluster;
-        this.instance = instanceName;
+        this.id = requireEndpointId(id, scope, certificateName);
+        this.cluster = requireCluster(cluster, certificateName);
+        this.instance = requireInstance(instanceName, scope);
         this.url = url;
-        this.targets = List.copyOf(targets);
+        this.targets = List.copyOf(requireTargets(targets, application, instanceName, scope, certificateName));
         this.scope = scope;
         this.legacy = legacy;
         this.routingMethod = routingMethod;
         this.tls = port.tls;
-        if (!certificateName && "*".equals(name())) {
-            throw new IllegalArgumentException("Wildcard found in endpoint that is not intended as a certificate name");
-        }
-    }
-
-    private Endpoint(EndpointId id, ClusterSpec.Id cluster, TenantAndApplicationId application,
-                     Optional<InstanceName> instance, List<Target> targets, Scope scope, SystemName system, Port port,
-                     boolean legacy, RoutingMethod routingMethod, boolean certificateName) {
-        this(application,
-             instance,
-             id,
-             cluster,
-             createUrl(endpointOrClusterAsString(id, cluster),
-                       Objects.requireNonNull(application, "application must be non-null"),
-                       Objects.requireNonNull(instance, "instance must be non-null"),
-                       targets,
-                       scope,
-                       Objects.requireNonNull(system, "system must be non-null"),
-                       Objects.requireNonNull(port, "port must be non-null"),
-                       legacy,
-                       routingMethod),
-             targets, scope, port, legacy, routingMethod, certificateName);
     }
 
     /**
@@ -358,6 +308,50 @@ public class Endpoint {
         return ZoneId.from(zone.environment(), effectiveRegion(zone.region()));
     }
 
+    private static ClusterSpec.Id requireCluster(ClusterSpec.Id cluster, boolean certificateName) {
+        if (!certificateName && cluster.value().equals("*")) throw new IllegalArgumentException("Wildcard found in cluster ID which is not a certificate name");
+        return cluster;
+    }
+
+    private static EndpointId requireEndpointId(EndpointId endpointId, Scope scope, boolean certificateName) {
+        if (scope.multiDeployment() && endpointId == null) throw new IllegalArgumentException("Endpoint ID must be set for multi-deployment endpoints");
+        if (scope == Scope.zone && endpointId != null) throw new IllegalArgumentException("Endpoint ID cannot be set for " + scope + " endpoints");
+        if (!certificateName && endpointId != null && endpointId.id().equals("*")) throw new IllegalArgumentException("Wildcard found in endpoint ID which is not a certificate name");
+        return endpointId;
+    }
+
+    private static Optional<InstanceName> requireInstance(Optional<InstanceName> instanceName, Scope scope) {
+        if (scope == Scope.application) {
+            if (instanceName.isPresent()) throw new IllegalArgumentException("Instance cannot be set for scope " + scope);
+        } else {
+            if (instanceName.isEmpty()) throw new IllegalArgumentException("Instance must be set for scope " + scope);
+        }
+        return instanceName;
+    }
+
+    private static List<Target> requireTargets(List<Target> targets, TenantAndApplicationId application, Optional<InstanceName> instanceName, Scope scope, boolean certificateName) {
+        if (!certificateName && targets.isEmpty()) throw new IllegalArgumentException("At least one target must be given for " + scope + " endpoints");
+        if (scope == Scope.zone && targets.size() != 1) throw new IllegalArgumentException("Exactly one target must be given for " + scope + " endpoints");
+        for (var target : targets) {
+            if (scope == Scope.application) {
+                TenantAndApplicationId owner = TenantAndApplicationId.from(target.deployment().applicationId());
+                if (!owner.equals(application)) {
+                    throw new IllegalArgumentException("Endpoint has target owned by " + owner +
+                                                       ", which does not match application of this endpoint: " +
+                                                       application);
+                }
+            } else {
+                ApplicationId owner = target.deployment.applicationId();
+                ApplicationId instance = application.instance(instanceName.get());
+                if (!owner.equals(instance)) {
+                    throw new IllegalArgumentException("Endpoint has target owned by " + owner +
+                                                       ", which does not match instance of this endpoint: " + instance);
+                }
+            }
+        }
+        return targets;
+    }
+
     /** An endpoint's scope */
     public enum Scope {
 
@@ -597,7 +591,26 @@ public class Endpoint {
             if (routingMethod.isDirect() && !port.isDefault()) {
                 throw new IllegalArgumentException("Routing method " + routingMethod + " can only use default port");
             }
-            return new Endpoint(endpointId, cluster, application, instance, targets, scope, system, port, legacy, routingMethod, certificateName);
+            URI url = createUrl(endpointOrClusterAsString(endpointId, cluster),
+                                Objects.requireNonNull(application, "application must be non-null"),
+                                Objects.requireNonNull(instance, "instance must be non-null"),
+                                Objects.requireNonNull(targets, "targets must be non-null"),
+                                Objects.requireNonNull(scope, "scope must be non-null"),
+                                Objects.requireNonNull(system, "system must be non-null"),
+                                Objects.requireNonNull(port, "port must be non-null"),
+                                legacy,
+                                Objects.requireNonNull(routingMethod, "routingMethod must be non-null"));
+            return new Endpoint(application,
+                                instance,
+                                endpointId,
+                                cluster,
+                                url,
+                                targets,
+                                scope,
+                                port,
+                                legacy,
+                                routingMethod,
+                                certificateName);
         }
 
         private Scope requireUnset(Scope scope) {
