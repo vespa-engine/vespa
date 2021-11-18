@@ -255,7 +255,7 @@ func (t *cloudTarget) PrepareApiRequest(req *http.Request, sigKeyId string) erro
 }
 
 func (t *cloudTarget) addAuth0AccessToken(request *http.Request) error {
-	a, err := auth0.GetAuth0(t.authConfigPath, t.systemName)
+	a, err := auth0.GetAuth0(t.authConfigPath, t.systemName, t.apiURL)
 	system, err := a.PrepareSystem(auth0.ContextWithCancel())
 	if err != nil {
 		return err

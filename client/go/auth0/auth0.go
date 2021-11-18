@@ -41,6 +41,7 @@ type System struct {
 type Auth0 struct {
 	Authenticator *auth.Authenticator
 	system        string
+	systemApiUrl  string
 	initOnce      sync.Once
 	errOnce       error
 	Path          string
@@ -68,11 +69,12 @@ func ContextWithCancel() context.Context {
 
 // GetAuth0 will try to initialize the config context, as well as figure out if
 // there's a readily available system.
-func GetAuth0(configPath string, systemName string) (*Auth0, error) {
+func GetAuth0(configPath string, systemName string, systemApiUrl string) (*Auth0, error) {
 	a := Auth0{}
 	a.Path = configPath
 	a.system = systemName
-	c, err := getDeviceFlowConfig()
+	a.systemApiUrl = systemApiUrl
+	c, err := a.getDeviceFlowConfig()
 	if err != nil {
 		return nil, fmt.Errorf("cannot get auth config: %w", err)
 	}
@@ -85,9 +87,9 @@ func GetAuth0(configPath string, systemName string) (*Auth0, error) {
 	return &a, nil
 }
 
-func getDeviceFlowConfig() (authCfg, error) {
-	apiUrl, _ := url.Parse("https://api.vespa-external-cd.aws.oath.cloud:4443/auth0/v1/device-flow-config")
-	r, err := http.Get(apiUrl.String())
+func (a *Auth0) getDeviceFlowConfig() (authCfg, error) {
+	systemApiUrl, _ := url.Parse(a.systemApiUrl + "/auth0/v1/device-flow-config")
+	r, err := http.Get(systemApiUrl.String())
 	if err != nil {
 		return authCfg{}, fmt.Errorf("cannot get auth config: %w", err)
 	}
