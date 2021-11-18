@@ -31,7 +31,7 @@ public:
     ~GidToLidChangeListener() override;
     void notifyPutDone(IDestructorCallbackSP context, document::GlobalId gid, uint32_t lid) override;
     void notifyRemove(IDestructorCallbackSP context, document::GlobalId gid) override;
-    void notifyRegistered() override;
+    void notifyRegistered(const std::vector<document::GlobalId>& removes) override;
     const vespalib::string &getName() const override;
     const vespalib::string &getDocTypeName() const override;
     const std::shared_ptr<search::attribute::ReferenceAttribute> &getReferenceAttribute() const { return _attr; }

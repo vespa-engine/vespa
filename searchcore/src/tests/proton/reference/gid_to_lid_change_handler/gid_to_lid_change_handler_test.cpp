@@ -38,6 +38,7 @@ class ListenerStats {
     uint32_t  _createdListeners;
     uint32_t  _registeredListeners;
     uint32_t  _destroyedListeners;
+    std::vector<GlobalId> _initial_removes;
 
 public:
     ListenerStats() noexcept
@@ -46,7 +47,8 @@ public:
           _removeChanges(0u),
           _createdListeners(0u),
           _registeredListeners(0u),
-          _destroyedListeners(0u)
+          _destroyedListeners(0u),
+          _initial_removes()
     {
     }
 
@@ -64,7 +66,7 @@ public:
         ++_removeChanges;
     }
     void markCreatedListener()    { lock_guard guard(_lock); ++_createdListeners; }
-    void markRegisteredListener() { lock_guard guard(_lock); ++_registeredListeners; }
+    void markRegisteredListener(const std::vector<GlobalId>& removes) { lock_guard guard(_lock); ++_registeredListeners; _initial_removes = removes; }
     void markDestroyedListener()  { lock_guard guard(_lock); ++_destroyedListeners; }
 
     uint32_t getCreatedListeners() const { return _createdListeners; }
@@ -84,6 +86,7 @@ public:
         EXPECT_EQUAL(expPutChanges, _putChanges);
         EXPECT_EQUAL(expRemoveChanges, _removeChanges);
     }
+    const std::vector<GlobalId>& get_initial_removes() const noexcept { return _initial_removes; }
 };
 
 class MyListener : public IGidToLidChangeListener
@@ -105,7 +108,7 @@ public:
     ~MyListener() override { _stats.markDestroyedListener(); }
     void notifyPutDone(IDestructorCallbackSP, GlobalId, uint32_t) override { _stats.notifyPutDone(); }
     void notifyRemove(IDestructorCallbackSP, GlobalId) override { _stats.notifyRemove(); }
-    void notifyRegistered() override { _stats.markRegisteredListener(); }
+    void notifyRegistered(const std::vector<GlobalId>& removes) override { _stats.markRegisteredListener(removes); }
     const vespalib::string &getName() const override { return _name; }
     const vespalib::string &getDocTypeName() const override { return _docTypeName; }
 };
@@ -231,6 +234,16 @@ TEST_F("Test that we keep old listener when registering duplicate", Fixture)
     TEST_DO(stats.assertListeners(2, 1, 0));
     f.addListener(std::move(listener));
     TEST_DO(stats.assertListeners(2, 1, 1));
+}
+
+TEST_F("Test that pending removes are passed on to new listener", Fixture)
+{
+    auto& stats = f.addStats();
+    auto listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
+    f.notifyRemove(toGid(doc1), 20);
+    f.addListener(std::move(listener));
+    EXPECT_TRUE((std::vector<GlobalId>{ toGid(doc1) }) == stats.get_initial_removes());
+    f.commit();
 }
 
 class StatsFixture : public Fixture

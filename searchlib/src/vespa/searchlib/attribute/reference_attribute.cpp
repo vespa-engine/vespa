@@ -366,8 +366,8 @@ ReferenceAttribute::notifyReferencedPut(const GlobalId &gid, DocId targetLid)
     commit();
 }
 
-void
-ReferenceAttribute::notifyReferencedRemove(const GlobalId &gid)
+bool
+ReferenceAttribute::notifyReferencedRemoveNoCommit(const GlobalId &gid)
 {
     EntryRef ref = _store.find(gid);
     if (ref.valid()) {
@@ -377,6 +377,15 @@ ReferenceAttribute::notifyReferencedRemove(const GlobalId &gid)
         if (oldTargetLid != 0) {
             _store.remove(ref);
         }
+        return true;
+    }
+    return false;
+}
+
+void
+ReferenceAttribute::notifyReferencedRemove(const GlobalId &gid)
+{
+    if (notifyReferencedRemoveNoCommit(gid)) {
         commit();
     }
 }
@@ -401,13 +410,16 @@ public:
 }
 
 void
-ReferenceAttribute::populateTargetLids()
+ReferenceAttribute::populateTargetLids(const std::vector<GlobalId>& removes)
 {
     if (_gidToLidMapperFactory) {
         std::unique_ptr<IGidToLidMapper> mapperUP = _gidToLidMapperFactory->getMapper();
         const IGidToLidMapper &mapper = *mapperUP;
         TargetLidPopulator populator(*this);
         mapper.foreach(populator);
+    }
+    for (auto& remove : removes) {
+        notifyReferencedRemoveNoCommit(remove);
     }
     commit();
 }
