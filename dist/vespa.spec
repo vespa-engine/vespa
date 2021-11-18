@@ -6,6 +6,10 @@
 # Only strip debug info
 %global _find_debuginfo_opts -g
 
+# Go binaries' build-ids are not recognized by RPMs yet, see
+# https://github.com/rpm-software-management/rpm/issues/367.
+%global _missing_build_ids_terminate_build 0
+
 # Force special prefix for Vespa
 %define _prefix /opt/vespa
 %define _vespa_deps_prefix /opt/vespa-deps
