@@ -31,8 +31,8 @@ class LidReuseDelayer
 public:
     LidReuseDelayer(searchcorespi::index::IThreadingService &writeService, IStore &documentMetaStore);
     ~LidReuseDelayer();
-    bool delayReuse(uint32_t lid);
-    bool delayReuse(const std::vector<uint32_t> &lids);
+    void delayReuse(uint32_t lid);
+    void delayReuse(const std::vector<uint32_t> &lids);
     std::vector<uint32_t> getReuseLids();
 };
 
