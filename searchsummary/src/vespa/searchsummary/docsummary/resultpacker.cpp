@@ -114,7 +114,6 @@ ResultPacker::AddEmpty()
         case RES_INT64:       return AddInt64(search::attribute::getUndefined<int64_t>());
         case RES_STRING:      return AddString(nullptr, 0);
         case RES_DATA:        return AddData(nullptr, 0);
-        case RES_XMLSTRING:
         case RES_JSONSTRING:
         case RES_FEATUREDATA:
         case RES_LONG_STRING: return AddLongString(nullptr, 0);

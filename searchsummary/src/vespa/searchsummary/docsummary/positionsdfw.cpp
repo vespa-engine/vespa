@@ -94,15 +94,10 @@ AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type
         vespalib::string value = vespalib::stringify(absdist);
         vespalib::Memory data(value.c_str(), value.size());
 
-        if (type == RES_STRING      ||
-            type == RES_LONG_STRING ||
-            type == RES_XMLSTRING)
-        {
+        if (type == RES_STRING || type == RES_LONG_STRING) {
             target.insertString(data);
         }
-        if (type == RES_LONG_DATA ||
-            type == RES_DATA)
-        {
+        if (type == RES_LONG_DATA || type == RES_DATA) {
             target.insertData(data);
         }
     }
@@ -176,7 +171,6 @@ insertFromAttr(const attribute::IAttributeVector &attribute, uint32_t docid, ves
 void checkExpected(ResType type) {
     static bool alreadyWarned = false;
     if (type == RES_JSONSTRING) return;
-    if (type == RES_XMLSTRING) return;
     if (alreadyWarned) return;
     alreadyWarned = true;
     LOG(error, "Unexpected summary field type %s", ResultConfig::GetResTypeName(type));

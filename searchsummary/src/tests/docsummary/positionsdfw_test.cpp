@@ -134,7 +134,7 @@ void checkWritePositionField(Test &test, AttrType &attr,
     PositionsDFW::UP writer =
         createPositionsDFW(attr.getName().c_str(), &attribute_man);
     ASSERT_TRUE(writer.get());
-    ResType res_type = RES_XMLSTRING;
+    ResType res_type = RES_JSONSTRING;
     MyGetDocsumsStateCallback callback;
     GetDocsumsState state(callback);
     state._attributes.push_back(&attr);

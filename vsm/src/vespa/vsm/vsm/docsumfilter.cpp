@@ -449,7 +449,7 @@ DocsumFilter::getMappedDocsum(uint32_t id)
     _packer.Init(resClass->GetClassID());
     for (FieldSpecList::iterator it(_fields.begin()), end = _fields.end(); it != end; ++it) {
         ResType type = it->getResultType();
-        if (type == RES_JSONSTRING || type == RES_XMLSTRING) {
+        if (type == RES_JSONSTRING) {
             // this really means 'structured data'
             writeSlimeField(*it, doc, _packer);
         } else {
