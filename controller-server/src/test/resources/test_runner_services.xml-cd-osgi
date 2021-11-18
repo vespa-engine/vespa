@@ -24,6 +24,13 @@
             </config>
         </component>
 
+        <component id="com.yahoo.vespa.testrunner.VespaCliTestRunner" bundle="vespa-osgi-testrunner">
+            <config name="com.yahoo.vespa.testrunner.vespa-cli-test-runner">
+                <artifactsPath>artifacts</artifactsPath>
+                <useAthenzCredentials>true</useAthenzCredentials>
+            </config>
+        </component>
+
         <nodes count="1" allocated-memory="17%">
             <resources vcpu="2.00" memory="12.00Gb" disk="75.00Gb" disk-speed="fast" storage-type="local"/>
         </nodes>

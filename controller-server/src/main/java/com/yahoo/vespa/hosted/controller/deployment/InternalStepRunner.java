@@ -929,6 +929,13 @@ public class InternalStepRunner implements StepRunner {
                 "                <artifactsPath>artifacts</artifactsPath>\n" +
                 "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
                 "            </config>\n" +
+                "        </component>\n" +
+                "\n" +
+                "        <component id=\"com.yahoo.vespa.testrunner.VespaCliTestRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
+                "            <config name=\"com.yahoo.vespa.testrunner.vespa-cli-test-runner\">\n" +
+                "                <artifactsPath>artifacts</artifactsPath>\n" +
+                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
+                "            </config>\n" +
                 "        </component>\n";
 
         String servicesXml =

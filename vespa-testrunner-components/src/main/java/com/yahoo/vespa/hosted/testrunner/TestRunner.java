@@ -157,6 +157,7 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
         // The AnsiOutputStream filters out ANSI characters, leaving the file contents pure.
         try (PrintStream fileStream = new PrintStream(new AnsiOutputStream(new BufferedOutputStream(new FileOutputStream(logFile.toFile()))));
              ByteArrayOutputStream logBuffer = new ByteArrayOutputStream();
+             PrintStream logPlainFormatter = new PrintStream(new AnsiOutputStream(logBuffer));
              PrintStream logFormatter = new PrintStream(new HtmlAnsiOutputStream(logBuffer))){
             writeTestApplicationPom(testProfile);
             Files.write(configFile, testConfig);
@@ -168,8 +169,11 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
                 fileStream.println(line);
                 logFormatter.print(line);
                 String message = logBuffer.toString(UTF_8);
-                if (message.length() > 1 << 13)
-                    message = message.substring(0, 1 << 13) + " ... (this log entry was truncated due to size)";
+                if (message.length() > 1 << 13) {
+                    logBuffer.reset();
+                    logPlainFormatter.print(line); // Avoid HTML since we don't know what we'll strip here.
+                    message = logBuffer.toString(UTF_8).substring(0, 1 << 13) + " ... (this log entry was truncated due to size)";
+                }
                 LogRecord record = new LogRecord(HTML, message);
                 log.put(record.getSequenceNumber(), record);
                 logBuffer.reset();
