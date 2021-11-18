@@ -31,9 +31,9 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationState;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationStatus;
 
 import java.security.PublicKey;
 import java.time.Instant;

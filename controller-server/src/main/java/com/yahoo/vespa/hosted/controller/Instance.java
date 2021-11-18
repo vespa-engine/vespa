@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationStatus;
 
 import java.time.Instant;
 import java.util.Collection;
