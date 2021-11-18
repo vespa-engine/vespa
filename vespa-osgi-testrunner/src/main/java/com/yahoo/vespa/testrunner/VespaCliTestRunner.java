@@ -77,9 +77,6 @@ public class VespaCliTestRunner implements TestRunner {
         Process process = null;
         try {
             TestConfig testConfig = TestConfig.fromJson(config);
-            Path credentialsPath = artifactsPath.resolve(testConfig.application().toFullString());
-            copyCredentials(credentialsPath);
-
             process = testRunProcessBuilder(suite, testConfig).start();
             BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
             in.lines().forEach(line -> {
@@ -99,12 +96,6 @@ public class VespaCliTestRunner implements TestRunner {
         }
     }
 
-    void copyCredentials(Path credentialsPath) throws IOException {
-        Files.createDirectories(credentialsPath);
-        Files.copy(artifactsPath.resolve("key"), credentialsPath.resolve("data-plane-private-key.pem"));
-        Files.copy(artifactsPath.resolve("cert"), credentialsPath.resolve("data-plane-public-cert.pem"));
-    }
-
     ProcessBuilder testRunProcessBuilder(Suite suite, TestConfig config) throws IOException {
         Path suitePath = getChildDirectory(artifactsPath, "tests")
                 .flatMap(testsPath -> getChildDirectory(testsPath, toSuiteDirectoryName(suite)))
@@ -112,7 +103,9 @@ public class VespaCliTestRunner implements TestRunner {
 
         ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
-                                                    "--endpoints", toEndpointsConfig(config));
+                                                    "--endpoints", toEndpointsConfig(config),
+                                                    "--data-plane-public-cert", artifactsPath.resolve("cert").toAbsolutePath().toString(),
+                                                    "--data-plane-private-key", artifactsPath.resolve("key").toAbsolutePath().toString());
         builder.redirectErrorStream(true);
         return builder;
     }

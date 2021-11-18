@@ -2,17 +2,14 @@
 package com.yahoo.vespa.testrunner;
 
 import ai.vespa.hosted.api.TestConfig;
-import com.yahoo.config.provision.ApplicationId;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,18 +57,10 @@ class VespaCliTestRunnerTest {
         ProcessBuilder builder = runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig);
         assertEquals(List.of("vespa", "test", systemTests.toAbsolutePath().toString(),
                              "--application", "t.a.i",
-                             "--endpoints", "{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}"),
+                             "--endpoints", "{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
+                             "--data-plane-public-cert", temp.resolve("cert").toAbsolutePath().toString(),
+                             "--data-plane-private-key", temp.resolve("key").toAbsolutePath().toString()),
                      builder.command());
-
-        Path credentialsPath = temp.resolve("creds");
-        assertThrows(NoSuchFileException.class,
-                     () -> runner.copyCredentials(credentialsPath));
-
-        Files.write(temp.resolve("key"), new byte[]{ 0 });
-        Files.write(temp.resolve("cert"), new byte[]{ 1 });
-        runner.copyCredentials(credentialsPath);
-        assertArrayEquals(new byte[]{ 0 }, Files.readAllBytes(credentialsPath.resolve("data-plane-private-key.pem")));
-        assertArrayEquals(new byte[]{ 1 }, Files.readAllBytes(credentialsPath.resolve("data-plane-public-cert.pem")));
     }
 
 }
