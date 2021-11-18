@@ -86,6 +86,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag FEED_MASTER_TASK_LIMIT = defineIntFlag(
+            "feed-master-task-limit", 0,
+            List.of("geirst, baldersheim"), "2021-11-18", "2022-02-01",
+            "The task limit used by the master thread in each document db in proton. Ignored when set to 0.",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundStringFlag SHARED_FIELD_WRITER_EXECUTOR = defineStringFlag(
             "shared-field-writer-executor", "NONE",
             List.of("geirst, baldersheim"), "2021-11-05", "2022-02-01",

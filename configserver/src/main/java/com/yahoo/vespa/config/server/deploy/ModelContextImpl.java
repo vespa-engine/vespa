@@ -168,6 +168,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useThreePhaseUpdates;
         private final String feedSequencer;
         private final int feedTaskLimit;
+        private final int feedMasterTaskLimit;
         private final String sharedFieldWriterExecutor;
         private final String responseSequencer;
         private final int numResponseThreads;
@@ -205,6 +206,7 @@ public class ModelContextImpl implements ModelContext {
             this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
             this.feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
             this.feedTaskLimit = flagValue(source, appId, Flags.FEED_TASK_LIMIT);
+            this.feedMasterTaskLimit = flagValue(source, appId, Flags.FEED_MASTER_TASK_LIMIT);
             this.sharedFieldWriterExecutor = flagValue(source, appId, Flags.SHARED_FIELD_WRITER_EXECUTOR);
             this.responseSequencer = flagValue(source, appId, Flags.RESPONSE_SEQUENCER_TYPE);
             this.numResponseThreads = flagValue(source, appId, Flags.RESPONSE_NUM_THREADS);
@@ -242,6 +244,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public int feedTaskLimit() { return feedTaskLimit; }
+        @Override public int feedMasterTaskLimit() { return feedMasterTaskLimit; }
         @Override public String sharedFieldWriterExecutor() { return sharedFieldWriterExecutor; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }

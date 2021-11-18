@@ -825,6 +825,20 @@ public class ContentBuilderTest extends DomBuilderTest {
     }
 
     @Test
+    public void feed_master_task_limit_is_controlled_by_feature_flag() {
+        assertEquals(0, resolveFeedMasterTaskLimitConfigWithFeatureFlag(null));
+        assertEquals(2000, resolveFeedMasterTaskLimitConfigWithFeatureFlag(2000));
+    }
+
+    private int resolveFeedMasterTaskLimitConfigWithFeatureFlag(Integer value) {
+        var props = new TestProperties();
+        if (value != null) {
+            props.setFeedMasterTaskLimit(value);
+        }
+        return resolveProtonConfig(props, singleNodeContentXml()).feeding().master_task_limit();
+    }
+
+    @Test
     public void shared_field_writer_executor_is_controlled_by_feature_flag() {
 
         assertEquals(Shared_field_writer_executor.Enum.NONE,
