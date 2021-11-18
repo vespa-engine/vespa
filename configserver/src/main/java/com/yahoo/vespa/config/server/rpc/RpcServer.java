@@ -21,7 +21,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -61,6 +60,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -253,6 +253,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     boolean hasNewerGeneration(ApplicationId id, long generation) {
         return getState(id).getActiveGeneration() > generation;
     }
+
     /**
      * Checks all delayed responses for config changes and waits until all has been answered.
      * This method should be called when config is reloaded in the server.
@@ -262,8 +263,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         ApplicationId applicationId = applicationSet.getId();
         ApplicationState state = getState(applicationId);
         state.setActiveGeneration(applicationSet.getApplicationGeneration());
-        configReloaded(applicationId);
         reloadSuperModel(applicationSet);
+        configReloaded(applicationId);
     }
 
     private void reloadSuperModel(ApplicationSet applicationSet) {
