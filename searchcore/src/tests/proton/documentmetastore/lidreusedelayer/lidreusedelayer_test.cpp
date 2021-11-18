@@ -169,16 +169,12 @@ public:
         _writeService.index().execute(makeLambdaTask([this, lids]() { performCycleLids(lids);}));
     }
 
-    bool delayReuse(uint32_t lid) {
-        bool res = false;
-        runInMaster([&] () { res = _lidReuseDelayer->delayReuse(lid); } );
-        return res;
+    void delayReuse(uint32_t lid) {
+        runInMaster([&] () { _lidReuseDelayer->delayReuse(lid); } );
     }
 
-    bool delayReuse(const std::vector<uint32_t> &lids) {
-        bool res = false;
-        runInMaster([&] () { res = _lidReuseDelayer->delayReuse(lids); });
-        return res;
+    void delayReuse(const std::vector<uint32_t> &lids) {
+        runInMaster([&] () { _lidReuseDelayer->delayReuse(lids); });
     }
 
     void commit() {
@@ -191,8 +187,8 @@ public:
 
 TEST_F("require that nothing happens before free list is active", Fixture)
 {
-    EXPECT_FALSE(f.delayReuse(4));
-    EXPECT_FALSE(f.delayReuse({ 5, 6}));
+    f.delayReuse(4);
+    f.delayReuse({ 5, 6});
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
     EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
 }
@@ -200,15 +196,15 @@ TEST_F("require that nothing happens before free list is active", Fixture)
 TEST_F("require that reuse can be batched", Fixture)
 {
     f._store._freeListActive = true;
-    EXPECT_FALSE(f.delayReuse(4));
-    EXPECT_FALSE(f.delayReuse({ 5, 6, 7}));
+    f.delayReuse(4);
+    f.delayReuse({ 5, 6, 7});
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
     EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
     f.commit();
     EXPECT_TRUE(f._store.assertWork(0, 1, 4));
     EXPECT_TRUE(assertThreadObserver(4, 1, 0, f._writeService));
-    EXPECT_FALSE(f.delayReuse(8));
-    EXPECT_FALSE(f.delayReuse({ 9, 10}));
+    f.delayReuse(8);
+    f.delayReuse({ 9, 10});
     EXPECT_TRUE(f._store.assertWork(0, 1, 4));
     EXPECT_TRUE(assertThreadObserver(6, 1, 0, f._writeService));
 }
@@ -216,7 +212,7 @@ TEST_F("require that reuse can be batched", Fixture)
 TEST_F("require that single element array is optimized", Fixture)
 {
     f._store._freeListActive = true;
-    EXPECT_FALSE(f.delayReuse({ 4}));
+    f.delayReuse({ 4});
     EXPECT_TRUE(f._store.assertWork(0, 0, 0));
     EXPECT_TRUE(assertThreadObserver(1, 0, 0, f._writeService));
     f.commit();

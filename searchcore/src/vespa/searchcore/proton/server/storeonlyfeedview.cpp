@@ -67,10 +67,9 @@ void setPrev(DocumentOperation &op, const documentmetastore::IStore::Result &res
 }
 
 std::shared_ptr<RemoveDoneContext>
-createRemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
-                        IDocumentMetaStore &documentMetaStore, uint32_t lid)
+createRemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted)
 {
-    return std::make_shared<RemoveDoneContext>(std::move(token), std::move(uncommitted), executor, documentMetaStore, lid);
+    return std::make_shared<RemoveDoneContext>(std::move(token), std::move(uncommitted));
 }
 
 class SummaryPutDoneContext : public OperationDoneContext
@@ -579,9 +578,8 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithGid 
 void
 StoreOnlyFeedView::internalRemove(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, SerialNum serialNum, Lid lid)
 {
-    bool explicitReuseLid = _lidReuseDelayer.delayReuse(lid);
-    auto onWriteDone = createRemoveDoneContext(std::move(token), std::move(uncommitted), _writeService.master(), _metaStore,
-                                               (explicitReuseLid ? lid : 0u));
+    _lidReuseDelayer.delayReuse(lid);
+    auto onWriteDone = createRemoveDoneContext(std::move(token), std::move(uncommitted));
     removeSummary(serialNum, lid, onWriteDone);
     removeAttributes(serialNum, lid, onWriteDone);
     removeIndexedFields(serialNum, lid, onWriteDone);
@@ -630,7 +628,6 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     }
     const LidVector &lidsToRemove(ctx->getLidVector());
     bool useDMS = useDocumentMetaStore(serialNum);
-    bool explicitReuseLids = false;
     if (useDMS) {
         vespalib::Gate gate;
         std::vector<document::GlobalId> gidsToRemove = getGidsToRemove(_metaStore, lidsToRemove);
@@ -638,15 +635,11 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         gate.await();
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         _metaStore.commit(CommitParam(serialNum));
-        explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
+        _lidReuseDelayer.delayReuse(lidsToRemove);
     }
     std::shared_ptr<vespalib::IDestructorCallback> onWriteDone;
     vespalib::Executor::Task::UP removeBatchDoneTask;
-    if (explicitReuseLids) {
-        removeBatchDoneTask = makeLambdaTask([this, lidsToRemove]() { _metaStore.removeBatchComplete(lidsToRemove); });
-    } else {
-        removeBatchDoneTask = makeLambdaTask([]() {});
-    }
+    removeBatchDoneTask = makeLambdaTask([]() {});
     onWriteDone = std::make_shared<search::ScheduleTaskCallback>(_writeService.master(), std::move(removeBatchDoneTask));
     if (remove_index_and_attributes) {
         removeIndexedFields(serialNum, lidsToRemove, onWriteDone);

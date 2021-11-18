@@ -19,24 +19,22 @@ LidReuseDelayer::~LidReuseDelayer() {
     assert(_pendingLids.empty());
 }
 
-bool
+void
 LidReuseDelayer::delayReuse(uint32_t lid)
 {
     assert(_writeService.master().isCurrentThread());
-    if ( ! _documentMetaStore.getFreeListActive())
-        return false;
-    _pendingLids.push_back(lid);
-    return false;
+    if (_documentMetaStore.getFreeListActive()) {
+        _pendingLids.push_back(lid);
+    }
 }
 
-bool
+void
 LidReuseDelayer::delayReuse(const std::vector<uint32_t> &lids)
 {
     assert(_writeService.master().isCurrentThread());
-    if ( ! _documentMetaStore.getFreeListActive() || lids.empty())
-        return false;
-    _pendingLids.insert(_pendingLids.end(), lids.cbegin(), lids.cend());
-    return false;
+    if (_documentMetaStore.getFreeListActive() && !lids.empty()) {
+        _pendingLids.insert(_pendingLids.end(), lids.cbegin(), lids.cend());
+    }
 }
 
 std::vector<uint32_t>

@@ -85,7 +85,6 @@ vespa_add_library(searchcore_server STATIC
     reconfig_params.cpp
     remove_operations_rate_tracker.cpp
     removedonecontext.cpp
-    removedonetask.cpp
     replaypacketdispatcher.cpp
     resource_usage_explorer.cpp
     rpc_hooks.cpp

@@ -4,32 +4,23 @@
 
 #include "operationdonecontext.h"
 #include <vespa/searchcore/proton/common/ipendinglidtracker.h>
-#include <vespa/vespalib/util/executor.h>
 
 namespace proton {
 
-struct IDocumentMetaStore;
-
-
 /**
- * Context class for document removes that acks remove and schedules a
- * task when instance is destroyed. Typically a shared pointer to an
+ * Context class for document removes that acks remove
+ * when instance is destroyed. Typically a shared pointer to an
  * instance is passed around to multiple worker threads that performs
  * portions of a larger task before dropping the shared pointer,
- * triggering the ack and task scheduling when all worker threads have
- * completed.
+ * triggering the ack when all worker threads have completed.
  */
 class RemoveDoneContext : public OperationDoneContext
 {
-    vespalib::Executor &_executor;
-    std::unique_ptr<vespalib::Executor::Task> _task;
     IPendingLidTracker::Token _uncommitted;
 
 public:
-    RemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
-                      IDocumentMetaStore &documentMetaStore, uint32_t lid);
+    RemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted);
     ~RemoveDoneContext() override;
 };
-
 
 }  // namespace proton
