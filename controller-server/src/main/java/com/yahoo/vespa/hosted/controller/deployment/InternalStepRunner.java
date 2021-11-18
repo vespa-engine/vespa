@@ -848,11 +848,9 @@ public class InternalStepRunner implements StepRunner {
 
         ZoneId zone = id.type().zone(controller.system());
         boolean useTesterCertificate = useTesterCertificate(id);
-        boolean useOsgiBasedTestRuntime = testerPlatformVersion(id).isAfter(new Version(7, 247, 11));
 
         byte[] servicesXml = servicesXml( ! controller.system().isPublic(),
                                          useTesterCertificate,
-                                         useOsgiBasedTestRuntime,
                                          testerResourcesFor(zone, spec.requireInstance(id.application().instance())),
                                          controller.controllerConfig().steprunner().testerapp());
         byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
@@ -904,9 +902,8 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(
-            boolean systemUsesAthenz, boolean useTesterCertificate, boolean useOsgiBasedTestRuntime,
-            NodeResources resources, ControllerConfig.Steprunner.Testerapp config) {
+    static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate,
+                              NodeResources resources, ControllerConfig.Steprunner.Testerapp config) {
         int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
         int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
 
@@ -919,24 +916,6 @@ public class InternalStepRunner implements StepRunner {
 
         String runtimeProviderClass = config.runtimeProviderClass();
         String tenantCdBundle = config.tenantCdBundle();
-
-        String extraJUnitComponents =
-                "\n" +
-                "        <component id=\"" + runtimeProviderClass + "\" bundle=\"" + tenantCdBundle + "\" />\n" +
-                "\n" +
-                "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
-                "            <config name=\"com.yahoo.vespa.testrunner.junit-test-runner\">\n" +
-                "                <artifactsPath>artifacts</artifactsPath>\n" +
-                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
-                "            </config>\n" +
-                "        </component>\n" +
-                "\n" +
-                "        <component id=\"com.yahoo.vespa.testrunner.VespaCliTestRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
-                "            <config name=\"com.yahoo.vespa.testrunner.vespa-cli-test-runner\">\n" +
-                "                <artifactsPath>artifacts</artifactsPath>\n" +
-                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
-                "            </config>\n" +
-                "        </component>\n";
 
         String servicesXml =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
@@ -955,7 +934,22 @@ public class InternalStepRunner implements StepRunner {
                 "        <handler id=\"com.yahoo.vespa.testrunner.TestRunnerHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
                 "            <binding>http://*/tester/v1/*</binding>\n" +
                 "        </handler>\n" +
-                (useOsgiBasedTestRuntime ? extraJUnitComponents : "") +
+                "\n" +
+                "        <component id=\"" + runtimeProviderClass + "\" bundle=\"" + tenantCdBundle + "\" />\n" +
+                "\n" +
+                "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
+                "            <config name=\"com.yahoo.vespa.testrunner.junit-test-runner\">\n" +
+                "                <artifactsPath>artifacts</artifactsPath>\n" +
+                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
+                "            </config>\n" +
+                "        </component>\n" +
+                "\n" +
+                "        <component id=\"com.yahoo.vespa.testrunner.VespaCliTestRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
+                "            <config name=\"com.yahoo.vespa.testrunner.vespa-cli-test-runner\">\n" +
+                "                <artifactsPath>artifacts</artifactsPath>\n" +
+                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
+                "            </config>\n" +
+                "        </component>\n" +
                 "\n" +
                 "        <nodes count=\"1\" allocated-memory=\"" + jdiscMemoryPct + "%\">\n" +
                 "            " + resourceString + "\n" +
