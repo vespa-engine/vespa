@@ -24,7 +24,7 @@ namespace storage {
  * Class for testing merge handler taking async_apply_bucket_diff as
  * parameter for the test.
  */
-struct MergeHandlerTest : SingleDiskPersistenceTestUtils,
+struct MergeHandlerTest : PersistenceTestUtils,
                           public testing::WithParamInterface<bool> {
     uint32_t _location; // Location used for all merge tests
     document::Bucket _bucket; // Bucket used for all merge tests
@@ -202,7 +202,7 @@ MergeHandlerTest::HandleApplyBucketDiffReplyInvoker::~HandleApplyBucketDiffReply
 void
 MergeHandlerTest::SetUp() {
     _context = std::make_unique<spi::Context>(0, 0);
-    SingleDiskPersistenceTestUtils::SetUp();
+    PersistenceTestUtils::SetUp();
 
     _location = 1234;
     _bucket = makeDocumentBucket(document::BucketId(16, _location));

@@ -21,7 +21,7 @@ using namespace ::testing;
 
 namespace storage {
 
-struct TestAndSetTest : SingleDiskPersistenceTestUtils {
+struct TestAndSetTest : PersistenceTestUtils {
     static constexpr int MIN_DOCUMENT_SIZE = 0;
     static constexpr int MAX_DOCUMENT_SIZE = 128;
     static constexpr int RANDOM_SEED = 1234;
@@ -46,7 +46,7 @@ struct TestAndSetTest : SingleDiskPersistenceTestUtils {
     {}
 
     void SetUp() override {
-        SingleDiskPersistenceTestUtils::SetUp();
+        PersistenceTestUtils::SetUp();
 
         createBucket(BUCKET_ID);
         getPersistenceProvider().createBucket(makeSpiBucket(BUCKET_ID),context);
@@ -57,7 +57,7 @@ struct TestAndSetTest : SingleDiskPersistenceTestUtils {
     }
 
     void TearDown() override {
-        SingleDiskPersistenceTestUtils::TearDown();
+        PersistenceTestUtils::TearDown();
     }
 
     std::shared_ptr<api::UpdateCommand> conditional_update_test(
