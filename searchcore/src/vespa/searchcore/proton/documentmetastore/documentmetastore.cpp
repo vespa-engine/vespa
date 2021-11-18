@@ -444,7 +444,6 @@ DocumentMetaStore::~DocumentMetaStore()
 DocumentMetaStore::Result
 DocumentMetaStore::inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num)
 {
-    assert(_lidAlloc.isFreeListConstructed());
     Result res;
     KeyComp comp(gid, _metaDataStore);
     auto find_key = GidToLidMapKey::make_find_key(gid);
