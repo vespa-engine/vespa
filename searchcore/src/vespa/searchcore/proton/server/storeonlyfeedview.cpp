@@ -489,12 +489,12 @@ StoreOnlyFeedView::makeUpdatedDocument(bool useDocStore, Lid lid, const Document
 bool
 StoreOnlyFeedView::lookupDocId(const DocumentId &docId, Lid &lid) const
 {
-    // This function should only be called by the updater thread.
-    // Readers need to take a guard on the document meta store
-    // attribute before accessing.
-    if (!_metaStore.getLid(docId.getGlobalId(), lid)) {
+    // This function should only be called by the document db main thread.
+    auto result = _metaStore.inspectExisting(docId.getGlobalId(), 0);
+    if (!result.ok()) {
         return false;
     }
+    lid = result.getLid();
     if (_params._subDbType == SubDbType::REMOVED)
         return false;
     return true;
