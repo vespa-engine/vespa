@@ -15,7 +15,7 @@ Preferences -> Plugins -> Press the gear icon -> Install Plugin from Disk.
 
 ## Building the plugin
 
-    ./gradlew
+    gradle
 
 This produces an installable plugin .zip in the directory build/distributions
 
