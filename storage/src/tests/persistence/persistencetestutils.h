@@ -267,10 +267,5 @@ public:
     void clearBody(document::Document& doc);
 };
 
-class SingleDiskPersistenceTestUtils : public PersistenceTestUtils
-{
-public:
-};
-
 } // storage
 

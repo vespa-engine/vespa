@@ -4,6 +4,7 @@
 #include "types.h"
 #include "messages.h"
 #include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/removelocation.h>
 
 namespace document { class BucketIdFactory; }
 namespace vespalib { class ISequencedTaskExecutor; }
@@ -31,6 +32,7 @@ public:
     MessageTrackerUP handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleDeleteBucket(api::DeleteBucketCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleCreateBucket(api::CreateBucketCommand& cmd, MessageTrackerUP tracker) const;
+    MessageTrackerUP handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrackerUP tracker) const;
     static bool is_async_message(api::MessageType::Id type_id) noexcept;
 private:
     bool checkProviderBucketInfoMatches(const spi::Bucket&, const api::BucketInfo&) const;

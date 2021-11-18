@@ -14,7 +14,7 @@ using namespace ::testing;
 
 namespace storage {
 
-struct PersistenceThreadSplitTest : public SingleDiskPersistenceTestUtils {
+struct PersistenceThreadSplitTest : public PersistenceTestUtils {
     enum SplitCase {
         TOO_MANY_DOCS_SPLIT_ONCE, // Only one split needed to divide
         TOO_MANY_DOCS_SPLIT_MULTIPLE_BITS, // Multiple bits needed to divide

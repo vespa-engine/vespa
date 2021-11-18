@@ -9,7 +9,7 @@ using storage::spi::test::makeSpiBucket;
 
 namespace storage {
 
-struct ProviderErrorWrapperTest : SingleDiskPersistenceTestUtils {
+struct ProviderErrorWrapperTest : PersistenceTestUtils {
 };
 
 namespace {
