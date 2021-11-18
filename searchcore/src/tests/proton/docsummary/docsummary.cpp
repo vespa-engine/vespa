@@ -251,8 +251,8 @@ public:
         PutRes putRes(dms.put(docId.getGlobalId(), BucketFactory::getBucketId(docId),
                               Timestamp(0u), docSize, lid, 0u));
         LOG_ASSERT(putRes.ok());
-        dms.commit(CommitParam(0u));
         uint64_t serialNum = _ddb->getFeedHandler().inc_serial_num();
+        dms.commit(CommitParam(serialNum));
         _aw->put(serialNum, doc, lid, std::shared_ptr<IDestructorCallback>());
         {
             vespalib::Gate gate;

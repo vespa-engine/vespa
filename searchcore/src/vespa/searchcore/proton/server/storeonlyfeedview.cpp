@@ -175,6 +175,9 @@ StoreOnlyFeedView::Context::~Context() = default;
 void
 StoreOnlyFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
 {
+    if (useDocumentMetaStore(param.lastSerialNum())) {
+        _metaStore.commit(param);
+    }
     internalForceCommit(param, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
                                                                     _pendingLidsForCommit->produceSnapshot(),
                                                                     _gidToLidChangeHandler.grab_pending_changes(),
