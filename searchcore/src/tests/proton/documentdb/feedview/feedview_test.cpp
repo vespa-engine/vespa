@@ -674,6 +674,8 @@ struct FixtureBase
         _gidToLidChangeHandler->assertLid(gid, expLid);
     }
     void populateBeforeCompactLidSpace();
+
+    void dms_commit() { _dmsc->get().commit(search::CommitParam(serial)); }
 };
 
 
@@ -789,6 +791,7 @@ TEST_F("require that put() updates document meta store with bucket info",
 {
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
+    f.dms_commit();
 
     assertBucketInfo(dc.bid, dc.ts, 1, f.getMetaStore());
     // TODO: rewrite to use getBucketInfo() when available
@@ -828,6 +831,7 @@ TEST_F("require that update() updates document meta store with bucket info",
     f.putAndWait(dc1);
     BucketChecksum bcs = f.getBucketDB()->get(dc1.bid).getChecksum();
     f.updateAndWait(dc2);
+    f.dms_commit();
 
     assertBucketInfo(dc1.bid, Timestamp(20), 1, f.getMetaStore());
     // TODO: rewrite to use getBucketInfo() when available
@@ -857,6 +861,7 @@ TEST_F("require that remove() updates document meta store with bucket info",
     f.putAndWait(dc2);
     BucketChecksum bcs2 = f.getBucketDB()->get(dc2.bid).getChecksum();
     f.removeAndWait(DocumentContext("id:test:searchdocument:n=1:2", 20, f.getBuilder()));
+    f.dms_commit();
 
     assertBucketInfo(dc1.bid, Timestamp(10), 1, f.getMetaStore());
     EXPECT_FALSE(f.getMetaStore().validLid(2)); // don't remember remove
@@ -934,6 +939,7 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
     TEST_DO(f.assertChangeNotified(docs[2].gid(), 3));
     TEST_DO(f.assertChangeNotified(docs[3].gid(), 4));
     TEST_DO(f.assertChangeNotified(docs[4].gid(), 5));
+    f.dms_commit();
 
     DocumentIdT lid;
     EXPECT_TRUE(f.getMetaStore().getLid(docs[0].doc->getId().getGlobalId(), lid));
@@ -946,6 +952,7 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
     // delete bucket for user 1
     DeleteBucketOperation op(docs[0].bid);
     f.runInMaster([&] () { f.performDeleteBucket(op); });
+    f.dms_commit();
 
     EXPECT_EQUAL(0u, f.getBucketDB()->get(docs[0].bid).getDocumentCount());
     EXPECT_EQUAL(2u, f.getBucketDB()->get(docs[3].bid).getDocumentCount());
