@@ -764,6 +764,7 @@ fi
 %dir %{_prefix}/conf/vespa-feed-client
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
+%{_prefix}/bin/vespa
 %{_prefix}/bin/vespa-feed-client
 %{_prefix}/conf/vespa-feed-client/logging.properties
 %{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
