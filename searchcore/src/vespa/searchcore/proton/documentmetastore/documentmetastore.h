@@ -167,21 +167,17 @@ public:
     vespalib::GenerationHandler::Guard getGuard() const override;
 
     /**
-     * Put lid on a hold list, for later reuse.  Typically called
-     * after remove() has been called and related structures for
-     * document has been torn down (memory index, attribute vectors,
+     * Put lids on a hold list, for later reuse.  Typically called
+     * after remove() or removeBatch() has been called and related structures for
+     * documents have been torn down (memory index, attribute vectors,
      * document store).
      */
-    void removeComplete(DocId lid) override;
+    void removes_complete(const std::vector<DocId>& lids) override;
     void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
     bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
     bool validLid(DocId lid) const override { return validLidFast(lid); }
     void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override;
-    /**
-     * Put lids on a hold list, for laster reuse.
-     */
-    void removeBatchComplete(const std::vector<DocId> &lidsToRemove) override;
     const RawDocumentMetaData & getRawMetaData(DocId lid) const override { return _metaDataStore[lid]; }
 
     /**

@@ -45,7 +45,6 @@ public:
     }
     void moveLidBegin(DocId fromLid, DocId toLid);
     void moveLidEnd(DocId fromLid, DocId toLid);
-    void holdLid(DocId lid, DocId lidLimit, generation_t currentGeneration);
     void holdLids(const std::vector<DocId> &lids, DocId lidLimit,
                   generation_t currentGeneration);
     bool holdLidOK(DocId lid, DocId lidLimit) const;

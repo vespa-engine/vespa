@@ -30,11 +30,7 @@ ForceCommitDoneTask::run()
         _pending_gid_to_lid_changes->notify_done();
     }
     if (!_lidsToReuse.empty()) {
-        if (_lidsToReuse.size() == 1) {
-            _documentMetaStore.removeComplete(_lidsToReuse[0]);
-        } else {
-            _documentMetaStore.removeBatchComplete(_lidsToReuse);
-        }
+        _documentMetaStore.removes_complete(_lidsToReuse);
     }
     if (_holdUnblockShrinkLidSpace) {
         _documentMetaStore.holdUnblockShrinkLidSpace();

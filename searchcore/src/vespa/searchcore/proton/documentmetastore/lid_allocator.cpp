@@ -122,21 +122,6 @@ LidAllocator::moveLidEnd(DocId fromLid, DocId toLid)
 }
 
 void
-LidAllocator::holdLid(DocId lid,
-                      DocId lidLimit,
-                      generation_t currentGeneration)
-{
-    (void) lidLimit;
-    assert(holdLidOK(lid, lidLimit));
-    assert(isFreeListConstructed());
-    assert(lid < _usedLids.size());
-    assert(lid < _pendingHoldLids.size());
-    assert(_pendingHoldLids.testBit(lid));
-    _pendingHoldLids.clearBit(lid);
-    _holdLids.add(lid, currentGeneration);
-}
-
-void
 LidAllocator::holdLids(const std::vector<DocId> &lids,
                        DocId lidLimit,
                        generation_t currentGeneration)

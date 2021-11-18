@@ -341,7 +341,7 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
                       doc->getId().getGlobalId().convertToBucketId(),
                       Timestamp(10), docSize, 2, 0u); });
     f.runInMaster([&] () { f.metaStore->remove(1, 0u); });
-    f.metaStore->removeComplete(1);
+    f.metaStore->removes_complete({ 1 });
     MoveOperation::UP op = makeMoveOp(doc, DbDocumentId(subdb_id, 2), subdb_id);
     op->setTargetLid(1);
     TEST_DO(f.assertPutCount(0));

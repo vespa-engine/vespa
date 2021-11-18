@@ -604,11 +604,9 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
 }
 
 void
-DocumentMetaStore::removeComplete(DocId lid)
+DocumentMetaStore::removes_complete(const std::vector<DocId>& lids)
 {
-    assert(lid != 0);
-    assert(lid < _metaDataStore.size());
-    _lidAlloc.holdLid(lid, _metaDataStore.size(), getCurrentGeneration());
+    _lidAlloc.holdLids(lids, _metaDataStore.size(), getCurrentGeneration());
     incGeneration();
 }
 
@@ -697,13 +695,6 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
     if (_op_listener) {
         _op_listener->notify_remove_batch();
     }
-}
-
-void
-DocumentMetaStore::removeBatchComplete(const std::vector<DocId> &lidsToRemove)
-{
-    _lidAlloc.holdLids(lidsToRemove, _metaDataStore.size(), getCurrentGeneration());
-    incGeneration();
 }
 
 bool

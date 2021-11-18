@@ -477,7 +477,7 @@ MyDocumentSubDB::handlePruneRemovedDocuments(const PruneRemovedDocumentsOperatio
     const LidVectorContext &lidCtx = *op.getLidsToRemove();
     const LidVector &lidsToRemove(lidCtx.getLidVector());
     _metaStore.removeBatch(lidsToRemove, lidCtx.getDocIdLimit());
-    _metaStore.removeBatchComplete(lidsToRemove);
+    _metaStore.removes_complete(lidsToRemove);
     _metaStore.commit(serialNum);
     for (auto lid : lidsToRemove) {
         _docs.erase(lid);
@@ -517,7 +517,7 @@ MyDocumentSubDB::handlePut(PutOperation &op)
         bool remres = _metaStore.remove(op.getPrevLid(), 0u);
         assert(remres);
         (void) remres;
-        _metaStore.removeComplete(op.getPrevLid());
+        _metaStore.removes_complete({ op.getPrevLid() });
 
         _docs.erase(op.getPrevLid());
         needCommit = true;
@@ -564,7 +564,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
         assert(remres);
         (void) remres;
 
-        _metaStore.removeComplete(op.getPrevLid());
+        _metaStore.removes_complete({ op.getPrevLid() });
         _docs.erase(op.getPrevLid());
         needCommit = true;
     }
@@ -618,7 +618,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
         assert(remres);
         (void) remres;
 
-        _metaStore.removeComplete(op.getPrevLid());
+        _metaStore.removes_complete({ op.getPrevLid() });
         _docs.erase(op.getPrevLid());
         needCommit = true;
     }

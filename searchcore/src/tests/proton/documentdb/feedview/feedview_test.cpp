@@ -900,7 +900,7 @@ assertThreadObserver(uint32_t masterExecuteCnt,
     return true;
 }
 
-TEST_F("require that remove() calls removeComplete() via delayed thread service",
+TEST_F("require that remove() calls removes_complete() via delayed thread service",
         SearchableFeedViewFixture)
 {
     EXPECT_TRUE(assertThreadObserver(0, 0, 0, f.writeServiceObserver()));
@@ -913,8 +913,9 @@ TEST_F("require that remove() calls removeComplete() via delayed thread service"
     // remove index fields handled in index thread
     // delayed remove complete handled in same index thread, then master thread
     EXPECT_TRUE(assertThreadObserver(5, 4, 4, f.writeServiceObserver()));
-    EXPECT_EQUAL(1u, f.metaStoreObserver()._removeCompleteCnt);
-    EXPECT_EQUAL(1u, f.metaStoreObserver()._removeCompleteLid);
+    EXPECT_EQUAL(1u, f.metaStoreObserver()._removes_complete_cnt);
+    ASSERT_FALSE(f.metaStoreObserver()._removes_complete_lids.empty());
+    EXPECT_EQUAL(1u, f.metaStoreObserver()._removes_complete_lids.back());
 }
 
 TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedViewFixture)
