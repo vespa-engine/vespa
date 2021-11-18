@@ -10,15 +10,15 @@ namespace proton::test {
 struct DocumentMetaStoreObserver : public IDocumentMetaStore
 {
     IDocumentMetaStore &_store;
-    uint32_t _removeCompleteCnt;
-    DocId _removeCompleteLid;
+    uint32_t _removes_complete_cnt;
+    std::vector<DocId> _removes_complete_lids;
     DocId _compactLidSpaceLidLimit;
     uint32_t _holdUnblockShrinkLidSpaceCnt;
 
     DocumentMetaStoreObserver(IDocumentMetaStore &store) noexcept
         : _store(store),
-          _removeCompleteCnt(0),
-          _removeCompleteLid(0),
+          _removes_complete_cnt(0),
+          _removes_complete_lids(0),
           _compactLidSpaceLidLimit(0),
           _holdUnblockShrinkLidSpaceCnt(0)
     {}
@@ -76,10 +76,10 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     bool remove(DocId lid, uint64_t prepare_serial_num) override {
         return _store.remove(lid, prepare_serial_num);
     }
-    void removeComplete(DocId lid) override {
-        ++_removeCompleteCnt;
-        _removeCompleteLid = lid;
-        _store.removeComplete(lid);
+    void removes_complete(const std::vector<DocId>& lids) override {
+        ++_removes_complete_cnt;
+        _removes_complete_lids.insert(_removes_complete_lids.end(), lids.cbegin(), lids.cend());
+        _store.removes_complete(lids);
     }
     void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override {
         _store.move(fromLid, toLid, prepare_serial_num);
@@ -90,9 +90,6 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
      void removeBatch(const std::vector<DocId> &lidsToRemove,
                              const DocId docIdLimit) override {
         _store.removeBatch(lidsToRemove, docIdLimit);
-    }
-    void removeBatchComplete(const std::vector<DocId> &lidsToRemove) override {
-        _store.removeBatchComplete(lidsToRemove);
     }
     const RawDocumentMetaData &getRawMetaData(DocId lid) const override {
         return _store.getRawMetaData(lid);

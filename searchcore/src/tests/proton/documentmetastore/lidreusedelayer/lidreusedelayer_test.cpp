@@ -44,15 +44,13 @@ class MyMetaStore : public documentmetastore::IStore
 {
 public:
     bool     _freeListActive;
-    uint32_t _removeCompleteCount;
-    uint32_t _removeBatchCompleteCount;
-    uint32_t _removeCompleteLids;
+    uint32_t _removes_complete_count;
+    uint32_t _removes_complete_lids;
 
     MyMetaStore()
         : _freeListActive(false),
-          _removeCompleteCount(0),
-          _removeBatchCompleteCount(0),
-          _removeCompleteLids(0)
+          _removes_complete_count(0),
+          _removes_complete_lids(0)
     {
     }
 
@@ -78,9 +76,9 @@ public:
         return true;
     }
 
-    void removeComplete(DocId) override {
-        ++_removeCompleteCount;
-        ++_removeCompleteLids;
+    void removes_complete(const std::vector<DocId>& lids) override{
+        ++_removes_complete_count;
+        _removes_complete_lids += lids.size();
     }
 
     void move(DocId, DocId, uint64_t) override {
@@ -92,11 +90,6 @@ public:
 
     void removeBatch(const std::vector<DocId> &, const DocId) override {}
 
-    void removeBatchComplete(const std::vector<DocId> &lidsToRemove) override{
-        ++_removeBatchCompleteCount;
-        _removeCompleteLids += lidsToRemove.size();
-    }
-
     const RawDocumentMetaData &getRawMetaData(DocId) const override {
         LOG_ABORT("should not be reached");
     }
@@ -106,17 +99,13 @@ public:
     }
 
     bool
-    assertWork(uint32_t expRemoveCompleteCount,
-               uint32_t expRemoveBatchCompleteCount,
-               uint32_t expRemoveCompleteLids) const
+    assertWork(uint32_t exp_removes_complete_count,
+               uint32_t exp_removes_complete_lids) const
     {
-        if (!EXPECT_EQUAL(expRemoveCompleteCount, _removeCompleteCount)) {
+        if (!EXPECT_EQUAL(exp_removes_complete_count, _removes_complete_count)) {
             return false;
         }
-        if (!EXPECT_EQUAL(expRemoveBatchCompleteCount, _removeBatchCompleteCount)) {
-            return false;
-        }
-        if (!EXPECT_EQUAL(expRemoveCompleteLids, _removeCompleteLids)) {
+        if (!EXPECT_EQUAL(exp_removes_complete_lids, _removes_complete_lids)) {
             return false;
         }
         return true;
@@ -152,11 +141,7 @@ public:
     }
 
     void cycledLids(const std::vector<uint32_t> &lids) {
-        if (lids.size() == 1) {
-            _store.removeComplete(lids[0]);
-        } else {
-            _store.removeBatchComplete(lids);
-        }
+        _store.removes_complete(lids);
     }
 
     void performCycleLids(const std::vector<uint32_t> &lids) {
@@ -189,7 +174,7 @@ TEST_F("require that nothing happens before free list is active", Fixture)
 {
     f.delayReuse(4);
     f.delayReuse({ 5, 6});
-    EXPECT_TRUE(f._store.assertWork(0, 0, 0));
+    EXPECT_TRUE(f._store.assertWork(0, 0));
     EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
 }
 
@@ -198,26 +183,15 @@ TEST_F("require that reuse can be batched", Fixture)
     f._store._freeListActive = true;
     f.delayReuse(4);
     f.delayReuse({ 5, 6, 7});
-    EXPECT_TRUE(f._store.assertWork(0, 0, 0));
+    EXPECT_TRUE(f._store.assertWork(0, 0));
     EXPECT_TRUE(assertThreadObserver(2, 0, 0, f._writeService));
     f.commit();
-    EXPECT_TRUE(f._store.assertWork(0, 1, 4));
+    EXPECT_TRUE(f._store.assertWork(1, 4));
     EXPECT_TRUE(assertThreadObserver(4, 1, 0, f._writeService));
     f.delayReuse(8);
     f.delayReuse({ 9, 10});
-    EXPECT_TRUE(f._store.assertWork(0, 1, 4));
+    EXPECT_TRUE(f._store.assertWork(1, 4));
     EXPECT_TRUE(assertThreadObserver(6, 1, 0, f._writeService));
-}
-
-TEST_F("require that single element array is optimized", Fixture)
-{
-    f._store._freeListActive = true;
-    f.delayReuse({ 4});
-    EXPECT_TRUE(f._store.assertWork(0, 0, 0));
-    EXPECT_TRUE(assertThreadObserver(1, 0, 0, f._writeService));
-    f.commit();
-    EXPECT_TRUE(f._store.assertWork(1, 0, 1));
-    EXPECT_TRUE(assertThreadObserver(3, 1, 0, f._writeService));
 }
 
 }

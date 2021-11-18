@@ -110,7 +110,7 @@ struct Fixture
 
     void remove(uint32_t lid) {
         if (_dms->remove(lid, 0u)) {
-            _dms->removeComplete(lid);
+            _dms->removes_complete({ lid });
         }
         _dms->commit();
     }
