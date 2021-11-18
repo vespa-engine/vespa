@@ -309,7 +309,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
     }
 
     private void updateReport(ZoneId zoneId, Node node, VcmrReport report) {
-        LOG.info(Text.format("Updating report for %s: %s", node.hostname(), report));
+        LOG.fine(() -> Text.format("Updating report for %s: %s", node.hostname(), report));
         nodeRepository.updateReports(zoneId, node.hostname().value(), report.toNodeReports());
     }
 
