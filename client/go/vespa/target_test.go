@@ -25,7 +25,7 @@ func (v *mockVespaApi) mockVespaHandler(w http.ResponseWriter, req *http.Request
 	case "/application/v4/tenant/t1/application/a1/instance/i1/environment/dev/region/us-north-1":
 		response := "{}"
 		if v.deploymentConverged {
-			response = fmt.Sprintf(`{"endpoints": [{"url": "%s"}]}`, v.serverURL)
+			response = fmt.Sprintf(`{"endpoints": [{"url": "%s","scope": "zone","cluster": "cluster1"}]}`, v.serverURL)
 		}
 		w.Write([]byte(response))
 	case "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42":
