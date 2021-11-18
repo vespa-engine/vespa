@@ -2,6 +2,7 @@
 
 #include "persistenceprovider.h"
 #include "catchresult.h"
+#include <vespa/document/base/documentid.h>
 #include <future>
 
 namespace storage::spi {
@@ -44,7 +45,9 @@ RemoveResult
 PersistenceProvider::remove(const Bucket& bucket, Timestamp timestamp, const DocumentId & docId, Context& context) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();
-    removeAsync(bucket, timestamp, docId, context, std::move(catcher));
+    std::vector<TimeStampAndDocumentId> ids;
+    ids.emplace_back(timestamp, docId);
+    removeAsync(bucket, std::move(ids), context, std::move(catcher));
     return dynamic_cast<const RemoveResult &>(*future.get());
 }
 

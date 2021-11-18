@@ -471,30 +471,33 @@ DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdate
 }
 
 void
-DummyPersistence::removeAsync(const Bucket& b, Timestamp t, const DocumentId& did, Context &, OperationComplete::UP onComplete)
+DummyPersistence::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, Context &, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
-    LOG(debug, "remove(%s, %" PRIu64 ", %s)",
-        b.toString().c_str(),
-        uint64_t(t),
-        did.toString().c_str());
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
-
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
-    while (!bc) {
-        internal_create_bucket(b);
-        bc = acquireBucketWithLock(b);
+
+    uint32_t numRemoves(0);
+    for (const TimeStampAndDocumentId & stampedId : ids) {
+        const DocumentId & id = stampedId.second;
+        Timestamp t = stampedId.first;
+        LOG(debug, "remove(%s, %" PRIu64 ", %s)", b.toString().c_str(), uint64_t(t), id.toString().c_str());
+
+        while (!bc) {
+            internal_create_bucket(b);
+            bc = acquireBucketWithLock(b);
+        }
+        DocEntry::SP entry((*bc)->getEntry(id));
+        numRemoves += (entry.get() && !entry->isRemove()) ? 1 : 0;
+        auto remEntry = std::make_unique<DocEntry>(t, REMOVE_ENTRY, id);
+
+        if ((*bc)->hasTimestamp(t)) {
+            (*bc)->eraseEntry(t);
+        }
+        (*bc)->insert(std::move(remEntry));
     }
-    DocEntry::SP entry((*bc)->getEntry(did));
-    bool foundPut(entry.get() && !entry->isRemove());
-    auto remEntry = std::make_unique<DocEntry>(t, REMOVE_ENTRY, did);
-    
-    if ((*bc)->hasTimestamp(t)) {
-        (*bc)->eraseEntry(t);
-    }
-    (*bc)->insert(std::move(remEntry));
     bc.reset();
-    onComplete->onComplete(std::make_unique<RemoveResult>(foundPut));
+    onComplete->onComplete(std::make_unique<RemoveResult>(numRemoves));
 }
 
 GetResult

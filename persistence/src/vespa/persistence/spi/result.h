@@ -142,6 +142,7 @@ public:
         : _numRemoved(numRemoved) { }
     bool wasFound() const { return _numRemoved > 0; }
     uint32_t num_removed() const { return _numRemoved; }
+    void inc_num_removed(uint32_t add) { _numRemoved += add; }
 
 private:
     uint32_t _numRemoved;
