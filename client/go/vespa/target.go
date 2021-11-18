@@ -209,10 +209,33 @@ type cloudTarget struct {
 	tlsOptions TLSOptions
 	logOptions LogOptions
 
-	queryURL       string
-	documentURL    string
+	urlsByCluster  map[string]string
 	authConfigPath string
 	systemName     string
+}
+
+func (t *cloudTarget) resolveEndpoint(cluster string) (string, error) {
+	if cluster == "" {
+		for _, u := range t.urlsByCluster {
+			if len(t.urlsByCluster) == 1 {
+				return u, nil
+			} else {
+				return "", fmt.Errorf("multiple clusters, none chosen: %v", t.urlsByCluster)
+			}
+		}
+	} else {
+		u := t.urlsByCluster[cluster]
+		if u == "" {
+			clusters := make([]string, len(t.urlsByCluster))
+			for c := range t.urlsByCluster {
+				clusters = append(clusters, c)
+			}
+			return "", fmt.Errorf("unknown cluster '%s': must be one of %v", cluster, clusters)
+		}
+		return u, nil
+	}
+
+	return "", fmt.Errorf("no endpoints")
 }
 
 func (t *cloudTarget) Type() string { return t.targetType }
@@ -227,15 +250,17 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64) (
 	case deployService:
 		return &Service{Name: name, BaseURL: t.apiURL}, nil
 	case queryService:
-		if t.queryURL == "" {
-			return nil, fmt.Errorf("service %s is not discovered", name)
+		queryURL, err := t.resolveEndpoint("")
+		if err != nil {
+			return nil, err
 		}
-		return &Service{Name: name, BaseURL: t.queryURL, TLSOptions: t.tlsOptions}, nil
+		return &Service{Name: name, BaseURL: queryURL, TLSOptions: t.tlsOptions}, nil
 	case documentService:
-		if t.documentURL == "" {
-			return nil, fmt.Errorf("service %s is not discovered", name)
+		documentURL, err := t.resolveEndpoint("")
+		if err != nil {
+			return nil, err
 		}
-		return &Service{Name: name, BaseURL: t.documentURL, TLSOptions: t.tlsOptions}, nil
+		return &Service{Name: name, BaseURL: documentURL, TLSOptions: t.tlsOptions}, nil
 	}
 	return nil, fmt.Errorf("unknown service: %s", name)
 }
@@ -404,7 +429,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 	if err := t.PrepareApiRequest(req, t.deployment.Application.SerializedForm()); err != nil {
 		return err
 	}
-	var endpointURL string
+	urlsByCluster := make(map[string]string)
 	endpointFunc := func(status int, response []byte) (bool, error) {
 		if ok, err := isOK(status); !ok {
 			return ok, err
@@ -416,17 +441,21 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) error {
 		if len(resp.Endpoints) == 0 {
 			return false, nil
 		}
-		endpointURL = resp.Endpoints[0].URL
+		for _, endpoint := range resp.Endpoints {
+			if endpoint.Scope != "zone" {
+				continue
+			}
+			urlsByCluster[endpoint.Cluster] = endpoint.URL
+		}
 		return true, nil
 	}
 	if _, err = wait(endpointFunc, func() *http.Request { return req }, &t.tlsOptions.KeyPair, timeout); err != nil {
 		return err
 	}
-	if endpointURL == "" {
-		return fmt.Errorf("no endpoint discovered")
+	if len(urlsByCluster) == 0 {
+		return fmt.Errorf("no endpoints discovered")
 	}
-	t.queryURL = endpointURL
-	t.documentURL = endpointURL
+	t.urlsByCluster = urlsByCluster
 	return nil
 }
 
@@ -462,7 +491,9 @@ func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions
 }
 
 type deploymentEndpoint struct {
-	URL string `json:"url"`
+	Cluster string `json:"cluster"`
+	URL     string `json:"url"`
+	Scope   string `json:"scope"`
 }
 
 type deploymentResponse struct {
