@@ -228,7 +228,7 @@ func (t *cloudTarget) resolveEndpoint(cluster string) (string, error) {
 			for c := range t.urlsByCluster {
 				clusters = append(clusters, c)
 			}
-			return "", fmt.Errorf("unknown cluster '%s': must be one of %v, ", cluster, clusters)
+			return "", fmt.Errorf("unknown cluster '%s': must be one of %v", cluster, clusters)
 		}
 		return u, nil
 	}
