@@ -32,6 +32,7 @@ type config struct {
 }
 
 type System struct {
+	Name        string    `json:"name"`
 	AccessToken string    `json:"access_token,omitempty"`
 	Scopes      []string  `json:"scopes,omitempty"`
 	ExpiresAt   time.Time `json:"expires_at"`
@@ -225,6 +226,28 @@ func (a *Auth0) AddSystem(s System) error {
 	return nil
 }
 
+func (a *Auth0) removeSystem(s string) error {
+	_ = a.init()
+
+	// If we're dealing with an empty file, we'll need to initialize this map.
+	if a.config.Systems == nil {
+		a.config.Systems = map[string]System{}
+	}
+
+	delete(a.config.Systems, s)
+
+	if err := a.persistConfig(); err != nil {
+		return fmt.Errorf("unexpected error persisting config: %w", err)
+	}
+
+	tr := &auth.TokenRetriever{Secrets: &auth.Keyring{}}
+	if err := tr.Delete(s); err != nil {
+		return fmt.Errorf("unexpected error clearing system information: %w", err)
+	}
+
+	return nil
+}
+
 func (a *Auth0) persistConfig() error {
 	dir := filepath.Dir(a.Path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -318,6 +341,7 @@ func RunLogin(ctx context.Context, a *Auth0, expired bool) (System, error) {
 	}
 
 	s := System{
+		Name:        a.system,
 		AccessToken: res.AccessToken,
 		ExpiresAt:   time.Now().Add(time.Duration(res.ExpiresIn) * time.Second),
 		Scopes:      auth.RequiredScopes(),
@@ -328,4 +352,21 @@ func RunLogin(ctx context.Context, a *Auth0, expired bool) (System, error) {
 	}
 
 	return s, nil
+}
+
+func RunLogout(a *Auth0) error {
+	s, err := a.getSystem()
+	if err != nil {
+		return err
+	}
+
+	if err := a.removeSystem(s.Name); err != nil {
+		return err
+	}
+
+	fmt.Print("\n")
+	fmt.Println("Successfully logged out.")
+	fmt.Print("\n")
+
+	return nil
 }
