@@ -110,11 +110,10 @@ public class VespaCliTestRunner implements TestRunner {
                 .flatMap(testsPath -> getChildDirectory(testsPath, toSuiteDirectoryName(suite)))
                 .orElseThrow(() -> new IllegalStateException("No tests found, for suite '" + suite + "'"));
 
-        ProcessBuilder builder = new ProcessBuilder("vespa", "test",
+        ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
                                                     "--endpoints", toEndpointsConfig(config));
         builder.redirectErrorStream(true);
-        builder.directory(suitePath.toFile());
         return builder;
     }
 
