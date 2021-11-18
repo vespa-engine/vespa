@@ -46,13 +46,13 @@ GidToLidChangeListener::notifyRemove(IDestructorCallbackSP context, document::Gl
 }
 
 void
-GidToLidChangeListener::notifyRegistered()
+GidToLidChangeListener::notifyRegistered(const std::vector<document::GlobalId>& removes)
 {
     std::promise<void> promise;
     auto future = promise.get_future();
     _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise]() {
-                                            _attr->populateTargetLids();
+                                        [this, &promise, removes(std::move(removes))]() {
+                                            _attr->populateTargetLids(removes);
                                             promise.set_value();
                                         });
     future.wait();

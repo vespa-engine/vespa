@@ -26,7 +26,7 @@ public:
     ~MyListener() override { }
     void notifyPutDone(IDestructorCallbackSP, document::GlobalId, uint32_t) override { }
     void notifyRemove(IDestructorCallbackSP, document::GlobalId) override { }
-    void notifyRegistered() override { }
+    void notifyRegistered(const std::vector<document::GlobalId>&) override { }
     const vespalib::string &getName() const override { return _name; }
     const vespalib::string &getDocTypeName() const override { return _docTypeName; }
 };
