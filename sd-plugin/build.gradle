@@ -1,5 +1,4 @@
-// This "noinspection" comment below is here to fix a warning
-//noinspection GroovyAssignabilityCheck
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 plugins {
   id 'org.jetbrains.intellij' version '1.1.4'
   id 'java'
@@ -17,17 +16,17 @@ import org.jetbrains.grammarkit.tasks.GenerateLexer
 import org.jetbrains.grammarkit.tasks.GenerateParser
 
 task generateSdLexer(type: GenerateLexer) {
-  source 'src/main/java/org/intellij/sdk/language/lexer/sd.flex'
-  targetDir 'src/main/gen/org/intellij/sdk/language/lexer/'
+  source 'src/main/jflex/ai/vespa/intellij/schema/lexer/sd.flex'
+  targetDir 'target/generated-sources/jflex/ai/vespa/intellij/schema/lexer/'
   targetClass 'SdLexer'
   purgeOldFiles true
 }
 
 task generateSdParser(type: GenerateParser) {
-  source 'src/main/java/org/intellij/sdk/language/parser/sd.bnf'
-  targetRoot 'src/main/gen'
-  pathToParser 'org/intellij/sdk/language/parser/SdParser.java'
-  pathToPsiRoot 'org/intellij/sdk/language/psi/'
+  source 'src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf'
+  targetRoot 'target/generated-sources/bnf/'
+  pathToParser 'ai/vespa/intellij/schema/parser/SdParser.java'
+  pathToPsiRoot 'ai/vespa/intellij/schema/parser/psi/'
   purgeOldFiles true
 }
 
@@ -36,20 +35,18 @@ compileJava {
   dependsOn generateSdParser
 }
 
-
-group 'org.yahoo.native'
-version '1.0.2'
+group 'ai.vespa'
+version '1.0.3'
 
 sourceCompatibility = 11
 
 // This "noinspection" comment below is here to fix a warning
-//noinspection GroovyAssignabilityCheck
+// noinspection GroovyAssignabilityCheck
 repositories {
   mavenCentral()
 }
 
-
-sourceSets.main.java.srcDirs 'src/main/gen'
+sourceSets.main.java.srcDirs = ['src/main/java', 'target/generated-sources/bnf', 'target/generated-sources/jflex']
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {

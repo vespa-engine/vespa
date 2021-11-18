@@ -1,10 +1,10 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <idea-plugin>
-    <id>org.intellij.sdk.language</id>
+    <id>ai.vespa</id>
     <name>SdReader</name>
 
     <!-- Text to display as company information on Preferences/Settings | Plugin page -->
-    <vendor>Yahoo</vendor>
+    <vendor>vespa.ai</vendor>
 
     <!-- Product and plugin compatibility requirements -->
     <depends>com.intellij.java</depends>
@@ -12,42 +12,30 @@
 
     <!-- Text to display as description on Preferences/Settings | Plugin page -->
     <description><![CDATA[
-    <p>Support for reading Vespa's SD files.</p>
-    <p>Features:</p>
-    <ul>
-    <li>Structure View</li>
-    <li>Find Usages</li>
-    <li>Call Hierarchy (for functions/macros)</li>
-    <li>Go To Declaration</li>
-    <li>Go to Symbol</li>
-    <li>Refactoring (Only for uses of the same implementation)</li>
-    <li>Syntax Highlighting</li>
-    <li>Commenter- enable turning lines into a comment with "Code -> Comment with line comment"</li>
-    </ul>
-    <p>Find more information on Vespa's SD files <a href="https://docs.vespa.ai/en/reference/schema-reference.html">here</a>.</p>
+    <p>Vespa Schema (.sd file) Editor</p>
     ]]></description>
     
     <!-- Extension points defined by the plugin -->
     <extensions defaultExtensionNs="com.intellij">
-        <fileType name="Sd File" implementationClass="org.intellij.sdk.language.SdFileType" fieldName="INSTANCE"
+        <fileType name="Sd File" implementationClass="ai.vespa.intellij.schema.SdFileType" fieldName="INSTANCE"
                   language="Sd" extensions="sd"/>
-        <lang.parserDefinition language="Sd" implementationClass="org.intellij.sdk.language.parser.SdParserDefinition"/>
-        <lang.syntaxHighlighterFactory language="Sd" implementationClass="org.intellij.sdk.language.SdSyntaxHighlighterFactory"/>
-        <completion.contributor language="Sd" implementationClass="org.intellij.sdk.language.SdCompletionContributor"/>
+        <lang.parserDefinition language="Sd" implementationClass="ai.vespa.intellij.schema.parser.SdParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="Sd" implementationClass="ai.vespa.intellij.schema.SdSyntaxHighlighterFactory"/>
+        <completion.contributor language="Sd" implementationClass="ai.vespa.intellij.schema.SdCompletionContributor"/>
 
-        <lang.findUsagesProvider language="Sd" implementationClass="org.intellij.sdk.language.findUsages.SdFindUsagesProvider"/>
-        <findUsagesHandlerFactory implementation="org.intellij.sdk.language.findUsages.SdFindUsagesHandlerFactory"/>
-        <fileStructureGroupRuleProvider implementation="org.intellij.sdk.language.findUsages.SdRankProfileGroupingRuleProvider"/>
-        <fileStructureGroupRuleProvider implementation="org.intellij.sdk.language.findUsages.SdDocumentSummaryGroupingRuleProvider"/>
-        <elementDescriptionProvider implementation="org.intellij.sdk.language.psi.SdElementDescriptionProvider"/>
+        <lang.findUsagesProvider language="Sd" implementationClass="ai.vespa.intellij.schema.findUsages.SdFindUsagesProvider"/>
+        <findUsagesHandlerFactory implementation="ai.vespa.intellij.schema.findUsages.SdFindUsagesHandlerFactory"/>
+        <fileStructureGroupRuleProvider implementation="ai.vespa.intellij.schema.findUsages.SdRankProfileGroupingRuleProvider"/>
+        <fileStructureGroupRuleProvider implementation="ai.vespa.intellij.schema.findUsages.SdDocumentSummaryGroupingRuleProvider"/>
+        <elementDescriptionProvider implementation="ai.vespa.intellij.schema.psi.SdElementDescriptionProvider"/>
 
-        <lang.psiStructureViewFactory language="Sd" implementationClass="org.intellij.sdk.language.structure.SdStructureViewFactory"/>
-        <codeStyleSettingsProvider implementation="org.intellij.sdk.language.SdCodeStyleSettingsProvider"/>
-        <langCodeStyleSettingsProvider implementation="org.intellij.sdk.language.SdLanguageCodeStyleSettingsProvider"/>
-        <lang.commenter language="Sd" implementationClass="org.intellij.sdk.language.SdCommenter"/>
-        <lang.refactoringSupport language="Sd" implementationClass="org.intellij.sdk.language.SdRefactoringSupportProvider"/>
-        <gotoSymbolContributor implementation="org.intellij.sdk.language.SdChooseByNameContributor"/>
-        <callHierarchyProvider language="Sd" implementationClass="org.intellij.sdk.language.hierarchy.SdCallHierarchyProvider"/>
+        <lang.psiStructureViewFactory language="Sd" implementationClass="ai.vespa.intellij.schema.structure.SdStructureViewFactory"/>
+        <codeStyleSettingsProvider implementation="ai.vespa.intellij.schema.SdCodeStyleSettingsProvider"/>
+        <langCodeStyleSettingsProvider implementation="ai.vespa.intellij.schema.SdLanguageCodeStyleSettingsProvider"/>
+        <lang.commenter language="Sd" implementationClass="ai.vespa.intellij.schema.SdCommenter"/>
+        <lang.refactoringSupport language="Sd" implementationClass="ai.vespa.intellij.schema.SdRefactoringSupportProvider"/>
+        <gotoSymbolContributor implementation="ai.vespa.intellij.schema.SdChooseByNameContributor"/>
+        <callHierarchyProvider language="Sd" implementationClass="ai.vespa.intellij.schema.hierarchy.SdCallHierarchyProvider"/>
     </extensions>
     
 </idea-plugin>
