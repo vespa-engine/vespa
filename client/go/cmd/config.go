@@ -133,10 +133,16 @@ func (c *Config) Write() error {
 }
 
 func (c *Config) CertificatePath(app vespa.ApplicationID) (string, error) {
+	if override, _ := c.Get(dataPlaneCertFlag); override != "" {
+		return override, nil;
+	}
 	return c.applicationFilePath(app, "data-plane-public-cert.pem")
 }
 
 func (c *Config) PrivateKeyPath(app vespa.ApplicationID) (string, error) {
+	if override, _ := c.Get(dataPlaneKeyFlag); override != "" {
+		return override, nil;
+	}
 	return c.applicationFilePath(app, "data-plane-private-key.pem")
 }
 
