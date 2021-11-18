@@ -2,5 +2,4 @@
 
 // This sets the name of the generated zip file uploadable to Intellij Marketplace
 // (But not the actual *name* of the plugin, which is the name in plugin.xml)
-// Remove this if the directory and plugin name can be the same.
-rootProject.name = 'sd_language_plugin'
+rootProject.name = 'vespa'
