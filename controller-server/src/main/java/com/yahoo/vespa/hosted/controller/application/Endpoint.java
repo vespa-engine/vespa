@@ -321,7 +321,11 @@ public class Endpoint {
     }
 
     private static Optional<InstanceName> requireInstance(Optional<InstanceName> instanceName, Scope scope) {
-        if (scope != Scope.application && instanceName.isEmpty()) throw new IllegalArgumentException("Instance must be set for scope " + scope);
+        if (scope == Scope.application) {
+            if (instanceName.isPresent()) throw new IllegalArgumentException("Instance cannot be set for scope " + scope);
+        } else {
+            if (instanceName.isEmpty()) throw new IllegalArgumentException("Instance must be set for scope " + scope);
+        }
         return instanceName;
     }
 
