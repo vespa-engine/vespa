@@ -48,6 +48,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
 
     : _sharedExecutor(sharedExecutor),
       _masterExecutor(1, stackSize, master_executor),
+      _shared_field_writer(cfg.shared_field_writer()),
       _master_task_limit(cfg.master_task_limit()),
       _indexExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), index_executor)),
       _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), summary_executor)),
@@ -62,7 +63,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
       _index_field_writer_ptr(),
       _attribute_field_writer_ptr()
 {
-    if (cfg.shared_field_writer() == SharedFieldWriterExecutor::INDEX) {
+    if (_shared_field_writer == SharedFieldWriterExecutor::INDEX) {
         _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 2, cfg.defaultTaskLimit());
         _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
                                                               cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
@@ -70,7 +71,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
         _index_field_writer_ptr = _field_writer.get();
         _attribute_field_writer_ptr = _attributeFieldWriter.get();
 
-    } else if (cfg.shared_field_writer() == SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE) {
+    } else if (_shared_field_writer == SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE) {
         _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 3, cfg.defaultTaskLimit(),
                                                       cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
         _index_field_inverter_ptr = _field_writer.get();
@@ -154,13 +155,28 @@ ExecutorThreadingService::set_task_limits(uint32_t master_task_limit,
 ExecutorThreadingServiceStats
 ExecutorThreadingService::getStats()
 {
-    return ExecutorThreadingServiceStats(_masterExecutor.getStats(),
-                                         _indexExecutor->getStats(),
-                                         _summaryExecutor->getStats(),
-                                         _sharedExecutor.getStats(),
-                                         _index_field_inverter_ptr->getStats(),
-                                         _index_field_writer_ptr->getStats(),
-                                         _attribute_field_writer_ptr->getStats());
+    auto master_stats = _masterExecutor.getStats();
+    auto index_stats = _indexExecutor->getStats();
+    auto summary_stats = _summaryExecutor->getStats();
+    auto shared_stats = _sharedExecutor.getStats();
+    if (_shared_field_writer == SharedFieldWriterExecutor::INDEX) {
+        auto field_writer_stats = _field_writer->getStats();
+        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats, shared_stats,
+                                             field_writer_stats,
+                                             field_writer_stats,
+                                             _attribute_field_writer_ptr->getStats());
+    } else if (_shared_field_writer == SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE) {
+        auto field_writer_stats = _field_writer->getStats();
+        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats, shared_stats,
+                                             field_writer_stats,
+                                             field_writer_stats,
+                                             field_writer_stats);
+    } else {
+        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats, shared_stats,
+                                             _index_field_inverter_ptr->getStats(),
+                                             _index_field_writer_ptr->getStats(),
+                                             _attribute_field_writer_ptr->getStats());
+    }
 }
 
 vespalib::ISequencedTaskExecutor &
