@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/joeshaw/envdecode"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/browser"
 	"github.com/vespa-engine/vespa/client/go/auth"
@@ -47,15 +47,12 @@ type Auth0 struct {
 	config        config
 }
 
-// default to vespa-cd.auth0.com
-var (
-	authCfg struct {
-		Audience           string `env:"AUTH0_AUDIENCE,default=https://vespa-cd.auth0.com/api/v2/"`
-		ClientID           string `env:"AUTH0_CLIENT_ID,default=4wYWA496zBP28SLiz0PuvCt8ltL11DZX"`
-		DeviceCodeEndpoint string `env:"AUTH0_DEVICE_CODE_ENDPOINT,default=https://vespa-cd.auth0.com/oauth/device/code"`
-		OauthTokenEndpoint string `env:"AUTH0_OAUTH_TOKEN_ENDPOINT,default=https://vespa-cd.auth0.com/oauth/token"`
-	}
-)
+type authCfg struct {
+	Audience           string `json:"audience"`
+	ClientID           string `json:"client-id"`
+	DeviceCodeEndpoint string `json:"device-code-endpoint"`
+	OauthTokenEndpoint string `json:"oauth-token-endpoint"`
+}
 
 func ContextWithCancel() context.Context {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -75,16 +72,32 @@ func GetAuth0(configPath string, systemName string) (*Auth0, error) {
 	a := Auth0{}
 	a.Path = configPath
 	a.system = systemName
-	if err := envdecode.StrictDecode(&authCfg); err != nil {
-		return nil, fmt.Errorf("could not decode env: %w", err)
+	c, err := getDeviceFlowConfig()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get auth config: %w", err)
 	}
 	a.Authenticator = &auth.Authenticator{
-		Audience:           authCfg.Audience,
-		ClientID:           authCfg.ClientID,
-		DeviceCodeEndpoint: authCfg.DeviceCodeEndpoint,
-		OauthTokenEndpoint: authCfg.OauthTokenEndpoint,
+		Audience:           c.Audience,
+		ClientID:           c.ClientID,
+		DeviceCodeEndpoint: c.DeviceCodeEndpoint,
+		OauthTokenEndpoint: c.OauthTokenEndpoint,
 	}
 	return &a, nil
+}
+
+func getDeviceFlowConfig() (authCfg, error) {
+	apiUrl, _ := url.Parse("https://api.vespa-external-cd.aws.oath.cloud:4443/auth0/v1/device-flow-config")
+	r, err := http.Get(apiUrl.String())
+	if err != nil {
+		return authCfg{}, fmt.Errorf("cannot get auth config: %w", err)
+	}
+	defer r.Body.Close()
+	var res authCfg
+	err = json.NewDecoder(r.Body).Decode(&res)
+	if err != nil {
+		return authCfg{}, fmt.Errorf("cannot decode response: %w", err)
+	}
+	return res, nil
 }
 
 // IsLoggedIn encodes the domain logic for determining whether we're
