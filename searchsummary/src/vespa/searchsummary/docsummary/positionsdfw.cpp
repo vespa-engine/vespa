@@ -94,15 +94,10 @@ AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType type
         vespalib::string value = vespalib::stringify(absdist);
         vespalib::Memory data(value.c_str(), value.size());
 
-        if (type == RES_STRING      ||
-            type == RES_LONG_STRING ||
-            type == RES_XMLSTRING)
-        {
+        if (type == RES_STRING || type == RES_LONG_STRING) {
             target.insertString(data);
         }
-        if (type == RES_LONG_DATA ||
-            type == RES_DATA)
-        {
+        if (type == RES_LONG_DATA || type == RES_DATA) {
             target.insertData(data);
         }
     }
@@ -173,63 +168,21 @@ insertFromAttr(const attribute::IAttributeVector &attribute, uint32_t docid, ves
     }
 }
 
-vespalib::asciistream
-formatField(const attribute::IAttributeVector &attribute, uint32_t docid, ResType type) {
-    vespalib::asciistream target;
-    int32_t docx = 0;
-    int32_t docy = 0;
-
-    IntegerContent pos;
-    pos.fill(attribute, docid);
-    uint32_t numValues = pos.size();
-    LOG(debug, "docid=%d, numValues=%d", docid, numValues);
-
-    bool isShort = !IDocsumFieldWriter::IsBinaryCompatible(type, RES_LONG_STRING);
-    for (uint32_t i = 0; i < numValues; i++) {
-        int64_t docxy(pos[i]);
-        vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
-        if (docx == 0 && docy == INT_MIN) {
-            LOG(spam, "skipping empty zcurve value");
-            continue;
-        }
-        double degrees_ns = docy;
-        degrees_ns /= 1000000.0;
-        double degrees_ew = docx;
-        degrees_ew /= 1000000.0;
-
-        target << "<position x=\"" << docx << "\" y=\"" << docy << "\"";
-        target << " latlong=\"";
-        target << vespalib::FloatSpec::fixed;
-        if (degrees_ns < 0) {
-            target << "S" << (-degrees_ns);
-        } else {
-            target << "N" << degrees_ns;
-        }
-        target << ";";
-        if (degrees_ew < 0) {
-            target << "W" << (-degrees_ew);
-        } else {
-            target << "E" << degrees_ew;
-        }
-        target << "\" />";
-        if (isShort && target.size() > 30000) {
-            target << "<overflow />";
-            break;
-        }
-    }
-    return target;
+void checkExpected(ResType type) {
+    static bool alreadyWarned = false;
+    if (type == RES_JSONSTRING) return;
+    if (alreadyWarned) return;
+    alreadyWarned = true;
+    LOG(error, "Unexpected summary field type %s", ResultConfig::GetResTypeName(type));
 }
-}
+
+} // namespace
 
 void
 PositionsDFW::insertField(uint32_t docid, GetDocsumsState * dsState, ResType type, vespalib::slime::Inserter &target)
 {
-    if (type == RES_XMLSTRING) {
-        insertFromAttr(get_attribute(*dsState), docid, target);
-        return;
-    }
-    vespalib::asciistream val(formatField(get_attribute(*dsState), docid, type));
-    target.insertString(vespalib::Memory(val.c_str(), val.size()));
+    checkExpected(type);
+    insertFromAttr(get_attribute(*dsState), docid, target);
 }
 
 //--------------------------------------------------------------------------

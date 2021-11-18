@@ -255,7 +255,6 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
             break;
         }
 
-        case RES_XMLSTRING:
         case RES_JSONSTRING:
         case RES_FEATUREDATA:
         case RES_LONG_STRING: {

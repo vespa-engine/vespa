@@ -8,6 +8,7 @@
 #include <vespa/searchsummary/docsummary/positionsdfw.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
+#include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -113,7 +114,7 @@ struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
 
 template <typename AttrType>
 void checkWritePositionField(Test &test, AttrType &attr,
-                             uint32_t doc_id, const string &expected) {
+                             uint32_t doc_id, const vespalib::string &expect_json) {
     for (AttributeVector::DocId i = 0; i < doc_id + 1; ) {
         attr.addDoc(i);
         if (i == 007) {
@@ -133,7 +134,7 @@ void checkWritePositionField(Test &test, AttrType &attr,
     PositionsDFW::UP writer =
         createPositionsDFW(attr.getName().c_str(), &attribute_man);
     ASSERT_TRUE(writer.get());
-    ResType res_type = RES_LONG_STRING;
+    ResType res_type = RES_JSONSTRING;
     MyGetDocsumsStateCallback callback;
     GetDocsumsState state(callback);
     state._attributes.push_back(&attr);
@@ -142,19 +143,17 @@ void checkWritePositionField(Test &test, AttrType &attr,
     vespalib::slime::SlimeInserter inserter(target);
     writer->insertField(doc_id, &state, res_type, inserter);
 
-    vespalib::Memory got = target.get().asString();
-    test.EXPECT_EQUAL(expected.size(), got.size);
-    test.EXPECT_EQUAL(expected, string(got.data, got.size));
+    test::SlimeValue expected(expect_json);
+    test.EXPECT_EQUAL(expected.slime, target);
 }
 
 void Test::requireThat2DPositionFieldIsWritten() {
     SingleInt64ExtAttribute attr("foo");
-    checkWritePositionField(*this, attr, 0x3e, "<position x=\"6\" y=\"7\" latlong=\"N0.000007;E0.000006\" />");
-    checkWritePositionField(*this, attr,  007, "<position x=\"-1\" y=\"-1\" latlong=\"S0.000001;W0.000001\" />");
-    checkWritePositionField(*this, attr, 0x42, "<position x=\"0\" y=\"-1\" latlong=\"S0.000001;E0.000000\" />");
-    checkWritePositionField(*this, attr, 0x17, "<position x=\"-16711935\" y=\"16711935\" latlong=\"N16.711935;W16.711935\" />");
-    checkWritePositionField(*this, attr,   42, "");
-
+    checkWritePositionField(*this, attr, 0x3e, "{x:6,y:7,latlong:'N0.000007;E0.000006'}");
+    checkWritePositionField(*this, attr,  007, "{x:-1,y:-1,latlong:'S0.000001;W0.000001'}");
+    checkWritePositionField(*this, attr, 0x42, "{x:0,y:-1,latlong:'S0.000001;E0.000000'}");
+    checkWritePositionField(*this, attr, 0x17, "{x:-16711935,y:16711935,latlong:'N16.711935;W16.711935'}");
+    checkWritePositionField(*this, attr,   42, "null");
 }
 
 }  // namespace

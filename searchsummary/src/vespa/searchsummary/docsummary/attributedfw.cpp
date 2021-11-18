@@ -118,7 +118,6 @@ SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type
     }
         break;
     case RES_JSONSTRING:
-    case RES_XMLSTRING:
     case RES_FEATUREDATA:
     case RES_LONG_STRING:
     case RES_STRING: {

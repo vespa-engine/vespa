@@ -123,11 +123,10 @@ public:
             return (b == RES_STRING || b == RES_DATA);
         case RES_LONG_STRING:
         case RES_LONG_DATA:
-        case RES_XMLSTRING:
         case RES_FEATUREDATA:
         case RES_JSONSTRING:
             return (b == RES_LONG_STRING || b == RES_LONG_DATA ||
-                    b == RES_XMLSTRING || b == RES_FEATUREDATA || b == RES_JSONSTRING);
+                    b == RES_FEATUREDATA || b == RES_JSONSTRING);
         default:
             return false;
         }
@@ -159,9 +158,8 @@ public:
             return b == RES_INT64;
         case RES_STRING:
         case RES_LONG_STRING:
-        case RES_XMLSTRING:
         case RES_JSONSTRING:
-            return (b == RES_STRING || b == RES_LONG_STRING || b == RES_XMLSTRING || b == RES_JSONSTRING);
+            return (b == RES_STRING || b == RES_LONG_STRING || b == RES_JSONSTRING);
         case RES_DATA:
         case RES_LONG_DATA:
             return (b == RES_DATA || b == RES_LONG_DATA);
