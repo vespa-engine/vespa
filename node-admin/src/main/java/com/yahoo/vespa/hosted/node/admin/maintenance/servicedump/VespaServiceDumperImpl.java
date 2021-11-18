@@ -108,7 +108,7 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
                 context.log(log, "Producing artifact of type '" + producer.artifactName() + "'");
                 producedArtifacts.addAll(producer.produceArtifacts(producerCtx));
             }
-            uploadArtifacts(context, destination, producedArtifacts, expiry);
+            uploadArtifacts(context, destination, producedArtifacts);
             storeReport(context, ServiceDumpReport.createSuccessReport(request, startedAt, clock.instant(), destination));
         } catch (Exception e) {
             handleFailure(context, request, startedAt, e);
@@ -121,17 +121,17 @@ public class VespaServiceDumperImpl implements VespaServiceDumper {
     }
 
     private void uploadArtifacts(NodeAgentContext ctx, URI destination,
-                                 List<Artifact> producedArtifacts, Instant expiry) {
+                                 List<Artifact> producedArtifacts) {
         ApplicationId owner = ctx.node().owner().orElseThrow();
         List<SyncFileInfo> filesToUpload = producedArtifacts.stream()
                 .map(a -> {
                     Compression compression = a.compressOnUpload() ? Compression.ZSTD : Compression.NONE;
                     String classification = a.classification().map(Artifact.Classification::value).orElse(null);
-                    return SyncFileInfo.forServiceDump(destination, a.file(), expiry, compression, owner, classification);
+                    return SyncFileInfo.forServiceDump(destination, a.file(), compression, owner, classification);
                 })
                 .collect(Collectors.toList());
         ctx.log(log, Level.INFO,
-                "Uploading " + filesToUpload.size() + " file(s) with destination " + destination + " and expiry " + expiry);
+                "Uploading " + filesToUpload.size() + " file(s) with destination " + destination);
         if (!syncClient.sync(ctx, filesToUpload, Integer.MAX_VALUE)) {
             throw new RuntimeException("Unable to upload all files");
         }
