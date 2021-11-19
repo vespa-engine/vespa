@@ -118,6 +118,7 @@ public:
 
     void onReplayDone(uint32_t docIdLimit) override;
     bool hasStructFieldAttribute() const override;
+    void drain(OnWriteDoneType onWriteDone) override;
 
     // Should only be used for unit testing.
     const std::vector<WriteContext>& get_write_contexts() const {
