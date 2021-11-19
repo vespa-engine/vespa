@@ -235,6 +235,12 @@ func (c *Config) Set(option, value string) error {
 			viper.Set(option, value)
 			return nil
 		}
+	case cloudAuthFlag:
+		switch value {
+		case "access-token", "api-key":
+			viper.Set(option, value)
+			return nil
+		}
 	}
 	return fmt.Errorf("invalid option or value: %q: %q", option, value)
 }

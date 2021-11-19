@@ -344,8 +344,10 @@ func checkDeploymentOpts(opts DeploymentOpts) error {
 	if !opts.ApplicationPackage.HasCertificate() {
 		return fmt.Errorf("%s: missing certificate in package", opts)
 	}
-	if !Auth0AccessTokenEnabled() && opts.APIKey == nil {
-		return fmt.Errorf("%s: missing api key", opts.String())
+	if !Auth0AccessTokenEnabled() {
+		if opts.APIKey == nil {
+			return fmt.Errorf("%s: missing api key", opts.String())
+		}
 	}
 	return nil
 }

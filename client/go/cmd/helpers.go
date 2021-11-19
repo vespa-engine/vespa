@@ -182,8 +182,8 @@ func getTarget() vespa.Target {
 			return nil
 		}
 		var apiKey []byte = nil
+		apiKey, err = ioutil.ReadFile(cfg.APIKeyPath(deployment.Application.Tenant))
 		if !vespa.Auth0AccessTokenEnabled() {
-			apiKey, err = ioutil.ReadFile(cfg.APIKeyPath(deployment.Application.Tenant))
 			if err != nil {
 				fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 			}
@@ -202,6 +202,20 @@ func getTarget() vespa.Target {
 		if err != nil {
 			fatalErrHint(err, "Deployment to cloud requires a certificate. Try 'vespa cert'")
 		}
+		var cloudAuth string
+		if vespa.Auth0AccessTokenEnabled() {
+			cloudAuth, err = cfg.Get(cloudAuthFlag)
+			if err != nil {
+				if apiKey != nil {
+					cloudAuth = "api-key"
+				} else {
+					cloudAuth = "access-token"
+				}
+			}
+		} else {
+			cloudAuth = ""
+		}
+
 		return vespa.CloudTarget(getApiURL(), deployment, apiKey,
 			vespa.TLSOptions{
 				KeyPair:         kp,
@@ -213,7 +227,8 @@ func getTarget() vespa.Target {
 				Level:  vespa.LogLevel(logLevelArg),
 			},
 			cfg.AuthConfigPath(),
-			getSystemName())
+			getSystemName(),
+			cloudAuth)
 	}
 	fatalErrHint(fmt.Errorf("Invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
 	return nil
@@ -244,9 +259,9 @@ func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.T
 			fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
 			return opts
 		}
+		var err error
+		opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
 		if !vespa.Auth0AccessTokenEnabled() {
-			var err error
-			opts.APIKey, err = cfg.ReadAPIKey(deployment.Application.Tenant)
 			if err != nil {
 				fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 				return opts
