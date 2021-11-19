@@ -1,0 +1,41 @@
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<idea-plugin>
+    <id>ai.vespa</id>
+    <name>Vespa</name>
+
+    <!-- Text to display as company information on Preferences/Settings | Plugin page -->
+    <vendor>vespa.ai</vendor>
+
+    <!-- Product and plugin compatibility requirements -->
+    <depends>com.intellij.java</depends>
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Text to display as description on Preferences/Settings | Plugin page -->
+    <description><![CDATA[
+    <p>Vespa.ai schema file support</p>
+    ]]></description>
+    
+    <!-- Extension points defined by the plugin -->
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="Sd File" implementationClass="ai.vespa.intellij.schema.SdFileType" fieldName="INSTANCE"
+                  language="Sd" extensions="sd"/>
+        <lang.parserDefinition language="Sd" implementationClass="ai.vespa.intellij.schema.parser.SdParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="Sd" implementationClass="ai.vespa.intellij.schema.SdSyntaxHighlighterFactory"/>
+        <completion.contributor language="Sd" implementationClass="ai.vespa.intellij.schema.SdCompletionContributor"/>
+
+        <lang.findUsagesProvider language="Sd" implementationClass="ai.vespa.intellij.schema.findUsages.SdFindUsagesProvider"/>
+        <findUsagesHandlerFactory implementation="ai.vespa.intellij.schema.findUsages.SdFindUsagesHandlerFactory"/>
+        <fileStructureGroupRuleProvider implementation="ai.vespa.intellij.schema.findUsages.SdRankProfileGroupingRuleProvider"/>
+        <fileStructureGroupRuleProvider implementation="ai.vespa.intellij.schema.findUsages.SdDocumentSummaryGroupingRuleProvider"/>
+        <elementDescriptionProvider implementation="ai.vespa.intellij.schema.psi.SdElementDescriptionProvider"/>
+
+        <lang.psiStructureViewFactory language="Sd" implementationClass="ai.vespa.intellij.schema.structure.SdStructureViewFactory"/>
+        <codeStyleSettingsProvider implementation="ai.vespa.intellij.schema.SdCodeStyleSettingsProvider"/>
+        <langCodeStyleSettingsProvider implementation="ai.vespa.intellij.schema.SdLanguageCodeStyleSettingsProvider"/>
+        <lang.commenter language="Sd" implementationClass="ai.vespa.intellij.schema.SdCommenter"/>
+        <lang.refactoringSupport language="Sd" implementationClass="ai.vespa.intellij.schema.SdRefactoringSupportProvider"/>
+        <gotoSymbolContributor implementation="ai.vespa.intellij.schema.SdChooseByNameContributor"/>
+        <callHierarchyProvider language="Sd" implementationClass="ai.vespa.intellij.schema.hierarchy.SdCallHierarchyProvider"/>
+    </extensions>
+    
+</idea-plugin>
