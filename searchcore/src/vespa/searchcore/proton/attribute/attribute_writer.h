@@ -83,7 +83,6 @@ public:
 private:
     using AttrMap = vespalib::hash_map<vespalib::string, AttributeWithInfo>;
     std::vector<WriteContext> _writeContexts;
-    const DataType           *_dataType;
     bool                      _hasStructFieldAttribute;
     AttrMap                   _attrMap;
 
