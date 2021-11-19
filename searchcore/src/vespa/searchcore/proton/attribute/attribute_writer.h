@@ -89,7 +89,6 @@ private:
 
     void setupWriteContexts();
     void setupAttributeMapping();
-    void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
     void internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                      bool allAttributes, OnWriteDoneType onWriteDone);
     void internalRemove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType onWriteDone);
