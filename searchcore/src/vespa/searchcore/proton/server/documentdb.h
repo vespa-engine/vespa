@@ -160,18 +160,6 @@ private:
     void enterApplyLiveConfigState();
 
     /**
-     * Drop old field view in a controlled manner.  The feed view will
-     * be kept alive until the index executor is done with all current
-     * tasks.
-     *
-     * Called by executor thread.
-     *
-     * @param feedView  shared pointer to feed view to be dropped.
-     */
-    void performDropFeedView(IFeedView::SP feedView);
-    void performDropFeedView2(IFeedView::SP feedView);
-
-    /**
      * Implements IFeedHandlerOwner
      */
     void onTransactionLogReplayDone() override __attribute__((noinline));

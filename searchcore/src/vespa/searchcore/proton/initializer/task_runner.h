@@ -41,7 +41,6 @@ class TaskRunner {
         }
         void setDone() { execute(std::move(_doneTask)); }
         const InitializerTask::SP &rootTask() { return _rootTask; }
-        void schedulePoll();
     };
     void getReadyTasks(const InitializerTask::SP task, TaskList &readyTasks, TaskSet &checked);
     void setTaskRunning(InitializerTask &task);
