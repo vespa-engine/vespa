@@ -23,7 +23,7 @@ DataStoreT<RefT>::~DataStoreT() = default;
 
 template <typename RefT>
 void
-DataStoreT<RefT>::freeElem(EntryRef ref, size_t numElems)
+DataStoreT<RefT>::free_elem_internal(EntryRef ref, size_t numElems, bool was_held)
 {
     RefType intRef(ref);
     BufferState &state = getBufferState(intRef.bufferId());
@@ -35,9 +35,12 @@ DataStoreT<RefT>::freeElem(EntryRef ref, size_t numElems)
             state.freeList().push_back(ref);
         }
     } else {
-        assert(state.isOnHold());
+        assert(state.isOnHold() && was_held);
     }
     state.incDeadElems(numElems);
+    if (was_held) {
+        state.decHoldElems(numElems);
+    }
     state.cleanHold(getBuffer(intRef.bufferId()),
                     intRef.unscaled_offset() * state.getArraySize(), numElems);
 }
@@ -71,10 +74,7 @@ DataStoreT<RefT>::trimElemHoldList(generation_t usedGen)
     for (; it != ite; ++it) {
         if (static_cast<sgeneration_t>(it->_generation - usedGen) >= 0)
             break;
-        RefType intRef(it->_ref);
-        BufferState &state = getBufferState(intRef.bufferId());
-        freeElem(it->_ref, it->_len);
-        state.decHoldElems(it->_len);
+        free_elem_internal(it->_ref, it->_len, true);
         ++freed;
     }
     if (freed != 0) {
@@ -91,10 +91,7 @@ DataStoreT<RefT>::clearElemHoldList()
     ElemHold2List::iterator it(elemHold2List.begin());
     ElemHold2List::iterator ite(elemHold2List.end());
     for (; it != ite; ++it) {
-        RefType intRef(it->_ref);
-        BufferState &state = getBufferState(intRef.bufferId());
-        freeElem(it->_ref, it->_len);
-        state.decHoldElems(it->_len);
+        free_elem_internal(it->_ref, it->_len, true);
     }
     elemHold2List.clear();
 }
