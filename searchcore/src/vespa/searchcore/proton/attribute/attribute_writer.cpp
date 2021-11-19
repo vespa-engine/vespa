@@ -657,7 +657,6 @@ AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
       _attributeFieldWriter(_mgr->getAttributeFieldWriter()),
       _shared_executor(_mgr->get_shared_executor()),
       _writeContexts(),
-      _dataType(nullptr),
       _hasStructFieldAttribute(false),
       _attrMap()
 {
