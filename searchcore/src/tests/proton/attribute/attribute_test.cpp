@@ -28,7 +28,6 @@
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
-#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -40,7 +39,6 @@
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -165,12 +163,10 @@ public:
     AttributeVector::SP addAttribute(const AttributeSpec &spec) {
         auto ret = _mgr->addAttribute(spec.getName(),
                                       AttributeFactory::createAttribute(spec.getName(), spec.getConfig()));
-        allocAttributeWriter();
         return ret;
     }
     void add_attribute(AttributeVector::SP attr) {
         _mgr->addAttribute(attr->getName(), std::move(attr));
-        allocAttributeWriter();
     }
     void put(SerialNum serialNum, const Document &doc, DocumentIdT lid) {
         _aw->put(serialNum, doc, lid, emptyCallback);
@@ -225,6 +221,7 @@ TEST_F(AttributeWriterTest, handles_put)
     auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
     auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
     auto a4 = addAttribute({"a4", AVConfig(AVBasicType::STRING)});
+    allocAttributeWriter();
 
     attribute::IntegerContent ibuf;
     attribute::FloatContent fbuf;
@@ -303,6 +300,7 @@ TEST_F(AttributeWriterTest, handles_predicate_put)
     DocBuilder idb(s);
 
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
+    allocAttributeWriter();
 
     PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
 
@@ -349,6 +347,7 @@ TEST_F(AttributeWriterTest, handles_remove)
 {
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute("a2");
+    allocAttributeWriter();
     fillAttribute(a1, 1, 10, 1);
     fillAttribute(a2, 1, 20, 1);
 
@@ -371,6 +370,7 @@ TEST_F(AttributeWriterTest, handles_batch_remove)
 {
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute("a2");
+    allocAttributeWriter();
     fillAttribute(a1, 4, 22, 1);
     fillAttribute(a2, 4, 33, 1);
 
@@ -397,6 +397,7 @@ verifyAttributeContent(const AttributeVector & v, uint32_t lid, vespalib::string
 TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
 {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)});
+    allocAttributeWriter();
     Schema s;
     s.addAttributeField(Schema::AttributeField("a1", schema::DataType::STRING, CollectionType::SINGLE));
     DocBuilder idb(s);
@@ -442,6 +443,7 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
 TEST_F(AttributeWriterTest, handles_predicate_remove)
 {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
+    allocAttributeWriter();
     Schema s;
     s.addAttributeField(
             Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
@@ -465,6 +467,7 @@ TEST_F(AttributeWriterTest, handles_update)
 {
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute("a2");
+    allocAttributeWriter();
 
     fillAttribute(a1, 1, 10, 1);
     fillAttribute(a2, 1, 20, 1);
@@ -504,6 +507,7 @@ TEST_F(AttributeWriterTest, handles_update)
 TEST_F(AttributeWriterTest, handles_predicate_update)
 {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
+    allocAttributeWriter();
     Schema schema;
     schema.addAttributeField(Schema::AttributeField("a1", schema::DataType::BOOLEANTREE, CollectionType::SINGLE));
 
@@ -680,6 +684,7 @@ createTensorPutDoc(DocBuilder &builder, const Value &tensor) {
 TEST_F(AttributeWriterTest, can_write_to_tensor_attribute)
 {
     auto a1 = createTensorAttribute(*this);
+    allocAttributeWriter();
     Schema s = createTensorSchema();
     DocBuilder builder(s);
     auto tensor = make_tensor(TensorSpec(sparse_tensor)
@@ -697,6 +702,7 @@ TEST_F(AttributeWriterTest, can_write_to_tensor_attribute)
 TEST_F(AttributeWriterTest, handles_tensor_assign_update)
 {
     auto a1 = createTensorAttribute(*this);
+    allocAttributeWriter();
     Schema s = createTensorSchema();
     DocBuilder builder(s);
     auto tensor = make_tensor(TensorSpec(sparse_tensor)
@@ -762,6 +768,7 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
     auto a1 = t.addAttribute(a1_name);
     auto a2 = t.addAttribute(a2_name);
     auto a3 = t.addAttribute(a3_name);
+    t.allocAttributeWriter();
 
     EXPECT_EQ(1u, a1->getNumDocs());
     EXPECT_EQ(1u, a2->getNumDocs());
@@ -899,6 +906,7 @@ public:
         tensor = make_tensor(TensorSpec(dense_tensor)
                                      .add({{"x", 0}}, 3).add({{"x", 1}}, 5));
         attr->exp_tensor = tensor.get();
+        allocAttributeWriter();
     }
     void expect_tensor_attr_calls(size_t exp_prepare_cnt,
                                   size_t exp_complete_cnt,
@@ -1028,6 +1036,7 @@ TEST_F(AttributeWriterTest, forceCommit_clears_search_cache_in_imported_attribut
 TEST_F(AttributeWriterTest, ignores_force_commit_serial_not_greater_than_create_serial)
 {
     auto a1 = addAttribute("a1");
+    allocAttributeWriter();
     a1->setCreateSerialNum(100);
     EXPECT_EQ(0u, test_force_commit(*a1, 50u));
     EXPECT_EQ(0u, test_force_commit(*a1, 100u));
@@ -1112,6 +1121,7 @@ StructArrayWriterTest::~StructArrayWriterTest() = default;
 
 TEST_F(StructArrayWriterTest, update_with_doc_argument_updates_struct_field_attributes)
 {
+    allocAttributeWriter();
     auto doc = makeDoc(10,  {11, 12});
     put(10, *doc, 1);
     checkAttrs(1, 10, {11, 12});
@@ -1169,6 +1179,7 @@ public:
 
 TEST_F(StructMapWriterTest, update_with_doc_argument_updates_struct_field_attributes)
 {
+    allocAttributeWriter();
     auto doc = makeDoc(10,  {{1, 11}, {2, 12}});
     put(10, *doc, 1);
     checkAttrs(1, 10, {{1, 11}, {2, 12}});
