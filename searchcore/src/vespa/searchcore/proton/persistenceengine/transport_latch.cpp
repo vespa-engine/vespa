@@ -32,8 +32,8 @@ TransportMerger::mergeResult(ResultUP result, bool documentWasFound) {
 }
 
 Result::UP
-TransportMerger::merge(ResultUP accum, ResultUP incomming, bool documentWasFound) {
-    return documentWasFound ? std::move(incomming) : std::move(accum);
+TransportMerger::merge(ResultUP accum, ResultUP incoming, bool documentWasFound) {
+    return documentWasFound ? std::move(incoming) : std::move(accum);
 }
 
 void
@@ -100,9 +100,9 @@ AsyncTransportContext::send(ResultUP result, bool documentWasFound)
 }
 
 Result::UP
-AsyncRemoveTransportContext::merge(ResultUP accum, ResultUP incomming, bool) {
+AsyncRemoveTransportContext::merge(ResultUP accum, ResultUP incoming, bool) {
     // TODO This can be static cast if necessary.
-    dynamic_cast<RemoveResult *>(accum.get())->inc_num_removed(dynamic_cast<RemoveResult *>(incomming.get())->num_removed());
+    dynamic_cast<RemoveResult *>(accum.get())->inc_num_removed(dynamic_cast<RemoveResult *>(incoming.get())->num_removed());
     return accum;
 }
 

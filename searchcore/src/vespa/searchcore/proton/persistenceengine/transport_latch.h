@@ -23,7 +23,7 @@ protected:
     ~TransportMerger() override;
     void mergeResult(ResultUP result, bool documentWasFound);
     virtual void completeIfDone() { } // Called with lock held if necessary on every merge
-    virtual ResultUP merge(ResultUP accum, ResultUP incomming, bool documentWasFound);
+    virtual ResultUP merge(ResultUP accum, ResultUP incoming, bool documentWasFound);
     ResultUP  _result;
 
 private:
@@ -77,7 +77,7 @@ class AsyncRemoveTransportContext : public AsyncTransportContext {
 public:
     using AsyncTransportContext::AsyncTransportContext;
 protected:
-    ResultUP merge(ResultUP accum, ResultUP incomming, bool documentWasFound) override;
+    ResultUP merge(ResultUP accum, ResultUP incoming, bool documentWasFound) override;
 };
 
 }
