@@ -625,13 +625,13 @@ public class ControllerTest {
                 .instances("beta,main")
                 .region("us-west-1")
                 .region("us-east-3")
-                .applicationEndpoint("a", "qrs", "us-west-1",
+                .applicationEndpoint("a", "default", "us-west-1",
                                      Map.of(InstanceName.from("beta"), 2,
                                             InstanceName.from("main"), 8))
-                .applicationEndpoint("b", "qrs", "us-west-1",
+                .applicationEndpoint("b", "default", "us-west-1",
                                      Map.of(InstanceName.from("beta"), 1,
                                             InstanceName.from("main"), 1))
-                .applicationEndpoint("c", "qrs", "us-east-3",
+                .applicationEndpoint("c", "default", "us-east-3",
                                      Map.of(InstanceName.from("beta"), 4,
                                             InstanceName.from("main"), 6))
                 .build();
@@ -644,7 +644,7 @@ public class ControllerTest {
                                                                      usEast, List.of("c--app1--tenant1.us-east-3-r.vespa.oath.cloud"));
         deploymentEndpoints.forEach((zone, endpointNames) -> {
             assertEquals("Endpoint names are passed to config server in " + zone,
-                         Set.of(new ContainerEndpoint("qrs", "application",
+                         Set.of(new ContainerEndpoint("default", "application",
                                                       endpointNames)),
                          tester.configServer().containerEndpoints().get(zone));
         });
