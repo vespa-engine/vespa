@@ -517,30 +517,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     }
 }
 
-
-void
-DocumentDB::performDropFeedView(IFeedView::SP feedView)
-{
-    // Delays when feed view is dropped.
-    assert(_writeService.master().isCurrentThread());
-    _writeService.attributeFieldWriter().sync_all();
-    _writeService.summary().sync();
-
-    // Feed view is kept alive in the closure's shared ptr.
-    _writeService.index().execute(makeLambdaTask([this, feedView] () { performDropFeedView2(feedView); }));
-}
-
-
-void
-DocumentDB::performDropFeedView2(IFeedView::SP feedView) {
-    // Delays when feed view is dropped.
-    assert(_writeService.index().isCurrentThread());
-    _writeService.indexFieldInverter().sync_all();
-    _writeService.indexFieldWriter().sync_all();
-    masterExecute([feedView]() { (void) feedView; });
-}
-
-
 void
 DocumentDB::tearDownReferences()
 {
@@ -922,10 +898,6 @@ DocumentDB::syncFeedView()
     _feedHandler->setActiveFeedView(newFeedView.get());
     _subDBs.createRetrievers();
     _subDBs.maintenanceSync(_maintenanceController);
-
-    // Ensure that old feed view is referenced until all index executor tasks
-    // depending on it has completed.
-    performDropFeedView(oldFeedView);
 }
 
 bool
