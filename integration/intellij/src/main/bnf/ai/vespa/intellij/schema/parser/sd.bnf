@@ -182,7 +182,7 @@ ArgumentDefinition ::= IdentifierVal
 
 SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierVal)? '{' RankFeature* '}'))
 
-MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ('{' RankFeature* '}'))
+MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ((inherits IdentifierVal)? '{' RankFeature* '}'))
 
 RankFeaturesDefinition ::= rank-features ((':' RankFeature+) | ('{' RankFeature* '}'))
 
@@ -250,15 +250,15 @@ StructFieldBodyOptions ::= IndexingDefinition | AttributeDefinition | MatchDefin
                            StructFieldDefinition | SummaryDefinition            
 // Match
 MatchDefinition ::= match ((':' MatchProperty) | ('{' MatchProperty+ '}'))
-MatchProperty ::= text | exact | (exact-terminator ':' STRING_REG) | word | prefix | cased | uncased | substring | 
+MatchProperty ::= text | token | exact | (exact-terminator ':' STRING_REG) | word | prefix | cased | uncased | substring |
                   suffix | (max-length ':' INTEGER_REG) | gram | (gram-size ':' INTEGER_REG) | WordWrapper
 // Indexing
 IndexingDefinition ::= indexing ((':' IndexingStatement) | ('{' IndexingStatement+ '}'))
-IndexingStatement ::= IndexingStatementOptions ((('|' | ';') IndexingStatementOptions)*)
+IndexingStatement ::= IndexingStatementOptions (('|' IndexingStatementOptions)*) (';')?
                       // Does not support zero-or-one occurrences
 IndexingStatementOptions ::= summary | attribute | index | set_language | lowercase | (input (IdentifierVal | IndexingStuff)+) | 
                              ('{' IndexingStatementOptions '}') | IndexingStuff+
-private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | ('{' IndexingStatementOptions+ '}') |
+private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | ('{' IndexingStatement '}') |
                           ':' | ('|' IndexingStatementOptions) | ';' | '.' | '(' | ')' | ARITHMETIC_OPERATOR | COMPARISON_OPERATOR
 // Attribute
 AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (ComplexAttributeProperty | SimpleAttributeProperty)+ '}'))
