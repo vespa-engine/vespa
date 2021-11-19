@@ -23,6 +23,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attributemanager");
@@ -168,31 +169,32 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
                                              const Spec &newSpec,
                                              Spec::AttributeList &toBeAdded)
 {
-    std::vector<std::unique_ptr<vespalib::Gate>> gates;
-    for (const auto &aspec : newSpec.getAttributes()) {
-        AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
-        if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
-            LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %" PRIu64 " from current manager",
-                       av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
-            auto wrap = currMgr.findFlushable(aspec.getName());
-            assert(wrap != nullptr);
-            auto shrinker = wrap->getShrinker();
-            assert(shrinker);
-            addAttribute(AttributeWrap::normalAttribute(av), shrinker);
-            auto id = _attributeFieldWriter.getExecutorIdFromName(av->getNamePrefix());
-            auto cfg = aspec.getConfig();
-            gates.push_back(std::make_unique<vespalib::Gate>());
-            _attributeFieldWriter.execute(id, [av, cfg, gate = gates.back().get()]() {
-                av->update_config(cfg);
-                gate->countDown();
-            });
-        } else {
-            toBeAdded.push_back(aspec);
+    vespalib::Gate gate;
+    {
+        auto gateCallback = std::make_shared<vespalib::GateCallback>(gate);
+        for (const auto &aspec: newSpec.getAttributes()) {
+            AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
+            if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
+                LOG(debug,
+                    "Transferring attribute vector '%s' with %u docs and serial number %" PRIu64 " from current manager",
+                    av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
+                auto wrap = currMgr.findFlushable(aspec.getName());
+                assert(wrap != nullptr);
+                auto shrinker = wrap->getShrinker();
+                assert(shrinker);
+                addAttribute(AttributeWrap::normalAttribute(av), shrinker);
+                auto id = _attributeFieldWriter.getExecutorIdFromName(av->getNamePrefix());
+                auto cfg = aspec.getConfig();
+                _attributeFieldWriter.execute(id, [av, cfg, gateCallback]() {
+                    (void) gateCallback;
+                    av->update_config(cfg);
+                });
+            } else {
+                toBeAdded.push_back(aspec);
+            }
         }
     }
-    for (auto & gate : gates) {
-        gate->await();
-    }
+    gate.await();
 }
 
 void
