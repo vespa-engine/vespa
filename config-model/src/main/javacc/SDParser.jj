@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// --------------------------------------------------------------------------------
+
+// Schema parser.
 //
-// JavaCC options. When this file is changed, run "mvn generate-sources" to rebuild
-// the parser classes.
-//
-// --------------------------------------------------------------------------------
+// NOTE: When this is changed, also change integration/intellij/src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf
+
 options {
     UNICODE_INPUT = true;
     CACHE_TOKENS  = false;
@@ -15,11 +14,6 @@ options {
     USER_CHAR_STREAM = true;
 }
 
-// --------------------------------------------------------------------------------
-//
-// Parser body.
-//
-// --------------------------------------------------------------------------------
 PARSER_BEGIN(SDParser)
 
 package com.yahoo.searchdefinition.parser;
