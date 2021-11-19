@@ -11,9 +11,9 @@ import java.util.stream.Stream;
 
 public class PlanRegistryMock implements PlanRegistry {
 
-    public static final Plan freeTrial = new MockPlan("trial", false, 0, 0, 0, 200, "Free Trial - for testing purposes");
-    public static final Plan paidPlan  = new MockPlan("paid", true, "0.09", "0.009", "0.0003", 500, "Paid Plan - for testing purposes");
-    public static final Plan nonePlan  = new MockPlan("none", false, 0, 0, 0, 0, "None Plan - for testing purposes");
+    public static final Plan freeTrial = new MockPlan("trial", false, false, 0, 0, 0, 200, "Free Trial - for testing purposes");
+    public static final Plan paidPlan  = new MockPlan("paid", true, true, "0.09", "0.009", "0.0003", 500, "Paid Plan - for testing purposes");
+    public static final Plan nonePlan  = new MockPlan("none", false, false, 0, 0, 0, 0, "None Plan - for testing purposes");
 
     @Override
     public Plan defaultPlan() {
@@ -33,18 +33,20 @@ public class PlanRegistryMock implements PlanRegistry {
         private final CostCalculator costCalculator;
         private final QuotaCalculator quotaCalculator;
         private final boolean billed;
+        private final boolean supported;
 
-        public MockPlan(String planId, boolean billed, double cpuPrice, double memPrice, double dgbPrice, int quota, String description) {
-            this(PlanId.from(planId), billed, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> Quota.unlimited().withBudget(quota), description);
+        public MockPlan(String planId, boolean billed, boolean supported, double cpuPrice, double memPrice, double dgbPrice, int quota, String description) {
+            this(PlanId.from(planId), billed, supported, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> Quota.unlimited().withBudget(quota), description);
         }
 
-        public MockPlan(String planId, boolean billed, String cpuPrice, String memPrice, String dgbPrice, int quota, String description) {
-            this(PlanId.from(planId), billed, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> Quota.unlimited().withBudget(quota), description);
+        public MockPlan(String planId, boolean billed, boolean supported, String cpuPrice, String memPrice, String dgbPrice, int quota, String description) {
+            this(PlanId.from(planId), billed, supported, new MockCostCalculator(cpuPrice, memPrice, dgbPrice), () -> Quota.unlimited().withBudget(quota), description);
         }
 
-        public MockPlan(PlanId planId, boolean billed, MockCostCalculator calculator, QuotaCalculator quota, String description) {
+        public MockPlan(PlanId planId, boolean billed, boolean supported, MockCostCalculator calculator, QuotaCalculator quota, String description) {
             this.planId = planId;
             this.billed = billed;
+            this.supported = supported;
             this.costCalculator = calculator;
             this.quotaCalculator = quota;
             this.description = description;
@@ -73,6 +75,11 @@ public class PlanRegistryMock implements PlanRegistry {
         @Override
         public boolean isBilled() {
             return billed;
+        }
+
+        @Override
+        public boolean isSupported() {
+            return supported;
         }
     }
 
