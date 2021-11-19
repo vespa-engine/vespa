@@ -69,6 +69,7 @@ import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessGrant;
@@ -1868,13 +1869,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void assertGlobalRouting(DeploymentId deployment, RoutingStatus.Value value, RoutingStatus.Agent agent) {
-        var changedAt = tester.controller().clock().instant();
-        var westPolicies = tester.controller().routing().policies().get(deployment);
-        assertEquals(1, westPolicies.size());
-        var westPolicy = westPolicies.values().iterator().next();
-        assertEquals(value, westPolicy.status().routingStatus().value());
-        assertEquals(agent, westPolicy.status().routingStatus().agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), westPolicy.status().routingStatus().changedAt());
+        Instant changedAt = tester.controller().clock().instant();
+        DeploymentRoutingContext context = tester.controller().routing().of(deployment);
+        RoutingStatus status = context.routingStatus();
+        assertEquals(value, status.value());
+        assertEquals(agent, status.agent());
+        assertEquals(changedAt.truncatedTo(ChronoUnit.SECONDS), status.changedAt());
     }
 
     private static class RequestBuilder implements Supplier<Request> {

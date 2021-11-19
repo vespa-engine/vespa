@@ -41,15 +41,16 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
@@ -477,12 +478,12 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
-        var endpoints = controller.routing().readZoneEndpointsOf(Set.of(new DeploymentId(id, zone)));
+        DeploymentId deployment = new DeploymentId(id, zone);
+        Map<ZoneId, List<Endpoint>> endpoints = controller.routing().readZoneEndpointsOf(Set.of(deployment));
         if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
             return false;
         }
-        var policies = controller.routing().policies().get(new DeploymentId(id, zone));
         for (var endpoint : endpoints.get(zone)) {
             HostName endpointName = HostName.from(endpoint.dnsName());
             var ipAddress = controller.jobController().cloud().resolveHostName(endpointName);
@@ -490,10 +491,10 @@ public class InternalStepRunner implements StepRunner {
                 logger.log(INFO, "DNS lookup yielded no IP address for '" + endpointName + "'.");
                 return false;
             }
-            if (endpoint.routingMethod() == RoutingMethod.exclusive)  {
-                var policy = policies.get(new RoutingPolicyId(id, ClusterSpec.Id.from(endpoint.name()), zone));
-                if (policy == null)
-                    throw new IllegalStateException(endpoint + " has no matching policy in " + policies);
+            DeploymentRoutingContext context = controller.routing().of(deployment);
+            if (context.routingMethod() == RoutingMethod.exclusive)  {
+                RoutingPolicy policy = context.routingPolicy(ClusterSpec.Id.from(endpoint.name()))
+                                              .orElseThrow(() -> new IllegalStateException(endpoint + " has no matching policy"));
 
                 var cNameValue = controller.jobController().cloud().resolveCname(endpointName);
                 if ( ! cNameValue.map(policy.canonicalName()::equals).orElse(false)) {

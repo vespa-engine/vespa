@@ -351,6 +351,7 @@ public class ApplicationController {
 
         TenantAndApplicationId applicationId = TenantAndApplicationId.from(job.application());
         ZoneId zone = job.type().zone(controller.system());
+        DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         try (Lock deploymentLock = lockForDeployment(job.application(), zone)) {
             Set<ContainerEndpoint> containerEndpoints;
@@ -364,7 +365,7 @@ public class ApplicationController {
 
             Version platform = run.versions().sourcePlatform().filter(__ -> deploySourceVersions).orElse(run.versions().targetPlatform());
             ApplicationVersion revision = run.versions().sourceApplication().filter(__ -> deploySourceVersions).orElse(run.versions().targetApplication());
-            ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(new DeploymentId(job.application(), zone), revision));
+            ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(deployment, revision));
 
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
@@ -376,8 +377,7 @@ public class ApplicationController {
                     applicationPackage = applicationPackage.withTrustedCertificate(run.testerCertificate().get());
 
                 endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone, applicationPackage.deploymentSpec());
-
-                containerEndpoints = controller.routing().containerEndpointsOf(application, job.application().instance(), zone);
+                containerEndpoints = controller.routing().of(deployment).prepare(application);
 
             } // Release application lock while doing the deployment, which is a lengthy task.
 
@@ -391,7 +391,7 @@ public class ApplicationController {
             // For direct deployments use the full deployment ID, but otherwise use just the tenant and application as
             // the source since it's the same application, so it should have the same warnings
             NotificationSource source = zone.environment().isManuallyDeployed() ?
-                    NotificationSource.from(new DeploymentId(job.application(), zone)) : NotificationSource.from(applicationId);
+                    NotificationSource.from(deployment) : NotificationSource.from(applicationId);
             List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
                     .map(logs -> logs.stream()
                             .filter(log -> log.applicationPackage)
@@ -476,6 +476,7 @@ public class ApplicationController {
                                   ZoneId zone, Version platform, Set<ContainerEndpoint> endpoints,
                                   Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                                   boolean dryRun) {
+        DeploymentId deployment = new DeploymentId(application, zone);
         try {
             Optional<DockerImage> dockerImageRepo = Optional.ofNullable(
                     dockerImageRepoFlag
@@ -490,7 +491,7 @@ public class ApplicationController {
                     .map(tenant -> ((AthenzTenant)tenant).domain());
 
             if (zone.environment().isManuallyDeployed())
-                controller.applications().applicationStore().putMeta(new DeploymentId(application, zone),
+                controller.applications().applicationStore().putMeta(deployment,
                                                                      clock.instant(),
                                                                      applicationPackage.metaDataZip());
 
@@ -502,9 +503,9 @@ public class ApplicationController {
                     .filter(tenant-> tenant instanceof CloudTenant)
                     .map(tenant -> ((CloudTenant) tenant).tenantSecretStores())
                     .orElse(List.of());
-            List<X509Certificate> operatorCertificates = controller.supportAccess().activeGrantsFor(new DeploymentId(application, zone)).stream()
-                    .map(SupportAccessGrant::certificate)
-                    .collect(toList());
+            List<X509Certificate> operatorCertificates = controller.supportAccess().activeGrantsFor(deployment).stream()
+                                                                   .map(SupportAccessGrant::certificate)
+                                                                   .collect(toList());
 
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
@@ -515,10 +516,10 @@ public class ApplicationController {
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {
-            // Even if prepare fails, a load balancer may have been provisioned. Always refresh routing policies so that
-            // any DNS updates can be propagated as early as possible.
-            if ( ! application.instance().isTester())
-                controller.routing().policies().refresh(application, applicationPackage.deploymentSpec(), zone);
+            // Even if prepare fails, routing configuration may need to be updated
+            if ( ! application.instance().isTester()) {
+                controller.routing().of(deployment).configure(applicationPackage.deploymentSpec());
+            }
         }
     }
 
@@ -702,7 +703,7 @@ public class ApplicationController {
         try {
             configServer.deactivate(id);
         } finally {
-            controller.routing().policies().refresh(application.get().id().instance(instanceName), application.get().deploymentSpec(), zone);
+            controller.routing().of(id).configure(application.get().deploymentSpec());
             if (zone.environment().isManuallyDeployed())
                 applicationStore.putMetaTombstone(id, clock.instant());
             if (!zone.environment().isTest())

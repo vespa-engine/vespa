@@ -50,9 +50,10 @@ public class EndpointStatus {
     }
 
     /**
-     * @return The epoch for when this status became active
+     * @return The epoch for when this status became active, in seconds
      */
     public long getEpoch() {
         return epoch;
     }
+
 }

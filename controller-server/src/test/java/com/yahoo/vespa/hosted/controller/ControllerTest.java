@@ -19,7 +19,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
@@ -40,6 +39,8 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Test;
 
@@ -214,22 +215,18 @@ public class ControllerTest {
 
         // Check initial rotation status
         var deployment1 = context.deploymentIdIn(zone1);
-        var status1 = tester.controller().routing().globalRotationStatus(deployment1);
-        assertEquals(1, status1.size());
-        assertTrue("All upstreams are in", status1.values().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.in));
+        DeploymentRoutingContext routingContext = tester.controller().routing().of(deployment1);
+        RoutingStatus status1 = routingContext.routingStatus();
+        assertEquals(RoutingStatus.Value.in, status1.value());
 
         // Set the deployment out of service in the global rotation
-        var newStatus = new EndpointStatus(EndpointStatus.Status.out, "unit-test", ControllerTest.class.getSimpleName(), tester.clock().instant().getEpochSecond());
-        tester.controller().routing().setGlobalRotationStatus(deployment1, newStatus);
-        status1 = tester.controller().routing().globalRotationStatus(deployment1);
-        assertEquals(1, status1.size());
-        assertTrue("All upstreams are out", status1.values().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.out));
-        assertTrue("Reason is set", status1.values().stream().allMatch(es -> es.getReason().equals("unit-test")));
+        routingContext.setRoutingStatus(RoutingStatus.Value.out, RoutingStatus.Agent.operator);
+        RoutingStatus status2 = routingContext.routingStatus();
+        assertEquals(RoutingStatus.Value.out, status2.value());
 
         // Other deployment remains in
-        var status2 = tester.controller().routing().globalRotationStatus(context.deploymentIdIn(zone2));
-        assertEquals(1, status2.size());
-        assertTrue("All upstreams are in", status2.values().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.in));
+        RoutingStatus status3 = tester.controller().routing().of(context.deploymentIdIn(zone2)).routingStatus();
+        assertEquals(RoutingStatus.Value.in, status3.value());
     }
 
     @Test
