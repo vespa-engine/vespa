@@ -54,6 +54,7 @@ struct PersistenceProvider
 {
     using BucketSpace = document::BucketSpace;
     using FieldSetSP = std::shared_ptr<document::FieldSet>;
+    using TimeStampAndDocumentId = std::pair<Timestamp, DocumentId>;
 
     virtual ~PersistenceProvider();
 
@@ -168,7 +169,7 @@ struct PersistenceProvider
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
      */
-    virtual void removeAsync(const Bucket&, Timestamp timestamp, const DocumentId& id, Context&, OperationComplete::UP) = 0;
+    virtual void removeAsync(const Bucket&, std::vector<TimeStampAndDocumentId> ids, Context&, OperationComplete::UP) = 0;
 
     /**
      * @see remove()

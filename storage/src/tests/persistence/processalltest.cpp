@@ -41,11 +41,14 @@ TEST_F(ProcessAllHandlerTest, remove_location) {
     AsyncHandler handler(getEnv(), getPersistenceProvider(), _bucketOwnershipNotifier, *_sequenceTaskExecutor, _bucketIdFactory);
     auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
 
+    std::shared_ptr<api::StorageMessage> msg;
+    ASSERT_TRUE(_replySender.queue.getNext(msg, 60s));
+
     EXPECT_EQ("DocEntry(1234, 1, id:mail:testdoctype1:n=4:3619.html)\n"
               "DocEntry(2345, 1, id:mail:testdoctype1:n=4:4008.html)\n",
               dumpBucket(bucketId));
 
-    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(std::move(*tracker).stealReplySP());
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(msg);
     ASSERT_TRUE(reply);
     EXPECT_EQ(2u, reply->documents_removed());
 }
@@ -65,6 +68,9 @@ TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
     auto cmd = std::make_shared<api::RemoveLocationCommand>("testdoctype1.headerval % 2 == 0", bucket);
     auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
 
+    std::shared_ptr<api::StorageMessage> msg;
+    ASSERT_TRUE(_replySender.queue.getNext(msg, 60s));
+
     EXPECT_EQ("DocEntry(100, 1, id:mail:testdoctype1:n=4:3619.html)\n"
               "DocEntry(101, 0, Doc(id:mail:testdoctype1:n=4:33113.html))\n"
               "DocEntry(102, 1, id:mail:testdoctype1:n=4:62608.html)\n"
@@ -77,7 +83,7 @@ TEST_F(ProcessAllHandlerTest, remove_location_document_subset) {
               "DocEntry(109, 0, Doc(id:mail:testdoctype1:n=4:6925.html))\n",
               dumpBucket(bucketId));
 
-    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(std::move(*tracker).stealReplySP());
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(msg);
     ASSERT_TRUE(reply);
     EXPECT_EQ(5u, reply->documents_removed());
 }

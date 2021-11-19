@@ -3,13 +3,13 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/persistence/spi/catchresult.h>
 #include <vespa/persistence/spi/resource_usage_listener.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/document/util/bytebuffer.h>
 #include <vespa/vdslib/state/state.h>
 #include <vespa/vdslib/state/node.h>
 #include <vespa/vdslib/state/nodestate.h>
@@ -18,7 +18,6 @@
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-stor-distribution.h>
-#include <algorithm>
 #include <limits>
 #include <gtest/gtest.h>
 
@@ -794,6 +793,40 @@ TEST_F(ConformanceTest, testRemove)
     EXPECT_EQ(Timestamp(9), getResult.getTimestamp());
     EXPECT_TRUE(getResult.is_tombstone());
     EXPECT_FALSE(getResult.hasDocument());
+}
+
+TEST_F(ConformanceTest, testRemoveMulti)
+{
+    document::TestDocMan testDocMan;
+    _factory->clear();
+    PersistenceProviderUP spi(getSpi(*_factory, testDocMan));
+
+    BucketId bucketId1(8, 0x01);
+    Bucket bucket1(makeSpiBucket(bucketId1));
+    Context context(Priority(0), Trace::TraceLevel(0));
+    spi->createBucket(bucket1, context);
+
+    std::vector<Document::SP> docs;
+    for (size_t i(0); i < 30; i++) {
+        docs.push_back(testDocMan.createRandomDocumentAtLocation(0x01, i));
+    }
+
+    std::vector<PersistenceProvider::TimeStampAndDocumentId> ids;
+    for (size_t i(0); i < docs.size(); i++) {
+        spi->put(bucket1, Timestamp(i), docs[i], context);
+        if (i & 0x1) {
+            ids.emplace_back(Timestamp(i), docs[i]->getId());
+        }
+    }
+
+    auto onDone = std::make_unique<CatchResult>();
+    auto future = onDone->future_result();
+    spi->removeAsync(bucket1, ids, context, std::move(onDone));
+    auto result = future.get();
+    ASSERT_TRUE(result);
+    auto removeResult = dynamic_cast<spi::RemoveResult *>(result.get());
+    ASSERT_TRUE(removeResult != nullptr);
+    EXPECT_EQ(15u, removeResult->num_removed());
 }
 
 TEST_F(ConformanceTest, testRemoveMerge)

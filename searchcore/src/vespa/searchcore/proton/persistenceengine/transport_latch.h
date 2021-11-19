@@ -23,6 +23,7 @@ protected:
     ~TransportMerger() override;
     void mergeResult(ResultUP result, bool documentWasFound);
     virtual void completeIfDone() { } // Called with lock held if necessary on every merge
+    virtual ResultUP merge(ResultUP accum, ResultUP incoming, bool documentWasFound);
     ResultUP  _result;
 
 private:
@@ -47,14 +48,9 @@ public:
     void await() {
         _latch.await();
     }
-    const UpdateResult &getUpdateResult() const {
-        return dynamic_cast<const UpdateResult &>(*_result);
-    }
+
     const Result &getResult() const {
         return *_result;
-    }
-    const RemoveResult &getRemoveResult() const {
-        return dynamic_cast<const RemoveResult &>(*_result);
     }
 
 };
@@ -77,5 +73,11 @@ public:
     void send(ResultUP result, bool documentWasFound) override;
 };
 
-} // namespace proton
+class AsyncRemoveTransportContext : public AsyncTransportContext {
+public:
+    using AsyncTransportContext::AsyncTransportContext;
+protected:
+    ResultUP merge(ResultUP accum, ResultUP incoming, bool documentWasFound) override;
+};
 
+}

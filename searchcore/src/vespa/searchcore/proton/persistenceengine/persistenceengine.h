@@ -88,7 +88,8 @@ private:
     void saveClusterState(BucketSpace bucketSpace, const ClusterState &calc);
     ClusterState::SP savedClusterState(BucketSpace bucketSpace) const;
     std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
-
+    void removeAsyncSingle(const Bucket&, Timestamp, const document::DocumentId &id, OperationComplete::UP);
+    void removeAsyncMulti(const Bucket&, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP);
 public:
     typedef std::unique_ptr<PersistenceEngine> UP;
 
@@ -106,7 +107,7 @@ public:
     void setActiveStateAsync(const Bucket&, BucketInfo::ActiveState, OperationComplete::UP) override;
     BucketInfoResult getBucketInfo(const Bucket&) const override;
     void putAsync(const Bucket &, Timestamp, storage::spi::DocumentSP, Context &context, OperationComplete::UP) override;
-    void removeAsync(const Bucket&, Timestamp, const document::DocumentId&, Context&, OperationComplete::UP) override;
+    void removeAsync(const Bucket&, std::vector<TimeStampAndDocumentId> ids, Context&, OperationComplete::UP) override;
     void updateAsync(const Bucket&, Timestamp, storage::spi::DocumentUpdateSP, Context&, OperationComplete::UP) override;
     GetResult get(const Bucket&, const document::FieldSet&, const document::DocumentId&, Context&) const override;
     CreateIteratorResult
