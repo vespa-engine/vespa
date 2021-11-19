@@ -625,13 +625,13 @@ public class ControllerTest {
                 .instances("beta,main")
                 .region("us-west-1")
                 .region("us-east-3")
-                .applicationEndpoint("a", "qrs", "us-west-1",
+                .applicationEndpoint("a", "default", "us-west-1",
                                      Map.of(InstanceName.from("beta"), 2,
                                             InstanceName.from("main"), 8))
-                .applicationEndpoint("b", "qrs", "us-west-1",
+                .applicationEndpoint("b", "default", "us-west-1",
                                      Map.of(InstanceName.from("beta"), 1,
                                             InstanceName.from("main"), 1))
-                .applicationEndpoint("c", "qrs", "us-east-3",
+                .applicationEndpoint("c", "default", "us-east-3",
                                      Map.of(InstanceName.from("beta"), 4,
                                             InstanceName.from("main"), 6))
                 .build();
@@ -640,11 +640,11 @@ public class ControllerTest {
         // Endpoint names are passed to each deployment
         DeploymentId usWest = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
         DeploymentId usEast = context.deploymentIdIn(ZoneId.from("prod", "us-east-3"));
-        Map<DeploymentId, List<String>> deploymentEndpoints = Map.of(usWest, List.of("a--app1--tenant1.us-west-1-r.vespa.oath.cloud", "b--app1--tenant1.us-west-1-r.vespa.oath.cloud"),
-                                                                     usEast, List.of("c--app1--tenant1.us-east-3-r.vespa.oath.cloud"));
+        Map<DeploymentId, List<String>> deploymentEndpoints = Map.of(usWest, List.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud", "b.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
+                                                                     usEast, List.of("c.app1.tenant1.us-east-3-r.vespa.oath.cloud"));
         deploymentEndpoints.forEach((zone, endpointNames) -> {
             assertEquals("Endpoint names are passed to config server in " + zone,
-                         Set.of(new ContainerEndpoint("qrs", "application",
+                         Set.of(new ContainerEndpoint("default", "application",
                                                       endpointNames)),
                          tester.configServer().containerEndpoints().get(zone));
         });
@@ -653,21 +653,21 @@ public class ControllerTest {
         // DNS records are created for each endpoint
         Set<Record> records = tester.controllerTester().nameService().records();
         assertEquals(Set.of(new Record(Record.Type.CNAME,
-                                       RecordName.from("a--app1--tenant1.us-west-1-r.vespa.oath.cloud"),
+                                       RecordName.from("a.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
                                        RecordData.from("vip.prod.us-west-1.")),
                             new Record(Record.Type.CNAME,
-                                       RecordName.from("b--app1--tenant1.us-west-1-r.vespa.oath.cloud"),
+                                       RecordName.from("b.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
                                        RecordData.from("vip.prod.us-west-1.")),
                             new Record(Record.Type.CNAME,
-                                       RecordName.from("c--app1--tenant1.us-east-3-r.vespa.oath.cloud"),
+                                       RecordName.from("c.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
                                        RecordData.from("vip.prod.us-east-3."))),
                      records);
         List<String> endpointDnsNames = tester.controller().routing().declaredEndpointsOf(context.application())
                                               .scope(Endpoint.Scope.application)
                                               .mapToList(Endpoint::dnsName);
-        assertEquals(List.of("a--app1--tenant1.us-west-1-r.vespa.oath.cloud",
-                             "b--app1--tenant1.us-west-1-r.vespa.oath.cloud",
-                             "c--app1--tenant1.us-east-3-r.vespa.oath.cloud"),
+        assertEquals(List.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud",
+                             "b.app1.tenant1.us-west-1-r.vespa.oath.cloud",
+                             "c.app1.tenant1.us-east-3-r.vespa.oath.cloud"),
                      endpointDnsNames);
     }
 
