@@ -672,9 +672,18 @@ void AttributeWriter::setupAttributeMapping() {
 }
 
 
-AttributeWriter::~AttributeWriter()
-{
-    _attributeFieldWriter.sync_all();
+AttributeWriter::~AttributeWriter() {
+    vespalib::Gate gate;
+    drain(std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
+}
+
+void
+AttributeWriter::drain(OnWriteDoneType onDone) {
+
+    for (const auto &wc : _writeContexts) {
+        _attributeFieldWriter.executeLambda(wc.getExecutorId(), [onDone] () { (void) onDone; });
+    }
 }
 
 std::vector<search::AttributeVector *>

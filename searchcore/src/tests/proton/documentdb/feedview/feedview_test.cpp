@@ -375,6 +375,9 @@ struct MyAttributeWriter : public IAttributeWriter
         ++_commitCount;
         _tracer.traceCommit(attributeAdapterTypeName, param.lastSerialNum());
     }
+    void drain(OnWriteDoneType onDone) override {
+        (void) onDone;
+    }
 
     void onReplayDone(uint32_t ) override { }
     bool hasStructFieldAttribute() const override { return false; }
