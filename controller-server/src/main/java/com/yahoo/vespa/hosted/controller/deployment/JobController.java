@@ -578,16 +578,8 @@ public class JobController {
                });
     }
 
-    // TODO(mpolden): Eliminate duplication in this and ApplicationController#deactivate
     public void deactivateTester(TesterId id, JobType type) {
-        var zone = type.zone(controller.system());
-        try {
-            controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), zone));
-        } finally {
-            // Passing an empty DeploymentSpec here is fine as it's used for registering global endpoint names, and
-            // tester instances have none.
-            controller.routing().policies().refresh(id.id(), DeploymentSpec.empty, zone);
-        }
+        controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
     }
 
     private void prunePackages(TenantAndApplicationId id) {

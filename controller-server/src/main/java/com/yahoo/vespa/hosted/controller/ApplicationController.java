@@ -517,7 +517,8 @@ public class ApplicationController {
         } finally {
             // Even if prepare fails, a load balancer may have been provisioned. Always refresh routing policies so that
             // any DNS updates can be propagated as early as possible.
-            controller.routing().policies().refresh(application, applicationPackage.deploymentSpec(), zone);
+            if ( ! application.instance().isTester())
+                controller.routing().policies().refresh(application, applicationPackage.deploymentSpec(), zone);
         }
     }
 
