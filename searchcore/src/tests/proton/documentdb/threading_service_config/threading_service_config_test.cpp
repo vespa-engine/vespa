@@ -43,7 +43,7 @@ TEST_F("require that indexing threads are set based on cpu cores and feeding con
     TEST_DO(f.assertIndexingThreads(3, 18));
     TEST_DO(f.assertIndexingThreads(4, 19));
     TEST_DO(f.assertIndexingThreads(4, 24));
-    TEST_DO(f.assertIndexingThreads(4, 64)); // Ensure it is capped at 4
+    TEST_DO(f.assertIndexingThreads(11, 64));
 }
 
 TEST_F("require that indexing threads is always >= 1", Fixture(0))
