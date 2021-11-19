@@ -35,3 +35,7 @@ They are not marked as errors.
 Type suggestions should include all primitive types, not just annotations
 
 Even if the parser continues, only the first error in a file is marked.
+
+Aliases with dot does not work.
+
+
