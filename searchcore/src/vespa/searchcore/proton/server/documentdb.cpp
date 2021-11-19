@@ -29,7 +29,6 @@
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -103,6 +102,23 @@ public:
         return _doc_db.getReadySubDB()->getSearchableStats().max_component_size_on_disk();
     }
 };
+
+template<typename T>
+void
+forceCommitAndWait(std::shared_ptr<IFeedView> feedView, SerialNum serialNum, T keepAlive) {
+    vespalib::Gate gate;
+    using Keep = vespalib::KeepAlive<std::pair<T, std::shared_ptr<IDestructorCallback>>>;
+    feedView->forceCommit(CommitParam(serialNum),
+                          std::make_shared<Keep>(std::make_pair(std::move(keepAlive), std::make_shared<GateCallback>(gate))));
+    gate.await();
+}
+
+void
+forceCommitAndWait(std::shared_ptr<IFeedView> feedView, SerialNum serialNum) {
+    vespalib::Gate gate;
+    feedView->forceCommit(CommitParam(serialNum), std::make_shared<GateCallback>(gate));
+    gate.await();
+}
 
 }
 
@@ -469,11 +485,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     }
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
-        vespalib::Gate gate;
-        // Flush changes to attributes and memory index, cf. visibilityDelay
-        _feedView.get()->forceCommit(CommitParam(elidedConfigSave ? serialNum : serialNum - 1),
-                                     std::make_shared<vespalib::KeepAlive<std::pair<FeedHandler::CommitResult, std::shared_ptr<IDestructorCallback>>>>(std::make_pair(std::move(commit_result), std::make_shared<GateCallback>(gate))));
-        gate.await();
+        forceCommitAndWait(_feedView.get(), elidedConfigSave ? serialNum : serialNum - 1, std::move(commit_result));
     }
     if (params.shouldMaintenanceControllerChange()) {
         _maintenanceController.killJobs();
@@ -556,8 +568,11 @@ DocumentDB::close()
     DocumentDBTaggedMetrics &metrics = getMetrics();
     _metricsWireService.cleanAttributes(metrics.ready.attributes);
     _metricsWireService.cleanAttributes(metrics.notReady.attributes);
-    _writeService.sync_all_executors();
-    masterExecute([this] () { closeSubDBs(); } );
+
+    masterExecute([this] () {
+        forceCommitAndWait(_feedView.get(), getCurrentSerialNumber());
+        closeSubDBs();
+    });
     _writeService.sync_all_executors();
     // What about queued tasks ?
     _writeService.shutdown();
@@ -888,7 +903,6 @@ void
 DocumentDB::syncFeedView()
 {
     assert(_writeService.master().isCurrentThread());
-    IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
     _maintenanceController.killJobs();
