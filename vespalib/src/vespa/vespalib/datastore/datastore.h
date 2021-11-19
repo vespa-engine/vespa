@@ -27,6 +27,8 @@ template <typename RefT = EntryRefT<22> >
 class DataStoreT : public DataStoreBase
 {
 private:
+    void free_elem_internal(EntryRef ref, size_t numElems, bool was_held);
+
 public:
     typedef RefT RefType;
 
@@ -49,7 +51,7 @@ public:
     /**
      * Free element(s).
      */
-    void freeElem(EntryRef ref, size_t numElems);
+    void freeElem(EntryRef ref, size_t numElems) { free_elem_internal(ref, numElems, false); }
 
     /**
      * Hold element(s).
