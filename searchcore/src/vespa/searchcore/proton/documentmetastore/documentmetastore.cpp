@@ -690,7 +690,7 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
         bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
         bucketGuard->remove_batch(bdb_removed, _subDbType);
     }
-    ++_changesSinceCommit;
+    incGeneration();
     if (_op_listener) {
         _op_listener->notify_remove_batch();
     }
