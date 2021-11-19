@@ -60,7 +60,7 @@ public class Endpoint {
         this.instance = requireInstance(instanceName, scope);
         this.url = url;
         this.targets = List.copyOf(requireTargets(targets, application, instanceName, scope, certificateName));
-        this.scope = scope;
+        this.scope = requireScope(scope, routingMethod);
         this.legacy = legacy;
         this.routingMethod = routingMethod;
         this.tls = port.tls;
@@ -327,6 +327,11 @@ public class Endpoint {
             if (instanceName.isEmpty()) throw new IllegalArgumentException("Instance must be set for scope " + scope);
         }
         return instanceName;
+    }
+
+    private static Scope requireScope(Scope scope, RoutingMethod routingMethod) {
+        if (scope == Scope.application && !routingMethod.isDirect()) throw new IllegalArgumentException("Routing method " + routingMethod + " does not support " + scope + "-scoped endpoints");
+        return scope;
     }
 
     private static List<Target> requireTargets(List<Target> targets, TenantAndApplicationId application, Optional<InstanceName> instanceName, Scope scope, boolean certificateName) {

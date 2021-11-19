@@ -24,9 +24,9 @@
     {
       "cluster": "foo",
       "tls": true,
-      "url": "https://a0--application1--tenant1.us-central-1-r.vespa.oath.cloud:4443/",
+      "url": "https://a0.application1.tenant1.us-central-1-r.vespa.oath.cloud/",
       "scope": "application",
-      "routingMethod": "shared",
+      "routingMethod": "sharedLayer4",
       "legacy": false
     }
   ],

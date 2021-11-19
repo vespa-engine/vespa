@@ -145,16 +145,17 @@ public class RoutingController {
                                                                      .collect(Collectors.toMap(t -> new DeploymentId(application.id().instance(t.instance()),
                                                                                                                      ZoneId.from(Environment.prod, t.region())),
                                                                                                t -> t.weight()));
-            List<RoutingMethod> availableRoutingMethods = routingMethodsOfAll(deployments.keySet(), deploymentSpec);
-            for (var routingMethod : availableRoutingMethods) {
-                endpoints.add(Endpoint.of(application.id())
-                                      .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
-                                                         ClusterSpec.Id.from(declaredEndpoint.containerId()),
-                                                         deployments)
-                                      .routingMethod(routingMethod)
-                                      .on(Port.fromRoutingMethod(routingMethod))
-                                      .in(controller.system()));
-            }
+            // An application endpoint can only target a single zone, so we just pick the zone of any deployment target
+            ZoneId zone = deployments.keySet().iterator().next().zoneId();
+            // Application endpoints are only supported when using direct routing methods
+            RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
+            endpoints.add(Endpoint.of(application.id())
+                                  .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
+                                                     ClusterSpec.Id.from(declaredEndpoint.containerId()),
+                                                     deployments)
+                                  .routingMethod(routingMethod)
+                                  .on(Port.fromRoutingMethod(routingMethod))
+                                  .in(controller.system()));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -352,6 +353,10 @@ public class RoutingController {
                                                         .removeRecords(Record.Type.CNAME,
                                                                        RecordName.from(endpoint.dnsName()),
                                                                        Priority.normal));
+    }
+
+    private boolean usesSharedRouting(ZoneId zone) {
+        return controller.zoneRegistry().routingMethods(zone).stream().anyMatch(RoutingMethod::isShared);
     }
 
     /** Returns the routing methods that are available across all given deployments */
