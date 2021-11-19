@@ -26,7 +26,7 @@ class DocumentSelectionParser;
 class ExternalOperationHandler;
 class IdealStateManager;
 class IdealStateMetricSet;
-class NodeSupportedFeatures;
+struct NodeSupportedFeatures;
 class Operation;
 class StripeBucketDBUpdater;
 
