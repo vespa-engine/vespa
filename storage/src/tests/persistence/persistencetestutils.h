@@ -115,7 +115,6 @@ public:
 
     void TearDown() override {
         if (_sequenceTaskExecutor) {
-            _sequenceTaskExecutor->sync_all();
             _sequenceTaskExecutor.reset();
         }
         _env.reset();
