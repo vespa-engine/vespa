@@ -108,9 +108,6 @@ public:
     PersistenceTestUtils();
     ~PersistenceTestUtils() override;
 
-    document::Document::SP schedulePut(uint32_t location, spi::Timestamp timestamp, uint32_t minSize = 0, uint32_t maxSize = 128);
-
-    void setupDisks();
     void setupExecutor(uint32_t numThreads);
 
     void TearDown() override {
