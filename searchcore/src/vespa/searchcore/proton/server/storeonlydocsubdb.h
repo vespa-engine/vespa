@@ -146,10 +146,10 @@ protected:
     vespalib::VarHolder<IFeedView::SP>      _iFeedView;
     std::mutex                             &_configMutex;
     HwInfo                                  _hwInfo;
+    const IGetSerialNum                    &_getSerialNum;
 private:
-    const IGetSerialNum             &_getSerialNum;
-    TlsSyncer                        _tlsSyncer;
-    DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
+    TlsSyncer                                  _tlsSyncer;
+    DocumentMetaStoreFlushTarget::SP           _dmsFlushTarget;
     std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
     std::shared_ptr<PendingLidTrackerBase>     _pendingLidsForCommit;
     bool                                       _nodeRetired;
