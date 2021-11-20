@@ -101,7 +101,7 @@ BuildRequires: libarchive
 %if 0%{?_centos_stream}
 BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
 %else
-BuildRequires: (llvm-devel >= 11.0.0 and llvm-devel < 12)
+BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
 %endif
 %else
 BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
@@ -246,7 +246,7 @@ Requires: vespa-gtest = 1.11.0
 %if 0%{?_centos_stream}
 %define _vespa_llvm_version 12
 %else
-%define _vespa_llvm_version 11
+%define _vespa_llvm_version 12
 %endif
 %else
 %define _vespa_llvm_version 10
@@ -375,7 +375,7 @@ Requires: openssl-libs
 %if 0%{?_centos_stream}
 Requires: (llvm-libs >= 12.0.0 and llvm-libs < 13)
 %else
-Requires: (llvm-libs >= 11.0.0 and llvm-libs < 12)
+Requires: (llvm-libs >= 12.0.0 and llvm-libs < 13)
 %endif
 %else
 Requires: (llvm-libs >= 10.0.1 and llvm-libs < 11)
