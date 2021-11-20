@@ -34,7 +34,7 @@ function(setup_vespa_default_build_settings_centos_8)
   if (VESPA_OS_DISTRO_NAME STREQUAL "CentOS Stream")
     set(DEFAULT_VESPA_LLVM_VERSION "12" PARENT_SCOPE)
   else()
-    set(DEFAULT_VESPA_LLVM_VERSION "11" PARENT_SCOPE)
+    set(DEFAULT_VESPA_LLVM_VERSION "12" PARENT_SCOPE)
   endif()
 endfunction()
 
