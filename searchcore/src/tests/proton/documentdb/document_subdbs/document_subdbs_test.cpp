@@ -203,9 +203,9 @@ MyFastAccessContext::~MyFastAccessContext() = default;
 
 struct MySearchableConfig
 {
-    SearchableConfig _cfg;
+    FastAccessConfig _cfg;
     MySearchableConfig()
-        : _cfg(MyFastAccessConfig<false>()._cfg, 1)
+        : _cfg(MyFastAccessConfig<false>()._cfg)
     {
     }
 };
@@ -386,20 +386,20 @@ typedef BaseTraitsT<OneAttrSchema, ConfigDir1> BaseTraits;
 
 struct StoreOnlyTraits : public BaseTraits
 {
-    typedef MyStoreOnlyConfig Config;
-    typedef MyStoreOnlyContext Context;
-    typedef StoreOnlyDocSubDB SubDB;
-    typedef StoreOnlyFeedView FeedView;
+    using Config = MyStoreOnlyConfig;
+    using Context = MyStoreOnlyContext;
+    using SubDB = StoreOnlyDocSubDB;
+    using FeedView = StoreOnlyFeedView;
 };
 
 typedef FixtureBase<StoreOnlyTraits> StoreOnlyFixture;
 
 struct FastAccessTraits : public BaseTraits
 {
-    typedef MyFastAccessConfig<false> Config;
-    typedef MyFastAccessContext Context;
-    typedef FastAccessDocSubDB SubDB;
-    typedef FastAccessFeedView FeedView;
+    using Config = MyFastAccessConfig<false>;
+    using Context = MyFastAccessContext;
+    using SubDB = FastAccessDocSubDB;
+    using FeedView = FastAccessFeedView;
 };
 
 typedef FixtureBase<FastAccessTraits> FastAccessFixture;
@@ -407,10 +407,10 @@ typedef FixtureBase<FastAccessTraits> FastAccessFixture;
 template <typename ConfigDirT>
 struct FastAccessOnlyTraitsBase : public BaseTraitsT<TwoAttrSchema, ConfigDirT>
 {
-    typedef MyFastAccessConfig<true> Config;
-    typedef MyFastAccessContext Context;
-    typedef FastAccessDocSubDB SubDB;
-    typedef FastAccessFeedView FeedView;
+    using Config = MyFastAccessConfig<true>;
+    using Context = MyFastAccessContext;
+    using SubDB = FastAccessDocSubDB;
+    using FeedView = FastAccessFeedView;
 };
 
 // Setup with 1 fast-access attribute
@@ -420,10 +420,10 @@ typedef FixtureBase<FastAccessOnlyTraits> FastAccessOnlyFixture;
 template <typename SchemaT, typename ConfigDirT>
 struct SearchableTraitsBase : public BaseTraitsT<SchemaT, ConfigDirT>
 {
-    typedef MySearchableConfig Config;
-    typedef MySearchableContext Context;
-    typedef SearchableDocSubDB SubDB;
-    typedef proton::SearchableFeedView FeedView;
+    using Config = MySearchableConfig;
+    using Context = MySearchableContext;
+    using SubDB = SearchableDocSubDB;
+    using FeedView = proton::SearchableFeedView;
 };
 
 typedef SearchableTraitsBase<OneAttrSchema, ConfigDir1> SearchableTraits;

@@ -29,7 +29,7 @@ using namespace searchcorespi;
 namespace proton {
 
 SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
-    : FastAccessDocSubDB(cfg._fastUpdCfg, ctx._fastUpdCtx),
+    : FastAccessDocSubDB(cfg, ctx._fastUpdCtx),
       IIndexManager::Reconfigurer(),
       _indexMgr(),
       _indexWriter(),
