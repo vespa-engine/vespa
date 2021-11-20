@@ -39,15 +39,6 @@ SearchableDocSubDB : public FastAccessDocSubDB,
 
 {
 public:
-    struct Config {
-        const FastAccessDocSubDB::Config _fastUpdCfg;
-        const size_t _numSearcherThreads;
-
-        Config(const FastAccessDocSubDB::Config &fastUpdCfg, size_t numSearcherThreads)
-            : _fastUpdCfg(fastUpdCfg),
-              _numSearcherThreads(numSearcherThreads)
-        { }
-    };
 
     struct Context {
         const FastAccessDocSubDB::Context  _fastUpdCtx;

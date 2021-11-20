@@ -58,13 +58,6 @@ public:
     using SubDBVector = std::vector<IDocumentSubDB *>;
     using const_iterator = SubDBVector::const_iterator;
     using SerialNum = search::SerialNum;
-    class Config {
-    public:
-        Config(size_t numSearchThreads);
-        size_t getNumSearchThreads() const noexcept { return _numSearchThreads; }
-    private:
-        const size_t       _numSearchThreads;
-    };
 
 private:
     using IFeedViewSP = std::shared_ptr<IFeedView>;
@@ -99,7 +92,6 @@ public:
             const vespalib::Clock &clock,
             std::mutex &configMutex,
             const vespalib::string &baseDir,
-            const Config & cfg,
             const HwInfo &hwInfo);
     ~DocumentSubDBCollection();
 
