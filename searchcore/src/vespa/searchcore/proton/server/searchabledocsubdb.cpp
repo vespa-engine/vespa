@@ -16,6 +16,7 @@
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 
 using vespa::config::search::RankProfilesConfig;
 using proton::matching::MatchingStats;
@@ -244,7 +245,10 @@ SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure)
 {
     assert(_writeService.master().isCurrentThread());
 
-    _writeService.sync_all_executors();
+    vespalib::Gate gate;
+    StoreOnlyDocSubDB::getFeedView()->forceCommit(search::CommitParam(_getSerialNum.getSerialNum()),
+                                                  std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
 
     // Everything should be quiet now.
 
