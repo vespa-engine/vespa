@@ -165,9 +165,6 @@ public:
     void commit() {
         runInMaster([&] () { cycleLids(_lidReuseDelayer->getReuseLids()); });
     }
-
-    void sync() { _writeService.sync_all_executors(); }
-
 };
 
 TEST_F("require that nothing happens before free list is active", Fixture)
