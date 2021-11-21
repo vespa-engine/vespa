@@ -14,6 +14,7 @@
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -245,8 +246,11 @@ struct FixtureBase {
     }
 
     void force_commit() {
-        runInMaster([this] () { static_cast<IFeedView&>(*feedview).forceCommit(serial_num); });
-        writeService.sync_all_executors();
+        vespalib::Gate gate;
+        runInMaster([this, &gate] () {
+            feedview->forceCommit(search::CommitParam(serial_num), std::make_shared<vespalib::GateCallback>(gate));
+        });
+        gate.await();
     }
 };
 
