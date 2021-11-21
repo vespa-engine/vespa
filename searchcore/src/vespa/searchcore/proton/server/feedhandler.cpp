@@ -303,9 +303,7 @@ void
 FeedHandler::performEof()
 {
     assert(_writeService.master().isCurrentThread());
-    vespalib::Gate gate;
-    _activeFeedView->forceCommit(CommitParam(_serialNum), std::make_shared<vespalib::GateCallback>(gate));
-    gate.await();
+    _activeFeedView->forceCommitAndWait(CommitParam(_serialNum));
     LOG(debug, "Visiting done for transaction log domain '%s', eof received", _tlsMgr.getDomainName().c_str());
     // Replay must be complete
     if (_replay_end_serial_num != _serialNum) {
