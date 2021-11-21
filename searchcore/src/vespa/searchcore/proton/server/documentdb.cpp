@@ -113,13 +113,6 @@ forceCommitAndWait(std::shared_ptr<IFeedView> feedView, SerialNum serialNum, T k
     gate.await();
 }
 
-void
-forceCommitAndWait(std::shared_ptr<IFeedView> feedView, SerialNum serialNum) {
-    vespalib::Gate gate;
-    feedView->forceCommit(CommitParam(serialNum), std::make_shared<GateCallback>(gate));
-    gate.await();
-}
-
 }
 
 template <typename FunctionType>
@@ -392,12 +385,8 @@ DocumentDB::enterOnlineState()
 {
     // Called by executor thread
     assert(_writeService.master().isCurrentThread());
-    {
-        vespalib::Gate gate;
-        // Ensure that all replayed operations are committed to memory structures
-        _feedView.get()->forceCommit(CommitParam(_feedHandler->getSerialNum()), std::make_shared<GateCallback>(gate));
-        gate.await();
-    }
+    // Ensure that all replayed operations are committed to memory structures
+    _feedView.get()->forceCommitAndWait(CommitParam(_feedHandler->getSerialNum()));
 
     (void) _state.enterOnlineState();
     // Consider delayed pruning of transaction log and config history
@@ -568,7 +557,7 @@ DocumentDB::close()
     _metricsWireService.cleanAttributes(metrics.notReady.attributes);
 
     masterExecute([this] () {
-        forceCommitAndWait(_feedView.get(), getCurrentSerialNumber());
+        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber()));
         closeSubDBs();
     });
     _writeService.sync_all_executors();
