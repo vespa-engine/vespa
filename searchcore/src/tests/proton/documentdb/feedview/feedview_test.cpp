@@ -418,16 +418,6 @@ struct MyTransport : public feedtoken::ITransport
 MyTransport::MyTransport(MyTracer &tracer) : lastResult(), _gate(), _tracer(tracer) {}
 MyTransport::~MyTransport() = default;
 
-struct MyResultHandler : public IGenericResultHandler
-{
-    vespalib::Gate _gate;
-    MyResultHandler() : _gate() {}
-    void handle(const storage::spi::Result &) override {
-        _gate.countDown();
-    }
-    void await() { _gate.await(); }
-};
-
 struct SchemaContext
 {
     Schema::SP                _schema;
@@ -449,7 +439,6 @@ SchemaContext::SchemaContext() :
     _builder.reset(new DocBuilder(*_schema));
 }
 SchemaContext::~SchemaContext() = default;
-
 
 struct DocumentContext
 {
@@ -513,14 +502,6 @@ struct FixtureBase
     FixtureBase();
 
     virtual ~FixtureBase();
-
-    void syncMaster() {
-        _writeService.master().sync();
-    }
-
-    void sync() {
-        _writeServiceReal.sync_all_executors();
-    }
 
     const test::DocumentMetaStoreObserver &metaStoreObserver() {
         return _dmsc->getObserver();

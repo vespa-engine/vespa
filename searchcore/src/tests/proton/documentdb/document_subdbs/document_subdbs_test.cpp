@@ -353,9 +353,7 @@ struct FixtureBase
         }
         _subDb.onReprocessDone(serialNum);
     }
-    void sync() {
-        _writeService.master().sync();
-    }
+
     proton::IAttributeManager::SP getAttributeManager() {
         return _subDb.getAttributeManager();
     }
