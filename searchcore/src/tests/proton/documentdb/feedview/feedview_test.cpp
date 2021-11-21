@@ -518,10 +518,6 @@ struct FixtureBase
         _writeService.master().sync();
     }
 
-    void syncIndex() {
-        _writeService.sync_all_executors();
-    }
-
     void sync() {
         _writeServiceReal.sync_all_executors();
     }
@@ -1153,7 +1149,7 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 6, 6, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(7, 7, 7, f.writeServiceObserver()));
     EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1171,7 +1167,7 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
     op.setSerialNum(0);
     f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(6, 5, 4, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(6, 6, 5, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
