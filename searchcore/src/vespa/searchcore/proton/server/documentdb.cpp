@@ -542,8 +542,10 @@ DocumentDB::close()
     }
     // Abort any ongoing maintenance
     stopMaintenance();
-    _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
-    masterExecute([this]() { tearDownReferences(); });
+    masterExecute([this]() {
+        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber()));
+        tearDownReferences();
+    });
     _writeService.master().sync();
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.
@@ -963,7 +965,6 @@ void
 DocumentDB::stopMaintenance()
 {
     _maintenanceController.stop();
-    _writeService.sync_all_executors();
 }
 
 void
