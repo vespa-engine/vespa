@@ -185,13 +185,13 @@ struct MyFeedView : public test::DummyFeedView {
     int remove_count;
     int move_count;
     int prune_removed_count;
+    
     int update_count;
     SerialNum update_serial;
     const DocumentType *documentType;
     MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &dtr,
                const DocTypeName &docTypeName);
     ~MyFeedView() override;
-    void resetPutLatch(uint32_t count) { putLatch = std::make_unique<vespalib::CountDownLatch>(count); }
     void preparePut(PutOperation &op) override {
         prepareDocumentOperation(op, op.getDocument()->getId().getGlobalId());
     }
@@ -389,16 +389,6 @@ FeedTokenContext::FeedTokenContext()
 
 FeedTokenContext::~FeedTokenContext() = default;
 
-struct PutContext {
-    FeedTokenContext tokenCtx;
-    DocumentContext  docCtx;
-    typedef std::shared_ptr<PutContext> SP;
-    PutContext(const vespalib::string &docId, DocBuilder &builder) :
-        tokenCtx(),
-        docCtx(docId, builder)
-    {}
-};
-
 struct MyTlsWriter : TlsWriter {
     int store_count;
     int erase_count;
@@ -455,39 +445,17 @@ struct FeedHandlerFixture
     }
 
     ~FeedHandlerFixture() {
-        writeService.sync_all_executors();
+        writeService.shutdown();
     }
     template <class FunctionType>
     inline void runAsMaster(FunctionType &&function) {
         writeService.master().execute(makeLambdaTask(std::move(function)));
-        writeService.master().sync();
+        syncMaster();
     }
     void syncMaster() {
         writeService.master().sync();
     }
 };
-
-
-struct MyConfigStore : ConfigStore {
-    SerialNum getBestSerialNum() const override { return 1; }
-    SerialNum getOldestSerialNum() const override { return 1; }
-    void saveConfig(const DocumentDBConfig &, SerialNum) override {}
-    void loadConfig(const DocumentDBConfig &, SerialNum, DocumentDBConfig::SP &) override {}
-    void removeInvalid() override {}
-    void prune(SerialNum) override {}
-    bool hasValidSerial(SerialNum) const override { return true; }
-    SerialNum getPrevValidSerial(SerialNum) const override { return 1; }
-    void serializeConfig(SerialNum, vespalib::nbostream &) override {}
-    void deserializeConfig(SerialNum, vespalib::nbostream &) override {}
-    void setProtonConfig(const ProtonConfigSP &) override { }
-};
-
-
-struct ReplayTransactionLogContext {
-    MyConfigStore config_store;
-    DocumentDBConfig::SP cfgSnap;
-};
-
 
 TEST_F("require that heartBeat calls FeedView's heartBeat",
        FeedHandlerFixture)
