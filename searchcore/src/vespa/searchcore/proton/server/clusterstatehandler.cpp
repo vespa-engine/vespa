@@ -27,6 +27,7 @@ private:
     bool _nodeUp;
     bool _nodeInitializing;
     bool _nodeRetired;
+    bool _nodeMaintenance;
 
 public:
     ClusterStateAdapter(const ClusterState &calc)
@@ -34,7 +35,8 @@ public:
           _clusterUp(_calc.clusterUp()),
           _nodeUp(_calc.nodeUp()),
           _nodeInitializing(_calc.nodeInitializing()),
-          _nodeRetired(_calc.nodeRetired())
+          _nodeRetired(_calc.nodeRetired()),
+          _nodeMaintenance(_calc.nodeMaintenance())
     {
     }
     vespalib::Trinary shouldBeReady(const document::Bucket &bucket) const override {
@@ -44,6 +46,7 @@ public:
     bool nodeUp() const override { return _nodeUp; }
     bool nodeInitializing() const override { return _nodeInitializing; }
     bool nodeRetired() const override { return _nodeRetired; }
+    bool nodeMaintenance() const noexcept override { return _nodeMaintenance; }
 };
 
 }

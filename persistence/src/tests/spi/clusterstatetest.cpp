@@ -233,4 +233,31 @@ TEST(ClusterStateTest, can_infer_own_node_retired_state)
     EXPECT_TRUE(!node_marked_as_retired_in_state("distributor:3 storage:3 .1.s:r", d, 0));
 }
 
+namespace {
+
+bool
+node_marked_as_maintenance_in_state(const std::string& stateStr,
+                                    const lib::Distribution& d,
+                                    uint16_t node)
+{
+    lib::ClusterState s(stateStr);
+    ClusterState state(s, node, d);
+    return state.nodeMaintenance();
+}
+
+}
+
+TEST(ClusterStateTest, can_infer_own_node_maintenance_state)
+{
+    lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
+
+    EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3", d, 0));
+    EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:i", d, 0));
+    EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:d", d, 0));
+    EXPECT_TRUE( node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:m", d, 0));
+    EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:r", d, 0));
+    EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:m", d, 1));
+    EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .1.s:m", d, 0));
+}
+
 }

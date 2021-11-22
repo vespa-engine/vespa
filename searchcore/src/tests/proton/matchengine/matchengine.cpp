@@ -17,7 +17,7 @@ class MySearchHandler : public ISearchHandler {
     std::string _name;
     std::string _reply;
 public:
-    MySearchHandler(size_t numHits = 0) :
+    explicit MySearchHandler(size_t numHits = 0) :
         _numHits(numHits), _name("my"), _reply("myreply")
     {}
     DocsumReply::UP getDocsums(const DocsumRequest &) override {
@@ -91,6 +91,7 @@ assertSearchReply(MatchEngine & engine, const std::string & searchDocType, size_
     LocalSearchClient client;
     engine.search(SearchRequest::Source(request), client);
     SearchReply::UP reply = client.getReply(10000);
+    ASSERT_TRUE(reply);
     return EXPECT_EQUAL(expHits, reply->hits.size());
 }
 
@@ -173,9 +174,22 @@ TEST("requireThatEmptySearchReplyIsReturnedWhenEngineIsClosed")
     LocalSearchClient client;
     SearchRequest::Source request(new SearchRequest());
     SearchReply::UP reply = engine.search(std::move(request), client);
-    EXPECT_TRUE(reply );
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(0u, reply->hits.size());
     EXPECT_EQUAL(7u, reply->getDistributionKey());
+}
+
+namespace {
+
+constexpr const char* search_interface_offline_slime_str() noexcept {
+    return "{\n"
+           "    \"status\": {\n"
+           "        \"state\": \"OFFLINE\",\n"
+           "        \"message\": \"Search interface is offline\"\n"
+           "    }\n"
+           "}\n";
+}
+
 }
 
 TEST("requireThatStateIsReported")
@@ -185,14 +199,44 @@ TEST("requireThatStateIsReported")
     Slime slime;
     SlimeInserter inserter(slime);
     engine.get_state(inserter, false);
-    EXPECT_EQUAL(
-            "{\n"
-            "    \"status\": {\n"
-            "        \"state\": \"OFFLINE\",\n"
-            "        \"message\": \"Search interface is offline\"\n"
-            "    }\n"
-            "}\n",
-            slime.toString());
+    EXPECT_EQUAL(search_interface_offline_slime_str(),
+                 slime.toString());
+}
+
+TEST("searches are executed when node is in maintenance mode")
+{
+    MatchEngine engine(1, 1, 7);
+    engine.setNodeMaintenance(true);
+    engine.putSearchHandler(DocTypeName("foo"), std::make_shared<MySearchHandler>(3));
+    EXPECT_TRUE(assertSearchReply(engine, "foo", 3));
+}
+
+TEST("setNodeMaintenance(true) implies setNodeUp(false)")
+{
+    MatchEngine engine(1, 1, 7);
+    engine.setNodeUp(true);
+    engine.setNodeMaintenance(true);
+    EXPECT_FALSE(engine.isOnline());
+}
+
+TEST("setNodeMaintenance(false) does not imply setNodeUp(false)")
+{
+    MatchEngine engine(1, 1, 7);
+    engine.setNodeUp(true);
+    engine.setNodeMaintenance(false);
+    EXPECT_TRUE(engine.isOnline());
+}
+
+TEST("search interface is reported as offline when node is in maintenance mode")
+{
+    MatchEngine engine(1, 1, 7);
+    engine.setNodeMaintenance(true);
+
+    Slime slime;
+    SlimeInserter inserter(slime);
+    engine.get_state(inserter, false);
+    EXPECT_EQUAL(search_interface_offline_slime_str(),
+                 slime.toString());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

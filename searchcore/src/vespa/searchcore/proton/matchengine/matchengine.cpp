@@ -50,7 +50,8 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _handlers(),
       _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256_Ki, match_engine_executor),
       _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
-      _nodeUp(false)
+      _nodeUp(false),
+      _nodeMaintenance(false)
 {
 }
 
@@ -98,7 +99,8 @@ search::engine::SearchReply::UP
 MatchEngine::search(search::engine::SearchRequest::Source request,
                     search::engine::SearchClient &client)
 {
-    if (_closed || !_nodeUp) {
+    // We continue to allow searches if the node is in Maintenance mode
+    if (_closed || (!_nodeUp && !_nodeMaintenance)) {
         auto ret = std::make_unique<search::engine::SearchReply>();
         ret->setDistributionKey(_distributionKey);
 
@@ -177,6 +179,14 @@ MatchEngine::setNodeUp(bool nodeUp)
     _nodeUp = nodeUp;
 }
 
+void
+MatchEngine::setNodeMaintenance(bool nodeMaintenance)
+{
+    _nodeMaintenance = nodeMaintenance;
+    if (nodeMaintenance) {
+        _nodeUp = false;
+    }
+}
 
 StatusReport::UP
 MatchEngine::reportStatus() const
