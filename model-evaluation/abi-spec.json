@@ -56,6 +56,7 @@
       "public java.lang.String name()",
       "public java.util.List functions()",
       "public varargs ai.vespa.models.evaluation.FunctionEvaluator evaluatorOf(java.lang.String[])",
+      "public varargs ai.vespa.models.evaluation.MultiFunctionEvaluator multiEvaluatorOf(java.lang.String[])",
       "public java.lang.String toString()"
     ],
     "fields": []
@@ -72,7 +73,22 @@
       "public void <init>(java.util.Map)",
       "public java.util.Map models()",
       "public varargs ai.vespa.models.evaluation.FunctionEvaluator evaluatorOf(java.lang.String, java.lang.String[])",
+      "public varargs ai.vespa.models.evaluation.MultiFunctionEvaluator multiEvaluatorOf(java.lang.String, java.lang.String[])",
       "public ai.vespa.models.evaluation.Model requireModel(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "ai.vespa.models.evaluation.MultiFunctionEvaluator": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public ai.vespa.models.evaluation.MultiFunctionEvaluator bind(java.lang.String, com.yahoo.tensor.Tensor)",
+      "public ai.vespa.models.evaluation.MultiFunctionEvaluator bind(java.lang.String, double)",
+      "public java.util.Map evaluate()",
+      "public java.util.List functions()"
     ],
     "fields": []
   },

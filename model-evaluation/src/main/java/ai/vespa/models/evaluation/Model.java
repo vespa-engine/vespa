@@ -6,9 +6,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
-import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
@@ -230,6 +228,22 @@ public class Model {
     /** Returns a single-use evaluator of a function */
     private FunctionEvaluator evaluatorOf(ExpressionFunction function) {
         return new FunctionEvaluator(function, requireContextPrototype(function.getName()).copy());
+    }
+
+    /**
+     * Returns an evaluator which can be used to evaluate the given model in a single thread once.
+     *
+     * @param names The names identifying the outputs. If none are passed, evaluates all outputs.
+     * @throws IllegalArgumentException if the function is not present.
+     */
+    public MultiFunctionEvaluator multiEvaluatorOf(String ... names) {
+        List<FunctionEvaluator> evaluators;
+        if (names.length == 0) {
+            evaluators = functions.stream().map(this::evaluatorOf).collect(Collectors.toList());
+        } else {
+            evaluators = Arrays.stream(names).map(this::evaluatorOf).collect(Collectors.toList());
+        }
+        return new MultiFunctionEvaluator(evaluators);
     }
 
     private void throwUndeterminedFunction(String message) {

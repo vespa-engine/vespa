@@ -50,6 +50,10 @@ class OnnxModel {
         return evaluator().evaluate(inputs, output);
     }
 
+    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
+        return evaluator().evaluate(inputs);
+    }
+
     private OnnxEvaluator evaluator() {
         if (evaluator == null) {
             throw new IllegalStateException("ONNX model has not been loaded.");

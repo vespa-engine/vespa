@@ -2,25 +2,31 @@
 import onnx
 from onnx import helper, TensorProto
 
-INPUT_1 = helper.make_tensor_value_info('input1', TensorProto.FLOAT, [1])
-INPUT_2 = helper.make_tensor_value_info('input2', TensorProto.FLOAT, [1])
-OUTPUT = helper.make_tensor_value_info('output', TensorProto.FLOAT, [1])
+INPUT1 = helper.make_tensor_value_info('input1', TensorProto.FLOAT, [1])
+INPUT2 = helper.make_tensor_value_info('input2', TensorProto.FLOAT, [1])
+OUTPUT1 = helper.make_tensor_value_info('output1', TensorProto.FLOAT, [1])
+OUTPUT2 = helper.make_tensor_value_info('output2', TensorProto.FLOAT, [1])
 
 nodes = [
     helper.make_node(
         'Mul',
         ['input1', 'input2'],
-        ['output'],
+        ['output1'],
+    ),
+    helper.make_node(
+        'Add',
+        ['input1', 'input2'],
+        ['output2'],
     ),
 ]
 graph_def = helper.make_graph(
     nodes,
     'mul',
     [
-        INPUT_1,
-        INPUT_2
+        INPUT1,
+        INPUT2
     ],
-    [OUTPUT],
+    [OUTPUT1, OUTPUT2],
 )
 model_def = helper.make_model(graph_def, producer_name='mul.py', opset_imports=[onnx.OperatorSetIdProto(version=12)])
 onnx.save(model_def, 'mul.onnx')
