@@ -137,7 +137,7 @@ public:
 
     template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
-        test::runInMasterAndSyncAll(_writeService, func);
+        test::runInMasterAndSync(_writeService, func);
     }
 
     void cycledLids(const std::vector<uint32_t> &lids) {
