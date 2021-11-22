@@ -997,7 +997,7 @@ DocumentDB::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculat
         if (cfv != nullptr)
             cfv->setCalculator(newCalc);
     }
-    _subDBs.setBucketStateCalculator(newCalc);
+    _subDBs.setBucketStateCalculator(newCalc, std::shared_ptr<vespalib::IDestructorCallback>());
 }
 
 

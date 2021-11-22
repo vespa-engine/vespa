@@ -31,7 +31,7 @@ class ImportedAttributesRepo;
 struct IAttributeManager : public search::IAttributeManager
 {
     using SP = std::shared_ptr<IAttributeManager>;
-    using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
+    using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using IConstAttributeFunctor = search::attribute::IConstAttributeFunctor;
 
@@ -98,7 +98,7 @@ struct IAttributeManager : public search::IAttributeManager
     virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const = 0;
 
     virtual void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const = 0;
-    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const = 0;
+    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const = 0;
 
     virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const = 0;
 

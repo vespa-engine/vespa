@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace search::index { class Schema; }
 
@@ -60,6 +61,7 @@ public:
     using SchemaSP = std::shared_ptr<Schema>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using IndexConfig = index::IndexConfig;
+    using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
 public:
     IDocumentSubDB() { }
     virtual ~IDocumentSubDB() { }
@@ -77,7 +79,7 @@ public:
     virtual IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) = 0;
-    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) = 0;
+    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone) = 0;
 
     virtual std::shared_ptr<ISearchHandler> getSearchView() const = 0;
     virtual std::shared_ptr<IFeedView> getFeedView() const = 0;

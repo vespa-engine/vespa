@@ -460,7 +460,7 @@ StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, 
 }
 
 void
-StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> & calc) {
+StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> & calc, OnDone onDone) {
     bool wasNodeRetired = isNodeRetired();
     _nodeRetired = calc->nodeRetired();
     if (wasNodeRetired != isNodeRetired()) {
@@ -468,16 +468,16 @@ StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCa
         auto cfg = _dms->getConfig();
         cfg.setCompactionStrategy(compactionStrategy);
         _dms->update_config(cfg);
-        reconfigureAttributesConsideringNodeState();
+        reconfigureAttributesConsideringNodeState(std::move(onDone));
     }
 }
 
 void
-StoreOnlyDocSubDB::reconfigureAttributesConsideringNodeState() {
+StoreOnlyDocSubDB::reconfigureAttributesConsideringNodeState(OnDone onDone) {
     search::CompactionStrategy compactionStrategy = computeCompactionStrategy(_lastConfiguredCompactionStrategy);
     auto attrMan = getAttributeManager();
     if (attrMan) {
-        attrMan->asyncForEachAttribute(std::make_shared<UpdateConfig>(compactionStrategy));
+        attrMan->asyncForEachAttribute(std::make_shared<UpdateConfig>(compactionStrategy), std::move(onDone));
     }
 }
 
