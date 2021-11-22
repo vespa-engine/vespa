@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
@@ -660,15 +661,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     static boolean incompatibleGCOptions(String jvmargs) {
         Pattern gcAlgorithm = Pattern.compile("-XX:[-+]Use.+GC");
         Pattern cmsArgs = Pattern.compile("-XX:[-+]*CMS");
-        return (gcAlgorithm.matcher(jvmargs).find() || cmsArgs.matcher(jvmargs).find());
+        return (gcAlgorithm.matcher(jvmargs).find() ||cmsArgs.matcher(jvmargs).find());
     }
 
-    private static String buildJvmGCOptions(DeployState deployState, String jvmGCOptions) {
-        String options = (jvmGCOptions != null)
-                ? jvmGCOptions
+    private static String buildJvmGCOptions(DeployState deployState, String jvmGCOPtions) {
+        String options = (jvmGCOPtions != null)
+                ? jvmGCOPtions
                 : deployState.getProperties().jvmGCOptions();
         return (options == null || options.isEmpty())
-                ? (deployState.isHosted() ? ContainerCluster.PARALLEL_GC : ContainerCluster.G1GC)
+                ? (deployState.isHosted() ? ContainerCluster.CMS : ContainerCluster.G1GC)
                 : options;
     }
 
@@ -684,7 +685,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
             if (incompatibleGCOptions(jvmOptions)) {
-                deployLogger.logApplicationPackage(WARNING, "You need to move out your GC-related options from deprecated 'jvmargs' to 'jvm-gc-options'");
+                deployLogger.logApplicationPackage(WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
                 cluster.setJvmGCOptions(ContainerCluster.G1GC);
             }
         }
