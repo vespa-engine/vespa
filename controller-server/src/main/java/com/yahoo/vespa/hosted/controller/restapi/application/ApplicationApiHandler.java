@@ -1292,17 +1292,21 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                            request.getUri()).toString());
             }
         }
-        // Add dummy values for not-yet-existent prod deployments.
-        status.jobSteps().keySet().stream()
-              .filter(job -> job.application().instance().equals(instance.name()))
-              .filter(job -> job.type().isProduction() && job.type().isDeployment())
+        // Add dummy values for not-yet-existent prod deployments, and running dev/perf deployments.
+        Stream.concat(status.jobSteps().keySet().stream()
+                            .filter(job -> job.application().instance().equals(instance.name()))
+                            .filter(job -> job.type().isProduction() && job.type().isDeployment()),
+                      controller.jobController().active(instance.id()).stream()
+                                .map(run -> run.id().job())
+                                .filter(job -> job.type().environment().isManuallyDeployed()))
               .map(job -> job.type().zone(controller.system()))
               .filter(zone -> ! instance.deployments().containsKey(zone))
               .forEach(zone -> {
-                    Cursor deploymentObject = instancesArray.addObject();
-                    deploymentObject.setString("environment", zone.environment().value());
-                    deploymentObject.setString("region", zone.region().value());
+                  Cursor deploymentObject = instancesArray.addObject();
+                  deploymentObject.setString("environment", zone.environment().value());
+                  deploymentObject.setString("region", zone.region().value());
               });
+
 
         // TODO jonmv: Remove when clients are updated
         application.deployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", KeyUtils.toPem(key)));
