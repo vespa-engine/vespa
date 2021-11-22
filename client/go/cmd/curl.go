@@ -46,7 +46,7 @@ $ vespa curl -t local -- -v /search/?yql=query
 			fatalErr(err)
 			return
 		}
-		service := getService("query", 0)
+		service := getService("query", 0, "")
 		url := joinURL(service.BaseURL, args[len(args)-1])
 		rawArgs := args[:len(args)-1]
 		c, err := curl.RawArgs(url, rawArgs...)

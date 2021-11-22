@@ -161,5 +161,5 @@ func assertDocumentServerError(t *testing.T, status int, errorMessage string) {
 }
 
 func documentServiceURL(client *mockHttpClient) string {
-	return getService("document", 0).BaseURL
+	return getService("document", 0, "").BaseURL
 }
