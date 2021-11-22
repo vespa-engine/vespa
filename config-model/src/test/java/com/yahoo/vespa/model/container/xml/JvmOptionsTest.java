@@ -137,7 +137,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         verifyJvmGCOptions(true, "", null, ContainerCluster.PARALLEL_GC);
         verifyJvmGCOptions(false, "-XX:+UseG1GC", null, "-XX:+UseG1GC");
         verifyJvmGCOptions(true, "-XX:+UseG1GC", null, "-XX:+UseG1GC");
-        verifyJvmGCOptions(false, null,"-XX:+UseG1GC", "-XX:+UseG1GC");
+        verifyJvmGCOptions(false, null, "-XX:+UseG1GC", "-XX:+UseG1GC");
         verifyJvmGCOptions(false, "-XX:+UseParallelGC", "-XX:+UseG1GC", "-XX:+UseG1GC");
         verifyJvmGCOptions(false, null, "-XX:+UseParallelGC", "-XX:+UseParallelGC");
     }
