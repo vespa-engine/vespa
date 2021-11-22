@@ -125,6 +125,8 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
     Reset();
     int    maxclassID = 0x7fffffff; // avoid negative classids
     _defaultSummaryId = cfg.defaultsummaryid;
+    _useV8geoPositions = cfg.usev8geopositions;
+
     for (uint32_t i = 0; rc && i < cfg.classes.size(); i++) {
         const auto& cfg_class = cfg.classes[i];
         if (cfg_class.name.empty()) {

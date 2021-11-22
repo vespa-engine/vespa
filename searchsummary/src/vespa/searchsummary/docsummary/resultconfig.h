@@ -33,6 +33,7 @@ private:
     typedef vespalib::hash_map<vespalib::string, uint32_t> NameMap;
     typedef vespalib::hash_map<uint32_t, ResultClass::UP> IdMap;
     uint32_t                    _defaultSummaryId;
+    bool                        _useV8geoPositions;
     search::util::StringEnum    _fieldEnum;
     IdMap                       _classLookup;
     NameMap                     _nameLookup; // name -> class id
@@ -41,6 +42,7 @@ private:
     void Init();
 
 public:
+    bool useV8geoPositions() const { return _useV8geoPositions; }
     class iterator {
     public:
         iterator(IdMap::iterator it) : _it(it) { }
