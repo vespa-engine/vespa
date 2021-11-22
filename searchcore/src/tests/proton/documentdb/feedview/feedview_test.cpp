@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/index/docbuilder.h>
 
 #include <vespa/log/log.h>
@@ -600,15 +601,17 @@ struct FixtureBase
         }
     }
 
-    void performMove(MoveOperation &op) {
+    void performMove(MoveOperation &op, IDestructorCallback::SP onDone) {
         op.setSerialNum(++serial);
-        getFeedView().handleMove(op, IDestructorCallback::SP());
+        getFeedView().handleMove(op, std::move(onDone));
     }
 
     void moveAndWait(const DocumentContext &docCtx, uint32_t fromLid, uint32_t toLid) {
         MoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc, DbDocumentId(pc._params._subDbId, fromLid), pc._params._subDbId);
         op.setTargetLid(toLid);
-        runInMasterAndSyncAll([&]() { performMove(op); });
+        vespalib::Gate gate;
+        runInMaster([&, onDone=std::make_shared<vespalib::GateCallback>(gate)]() { performMove(op, std::move(onDone)); });
+        gate.await();
     }
 
     void performDeleteBucket(DeleteBucketOperation &op) {
