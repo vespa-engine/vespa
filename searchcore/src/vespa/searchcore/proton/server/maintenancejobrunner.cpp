@@ -77,13 +77,6 @@ MaintenanceJobRunner::MaintenanceJobRunner(Executor &executor, IMaintenanceJob::
 }
 
 bool
-MaintenanceJobRunner::isRunning() const
-{
-    Guard guard(_lock);
-    return _running;
-}
-
-bool
 MaintenanceJobRunner::isRunnable() const
 {
     Guard guard(_lock);
