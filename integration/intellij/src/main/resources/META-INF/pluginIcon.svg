@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg id="Layer_1" data-name="Layer 1" viewBox="0 0 40 40" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>.cls-1{fill:#ffc43c;}.cls-2{fill:url(#linear-gradient);}.cls-3{fill:#1a7db6;}.cls-4{fill:url(#linear-gradient-2);}.cls-5{fill:#303030;}</style>
+    <linearGradient id="linear-gradient" x1="964.75" y1="34.82" x2="919.68" y2="63.4" gradientTransform="matrix(-0.276923, 0, 0, 0.276923, 291.653198, 2)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#da9728"/>
+      <stop offset="0.54" stop-color="#ffc43c"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="46.38" y1="94.56" x2="-29.88" y2="53" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0.276923, 0, 0, 0.276923, 3.212999, 2)">
+      <stop offset="0" stop-color="#005a8e"/>
+      <stop offset="0.54" stop-color="#1a7db6"/>
+    </linearGradient>
+  </defs>
+  <title>VespaLogo copy</title>
+  <polygon class="cls-1" points="22.736 2 8.685 11.543 8.685 27.971 22.736 18.064 36.787 27.971 36.787 11.543 22.736 2"/>
+  <polygon class="cls-2" points="22.736 18.064 22.736 2 36.787 11.543 36.787 27.97 22.736 18.064"/>
+  <polygon class="cls-3" points="17.264 21.936 3.213 12.029 3.213 28.457 17.264 38 31.315 28.457 31.315 12.029 17.264 21.936"/>
+  <polygon class="cls-4" points="17.264 21.936 17.264 38 3.213 28.457 3.213 12.03 17.264 21.936"/>
+</svg>
