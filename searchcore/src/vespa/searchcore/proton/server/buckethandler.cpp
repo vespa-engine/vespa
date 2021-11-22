@@ -68,7 +68,8 @@ BucketHandler::BucketHandler(vespalib::Executor &executor)
       _executor(executor),
       _ready(nullptr),
       _changedHandlers(),
-      _nodeUp(false)
+      _nodeUp(false),
+      _nodeMaintenance(false)
 {
     LOG(spam, "BucketHandler::BucketHandler");
 }
@@ -147,9 +148,20 @@ void
 BucketHandler::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> & newCalc)
 {
     bool oldNodeUp = _nodeUp;
-    _nodeUp = newCalc->nodeUp();
+    bool oldNodeMaintenance = _nodeMaintenance;
+    _nodeUp = newCalc->nodeUp(); // Up, Retired or Initializing
+    _nodeMaintenance = newCalc->nodeMaintenance();
     LOG(spam, "notifyClusterStateChanged: %s -> %s", oldNodeUp ? "up" : "down", _nodeUp ? "up" : "down");
-    if (oldNodeUp && !_nodeUp) {
+    if (_nodeMaintenance) {
+        return; // Don't deactivate buckets in maintenance mode; let query traffic drain away naturally.
+    }
+    // We implicitly deactivate buckets in two edge cases:
+    //  - Up -> Down (not maintenance; handled above), since the node can not be expected to offer
+    //    any graceful query draining when set Down.
+    //  - Maintenance -> Up, since we'd otherwise introduce a bunch of transient duplicate results
+    //    into queries. The assumption is that the system has already activated buckets on other
+    //    nodes in such a scenario.
+    if ((oldNodeUp && !_nodeUp) || (oldNodeMaintenance && _nodeUp)) {
         deactivateAllActiveBuckets();
     }
 }

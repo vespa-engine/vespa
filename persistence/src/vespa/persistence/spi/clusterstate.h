@@ -45,23 +45,28 @@ public:
      * compared to the complete list of nodes, and deigns the system to be
      * unusable.
      */
-    bool clusterUp() const;
+    bool clusterUp() const noexcept;
 
     /**
      * Returns false if this node has been set in a state where it should not
      * receive external load.
      */
-    bool nodeUp() const;
+    bool nodeUp() const noexcept;
 
     /**
      * Returns true iff this node is marked as Initializing in the cluster state.
      */
-    bool nodeInitializing() const;
+    bool nodeInitializing() const noexcept;
 
     /**
      * Returns true iff this node is marked as Retired in the cluster state.
      */
-    bool nodeRetired() const;
+    bool nodeRetired() const noexcept;
+
+    /**
+     * Returns true iff this node is marked as Maintenance in the cluster state.
+     */
+    bool nodeMaintenance() const noexcept;
 
     /**
      * Returns a serialized form of this object.
@@ -74,7 +79,7 @@ private:
     uint16_t _nodeIndex;
 
     void deserialize(vespalib::nbostream&);
-    bool nodeHasStateOneOf(const char* states) const;
+    bool nodeHasStateOneOf(const char* states) const noexcept;
 };
 
 }

@@ -869,6 +869,7 @@ Proton::setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterStat
     bool nodeRetired(calc.nodeRetired());
     bool nodeUp = updateNodeUp(bucketSpace, nodeUpInBucketSpace);
     _matchEngine->setNodeUp(nodeUp);
+    _matchEngine->setNodeMaintenance(calc.nodeMaintenance());
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setNodeRetired(nodeRetired);
     }

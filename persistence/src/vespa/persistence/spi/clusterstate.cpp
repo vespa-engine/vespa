@@ -68,26 +68,30 @@ ClusterState::shouldBeReady(const Bucket& b) const {
     return Trinary::False;
 }
 
-bool ClusterState::clusterUp() const {
+bool ClusterState::clusterUp() const noexcept {
     return _state && _state->getClusterState() == lib::State::UP;
 }
 
-bool ClusterState::nodeHasStateOneOf(const char* states) const {
+bool ClusterState::nodeHasStateOneOf(const char* states) const noexcept {
     return _state &&
            _state->getNodeState(lib::Node(lib::NodeType::STORAGE, _nodeIndex)).
                    getState().oneOf(states);
 }
 
-bool ClusterState::nodeUp() const {
+bool ClusterState::nodeUp() const noexcept {
     return nodeHasStateOneOf("uir");
 }
 
-bool ClusterState::nodeInitializing() const {
+bool ClusterState::nodeInitializing() const noexcept {
     return nodeHasStateOneOf("i");
 }
 
-bool ClusterState::nodeRetired() const {
+bool ClusterState::nodeRetired() const noexcept {
     return nodeHasStateOneOf("r");
+}
+
+bool ClusterState::nodeMaintenance() const noexcept {
+    return nodeHasStateOneOf("m");
 }
 
 void ClusterState::serialize(vespalib::nbostream& o) const {
