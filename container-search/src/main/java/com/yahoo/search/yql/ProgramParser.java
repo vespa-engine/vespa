@@ -65,8 +65,6 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
-import org.antlr.v4.runtime.misc.NotNull;
-import org.antlr.v4.runtime.misc.Nullable;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -102,12 +100,12 @@ final class ProgramParser {
         lexer.addErrorListener(new BaseErrorListener() {
 
           @Override
-          public void syntaxError(@NotNull Recognizer<?, ?> recognizer,
-                                  @Nullable Object offendingSymbol,
+          public void syntaxError(Recognizer<?, ?> recognizer,
+                                  Object offendingSymbol,
                                   int line,
                                   int charPositionInLine,
-                                  @NotNull String msg,
-                                  @Nullable RecognitionException e) {
+                                  String msg,
+                                  RecognitionException e) {
             throw new ProgramCompileException(new Location(programName, line, charPositionInLine), "%s", msg);
           }
 
@@ -119,12 +117,12 @@ final class ProgramParser {
         parser.addErrorListener(new BaseErrorListener() {
 
           @Override
-          public void syntaxError(@NotNull Recognizer<?, ?> recognizer,
-                                  @Nullable Object offendingSymbol,
+          public void syntaxError(Recognizer<?, ?> recognizer,
+                                  Object offendingSymbol,
                                   int line,
                                   int charPositionInLine,
-                                  @NotNull String msg,
-                                  @Nullable RecognitionException e) {
+                                  String msg,
+                                  RecognitionException e) {
             throw new ProgramCompileException(new Location(programName, line, charPositionInLine), "%s", msg);
           }
 
@@ -195,7 +193,6 @@ final class ProgramParser {
         final Scope parent;
         Set<String> cursors = ImmutableSet.of();
         Set<String> variables = ImmutableSet.of();
-        Set<String> views = Sets.newHashSet();
         Map<String, Binding> bindings = Maps.newHashMap();
         final yqlplusParser parser;
         final String programName;
@@ -247,13 +244,6 @@ final class ProgramParser {
             return variables.contains(name) || (parent != null && parent.isVariable(name));
         }
 
-        public void bindModule(Location loc, List<String> binding, String symbolName) {
-            if (isBound(symbolName)) {
-                throw new ProgramCompileException(loc, "Name '%s' is already used.", symbolName);
-            }
-            root.bindings.put(symbolName, new Binding(binding));
-        }
-
         public void defineDataSource(Location loc, String name) {
             if (isCursor(name)) {
                 throw new ProgramCompileException(loc, "Alias '%s' is already used.", name);
@@ -273,16 +263,6 @@ final class ProgramParser {
             }
             variables.add(name);
 
-        }
-
-        public void defineView(Location loc, String text) {
-            if (this != root) {
-                throw new IllegalStateException("Views MUST be defined in 'root' scope only");
-            }
-            if (views.contains(text)) {
-                throw new ProgramCompileException(loc, "View '%s' already defined", text);
-            }
-            views.add(text);
         }
 
         Scope child() {
@@ -351,8 +331,8 @@ final class ProgramParser {
                     List<Orderby_fieldContext> orderFieds = ((OrderbyContext) child)
                             .orderby_fields().orderby_field();
                     orderby = Lists.newArrayListWithExpectedSize(orderFieds.size());
-                    for (int j = 0; j < orderFieds.size(); ++j) {
-                        orderby.add(convertSortKey(orderFieds.get(j), scope));
+                    for (var field: orderFieds) {
+                        orderby.add(convertSortKey(field, scope));
                     }
                     break;
                 case yqlplusParser.RULE_limit:
@@ -926,8 +906,8 @@ final class ProgramParser {
                 List<String> path = readName((Namespaced_nameContext) parseTree.getChild(0));
                 Location loc = toLocation(scope, parseTree.getChild(0));
                 String alias = path.get(0);
-                OperatorNode<ExpressionOperator> result = null;
-                int start = 0;
+                OperatorNode<ExpressionOperator> result;
+                int start;
                 if (scope.isCursor(alias)) {
                     if (path.size() > 1) {
                         result = OperatorNode.create(loc, ExpressionOperator.READ_FIELD, alias, path.get(1));
