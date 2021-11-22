@@ -513,7 +513,7 @@ struct FixtureBase
 
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
-        test::runInMaster(_writeService, func);
+        test::runInMasterAndSync(_writeService, func);
     }
 
     virtual IFeedView &getFeedView() = 0;
@@ -683,7 +683,7 @@ FixtureBase::FixtureBase()
 }
 
 FixtureBase::~FixtureBase() {
-    _writeServiceReal.sync_all_executors();
+    _writeServiceReal.shutdown();
 }
 
 void

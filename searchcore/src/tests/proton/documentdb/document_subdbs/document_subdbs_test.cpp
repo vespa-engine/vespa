@@ -34,6 +34,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 
 using namespace cloud::config::filedistribution;
 using namespace document;
@@ -65,7 +66,6 @@ typedef StoreOnlyDocSubDB::Config StoreOnlyConfig;
 typedef StoreOnlyDocSubDB::Context StoreOnlyContext;
 typedef FastAccessDocSubDB::Config FastAccessConfig;
 typedef FastAccessDocSubDB::Context FastAccessContext;
-typedef SearchableDocSubDB::Config SearchableConfig;
 typedef SearchableDocSubDB::Context SearchableContext;
 typedef std::vector<AttributeGuard> AttributeGuardList;
 
@@ -319,7 +319,7 @@ struct FixtureBase
     }
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
-        proton::test::runInMaster(_writeService, func);
+        proton::test::runInMasterAndSync(_writeService, func);
     }
     void init() {
         DocumentSubDbInitializer::SP task =
@@ -781,27 +781,34 @@ struct DocumentHandler
     }
     void putDoc(PutOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
+        vespalib::Gate gate;
         _f.runInMaster([&]() {
             feedView->preparePut(op);
             feedView->handlePut(FeedToken(), op);
-            feedView->forceCommit(op.getSerialNum());
+            feedView->forceCommit(CommitParam(op.getSerialNum()), std::make_shared<vespalib::GateCallback>(gate));
         } );
+        gate.await();
     }
     void moveDoc(MoveOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
+        vespalib::Gate gate;
         _f.runInMaster([&]() {
-            feedView->handleMove(op, IDestructorCallback::SP());
-            feedView->forceCommit(op.getSerialNum());
+            auto onDone = std::make_shared<vespalib::GateCallback>(gate);
+            feedView->handleMove(op, onDone);
+            feedView->forceCommit(CommitParam(op.getSerialNum()), onDone);
         } );
+        gate.await();
     }
     void removeDoc(RemoveOperation &op)
     {
         IFeedView::SP feedView = _f._subDb.getFeedView();
+        vespalib::Gate gate;
         _f.runInMaster([&]() {
             feedView->prepareRemove(op);
             feedView->handleRemove(FeedToken(), op);
-            feedView->forceCommit(op.getSerialNum());
+            feedView->forceCommit(CommitParam(op.getSerialNum()), std::make_shared<vespalib::GateCallback>(gate));
         } );
+        gate.await();
     }
     void putDocs() {
         PutOperation putOp = createPut(std::move(createDoc(1, 22, 33)), Timestamp(10), 10);

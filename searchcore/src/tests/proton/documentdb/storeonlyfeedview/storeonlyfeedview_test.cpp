@@ -242,7 +242,7 @@ struct FixtureBase {
 
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
-        test::runInMaster(writeService, func);
+        test::runInMasterAndSync(writeService, func);
     }
 
     void force_commit() {
