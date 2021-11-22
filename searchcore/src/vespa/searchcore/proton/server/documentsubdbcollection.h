@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <mutex>
 
 namespace vespalib {
@@ -58,6 +59,7 @@ public:
     using SubDBVector = std::vector<IDocumentSubDB *>;
     using const_iterator = SubDBVector::const_iterator;
     using SerialNum = search::SerialNum;
+    using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
 
 private:
     using IFeedViewSP = std::shared_ptr<IFeedView>;
@@ -95,7 +97,7 @@ public:
             const HwInfo &hwInfo);
     ~DocumentSubDBCollection();
 
-    void setBucketStateCalculator(const IBucketStateCalculatorSP &calc);
+    void setBucketStateCalculator(const IBucketStateCalculatorSP &calc, OnDone onDone);
 
     void createRetrievers();
     void maintenanceSync(MaintenanceController &mc);

@@ -303,11 +303,11 @@ DocumentSubDBCollection::close()
 }
 
 void
-DocumentSubDBCollection::setBucketStateCalculator(const IBucketStateCalculatorSP &calc)
+DocumentSubDBCollection::setBucketStateCalculator(const IBucketStateCalculatorSP &calc, OnDone onDone)
 {
     _calc = calc;
     for (auto subDb : _subDBs) {
-        subDb->setBucketStateCalculator(calc);
+        subDb->setBucketStateCalculator(calc, onDone);
     }
 }
 

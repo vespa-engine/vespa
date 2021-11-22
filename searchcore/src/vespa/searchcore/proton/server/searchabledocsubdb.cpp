@@ -180,9 +180,9 @@ SearchableDocSubDB::propagateFlushConfig()
 }
 
 void
-SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc)
+SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone onDone)
 {
-    FastAccessDocSubDB::setBucketStateCalculator(calc);
+    FastAccessDocSubDB::setBucketStateCalculator(calc, std::move(onDone));
     propagateFlushConfig();
 }
 

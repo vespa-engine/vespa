@@ -316,6 +316,11 @@ struct FixtureBase
         _writeService.master().execute(makeLambdaTask([this]() { _subDb.close(); }));
         _writeService.shutdown();
     }
+    void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> & calc) {
+        vespalib::Gate gate;
+        _subDb.setBucketStateCalculator(calc, std::make_shared<vespalib::GateCallback>(gate));
+        gate.await();
+    }
     template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
         proton::test::runInMasterAndSync(_writeService, func);
@@ -336,7 +341,7 @@ struct FixtureBase
         runInMasterAndSync([&]() { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
     }
     void performReconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
-        MyConfigSnapshot::UP newCfg(new MyConfigSnapshot(reconfigSchema, reconfigConfigDir));
+        auto newCfg = std::make_unique<MyConfigSnapshot>(reconfigSchema, reconfigConfigDir);
         DocumentDBConfig::ComparisonResult cmpResult;
         cmpResult.attributesChanged = true;
         cmpResult.documenttypesChanged = true;
@@ -564,14 +569,14 @@ TEST_F("require that subdb reflect retirement", FastAccessFixture)
 
     auto calc = std::make_shared<proton::test::BucketStateCalculator>();
     calc->setNodeRetired(true);
-    f._subDb.setBucketStateCalculator(calc);
+    f.setBucketStateCalculator(calc);
     EXPECT_TRUE(f._subDb.isNodeRetired());
     auto retired_cfg = f._subDb.computeCompactionStrategy(cfg);
     EXPECT_TRUE(cfg != retired_cfg);
     EXPECT_TRUE(search::CompactionStrategy(0.5, 0.5) == retired_cfg);
 
     calc->setNodeRetired(false);
-    f._subDb.setBucketStateCalculator(calc);
+    f.setBucketStateCalculator(calc);
     EXPECT_FALSE(f._subDb.isNodeRetired());
     unretired_cfg = f._subDb.computeCompactionStrategy(cfg);
     EXPECT_TRUE(cfg == unretired_cfg);
@@ -587,21 +592,18 @@ TEST_F("require that attribute compaction config reflect retirement", FastAccess
 
     auto calc = std::make_shared<proton::test::BucketStateCalculator>();
     calc->setNodeRetired(true);
-    f._subDb.setBucketStateCalculator(calc);
-    f._writeService.sync_all_executors();
+    f.setBucketStateCalculator(calc);
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
     EXPECT_EQUAL(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
     EXPECT_EQUAL(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
 
     f.basicReconfig(10);
-    f._writeService.sync_all_executors();
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
     EXPECT_EQUAL(retired_cfg, (*guard)->getConfig().getCompactionStrategy());
     EXPECT_EQUAL(retired_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());
 
     calc->setNodeRetired(false);
-    f._subDb.setBucketStateCalculator(calc);
-    f._writeService.sync_all_executors();
+    f.setBucketStateCalculator(calc);
     guard = f._subDb.getAttributeManager()->getAttribute("attr1");
     EXPECT_EQUAL(default_cfg, (*guard)->getConfig().getCompactionStrategy());
     EXPECT_EQUAL(default_cfg, dynamic_cast<const proton::DocumentMetaStore &>(f._subDb.getDocumentMetaStoreContext().get()).getConfig().getCompactionStrategy());

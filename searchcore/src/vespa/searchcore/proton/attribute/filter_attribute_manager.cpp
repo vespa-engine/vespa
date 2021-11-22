@@ -206,7 +206,7 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFun
 }
 
 void
-FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
+FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const
 {
     // Run by document db master thread
     std::vector<AttributeGuard> completeList;
@@ -217,7 +217,10 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
         // Name must be extracted in document db master thread or attribute
         // writer thread
         attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
-                                     [attrsp, func]() { (*func)(*attrsp); });
+                                     [attrsp, func, onDone]() {
+            (void) onDone;
+            (*func)(*attrsp);
+        });
     }
 }
 

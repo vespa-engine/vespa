@@ -52,7 +52,7 @@ public:
     search::AttributeVector * getWritableAttribute(const vespalib::string &name) const override;
     const std::vector<search::AttributeVector *> & getWritableAttributes() const override;
     void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const override;
-    void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const override;
+    void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const override;
     ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
     void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
     const ImportedAttributesRepo *getImportedAttributes() const override;

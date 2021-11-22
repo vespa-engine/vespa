@@ -276,7 +276,10 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         }
         _iFeedView.set(_fastAccessFeedView.get());
         if (isNodeRetired()) {
-            reconfigureAttributesConsideringNodeState();
+            // TODO Should probably ahve a similar OnDone callback to applyConfig too.
+            vespalib::Gate gate;
+            reconfigureAttributesConsideringNodeState(std::make_shared<vespalib::GateCallback>(gate));
+            gate.await();
         }
     }
     return tasks;

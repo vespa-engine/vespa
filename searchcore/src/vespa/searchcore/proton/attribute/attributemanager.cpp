@@ -595,7 +595,7 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> 
 }
 
 void
-AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
+AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const
 {
     for (const auto &attr : _attributes) {
         if (attr.second.isExtra()) {
@@ -604,7 +604,10 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func)
         }
         AttributeVector::SP attrsp = attr.second.getAttribute();
         _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
-                                      [attrsp, func]() { (*func)(*attrsp); });
+                                      [attrsp, func, onDone]() {
+            (void) onDone;
+            (*func)(*attrsp);
+        });
     }
 }
 
