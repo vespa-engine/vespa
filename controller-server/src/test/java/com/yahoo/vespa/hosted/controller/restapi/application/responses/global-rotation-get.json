@@ -4,7 +4,7 @@
     {
       "status": "in",
       "reason": "",
-      "agent": "",
+      "agent": "unknown",
       "timestamp": 1497618757
     }
   ]
