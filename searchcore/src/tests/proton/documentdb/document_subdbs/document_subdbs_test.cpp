@@ -313,9 +313,8 @@ struct FixtureBase
         init();
     }
     ~FixtureBase() {
-        _writeService.sync_all_executors();
-            _writeService.master().execute(makeLambdaTask([this]() { _subDb.close(); }));
-        _writeService.sync_all_executors();
+        _writeService.master().execute(makeLambdaTask([this]() { _subDb.close(); }));
+        _writeService.shutdown();
     }
     template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
