@@ -32,7 +32,7 @@
         COMMENT = 'regexp:#.*'
         SYMBOL = 'regexp:[!$|:{}(),.\[\]]'
         COMPARISON_OPERATOR = 'regexp:[<>]|(==)|(<=)|(>=)|(~=)'
-        ARITHMETIC_OPERATOR = 'regexp:[\-+*/]'
+        ARITHMETIC_OPERATOR = 'regexp:[\-+*/%]'
         INTEGER_REG = 'regexp:[0-9]+'
         FLOAT_REG = 'regexp:[0-9]+[.][0-9]+[e]?'
         STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"'
@@ -44,7 +44,7 @@ SdFile ::= SchemaDefinition | DocumentDefinition
 SchemaDefinition ::= (search | schema) IdentifierVal? (inherits IdentifierVal)? '{' SchemaBody '}'
 SchemaBody ::= SchemaBodyOptions* DocumentDefinition SchemaBodyOptions* // Does not support zero-or-one occurrences
 private SchemaBodyOptions ::= SchemaFieldDefinition | ImportFieldDefinition | DocumentSummaryDefinition | 
-                              RankProfileDefinition | IndexDefinition |
+                              RankProfileDefinition | IndexDefinition | DocumentStructDefinition |
                               FieldSetDefinition | ConstantDefinition | OnnxModelDefinition | StemmingDefinition |
                               raw-as-base64-in-summary | SchemaAnnotationDefinition
 
@@ -170,7 +170,7 @@ RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue)+
 RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | ',' | '$' | INTEGER_REG)+ 
 RankPropertiesValue ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | WORD_REG | IdentifierVal | STRING_REG
 
-FunctionDefinition ::= (function | macro) inline? IdentifierVal '(' (ArgumentDefinition (',' ArgumentDefinition)*)? ')'
+FunctionDefinition ::= (function | macro) inline? IdentifierVal ( '()' | '(' (ArgumentDefinition (',' ArgumentDefinition)*)? ')' )
                        '{' ExpressionDefinition '}'  
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdFunctionDefinitionInterface" "ai.vespa.intellij.schema.psi.SdNamedElement"]
@@ -182,7 +182,7 @@ ArgumentDefinition ::= IdentifierVal
 
 SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierVal)? '{' RankFeature* '}'))
 
-MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ('{' RankFeature* '}'))
+MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ((inherits IdentifierVal)? '{' RankFeature* '}'))
 
 RankFeaturesDefinition ::= rank-features ((':' RankFeature+) | ('{' RankFeature* '}'))
 
@@ -237,7 +237,7 @@ private DocumentFieldBodyOptions ::= StructFieldDefinition | MatchDefinition | I
                              AliasDefinition | RankDefinition | IndexingRewriteState | QueryCommandDefinition | SummaryDefinition |
                              BoldingDefinition | (id ':' INTEGER_REG) | IndexDefinition | (normalizing ':' IdentifierWithDashVal) | 
                              SortingDefinition | StemmingDefinition | (weight ':' INTEGER_REG) | WeightedSetDefinition |
-                             RankTypeDefinition | DictionaryDefinition | SummaryToDefinition | body
+                             RankTypeDefinition | DictionaryDefinition | SummaryToDefinition | header | body
 //***** Field's body elements ******//
 // Struct
 StructFieldDefinition ::= struct-field IdentifierVal ('.' IdentifierVal)? '{' StructFieldBody '}'
@@ -250,15 +250,16 @@ StructFieldBodyOptions ::= IndexingDefinition | AttributeDefinition | MatchDefin
                            StructFieldDefinition | SummaryDefinition            
 // Match
 MatchDefinition ::= match ((':' MatchProperty) | ('{' MatchProperty+ '}'))
-MatchProperty ::= text | exact | (exact-terminator ':' STRING_REG) | word | prefix | cased | uncased | substring | 
+MatchProperty ::= text | token | exact | (exact-terminator ':' STRING_REG) | word | prefix | cased | uncased | substring |
                   suffix | (max-length ':' INTEGER_REG) | gram | (gram-size ':' INTEGER_REG) | WordWrapper
 // Indexing
 IndexingDefinition ::= indexing ((':' IndexingStatement) | ('{' IndexingStatement+ '}'))
-IndexingStatement ::= IndexingStatementOptions ((('|' | ';') IndexingStatementOptions)*)
+IndexingStatement ::= IndexingStatementOptions (('|' IndexingStatementOptions)*) (';')?
                       // Does not support zero-or-one occurrences
-IndexingStatementOptions ::= summary | attribute | index | set_language | lowercase | (input (IdentifierVal | IndexingStuff)+) | 
+IndexingStatementOptions ::= summary | attribute | index | set_language | lowercase |
+                             (input (IdentifierVal | IndexingStuff)+) |
                              ('{' IndexingStatementOptions '}') | IndexingStuff+
-private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | ('{' IndexingStatementOptions+ '}') |
+private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | ('{' IndexingStatement '}') |
                           ':' | ('|' IndexingStatementOptions) | ';' | '.' | '(' | ')' | ARITHMETIC_OPERATOR | COMPARISON_OPERATOR
 // Attribute
 AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (ComplexAttributeProperty | SimpleAttributeProperty)+ '}'))
@@ -266,7 +267,7 @@ SimpleAttributeProperty ::= fast-search | fast-access | paged | mutable | enable
 ComplexAttributeProperty ::= AliasDefinition | SortingDefinition | DistanceMetricDef // Does not support zero-or-one occurrences
 DistanceMetricDef ::= distance-metric ':' IdentifierWithDashVal
 // Alias
-AliasDefinition ::= alias (IdentifierWithDashVal ('.' IdentifierWithDashVal)*)? ':' IdentifierWithDashVal ('.' IdentifierWithDashVal)*
+AliasDefinition ::= alias (IdentifierVal)? ':' IdentifierWithDashVal ('.' IdentifierWithDashVal)*
 // Stemming
 StemmingDefinition ::= stemming ':' IdentifierWithDashVal
 // Rank

@@ -13,3 +13,8 @@ gradle-app.setting
 
 # Cache of project
 .gradletasknamecache
+
+# These are not needed, but IntelliJ automatically adds them
+gradlew
+gradlew.bat
+gradle/

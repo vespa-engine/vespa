@@ -38,7 +38,7 @@ SYMBOL= [!$|:{}(),.\[\]]
 INTEGER = [0-9]+
 FLOAT = {INTEGER}[.][0-9]+[e]?
 COMPARISON_OPERATOR = [<>]|(==)|(<=)|(>=)|(\~=)
-ARITHMETIC_OPERATOR = [\-+*/]
+ARITHMETIC_OPERATOR = [\-+*/%]
 STRING = \"([^\"\\]*(\\.[^\"\\]*)*)\"
 WORD = \w+
 
