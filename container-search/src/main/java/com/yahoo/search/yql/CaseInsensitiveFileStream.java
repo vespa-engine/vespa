@@ -16,10 +16,6 @@ class CaseInsensitiveFileStream extends ANTLRFileStream {
         super(fileName);
     }
 
-    public CaseInsensitiveFileStream(String fileName, String encoding) throws IOException {
-        super(fileName, encoding);
-    }
-
     @Override
     public int LA(int i) {
         if (i == 0) {

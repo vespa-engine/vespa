@@ -12,23 +12,12 @@ import java.io.InputStream;
  */
 class CaseInsensitiveInputStream extends ANTLRInputStream {
 
-    public CaseInsensitiveInputStream() {
-        super();
-    }
 
     public CaseInsensitiveInputStream(InputStream input) throws IOException {
         super(input);
     }
-
-    public CaseInsensitiveInputStream(InputStream input, int size) throws IOException {
-        super(input, size);
-    }
     
-    public CaseInsensitiveInputStream(char[] data, int numberOfActualCharsInArray) throws IOException {
-        super(data, numberOfActualCharsInArray);
-    }
-    
-    public CaseInsensitiveInputStream(String input) throws IOException {
+    public CaseInsensitiveInputStream(String input) {
         super(input);
     }
 
