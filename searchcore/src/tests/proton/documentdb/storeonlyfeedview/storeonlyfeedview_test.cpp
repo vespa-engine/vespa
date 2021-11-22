@@ -241,13 +241,21 @@ struct FixtureBase {
     }
 
     template <typename FunctionType>
+    void runInMasterAndSyncAll(FunctionType func) {
+        test::runInMasterAndSyncAll(writeService, func);
+    }
+    template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
         test::runInMasterAndSync(writeService, func);
+    }
+    template <typename FunctionType>
+    void runInMaster(FunctionType func) {
+        test::runInMaster(writeService, func);
     }
 
     void force_commit() {
         vespalib::Gate gate;
-        runInMasterAndSync([this, &gate]() {
+        runInMaster([this, &gate]() {
             feedview->forceCommit(search::CommitParam(serial_num), std::make_shared<vespalib::GateCallback>(gate));
         });
         gate.await();
@@ -314,7 +322,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
         MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id + 1, 1), subdb_id);
         TEST_DO(f.assertPutCount(0));
         f.runInMasterAndSync([&]() { f.feedview->prepareMove(*op); });
-        f.runInMasterAndSync([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+        f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
         TEST_DO(f.assertPutCount(1));
         TEST_DO(f.assertAndClearMoveOp());
         lid = op->getDbDocumentId().getLid();
@@ -326,7 +334,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
         MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id, 1), subdb_id + 1);
         op->setDbDocumentId(DbDocumentId(subdb_id + 1, 1));
         TEST_DO(f.assertRemoveCount(0));
-        f.runInMasterAndSync([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+        f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
         EXPECT_FALSE(f.metaStore->validLid(lid));
         TEST_DO(f.assertRemoveCount(1));
         TEST_DO(f.assertAndClearMoveOp());
@@ -354,7 +362,7 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
     op->setTargetLid(1);
     TEST_DO(f.assertPutCount(0));
     TEST_DO(f.assertRemoveCount(0));
-    f.runInMasterAndSync([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+    f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
     TEST_DO(f.assertPutCount(1));
     TEST_DO(f.assertRemoveCount(1));
     TEST_DO(f.assertAndClearMoveOp());
@@ -374,7 +382,7 @@ TEST_F("require that prune removed documents removes documents",
     PruneRemovedDocumentsOperation op(lids->getDocIdLimit(), subdb_id);
     op.setLidsToRemove(lids);
     op.setSerialNum(1);  // allows use of meta store.
-    f.runInMasterAndSync([&]() { f.feedview->handlePruneRemovedDocuments(op); });
+    f.runInMasterAndSyncAll([&]() { f.feedview->handlePruneRemovedDocuments(op); });
 
     EXPECT_EQUAL(2, f.removeCount);
     EXPECT_FALSE(f.metaStore->validLid(1));
@@ -390,7 +398,7 @@ TEST_F("require that heartbeat propagates and commits meta store", Fixture)
     EXPECT_EQUAL(0, f.feedview->heartBeatIndexedFieldsCount);
     EXPECT_EQUAL(0, f.feedview->heartBeatAttributesCount);
     EXPECT_EQUAL(0, f.heartbeatCount);
-    f.runInMasterAndSync([&]() { f.feedview->heartBeat(2); });
+    f.runInMasterAndSyncAll([&]() { f.feedview->heartBeat(2); });
     EXPECT_EQUAL(2u, f.metaStore->getStatus().getLastSyncToken());
     EXPECT_EQUAL(1, f.feedview->heartBeatIndexedFieldsCount);
     EXPECT_EQUAL(1, f.feedview->heartBeatAttributesCount);
