@@ -100,6 +100,8 @@ class HttpRequestDispatch {
                     if (t != null) requestCompletion.completeExceptionally(t);
                     else requestCompletion.complete(null);
                 });
+        // Start the reader after wiring of "finished futures" are complete
+        servletRequestReader.start();
     }
 
     ContentChannel dispatchFilterRequest(Response response) {
@@ -217,11 +219,7 @@ class HttpRequestDispatch {
             HttpRequestFactory.copyHeaders(jettyRequest, jdiscRequest);
             requestContentChannel = requestHandler.handleRequest(jdiscRequest, servletResponseController.responseHandler());
         }
-        //TODO If the below method throws servletRequestReader will not complete and
-        // requestContentChannel will not be closed and there is a reference leak
-        // Ditto for the servletInputStream
-        return new ServletRequestReader(
-                jettyRequest.getInputStream(), requestContentChannel, jDiscContext.janitor, metricReporter);
+        return new ServletRequestReader(jettyRequest, requestContentChannel, jDiscContext.janitor, metricReporter);
     }
 
     private static RequestHandler newRequestHandler(JDiscContext context,
