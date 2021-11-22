@@ -230,6 +230,7 @@ public class RoutingPolicies {
             for (var policy : routeEntry.getValue()) {
                 for (var target : endpoint.targets()) {
                     if (!policy.appliesTo(target.deployment())) continue;
+                    if (policy.dnsZone().isEmpty()) continue; // Does not support ALIAS records
                     int weight = target.weight();
                     if (isConfiguredOut(policy, inactiveZones) && removableFromApplicationEndpoint(policy, application, targetWeights)) {
                         weight = 0;
