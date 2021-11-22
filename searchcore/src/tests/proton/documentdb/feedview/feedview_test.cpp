@@ -512,7 +512,7 @@ struct FixtureBase
     }
 
     template <typename FunctionType>
-    void runInMaster(FunctionType func) {
+    void runInMasterAndSync(FunctionType func) {
         test::runInMasterAndSync(_writeService, func);
     }
 
@@ -558,7 +558,7 @@ struct FixtureBase
     void putAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         PutOperation op(docCtx.bid, docCtx.ts, docCtx.doc);
-        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performPut(std::move(ft), op); });
+        runInMasterAndSync([this, ft = std::move(token.ft), &op]() mutable { performPut(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -571,7 +571,7 @@ struct FixtureBase
     void updateAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         UpdateOperation op(docCtx.bid, docCtx.ts, docCtx.upd);
-        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performUpdate(std::move(ft), op); });
+        runInMasterAndSync([this, ft = std::move(token.ft), &op]() mutable { performUpdate(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -586,7 +586,7 @@ struct FixtureBase
     void removeAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         RemoveOperationWithDocId op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
-        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performRemove(std::move(ft), op); });
+        runInMasterAndSync([this, ft = std::move(token.ft), &op]() mutable { performRemove(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -604,7 +604,7 @@ struct FixtureBase
     void moveAndWait(const DocumentContext &docCtx, uint32_t fromLid, uint32_t toLid) {
         MoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc, DbDocumentId(pc._params._subDbId, fromLid), pc._params._subDbId);
         op.setTargetLid(toLid);
-        runInMaster([&]() { performMove(op); });
+        runInMasterAndSync([&]() { performMove(op); });
     }
 
     void performDeleteBucket(DeleteBucketOperation &op) {
@@ -615,7 +615,7 @@ struct FixtureBase
 
     void performForceCommit() { getFeedView().forceCommit(serial); }
     void forceCommitAndWait() {
-        runInMaster([&]() { performForceCommit(); });
+        runInMasterAndSync([&]() { performForceCommit(); });
     }
 
     bool assertTrace(const vespalib::string &exp) {
@@ -642,7 +642,7 @@ struct FixtureBase
         fv.handleCompactLidSpace(op);
     }
     void compactLidSpaceAndWait(uint32_t wantedLidLimit) {
-        runInMaster([&] () { performCompactLidSpace(wantedLidLimit); });
+        runInMasterAndSync([&]() { performCompactLidSpace(wantedLidLimit); });
     }
     void assertChangeHandler(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {
         _gidToLidChangeHandler->assertChanges(expGid, expLid, expChanges);
@@ -931,7 +931,7 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
 
     // delete bucket for user 1
     DeleteBucketOperation op(docs[0].bid);
-    f.runInMaster([&] () { f.performDeleteBucket(op); });
+    f.runInMasterAndSync([&]() { f.performDeleteBucket(op); });
     f.dms_commit();
 
     EXPECT_EQUAL(0u, f.getBucketDB()->get(docs[0].bid).getDocumentCount());
@@ -1034,7 +1034,7 @@ TEST_F("require that removes are not remembered", SearchableFeedViewFixture)
 TEST_F("require that heartbeat propagates to index- and attributeadapter",
        SearchableFeedViewFixture)
 {
-    f.runInMaster([&] () { f.fv.heartBeat(2); });
+    f.runInMasterAndSync([&]() { f.fv.heartBeat(2); });
     EXPECT_EQUAL(1, f.miw._heartBeatCount);
     EXPECT_EQUAL(1, f.maw._heartBeatCount);
 }
@@ -1146,7 +1146,7 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
     EXPECT_TRUE(assertThreadObserver(5, 4, 4, f.writeServiceObserver()));
     CompactLidSpaceOperation op(0, 2);
     op.setSerialNum(0);
-    f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
+    f.runInMasterAndSync([&]() { f.fv.handleCompactLidSpace(op); });
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
     EXPECT_TRUE(assertThreadObserver(6, 6, 5, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
