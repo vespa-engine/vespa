@@ -8,7 +8,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
@@ -669,7 +668,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 ? jvmGCOPtions
                 : deployState.getProperties().jvmGCOptions();
         return (options == null || options.isEmpty())
-                ? (deployState.isHosted() ? ContainerCluster.CMS : ContainerCluster.G1GC)
+                ? (deployState.isHosted() ? ContainerCluster.PARALLEL_GC : ContainerCluster.G1GC)
                 : options;
     }
 
