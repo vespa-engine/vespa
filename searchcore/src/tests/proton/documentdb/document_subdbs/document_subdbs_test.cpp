@@ -318,7 +318,7 @@ struct FixtureBase
         _writeService.sync_all_executors();
     }
     template <typename FunctionType>
-    void runInMaster(FunctionType func) {
+    void runInMasterAndSync(FunctionType func) {
         proton::test::runInMasterAndSync(_writeService, func);
     }
     void init() {
@@ -328,13 +328,13 @@ struct FixtureBase
         initializer::TaskRunner taskRunner(executor);
         taskRunner.runTask(task);
         auto sessionMgr = std::make_shared<SessionManager>(1);
-        runInMaster([&] () { _subDb.initViews(*_snapshot->_cfg, sessionMgr); });
+        runInMasterAndSync([&]() { _subDb.initViews(*_snapshot->_cfg, sessionMgr); });
     }
     void basicReconfig(SerialNum serialNum) {
-        runInMaster([&] () { performReconfig(serialNum, TwoAttrSchema(), ConfigDir2::dir()); });
+        runInMasterAndSync([&]() { performReconfig(serialNum, TwoAttrSchema(), ConfigDir2::dir()); });
     }
     void reconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
-        runInMaster([&] () { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
+        runInMasterAndSync([&]() { performReconfig(serialNum, reconfigSchema, reconfigConfigDir); });
     }
     void performReconfig(SerialNum serialNum, const Schema &reconfigSchema, const vespalib::string &reconfigConfigDir) {
         MyConfigSnapshot::UP newCfg(new MyConfigSnapshot(reconfigSchema, reconfigConfigDir));
@@ -782,32 +782,32 @@ struct DocumentHandler
     void putDoc(PutOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMaster([&]() {
+        _f.runInMasterAndSync([&]() {
             feedView->preparePut(op);
             feedView->handlePut(FeedToken(), op);
             feedView->forceCommit(CommitParam(op.getSerialNum()), std::make_shared<vespalib::GateCallback>(gate));
-        } );
+        });
         gate.await();
     }
     void moveDoc(MoveOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMaster([&]() {
+        _f.runInMasterAndSync([&]() {
             auto onDone = std::make_shared<vespalib::GateCallback>(gate);
             feedView->handleMove(op, onDone);
             feedView->forceCommit(CommitParam(op.getSerialNum()), onDone);
-        } );
+        });
         gate.await();
     }
     void removeDoc(RemoveOperation &op)
     {
         IFeedView::SP feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMaster([&]() {
+        _f.runInMasterAndSync([&]() {
             feedView->prepareRemove(op);
             feedView->handleRemove(FeedToken(), op);
             feedView->forceCommit(CommitParam(op.getSerialNum()), std::make_shared<vespalib::GateCallback>(gate));
-        } );
+        });
         gate.await();
     }
     void putDocs() {

@@ -136,7 +136,7 @@ public:
     }
 
     template <typename FunctionType>
-    void runInMaster(FunctionType func) {
+    void runInMasterAndSync(FunctionType func) {
         test::runInMasterAndSync(_writeService, func);
     }
 
@@ -155,15 +155,15 @@ public:
     }
 
     void delayReuse(uint32_t lid) {
-        runInMaster([&] () { _lidReuseDelayer->delayReuse(lid); } );
+        runInMasterAndSync([&]() { _lidReuseDelayer->delayReuse(lid); });
     }
 
     void delayReuse(const std::vector<uint32_t> &lids) {
-        runInMaster([&] () { _lidReuseDelayer->delayReuse(lids); });
+        runInMasterAndSync([&]() { _lidReuseDelayer->delayReuse(lids); });
     }
 
     void commit() {
-        runInMaster([&] () { cycleLids(_lidReuseDelayer->getReuseLids()); });
+        runInMasterAndSync([&]() { cycleLids(_lidReuseDelayer->getReuseLids()); });
     }
 };
 
