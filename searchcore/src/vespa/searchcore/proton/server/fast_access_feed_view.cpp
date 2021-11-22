@@ -6,6 +6,7 @@
 #include "removedonecontext.h"
 #include "putdonecontext.h"
 #include <vespa/searchcore/proton/feedoperation/operations.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 using document::Document;
 using document::DocumentUpdate;
@@ -72,7 +73,7 @@ void
 FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 {
     // Drain pending PutDoneContext and ForceCommitContext objects
-    forceCommitAndWait(search::CommitParam(op.getSerialNum()));
+    _writeService.sync_all_executors();
     _docIdLimit.set(op.getLidLimit());
     getAttributeWriter()->compactLidSpace(op.getLidLimit(), op.getSerialNum());
     Parent::handleCompactLidSpace(op);
