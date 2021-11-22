@@ -325,6 +325,10 @@ struct FixtureBase
     void runInMasterAndSync(FunctionType func) {
         proton::test::runInMasterAndSync(_writeService, func);
     }
+    template <typename FunctionType>
+    void runInMaster(FunctionType func) {
+        proton::test::runInMaster(_writeService, func);
+    }
     void init() {
         DocumentSubDbInitializer::SP task =
             _subDb.createInitializer(*_snapshot->_cfg, Traits::configSerial(), IndexConfig());
@@ -783,7 +787,7 @@ struct DocumentHandler
     void putDoc(PutOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMasterAndSync([&]() {
+        _f.runInMaster([&]() {
             feedView->preparePut(op);
             feedView->handlePut(FeedToken(), op);
             feedView->forceCommit(CommitParam(op.getSerialNum()), std::make_shared<vespalib::GateCallback>(gate));
@@ -793,7 +797,7 @@ struct DocumentHandler
     void moveDoc(MoveOperation &op) {
         IFeedView::SP feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMasterAndSync([&]() {
+        _f.runInMaster([&]() {
             auto onDone = std::make_shared<vespalib::GateCallback>(gate);
             feedView->handleMove(op, onDone);
             feedView->forceCommit(CommitParam(op.getSerialNum()), onDone);
@@ -804,7 +808,7 @@ struct DocumentHandler
     {
         IFeedView::SP feedView = _f._subDb.getFeedView();
         vespalib::Gate gate;
-        _f.runInMasterAndSync([&]() {
+        _f.runInMaster([&]() {
             feedView->prepareRemove(op);
             feedView->handleRemove(FeedToken(), op);
             feedView->forceCommit(CommitParam(op.getSerialNum()), std::make_shared<vespalib::GateCallback>(gate));

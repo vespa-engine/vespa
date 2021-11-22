@@ -136,6 +136,11 @@ public:
     }
 
     template <typename FunctionType>
+    void runInMasterAndSyncAll(FunctionType func) {
+        test::runInMasterAndSyncAll(_writeService, func);
+    }
+
+    template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
         test::runInMasterAndSync(_writeService, func);
     }
@@ -163,7 +168,7 @@ public:
     }
 
     void commit() {
-        runInMasterAndSync([&]() { cycleLids(_lidReuseDelayer->getReuseLids()); });
+        runInMasterAndSyncAll([&]() { cycleLids(_lidReuseDelayer->getReuseLids()); });
     }
 };
 
