@@ -2,11 +2,14 @@
 
 #include <vespa/storage/persistence/apply_bucket_diff_state.h>
 #include <vespa/storage/persistence/merge_bucket_info_syncer.h>
+#include <vespa/storage/persistence/filestorage/merge_handler_metrics.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/metrics/metricset.h>
 #include <vespa/persistence/spi/result.h>
+#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <gtest/gtest.h>
 
 using document::DocumentId;
@@ -75,19 +78,26 @@ class ApplyBucketDiffStateTestBase : public ::testing::Test
 public:
     uint32_t                   sync_count;
     DummyMergeBucketInfoSyncer syncer;
+    metrics::MetricSet         merge_handler_metrics_owner;
+    MergeHandlerMetrics        merge_handler_metrics;
+    framework::defaultimplementation::FakeClock clock;
     MonitoredRefCount          monitored_ref_count;
 
     ApplyBucketDiffStateTestBase()
         : ::testing::Test(),
           sync_count(0u),
-          syncer(sync_count)
+          syncer(sync_count),
+          merge_handler_metrics_owner("owner", {}, "owner"),
+          merge_handler_metrics(&merge_handler_metrics_owner),
+          clock(),
+          monitored_ref_count()
     {
     }
 
     ~ApplyBucketDiffStateTestBase();
 
     std::shared_ptr<ApplyBucketDiffState> make_state() {
-        return ApplyBucketDiffState::create(syncer, spi::Bucket(dummy_document_bucket), RetainGuard(monitored_ref_count));
+        return ApplyBucketDiffState::create(syncer, merge_handler_metrics, clock, spi::Bucket(dummy_document_bucket), RetainGuard(monitored_ref_count));
     }
 };
 
@@ -166,6 +176,31 @@ TEST_F(ApplyBucketDiffStateTest, failed_sync_bucket_info_is_detected)
     syncer.set_fail(fail);
     state->mark_stale_bucket_info();
     check_failure(fail);
+}
+
+TEST_F(ApplyBucketDiffStateTest, data_write_latency_is_updated)
+{
+    clock.addMilliSecondsToTime(10);
+    state.reset();
+    EXPECT_EQ(10.0, merge_handler_metrics.mergeDataWriteLatency.getLast());
+    EXPECT_EQ(1, merge_handler_metrics.mergeDataWriteLatency.getCount());
+}
+
+TEST_F(ApplyBucketDiffStateTest, total_latency_is_not_updated)
+{
+    clock.addMilliSecondsToTime(14);
+    state.reset();
+    EXPECT_EQ(0.0, merge_handler_metrics.mergeLatencyTotal.getLast());
+    EXPECT_EQ(0, merge_handler_metrics.mergeLatencyTotal.getCount());
+}
+
+TEST_F(ApplyBucketDiffStateTest, total_latency_is_updated)
+{
+    state->set_merge_start_time(framework::MilliSecTimer(clock));
+    clock.addMilliSecondsToTime(14);
+    state.reset();
+    EXPECT_EQ(14.0, merge_handler_metrics.mergeLatencyTotal.getLast());
+    EXPECT_EQ(1, merge_handler_metrics.mergeLatencyTotal.getCount());
 }
 
 }

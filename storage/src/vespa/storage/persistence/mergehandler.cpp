@@ -1255,14 +1255,11 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
             _env._nodeIndex, index);
     }
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
-       framework::MilliSecTimer startTime(_clock);
-       async_results = ApplyBucketDiffState::create(*this, bucket, RetainGuard(*_monitored_ref_count));
+       async_results = ApplyBucketDiffState::create(*this, _env._metrics.merge_handler_metrics, _clock, bucket, RetainGuard(*_monitored_ref_count));
        applyDiffLocally(bucket, cmd.getDiff(), index, tracker->context(), async_results);
        if (!_async_apply_bucket_diff.load(std::memory_order_relaxed)) {
             check_apply_diff_sync(std::move(async_results));
         }
-        _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(
-                startTime.getElapsedTimeAsDouble());
     } else {
         LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u).",
             bucket.toString().c_str(), _env._nodeIndex, index);
@@ -1365,13 +1362,11 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, Messa
                 _env._metrics.merge_handler_metrics.mergeDataReadLatency.addValue(startTime.getElapsedTimeAsDouble());
             }
             if (applyDiffHasLocallyNeededData(diff, index)) {
-                framework::MilliSecTimer startTime(_clock);
-                async_results = ApplyBucketDiffState::create(*this, bucket, RetainGuard(*_monitored_ref_count));
+                async_results = ApplyBucketDiffState::create(*this, _env._metrics.merge_handler_metrics, _clock, bucket, RetainGuard(*_monitored_ref_count));
                 applyDiffLocally(bucket, diff, index, s->context, async_results);
                 if (!_async_apply_bucket_diff.load(std::memory_order_relaxed)) {
                     check_apply_diff_sync(std::move(async_results));
                 }
-                _env._metrics.merge_handler_metrics.mergeDataWriteLatency.addValue(startTime.getElapsedTimeAsDouble());
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
                     bucket.toString().c_str(),
@@ -1416,7 +1411,11 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, Messa
                     // We have sent something on and shouldn't reply now.
                     clearState = false;
                 } else {
-                    _env._metrics.merge_handler_metrics.mergeLatencyTotal.addValue(s->startTime.getElapsedTimeAsDouble());
+                    if (async_results) {
+                        async_results->set_merge_start_time(s->startTime);
+                    } else {
+                        _env._metrics.merge_handler_metrics.mergeLatencyTotal.addValue(s->startTime.getElapsedTimeAsDouble());
+                    }
                 }
             }
         } else {
