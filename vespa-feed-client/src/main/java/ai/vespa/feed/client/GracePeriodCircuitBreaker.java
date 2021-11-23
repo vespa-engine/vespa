@@ -31,20 +31,32 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
     private final long graceMillis;
     private final long doomMillis;
 
+    /**
+     * Creates a new circuit breaker with the given grace periods.
+     * @param grace the period of consecutive failures before state changes to half-open.
+     */
+    public GracePeriodCircuitBreaker(Duration grace) {
+        this(System::currentTimeMillis, grace, null);
+    }
+
+    /**
+     * Creates a new circuit breaker with the given grace periods.
+     * @param grace the period of consecutive failures before state changes to half-open.
+     * @param doom the period of consecutive failures before shutting down.
+     */
     public GracePeriodCircuitBreaker(Duration grace, Duration doom) {
         this(System::currentTimeMillis, grace, doom);
+        if (doom.isNegative())
+            throw new IllegalArgumentException("Doom delay must be non-negative");
     }
 
     GracePeriodCircuitBreaker(LongSupplier clock, Duration grace, Duration doom) {
         if (grace.isNegative())
             throw new IllegalArgumentException("Grace delay must be non-negative");
 
-        if (doom.isNegative())
-            throw new IllegalArgumentException("Doom delay must be non-negative");
-
         this.clock = requireNonNull(clock);
         this.graceMillis = grace.toMillis();
-        this.doomMillis = doom.toMillis();
+        this.doomMillis = doom == null ? -1 : doom.toMillis();
     }
 
     @Override
@@ -74,11 +86,11 @@ public class GracePeriodCircuitBreaker implements FeedClient.CircuitBreaker {
         long failingMillis = clock.getAsLong() - failingSinceMillis.get();
         if (failingMillis > graceMillis && halfOpen.compareAndSet(false, true))
             log.log(INFO, "Circuit breaker is now half-open, as no requests have succeeded for the " +
-                          "last " + failingMillis + "ms. The server will be pinged to see if it recovers, " +
-                          "but this client will give up if no successes are observed within " + doomMillis + "ms. " +
-                          "First failure was '" + detail.get() + "'.");
+                          "last " + failingMillis + "ms. The server will be pinged to see if it recovers" +
+                          (doomMillis >= 0 ? ", but this client will give up if no successes are observed within " + doomMillis + "ms" : "") +
+                          ". First failure was '" + detail.get() + "'.");
 
-        if (failingMillis > doomMillis && open.compareAndSet(false, true))
+        if (doomMillis >= 0 && failingMillis > doomMillis && open.compareAndSet(false, true))
             log.log(WARNING, "Circuit breaker is now open, after " + doomMillis + "ms of failing request, " +
                              "and this client will give up and abort its remaining feed operations.");
 
