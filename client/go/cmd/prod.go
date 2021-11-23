@@ -146,8 +146,8 @@ $ vespa prod submit`,
 		}
 		isCI := os.Getenv("CI") != ""
 		if !isCI {
-			fmt.Fprintln(stderr, color.Yellow("Warning:"), "Submitting from a non-CI environment is discouraged")
-			printErrHint(nil, "See https://cloud.vespa.ai/en/getting-to-production for best practices")
+			fmt.Fprintln(stderr, color.Yellow("Warning:"), "We recommend doing this only from a CD job")
+			printErrHint(nil, "See https://cloud.vespa.ai/en/getting-to-production")
 		}
 		opts := getDeploymentOpts(cfg, pkg, target)
 		if err := vespa.Submit(opts); err != nil {
