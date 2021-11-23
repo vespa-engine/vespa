@@ -23,6 +23,7 @@ private:
     std::shared_ptr<const lib::ClusterState> _clusterState;
     std::shared_ptr<const lib::Distribution> _distribution;
     bool _nodeUpInLastNodeStateSeenByProvider;
+    bool _nodeMaintenanceInLastNodeStateSeenByProvider;
 
 public:
     using UP = std::unique_ptr<ContentBucketSpace>;
@@ -36,6 +37,8 @@ public:
     std::shared_ptr<const lib::Distribution> getDistribution() const;
     bool getNodeUpInLastNodeStateSeenByProvider() const;
     void setNodeUpInLastNodeStateSeenByProvider(bool nodeUpInLastNodeStateSeenByProvider);
+    bool getNodeMaintenanceInLastNodeStateSeenByProvider() const;
+    void setNodeMaintenanceInLastNodeStateSeenByProvider(bool nodeMaintenanceInLastNodeStateSeenByProvider);
 };
 
 }

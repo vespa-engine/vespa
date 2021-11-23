@@ -21,8 +21,8 @@ private:
 public:
     explicit ContentBucketSpaceRepo(const ContentBucketDbOptions&);
     ContentBucketSpace &get(document::BucketSpace bucketSpace) const;
-    BucketSpaceMap::const_iterator begin() const { return _map.begin(); }
-    BucketSpaceMap::const_iterator end() const { return _map.end(); }
+    BucketSpaceMap::const_iterator begin() const noexcept { return _map.begin(); }
+    BucketSpaceMap::const_iterator end() const noexcept { return _map.end(); }
 
     BucketSpaces getBucketSpaces() const;
     size_t getBucketMemoryUsage() const;

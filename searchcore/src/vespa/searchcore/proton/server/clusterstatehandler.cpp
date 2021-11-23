@@ -56,11 +56,12 @@ ClusterStateHandler::performSetClusterState(const ClusterState *calc, IGenericRe
 {
     LOG(debug,
         "performSetClusterState(): "
-        "clusterUp(%s), nodeUp(%s), nodeInitializing(%s)"
+        "clusterUp(%s), nodeUp(%s), nodeInitializing(%s), nodeMaintenance(%s)"
         "changedHandlers.size() = %zu",
         (calc->clusterUp() ? "true" : "false"),
         (calc->nodeUp() ? "true" : "false"),
         (calc->nodeInitializing() ? "true" : "false"),
+        (calc->nodeMaintenance() ? "true" : "false"),
         _changedHandlers.size());
     if (!_changedHandlers.empty()) {
         auto newCalc = std::make_shared<ClusterStateAdapter>(*calc);
