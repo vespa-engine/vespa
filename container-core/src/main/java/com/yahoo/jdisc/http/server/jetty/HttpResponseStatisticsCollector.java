@@ -299,6 +299,7 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
                     .collect(Collectors.toSet());
         }
 
+        @SuppressWarnings("removal")
         private static Collection<String> metricNames(Request req) {
             int code = req.getResponse().getStatus();
             if (code == 401) return Set.of(MetricDefinitions.RESPONSES_401, MetricDefinitions.RESPONSES_4XX);

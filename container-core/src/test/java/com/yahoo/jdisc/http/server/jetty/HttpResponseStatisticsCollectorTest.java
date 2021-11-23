@@ -76,6 +76,7 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
+    @SuppressWarnings("removal")
     public void statistics_include_grouped_and_single_statuscodes() {
         testRequest("http", 401, "GET");
         testRequest("http", 404, "GET");
