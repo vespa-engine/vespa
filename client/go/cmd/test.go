@@ -106,7 +106,7 @@ func runTest(testPath string, target vespa.Target) string {
 	if test.Name == "" {
 		testName = testPath
 	}
-	fmt.Fprintf(stdout, "Running %s: ", testName)
+	fmt.Fprintf(stdout, "Running %s:", testName)
 
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, path.Dir(testPath))
 	if err != nil {
@@ -126,12 +126,15 @@ func runTest(testPath string, target vespa.Target) string {
 			fatalErr(err, fmt.Sprintf("\nError verifying %s", assertionName))
 		}
 		if failure != "" {
-			fmt.Fprintf(stdout, "\nFailed verifying %s: \n%s\n", assertionName, failure)
+			fmt.Fprintf(stdout, "\nFailed verifying %s:\n%s\n", assertionName, failure)
 			return fmt.Sprintf("%v: %v", testName, assertionName)
 		}
-		fmt.Print(".")
+		if i == 0 {
+			fmt.Fprintf(stdout, " ")
+		}
+		fmt.Fprint(stdout, ".")
 	}
-	fmt.Println(" OK!")
+	fmt.Fprintln(stdout, " OK!")
 	return ""
 }
 

@@ -1,0 +1,34 @@
+{
+  "root": {
+    "children": [
+      {
+        "fields": {
+          "artist": "Foo Fighters",
+          "documentid": "id:test:music::doc",
+          "sddocname": "music"
+        },
+        "id": "id:test:music::doc",
+        "relevance": 0.38186238359951247,
+        "source": "music"
+      }
+    ],
+    "coverage": {
+      "coverage": 100,
+      "documents": 1,
+      "full": true,
+      "nodes": 1,
+      "results": 1,
+      "resultsFull": 1
+    },
+    "fields": {
+      "totalCount": 1
+    },
+    "id": "toplevel",
+    "relevance": 1
+  },
+  "timing": {
+    "querytime": 0.003,
+    "searchtime": 0.004,
+    "summaryfetchtime": 0
+  }
+}
