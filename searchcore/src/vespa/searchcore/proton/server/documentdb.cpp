@@ -551,7 +551,10 @@ DocumentDB::close()
     // Caller should have removed document DB from feed router.
     _refCount.waitForZeroRefCount();
 
-    _writeService.sync_all_executors();
+    masterExecute([this] () {
+        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber()));
+    });
+    _writeService.master().sync();
 
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics &metrics = getMetrics();
@@ -559,10 +562,8 @@ DocumentDB::close()
     _metricsWireService.cleanAttributes(metrics.notReady.attributes);
 
     masterExecute([this] () {
-        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber()));
         closeSubDBs();
     });
-    _writeService.sync_all_executors();
     // What about queued tasks ?
     _writeService.shutdown();
     _maintenanceController.kill();
