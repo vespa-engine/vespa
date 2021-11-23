@@ -47,8 +47,8 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 200, "GET");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 1L);
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_3XX, 2L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "read", 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_3XX, "read", 2L);
     }
 
     @Test
@@ -65,12 +65,12 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("https", 200, "POST");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 1L);
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, 1L);
-        assertStatisticsEntryPresent(stats, "http", "PUT", MetricDefinitions.RESPONSES_2XX, 1L);
-        assertStatisticsEntryPresent(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, 2L);
-        assertStatisticsEntryPresent(stats, "https", "GET", MetricDefinitions.RESPONSES_4XX, 1L);
-        assertStatisticsEntryPresent(stats, "https", "POST", MetricDefinitions.RESPONSES_2XX, 4L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "read", 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, "read", 1L);
+        assertStatisticsEntry(stats, "http", "PUT", MetricDefinitions.RESPONSES_2XX, "write", 1L);
+        assertStatisticsEntry(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, "write", 2L);
+        assertStatisticsEntry(stats, "https", "GET", MetricDefinitions.RESPONSES_4XX, "read", 1L);
+        assertStatisticsEntry(stats, "https", "POST", MetricDefinitions.RESPONSES_2XX, "write", 4L);
     }
 
     @Test
@@ -80,9 +80,9 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 403, "GET");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, 3L);
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_401, 1L);
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_403, 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, "read", 3L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_401, "read", 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_403, "read", 1L);
 
     }
 
@@ -92,12 +92,12 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 200, "GET");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 2L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "read", 2L);
 
         testRequest("http", 200, "GET");
 
         stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "read", 1L);
     }
 
     @Test
@@ -108,15 +108,15 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 200, "GET", "/status.html?foo=bar");
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "monitoring", 1L);
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "read", 1L);
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, "read", 1L);
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, "write", 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "monitoring", 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "read", 1L);
+        assertStatisticsEntry(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, "read", 1L);
+        assertStatisticsEntry(stats, "http", "POST", MetricDefinitions.RESPONSES_2XX, "write", 1L);
 
         testRequest("http", 200, "GET");
 
         stats = collector.takeStatistics();
-        assertStatisticsEntryPresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "read", 1L);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class HttpResponseStatisticsCollectorTest {
         testRequest("http", 200, "GET", "/search", com.yahoo.jdisc.Request.RequestType.WRITE);
 
         var stats = collector.takeStatistics();
-        assertStatisticsEntryWithRequestTypePresent(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "write", 1L);
+        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_2XX, "write", 1L);
     }
 
     @Before
@@ -172,18 +172,12 @@ public class HttpResponseStatisticsCollectorTest {
         return req;
     }
 
-    private static void assertStatisticsEntryPresent(List<StatisticsEntry> result, String scheme, String method, String name, long expectedValue) {
+    private static void assertStatisticsEntry(List<StatisticsEntry> result, String scheme, String method, String name, String requestType, long expectedValue) {
         long value = result.stream()
-                .filter(entry -> entry.method.equals(method) && entry.scheme.equals(scheme) && entry.name.equals(name))
-                .mapToLong(entry -> entry.value)
-                .findAny()
-                .orElseThrow(() -> new AssertionError(String.format("Not matching entry in result (scheme=%s, method=%s, name=%s)", scheme, method, name)));
-        assertThat(value, equalTo(expectedValue));
-    }
-
-    private static void assertStatisticsEntryWithRequestTypePresent(List<StatisticsEntry> result, String scheme, String method, String name, String requestType, long expectedValue) {
-        long value = result.stream()
-                .filter(entry -> entry.method.equals(method) && entry.scheme.equals(scheme) && entry.name.equals(name) && entry.requestType.equals(requestType))
+                .filter(entry -> entry.dimensions.method.equals(method)
+                        && entry.dimensions.scheme.equals(scheme)
+                        && entry.name.equals(name)
+                        && entry.dimensions.requestType.equals(requestType))
                 .mapToLong(entry -> entry.value)
                 .reduce(Long::sum)
                 .orElseThrow(() -> new AssertionError(String.format("Not matching entry in result (scheme=%s, method=%s, name=%s, type=%s)", scheme, method, name, requestType)));
