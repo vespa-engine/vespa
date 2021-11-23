@@ -84,6 +84,29 @@ struct UseCond : State {
     }
 };
 
+struct UseCondNolock : State {
+    std::mutex mutex;
+    std::condition_variable cond;
+    void wakeup() {
+        std::unique_lock<std::mutex> lock(mutex);
+        set_wakeup();
+        lock.unlock();
+        cond.notify_one();
+    }
+    void stop() {
+        std::unique_lock<std::mutex> lock(mutex);
+        set_stop();
+        lock.unlock();
+        cond.notify_one();
+    }
+    void wait() {
+        std::unique_lock<std::mutex> lock(mutex);
+        while (is_ready()) {
+            cond.wait(lock);
+        }
+    }
+};
+
 struct UsePipe : State {
     int pipefd[2];
     UsePipe() {
@@ -220,6 +243,7 @@ void benchmark() {
 TEST(WakeupBench, using_spin) { benchmark<Wakeup<UseSpin>>(); }
 TEST(WakeupBench, using_spin_yield) { benchmark<Wakeup<UseSpinYield>>(); }
 TEST(WakeupBench, using_cond) { benchmark<Wakeup<UseCond>>(); }
+TEST(WakeupBench, using_cond_nolock) { benchmark<Wakeup<UseCondNolock>>(); }
 TEST(WakeupBench, using_pipe) { benchmark<Wakeup<UsePipe>>(); }
 
 #ifdef __linux__
