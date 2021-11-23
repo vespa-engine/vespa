@@ -181,18 +181,20 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
         final String scheme;
         final String method;
         final String requestType;
+        final int statusCode;
 
-        private Dimensions(String protocol, String scheme, String method, String requestType) {
+        private Dimensions(String protocol, String scheme, String method, String requestType, int statusCode) {
             this.protocol = protocol;
             this.scheme = scheme;
             this.method = method;
             this.requestType = requestType;
+            this.statusCode = statusCode;
         }
 
         static Dimensions of(Request req, Collection<String> monitoringHandlerPaths,
                              Collection<String> searchHandlerPaths) {
             String requestType = requestType(req, monitoringHandlerPaths, searchHandlerPaths);
-            return new Dimensions(protocol(req), scheme(req), method(req), requestType);
+            return new Dimensions(protocol(req), scheme(req), method(req), requestType, statusCode(req));
         }
 
         Map<String, Object> asMap() {
@@ -201,6 +203,7 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
             builder.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
             builder.put(MetricDefinitions.METHOD_DIMENSION, method);
             builder.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, requestType);
+            builder.put(MetricDefinitions.STATUS_CODE_DIMENSION, (long) statusCode);
             return Map.copyOf(builder);
         }
 
@@ -243,6 +246,8 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
             }
         }
 
+        private static int statusCode(Request req) { return req.getResponse().getStatus(); }
+
         private static String requestType(Request req, Collection<String> monitoringHandlerPaths,
                                           Collection<String> searchHandlerPaths) {
             HttpRequest.RequestType requestType = (HttpRequest.RequestType)req.getAttribute(requestTypeAttribute);
@@ -259,16 +264,21 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
             else return "write";
         }
 
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Dimensions that = (Dimensions) o;
-            return Objects.equals(protocol, that.protocol) && Objects.equals(scheme, that.scheme)
-                    && Objects.equals(method, that.method) && Objects.equals(requestType, that.requestType);
+            return statusCode == that.statusCode && Objects.equals(protocol, that.protocol)
+                    && Objects.equals(scheme, that.scheme) && Objects.equals(method, that.method)
+                    && Objects.equals(requestType, that.requestType);
         }
 
-        @Override public int hashCode() { return Objects.hash(protocol, scheme, method, requestType); }
+        @Override
+        public int hashCode() {
+            return Objects.hash(protocol, scheme, method, requestType, statusCode);
+        }
 
     }
 
