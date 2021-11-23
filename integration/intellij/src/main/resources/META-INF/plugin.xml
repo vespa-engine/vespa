@@ -11,8 +11,19 @@
     <depends>com.intellij.modules.platform</depends>
 
     <!-- Text to display as description on Preferences/Settings | Plugin page -->
-    <description><![CDATA[
-    <p>Vespa.ai schema file support</p>
+    <description><![CDATA[    <p>Support for editing Vespa.ai
+    <a href="https://docs.vespa.ai/en/reference/schema-reference.html">schema files</a>.</p>
+    <p>Features:</p>
+    <ul>
+    <li>Syntax highlighting</li>
+    <li>Structure view</li>
+    <li>Find usages</li>
+    <li>Function call hierarchy</li>
+    <li>Go to declaration</li>
+    <li>Go to symbol</li>
+    <li>Refactoring</li>
+    <li>Turn lines into a comment</li>
+    </ul>
     ]]></description>
     
     <!-- Extension points defined by the plugin -->
