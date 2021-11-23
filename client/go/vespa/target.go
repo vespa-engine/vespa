@@ -128,7 +128,7 @@ func (s *Service) Description() string {
 
 func (t *customTarget) Type() string { return t.targetType }
 
-func (t *customTarget) Service(name string, timeout time.Duration, _ int64, _ string) (*Service, error) {
+func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunID int64, cluster string) (*Service, error) {
 	if timeout > 0 && name != deployService {
 		if err := t.waitForConvergence(timeout); err != nil {
 			return nil, err

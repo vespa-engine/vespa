@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
-	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -26,6 +26,7 @@ func init() {
 	rootCmd.AddCommand(testCmd)
 }
 
+// TODO: add link to test doc at cloud.vespa.ai
 var testCmd = &cobra.Command{
 	Use:   "test [tests directory or test file]",
 	Short: "Run a test suite, or a single test",
@@ -46,16 +47,16 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			testPath = args[0]
 		}
 		if count, failed := runTests(testPath, target); len(failed) != 0 {
-			_, _ = fmt.Fprintf(stdout, "\nFailed %d of %d tests:\n", len(failed), count)
+			fmt.Fprintf(stdout, "\nFailed %d of %d tests:\n", len(failed), count)
 			for _, test := range failed {
-				_, _ = fmt.Fprintln(stdout, test)
+				fmt.Fprintln(stdout, test)
 			}
 			exitFunc(3)
 		} else if count == 0 {
-			_, _ = fmt.Fprintf(stdout, "Failed to find any tests at '%v'\n", testPath)
+			fmt.Fprintf(stdout, "Failed to find any tests at '%v'\n", testPath)
 			exitFunc(3)
 		} else {
-			_, _ = fmt.Fprintf(stdout, "%d tests completed successfully\n", count)
+			fmt.Fprintf(stdout, "%d tests completed successfully\n", count)
 		}
 	},
 }
@@ -71,7 +72,7 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 			fatalErr(err, "Failed reading specified test directory")
 		}
 		for _, test := range tests {
-			if !test.IsDir() && strings.HasSuffix(test.Name(), ".json") {
+			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
 				testPath := path.Join(rootPath, test.Name())
 				failure := runTest(testPath, target)
 				if failure != "" {
@@ -93,16 +94,19 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 // Runs the test at the given path, and returns the specified test name if the test fails
 func runTest(testPath string, target vespa.Target) string {
 	var test test
-	bytes := readFile(testPath)
-	if err := json.Unmarshal(bytes, &test); err != nil {
-		fatalErr(err, fmt.Sprintf("Failed to parse test file '%s", testPath))
+	testBytes, err := ioutil.ReadFile(testPath)
+	if err != nil {
+		fatalErr(err, fmt.Sprintf("Failed to read test file at '%s'", testPath))
+	}
+	if err = json.Unmarshal(testBytes, &test); err != nil {
+		fatalErr(err, fmt.Sprintf("Failed to parse test file at '%s", testPath))
 	}
 
 	testName := test.Name
 	if test.Name == "" {
 		testName = testPath
 	}
-	_, _ = fmt.Fprintf(stdout, "Running %s: ", testName)
+	fmt.Fprintf(stdout, "Running %s: ", testName)
 
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, path.Dir(testPath))
 	if err != nil {
@@ -119,7 +123,7 @@ func runTest(testPath string, target vespa.Target) string {
 			fatalErr(err, fmt.Sprintf("\nError verifying %s", assertionName))
 		}
 		if failure != "" {
-			_, _ = fmt.Fprintf(stdout, "\nFailed verifying %s: \n%s\n", assertionName, failure)
+			fmt.Fprintf(stdout, "\nFailed verifying %s: \n%s\n", assertionName, failure)
 			return fmt.Sprintf("%v: %v", testName, assertionName)
 		}
 		fmt.Print(".")
@@ -175,7 +179,7 @@ func verify(assertion assertion, testsPath string, defaultCluster string, defaul
 	requestUrl.RawQuery = query.Encode()
 
 	header := http.Header{}
-	header.Add("Content-Type", "application/json")
+	header.Add("Content-Type", "application/json") // TODO: Not guaranteed to be true ...
 
 	request := &http.Request{
 		URL:    requestUrl,
@@ -291,11 +295,15 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 	if parametersRaw != nil {
 		var parametersPath string
 		if err := json.Unmarshal(parametersRaw, &parametersPath); err == nil {
-			parametersRaw = readFile(path.Join(testsPath, parametersPath))
+			resolvedParametersPath := path.Join(testsPath, parametersPath)
+			parametersRaw, err = ioutil.ReadFile(resolvedParametersPath)
+			if err != nil {
+				fatalErr(err, fmt.Sprintf("Failed to read request parameters file at '%s'", resolvedParametersPath))
+			}
 		}
 		var parameters map[string]string
 		if err := json.Unmarshal(parametersRaw, &parameters); err != nil {
-			return nil, fmt.Errorf("request parameters must be JSON with only string values: %v", err)
+			return nil, fmt.Errorf("request parameters must be JSON with only string values: %w", err)
 		}
 		return parameters, nil
 	}
@@ -305,25 +313,13 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 	var bodyPath string
 	if err := json.Unmarshal(bodyRaw, &bodyPath); err == nil {
-		return readFile(path.Join(testsPath, bodyPath)), nil
+		resolvedBodyPath := path.Join(testsPath, bodyPath)
+		bodyRaw, err =  ioutil.ReadFile(resolvedBodyPath)
+		if err != nil {
+			fatalErr(err, fmt.Sprintf("Failed to read body file at '%s'", resolvedBodyPath))
+		}
 	}
 	return bodyRaw, nil
-}
-
-func readFile(filePath string) []byte {
-	file, err := os.Open(filePath)
-	if err != nil {
-		fatalErr(err, fmt.Sprintf("Failed to open file at '%v'", filePath))
-	}
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		fatalErr(err, fmt.Sprintf("Failed to read file at '%v'", filePath))
-	}
-	err = file.Close()
-	if err != nil {
-		fatalErr(err, fmt.Sprintf("Failed to closse file at '%v'", filePath))
-	}
-	return fileBytes
 }
 
 type test struct {
