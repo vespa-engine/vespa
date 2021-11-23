@@ -48,6 +48,16 @@ var apiKeyCmd = &cobra.Command{
 		if err := ioutil.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
 			printSuccess("API private key written to ", apiKeyFile)
 			printPublicKey(apiKeyFile, app.Tenant)
+			if vespa.Auth0AccessTokenEnabled() {
+				if err == nil {
+					if err := cfg.Set(cloudAuthFlag, "api-key"); err != nil {
+						fatalErr(err, "Could not write config")
+					}
+					if err := cfg.Write(); err != nil {
+						fatalErr(err)
+					}
+				}
+			}
 		} else {
 			fatalErr(err, "Failed to write ", apiKeyFile)
 		}

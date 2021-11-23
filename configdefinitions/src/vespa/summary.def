@@ -2,6 +2,9 @@
 namespace=vespa.config.search
 
 defaultsummaryid int default=-1
+
+usev8geopositions bool default=false
+
 classes[].id int
 classes[].name string
 classes[].omitsummaryfeatures bool default=false

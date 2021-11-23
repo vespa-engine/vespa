@@ -208,16 +208,16 @@ class HttpRequestStrategyTest {
         // Enqueue some operations to the same id, which are serialised, and then shut down while operations are in flight.
         Phaser phaser = new Phaser(2);
         Phaser blocker = new Phaser(2);
-        AtomicReference<CompletableFuture<HttpResponse>> completion = new AtomicReference<>();
         cluster.expect((req, vessel) -> {
             if (req == blocking) {
-                phaser.arriveAndAwaitAdvance();  // Synchronise with tst main thread, and then ...
+                phaser.arriveAndAwaitAdvance();  // Synchronise with test main thread, and then ...
                 blocker.arriveAndAwaitAdvance(); // ... block dispatch thread, so we get something in the queue.
                 throw new RuntimeException("armageddon"); // Dispatch thread should die, tearing down everything.
             }
             else if (req == failing) {
                 phaser.arriveAndAwaitAdvance();  // Let test thread enqueue more ops before failing (and retrying) this.
                 vessel.completeExceptionally(new IOException("failed"));
+                phaser.arriveAndAwaitAdvance();  // Ensure a retry is scheduled before test thread is allowed to continue.
             }
             else phaser.arriveAndAwaitAdvance(); // Don't complete from mock cluster, but require destruction to do this.
         });
@@ -228,7 +228,8 @@ class HttpRequestStrategyTest {
         CompletableFuture<HttpResponse> blocked = strategy.enqueue(id3, blocking);
         CompletableFuture<HttpResponse> delayed = strategy.enqueue(id4, request);
         phaser.arriveAndAwaitAdvance(); // inflight completes dispatch, but causes no response.
-        phaser.arriveAndAwaitAdvance(); // failed completes dispatch, and a retry is enqueued.
+        phaser.arriveAndAwaitAdvance(); // failed is allowed to dispatch ...
+        phaser.arriveAndAwaitAdvance(); // ... and a retry is enqueued.
         phaser.arriveAndAwaitAdvance(); // blocked starts dispatch, and hangs, blocking dispatch thread.
 
         // Current state: inflight is "inflight to cluster", serialised1/2 are waiting completion of it;

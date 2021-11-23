@@ -44,7 +44,6 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
@@ -97,10 +96,11 @@ import com.yahoo.vespa.hosted.controller.maintenance.ResourceMeterMaintainer;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationState;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
@@ -1292,17 +1292,21 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                            request.getUri()).toString());
             }
         }
-        // Add dummy values for not-yet-existent prod deployments.
-        status.jobSteps().keySet().stream()
-              .filter(job -> job.application().instance().equals(instance.name()))
-              .filter(job -> job.type().isProduction() && job.type().isDeployment())
+        // Add dummy values for not-yet-existent prod deployments, and running dev/perf deployments.
+        Stream.concat(status.jobSteps().keySet().stream()
+                            .filter(job -> job.application().instance().equals(instance.name()))
+                            .filter(job -> job.type().isProduction() && job.type().isDeployment()),
+                      controller.jobController().active(instance.id()).stream()
+                                .map(run -> run.id().job())
+                                .filter(job -> job.type().environment().isManuallyDeployed()))
               .map(job -> job.type().zone(controller.system()))
               .filter(zone -> ! instance.deployments().containsKey(zone))
               .forEach(zone -> {
-                    Cursor deploymentObject = instancesArray.addObject();
-                    deploymentObject.setString("environment", zone.environment().value());
-                    deploymentObject.setString("region", zone.region().value());
+                  Cursor deploymentObject = instancesArray.addObject();
+                  deploymentObject.setString("environment", zone.environment().value());
+                  deploymentObject.setString("region", zone.region().value());
               });
+
 
         // TODO jonmv: Remove when clients are updated
         application.deployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", KeyUtils.toPem(key)));
@@ -1532,33 +1536,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (deployment == null) {
             throw new NotExistsException(instance + " has no deployment in " + zone);
         }
-
-        // The order here matters because setGlobalRotationStatus involves an external request that may fail.
-        // TODO(mpolden): Set only one of these when only one kind of global endpoints are supported per zone.
-        var deploymentId = new DeploymentId(instance.id(), zone);
-        setGlobalRotationStatus(deploymentId, inService, request);
-        setGlobalEndpointStatus(deploymentId, inService, request);
-
+        DeploymentId deploymentId = new DeploymentId(instance.id(), zone);
+        RoutingStatus.Agent agent = isOperator(request) ? RoutingStatus.Agent.operator : RoutingStatus.Agent.tenant;
+        RoutingStatus.Value status = inService ? RoutingStatus.Value.in : RoutingStatus.Value.out;
+        controller.routing().of(deploymentId).setRoutingStatus(status, agent);
         return new MessageResponse(Text.format("Successfully set %s in %s %s service",
                                                  instance.id().toShortString(), zone, inService ? "in" : "out of"));
-    }
-
-    /** Set the global endpoint status for given deployment. This only applies to global endpoints backed by a cloud service */
-    private void setGlobalEndpointStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
-        var agent = isOperator(request) ? RoutingStatus.Agent.operator : RoutingStatus.Agent.tenant;
-        var status = inService ? RoutingStatus.Value.in : RoutingStatus.Value.out;
-        controller.routing().policies().setRoutingStatus(deployment, status, agent);
-    }
-
-    /** Set the global rotation status for given deployment. This only applies to global endpoints backed by a rotation */
-    private void setGlobalRotationStatus(DeploymentId deployment, boolean inService, HttpRequest request) {
-        var requestData = toSlime(request.getData()).get();
-        var reason = mandatory("reason", requestData).asString();
-        var agent = isOperator(request) ? RoutingStatus.Agent.operator : RoutingStatus.Agent.tenant;
-        long timestamp = controller.clock().instant().getEpochSecond();
-        var status = inService ? EndpointStatus.Status.in : EndpointStatus.Status.out;
-        var endpointStatus = new EndpointStatus(status, reason, agent.name(), timestamp);
-        controller.routing().setGlobalRotationStatus(deployment, endpointStatus);
     }
 
     private HttpResponse getGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region) {
@@ -1566,15 +1549,19 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                      requireZone(environment, region));
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("globalrotationoverride");
-        controller.routing().globalRotationStatus(deploymentId)
-                  .forEach((endpoint, status) -> {
-                      array.addString(endpoint.upstreamIdOf(deploymentId));
-                      Cursor statusObject = array.addObject();
-                      statusObject.setString("status", status.getStatus().name());
-                      statusObject.setString("reason", status.getReason() == null ? "" : status.getReason());
-                      statusObject.setString("agent", status.getAgent() == null ? "" : status.getAgent());
-                      statusObject.setLong("timestamp", status.getEpoch());
-                  });
+        Optional<Endpoint> primaryEndpoint = controller.routing().readDeclaredEndpointsOf(deploymentId.applicationId())
+                                                       .requiresRotation()
+                                                       .primary();
+        if (primaryEndpoint.isPresent()) {
+            DeploymentRoutingContext context = controller.routing().of(deploymentId);
+            RoutingStatus status = context.routingStatus();
+            array.addString(primaryEndpoint.get().upstreamIdOf(deploymentId));
+            Cursor statusObject = array.addObject();
+            statusObject.setString("status", status.value().name());
+            statusObject.setString("reason", "");
+            statusObject.setString("agent", status.agent().name());
+            statusObject.setLong("timestamp", status.changedAt().getEpochSecond());
+        }
         return new SlimeJsonResponse(slime);
     }
 

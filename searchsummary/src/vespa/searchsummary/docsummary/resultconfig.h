@@ -33,6 +33,7 @@ private:
     typedef vespalib::hash_map<vespalib::string, uint32_t> NameMap;
     typedef vespalib::hash_map<uint32_t, ResultClass::UP> IdMap;
     uint32_t                    _defaultSummaryId;
+    bool                        _useV8geoPositions;
     search::util::StringEnum    _fieldEnum;
     IdMap                       _classLookup;
     NameMap                     _nameLookup; // name -> class id
@@ -41,6 +42,7 @@ private:
     void Init();
 
 public:
+    bool useV8geoPositions() const { return _useV8geoPositions; }
     class iterator {
     public:
         iterator(IdMap::iterator it) : _it(it) { }
@@ -123,11 +125,10 @@ public:
             return (b == RES_STRING || b == RES_DATA);
         case RES_LONG_STRING:
         case RES_LONG_DATA:
-        case RES_XMLSTRING:
         case RES_FEATUREDATA:
         case RES_JSONSTRING:
             return (b == RES_LONG_STRING || b == RES_LONG_DATA ||
-                    b == RES_XMLSTRING || b == RES_FEATUREDATA || b == RES_JSONSTRING);
+                    b == RES_FEATUREDATA || b == RES_JSONSTRING);
         default:
             return false;
         }
@@ -159,9 +160,8 @@ public:
             return b == RES_INT64;
         case RES_STRING:
         case RES_LONG_STRING:
-        case RES_XMLSTRING:
         case RES_JSONSTRING:
-            return (b == RES_STRING || b == RES_LONG_STRING || b == RES_XMLSTRING || b == RES_JSONSTRING);
+            return (b == RES_STRING || b == RES_LONG_STRING || b == RES_JSONSTRING);
         case RES_DATA:
         case RES_LONG_DATA:
             return (b == RES_DATA || b == RES_LONG_DATA);

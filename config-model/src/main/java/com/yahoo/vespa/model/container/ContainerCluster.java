@@ -114,8 +114,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final String APPLICATION_STATUS_HANDLER_CLASS = "com.yahoo.container.handler.observability.ApplicationStatusHandler";
     public static final String BINDINGS_OVERVIEW_HANDLER_CLASS = BindingsOverviewHandler.class.getName();
     public static final String LOG_HANDLER_CLASS = com.yahoo.container.handler.LogHandler.class.getName();
-    public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
     public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
+    public static final String PARALLEL_GC = "-XX:+UseParallelGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
 
     public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
     public static final BindingPattern STATE_HANDLER_BINDING_1 = SystemBindingPattern.fromHttpPath(StateHandler.STATE_API_ROOT);

@@ -54,6 +54,7 @@ vespa_add_library(searchcore_server STATIC
     health_adapter.cpp
     heart_beat_job.cpp
     idocumentdbowner.cpp
+    ifeedview.cpp
     ireplayconfig.cpp
     job_tracked_maintenance_job.cpp
     lid_space_compaction_handler.cpp

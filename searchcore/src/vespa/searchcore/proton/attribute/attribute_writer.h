@@ -83,13 +83,11 @@ public:
 private:
     using AttrMap = vespalib::hash_map<vespalib::string, AttributeWithInfo>;
     std::vector<WriteContext> _writeContexts;
-    const DataType           *_dataType;
     bool                      _hasStructFieldAttribute;
     AttrMap                   _attrMap;
 
     void setupWriteContexts();
     void setupAttributeMapping();
-    void buildFieldPaths(const DocumentType &docType, const DataType *dataType);
     void internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
                      bool allAttributes, OnWriteDoneType onWriteDone);
     void internalRemove(SerialNum serialNum, DocumentIdT lid, OnWriteDoneType onWriteDone);
@@ -120,6 +118,7 @@ public:
 
     void onReplayDone(uint32_t docIdLimit) override;
     bool hasStructFieldAttribute() const override;
+    void drain(OnWriteDoneType onWriteDone) override;
 
     // Should only be used for unit testing.
     const std::vector<WriteContext>& get_write_contexts() const {

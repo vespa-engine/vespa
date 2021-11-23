@@ -33,13 +33,6 @@ uint32_t
 calculateIndexingThreads(const ProtonConfig::Indexing & indexing, double concurrency, const HwInfo::Cpu &cpuInfo)
 {
     double scaledCores = cpuInfo.cores() * concurrency;
-    if (indexing.optimize != ProtonConfig::Indexing::Optimize::ADAPTIVE) {
-        // We are capping at 12 threads to reduce cost of waking up threads
-        // to achieve a better throughput.
-        // TODO: Fix this in a simpler/better way.
-        scaledCores = std::min(12.0, scaledCores);
-    }
-
     uint32_t indexingThreads = std::max((int32_t)std::ceil(scaledCores / 3), indexing.threads);
     return std::max(indexingThreads, 1u);
 }

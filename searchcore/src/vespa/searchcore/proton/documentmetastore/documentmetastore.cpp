@@ -207,6 +207,8 @@ void
 DocumentMetaStore::onCommit()
 {
     if (consider_compact_gid_to_lid_map()) {
+        incGeneration();
+        _changesSinceCommit = 0;
         _gidToLidMap.compact_worst();
         _gid_to_lid_map_write_itr_prepare_serial_num = 0u;
         _gid_to_lid_map_write_itr.begin(_gidToLidMap.getRoot());
@@ -690,7 +692,7 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
         bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
         bucketGuard->remove_batch(bdb_removed, _subDbType);
     }
-    incGeneration();
+    ++_changesSinceCommit;
     if (_op_listener) {
         _op_listener->notify_remove_batch();
     }

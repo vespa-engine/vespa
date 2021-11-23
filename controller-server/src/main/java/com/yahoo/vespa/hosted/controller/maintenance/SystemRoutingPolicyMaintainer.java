@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 
@@ -25,7 +26,8 @@ public class SystemRoutingPolicyMaintainer extends ControllerMaintainer {
         for (var zone : controller().zoneRegistry().zones().reachable().ids()) {
             for (var application : SystemApplication.values()) {
                 if (!application.hasEndpoint()) continue;
-                controller().routing().policies().refresh(application.id(), DeploymentSpec.empty, zone);
+                DeploymentId deployment = new DeploymentId(application.id(), zone);
+                controller().routing().of(deployment).configure(DeploymentSpec.empty);
             }
         }
         return 1.0;

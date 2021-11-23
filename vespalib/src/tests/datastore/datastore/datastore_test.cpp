@@ -705,6 +705,58 @@ TEST(DataStoreTest, control_static_sizes) {
     EXPECT_EQ(0, bs.size());
 }
 
+namespace {
+
+void test_free_element_to_held_buffer(bool direct, bool before_hold_buffer)
+{
+    MyStore s;
+    auto ref = s.addEntry(1);
+    EXPECT_EQ(0u, MyRef(ref).bufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(1u, s.primary_buffer_id());
+    
+    if (before_hold_buffer) {
+        if (direct) {
+            s.freeElem(ref, 1);
+        } else {
+            s.holdElem(ref, 1);
+        }
+    }
+    s.holdBuffer(0); // hold last buffer
+    if (!before_hold_buffer) {
+        if (direct) {
+            ASSERT_DEATH({ s.freeElem(ref, 1); }, "state.isOnHold\\(\\) && was_held");
+        } else {
+            ASSERT_DEATH({ s.holdElem(ref, 1); }, "state.isActive\\(\\)");
+        }
+    }
+    s.transferHoldLists(100);
+    s.trimHoldLists(101);
+}
+
+}
+
+TEST(DataStoreTest, free_to_active_then_held_buffer_is_ok)
+{
+    test_free_element_to_held_buffer(true, true);
+}
+
+TEST(DataStoreTest, hold_to_active_then_held_buffer_is_ok)
+{
+    test_free_element_to_held_buffer(false, true);
+}
+
+#ifndef NDEBUG
+TEST(DataStoreDeathTest, free_to_held_buffer_is_not_ok)
+{
+    test_free_element_to_held_buffer(true, false);
+}
+
+TEST(DataStoreDeathTest, hold_to_held_buffer_is_not_ok)
+{
+    test_free_element_to_held_buffer(false, false);
+}
+#endif
 
 }
 

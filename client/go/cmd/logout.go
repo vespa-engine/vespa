@@ -24,7 +24,7 @@ var logoutCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName())
+		a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName(), getApiURL())
 		if err != nil {
 			return err
 		}

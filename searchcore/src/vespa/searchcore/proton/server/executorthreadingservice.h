@@ -2,13 +2,13 @@
 #pragma once
 
 #include "executor_thread_service.h"
+#include "threading_service_config.h"
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 namespace proton {
 
 class ExecutorThreadingServiceStats;
-class ThreadingServiceConfig;
 
 /**
  * Implementation of IThreadingService using 2 underlying thread stack executors
@@ -19,6 +19,7 @@ class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 private:
     vespalib::ThreadExecutor                           & _sharedExecutor;
     vespalib::ThreadStackExecutor                        _masterExecutor;
+    ThreadingServiceConfig::SharedFieldWriterExecutor    _shared_field_writer;
     std::atomic<uint32_t>                                _master_task_limit;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _indexExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;

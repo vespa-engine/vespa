@@ -146,10 +146,10 @@ protected:
     vespalib::VarHolder<IFeedView::SP>      _iFeedView;
     std::mutex                             &_configMutex;
     HwInfo                                  _hwInfo;
+    const IGetSerialNum                    &_getSerialNum;
 private:
-    const IGetSerialNum             &_getSerialNum;
-    TlsSyncer                        _tlsSyncer;
-    DocumentMetaStoreFlushTarget::SP _dmsFlushTarget;
+    TlsSyncer                                  _tlsSyncer;
+    DocumentMetaStoreFlushTarget::SP           _dmsFlushTarget;
     std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
     std::shared_ptr<PendingLidTrackerBase>     _pendingLidsForCommit;
     bool                                       _nodeRetired;
@@ -183,7 +183,7 @@ protected:
     StoreOnlyFeedView::PersistentParams getFeedViewPersistentParams();
     vespalib::string getSubDbName() const;
     void reconfigure(const search::LogDocumentStore::Config & protonConfig, const AllocStrategy& alloc_strategy);
-    void reconfigureAttributesConsideringNodeState();
+    void reconfigureAttributesConsideringNodeState(OnDone onDone);
 public:
     StoreOnlyDocSubDB(const Config &cfg, const Context &ctx);
     ~StoreOnlyDocSubDB() override;
@@ -203,7 +203,7 @@ public:
     IReprocessingTask::List
     applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
                 SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver) override;
-    void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc) override;
+    void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone onDone) override;
 
     ISearchHandler::SP getSearchView() const override { return _iSearchView.get(); }
     IFeedView::SP getFeedView() const override { return _iFeedView.get(); }

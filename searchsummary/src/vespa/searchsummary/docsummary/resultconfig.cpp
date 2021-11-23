@@ -53,7 +53,6 @@ ResultConfig::GetResTypeName(ResType type)
     case RES_DATA:        return "data";
     case RES_LONG_STRING: return "longstring";
     case RES_LONG_DATA:   return "longdata";
-    case RES_XMLSTRING:   return "xmlstring";
     case RES_JSONSTRING:  return "jsonstring";
     case RES_TENSOR:  return "tensor";
     case RES_FEATUREDATA: return "featuredata";
@@ -126,6 +125,8 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
     Reset();
     int    maxclassID = 0x7fffffff; // avoid negative classids
     _defaultSummaryId = cfg.defaultsummaryid;
+    _useV8geoPositions = cfg.usev8geopositions;
+
     for (uint32_t i = 0; rc && i < cfg.classes.size(); i++) {
         const auto& cfg_class = cfg.classes[i];
         if (cfg_class.name.empty()) {
@@ -173,7 +174,7 @@ ResultConfig::ReadConfig(const vespa::config::search::SummaryConfig &cfg, const 
             } else if (strcmp(fieldtype, "longdata") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_LONG_DATA);
             } else if (strcmp(fieldtype, "xmlstring") == 0) {
-                rc = resClass->AddConfigEntry(fieldname, RES_XMLSTRING);
+                rc = resClass->AddConfigEntry(fieldname, RES_JSONSTRING);
             } else if (strcmp(fieldtype, "jsonstring") == 0) {
                 rc = resClass->AddConfigEntry(fieldname, RES_JSONSTRING);
             } else if (strcmp(fieldtype, "tensor") == 0) {

@@ -287,7 +287,7 @@ struct FastAccessFixture
         vespalib::mkdir(BASE_DIR);
     }
     ~FastAccessFixture() {
-        _writeService.sync_all_executors();
+        _writeService.shutdown();
     }
 };
 
@@ -377,17 +377,11 @@ struct FeedViewComparer
     void expect_equal_index_adapter() {
         EXPECT_EQUAL(_old->getIndexWriter().get(), _new->getIndexWriter().get());
     }
-    void expect_equal_attribute_writer() {
-        EXPECT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
-    }
     void expect_not_equal_attribute_writer() {
         EXPECT_NOT_EQUAL(_old->getAttributeWriter().get(), _new->getAttributeWriter().get());
     }
     void expect_equal_summary_adapter() {
         EXPECT_EQUAL(_old->getSummaryAdapter().get(), _new->getSummaryAdapter().get());
-    }
-    void expect_equal_schema() {
-        EXPECT_EQUAL(_old->getSchema().get(), _new->getSchema().get());
     }
     void expect_not_equal_schema() {
         EXPECT_NOT_EQUAL(_old->getSchema().get(), _new->getSchema().get());

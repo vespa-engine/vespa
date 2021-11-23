@@ -136,8 +136,13 @@ public:
     }
 
     template <typename FunctionType>
-    void runInMaster(FunctionType func) {
-        test::runInMaster(_writeService, func);
+    void runInMasterAndSyncAll(FunctionType func) {
+        test::runInMasterAndSyncAll(_writeService, func);
+    }
+
+    template <typename FunctionType>
+    void runInMasterAndSync(FunctionType func) {
+        test::runInMasterAndSync(_writeService, func);
     }
 
     void cycledLids(const std::vector<uint32_t> &lids) {
@@ -155,19 +160,16 @@ public:
     }
 
     void delayReuse(uint32_t lid) {
-        runInMaster([&] () { _lidReuseDelayer->delayReuse(lid); } );
+        runInMasterAndSync([&]() { _lidReuseDelayer->delayReuse(lid); });
     }
 
     void delayReuse(const std::vector<uint32_t> &lids) {
-        runInMaster([&] () { _lidReuseDelayer->delayReuse(lids); });
+        runInMasterAndSync([&]() { _lidReuseDelayer->delayReuse(lids); });
     }
 
     void commit() {
-        runInMaster([&] () { cycleLids(_lidReuseDelayer->getReuseLids()); });
+        runInMasterAndSyncAll([&]() { cycleLids(_lidReuseDelayer->getReuseLids()); });
     }
-
-    void sync() { _writeService.sync_all_executors(); }
-
 };
 
 TEST_F("require that nothing happens before free list is active", Fixture)

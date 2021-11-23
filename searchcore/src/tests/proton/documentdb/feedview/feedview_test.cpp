@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/searchlib/index/docbuilder.h>
 
 #include <vespa/log/log.h>
@@ -375,6 +376,9 @@ struct MyAttributeWriter : public IAttributeWriter
         ++_commitCount;
         _tracer.traceCommit(attributeAdapterTypeName, param.lastSerialNum());
     }
+    void drain(OnWriteDoneType onDone) override {
+        (void) onDone;
+    }
 
     void onReplayDone(uint32_t ) override { }
     bool hasStructFieldAttribute() const override { return false; }
@@ -415,16 +419,6 @@ struct MyTransport : public feedtoken::ITransport
 MyTransport::MyTransport(MyTracer &tracer) : lastResult(), _gate(), _tracer(tracer) {}
 MyTransport::~MyTransport() = default;
 
-struct MyResultHandler : public IGenericResultHandler
-{
-    vespalib::Gate _gate;
-    MyResultHandler() : _gate() {}
-    void handle(const storage::spi::Result &) override {
-        _gate.countDown();
-    }
-    void await() { _gate.await(); }
-};
-
 struct SchemaContext
 {
     Schema::SP                _schema;
@@ -446,7 +440,6 @@ SchemaContext::SchemaContext() :
     _builder.reset(new DocBuilder(*_schema));
 }
 SchemaContext::~SchemaContext() = default;
-
 
 struct DocumentContext
 {
@@ -511,18 +504,6 @@ struct FixtureBase
 
     virtual ~FixtureBase();
 
-    void syncMaster() {
-        _writeService.master().sync();
-    }
-
-    void syncIndex() {
-        _writeService.sync_all_executors();
-    }
-
-    void sync() {
-        _writeServiceReal.sync_all_executors();
-    }
-
     const test::DocumentMetaStoreObserver &metaStoreObserver() {
         return _dmsc->getObserver();
     }
@@ -531,6 +512,10 @@ struct FixtureBase
         return _writeService;
     }
 
+    template <typename FunctionType>
+    void runInMasterAndSyncAll(FunctionType func) {
+        test::runInMasterAndSyncAll(_writeService, func);
+    }
     template <typename FunctionType>
     void runInMaster(FunctionType func) {
         test::runInMaster(_writeService, func);
@@ -578,7 +563,7 @@ struct FixtureBase
     void putAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         PutOperation op(docCtx.bid, docCtx.ts, docCtx.doc);
-        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performPut(std::move(ft), op); });
+        runInMaster([this, ft = std::move(token.ft), &op]() mutable { performPut(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -591,7 +576,7 @@ struct FixtureBase
     void updateAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         UpdateOperation op(docCtx.bid, docCtx.ts, docCtx.upd);
-        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performUpdate(std::move(ft), op); });
+        runInMaster([this, ft = std::move(token.ft), &op]() mutable { performUpdate(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -606,7 +591,7 @@ struct FixtureBase
     void removeAndWait(const DocumentContext &docCtx) {
         FeedTokenContext token(_tracer);
         RemoveOperationWithDocId op(docCtx.bid, docCtx.ts, docCtx.doc->getId());
-        runInMaster([this, ft=std::move(token.ft), &op] () mutable { performRemove(std::move(ft), op); });
+        runInMaster([this, ft = std::move(token.ft), &op]() mutable { performRemove(std::move(ft), op); });
         token.mt.await();
     }
 
@@ -616,15 +601,17 @@ struct FixtureBase
         }
     }
 
-    void performMove(MoveOperation &op) {
+    void performMove(MoveOperation &op, IDestructorCallback::SP onDone) {
         op.setSerialNum(++serial);
-        getFeedView().handleMove(op, IDestructorCallback::SP());
+        getFeedView().handleMove(op, std::move(onDone));
     }
 
     void moveAndWait(const DocumentContext &docCtx, uint32_t fromLid, uint32_t toLid) {
         MoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc, DbDocumentId(pc._params._subDbId, fromLid), pc._params._subDbId);
         op.setTargetLid(toLid);
-        runInMaster([&]() { performMove(op); });
+        vespalib::Gate gate;
+        runInMaster([&, onDone=std::make_shared<vespalib::GateCallback>(gate)]() { performMove(op, std::move(onDone)); });
+        gate.await();
     }
 
     void performDeleteBucket(DeleteBucketOperation &op) {
@@ -635,7 +622,7 @@ struct FixtureBase
 
     void performForceCommit() { getFeedView().forceCommit(serial); }
     void forceCommitAndWait() {
-        runInMaster([&]() { performForceCommit(); });
+        runInMasterAndSyncAll([&]() { performForceCommit(); });
     }
 
     bool assertTrace(const vespalib::string &exp) {
@@ -662,7 +649,7 @@ struct FixtureBase
         fv.handleCompactLidSpace(op);
     }
     void compactLidSpaceAndWait(uint32_t wantedLidLimit) {
-        runInMaster([&] () { performCompactLidSpace(wantedLidLimit); });
+        runInMasterAndSyncAll([&]() { performCompactLidSpace(wantedLidLimit); });
     }
     void assertChangeHandler(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {
         _gidToLidChangeHandler->assertChanges(expGid, expLid, expChanges);
@@ -674,6 +661,8 @@ struct FixtureBase
         _gidToLidChangeHandler->assertLid(gid, expLid);
     }
     void populateBeforeCompactLidSpace();
+
+    void dms_commit() { _dmsc->get().commit(search::CommitParam(serial)); }
 };
 
 
@@ -701,7 +690,7 @@ FixtureBase::FixtureBase()
 }
 
 FixtureBase::~FixtureBase() {
-    _writeServiceReal.sync_all_executors();
+    _writeServiceReal.shutdown();
 }
 
 void
@@ -789,6 +778,7 @@ TEST_F("require that put() updates document meta store with bucket info",
 {
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
+    f.dms_commit();
 
     assertBucketInfo(dc.bid, dc.ts, 1, f.getMetaStore());
     // TODO: rewrite to use getBucketInfo() when available
@@ -828,6 +818,7 @@ TEST_F("require that update() updates document meta store with bucket info",
     f.putAndWait(dc1);
     BucketChecksum bcs = f.getBucketDB()->get(dc1.bid).getChecksum();
     f.updateAndWait(dc2);
+    f.dms_commit();
 
     assertBucketInfo(dc1.bid, Timestamp(20), 1, f.getMetaStore());
     // TODO: rewrite to use getBucketInfo() when available
@@ -857,6 +848,7 @@ TEST_F("require that remove() updates document meta store with bucket info",
     f.putAndWait(dc2);
     BucketChecksum bcs2 = f.getBucketDB()->get(dc2.bid).getChecksum();
     f.removeAndWait(DocumentContext("id:test:searchdocument:n=1:2", 20, f.getBuilder()));
+    f.dms_commit();
 
     assertBucketInfo(dc1.bid, Timestamp(10), 1, f.getMetaStore());
     EXPECT_FALSE(f.getMetaStore().validLid(2)); // don't remember remove
@@ -934,6 +926,7 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
     TEST_DO(f.assertChangeNotified(docs[2].gid(), 3));
     TEST_DO(f.assertChangeNotified(docs[3].gid(), 4));
     TEST_DO(f.assertChangeNotified(docs[4].gid(), 5));
+    f.dms_commit();
 
     DocumentIdT lid;
     EXPECT_TRUE(f.getMetaStore().getLid(docs[0].doc->getId().getGlobalId(), lid));
@@ -945,7 +938,8 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
 
     // delete bucket for user 1
     DeleteBucketOperation op(docs[0].bid);
-    f.runInMaster([&] () { f.performDeleteBucket(op); });
+    f.runInMasterAndSyncAll([&]() { f.performDeleteBucket(op); });
+    f.dms_commit();
 
     EXPECT_EQUAL(0u, f.getBucketDB()->get(docs[0].bid).getDocumentCount());
     EXPECT_EQUAL(2u, f.getBucketDB()->get(docs[3].bid).getDocumentCount());
@@ -1047,7 +1041,7 @@ TEST_F("require that removes are not remembered", SearchableFeedViewFixture)
 TEST_F("require that heartbeat propagates to index- and attributeadapter",
        SearchableFeedViewFixture)
 {
-    f.runInMaster([&] () { f.fv.heartBeat(2); });
+    f.runInMasterAndSyncAll([&]() { f.fv.heartBeat(2); });
     EXPECT_EQUAL(1, f.miw._heartBeatCount);
     EXPECT_EQUAL(1, f.maw._heartBeatCount);
 }
@@ -1143,7 +1137,7 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 6, 6, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(7, 7, 7, f.writeServiceObserver()));
     EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1159,32 +1153,29 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
     EXPECT_TRUE(assertThreadObserver(5, 4, 4, f.writeServiceObserver()));
     CompactLidSpaceOperation op(0, 2);
     op.setSerialNum(0);
-    f.runInMaster([&] () { f.fv.handleCompactLidSpace(op); });
+    f.runInMasterAndSyncAll([&]() { f.fv.handleCompactLidSpace(op); });
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
-    EXPECT_TRUE(assertThreadObserver(6, 5, 4, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(6, 6, 5, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(0u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
 }
 
-TEST_F("require that compactLidSpace() propagates to attributeadapter",
-       FastAccessFeedViewFixture)
+TEST_F("require that compactLidSpace() propagates to attributeadapter", FastAccessFeedViewFixture)
 {
     f.populateBeforeCompactLidSpace();
     f.compactLidSpaceAndWait(2);
     EXPECT_EQUAL(2u, f.maw._wantedLidLimit);
 }
 
-TEST_F("require that compactLidSpace() propagates to index writer",
-       SearchableFeedViewFixture)
+TEST_F("require that compactLidSpace() propagates to index writer", SearchableFeedViewFixture)
 {
     f.populateBeforeCompactLidSpace();
     f.compactLidSpaceAndWait(2);
     EXPECT_EQUAL(2u, f.miw._wantedLidLimit);
 }
 
-TEST_F("require that commit is not implicitly called",
-       SearchableFeedViewFixture)
+TEST_F("require that commit is not implicitly called", SearchableFeedViewFixture)
 {
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
@@ -1204,8 +1195,7 @@ TEST_F("require that commit is not implicitly called",
     f.forceCommitAndWait();
 }
 
-TEST_F("require that forceCommit updates docid limit",
-       SearchableFeedViewFixture)
+TEST_F("require that forceCommit updates docid limit", SearchableFeedViewFixture)
 {
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);

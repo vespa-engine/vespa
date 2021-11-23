@@ -1,19 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "gid_to_lid_change_listener.h"
+#include <vespa/vespalib/util/gate.h>
 #include <future>
 
 using vespalib::RetainGuard;
 
 namespace proton {
 
-GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor &attributeFieldWriter,
+GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor & executor,
                                                std::shared_ptr<search::attribute::ReferenceAttribute> attr,
                                                RetainGuard retainGuard,
                                                const vespalib::string &name,
                                                const vespalib::string &docTypeName)
-    : _attributeFieldWriter(attributeFieldWriter),
-      _executorId(_attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix())),
+    : _executor(executor),
+      _executorId(_executor.getExecutorIdFromName(attr->getNamePrefix())),
       _attr(std::move(attr)),
       _retainGuard(std::move(retainGuard)),
       _name(name),
@@ -22,14 +23,16 @@ GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor 
 
 GidToLidChangeListener::~GidToLidChangeListener()
 {
-    _attributeFieldWriter.sync_all();
+    vespalib::Gate gate;
+    _executor.executeLambda(_executorId, [&gate]() { gate.countDown(); });
+    gate.await();
 }
 
 void
 GidToLidChangeListener::notifyPutDone(IDestructorCallbackSP context, document::GlobalId gid, uint32_t lid)
 {
-    _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, context=std::move(context), gid, lid]() {
+    _executor.executeLambda(_executorId,
+                            [this, context=std::move(context), gid, lid]() {
                                             (void) context;
                                             _attr->notifyReferencedPut(gid, lid);
                                         });
@@ -38,21 +41,21 @@ GidToLidChangeListener::notifyPutDone(IDestructorCallbackSP context, document::G
 void
 GidToLidChangeListener::notifyRemove(IDestructorCallbackSP context, document::GlobalId gid)
 {
-    _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, context = std::move(context), gid]() {
+    _executor.executeLambda(_executorId,
+                            [this, context = std::move(context), gid]() {
                                             (void) context;
                                             _attr->notifyReferencedRemove(gid);
                                         });
 }
 
 void
-GidToLidChangeListener::notifyRegistered()
+GidToLidChangeListener::notifyRegistered(const std::vector<document::GlobalId>& removes)
 {
     std::promise<void> promise;
     auto future = promise.get_future();
-    _attributeFieldWriter.executeLambda(_executorId,
-                                        [this, &promise]() {
-                                            _attr->populateTargetLids();
+    _executor.executeLambda(_executorId,
+                            [this, &promise, removes(std::move(removes))]() {
+                                            _attr->populateTargetLids(removes);
                                             promise.set_value();
                                         });
     future.wait();

@@ -4,15 +4,14 @@ package com.yahoo.search.yql;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.language.Language;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.BoolItem;
-import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.PhraseItem;
@@ -28,6 +27,7 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.QueryRewrite;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -42,7 +42,6 @@ import com.yahoo.search.query.Sorting.Order;
 import com.yahoo.search.query.Sorting.UcaSorter;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
-
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
 
@@ -69,6 +68,13 @@ import static org.junit.Assert.fail;
 public class YqlParserTestCase {
 
     private final YqlParser parser = new YqlParser(new ParserEnvironment());
+
+    @Test
+    public void failsGracefullyOnMissingQuoteEscapingAndSubsequentUnicodeCharacter() {
+        assertParseFail("select * from bar where rank(ids contains 'http://en.wikipedia.org/wiki/Hors_d'œuvre') limit 10;",
+                new IllegalInputException("com.yahoo.search.yql.ProgramCompileException: query:L1:79 " +
+                        "no viable alternative at input 'rank(ids contains 'http://en.wikipedia.org/wiki/Hors_d''"));
+    }
 
     @Test
     public void testParserDefaults() {

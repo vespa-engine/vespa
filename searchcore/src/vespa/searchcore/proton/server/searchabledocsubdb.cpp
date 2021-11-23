@@ -29,7 +29,7 @@ using namespace searchcorespi;
 namespace proton {
 
 SearchableDocSubDB::SearchableDocSubDB(const Config &cfg, const Context &ctx)
-    : FastAccessDocSubDB(cfg._fastUpdCfg, ctx._fastUpdCtx),
+    : FastAccessDocSubDB(cfg, ctx._fastUpdCtx),
       IIndexManager::Reconfigurer(),
       _indexMgr(),
       _indexWriter(),
@@ -180,9 +180,9 @@ SearchableDocSubDB::propagateFlushConfig()
 }
 
 void
-SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc)
+SearchableDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone onDone)
 {
-    FastAccessDocSubDB::setBucketStateCalculator(calc);
+    FastAccessDocSubDB::setBucketStateCalculator(calc, std::move(onDone));
     propagateFlushConfig();
 }
 
@@ -244,7 +244,7 @@ SearchableDocSubDB::reconfigure(std::unique_ptr<Configure> configure)
 {
     assert(_writeService.master().isCurrentThread());
 
-    _writeService.sync_all_executors();
+    getFeedView()->forceCommitAndWait(search::CommitParam(_getSerialNum.getSerialNum()));
 
     // Everything should be quiet now.
 

@@ -103,8 +103,8 @@ struct Fixture
         gate.await();
     }
 
-    void notifyListenerRegistered() {
-        _listener->notifyRegistered();
+    void notifyListenerRegistered(const std::vector<GlobalId>& removes) {
+        _listener->notifyRegistered(removes);
     }
 };
 
@@ -144,10 +144,35 @@ TEST_F("Test that target lids are populated when listener is registered", Fixtur
         std::make_shared<MyGidToLidMapperFactory>();
     f._attr->setGidToLidMapperFactory(factory);
     f.allocListener();
-    f.notifyListenerRegistered();
+    f.notifyListenerRegistered({});
     TEST_DO(f.assertTargetLid(10, 1));
     TEST_DO(f.assertTargetLid(17, 2));
     TEST_DO(f.assertTargetLid(10, 3));
+    TEST_DO(f.assertTargetLid(0, 4));
+    TEST_DO(f.assertNoTargetLid(5));
+}
+
+TEST_F("Test that removed target lids are pruned when listener is registered", Fixture)
+{
+    f.ensureDocIdLimit(6);
+    f.set(1, toGid(doc1));
+    f.set(2, toGid(doc2));
+    f.set(3, toGid(doc1));
+    f.set(4, toGid(doc3));
+    f.commit();
+    TEST_DO(f.assertTargetLid(0, 1));
+    TEST_DO(f.assertTargetLid(0, 2));
+    TEST_DO(f.assertTargetLid(0, 3));
+    TEST_DO(f.assertTargetLid(0, 4));
+    TEST_DO(f.assertNoTargetLid(5));
+    std::shared_ptr<search::IGidToLidMapperFactory> factory =
+        std::make_shared<MyGidToLidMapperFactory>();
+    f._attr->setGidToLidMapperFactory(factory);
+    f.allocListener();
+    f.notifyListenerRegistered({ toGid(doc1) });
+    TEST_DO(f.assertTargetLid(0, 1));
+    TEST_DO(f.assertTargetLid(17, 2));
+    TEST_DO(f.assertTargetLid(0, 3));
     TEST_DO(f.assertTargetLid(0, 4));
     TEST_DO(f.assertNoTargetLid(5));
 }

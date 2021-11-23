@@ -20,10 +20,6 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DocumentSubDBCollection::Config::Config(size_t numSearchThreads)
-    : _numSearchThreads(numSearchThreads)
-{ }
-
 DocumentSubDBCollection::DocumentSubDBCollection(
         IDocumentSubDBOwner &owner,
         search::transactionlog::SyncProxy &tlSyncer,
@@ -38,7 +34,6 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const vespalib::Clock &clock,
         std::mutex &configMutex,
         const vespalib::string &baseDir,
-        const Config & cfg,
         const HwInfo &hwInfo)
     : _subDBs(),
       _owner(owner),
@@ -58,30 +53,22 @@ DocumentSubDBCollection::DocumentSubDBCollection(
     StoreOnlyDocSubDB::Context context(owner, tlSyncer, getSerialNum, fileHeaderContext, writeService,
                                        _bucketDB, *_bucketDBHandler, metrics, configMutex, hwInfo);
     _subDBs.push_back
-        (new SearchableDocSubDB(
-                SearchableDocSubDB::Config(
-                    FastAccessDocSubDB::Config(
-                            StoreOnlyDocSubDB::Config(docTypeName, "0.ready", baseDir,
-                                    _readySubDbId, SubDbType::READY),
-                            true, true, false),
-                    cfg.getNumSearchThreads()),
-                SearchableDocSubDB::Context(
-                        FastAccessDocSubDB::Context(context, metrics.ready.attributes, metricsWireService),
-                        queryLimiter, clock, warmupExecutor)));
+        (new SearchableDocSubDB(FastAccessDocSubDB::Config(
+                StoreOnlyDocSubDB::Config(docTypeName, "0.ready", baseDir,_readySubDbId, SubDbType::READY),
+                true, true, false),
+                                SearchableDocSubDB::Context(
+                                        FastAccessDocSubDB::Context(context, metrics.ready.attributes, metricsWireService),
+                                        queryLimiter, clock, warmupExecutor)));
 
     _subDBs.push_back
-        (new StoreOnlyDocSubDB(
-                StoreOnlyDocSubDB::Config(docTypeName, "1.removed", baseDir,
-               _remSubDbId, SubDbType::REMOVED),
-                context));
+        (new StoreOnlyDocSubDB(StoreOnlyDocSubDB::Config(docTypeName, "1.removed", baseDir, _remSubDbId, SubDbType::REMOVED),
+                               context));
 
     _subDBs.push_back
-        (new FastAccessDocSubDB(
-                FastAccessDocSubDB::Config(
-                        StoreOnlyDocSubDB::Config(docTypeName, "2.notready", baseDir,
-                                _notReadySubDbId, SubDbType::NOTREADY),
-                        true, true, true),
-                FastAccessDocSubDB::Context(context, metrics.notReady.attributes, metricsWireService)));
+        (new FastAccessDocSubDB(FastAccessDocSubDB::Config(
+                StoreOnlyDocSubDB::Config(docTypeName, "2.notready", baseDir,_notReadySubDbId, SubDbType::NOTREADY),
+                true, true, true),
+                                FastAccessDocSubDB::Context(context, metrics.notReady.attributes, metricsWireService)));
 }
 
 
@@ -316,11 +303,11 @@ DocumentSubDBCollection::close()
 }
 
 void
-DocumentSubDBCollection::setBucketStateCalculator(const IBucketStateCalculatorSP &calc)
+DocumentSubDBCollection::setBucketStateCalculator(const IBucketStateCalculatorSP &calc, OnDone onDone)
 {
     _calc = calc;
     for (auto subDb : _subDBs) {
-        subDb->setBucketStateCalculator(calc);
+        subDb->setBucketStateCalculator(calc, onDone);
     }
 }
 

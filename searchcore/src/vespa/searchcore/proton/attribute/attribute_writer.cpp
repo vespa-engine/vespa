@@ -259,7 +259,7 @@ applyCommit(CommitParam param, AttributeWriter::OnWriteDoneType , AttributeVecto
 void
 applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, AttributeVector &attr)
 {
-    if (attr.getStatus().getLastSyncToken() < serialNum) {
+    if (attr.getStatus().getLastSyncToken() <= serialNum) {
         /*
          * If the attribute is an empty placeholder attribute due to
          * later config changes removing the attribute then it might
@@ -657,7 +657,6 @@ AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
       _attributeFieldWriter(_mgr->getAttributeFieldWriter()),
       _shared_executor(_mgr->get_shared_executor()),
       _writeContexts(),
-      _dataType(nullptr),
       _hasStructFieldAttribute(false),
       _attrMap()
 {
@@ -673,9 +672,18 @@ void AttributeWriter::setupAttributeMapping() {
 }
 
 
-AttributeWriter::~AttributeWriter()
-{
-    _attributeFieldWriter.sync_all();
+AttributeWriter::~AttributeWriter() {
+    vespalib::Gate gate;
+    drain(std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
+}
+
+void
+AttributeWriter::drain(OnWriteDoneType onDone) {
+
+    for (const auto &wc : _writeContexts) {
+        _attributeFieldWriter.executeLambda(wc.getExecutorId(), [onDone] () { (void) onDone; });
+    }
 }
 
 std::vector<search::AttributeVector *>

@@ -104,8 +104,6 @@ void push_documents_and_wait(search::memoryindex::DocumentInverter &inverter) {
     gate.await();
 }
 
-std::shared_ptr<vespalib::IDestructorCallback> emptyDestructorCallback;
-
 struct IndexManagerTest : public ::testing::Test {
     SerialNum _serial_num;
     IndexManagerDummyReconfigurer _reconfigurer;
@@ -128,7 +126,6 @@ struct IndexManagerTest : public ::testing::Test {
     {
         removeTestData();
         vespalib::mkdir(index_dir, false);
-        _writeService.sync_all_executors();
         resetIndexManager();
     }
 
@@ -138,22 +135,31 @@ struct IndexManagerTest : public ::testing::Test {
 
     template <class FunctionType>
     inline void runAsMaster(FunctionType &&function) {
-        _writeService.master().execute(makeLambdaTask(std::move(function)));
-        _writeService.master().sync();
+        vespalib::Gate gate;
+        _writeService.master().execute(makeLambdaTask([&gate,function = std::move(function)]() {
+            function();
+            gate.countDown();
+        }));
+        gate.await();
     }
     template <class FunctionType>
     inline void runAsIndex(FunctionType &&function) {
-        _writeService.index().execute(makeLambdaTask(std::move(function)));
-        _writeService.index().sync();
+        vespalib::Gate gate;
+        _writeService.index().execute(makeLambdaTask([&gate,function = std::move(function)]() {
+            function();
+            gate.countDown();
+        }));
+        gate.await();
     }
     void flushIndexManager();
     Document::UP addDocument(uint32_t docid);
     void resetIndexManager();
     void removeDocument(uint32_t docId, SerialNum serialNum) {
         vespalib::Gate gate;
-        runAsIndex([&]() { _index_manager->removeDocument(docId, serialNum);
-                              _index_manager->commit(serialNum, std::make_shared<vespalib::GateCallback>(gate));
-                          });
+        runAsIndex([&]() {
+            _index_manager->removeDocument(docId, serialNum);
+            _index_manager->commit(serialNum, std::make_shared<vespalib::GateCallback>(gate));
+        });
         gate.await();
     }
     void removeDocument(uint32_t docId) {

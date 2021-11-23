@@ -67,10 +67,10 @@ class EndpointResultQueue {
         InflightOperation operation = inflightOperations.remove(result.getOperationId());
         if (operation == null) {
             if (duplicateGivesWarning) {
-                log.warning("Result for ID '" + result.getOperationId() + "' received from '" + endpoint +
-                            "', but we have no record of a sent operation. Either something is wrong on the server side " +
-                            "(bad VIP usage?), or we have somehow received duplicate results, " +
-                            "or operation was received _after_ client-side timeout.");
+                log.info("Result for ID '" + result.getOperationId() + "' received from '" + endpoint +
+                         "', but we have no record of a sent operation. This may happen if an operation is " +
+                         "initiated, but also retried, due to HTTP failure. Otherwise, something is wrong on " +
+                         "the server side (bad VIP usage?), or operation was received _after_ client-side timeout.");
             }
             return;
         }

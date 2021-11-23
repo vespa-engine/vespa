@@ -121,7 +121,6 @@ CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *s
             target.insertLong(valint64);
             break; }
 
-        case RES_XMLSTRING:
         case RES_JSONSTRING:
         case RES_FEATUREDATA:
         case RES_LONG_STRING:

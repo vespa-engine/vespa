@@ -417,7 +417,6 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         bool updateOk = _metaStore.updateMetaData(updOp.getLid(), updOp.getBucketId(), updOp.getTimestamp());
         assert(updateOk);
         (void) updateOk;
-        _metaStore.commit(CommitParam(serialNum));
     }
 
     auto onWriteDone = createUpdateDoneContext(std::move(token), get_pending_lid_token(updOp), updOp.getUpdate());
@@ -605,7 +604,6 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const GlobalId &
             gate.await();
             removeMetaData(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
         }
-        _metaStore.commit(CommitParam(serialNum));
     }
 }
 
@@ -621,9 +619,6 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     const SerialNum serialNum = op.getSerialNum();
     const LidVectorContext::SP &ctx = op.getLidsToRemove(_params._subDbId);
     if (!ctx) {
-        if (useDocumentMetaStore(serialNum)) {
-            _metaStore.commit(CommitParam(serialNum));
-        }
         return 0;
     }
     const LidVector &lidsToRemove(ctx->getLidVector());
@@ -634,7 +629,6 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         _gidToLidChangeHandler.notifyRemoves(std::make_shared<vespalib::GateCallback>(gate), gidsToRemove, serialNum);
         gate.await();
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
-        _metaStore.commit(CommitParam(serialNum));
         _lidReuseDelayer.delayReuse(lidsToRemove);
     }
     std::shared_ptr<vespalib::IDestructorCallback> onWriteDone;

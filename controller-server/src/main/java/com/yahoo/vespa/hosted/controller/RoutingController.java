@@ -18,7 +18,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -31,10 +30,16 @@ import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
-import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
-import com.yahoo.vespa.hosted.controller.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.controller.routing.RoutingId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicies;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext.ExclusiveDeploymentRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext.SharedDeploymentRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.context.ExclusiveRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.context.RoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.context.SharedRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.nio.charset.StandardCharsets;
@@ -44,7 +49,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +79,25 @@ public class RoutingController {
                                                          controller.applications(),
                                                          controller.curator());
         this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
+    }
+
+    /** Create a routing context for given deployment */
+    public DeploymentRoutingContext of(DeploymentId deployment) {
+        if (usesSharedRouting(deployment.zoneId())) {
+            return new SharedDeploymentRoutingContext(deployment,
+                                                      this,
+                                                      controller.serviceRegistry().configServer(),
+                                                      controller.clock());
+        }
+        return new ExclusiveDeploymentRoutingContext(deployment, this);
+    }
+
+    /** Create a routing context for given zone */
+    public RoutingContext of(ZoneId zone) {
+        if (usesSharedRouting(zone)) {
+            return new SharedRoutingContext(zone, controller.serviceRegistry().configServer());
+        }
+        return new ExclusiveRoutingContext(zone, routingPolicies);
     }
 
     public RoutingPolicies policies() {
@@ -145,16 +168,17 @@ public class RoutingController {
                                                                      .collect(Collectors.toMap(t -> new DeploymentId(application.id().instance(t.instance()),
                                                                                                                      ZoneId.from(Environment.prod, t.region())),
                                                                                                t -> t.weight()));
-            List<RoutingMethod> availableRoutingMethods = routingMethodsOfAll(deployments.keySet(), deploymentSpec);
-            for (var routingMethod : availableRoutingMethods) {
-                endpoints.add(Endpoint.of(application.id())
-                                      .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
-                                                         ClusterSpec.Id.from(declaredEndpoint.containerId()),
-                                                         deployments)
-                                      .routingMethod(routingMethod)
-                                      .on(Port.fromRoutingMethod(routingMethod))
-                                      .in(controller.system()));
-            }
+            // An application endpoint can only target a single zone, so we just pick the zone of any deployment target
+            ZoneId zone = deployments.keySet().iterator().next().zoneId();
+            // Application endpoints are only supported when using direct routing methods
+            RoutingMethod routingMethod = usesSharedRouting(zone) ? RoutingMethod.sharedLayer4 : RoutingMethod.exclusive;
+            endpoints.add(Endpoint.of(application.id())
+                                  .targetApplication(EndpointId.of(declaredEndpoint.endpointId()),
+                                                     ClusterSpec.Id.from(declaredEndpoint.containerId()),
+                                                     deployments)
+                                  .routingMethod(routingMethod)
+                                  .on(Port.fromRoutingMethod(routingMethod))
+                                  .in(controller.system()));
         }
         return EndpointList.copyOf(endpoints);
     }
@@ -214,43 +238,6 @@ public class RoutingController {
             endpointDnsNames.add(endpoint.dnsName());
         }
         return Collections.unmodifiableList(endpointDnsNames);
-    }
-
-    /** Change status of all global endpoints for given deployment */
-    public void setGlobalRotationStatus(DeploymentId deployment, EndpointStatus status) {
-        readDeclaredEndpointsOf(deployment.applicationId()).requiresRotation().primary().ifPresent(endpoint -> {
-            try {
-                controller.serviceRegistry().configServer().setGlobalRotationStatus(deployment, endpoint.upstreamIdOf(deployment), status);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to set rotation status of " + endpoint + " in " + deployment, e);
-            }
-        });
-    }
-
-    /** Get global endpoint status for given deployment */
-    public Map<Endpoint, EndpointStatus> globalRotationStatus(DeploymentId deployment) {
-        var routingEndpoints = new LinkedHashMap<Endpoint, EndpointStatus>();
-        readDeclaredEndpointsOf(deployment.applicationId()).requiresRotation().primary().ifPresent(endpoint -> {
-            var upstreamName = endpoint.upstreamIdOf(deployment);
-            var status = controller.serviceRegistry().configServer().getGlobalRotationStatus(deployment, upstreamName);
-            routingEndpoints.put(endpoint, status);
-        });
-        return Collections.unmodifiableMap(routingEndpoints);
-    }
-
-    /**
-     * Assigns one or more global rotations to given application, if eligible. The given application is implicitly
-     * stored, ensuring that the assigned rotation(s) are persisted when this returns.
-     */
-    private LockedApplication assignRotations(LockedApplication application, InstanceName instanceName) {
-        try (RotationLock rotationLock = rotationRepository.lock()) {
-            var rotations = rotationRepository.getOrAssignRotations(application.get().deploymentSpec(),
-                                                                    application.get().require(instanceName),
-                                                                    rotationLock);
-            application = application.with(instanceName, instance -> instance.with(rotations));
-            controller.applications().store(application); // store assigned rotation even if deployment fails
-        }
-        return application;
     }
 
     /** Returns the global and application-level endpoints for given deployment, as container endpoints */
@@ -354,6 +341,36 @@ public class RoutingController {
                                                                        Priority.normal));
     }
 
+    /** Returns direct routing endpoints if any exist and feature flag is set for given application */
+    // TODO: Remove this when feature flag is removed, and in-line .direct() filter where relevant
+    public EndpointList directEndpoints(EndpointList endpoints, ApplicationId application) {
+        boolean hideSharedEndpoint = hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
+        EndpointList directEndpoints = endpoints.direct();
+        if (hideSharedEndpoint && !directEndpoints.isEmpty()) {
+            return directEndpoints;
+        }
+        return endpoints;
+    }
+
+    /**
+     * Assigns one or more global rotations to given application, if eligible. The given application is implicitly
+     * stored, ensuring that the assigned rotation(s) are persisted when this returns.
+     */
+    private LockedApplication assignRotations(LockedApplication application, InstanceName instanceName) {
+        try (RotationLock rotationLock = rotationRepository.lock()) {
+            var rotations = rotationRepository.getOrAssignRotations(application.get().deploymentSpec(),
+                                                                    application.get().require(instanceName),
+                                                                    rotationLock);
+            application = application.with(instanceName, instance -> instance.with(rotations));
+            controller.applications().store(application); // store assigned rotation even if deployment fails
+        }
+        return application;
+    }
+
+    private boolean usesSharedRouting(ZoneId zone) {
+        return controller.zoneRegistry().routingMethods(zone).stream().anyMatch(RoutingMethod::isShared);
+    }
+
     /** Returns the routing methods that are available across all given deployments */
     private List<RoutingMethod> routingMethodsOfAll(Collection<DeploymentId> deployments, DeploymentSpec deploymentSpec) {
         var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
@@ -437,21 +454,10 @@ public class RoutingController {
     }
 
     /** Create a common name based on a hash of given application. This must be less than 64 characters long. */
-    private String commonNameHashOf(ApplicationId application, SystemName system) {
+    private static String commonNameHashOf(ApplicationId application, SystemName system) {
         HashCode sha1 = Hashing.sha1().hashString(application.serializedForm(), StandardCharsets.UTF_8);
         String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
         return 'v' + base32 + Endpoint.internalDnsSuffix(system);
-    }
-
-    /** Returns direct routing endpoints if any exist and feature flag is set for given application */
-    // TODO: Remove this when feature flag is removed, and in-line .direct() filter where relevant
-    public EndpointList directEndpoints(EndpointList endpoints, ApplicationId application) {
-        boolean hideSharedEndpoint = hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
-        EndpointList directEndpoints = endpoints.direct();
-        if (hideSharedEndpoint && !directEndpoints.isEmpty()) {
-            return directEndpoints;
-        }
-        return endpoints;
     }
 
     private static String asString(Endpoint.Scope scope) {

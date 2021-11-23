@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
 
 import java.util.Collection;
 import java.util.Objects;

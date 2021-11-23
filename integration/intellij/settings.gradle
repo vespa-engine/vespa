@@ -1,0 +1,5 @@
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+// This sets the name of the generated zip file uploadable to Intellij Marketplace
+// (But not the actual *name* of the plugin, which is the name in plugin.xml)
+rootProject.name = 'vespa'

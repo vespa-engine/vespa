@@ -28,7 +28,6 @@ DocumentStoreAdapter::writeStringField(const char * buf, uint32_t buflen, ResTyp
     case RES_STRING:
         return _resultPacker.AddString(buf, buflen);
     case RES_LONG_STRING:
-    case RES_XMLSTRING:
     case RES_JSONSTRING:
         return _resultPacker.AddLongString(buf, buflen);
     default:
@@ -57,7 +56,6 @@ DocumentStoreAdapter::writeField(const FieldValue &value, ResType type)
         return _resultPacker.AddDouble(value.getAsDouble());
     case RES_STRING:
     case RES_LONG_STRING:
-    case RES_XMLSTRING:
     case RES_JSONSTRING:
         {
             if (value.getClass().inherits(LiteralFieldValueB::classId)) {

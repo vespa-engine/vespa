@@ -24,11 +24,21 @@ var loginCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName())
+		a, err := auth0.GetAuth0(cfg.AuthConfigPath(), getSystemName(), getApiURL())
 		if err != nil {
 			return err
 		}
 		_, err = auth0.RunLogin(ctx, a, false)
+		if vespa.Auth0AccessTokenEnabled() {
+			if err == nil {
+				if err := cfg.Set(cloudAuthFlag, "access-token"); err != nil {
+					return err
+				}
+				if err := cfg.Write(); err != nil {
+					fatalErr(err)
+				}
+			}
+		}
 		return err
 	},
 }

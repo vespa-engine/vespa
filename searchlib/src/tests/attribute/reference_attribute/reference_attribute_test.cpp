@@ -200,9 +200,9 @@ struct ReferenceAttributeTest : public ::testing::Test {
     void notifyReferencedRemove(const GlobalId &gid) {
         _attr->notifyReferencedRemove(gid);
     }
-    void setGidToLidMapperFactory(std::shared_ptr<MyGidToLidMapperFactory> factory) {
+    void setGidToLidMapperFactory(std::shared_ptr<MyGidToLidMapperFactory> factory, const std::vector<GlobalId>& removes) {
         _attr->setGidToLidMapperFactory(factory);
-        _attr->populateTargetLids();
+        _attr->populateTargetLids(removes);
     }
     uint32_t getUniqueGids() {
         return getStatus().getNumUniqueValues();
@@ -257,7 +257,7 @@ TEST_F(ReferenceAttributeTest, reference_for_a_document_can_be_cleared)
 TEST_F(ReferenceAttributeTest, lid_beyond_range_is_mapped_to_zero)
 {
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
-    setGidToLidMapperFactory(factory);
+    setGidToLidMapperFactory(factory, {});
     ensureDocIdLimit(5);
     _attr->addDocs(1);
     set(5, toGid(doc2));
@@ -318,7 +318,7 @@ TEST_F(ReferenceAttributeTest, update_uses_gid_mapper_to_set_target_lid)
 {
     ensureDocIdLimit(6);
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
-    setGidToLidMapperFactory(factory);
+    setGidToLidMapperFactory(factory, {});
     set(1, toGid(doc1));
     set(2, toGid(doc2));
     set(4, toGid(doc1));
@@ -371,7 +371,7 @@ void
 checkPopulateTargetLids(ReferenceAttributeTest &f)
 {
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
-    f.setGidToLidMapperFactory(factory);
+    f.setGidToLidMapperFactory(factory, {});
     f.assertTargetLid(1, 10);
     f.assertTargetLid(2, 17);
     f.assertTargetLid(3, 10);
@@ -399,6 +399,22 @@ TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_
     checkPopulateTargetLids(*this);
     EXPECT_TRUE(vespalib::unlink("test.dat"));
     EXPECT_TRUE(vespalib::unlink("test.udat"));
+}
+
+TEST_F(ReferenceAttributeTest, populateTargetLids_handles_removes)
+{
+    preparePopulateTargetLids(*this);
+    auto factory = std::make_shared<MyGidToLidMapperFactory>();
+    setGidToLidMapperFactory(factory, { toGid(doc1) });
+    assertTargetLid(1, 0);
+    assertTargetLid(2, 17);
+    assertTargetLid(3, 0);
+    assertTargetLid(4, 0);
+    assertNoTargetLid(5);
+    assertLids(0, { });
+    assertLids(10, { });
+    assertLids(17, { 2 });
+    assertLids(18, { });
 }
 
 TEST_F(ReferenceAttributeTest, notifyReferencedPut_and_notifyReferencedRemove_changes_reverse_mapping)

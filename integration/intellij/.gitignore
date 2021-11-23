@@ -1,0 +1,20 @@
+.gradle
+**/build/
+!src/**/build/
+
+# ignore generated files
+src/main/gen/
+
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle/wrapper/gradle-wrapper.jar
+
+# Cache of project
+.gradletasknamecache
+
+# These are not needed, but IntelliJ automatically adds them
+gradlew
+gradlew.bat
+gradle/

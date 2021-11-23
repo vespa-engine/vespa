@@ -62,6 +62,7 @@ public:
     virtual void forceCommit(const CommitParam & param, DoneCallback onDone) = 0;
     void forceCommit(CommitParam param) { forceCommit(param, DoneCallback()); }
     void forceCommit(search::SerialNum serialNum) { forceCommit(CommitParam(serialNum)); }
+    void forceCommitAndWait(CommitParam param);
     virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation & pruneOp) = 0;
     virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) = 0;
 };

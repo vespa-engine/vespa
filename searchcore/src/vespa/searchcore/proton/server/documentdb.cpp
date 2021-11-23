@@ -29,7 +29,6 @@
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -103,6 +102,16 @@ public:
         return _doc_db.getReadySubDB()->getSearchableStats().max_component_size_on_disk();
     }
 };
+
+template<typename T>
+void
+forceCommitAndWait(std::shared_ptr<IFeedView> feedView, SerialNum serialNum, T keepAlive) {
+    vespalib::Gate gate;
+    using Keep = vespalib::KeepAlive<std::pair<T, std::shared_ptr<IDestructorCallback>>>;
+    feedView->forceCommit(CommitParam(serialNum),
+                          std::make_shared<Keep>(std::make_pair(std::move(keepAlive), std::make_shared<GateCallback>(gate))));
+    gate.await();
+}
 
 }
 
@@ -196,9 +205,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _transient_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
-              metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
-              DocumentSubDBCollection::Config(protonCfg.numsearcherthreads),
-              hwInfo),
+              metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir, hwInfo),
       _maintenanceController(_writeService.master(), sharedExecutor, _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
@@ -378,12 +385,8 @@ DocumentDB::enterOnlineState()
 {
     // Called by executor thread
     assert(_writeService.master().isCurrentThread());
-    {
-        vespalib::Gate gate;
-        // Ensure that all replayed operations are committed to memory structures
-        _feedView.get()->forceCommit(CommitParam(_feedHandler->getSerialNum()), std::make_shared<GateCallback>(gate));
-        gate.await();
-    }
+    // Ensure that all replayed operations are committed to memory structures
+    _feedView.get()->forceCommitAndWait(CommitParam(_feedHandler->getSerialNum()));
 
     (void) _state.enterOnlineState();
     // Consider delayed pruning of transaction log and config history
@@ -469,11 +472,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     }
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
-        vespalib::Gate gate;
-        // Flush changes to attributes and memory index, cf. visibilityDelay
-        _feedView.get()->forceCommit(CommitParam(elidedConfigSave ? serialNum : serialNum - 1),
-                                     std::make_shared<vespalib::KeepAlive<std::pair<FeedHandler::CommitResult, std::shared_ptr<IDestructorCallback>>>>(std::make_pair(std::move(commit_result), std::make_shared<GateCallback>(gate))));
-        gate.await();
+        forceCommitAndWait(_feedView.get(), elidedConfigSave ? serialNum : serialNum - 1, std::move(commit_result));
     }
     if (params.shouldMaintenanceControllerChange()) {
         _maintenanceController.killJobs();
@@ -517,30 +516,6 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     }
 }
 
-
-void
-DocumentDB::performDropFeedView(IFeedView::SP feedView)
-{
-    // Delays when feed view is dropped.
-    assert(_writeService.master().isCurrentThread());
-    _writeService.attributeFieldWriter().sync_all();
-    _writeService.summary().sync();
-
-    // Feed view is kept alive in the closure's shared ptr.
-    _writeService.index().execute(makeLambdaTask([this, feedView] () { performDropFeedView2(feedView); }));
-}
-
-
-void
-DocumentDB::performDropFeedView2(IFeedView::SP feedView) {
-    // Delays when feed view is dropped.
-    assert(_writeService.index().isCurrentThread());
-    _writeService.indexFieldInverter().sync_all();
-    _writeService.indexFieldWriter().sync_all();
-    masterExecute([feedView]() { (void) feedView; });
-}
-
-
 void
 DocumentDB::tearDownReferences()
 {
@@ -567,8 +542,10 @@ DocumentDB::close()
     }
     // Abort any ongoing maintenance
     stopMaintenance();
-    _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
-    masterExecute([this]() { tearDownReferences(); });
+    masterExecute([this]() {
+        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber()));
+        tearDownReferences();
+    });
     _writeService.master().sync();
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.
@@ -580,8 +557,11 @@ DocumentDB::close()
     DocumentDBTaggedMetrics &metrics = getMetrics();
     _metricsWireService.cleanAttributes(metrics.ready.attributes);
     _metricsWireService.cleanAttributes(metrics.notReady.attributes);
-    _writeService.sync_all_executors();
-    masterExecute([this] () { closeSubDBs(); } );
+
+    masterExecute([this] () {
+        _feedView.get()->forceCommitAndWait(search::CommitParam(getCurrentSerialNumber()));
+        closeSubDBs();
+    });
     _writeService.sync_all_executors();
     // What about queued tasks ?
     _writeService.shutdown();
@@ -912,20 +892,14 @@ void
 DocumentDB::syncFeedView()
 {
     assert(_writeService.master().isCurrentThread());
-    IFeedView::SP oldFeedView(_feedView.get());
     IFeedView::SP newFeedView(_subDBs.getFeedView());
 
     _maintenanceController.killJobs();
-    _writeService.sync_all_executors();
 
     _feedView.set(newFeedView);
     _feedHandler->setActiveFeedView(newFeedView.get());
     _subDBs.createRetrievers();
     _subDBs.maintenanceSync(_maintenanceController);
-
-    // Ensure that old feed view is referenced until all index executor tasks
-    // depending on it has completed.
-    performDropFeedView(oldFeedView);
 }
 
 bool
@@ -990,7 +964,6 @@ void
 DocumentDB::stopMaintenance()
 {
     _maintenanceController.stop();
-    _writeService.sync_all_executors();
 }
 
 void
@@ -1023,7 +996,7 @@ DocumentDB::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculat
         if (cfv != nullptr)
             cfv->setCalculator(newCalc);
     }
-    _subDBs.setBucketStateCalculator(newCalc);
+    _subDBs.setBucketStateCalculator(newCalc, std::shared_ptr<vespalib::IDestructorCallback>());
 }
 
 

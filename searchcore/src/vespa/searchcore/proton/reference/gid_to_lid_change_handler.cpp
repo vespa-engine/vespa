@@ -142,7 +142,13 @@ GidToLidChangeHandler::addListener(std::unique_ptr<IGidToLidChangeListener> list
             }
         }
         _listeners.emplace_back(std::move(listener));
-        _listeners.back()->notifyRegistered();
+        std::vector<GlobalId> removes;
+        for (auto& change : _pending_changes) {
+            if (change.is_remove()) {
+                removes.emplace_back(change.get_gid());
+            }
+        }
+        _listeners.back()->notifyRegistered(removes);
     } else {
         assert(_listeners.empty());
     }

@@ -91,7 +91,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
         }
         if ( ! schema.isDocumentsOnly()) {
             attributeFields = new AttributeFields(schema);
-            summaries = new Summaries(schema, deployLogger);
+            summaries = new Summaries(schema, deployLogger, deployProperties.featureFlags());
             summaryMap = new SummaryMap(schema);
             juniperrc = new Juniperrc(schema);
             rankProfileList = new RankProfileList(schema, schema.rankingConstants(), schema.rankExpressionFiles(),

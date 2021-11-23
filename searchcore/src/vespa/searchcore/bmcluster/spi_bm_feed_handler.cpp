@@ -134,7 +134,9 @@ SpiBmFeedHandler::remove(const document::Bucket& bucket, const DocumentId& docum
     auto provider = get_provider(bucket);
     if (provider) {
         Bucket spi_bucket(bucket);
-        provider->removeAsync(spi_bucket, Timestamp(timestamp), document_id, context, std::make_unique<MyOperationComplete>(provider, _errors, spi_bucket, tracker));
+        std::vector<storage::spi::PersistenceProvider::TimeStampAndDocumentId> ids;
+        ids.emplace_back(Timestamp(timestamp), document_id);
+        provider->removeAsync(spi_bucket, std::move(ids), context, std::make_unique<MyOperationComplete>(provider, _errors, spi_bucket, tracker));
     } else {
         ++_errors;
     }

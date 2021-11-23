@@ -84,8 +84,9 @@ public:
 
     void notifyReferencedPutNoCommit(const GlobalId &gid, DocId targetLid);
     void notifyReferencedPut(const GlobalId &gid, DocId targetLid);
+    bool notifyReferencedRemoveNoCommit(const GlobalId &gid);
     void notifyReferencedRemove(const GlobalId &gid);
-    void populateTargetLids();
+    void populateTargetLids(const std::vector<GlobalId>& removes);
     void clearDocs(DocId lidLow, DocId lidLimit) override;
     void onShrinkLidSpace() override;
 

@@ -120,7 +120,6 @@ static void convertEntry(GetDocsumsState *state,
     case RES_STRING:
     case RES_LONG_STRING:
     case RES_FEATUREDATA:
-    case RES_XMLSTRING:
         entry->_resolve_field(&ptr, &len, &state->_docSumFieldSpace);
         if (len != 0) {
             inserter.insertString(Memory(ptr, len));

@@ -130,19 +130,6 @@ PersistenceTestUtils::setupExecutor(uint32_t numThreads) {
     _sequenceTaskExecutor = vespalib::SequencedTaskExecutor::create(test_executor, numThreads, 1000, vespalib::Executor::OptimizeFor::ADAPTIVE);
 }
 
-document::Document::SP
-PersistenceTestUtils::schedulePut(
-        uint32_t location,
-        spi::Timestamp timestamp,
-        uint32_t minSize,
-        uint32_t maxSize)
-{
-    document::Document::SP doc(createRandomDocumentAtLocation(location, timestamp, minSize, maxSize));
-    auto msg = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(16, location)), doc, timestamp);
-    fsHandler().schedule(msg);
-    return doc;
-}
-
 StorBucketDatabase::WrappedEntry
 PersistenceTestUtils::getBucket(const document::BucketId& id)
 {

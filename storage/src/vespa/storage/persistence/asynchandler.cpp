@@ -413,20 +413,14 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
                                 std::make_shared<document::DocIdOnly>(),
                                 processor, spi::NEWEST_DOCUMENT_ONLY,tracker->context());
 
-    std::vector<std::future<std::unique_ptr<spi::Result>>> results;
-    results.reserve(to_remove.size());
-    for (auto & entry : to_remove) {
-        auto catcher = std::make_unique<spi::CatchResult>();
-        results.push_back(catcher->future_result());
-        _spi.removeAsync(bucket, entry.first, entry.second, tracker->context(), std::move(catcher));
-    }
-    for (auto & future : results) {
-        auto result = future.get();
-        if (result->getErrorCode() != spi::Result::ErrorType::NONE) {
-            throw std::runtime_error(fmt("Failed to do remove for removelocation: %s", result->getErrorMessage().c_str()));
-        }
-    }
-    tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, to_remove.size()));
+    auto task = makeResultTask([&cmd, tracker = std::move(tracker), removed = to_remove.size()](spi::Result::UP response) {
+        tracker->checkForError(*response);
+        tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, removed));
+        tracker->sendReply();
+    });
+
+    _spi.removeAsync(bucket, std::move(to_remove), tracker->context(),
+                     std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
 
     return tracker;
 }

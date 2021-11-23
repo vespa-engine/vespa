@@ -195,6 +195,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(java.time.Duration)",
       "public void <init>(java.time.Duration, java.time.Duration)",
       "public void success()",
       "public void failure(ai.vespa.feed.client.HttpResponse)",

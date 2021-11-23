@@ -336,20 +336,22 @@ TEST(DocumentMetaStore, gids_can_be_cleared)
     assertLid(1, gid1, dms);
     EXPECT_EQ(1u, dms.getNumUsedLids());
     EXPECT_TRUE(dms.remove(1, 0u));
-    dms.removes_complete({ 1 });
+    dms.commit();
     EXPECT_EQ(0u, dms.getNumUsedLids());
     EXPECT_TRUE(!dms.getGid(1, gid));
     EXPECT_TRUE(!dms.getLid(gid1, lid));
+    dms.removes_complete({ 1 });
     // reuse lid
     addGid(dms, gid2, bucketId2, time2);
     assertGid(gid2, 1, dms);
     assertLid(1, gid2, dms);
     EXPECT_EQ(1u, dms.getNumUsedLids());
     EXPECT_TRUE(dms.remove(1, 0u));
-    dms.removes_complete({ 1 });
+    dms.commit();
     EXPECT_EQ(0u, dms.getNumUsedLids());
     EXPECT_TRUE(!dms.getGid(1, gid));
     EXPECT_TRUE(!dms.getLid(gid2, lid));
+    dms.removes_complete({ 1 });
     EXPECT_TRUE(!dms.remove(1, 0u)); // not used
     EXPECT_TRUE(!dms.remove(2, 0u)); // outside range
 }
@@ -519,6 +521,7 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded)
         EXPECT_EQ(numLids + 1, dms2.getNumDocs());
         EXPECT_EQ(numLids - (3 - i), dms2.getNumUsedLids());
     }
+    vespalib::unlink("documentmetastore2.dat");
 }
 
 TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time)
@@ -544,6 +547,7 @@ TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time)
 
     BucketId expected_bucket(storage::spi::BucketLimits::MinUsedBits, gid.convertToBucketId().getRawId());
     assertGid(gid, lid, dms2, expected_bucket, Timestamp(1000));
+    vespalib::unlink("documentmetastore2.dat");
 }
 
 TEST(DocumentMetaStore, stats_are_updated)
@@ -1732,6 +1736,7 @@ remove(uint32_t startLid, uint32_t shrinkTarget, DocumentMetaStore &dms)
 {
     for (uint32_t lid = startLid; lid >= shrinkTarget; --lid) {
         dms.remove(lid, 0u);
+        dms.commit();
         dms.removes_complete({ lid });
     }
 }
@@ -1765,8 +1770,6 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works)
     DummyFileHeaderContext fileHeaderContext;
     DummyTlsSyncer dummyTlsSyncer;
     HwInfo hwInfo;
-    vespalib::rmdir("dmsflush", true);
-    vespalib::mkdir("dmsflush");
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
     IFlushTarget::SP ft(std::make_shared<ShrinkLidSpaceFlushTarget>
@@ -1903,6 +1906,8 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved)
     assertSize(dms4, 1, 1);
     assertSize(dms4, 2, 1);
     assertSize(dms4, 3, 1);
+    vespalib::unlink("documentmetastore3.dat");
+    vespalib::unlink("documentmetastore4.dat");
 }
 
 namespace {
@@ -1944,12 +1949,12 @@ TEST(DocumentMetaStoreTest, multiple_lids_can_be_removed_with_removeBatch)
     assertLidGidFound(4, dms);
 
     dms.removeBatch({1, 3}, 5);
-    dms.removes_complete({1, 3});
-
+    dms.commit();
     assertLidGidNotFound(1, dms);
     assertLidGidFound(2, dms);
     assertLidGidNotFound(3, dms);
     assertLidGidFound(4, dms);
+    dms.removes_complete({1, 3});
 }
 
 class MockOperationListener : public documentmetastore::OperationListener {

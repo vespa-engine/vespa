@@ -76,7 +76,8 @@ public class VespaCliTestRunner implements TestRunner {
     void runTests(Suite suite, byte[] config) {
         Process process = null;
         try {
-            process = testRunProcessBuilder(suite, toEndpointsConfig(config)).start();
+            TestConfig testConfig = TestConfig.fromJson(config);
+            process = testRunProcessBuilder(suite, testConfig).start();
             BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
             in.lines().forEach(line -> {
                 if (line.length() > 1 << 13)
@@ -95,14 +96,17 @@ public class VespaCliTestRunner implements TestRunner {
         }
     }
 
-    ProcessBuilder testRunProcessBuilder(Suite suite, String endpointsConfig) {
+    ProcessBuilder testRunProcessBuilder(Suite suite, TestConfig config) throws IOException {
         Path suitePath = getChildDirectory(artifactsPath, "tests")
                 .flatMap(testsPath -> getChildDirectory(testsPath, toSuiteDirectoryName(suite)))
                 .orElseThrow(() -> new IllegalStateException("No tests found, for suite '" + suite + "'"));
 
-        ProcessBuilder builder = new ProcessBuilder("vespa", "test", "--endpoints", endpointsConfig);
+        ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.toAbsolutePath().toString(),
+                                                    "--application", config.application().toFullString(),
+                                                    "--endpoints", toEndpointsConfig(config),
+                                                    "--data-plane-public-cert", artifactsPath.resolve("cert").toAbsolutePath().toString(),
+                                                    "--data-plane-private-key", artifactsPath.resolve("key").toAbsolutePath().toString());
         builder.redirectErrorStream(true);
-        builder.directory(suitePath.toFile());
         return builder;
     }
 
@@ -133,8 +137,7 @@ public class VespaCliTestRunner implements TestRunner {
         }
     }
 
-    static String toEndpointsConfig(byte[] testConfig) throws IOException {
-        TestConfig config = TestConfig.fromJson(testConfig);
+    static String toEndpointsConfig(TestConfig config) throws IOException {
         Cursor root = new Slime().setObject();
         Cursor endpointsArray = root.setArray("endpoints");
         config.deployments().get(config.zone()).forEach((cluster, url) -> {

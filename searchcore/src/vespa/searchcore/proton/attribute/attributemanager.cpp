@@ -22,6 +22,8 @@
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attributemanager");
@@ -59,14 +61,14 @@ search::SerialNum estimateShrinkSerialNum(const AttributeVector &attr)
     return std::max(attr.getStatus().getLastSyncToken(), serialNum);
 }
 
-std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP &attr, vespalib::ISequencedTaskExecutor &attributeFieldWriter, AttributeDiskLayout &diskLayout)
+std::shared_ptr<ShrinkLidSpaceFlushTarget>
+allocShrinker(const AttributeVector::SP &attr, vespalib::ISequencedTaskExecutor & executor, AttributeDiskLayout &diskLayout)
 {
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
 
-    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, attributeFieldWriter,
-                                                                    attributeFieldWriter.getExecutorIdFromName(
-                                                                            attr->getNamePrefix()));
+    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, executor,
+                                                                    executor.getExecutorIdFromName(attr->getNamePrefix()));
     const vespalib::string &name = attr->getName();
     auto dir = diskLayout.createAttributeDir(name);
     search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
@@ -167,24 +169,32 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
                                              const Spec &newSpec,
                                              Spec::AttributeList &toBeAdded)
 {
-    for (const auto &aspec : newSpec.getAttributes()) {
-        AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
-        if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
-            LOG(debug, "Transferring attribute vector '%s' with %u docs and serial number %" PRIu64 " from current manager",
-                       av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
-            auto wrap = currMgr.findFlushable(aspec.getName());
-            assert(wrap != nullptr);
-            auto shrinker = wrap->getShrinker();
-            assert(shrinker);
-            addAttribute(AttributeWrap::normalAttribute(av), shrinker);
-            auto id = _attributeFieldWriter.getExecutorIdFromName(av->getNamePrefix());
-            auto cfg = aspec.getConfig();
-            _attributeFieldWriter.execute(id, [av, cfg]() { av->update_config(cfg); });
-        } else {
-            toBeAdded.push_back(aspec);
+    vespalib::Gate gate;
+    {
+        auto gateCallback = std::make_shared<vespalib::GateCallback>(gate);
+        for (const auto &aspec: newSpec.getAttributes()) {
+            AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
+            if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
+                LOG(debug,
+                    "Transferring attribute vector '%s' with %u docs and serial number %" PRIu64 " from current manager",
+                    av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
+                auto wrap = currMgr.findFlushable(aspec.getName());
+                assert(wrap != nullptr);
+                auto shrinker = wrap->getShrinker();
+                assert(shrinker);
+                addAttribute(AttributeWrap::normalAttribute(av), shrinker);
+                auto id = _attributeFieldWriter.getExecutorIdFromName(av->getNamePrefix());
+                auto cfg = aspec.getConfig();
+                _attributeFieldWriter.execute(id, [av, cfg, gateCallback]() {
+                    (void) gateCallback;
+                    av->update_config(cfg);
+                });
+            } else {
+                toBeAdded.push_back(aspec);
+            }
         }
     }
-    _attributeFieldWriter.sync_all();
+    gate.await();
 }
 
 void
@@ -585,7 +595,7 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> 
 }
 
 void
-AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
+AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const
 {
     for (const auto &attr : _attributes) {
         if (attr.second.isExtra()) {
@@ -594,7 +604,10 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func)
         }
         AttributeVector::SP attrsp = attr.second.getAttribute();
         _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
-                                      [attrsp, func]() { (*func)(*attrsp); });
+                                      [attrsp, func, onDone]() {
+            (void) onDone;
+            (*func)(*attrsp);
+        });
     }
 }
 

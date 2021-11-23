@@ -215,7 +215,7 @@ public class RoutingPolicies {
 
         Application application = controller.applications().requireApplication(routingTable.keySet().iterator().next().application());
         Map<DeploymentId, Map<EndpointId, Integer>> targetWeights = targetWeights(application);
-        Map<String, Set<AliasTarget>> targetsByEndpoint = new LinkedHashMap<>();
+        Map<Endpoint, Set<AliasTarget>> targetsByEndpoint = new LinkedHashMap<>();
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
             EndpointList endpoints = controller.routing().declaredEndpointsOf(application)
@@ -230,19 +230,27 @@ public class RoutingPolicies {
             for (var policy : routeEntry.getValue()) {
                 for (var target : endpoint.targets()) {
                     if (!policy.appliesTo(target.deployment())) continue;
+                    if (policy.dnsZone().isEmpty()) continue; // Does not support ALIAS records
                     int weight = target.weight();
                     if (isConfiguredOut(policy, inactiveZones) && removableFromApplicationEndpoint(policy, application, targetWeights)) {
                         weight = 0;
                     }
                     WeightedAliasTarget weightedAliasTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
                                                                                       target.deployment().zoneId(), weight);
-                    targetsByEndpoint.computeIfAbsent(endpoint.dnsName(), (k) -> new LinkedHashSet<>())
+                    targetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>())
                                      .add(weightedAliasTarget);
                 }
             }
         }
         targetsByEndpoint.forEach((applicationEndpoint, targets) -> {
-            controller.nameServiceForwarder().createAlias(RecordName.from(applicationEndpoint), targets, Priority.normal);
+            ZoneId targetZone = applicationEndpoint.targets().stream()
+                                             .map(Endpoint.Target::deployment)
+                                             .map(DeploymentId::zoneId)
+                                             .findFirst()
+                                             .get();
+            nameServiceForwarderIn(targetZone).createAlias(RecordName.from(applicationEndpoint.dnsName()),
+                                                           targets,
+                                                           Priority.normal);
         });
     }
 
