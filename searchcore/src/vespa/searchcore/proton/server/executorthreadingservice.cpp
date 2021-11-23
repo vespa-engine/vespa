@@ -128,13 +128,10 @@ ExecutorThreadingService::syncOnce() {
 void
 ExecutorThreadingService::shutdown()
 {
-    _masterExecutor.shutdown();
-    _masterExecutor.sync();
+    _masterExecutor.shutdown().sync();
     _attribute_field_writer_ptr->sync_all();
-    _summaryExecutor->shutdown();
-    _summaryExecutor->sync();
-    _indexExecutor->shutdown();
-    _indexExecutor->sync();
+    _summaryExecutor->shutdown().sync();
+    _indexExecutor->shutdown().sync();
     _index_field_inverter_ptr->sync_all();
     _index_field_writer_ptr->sync_all();
 }
