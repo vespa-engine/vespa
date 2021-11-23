@@ -113,6 +113,9 @@ func runTest(testPath string, target vespa.Target) string {
 		fatalErr(err, fmt.Sprintf("Invalid default parameters for '%s'", testName))
 	}
 
+	if len(test.Assertions) == 0 {
+		fatalErr(fmt.Errorf("a test must have at least one assertion, but none were found in '%s'", testPath))
+	}
 	for i, assertion := range test.Assertions {
 		assertionName := assertion.Name
 		if assertionName == "" {
@@ -200,7 +203,7 @@ func verify(assertion assertion, testsPath string, defaultCluster string, defaul
 		statusCode = 200
 	}
 	if statusCode != response.StatusCode {
-		return fmt.Sprintf("Expected status code %d, but got %d, and body:\n%s", statusCode, response.StatusCode, util.ReaderToJSON(response.Body)), nil
+		return fmt.Sprintf("Expected status code (%d) does not match actual (%d). Response body:\n%s", statusCode, response.StatusCode, util.ReaderToJSON(response.Body)), nil
 	}
 
 	responseBodySpecBytes, err := getBody(assertion.Response.BodyRaw, testsPath)
@@ -223,10 +226,15 @@ func verify(assertion assertion, testsPath string, defaultCluster string, defaul
 	var responseBody interface{}
 	err = json.Unmarshal(responseBodyBytes, &responseBody)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("got non-JSON response; %w:\n%s", err, string(responseBodyBytes))
 	}
 
-	return compare(responseBodySpec, responseBody, "")
+	failure, err := compare(responseBodySpec, responseBody, "")
+	if failure != "" {
+		responsePretty, _ := json.MarshalIndent(responseBody, "", "  ")
+		failure = failure + " Response body:\n" + string(responsePretty)
+	}
+	return failure, err
 }
 
 func compare(expected interface{}, actual interface{}, path string) (string, error) {
@@ -251,21 +259,30 @@ func compare(expected interface{}, actual interface{}, path string) (string, err
 	case []interface{}:
 		v, ok := actual.([]interface{})
 		typeMatch = ok
-		if ok && len(u) == len(v) {
-			for i, e := range u {
-				result, err := compare(e, v[i], fmt.Sprintf("%s[%d]", path, i))
-				if result != "" || err != nil {
-					return result, err
+		if ok {
+			if len(u) == len(v) {
+				for i, e := range u {
+					result, err := compare(e, v[i], fmt.Sprintf("%s/%d", path, i))
+					if result != "" || err != nil {
+						return result, err
+					}
 				}
+				valueMatch = true
+			} else {
+				return fmt.Sprintf("Expected number of elements at %s (%d) does not match actual (%d).", path, len(u), len(v)), nil
 			}
-			valueMatch = true
 		}
 	case map[string]interface{}:
 		v, ok := actual.(map[string]interface{})
 		typeMatch = ok
 		if ok {
 			for n, e := range u {
-				result, err := compare(e, v[n], fmt.Sprintf("%s['%s']", path, n))
+				childPath := fmt.Sprintf("%s/%s", path, strings.ReplaceAll(strings.ReplaceAll(n, "~", "~0"), "/", "~1"))
+				f, ok := v[n]
+				if !ok {
+					return fmt.Sprintf("Expected field at %s not present in actual data.", childPath), nil
+				}
+				result, err := compare(e, f, childPath)
 				if result != "" || err != nil {
 					return result, err
 				}
@@ -282,11 +299,7 @@ func compare(expected interface{}, actual interface{}, path string) (string, err
 		}
 		expectedJson, _ := json.MarshalIndent(expected, "", "  ")
 		actualJson, _ := json.MarshalIndent(actual, "", "  ")
-		mismatched := "Type"
-		if typeMatch {
-			mismatched = "Value"
-		}
-		return fmt.Sprintf("%s mismatch at %s: <<< expected === actual >>>\n<<<\n%s\n===\n%s\n>>>\n", mismatched, path, expectedJson, actualJson), nil
+		return fmt.Sprintf("Expected JSON at %s (%s) does not match actual (%s).", path, expectedJson, actualJson), nil
 	}
 	return "", nil
 }
@@ -314,7 +327,7 @@ func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 	var bodyPath string
 	if err := json.Unmarshal(bodyRaw, &bodyPath); err == nil {
 		resolvedBodyPath := path.Join(testsPath, bodyPath)
-		bodyRaw, err =  ioutil.ReadFile(resolvedBodyPath)
+		bodyRaw, err = ioutil.ReadFile(resolvedBodyPath)
 		if err != nil {
 			fatalErr(err, fmt.Sprintf("Failed to read body file at '%s'", resolvedBodyPath))
 		}
