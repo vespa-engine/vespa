@@ -39,6 +39,7 @@ namespace api {
 }
 namespace spi { struct PersistenceProvider; }
 
+class ContentBucketSpace;
 struct FileStorManagerTest;
 class ReadBucketList;
 class BucketOwnershipNotifier;
@@ -170,6 +171,11 @@ private:
     void onFlush(bool downwards) override;
     void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
     void storageDistributionChanged() override;
+    [[nodiscard]] static bool should_deactivate_buckets(const ContentBucketSpace& space,
+                                                        bool node_up_in_space,
+                                                        bool maintenance_in_all_spaces) noexcept;
+    [[nodiscard]] bool maintenance_in_all_spaces(const lib::Node& node) const noexcept;
+    void maybe_log_received_cluster_state();
     void updateState();
     void propagateClusterStates();
     void update_reported_state_after_db_init();

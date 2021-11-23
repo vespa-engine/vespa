@@ -140,6 +140,11 @@ struct Fixture
     setNodeUp(bool value)
     {
         _calc->setNodeUp(value);
+        _calc->setNodeMaintenance(false);
+        _handler.notifyClusterStateChanged(_calc);
+    }
+    void setNodeMaintenance(bool value) {
+        _calc->setNodeMaintenance(value);
         _handler.notifyClusterStateChanged(_calc);
     }
 };
@@ -223,7 +228,7 @@ TEST_F("require that unready bucket can be reported as active", Fixture)
 }
 
 
-TEST_F("require that node being down deactivates buckets", Fixture)
+TEST_F("node going down (but not into maintenance state) deactivates all buckets", Fixture)
 {
     f._handler.handleSetCurrentState(f._ready.bucket(2),
                                      BucketInfo::ACTIVE, f._genResult);
@@ -252,6 +257,42 @@ TEST_F("require that node being down deactivates buckets", Fixture)
     EXPECT_EQUAL(true, f._bucketInfo.getInfo().isActive());
 }
 
+TEST_F("node going into maintenance state does _not_ deactivate any buckets", Fixture)
+{
+    f._handler.handleSetCurrentState(f._ready.bucket(2),
+                                     BucketInfo::ACTIVE, f._genResult);
+    f.sync();
+    f.setNodeMaintenance(true);
+    f.sync();
+    f.handleGetBucketInfo(f._ready.bucket(2));
+    EXPECT_TRUE(f._bucketInfo.getInfo().isActive());
+}
+
+TEST_F("node going from maintenance to up state deactivates all buckets", Fixture)
+{
+    f._handler.handleSetCurrentState(f._ready.bucket(2),
+                                     BucketInfo::ACTIVE, f._genResult);
+    f.sync();
+    f.setNodeMaintenance(true);
+    f.sync();
+    f.setNodeUp(true);
+    f.sync();
+    f.handleGetBucketInfo(f._ready.bucket(2));
+    EXPECT_FALSE(f._bucketInfo.getInfo().isActive());
+}
+
+TEST_F("node going from maintenance to down state deactivates all buckets", Fixture)
+{
+    f._handler.handleSetCurrentState(f._ready.bucket(2),
+                                     BucketInfo::ACTIVE, f._genResult);
+    f.sync();
+    f.setNodeMaintenance(true);
+    f.sync();
+    f.setNodeUp(false);
+    f.sync();
+    f.handleGetBucketInfo(f._ready.bucket(2));
+    EXPECT_FALSE(f._bucketInfo.getInfo().isActive());
+}
 
 TEST_MAIN()
 {

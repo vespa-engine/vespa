@@ -23,9 +23,9 @@ public:
 
     ClusterState(const lib::ClusterState& state,
                  uint16_t nodeIndex,
-                 const lib::Distribution& distribution);
+                 const lib::Distribution& distribution,
+                 bool maintenanceInAllSpaces = false);
 
-    ClusterState(vespalib::nbostream& i);
     ClusterState(const ClusterState& other);
     ClusterState& operator=(const ClusterState& other) = delete;
     ~ClusterState();
@@ -45,23 +45,32 @@ public:
      * compared to the complete list of nodes, and deigns the system to be
      * unusable.
      */
-    bool clusterUp() const;
+    [[nodiscard]] bool clusterUp() const noexcept;
 
     /**
      * Returns false if this node has been set in a state where it should not
      * receive external load.
+     *
+     * TODO rename to indicate bucket space affinity.
      */
-    bool nodeUp() const;
+    [[nodiscard]] bool nodeUp() const noexcept;
 
     /**
      * Returns true iff this node is marked as Initializing in the cluster state.
+     *
+     * TODO remove, init no longer used internally.
      */
-    bool nodeInitializing() const;
+    [[nodiscard]] bool nodeInitializing() const noexcept;
 
     /**
      * Returns true iff this node is marked as Retired in the cluster state.
      */
-    bool nodeRetired() const;
+    [[nodiscard]] bool nodeRetired() const noexcept;
+
+    /**
+     * Returns true iff this node is marked as Maintenance in all bucket space cluster states.
+     */
+    [[nodiscard]] bool nodeMaintenance() const noexcept;
 
     /**
      * Returns a serialized form of this object.
@@ -72,9 +81,10 @@ private:
     std::unique_ptr<lib::ClusterState> _state;
     std::unique_ptr<lib::Distribution> _distribution;
     uint16_t _nodeIndex;
+    bool _maintenanceInAllSpaces;
 
     void deserialize(vespalib::nbostream&);
-    bool nodeHasStateOneOf(const char* states) const;
+    bool nodeHasStateOneOf(const char* states) const noexcept;
 };
 
 }

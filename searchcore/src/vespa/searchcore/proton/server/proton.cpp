@@ -865,10 +865,11 @@ Proton::setClusterState(BucketSpace bucketSpace, const storage::spi::ClusterStat
     // forward info sent by cluster controller to persistence engine
     // about whether node is supposed to be up or not.  Match engine
     // needs to know this in order to stop serving queries.
-    bool nodeUpInBucketSpace(calc.nodeUp());
+    bool nodeUpInBucketSpace(calc.nodeUp()); // TODO rename calculator function to imply bucket space affinity
     bool nodeRetired(calc.nodeRetired());
     bool nodeUp = updateNodeUp(bucketSpace, nodeUpInBucketSpace);
     _matchEngine->setNodeUp(nodeUp);
+    _matchEngine->setNodeMaintenance(calc.nodeMaintenance()); // Note: _all_ bucket spaces in maintenance
     if (_memoryFlushConfigUpdater) {
         _memoryFlushConfigUpdater->setNodeRetired(nodeRetired);
     }
