@@ -57,18 +57,4 @@ ContentBucketSpace::setNodeUpInLastNodeStateSeenByProvider(bool nodeUpInLastNode
     _nodeUpInLastNodeStateSeenByProvider = nodeUpInLastNodeStateSeenByProvider;
 }
 
-bool
-ContentBucketSpace::getNodeMaintenanceInLastNodeStateSeenByProvider() const
-{
-    std::lock_guard guard(_lock);
-    return _nodeMaintenanceInLastNodeStateSeenByProvider;
-}
-
-void
-ContentBucketSpace::setNodeMaintenanceInLastNodeStateSeenByProvider(bool nodeMaintenanceInLastNodeStateSeenByProvider)
-{
-    std::lock_guard guard(_lock);
-    _nodeMaintenanceInLastNodeStateSeenByProvider = nodeMaintenanceInLastNodeStateSeenByProvider;
-}
-
 }

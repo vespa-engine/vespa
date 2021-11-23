@@ -14,12 +14,10 @@ namespace storage::spi {
 
 ClusterState::ClusterState(const lib::ClusterState& state,
                            uint16_t nodeIndex,
-                           const lib::Distribution& distribution,
-                           bool maintenanceInAllSpaces)
+                           const lib::Distribution& distribution)
     : _state(std::make_unique<lib::ClusterState>(state)),
       _distribution(std::make_unique<lib::Distribution>(distribution.serialize())),
-      _nodeIndex(nodeIndex),
-      _maintenanceInAllSpaces(maintenanceInAllSpaces)
+      _nodeIndex(nodeIndex)
 {
 }
 
@@ -35,11 +33,14 @@ void ClusterState::deserialize(vespalib::nbostream& i) {
     _distribution = std::make_unique<lib::Distribution>(distribution);
 }
 
+ClusterState::ClusterState(vespalib::nbostream& i) {
+    deserialize(i);
+}
+
 ClusterState::ClusterState(const ClusterState& other) {
     vespalib::nbostream o;
     other.serialize(o);
     deserialize(o);
-    _maintenanceInAllSpaces = other._maintenanceInAllSpaces;
 }
 
 ClusterState::~ClusterState() = default;
@@ -67,30 +68,26 @@ ClusterState::shouldBeReady(const Bucket& b) const {
     return Trinary::False;
 }
 
-bool ClusterState::clusterUp() const noexcept {
+bool ClusterState::clusterUp() const {
     return _state && _state->getClusterState() == lib::State::UP;
 }
 
-bool ClusterState::nodeHasStateOneOf(const char* states) const noexcept {
+bool ClusterState::nodeHasStateOneOf(const char* states) const {
     return _state &&
            _state->getNodeState(lib::Node(lib::NodeType::STORAGE, _nodeIndex)).
                    getState().oneOf(states);
 }
 
-bool ClusterState::nodeUp() const noexcept {
+bool ClusterState::nodeUp() const {
     return nodeHasStateOneOf("uir");
 }
 
-bool ClusterState::nodeInitializing() const noexcept {
+bool ClusterState::nodeInitializing() const {
     return nodeHasStateOneOf("i");
 }
 
-bool ClusterState::nodeRetired() const noexcept {
+bool ClusterState::nodeRetired() const {
     return nodeHasStateOneOf("r");
-}
-
-bool ClusterState::nodeMaintenance() const noexcept {
-    return _maintenanceInAllSpaces;
 }
 
 void ClusterState::serialize(vespalib::nbostream& o) const {

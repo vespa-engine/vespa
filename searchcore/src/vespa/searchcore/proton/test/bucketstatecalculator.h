@@ -20,7 +20,6 @@ private:
     bool                   _clusterUp;
     bool                   _nodeUp;
     bool                   _nodeRetired;
-    bool                   _nodeMaintenance;
 
 public:
     typedef std::shared_ptr<BucketStateCalculator> SP;
@@ -29,8 +28,7 @@ public:
         _asked(),
         _clusterUp(true),
         _nodeUp(true),
-        _nodeRetired(false),
-        _nodeMaintenance(false)
+        _nodeRetired(false)
     {
     }
     BucketStateCalculator &addReady(const document::BucketId &bucket) {
@@ -56,15 +54,6 @@ public:
         return *this;
     }
 
-    BucketStateCalculator& setNodeMaintenance(bool maintenance) noexcept {
-        _nodeMaintenance = maintenance;
-        if (maintenance) {
-            _nodeUp = false;
-            _nodeRetired = false;
-        }
-        return *this;
-    }
-
     const BucketIdVector &asked() const noexcept { return _asked; }
     void resetAsked() { _asked.clear(); }
 
@@ -78,7 +67,6 @@ public:
     bool nodeUp() const override { return _nodeUp; }
     bool nodeRetired() const override { return _nodeRetired; }
     bool nodeInitializing() const override { return false; }
-    bool nodeMaintenance() const noexcept override { return _nodeMaintenance; }
 };
 
 }
