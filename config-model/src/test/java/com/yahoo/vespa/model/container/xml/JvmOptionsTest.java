@@ -132,14 +132,14 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
-        verifyJvmGCOptions(false, null,null, ContainerCluster.G1GC);
-        verifyJvmGCOptions(true, null,null, ContainerCluster.CMS);
-        verifyJvmGCOptions(true, "",null, ContainerCluster.CMS);
-        verifyJvmGCOptions(false, "-XX:+UseConcMarkSweepGC",null, "-XX:+UseConcMarkSweepGC");
-        verifyJvmGCOptions(true, "-XX:+UseConcMarkSweepGC",null, "-XX:+UseConcMarkSweepGC");
-        verifyJvmGCOptions(false, null,"-XX:+UseG1GC", "-XX:+UseG1GC");
-        verifyJvmGCOptions(false, "-XX:+UseConcMarkSweepGC","-XX:+UseG1GC", "-XX:+UseG1GC");
-        verifyJvmGCOptions(false, null,"-XX:+UseConcMarkSweepGC", "-XX:+UseConcMarkSweepGC");
+        verifyJvmGCOptions(false, null, null, ContainerCluster.G1GC);
+        verifyJvmGCOptions(true, null, null, ContainerCluster.PARALLEL_GC);
+        verifyJvmGCOptions(true, "", null, ContainerCluster.PARALLEL_GC);
+        verifyJvmGCOptions(false, "-XX:+UseG1GC", null, "-XX:+UseG1GC");
+        verifyJvmGCOptions(true, "-XX:+UseG1GC", null, "-XX:+UseG1GC");
+        verifyJvmGCOptions(false, null, "-XX:+UseG1GC", "-XX:+UseG1GC");
+        verifyJvmGCOptions(false, "-XX:+UseParallelGC", "-XX:+UseG1GC", "-XX:+UseG1GC");
+        verifyJvmGCOptions(false, null, "-XX:+UseParallelGC", "-XX:+UseParallelGC");
     }
 
 }
