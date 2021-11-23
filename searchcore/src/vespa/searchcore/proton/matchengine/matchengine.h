@@ -26,7 +26,6 @@ private:
     vespalib::ThreadStackExecutor      _executor;
     vespalib::SimpleThreadBundle::Pool _threadBundlePool;
     bool                               _nodeUp;
-    bool                               _nodeMaintenance;
 
 public:
     /**
@@ -131,13 +130,6 @@ public:
      * Set node up/down, based on info from cluster controller.
      */
     void setNodeUp(bool nodeUp);
-
-    /**
-     * Set node into maintenance, based on info from cluster controller. Note that
-     * nodeMaintenance == true also implies setNodeUp(false), as the node is technically
-     * not in a Up state.
-     */
-    void setNodeMaintenance(bool nodeMaintenance);
 
     StatusReport::UP reportStatus() const;
 
