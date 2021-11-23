@@ -42,23 +42,23 @@ public class FeedReplyReader implements ReplyHandler {
         metric.set(MetricNames.LATENCY, latencyInSeconds, null);
 
         DocumentOperationType type = DocumentOperationType.fromMessage(reply.getMessage());
-        boolean conditionNotMet = conditionNotMet(reply);
-        if (!conditionNotMet && reply.hasErrors()) {
+        boolean conditionMet = conditionMet(reply);
+        if (reply.hasErrors() && conditionMet) {
             DocumentOperationStatus status = DocumentOperationStatus.fromMessageBusErrorCodes(reply.getErrorCodes());
             metricsHelper.reportFailure(type, status);
             metric.add(MetricNames.FAILED, 1, null);
-            enqueue(context, reply.getError(0).getMessage(), ErrorCode.ERROR, conditionNotMet, reply.getTrace());
+            enqueue(context, reply.getError(0).getMessage(), ErrorCode.ERROR, false, reply.getTrace());
         } else {
             metricsHelper.reportSuccessful(type, latencyInSeconds);
             metric.add(MetricNames.SUCCEEDED, 1, null);
-            if (conditionNotMet)
+            if (!conditionMet)
                 metric.add(MetricNames.TEST_AND_SET_CONDITION_NOT_MET, 1, null);
-            enqueue(context, "Document processed.", ErrorCode.OK, false, reply.getTrace());
+            enqueue(context, "Document processed.", ErrorCode.OK, !conditionMet, reply.getTrace());
         }
     }
 
-    private static boolean conditionNotMet(Reply reply) {
-        return reply.hasErrors() && reply.getError(0).getCode() == DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED;
+    private static boolean conditionMet(Reply reply) {
+        return !reply.hasErrors() || reply.getError(0).getCode() != DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED;
     }
 
     private void enqueue(ReplyContext context, String message, ErrorCode status, boolean isConditionNotMet, Trace trace) {
