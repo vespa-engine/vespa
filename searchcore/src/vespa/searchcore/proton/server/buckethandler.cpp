@@ -144,6 +144,12 @@ BucketHandler::handlePopulateActiveBuckets(document::BucketId::List &buckets,
     }));
 }
 
+namespace {
+constexpr const char* bool_str(bool v) noexcept {
+    return v ? "true" : "false";
+}
+}
+
 void
 BucketHandler::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> & newCalc)
 {
@@ -151,17 +157,19 @@ BucketHandler::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalcu
     bool oldNodeMaintenance = _nodeMaintenance;
     _nodeUp = newCalc->nodeUp(); // Up, Retired or Initializing
     _nodeMaintenance = newCalc->nodeMaintenance();
-    LOG(spam, "notifyClusterStateChanged: %s -> %s", oldNodeUp ? "up" : "down", _nodeUp ? "up" : "down");
+    LOG(spam, "notifyClusterStateChanged; up: %s -> %s, maintenance: %s -> %s",
+        bool_str(oldNodeUp), bool_str(_nodeUp),
+        bool_str(oldNodeMaintenance), bool_str(_nodeMaintenance));
     if (_nodeMaintenance) {
         return; // Don't deactivate buckets in maintenance mode; let query traffic drain away naturally.
     }
     // We implicitly deactivate buckets in two edge cases:
     //  - Up -> Down (not maintenance; handled above), since the node can not be expected to offer
     //    any graceful query draining when set Down.
-    //  - Maintenance -> Up, since we'd otherwise introduce a bunch of transient duplicate results
-    //    into queries. The assumption is that the system has already activated buckets on other
-    //    nodes in such a scenario.
-    if ((oldNodeUp && !_nodeUp) || (oldNodeMaintenance && _nodeUp)) {
+    //  - Maintenance -> !Maintenance, since we'd otherwise introduce a bunch of transient duplicate
+    //    results into queries if we transition to an available state.
+    //    The assumption is that the system has already activated buckets on other nodes in such a scenario.
+    if ((oldNodeUp && !_nodeUp) || oldNodeMaintenance) {
         deactivateAllActiveBuckets();
     }
 }

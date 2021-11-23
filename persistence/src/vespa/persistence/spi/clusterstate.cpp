@@ -14,10 +14,12 @@ namespace storage::spi {
 
 ClusterState::ClusterState(const lib::ClusterState& state,
                            uint16_t nodeIndex,
-                           const lib::Distribution& distribution)
+                           const lib::Distribution& distribution,
+                           bool maintenanceInAllSpaces)
     : _state(std::make_unique<lib::ClusterState>(state)),
       _distribution(std::make_unique<lib::Distribution>(distribution.serialize())),
-      _nodeIndex(nodeIndex)
+      _nodeIndex(nodeIndex),
+      _maintenanceInAllSpaces(maintenanceInAllSpaces)
 {
 }
 
@@ -33,14 +35,11 @@ void ClusterState::deserialize(vespalib::nbostream& i) {
     _distribution = std::make_unique<lib::Distribution>(distribution);
 }
 
-ClusterState::ClusterState(vespalib::nbostream& i) {
-    deserialize(i);
-}
-
 ClusterState::ClusterState(const ClusterState& other) {
     vespalib::nbostream o;
     other.serialize(o);
     deserialize(o);
+    _maintenanceInAllSpaces = other._maintenanceInAllSpaces;
 }
 
 ClusterState::~ClusterState() = default;
@@ -91,7 +90,7 @@ bool ClusterState::nodeRetired() const noexcept {
 }
 
 bool ClusterState::nodeMaintenance() const noexcept {
-    return nodeHasStateOneOf("m");
+    return _maintenanceInAllSpaces;
 }
 
 void ClusterState::serialize(vespalib::nbostream& o) const {

@@ -281,6 +281,19 @@ TEST_F("node going from maintenance to up state deactivates all buckets", Fixtur
     EXPECT_FALSE(f._bucketInfo.getInfo().isActive());
 }
 
+TEST_F("node going from maintenance to down state deactivates all buckets", Fixture)
+{
+    f._handler.handleSetCurrentState(f._ready.bucket(2),
+                                     BucketInfo::ACTIVE, f._genResult);
+    f.sync();
+    f.setNodeMaintenance(true);
+    f.sync();
+    f.setNodeUp(false);
+    f.sync();
+    f.handleGetBucketInfo(f._ready.bucket(2));
+    EXPECT_FALSE(f._bucketInfo.getInfo().isActive());
+}
+
 TEST_MAIN()
 {
     TEST_RUN_ALL();
