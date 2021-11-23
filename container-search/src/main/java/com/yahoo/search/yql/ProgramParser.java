@@ -56,6 +56,7 @@ import com.yahoo.search.yql.yqlplusParser.TimeoutContext;
 import com.yahoo.search.yql.yqlplusParser.UnaryExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.WhereContext;
 
+import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -69,7 +70,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
@@ -83,50 +83,39 @@ import java.util.Set;
 final class ProgramParser {
 
     public yqlplusParser prepareParser(String programName, InputStream input) throws IOException {
-        return prepareParser(programName, new CaseInsensitiveInputStream(input));
+        //TODO ANTLRInputStream goes away on 4.7, so must use CharStreams.fromXXX() when upgrading
+        return prepareParser(programName, new CaseInsensitiveCharStream(new ANTLRInputStream(input)));
     }
 
     public yqlplusParser prepareParser(String programName, String input) throws IOException {
-        return prepareParser(programName, new CaseInsensitiveInputStream(input));
+        //TODO ANTLRInputStream goes away on 4.7, so must use CharStreams.fromXXX() when upgrading
+        return prepareParser(programName, new CaseInsensitiveCharStream(new ANTLRInputStream(input)));
     }
 
-    public yqlplusParser prepareParser(File file) throws IOException {
-        return prepareParser(file.getAbsoluteFile().toString(), new CaseInsensitiveFileStream(file.getAbsolutePath()));
+    private static class ErrorListener extends BaseErrorListener {
+        private final String programName;
+        ErrorListener(String programName) { this.programName = programName; }
+        @Override
+        public void syntaxError(Recognizer<?, ?> recognizer,
+                                Object offendingSymbol,
+                                int line,
+                                int charPositionInLine,
+                                String msg,
+                                RecognitionException e) {
+            throw new ProgramCompileException(new Location(programName, line, charPositionInLine), "%s", msg);
+        }
     }
 
     private yqlplusParser prepareParser(String programName, CharStream input) {
+        ErrorListener errorListener = new ErrorListener(programName);
         yqlplusLexer lexer = new yqlplusLexer(input);
         lexer.removeErrorListeners();
-        lexer.addErrorListener(new BaseErrorListener() {
-
-          @Override
-          public void syntaxError(Recognizer<?, ?> recognizer,
-                                  Object offendingSymbol,
-                                  int line,
-                                  int charPositionInLine,
-                                  String msg,
-                                  RecognitionException e) {
-            throw new ProgramCompileException(new Location(programName, line, charPositionInLine), "%s", msg);
-          }
-
-        });
+        lexer.addErrorListener(errorListener);
         TokenStream tokens = new CommonTokenStream(lexer);
 
         yqlplusParser parser = new yqlplusParser(tokens);
         parser.removeErrorListeners();
-        parser.addErrorListener(new BaseErrorListener() {
-
-          @Override
-          public void syntaxError(Recognizer<?, ?> recognizer,
-                                  Object offendingSymbol,
-                                  int line,
-                                  int charPositionInLine,
-                                  String msg,
-                                  RecognitionException e) {
-            throw new ProgramCompileException(new Location(programName, line, charPositionInLine), "%s", msg);
-          }
-
-        });
+        parser.addErrorListener(errorListener);
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
         return parser;
     }
