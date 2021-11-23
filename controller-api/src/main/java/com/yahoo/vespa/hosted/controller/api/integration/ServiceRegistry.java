@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
+import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
@@ -108,4 +109,6 @@ public interface ServiceRegistry {
     HorizonClient horizonClient();
 
     PlanRegistry planRegistry();
+
+    RoleMaintainer roleMaintainer();
 }

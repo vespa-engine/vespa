@@ -385,6 +385,13 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         return Set.copyOf(listResponse.entity);
     }
 
+    @Override
+    public void deleteRole(AthenzRole role) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s", role.domain().getName(), role.roleName()));
+        HttpUriRequest request = RequestBuilder.delete(uri).build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
     private static Header createCookieHeaderWithOktaTokens(OktaIdentityToken identityToken, OktaAccessToken accessToken) {
         return new BasicHeader("Cookie", String.format("okta_at=%s; okta_it=%s", accessToken.token(), identityToken.token()));
     }
