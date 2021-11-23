@@ -259,7 +259,7 @@ applyCommit(CommitParam param, AttributeWriter::OnWriteDoneType , AttributeVecto
 void
 applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, AttributeVector &attr)
 {
-    if (attr.getStatus().getLastSyncToken() < serialNum) {
+    if (attr.getStatus().getLastSyncToken() <= serialNum) {
         /*
          * If the attribute is an empty placeholder attribute due to
          * later config changes removing the attribute then it might
