@@ -184,10 +184,11 @@ func getTarget() vespa.Target {
 			return nil
 		}
 		deployment := deploymentFromArgs()
+		endpoints := getEndpointsFromEnv()
 
 		var apiKey []byte = nil
 		apiKey, err = ioutil.ReadFile(cfg.APIKeyPath(deployment.Application.Tenant))
-		if !vespa.Auth0AccessTokenEnabled() {
+		if !vespa.Auth0AccessTokenEnabled() && endpoints == nil {
 			if err != nil {
 				fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 			}
@@ -233,7 +234,7 @@ func getTarget() vespa.Target {
 			cfg.AuthConfigPath(),
 			getSystemName(),
 			cloudAuth,
-			getEndpointsFromEnv())
+			endpoints)
 	}
 	fatalErrHint(fmt.Errorf("Invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
 	return nil
