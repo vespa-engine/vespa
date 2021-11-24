@@ -1,5 +1,4 @@
 Running my test: .... OK
-
 Running testdata/tests/system-test/wrong-bool-value.json: Failed step 1:
 Unexpected value at /root/coverage/full: true
 Expected: false
@@ -309,7 +308,6 @@ Actual response:
     "summaryfetchtime": 0
   }
 }
-
 
 Failed 8 of 9 tests:
 testdata/tests/system-test/wrong-bool-value.json: step 1: Unexpected value at /root/coverage/full: true

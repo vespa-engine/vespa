@@ -56,7 +56,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			fmt.Fprintf(stdout, "Failed to find any tests at %v\n", testPath)
 			exitFunc(3)
 		} else {
-			fmt.Fprintf(stdout, "%d tests completed successfully\n", count)
+			fmt.Fprintf(stdout, "\n%d tests completed successfully\n", count)
 		}
 	},
 }
@@ -71,12 +71,18 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 		if err != nil {
 			fatalErr(err, "Failed reading specified test directory")
 		}
+		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
 				testPath := path.Join(rootPath, test.Name())
+				if previousFailed {
+					fmt.Fprintln(stdout, "")
+					previousFailed = false
+				}
 				failure := runTest(testPath, target)
 				if failure != "" {
 					failed = append(failed, failure)
+					previousFailed = true
 				}
 				count++
 			}
@@ -126,7 +132,7 @@ func runTest(testPath string, target vespa.Target) string {
 			fatalErr(err, fmt.Sprintf("Error in %s", stepName))
 		}
 		if failure != "" {
-			fmt.Fprintf(stdout, " Failed %s:\n%s\n\n", stepName, longFailure)
+			fmt.Fprintf(stdout, " Failed %s:\n%s\n", stepName, longFailure)
 			return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
 		}
 		if i == 0 {
@@ -134,7 +140,7 @@ func runTest(testPath string, target vespa.Target) string {
 		}
 		fmt.Fprint(stdout, ".")
 	}
-	fmt.Fprintf(stdout, " OK\n\n")
+	fmt.Fprintln(stdout, " OK")
 	return ""
 }
 
