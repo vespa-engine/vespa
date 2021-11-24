@@ -11,7 +11,8 @@ ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace,
       _lock(),
       _clusterState(),
       _distribution(),
-      _nodeUpInLastNodeStateSeenByProvider(false)
+      _nodeUpInLastNodeStateSeenByProvider(false),
+      _nodeMaintenanceInLastNodeStateSeenByProvider(false)
 {
 }
 
