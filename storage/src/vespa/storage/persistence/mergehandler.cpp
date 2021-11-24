@@ -104,6 +104,29 @@ void check_apply_diff_sync(std::shared_ptr<ApplyBucketDiffState> async_results) 
     }
 }
 
+FileStorThreadMetrics::Op *get_op_metrics(FileStorThreadMetrics& metrics, const api::StorageReply &reply) {
+    switch (reply.getType().getId()) {
+    case api::MessageType::MERGEBUCKET_REPLY_ID:
+        return &metrics.mergeBuckets;
+    case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
+        return &metrics.applyBucketDiff;
+    default:
+        ;
+    }
+    return nullptr;
+}
+
+void update_op_metrics(FileStorThreadMetrics& metrics, const api::StorageReply &reply, const framework::MilliSecTimer& start_time) {
+    auto op_metrics = get_op_metrics(metrics, reply);
+    if (op_metrics) {
+        if (reply.getResult().success()) {
+            op_metrics->latency.addValue(start_time.getElapsedTimeAsDouble());
+        } else {
+            op_metrics->failed.inc();
+        }
+    }
+}
+
 } // anonymous namespace
 
 void
@@ -1223,6 +1246,7 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply, MessageSe
     }
     if (replyToSend.get()) {
         replyToSend->setResult(reply.getResult());
+        update_op_metrics(_env._metrics, *replyToSend, s->startTime);
         sender.sendReply(replyToSend);
     }
 }
@@ -1433,7 +1457,8 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, Messa
 
     if (async_results && replyToSend) {
         replyToSend->setResult(returnCode);
-        async_results->set_delayed_reply(std::move(tracker), sender, std::move(replyToSend));
+        auto op_metrics = get_op_metrics(_env._metrics, *replyToSend);
+        async_results->set_delayed_reply(std::move(tracker), sender, op_metrics, s->startTime, std::move(replyToSend));
     }
     if (clearState) {
         _env._fileStorHandler.clearMergeStatus(bucket.getBucket());
@@ -1441,6 +1466,7 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, Messa
     if (replyToSend.get()) {
         // Send on
         replyToSend->setResult(returnCode);
+        update_op_metrics(_env._metrics, *replyToSend, s->startTime);
         sender.sendReply(replyToSend);
     }
 }
