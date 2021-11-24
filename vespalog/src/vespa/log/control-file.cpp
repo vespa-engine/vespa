@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include <cstdio>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
 #include <memory>
@@ -28,7 +27,7 @@ ControlFile::ControlFile(const char *file, Mode mode)
                                : (O_RDWR | O_CREAT))),
       _fileSize(0),
       _mode(mode),
-      _fileName(strdup(file)),
+      _fileName(file),
       _prefix(0),
       _mapBase(0),
       _mappedSize(0),
@@ -43,7 +42,6 @@ ControlFile::ControlFile(const char *file, Mode mode)
 ControlFile::~ControlFile()
 {
     freeMapping();
-    free(_fileName);
 }
 
 void
@@ -168,7 +166,7 @@ ControlFile::extendMapping()
 
     if (fileLen == -1) {
         _fileBacking.unlock();
-        LOG(error, "Cannot get file size of '%s': %s", _fileName,
+        LOG(error, "Cannot get file size of '%s': %s", _fileName.c_str(),
             strerror(errno));
         return false;
     }
@@ -273,14 +271,14 @@ ControlFile::getLevels(const char *name)
     strcat(appendedString, "\n");
 
     int len = strlen(appendedString);
-    int fd = open(_fileName, O_WRONLY | O_APPEND);
+    int fd = open(_fileName.c_str(), O_WRONLY | O_APPEND);
     int wlen = write(fd, appendedString, len);
     oldFileLength = lseek(fd, (off_t)0, SEEK_CUR) - wlen;
     close(fd);
     if (wlen != len) {
         _fileBacking.unlock();
         LOG(error, "Writing to control file '%s' fails (%d/%d bytes): %s",
-            _fileName, wlen, len, strerror(errno));
+            _fileName.c_str(), wlen, len, strerror(errno));
         return reinterpret_cast<unsigned int *>(inheritLevels);
     } else {
         _fileSize = _fileBacking.size();
@@ -290,7 +288,7 @@ ControlFile::getLevels(const char *name)
         if (!extendMapping()) {
             _fileBacking.unlock(); // just for sure
             LOG(error, "Failed to extend mapping of '%s', losing runtime "
-                "configurability of component '%s'", _fileName, name);
+                "configurability of component '%s'", _fileName.c_str(), name);
             return defaultLevels();
         }
     }

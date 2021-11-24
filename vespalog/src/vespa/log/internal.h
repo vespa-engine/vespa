@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cstring>
+#include <string>
 #include <cstdlib>
 
 #if !__GNUC__ && !defined(__attribute__)
@@ -15,15 +15,14 @@ void throwInvalid(const char *fmt, ...)
 
 class InvalidLogException {
 private:
-    char *_what;
-    InvalidLogException& operator = (const InvalidLogException&);
+    std::string _what;
 
 public:
-    InvalidLogException(const InvalidLogException &x) :
-        _what(strdup(x._what)) {}
-    InvalidLogException(const char *s) : _what(strdup(s)) {}
-    ~InvalidLogException() { free(_what); }
-    const char *what() const { return _what; }
+    InvalidLogException& operator = (const InvalidLogException&) = delete;
+    InvalidLogException(const InvalidLogException &x) = default;
+    InvalidLogException(const char *s) : _what(s) {}
+    ~InvalidLogException() = default;
+    const char *what() const { return _what.c_str(); }
 };
 
 } // end namespace ns_log

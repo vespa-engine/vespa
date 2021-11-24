@@ -88,7 +88,7 @@ private:
     void WriteBufInternal(const void *buffer, size_t length);
 
 protected:
-    char         *_filename;
+    std::string   _filename;
     unsigned int  _openFlags;
     bool          _directIOEnabled;
     bool          _syncWritesEnabled;
@@ -726,7 +726,7 @@ private:
     FastOS_DirectoryScanInterface& operator= (const FastOS_DirectoryScanInterface&);
 
 protected:
-    char *_searchPath;
+    std::string _searchPath;
 
 public:
 
@@ -750,7 +750,7 @@ public:
      * This is an internal copy of the path specified in the constructor.
      * @return Search path string.
      */
-    const char *GetSearchPath () { return _searchPath; }
+    const char *GetSearchPath () { return _searchPath.c_str(); }
 
     /**
      * Read the next entry in the directory scan. Failure indicates

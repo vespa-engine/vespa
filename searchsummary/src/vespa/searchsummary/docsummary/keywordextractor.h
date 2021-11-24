@@ -24,9 +24,8 @@ public:
         IndexPrefix& operator=(const IndexPrefix &);
 
     public:
-        char        *_prefix;
-        int          _prefixLen;
-        IndexPrefix *_next;
+        vespalib::string  _prefix;
+        IndexPrefix      *_next;
 
         IndexPrefix(const char *prefix, IndexPrefix **list);
         ~IndexPrefix();
@@ -42,7 +41,7 @@ private:
     bool IsLegalIndexPrefix(const char *idxName) const
     {
         for (const IndexPrefix *pt = _legalPrefixes;
-             pt != NULL;
+             pt != nullptr;
              pt = pt->_next)
         {
             if (pt->Match(idxName))

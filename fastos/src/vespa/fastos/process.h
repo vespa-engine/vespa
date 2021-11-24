@@ -12,6 +12,7 @@
 
 #include "types.h"
 #include <cstddef>
+#include <string>
 
 /**
  * This class serves as a sink for redirected (piped) output from
@@ -52,8 +53,8 @@ private:
 
 protected:
 
-    char *_cmdLine;
-    bool _pipeStdin;
+    std::string  _cmdLine;
+    bool         _pipeStdin;
 
     FastOS_ProcessRedirectListener *_stdoutListener;
     FastOS_ProcessRedirectListener *_stderrListener;
@@ -179,10 +180,7 @@ public:
      * Get command line string.
      * @return                   Command line string
      */
-    const char *GetCommandLine ()
-    {
-        return _cmdLine;
-    }
+    const char *GetCommandLine () const { return _cmdLine.c_str(); }
 };
 
 #include <vespa/fastos/unix_process.h>

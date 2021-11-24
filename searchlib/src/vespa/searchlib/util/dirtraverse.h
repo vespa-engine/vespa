@@ -3,6 +3,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace search {
 
@@ -20,14 +21,14 @@ public:
         Name& operator=(const Name &);
 
     public:
-        char *_name;
+        std::string _name;
         Name *_next;
         explicit Name(const char *name);
         ~Name();
         static Name *sort(Name *head, int count);
     };
 private:
-    char *_baseDir;
+    std::string _baseDir;
     Name *_nameHead;
     int _nameCount;
     Name *_dirHead;
@@ -36,11 +37,11 @@ private:
     Name *_rdirHead;
     Name *_curDir;
     Name *_curName;
-    char *_fullDirName;
-    char *_fullName;
-    char *_relName;
+    std::string _fullDirName;
+    std::string _fullName;
+    const char *_relName;
 public:
-    const char *GetFullName() const { return _fullName; }
+    const char *GetFullName() const { return _fullName.c_str(); }
     const char *GetRelName() const { return _relName; }
     void QueueDir(const char *name);
     void PushDir(const char *name);
