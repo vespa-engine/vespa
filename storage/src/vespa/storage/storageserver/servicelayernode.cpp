@@ -18,6 +18,7 @@
 #include <vespa/persistence/spi/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/messagebus/rpcmessagebus.h>
+#include <vespa/config/common/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".node.servicelayer");
@@ -51,6 +52,9 @@ void ServiceLayerNode::init()
         initialize();
     } catch (spi::HandledException& e) {
         requestShutdown("Failed to initialize: " + e.getMessage());
+        throw;
+    } catch (const config::ConfigTimeoutException &e) {
+        LOG(warning, "Error subscribing to initial config: '%s'", e.what());
         throw;
     } catch (const vespalib::NetworkSetupFailureException & e) {
         LOG(warning, "Network failure: '%s'", e.what());
