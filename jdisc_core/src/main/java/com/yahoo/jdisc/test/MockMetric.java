@@ -35,6 +35,13 @@ public class MockMetric implements Metric {
 
     public Map<String, Map<Map<String, ?>, Double>> metrics() { return metrics; }
 
+    @Override
+    public String toString() {
+        return "MockMetric{" +
+                "metrics=" + metrics +
+                '}';
+    }
+
     private static class MapContext implements Context {
 
         private static final MapContext empty = new MapContext(Map.of());
