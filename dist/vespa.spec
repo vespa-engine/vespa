@@ -53,7 +53,6 @@ BuildRequires: rh-maven35
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
 BuildRequires: python36-pytest
 %endif
-BuildRequires: golang
 BuildRequires: vespa-pybind11-devel
 BuildRequires: python3-devel
 %endif
@@ -63,7 +62,6 @@ BuildRequires: gcc-toolset-10-binutils
 BuildRequires: gcc-toolset-10-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-10/enable
 BuildRequires: maven
-BuildRequires: golang
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python36-devel
@@ -72,7 +70,6 @@ BuildRequires: glibc-langpack-en
 %if 0%{?fedora}
 BuildRequires: gcc-c++
 BuildRequires: libatomic
-BuildRequires: golang
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python3-devel
@@ -191,6 +188,7 @@ BuildRequires: java-11-openjdk-devel
 BuildRequires: rpm-build
 BuildRequires: make
 BuildRequires: git
+BuildRequires: golang
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
 BuildRequires: bison >= 3.0.0
