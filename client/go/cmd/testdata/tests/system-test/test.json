@@ -1,11 +1,12 @@
 {
+    "name": "my test",
     "defaults": {
         "cluster": "container",
         "parameters": {
             "timeout": "3.4s"
         }
     },
-    "assertions": [
+    "steps": [
         {
             "name": "feed music",
             "request": {

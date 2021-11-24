@@ -23,7 +23,7 @@ func TestSuite(t *testing.T) {
 	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
 	client.NextStatus(200)
 	client.NextStatus(200)
-	for i := 0; i < 9; i++ {
+	for i := 0; i < 10; i++ {
 		client.NextResponse(200, string(searchResponse))
 	}
 
@@ -35,7 +35,7 @@ func TestSuite(t *testing.T) {
 	baseUrl := "http://127.0.0.1:8080"
 	urlWithQuery := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
 	requests := []*http.Request{createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(urlWithQuery), createSearchRequest(urlWithQuery)}
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 8; i++ {
 		requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	}
 	assertRequests(requests, client, t)
@@ -44,13 +44,13 @@ func TestSuite(t *testing.T) {
 func TestTestWithoutAssertions(t *testing.T) {
 	client := &mockHttpClient{}
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/system-test/foo/query.json"}}, t, client)
-	assert.Equal(t, "a test must have at least one assertion, but none were found in 'testdata/tests/system-test/foo/query.json'\n", errBytes)
+	assert.Equal(t, "a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\n", errBytes)
 }
 
 func TestSuiteWithoutTests(t *testing.T) {
 	client := &mockHttpClient{}
 	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/staging-test"}}, t, client)
-	assert.Equal(t, "Failed to find any tests at 'testdata/tests/staging-test'\n", outBytes)
+	assert.Equal(t, "Failed to find any tests at testdata/tests/staging-test\n", outBytes)
 	assert.Equal(t, "", errBytes)
 }
 

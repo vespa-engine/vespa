@@ -1,229 +1,9 @@
-Running testdata/tests/system-test/test.json: .... OK!
-Running testdata/tests/system-test/wrong-bool-value.json:
-Failed verifying assertion 0:
-Expected JSON at /root/coverage/full (false) does not match actual (true). Response body:
-{
-  "root": {
-    "children": [
-      {
-        "fields": {
-          "artist": "Foo Fighters",
-          "documentid": "id:test:music::doc",
-          "sddocname": "music"
-        },
-        "id": "id:test:music::doc",
-        "relevance": 0.38186238359951247,
-        "source": "music"
-      }
-    ],
-    "coverage": {
-      "coverage": 100,
-      "documents": 1,
-      "full": true,
-      "nodes": 1,
-      "results": 1,
-      "resultsFull": 1
-    },
-    "fields": {
-      "totalCount": 1
-    },
-    "id": "toplevel",
-    "relevance": 1
-  },
-  "timing": {
-    "querytime": 0.003,
-    "searchtime": 0.004,
-    "summaryfetchtime": 0
-  }
-}
-Running testdata/tests/system-test/wrong-element-count.json:
-Failed verifying assertion 0:
-Expected number of elements at /root/children (0) does not match actual (1). Response body:
-{
-  "root": {
-    "children": [
-      {
-        "fields": {
-          "artist": "Foo Fighters",
-          "documentid": "id:test:music::doc",
-          "sddocname": "music"
-        },
-        "id": "id:test:music::doc",
-        "relevance": 0.38186238359951247,
-        "source": "music"
-      }
-    ],
-    "coverage": {
-      "coverage": 100,
-      "documents": 1,
-      "full": true,
-      "nodes": 1,
-      "results": 1,
-      "resultsFull": 1
-    },
-    "fields": {
-      "totalCount": 1
-    },
-    "id": "toplevel",
-    "relevance": 1
-  },
-  "timing": {
-    "querytime": 0.003,
-    "searchtime": 0.004,
-    "summaryfetchtime": 0
-  }
-}
-Running testdata/tests/system-test/wrong-field-name.json:
-Failed verifying assertion 0:
-Expected field at /root/fields/totalCountDracula not present in actual data. Response body:
-{
-  "root": {
-    "children": [
-      {
-        "fields": {
-          "artist": "Foo Fighters",
-          "documentid": "id:test:music::doc",
-          "sddocname": "music"
-        },
-        "id": "id:test:music::doc",
-        "relevance": 0.38186238359951247,
-        "source": "music"
-      }
-    ],
-    "coverage": {
-      "coverage": 100,
-      "documents": 1,
-      "full": true,
-      "nodes": 1,
-      "results": 1,
-      "resultsFull": 1
-    },
-    "fields": {
-      "totalCount": 1
-    },
-    "id": "toplevel",
-    "relevance": 1
-  },
-  "timing": {
-    "querytime": 0.003,
-    "searchtime": 0.004,
-    "summaryfetchtime": 0
-  }
-}
-Running testdata/tests/system-test/wrong-float-value.json:
-Failed verifying assertion 0:
-Expected JSON at /root/children/0/relevance (0.381862373599) does not match actual (0.38186238359951247). Response body:
-{
-  "root": {
-    "children": [
-      {
-        "fields": {
-          "artist": "Foo Fighters",
-          "documentid": "id:test:music::doc",
-          "sddocname": "music"
-        },
-        "id": "id:test:music::doc",
-        "relevance": 0.38186238359951247,
-        "source": "music"
-      }
-    ],
-    "coverage": {
-      "coverage": 100,
-      "documents": 1,
-      "full": true,
-      "nodes": 1,
-      "results": 1,
-      "resultsFull": 1
-    },
-    "fields": {
-      "totalCount": 1
-    },
-    "id": "toplevel",
-    "relevance": 1
-  },
-  "timing": {
-    "querytime": 0.003,
-    "searchtime": 0.004,
-    "summaryfetchtime": 0
-  }
-}
-Running testdata/tests/system-test/wrong-int-value.json:
-Failed verifying assertion 0:
-Expected JSON at /root/fields/totalCount (2) does not match actual (1). Response body:
-{
-  "root": {
-    "children": [
-      {
-        "fields": {
-          "artist": "Foo Fighters",
-          "documentid": "id:test:music::doc",
-          "sddocname": "music"
-        },
-        "id": "id:test:music::doc",
-        "relevance": 0.38186238359951247,
-        "source": "music"
-      }
-    ],
-    "coverage": {
-      "coverage": 100,
-      "documents": 1,
-      "full": true,
-      "nodes": 1,
-      "results": 1,
-      "resultsFull": 1
-    },
-    "fields": {
-      "totalCount": 1
-    },
-    "id": "toplevel",
-    "relevance": 1
-  },
-  "timing": {
-    "querytime": 0.003,
-    "searchtime": 0.004,
-    "summaryfetchtime": 0
-  }
-}
-Running testdata/tests/system-test/wrong-null-value.json:
-Failed verifying assertion 0:
-Expected field at /boot not present in actual data. Response body:
-{
-  "root": {
-    "children": [
-      {
-        "fields": {
-          "artist": "Foo Fighters",
-          "documentid": "id:test:music::doc",
-          "sddocname": "music"
-        },
-        "id": "id:test:music::doc",
-        "relevance": 0.38186238359951247,
-        "source": "music"
-      }
-    ],
-    "coverage": {
-      "coverage": 100,
-      "documents": 1,
-      "full": true,
-      "nodes": 1,
-      "results": 1,
-      "resultsFull": 1
-    },
-    "fields": {
-      "totalCount": 1
-    },
-    "id": "toplevel",
-    "relevance": 1
-  },
-  "timing": {
-    "querytime": 0.003,
-    "searchtime": 0.004,
-    "summaryfetchtime": 0
-  }
-}
-Running testdata/tests/system-test/wrong-string-value.json:
-Failed verifying assertion 0:
-Expected JSON at /root/children/0/fields/artist ("Boo Fighters") does not match actual ("Foo Fighters"). Response body:
+Running my test: .... OK
+
+Running testdata/tests/system-test/wrong-bool-value.json: Failed step 1:
+Unexpected value at /root/coverage/full: true
+Expected: false
+Actual response:
 {
   "root": {
     "children": [
@@ -259,11 +39,284 @@ Expected JSON at /root/children/0/fields/artist ("Boo Fighters") does not match 
   }
 }
 
-Failed 7 of 8 tests:
-testdata/tests/system-test/wrong-bool-value.json: assertion 0
-testdata/tests/system-test/wrong-element-count.json: assertion 0
-testdata/tests/system-test/wrong-field-name.json: assertion 0
-testdata/tests/system-test/wrong-float-value.json: assertion 0
-testdata/tests/system-test/wrong-int-value.json: assertion 0
-testdata/tests/system-test/wrong-null-value.json: assertion 0
-testdata/tests/system-test/wrong-string-value.json: assertion 0
+Running testdata/tests/system-test/wrong-element-count.json: Failed step 1:
+Unexpected number of elements at /root/children: 1
+Expected: 0
+Actual response:
+{
+  "root": {
+    "children": [
+      {
+        "fields": {
+          "artist": "Foo Fighters",
+          "documentid": "id:test:music::doc",
+          "sddocname": "music"
+        },
+        "id": "id:test:music::doc",
+        "relevance": 0.38186238359951247,
+        "source": "music"
+      }
+    ],
+    "coverage": {
+      "coverage": 100,
+      "documents": 1,
+      "full": true,
+      "nodes": 1,
+      "results": 1,
+      "resultsFull": 1
+    },
+    "fields": {
+      "totalCount": 1
+    },
+    "id": "toplevel",
+    "relevance": 1
+  },
+  "timing": {
+    "querytime": 0.003,
+    "searchtime": 0.004,
+    "summaryfetchtime": 0
+  }
+}
+
+Running testdata/tests/system-test/wrong-field-name.json: Failed step 1:
+Missing expected field at /root/fields/totalCountDracula
+Actual response:
+{
+  "root": {
+    "children": [
+      {
+        "fields": {
+          "artist": "Foo Fighters",
+          "documentid": "id:test:music::doc",
+          "sddocname": "music"
+        },
+        "id": "id:test:music::doc",
+        "relevance": 0.38186238359951247,
+        "source": "music"
+      }
+    ],
+    "coverage": {
+      "coverage": 100,
+      "documents": 1,
+      "full": true,
+      "nodes": 1,
+      "results": 1,
+      "resultsFull": 1
+    },
+    "fields": {
+      "totalCount": 1
+    },
+    "id": "toplevel",
+    "relevance": 1
+  },
+  "timing": {
+    "querytime": 0.003,
+    "searchtime": 0.004,
+    "summaryfetchtime": 0
+  }
+}
+
+Running testdata/tests/system-test/wrong-float-value.json: Failed step 1:
+Unexpected value at /root/children/0/relevance: 0.38186238359951247
+Expected: 0.381862373599
+Actual response:
+{
+  "root": {
+    "children": [
+      {
+        "fields": {
+          "artist": "Foo Fighters",
+          "documentid": "id:test:music::doc",
+          "sddocname": "music"
+        },
+        "id": "id:test:music::doc",
+        "relevance": 0.38186238359951247,
+        "source": "music"
+      }
+    ],
+    "coverage": {
+      "coverage": 100,
+      "documents": 1,
+      "full": true,
+      "nodes": 1,
+      "results": 1,
+      "resultsFull": 1
+    },
+    "fields": {
+      "totalCount": 1
+    },
+    "id": "toplevel",
+    "relevance": 1
+  },
+  "timing": {
+    "querytime": 0.003,
+    "searchtime": 0.004,
+    "summaryfetchtime": 0
+  }
+}
+
+Running testdata/tests/system-test/wrong-int-value.json: Failed step 1:
+Unexpected value at /root/fields/totalCount: 1
+Expected: 2
+Actual response:
+{
+  "root": {
+    "children": [
+      {
+        "fields": {
+          "artist": "Foo Fighters",
+          "documentid": "id:test:music::doc",
+          "sddocname": "music"
+        },
+        "id": "id:test:music::doc",
+        "relevance": 0.38186238359951247,
+        "source": "music"
+      }
+    ],
+    "coverage": {
+      "coverage": 100,
+      "documents": 1,
+      "full": true,
+      "nodes": 1,
+      "results": 1,
+      "resultsFull": 1
+    },
+    "fields": {
+      "totalCount": 1
+    },
+    "id": "toplevel",
+    "relevance": 1
+  },
+  "timing": {
+    "querytime": 0.003,
+    "searchtime": 0.004,
+    "summaryfetchtime": 0
+  }
+}
+
+Running testdata/tests/system-test/wrong-null-value.json: Failed step 1:
+Missing expected field at /boot
+Actual response:
+{
+  "root": {
+    "children": [
+      {
+        "fields": {
+          "artist": "Foo Fighters",
+          "documentid": "id:test:music::doc",
+          "sddocname": "music"
+        },
+        "id": "id:test:music::doc",
+        "relevance": 0.38186238359951247,
+        "source": "music"
+      }
+    ],
+    "coverage": {
+      "coverage": 100,
+      "documents": 1,
+      "full": true,
+      "nodes": 1,
+      "results": 1,
+      "resultsFull": 1
+    },
+    "fields": {
+      "totalCount": 1
+    },
+    "id": "toplevel",
+    "relevance": 1
+  },
+  "timing": {
+    "querytime": 0.003,
+    "searchtime": 0.004,
+    "summaryfetchtime": 0
+  }
+}
+
+Running testdata/tests/system-test/wrong-string-value.json: Failed step 1:
+Unexpected value at /root/children/0/fields/artist: "Foo Fighters"
+Expected: "Boo Fighters"
+Actual response:
+{
+  "root": {
+    "children": [
+      {
+        "fields": {
+          "artist": "Foo Fighters",
+          "documentid": "id:test:music::doc",
+          "sddocname": "music"
+        },
+        "id": "id:test:music::doc",
+        "relevance": 0.38186238359951247,
+        "source": "music"
+      }
+    ],
+    "coverage": {
+      "coverage": 100,
+      "documents": 1,
+      "full": true,
+      "nodes": 1,
+      "results": 1,
+      "resultsFull": 1
+    },
+    "fields": {
+      "totalCount": 1
+    },
+    "id": "toplevel",
+    "relevance": 1
+  },
+  "timing": {
+    "querytime": 0.003,
+    "searchtime": 0.004,
+    "summaryfetchtime": 0
+  }
+}
+
+Running testdata/tests/system-test/wrong-type.json: Failed step 1:
+Unexpected type at /root/fields/totalCount: 1
+Expected: "1"
+Actual response:
+{
+  "root": {
+    "children": [
+      {
+        "fields": {
+          "artist": "Foo Fighters",
+          "documentid": "id:test:music::doc",
+          "sddocname": "music"
+        },
+        "id": "id:test:music::doc",
+        "relevance": 0.38186238359951247,
+        "source": "music"
+      }
+    ],
+    "coverage": {
+      "coverage": 100,
+      "documents": 1,
+      "full": true,
+      "nodes": 1,
+      "results": 1,
+      "resultsFull": 1
+    },
+    "fields": {
+      "totalCount": 1
+    },
+    "id": "toplevel",
+    "relevance": 1
+  },
+  "timing": {
+    "querytime": 0.003,
+    "searchtime": 0.004,
+    "summaryfetchtime": 0
+  }
+}
+
+
+Failed 8 of 9 tests:
+testdata/tests/system-test/wrong-bool-value.json: step 1: Unexpected value at /root/coverage/full: true
+testdata/tests/system-test/wrong-element-count.json: step 1: Unexpected number of elements at /root/children: 1
+testdata/tests/system-test/wrong-field-name.json: step 1: Missing expected field at /root/fields/totalCountDracula
+testdata/tests/system-test/wrong-float-value.json: step 1: Unexpected value at /root/children/0/relevance: 0.38186238359951247
+testdata/tests/system-test/wrong-int-value.json: step 1: Unexpected value at /root/fields/totalCount: 1
+testdata/tests/system-test/wrong-null-value.json: step 1: Missing expected field at /boot
+testdata/tests/system-test/wrong-string-value.json: step 1: Unexpected value at /root/children/0/fields/artist: "Foo Fighters"
+testdata/tests/system-test/wrong-type.json: step 1: Unexpected type at /root/fields/totalCount: 1
