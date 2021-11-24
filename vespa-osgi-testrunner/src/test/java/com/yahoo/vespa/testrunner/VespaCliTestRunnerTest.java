@@ -57,14 +57,10 @@ class VespaCliTestRunnerTest {
         ProcessBuilder builder = runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig);
         assertEquals(List.of("vespa", "test", systemTests.toAbsolutePath().toString(),
                              "--application", "t.a.i",
-                             "--zone", "dev.aws-us-east-1c"),
+                             "--endpoints", "{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
+                             "--data-plane-public-cert", temp.resolve("cert").toAbsolutePath().toString(),
+                             "--data-plane-private-key", temp.resolve("key").toAbsolutePath().toString()),
                      builder.command());
-        assertEquals("{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
-                     builder.environment().get("VESPA_CLI_ENDPOINTS"));
-        assertEquals(temp.resolve("key").toAbsolutePath().toString(),
-                     builder.environment().get("VESPA_CLI_DATA_PLANE_KEY_FILE"));
-        assertEquals(temp.resolve("cert").toAbsolutePath().toString(),
-                     builder.environment().get("VESPA_CLI_DATA_PLANE_CERT_FILE"));
     }
 
 }
