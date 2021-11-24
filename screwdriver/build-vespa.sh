@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-set -e
+set -xe
 
 readonly SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd )"
 readonly NUM_THREADS=$(( $(nproc) + 2 ))
@@ -42,7 +42,6 @@ case $SHOULD_BUILD in
     make -C client/go -j ${NUM_THREADS}
     ;;
   *)
-    go version
     make -C client/go -j ${NUM_THREADS}
     ./bootstrap.sh java
     time mvn -V $VESPA_MAVEN_EXTRA_OPTS install
