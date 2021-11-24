@@ -349,9 +349,15 @@ public class InternalStepRunner implements StepRunner {
 
         String failureReason = null;
 
-        NodeList suspendedTooLong = nodeList.suspendedSince(controller.clock().instant().minus(timeouts.nodesDown()));
+        NodeList suspendedTooLong = nodeList
+                .isStateful()
+                .suspendedSince(controller.clock().instant().minus(timeouts.statefulNodesDown()))
+                .and(nodeList
+                        .not().isStateful()
+                        .suspendedSince(controller.clock().instant().minus(timeouts.statelessNodesDown()))
+                );
         if ( ! suspendedTooLong.isEmpty()) {
-            failureReason = "Some nodes have been suspended for more than " + timeouts.nodesDown().toMinutes() + " minutes:\n" +
+            failureReason = "Some nodes have been suspended for more than the allowed threshold:\n" +
                             suspendedTooLong.asList().stream().map(node -> node.node().hostname().value()).collect(joining("\n"));
         }
 
@@ -1042,7 +1048,8 @@ public class InternalStepRunner implements StepRunner {
         Duration endpoint() { return Duration.ofMinutes(15); }
         Duration endpointCertificate() { return Duration.ofMinutes(20); }
         Duration tester() { return Duration.ofMinutes(30); }
-        Duration nodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 60); }
+        Duration statelessNodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 60); }
+        Duration statefulNodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 720); }
         Duration noNodesDown() { return Duration.ofMinutes(system.isCd() ? 30 : 240); }
         Duration testerCertificate() { return Duration.ofMinutes(300); }
 

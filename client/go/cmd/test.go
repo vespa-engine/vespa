@@ -53,10 +53,10 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			}
 			exitFunc(3)
 		} else if count == 0 {
-			fmt.Fprintf(stdout, "Failed to find any tests at '%v'\n", testPath)
+			fmt.Fprintf(stdout, "Failed to find any tests at %v\n", testPath)
 			exitFunc(3)
 		} else {
-			fmt.Fprintf(stdout, "%d tests completed successfully\n", count)
+			fmt.Fprintf(stdout, "\n%d tests completed successfully\n", count)
 		}
 	},
 }
@@ -71,12 +71,18 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 		if err != nil {
 			fatalErr(err, "Failed reading specified test directory")
 		}
+		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
 				testPath := path.Join(rootPath, test.Name())
+				if previousFailed {
+					fmt.Fprintln(stdout, "")
+					previousFailed = false
+				}
 				failure := runTest(testPath, target)
 				if failure != "" {
 					failed = append(failed, failure)
+					previousFailed = true
 				}
 				count++
 			}
@@ -96,10 +102,10 @@ func runTest(testPath string, target vespa.Target) string {
 	var test test
 	testBytes, err := ioutil.ReadFile(testPath)
 	if err != nil {
-		fatalErr(err, fmt.Sprintf("Failed to read test file at '%s'", testPath))
+		fatalErr(err, fmt.Sprintf("Failed to read test file at %s", testPath))
 	}
 	if err = json.Unmarshal(testBytes, &test); err != nil {
-		fatalErr(err, fmt.Sprintf("Failed to parse test file at '%s", testPath))
+		fatalErr(err, fmt.Sprintf("Failed to parse test file at %s", testPath))
 	}
 
 	testName := test.Name
@@ -110,44 +116,44 @@ func runTest(testPath string, target vespa.Target) string {
 
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, path.Dir(testPath))
 	if err != nil {
-		fatalErr(err, fmt.Sprintf("Invalid default parameters for '%s'", testName))
+		fatalErr(err, fmt.Sprintf("Invalid default parameters for %s", testName))
 	}
 
-	if len(test.Assertions) == 0 {
-		fatalErr(fmt.Errorf("a test must have at least one assertion, but none were found in '%s'", testPath))
+	if len(test.Steps) == 0 {
+		fatalErr(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath))
 	}
-	for i, assertion := range test.Assertions {
-		assertionName := assertion.Name
-		if assertionName == "" {
-			assertionName = fmt.Sprintf("assertion %d", i)
+	for i, step := range test.Steps {
+		stepName := step.Name
+		if stepName == "" {
+			stepName = fmt.Sprintf("step %d", i+1)
 		}
-		failure, err := verify(assertion, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target)
+		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target)
 		if err != nil {
-			fatalErr(err, fmt.Sprintf("\nError verifying %s", assertionName))
+			fatalErr(err, fmt.Sprintf("Error in %s", stepName))
 		}
 		if failure != "" {
-			fmt.Fprintf(stdout, "\nFailed verifying %s:\n%s\n", assertionName, failure)
-			return fmt.Sprintf("%v: %v", testName, assertionName)
+			fmt.Fprintf(stdout, " Failed %s:\n%s\n", stepName, longFailure)
+			return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
 		}
 		if i == 0 {
 			fmt.Fprintf(stdout, " ")
 		}
 		fmt.Fprint(stdout, ".")
 	}
-	fmt.Fprintln(stdout, " OK!")
+	fmt.Fprintln(stdout, " OK")
 	return ""
 }
 
 // Asserts specified response is obtained for request, or returns a failure message, or an error if this fails
-func verify(assertion assertion, testsPath string, defaultCluster string, defaultParameters map[string]string, target vespa.Target) (string, error) {
-	requestBody, err := getBody(assertion.Request.BodyRaw, testsPath)
+func verify(step step, testsPath string, defaultCluster string, defaultParameters map[string]string, target vespa.Target) (string, string, error) {
+	requestBody, err := getBody(step.Request.BodyRaw, testsPath)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	parameters, err := getParameters(assertion.Request.ParametersRaw, testsPath)
+	parameters, err := getParameters(step.Request.ParametersRaw, testsPath)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	for name, value := range defaultParameters {
 		if _, present := parameters[name]; !present {
@@ -155,28 +161,28 @@ func verify(assertion assertion, testsPath string, defaultCluster string, defaul
 		}
 	}
 
-	cluster := assertion.Request.Cluster
+	cluster := step.Request.Cluster
 	if cluster == "" {
 		cluster = defaultCluster
 	}
 
 	service, err := target.Service("query", 0, 0, cluster)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	method := assertion.Request.Method
+	method := step.Request.Method
 	if method == "" {
 		method = "GET"
 	}
 
-	pathAndQuery := assertion.Request.URI
+	pathAndQuery := step.Request.URI
 	if pathAndQuery == "" {
 		pathAndQuery = "/search/"
 	}
 	requestUrl, err := url.ParseRequestURI(service.BaseURL + pathAndQuery)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	query := requestUrl.Query()
 	for name, value := range parameters {
@@ -197,50 +203,56 @@ func verify(assertion assertion, testsPath string, defaultCluster string, defaul
 
 	response, err := service.Do(request, 600*time.Second) // Vespa should provide a response within the given request timeout
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer response.Body.Close()
 
-	statusCode := assertion.Response.Code
+	statusCode := step.Response.Code
 	if statusCode == 0 {
 		statusCode = 200
 	}
 	if statusCode != response.StatusCode {
-		return fmt.Sprintf("Expected status code (%d) does not match actual (%d). Response body:\n%s", statusCode, response.StatusCode, util.ReaderToJSON(response.Body)), nil
+		failure := fmt.Sprintf("Unexpected status code: %d", response.StatusCode)
+		return failure, fmt.Sprintf("%s\nExpected: %d\nActual response:\n%s", failure, statusCode, util.ReaderToJSON(response.Body)), nil
 	}
 
-	responseBodySpecBytes, err := getBody(assertion.Response.BodyRaw, testsPath)
+	responseBodySpecBytes, err := getBody(step.Response.BodyRaw, testsPath)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	if responseBodySpecBytes == nil {
-		return "", nil
+		return "", "", nil
 	}
 	var responseBodySpec interface{}
 	err = json.Unmarshal(responseBodySpecBytes, &responseBodySpec)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	responseBodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	var responseBody interface{}
 	err = json.Unmarshal(responseBodyBytes, &responseBody)
 	if err != nil {
-		return "", fmt.Errorf("got non-JSON response; %w:\n%s", err, string(responseBodyBytes))
+		return "", "", fmt.Errorf("got non-JSON response; %w:\n%s", err, string(responseBodyBytes))
 	}
 
-	failure, err := compare(responseBodySpec, responseBody, "")
+	failure, expected, err := compare(responseBodySpec, responseBody, "")
 	if failure != "" {
 		responsePretty, _ := json.MarshalIndent(responseBody, "", "  ")
-		failure = failure + " Response body:\n" + string(responsePretty)
+		longFailure := failure
+		if expected != "" {
+			longFailure += "\n" + expected
+		}
+		longFailure += "\nActual response:\n" + string(responsePretty)
+		return failure, longFailure, err
 	}
-	return failure, err
+	return "", "", err
 }
 
-func compare(expected interface{}, actual interface{}, path string) (string, error) {
+func compare(expected interface{}, actual interface{}, path string) (string, string, error) {
 	typeMatch := false
 	valueMatch := false
 	switch u := expected.(type) {
@@ -265,14 +277,14 @@ func compare(expected interface{}, actual interface{}, path string) (string, err
 		if ok {
 			if len(u) == len(v) {
 				for i, e := range u {
-					result, err := compare(e, v[i], fmt.Sprintf("%s/%d", path, i))
-					if result != "" || err != nil {
-						return result, err
+					failure, expected, err := compare(e, v[i], fmt.Sprintf("%s/%d", path, i))
+					if failure != "" || err != nil {
+						return failure, expected, err
 					}
 				}
 				valueMatch = true
 			} else {
-				return fmt.Sprintf("Expected number of elements at %s (%d) does not match actual (%d).", path, len(u), len(v)), nil
+				return fmt.Sprintf("Unexpected number of elements at %s: %d", path, len(v)), fmt.Sprintf("Expected: %d", len(u)), nil
 			}
 		}
 	case map[string]interface{}:
@@ -283,28 +295,32 @@ func compare(expected interface{}, actual interface{}, path string) (string, err
 				childPath := fmt.Sprintf("%s/%s", path, strings.ReplaceAll(strings.ReplaceAll(n, "~", "~0"), "/", "~1"))
 				f, ok := v[n]
 				if !ok {
-					return fmt.Sprintf("Expected field at %s not present in actual data.", childPath), nil
+					return fmt.Sprintf("Missing expected field at %s", childPath), "", nil
 				}
-				result, err := compare(e, f, childPath)
-				if result != "" || err != nil {
-					return result, err
+				failure, expected, err := compare(e, f, childPath)
+				if failure != "" || err != nil {
+					return failure, expected, err
 				}
 			}
 			valueMatch = true
 		}
 	default:
-		return "", fmt.Errorf("unexpected expected JSON type for value '%v'", expected)
+		return "", "", fmt.Errorf("unexpected expected JSON type for value '%v'", expected)
 	}
 
-	if !(typeMatch && valueMatch) {
+	if !valueMatch {
 		if path == "" {
 			path = "root"
 		}
-		expectedJson, _ := json.MarshalIndent(expected, "", "  ")
-		actualJson, _ := json.MarshalIndent(actual, "", "  ")
-		return fmt.Sprintf("Expected JSON at %s (%s) does not match actual (%s).", path, expectedJson, actualJson), nil
+		mismatched := "type"
+		if typeMatch {
+			mismatched = "value"
+		}
+		expectedJson, _ := json.Marshal(expected)
+		actualJson, _ := json.Marshal(actual)
+		return fmt.Sprintf("Unexpected %s at %s: %s", mismatched, path, actualJson), fmt.Sprintf("Expected: %s", expectedJson), nil
 	}
-	return "", nil
+	return "", "", nil
 }
 
 func getParameters(parametersRaw []byte, testsPath string) (map[string]string, error) {
@@ -339,9 +355,9 @@ func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 }
 
 type test struct {
-	Name       string      `json:"name"`
-	Defaults   defaults    `json:"defaults"`
-	Assertions []assertion `json:"assertions"`
+	Name     string   `json:"name"`
+	Defaults defaults `json:"defaults"`
+	Steps    []step   `json:"steps"`
 }
 
 type defaults struct {
@@ -349,7 +365,7 @@ type defaults struct {
 	ParametersRaw json.RawMessage `json:"parameters"`
 }
 
-type assertion struct {
+type step struct {
 	Name     string   `json:"name"`
 	Request  request  `json:"request"`
 	Response response `json:"response"`

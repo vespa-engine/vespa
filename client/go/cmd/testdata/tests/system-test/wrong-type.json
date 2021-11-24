@@ -5,7 +5,7 @@
                 "body": {
                     "root": {
                         "fields": {
-                            "totalCountDracula" : 1
+                            "totalCount" : "1"
                         }
                     }
                 }

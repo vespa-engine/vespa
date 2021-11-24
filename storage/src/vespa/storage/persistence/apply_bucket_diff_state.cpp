@@ -34,7 +34,10 @@ ApplyBucketDiffState::ApplyBucketDiffState(const MergeBucketInfoSyncer& merge_bu
       _tracker(),
       _delayed_reply(),
       _sender(nullptr),
-      _retain_guard(std::move(retain_guard))
+      _op_metrics(nullptr),
+      _op_start_time(),
+      _retain_guard(std::move(retain_guard)),
+      _merge_start_time()
 {
 }
 
@@ -59,6 +62,15 @@ ApplyBucketDiffState::~ApplyBucketDiffState()
             _delayed_reply->setResult(api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, _fail_message));
         }
         if (_sender) {
+            if (_op_metrics != nullptr) {
+                if (_delayed_reply->getResult().success()) {
+                    if (_op_start_time.has_value()) {
+                        _op_metrics->latency.addValue(_op_start_time.value().getElapsedTimeAsDouble());
+                    }
+                } else {
+                    _op_metrics->failed.inc();
+                }
+            }
             _sender->sendReply(std::move(_delayed_reply));
         } else {
             // _tracker->_reply and _delayed_reply points to the same reply.
@@ -110,10 +122,12 @@ ApplyBucketDiffState::set_delayed_reply(std::unique_ptr<MessageTracker>&& tracke
 }
 
 void
-ApplyBucketDiffState::set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, MessageSender& sender, std::shared_ptr<api::StorageReply>&& delayed_reply)
+ApplyBucketDiffState::set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, MessageSender& sender, FileStorThreadMetrics::Op* op_metrics, const framework::MilliSecTimer& op_start_time, std::shared_ptr<api::StorageReply>&& delayed_reply)
 {
     _tracker = std::move(tracker);
     _sender = &sender;
+    _op_metrics = op_metrics;
+    _op_start_time = op_start_time;
     _delayed_reply = std::move(delayed_reply);
 }
 

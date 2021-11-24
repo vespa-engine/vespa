@@ -210,7 +210,7 @@ public class InternalStepRunnerTest {
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().stepStatuses().get(Step.installInitialReal));
 
-        tester.clock().advance(InternalStepRunner.Timeouts.of(system()).nodesDown().minus(Duration.ofSeconds(3)));
+        tester.clock().advance(InternalStepRunner.Timeouts.of(system()).statelessNodesDown().minus(Duration.ofSeconds(3)));
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
 
