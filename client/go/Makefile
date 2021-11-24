@@ -97,8 +97,7 @@ endif
 #
 
 install:
-	bash -c 'while true; do date; df -h; ps axjfww; sleep 60; done &'
-	env GOBIN=$(BIN) /usr/local/go/bin/go install -x $(GO_FLAGS) ./...
+	env GOBIN=$(BIN) /usr/local/go/bin/go install $(GO_FLAGS) ./...
 
 manpages: install
 	mkdir -p $(SHARE)/man/man1
