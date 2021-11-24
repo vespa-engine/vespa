@@ -1,0 +1,19 @@
+{
+    "assertions": [
+        {
+            "response": {
+                "body": {
+                    "root": {
+                        "children": [
+                            {
+                                "fields": {
+                                    "artist": "Boo Fighters"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}
