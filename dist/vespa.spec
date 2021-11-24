@@ -276,18 +276,13 @@ Requires: gtest
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
-%ifnarch x86_64
-%define _skip_vespamalloc 1
-%endif
 Requires: %{name}-base = %{version}-%{release}
 Requires: %{name}-base-libs = %{version}-%{release}
 Requires: %{name}-libs = %{version}-%{release}
 Requires: %{name}-clients = %{version}-%{release}
 Requires: %{name}-config-model-fat = %{version}-%{release}
 Requires: %{name}-jars = %{version}-%{release}
-%if ! 0%{?_skip_vespamalloc:1}
 Requires: %{name}-malloc = %{version}-%{release}
-%endif
 Requires: %{name}-tools = %{version}-%{release}
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
@@ -442,7 +437,6 @@ Summary: Vespa - The open big data serving engine - shared java jar files
 
 Vespa - The open big data serving engine - shared java jar files
 
-%if ! 0%{?_skip_vespamalloc:1}
 %package malloc
 
 Summary: Vespa - The open big data serving engine - malloc library
@@ -450,7 +444,6 @@ Summary: Vespa - The open big data serving engine - malloc library
 %description malloc
 
 Vespa - The open big data serving engine - malloc library
-%endif
 
 %package tools
 
@@ -643,9 +636,7 @@ fi
 %dir %{_prefix}/etc
 %{_prefix}/etc/systemd
 %{_prefix}/etc/vespa
-%if ! 0%{?_skip_vespamalloc:1}
 %exclude %{_prefix}/etc/vespamalloc.conf
-%endif
 %{_prefix}/include
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
@@ -752,9 +743,7 @@ fi
 %exclude %{_prefix}/lib64/libvespadefaults.so
 %exclude %{_prefix}/lib64/libvespalib.so
 %exclude %{_prefix}/lib64/libvespalog.so
-%if ! 0%{?_skip_vespamalloc:1}
 %exclude %{_prefix}/lib64/vespa
-%endif
 
 %files clients
 %if %{_defattr_is_vespa_vespa}
@@ -849,7 +838,6 @@ fi
 %dir %{_prefix}/libexec/vespa
 %{_prefix}/libexec/vespa/standalone-container.sh
 
-%if ! 0%{?_skip_vespamalloc:1}
 %files malloc
 %if %{_defattr_is_vespa_vespa}
 %defattr(-,%{_vespa_user},%{_vespa_group},-)
@@ -859,7 +847,6 @@ fi
 %config(noreplace) %{_prefix}/etc/vespamalloc.conf
 %dir %{_prefix}/lib64
 %{_prefix}/lib64/vespa
-%endif
 
 %files tools
 %if %{_defattr_is_vespa_vespa}
