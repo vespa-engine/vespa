@@ -97,7 +97,6 @@ endif
 #
 
 install:
-	go version
 	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
 
 manpages: install
