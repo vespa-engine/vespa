@@ -45,7 +45,7 @@ import static java.util.stream.Collectors.toMap;
 
 /**
  * A representation of the content of an application package.
- * Only the deployment.xml content can be accessed as anything other than compressed data.
+ * Only meta-data content can be accessed as anything other than compressed data.
  * A package is identified by a hash of the content.
  * 
  * This is immutable.
@@ -98,8 +98,6 @@ public class ApplicationPackage {
         this.validationOverrides = files.get(validationOverridesFile).map(bytes -> new String(bytes, UTF_8)).map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
 
         Optional<Inspector> buildMetaObject = files.get(buildMetaFile).map(SlimeUtils::jsonToSlime).map(Slime::get);
-        if (requireFiles && buildMetaObject.isEmpty())
-            throw new IllegalArgumentException("Missing required file '" + buildMetaFile + "'");
         this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
 
