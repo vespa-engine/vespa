@@ -103,10 +103,11 @@ public class VespaCliTestRunner implements TestRunner {
 
         ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
-                                                    "--endpoints", toEndpointsConfig(config),
-                                                    "--data-plane-public-cert", artifactsPath.resolve("cert").toAbsolutePath().toString(),
-                                                    "--data-plane-private-key", artifactsPath.resolve("key").toAbsolutePath().toString());
+                                                    "--zone", config.zone().value());
         builder.redirectErrorStream(true);
+        builder.environment().put("VESPA_CLI_ENDPOINTS", toEndpointsConfig(config));
+        builder.environment().put("VESPA_CLI_DATA_PLANE_KEY_FILE", artifactsPath.resolve("key").toAbsolutePath().toString());
+        builder.environment().put("VESPA_CLI_DATA_PLANE_CERT_FILE", artifactsPath.resolve("cert").toAbsolutePath().toString());
         return builder;
     }
 

@@ -1,0 +1,11 @@
+{
+    "assertions": [
+        {
+            "response": {
+                "body": {
+                    "boot": null
+                }
+            }
+        }
+    ]
+}

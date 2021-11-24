@@ -75,5 +75,5 @@ func assertQueryServiceError(t *testing.T, status int, errorMessage string) {
 }
 
 func queryServiceURL(client *mockHttpClient) string {
-	return getService("query", 0).BaseURL
+	return getService("query", 0, "").BaseURL
 }

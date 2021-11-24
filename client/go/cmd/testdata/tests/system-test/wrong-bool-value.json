@@ -1,0 +1,15 @@
+{
+    "assertions": [
+        {
+            "response": {
+                "body": {
+                    "root": {
+                        "coverage": {
+                            "full": false
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
