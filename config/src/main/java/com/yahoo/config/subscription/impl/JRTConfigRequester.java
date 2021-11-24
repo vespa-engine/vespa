@@ -29,7 +29,7 @@ import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
 /**
- * This class fetches config payload using JRT, and acts as the callback target.
+ * Requests configs using RPC, and acts as the callback target.
  * It uses the {@link JRTConfigSubscription} and {@link JRTClientConfigRequest}
  * as context, and puts the request objects on a queue on the subscription,
  * for handling by the user thread.
@@ -96,14 +96,15 @@ public class JRTConfigRequester implements RequestWaiter {
 
     private <T extends ConfigInstance> void doRequest(JRTConfigSubscription<T> sub, JRTClientConfigRequest req) {
         Connection connection = connectionPool.getCurrent();
-        req.getRequest().setContext(new RequestContext(sub, req, connection));
+        Request request = req.getRequest();
+        request.setContext(new RequestContext(sub, req, connection));
         if (!req.validateParameters()) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
 
         double jrtClientTimeout = getClientTimeout(req);
         log.log(FINE, () -> "Requesting config for " + sub + " on connection " + connection
                 + " with client timeout " + jrtClientTimeout +
                 (log.isLoggable(FINEST) ? (",defcontent=" + req.getDefContent().asString()) : ""));
-        connection.invokeAsync(req.getRequest(), jrtClientTimeout, this);
+        connection.invokeAsync(request, jrtClientTimeout, this);
     }
 
     @SuppressWarnings("unchecked")
@@ -127,7 +128,7 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     private void doHandle(JRTConfigSubscription<ConfigInstance> sub, JRTClientConfigRequest jrtReq, Connection connection) {
-        if (subscriptionIsClosed(sub)) return; // Avoid error messages etc. after closing
+        if (sub.isClosed()) return; // Avoid error messages etc. after closing
 
         boolean validResponse = jrtReq.validateResponse();
         log.log(FINE, () -> "Request callback " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
@@ -203,10 +204,6 @@ public class JRTConfigRequester implements RequestWaiter {
             sub.updateConfig(jrtReq);
         }
         scheduleNextRequest(jrtReq, sub, calculateSuccessDelay(), calculateSuccessTimeout());
-    }
-
-    private boolean subscriptionIsClosed(JRTConfigSubscription<ConfigInstance> sub) {
-        return sub.getState() == ConfigSubscription.State.CLOSED;
     }
 
     private long calculateSuccessTimeout() {
