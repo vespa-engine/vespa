@@ -39,15 +39,17 @@ public class VespaCliTestRunner implements TestRunner {
 
     private final SortedMap<Long, LogRecord> log = new ConcurrentSkipListMap<>();
     private final Path artifactsPath;
-    private AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
+    private final Path testsPath;
+    private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
 
     @Inject
     public VespaCliTestRunner(VespaCliTestRunnerConfig config) {
-        this(config.artifactsPath());
+        this(config.artifactsPath(), config.testsPath());
     }
 
-    VespaCliTestRunner(Path artifactsPath) {
+    VespaCliTestRunner(Path artifactsPath, Path testsPath) {
         this.artifactsPath = artifactsPath;
+        this.testsPath = testsPath;
     }
 
     @Override
@@ -70,7 +72,8 @@ public class VespaCliTestRunner implements TestRunner {
 
     @Override
     public boolean isSupported() {
-        return getChildDirectory(artifactsPath, "tests").isPresent();
+        return Stream.of(Suite.SYSTEM_TEST, Suite.STAGING_SETUP_TEST, Suite.STAGING_TEST)
+                     .anyMatch(suite -> getChildDirectory(testsPath, toSuiteDirectoryName(suite)).isPresent());
     }
 
     void runTests(Suite suite, byte[] config) {
@@ -97,8 +100,7 @@ public class VespaCliTestRunner implements TestRunner {
     }
 
     ProcessBuilder testRunProcessBuilder(Suite suite, TestConfig config) throws IOException {
-        Path suitePath = getChildDirectory(artifactsPath, "tests")
-                .flatMap(testsPath -> getChildDirectory(testsPath, toSuiteDirectoryName(suite)))
+        Path suitePath = getChildDirectory(testsPath, toSuiteDirectoryName(suite))
                 .orElseThrow(() -> new IllegalStateException("No tests found, for suite '" + suite + "'"));
 
         ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.toAbsolutePath().toString(),

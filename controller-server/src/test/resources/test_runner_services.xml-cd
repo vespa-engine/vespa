@@ -27,6 +27,7 @@
         <component id="com.yahoo.vespa.testrunner.VespaCliTestRunner" bundle="vespa-osgi-testrunner">
             <config name="com.yahoo.vespa.testrunner.vespa-cli-test-runner">
                 <artifactsPath>artifacts</artifactsPath>
+                <testsPath>tests</testsPath>
                 <useAthenzCredentials>true</useAthenzCredentials>
             </config>
         </component>

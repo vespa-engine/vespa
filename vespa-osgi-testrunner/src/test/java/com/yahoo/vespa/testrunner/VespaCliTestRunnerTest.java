@@ -44,16 +44,17 @@ class VespaCliTestRunnerTest {
     void testSetup() throws IOException {
         Path temp = Files.createTempDirectory("vespa-cli-test-runner-test-");
         temp.toFile().deleteOnExit();
-        VespaCliTestRunner runner = new VespaCliTestRunner(temp);
+        Path tests = Files.createDirectory(temp.resolve("tests"));
+        Path artifacts = Files.createDirectory(temp.resolve("artifacts"));
+        VespaCliTestRunner runner = new VespaCliTestRunner(artifacts, tests);
         assertFalse(runner.isSupported());
 
-        Path tests = Files.createDirectory(temp.resolve("tests"));
+        Path systemTests = Files.createDirectory(tests.resolve("system-test"));
         assertTrue(runner.isSupported());
         IllegalStateException ise = assertThrows(IllegalStateException.class,
-                                                 () -> runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig));
-        assertEquals("No tests found, for suite 'SYSTEM_TEST'", ise.getMessage());
+                                                 () -> runner.testRunProcessBuilder(TestRunner.Suite.STAGING_TEST, testConfig));
+        assertEquals("No tests found, for suite 'STAGING_TEST'", ise.getMessage());
 
-        Path systemTests = Files.createDirectory(tests.resolve("system-test"));
         ProcessBuilder builder = runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig);
         assertEquals(List.of("vespa", "test", systemTests.toAbsolutePath().toString(),
                              "--application", "t.a.i",
@@ -61,9 +62,9 @@ class VespaCliTestRunnerTest {
                      builder.command());
         assertEquals("{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
                      builder.environment().get("VESPA_CLI_ENDPOINTS"));
-        assertEquals(temp.resolve("key").toAbsolutePath().toString(),
+        assertEquals(artifacts.resolve("key").toAbsolutePath().toString(),
                      builder.environment().get("VESPA_CLI_DATA_PLANE_KEY_FILE"));
-        assertEquals(temp.resolve("cert").toAbsolutePath().toString(),
+        assertEquals(artifacts.resolve("cert").toAbsolutePath().toString(),
                      builder.environment().get("VESPA_CLI_DATA_PLANE_CERT_FILE"));
     }
 
