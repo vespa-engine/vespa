@@ -53,8 +53,9 @@ public class JRTConfigRequester implements RequestWaiter {
     private final ConnectionPool connectionPool;
     private final ConfigSourceSet configSourceSet;
 
-    private Instant noApplicationWarningLogged = Instant.MIN;
+    private Instant timeForLastLogWarning;
     private int failures = 0;
+    private boolean closed = false;
 
     /**
      * Returns a new requester
@@ -68,6 +69,8 @@ public class JRTConfigRequester implements RequestWaiter {
         this.scheduler = scheduler;
         this.connectionPool = connectionPool;
         this.timingValues = timingValues;
+        // Adjust so that we wait 1 second with logging warning in case there are some errors just when starting up
+        timeForLastLogWarning = Instant.now().minus(delayBetweenWarnings.plus(Duration.ofSeconds(1)));
     }
 
     /**
@@ -145,17 +148,21 @@ public class JRTConfigRequester implements RequestWaiter {
                 break;
             case ErrorCode.APPLICATION_NOT_LOADED:
             case ErrorCode.UNKNOWN_VESPA_VERSION:
-                if (noApplicationWarningLogged.isBefore(Instant.now().minus(delayBetweenWarnings))) {
-                    log.log(WARNING, "Request callback failed: " + ErrorCode.getName(jrtReq.errorCode()) +
-                            ". Connection spec: " + connection.getAddress() +
-                            ", error message: " + jrtReq.errorMessage());
-                    noApplicationWarningLogged = Instant.now();
-                }
+                logWarning(jrtReq, connection);
                 break;
             default:
                 log.log(WARNING, "Request callback failed. Req: " + jrtReq + "\nSpec: " + connection.getAddress() +
                         " . Req error message: " + jrtReq.errorMessage());
                 break;
+        }
+    }
+
+    private void logWarning(JRTClientConfigRequest jrtReq, Connection connection) {
+        if ( ! closed && timeForLastLogWarning.isBefore(Instant.now().minus(delayBetweenWarnings))) {
+            log.log(WARNING, "Request callback failed: " + ErrorCode.getName(jrtReq.errorCode()) +
+                    ". Connection spec: " + connection.getAddress() +
+                    ", error message: " + jrtReq.errorMessage());
+            timeForLastLogWarning = Instant.now();
         }
     }
 
@@ -190,7 +197,6 @@ public class JRTConfigRequester implements RequestWaiter {
 
     private void handleOKRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub) {
         failures = 0;
-        noApplicationWarningLogged = Instant.MIN;
         sub.setLastCallBackOKTS(Instant.now());
         log.log(FINE, () -> "OK response received in handleOkRequest: " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {
@@ -237,8 +243,7 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     public void close() {
-        // Fake that we have logged to avoid printing warnings after this
-        noApplicationWarningLogged = Instant.now();
+        closed = true;
         if (configSourceSet != null) {
             managedPool.release(configSourceSet);
         }
