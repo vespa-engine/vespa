@@ -3,6 +3,7 @@
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 
@@ -12,6 +13,8 @@ LOG_SETUP("distance_function_test");
 using namespace search::tensor;
 using vespalib::eval::Int8Float;
 using vespalib::eval::TypedCells;
+using vespalib::eval::CellType;
+using vespalib::BenchmarkTimer;
 using search::attribute::DistanceMetric;
 
 template <typename T>
@@ -71,23 +74,23 @@ TEST(DistanceFunctionsTest, euclidean_int8_smoketest)
 
     auto euclid = make_distance_function(DistanceMetric::Euclidean, ct);
 
-    std::vector<double> p00{0.0, 0.0, 0.0};
-    std::vector<Int8Float> p0{0.0, 0.0, 0.0};
-    std::vector<Int8Float> p1{1.0, 0.0, 0.0};
-    std::vector<Int8Float> p5{0.0,-1.0, 0.0};
-    std::vector<Int8Float> p7{-1.0, 2.0, -2.0};
+    std::vector<double>   p00{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<Int8Float> p0{ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::vector<Int8Float> p1{ 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+    std::vector<Int8Float> p5{ 0.0,-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0};
+    std::vector<Int8Float> p7{-1.0, 2.0,-2.0, 0.0, 0.0, 0.0, 0.0, 3.0};
 
-    EXPECT_DOUBLE_EQ(1.0, euclid->calc(t(p0), t(p1)));
-    EXPECT_DOUBLE_EQ(1.0, euclid->calc(t(p0), t(p5)));
-    EXPECT_DOUBLE_EQ(9.0, euclid->calc(t(p0), t(p7)));
+    EXPECT_DOUBLE_EQ( 2.0, euclid->calc(t(p0), t(p1)));
+    EXPECT_DOUBLE_EQ( 5.0, euclid->calc(t(p0), t(p5)));
+    EXPECT_DOUBLE_EQ(18.0, euclid->calc(t(p0), t(p7)));
 
-    EXPECT_DOUBLE_EQ(2.0, euclid->calc(t(p1), t(p5)));
-    EXPECT_DOUBLE_EQ(12.0, euclid->calc(t(p1), t(p7)));
-    EXPECT_DOUBLE_EQ(14.0, euclid->calc(t(p5), t(p7)));
+    EXPECT_DOUBLE_EQ( 3.0, euclid->calc(t(p1), t(p5)));
+    EXPECT_DOUBLE_EQ(16.0, euclid->calc(t(p1), t(p7)));
+    EXPECT_DOUBLE_EQ(15.0, euclid->calc(t(p5), t(p7)));
 
-    EXPECT_DOUBLE_EQ(1.0, euclid->calc(t(p00), t(p1)));
-    EXPECT_DOUBLE_EQ(1.0, euclid->calc(t(p00), t(p5)));
-    EXPECT_DOUBLE_EQ(9.0, euclid->calc(t(p00), t(p7)));
+    EXPECT_DOUBLE_EQ( 2.0, euclid->calc(t(p00), t(p1)));
+    EXPECT_DOUBLE_EQ( 5.0, euclid->calc(t(p00), t(p5)));
+    EXPECT_DOUBLE_EQ(18.0, euclid->calc(t(p00), t(p7)));
 }
 
 TEST(DistanceFunctionsTest, angular_gives_expected_score)
@@ -365,8 +368,25 @@ TEST(GeoDegreesTest, gives_expected_score)
     verify_geo_miles(geodeg.get(), g9_jfk, g7_syd, 9950);
     verify_geo_miles(geodeg.get(), g9_jfk, g8_lax, 2475);
     verify_geo_miles(geodeg.get(), g9_jfk, g9_jfk, 0);
+}
 
+TEST(DistanceFunctionsTest, euclidean_int8_stress)
+{
+    auto slow = std::make_unique<SquaredEuclideanDistance>(CellType::FLOAT);
+    auto experimental = std::make_unique<SquaredEuclideanDistancePI8>();
+    std::vector<Int8Float> v1;
+    std::vector<Int8Float> v2;
+    for (int i = 0; i < 10000; ++i) {
+        v1.clear();
+        v2.clear();
+        for (int j = 0; j < 1027; ++j) {
+            v1.push_back((random() % 256));
+            v2.push_back((random() % 256));
+        }
+        double expect = slow->calc(t(v1), t(v2));
+        double got = experimental->calc(t(v1), t(v2));
+        EXPECT_DOUBLE_EQ(expect, got);
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

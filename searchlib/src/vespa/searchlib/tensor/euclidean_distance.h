@@ -29,6 +29,21 @@ public:
     }
 };
 
+class SquaredEuclideanDistancePI8 : public SquaredEuclideanDistance {
+public:
+    SquaredEuclideanDistancePI8()
+        : SquaredEuclideanDistance(vespalib::eval::CellType::INT8)
+    {
+    }
+    double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override;
+    double calc_with_limit(const vespalib::eval::TypedCells& lhs,
+                           const vespalib::eval::TypedCells& rhs,
+                           double /*limit*/) const override
+    {
+        return calc(lhs, rhs);
+    }
+};
+
 /**
  * Calculates the square of the standard Euclidean distance.
  * Will use instruction optimal for the cpu it is running on

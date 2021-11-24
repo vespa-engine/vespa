@@ -19,6 +19,7 @@ make_distance_function(DistanceMetric variant, CellType cell_type)
     switch (variant) {
     case DistanceMetric::Euclidean:
         switch (cell_type) {
+        case CellType::INT8:   return std::make_unique<SquaredEuclideanDistancePI8>();
         case CellType::FLOAT:  return std::make_unique<SquaredEuclideanDistanceHW<float>>();
         case CellType::DOUBLE: return std::make_unique<SquaredEuclideanDistanceHW<double>>();
         default:               return std::make_unique<SquaredEuclideanDistance>(CellType::FLOAT);
