@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -18,8 +19,9 @@ const (
 )
 
 var (
-	zoneArg     string
-	logLevelArg string
+	zoneArg        string
+	logLevelArg    string
+	sessionOrRunID int64
 )
 
 func init() {
@@ -63,7 +65,14 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		}
 		target := getTarget()
 		opts := getDeploymentOpts(cfg, pkg, target)
-		if sessionOrRunID, err := vespa.Deploy(opts); err == nil {
+
+		util.Spinner(color.Yellow("Uploading application package ...").String(), func() error {
+			sessionOrRunID, err = vespa.Deploy(opts)
+			return err
+		})
+
+		if err == nil {
+			fmt.Print("\n")
 			if opts.IsCloud() {
 				printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))
 			} else {

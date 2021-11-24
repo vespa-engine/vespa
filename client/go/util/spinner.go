@@ -3,6 +3,7 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -11,23 +12,25 @@ import (
 )
 
 const (
-	spinnerTextEllipsis = "..."
-	spinnerTextDone     = "done"
-	spinnerTextFailed   = "failed"
-	spinnerColor        = "blue"
+	spinnerTextDone   = "done"
+	spinnerTextFailed = "failed"
+	spinnerColor      = "blue"
 )
 
 var messages = os.Stderr
 
-func Spinner(text string, fn func() error) error {
-	initialMsg := text + spinnerTextEllipsis + " "
-	doneMsg := initialMsg + spinnerTextDone + "\n"
+func Spinner(text string, fn func() error) {
+	initialMsg := text + " "
+	doneMsg := "\n" + initialMsg + spinnerTextDone + "\n"
 	failMsg := initialMsg + spinnerTextFailed + "\n"
-
-	return loading(initialMsg, doneMsg, failMsg, fn)
+	loading(initialMsg, doneMsg, failMsg, fn)
 }
 
-func loading(initialMsg, doneMsg, failMsg string, fn func() error) error {
+func Waiting(fn func() error) {
+	loading("", "", "", fn)
+}
+
+func loading(initialMsg, doneMsg, failMsg string, fn func() error) {
 	done := make(chan struct{})
 	errc := make(chan error)
 	go func() {
@@ -39,7 +42,7 @@ func loading(initialMsg, doneMsg, failMsg string, fn func() error) error {
 		s.HideCursor = true
 		s.Writer = messages
 
-		if err := s.Color(spinnerColor); err != nil {
+		if err := s.Color(spinnerColor, "bold"); err != nil {
 			panic(Error(err, "failed setting spinner color"))
 		}
 
@@ -55,7 +58,10 @@ func loading(initialMsg, doneMsg, failMsg string, fn func() error) error {
 	err := fn()
 	errc <- err
 	<-done
-	return err
+
+	if err != nil {
+		fmt.Println(fmt.Errorf("an unexpected error occurred: %w", err))
+	}
 }
 
 func Error(e error, message string) error {

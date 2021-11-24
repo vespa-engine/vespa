@@ -142,27 +142,29 @@ func getSampleAppsZip() *os.File {
 		return f
 	}
 
-	log.Print(color.Yellow("Downloading sample apps ...")) // TODO: Spawn thread to indicate progress
-	request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
-	if err != nil {
-		fatalErr(err, "Invalid URL")
+	util.Spinner(color.Yellow("Downloading sample apps ...").String(), func() error {
+		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
+		if err != nil {
+			fatalErr(err, "Invalid URL")
+			return nil
+		}
+		response, err := util.HttpDo(request, time.Minute*60, "GitHub")
+		if err != nil {
+			fatalErr(err, "Could not download sample apps from GitHub")
+			return nil
+		}
+		defer response.Body.Close()
+		if response.StatusCode != 200 {
+			fatalErr(nil, "Could not download sample apps from GitHub: ", response.StatusCode)
+			return nil
+		}
+		if _, err := io.Copy(f, response.Body); err != nil {
+			fatalErr(err, "Could not write sample apps to file: ", f.Name())
+			return nil
+		}
 		return nil
-	}
-	response, err := util.HttpDo(request, time.Minute*60, "GitHub")
-	if err != nil {
-		fatalErr(err, "Could not download sample apps from GitHub")
-		return nil
-	}
-	defer response.Body.Close()
-	if response.StatusCode != 200 {
-		fatalErr(nil, "Could not download sample apps from GitHub: ", response.StatusCode)
-		return nil
-	}
+	})
 
-	if _, err := io.Copy(f, response.Body); err != nil {
-		fatalErr(err, "Could not write sample apps to file: ", f.Name())
-		return nil
-	}
 	return f
 }
 
