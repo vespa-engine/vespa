@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo.Compression.NONE;
@@ -57,16 +58,21 @@ public class SyncFileInfoTest {
 
     @Test
     public void vespa_logs() {
-        assertForLogFile(vespaLogPath1, null, null, true);
-        assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log.zst", ZSTD, false);
+        assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log.zst", ZSTD, Duration.ofHours(1), true);
+        assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log.zst", ZSTD, Duration.ZERO, false);
 
         assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD, true);
         assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD, false);
     }
 
     private static void assertForLogFile(Path srcPath, String destination, SyncFileInfo.Compression compression, boolean rotatedOnly) {
+        assertForLogFile(srcPath, destination, compression, null, rotatedOnly);
+    }
+
+    private static void assertForLogFile(Path srcPath, String destination, SyncFileInfo.Compression compression, Duration minDurationBetweenSync, boolean rotatedOnly) {
         Optional<SyncFileInfo> sfi = SyncFileInfo.forLogFile(nodeArchiveUri, srcPath, rotatedOnly, ApplicationId.defaultId());
         assertEquals(destination, sfi.map(SyncFileInfo::destination).map(URI::toString).orElse(null));
         assertEquals(compression, sfi.map(SyncFileInfo::uploadCompression).orElse(null));
+        assertEquals(minDurationBetweenSync, sfi.flatMap(SyncFileInfo::minDurationBetweenSync).orElse(null));
     }
 }
