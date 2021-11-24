@@ -12,23 +12,20 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
     : _ioc_next(nullptr),
       _ioc_prev(nullptr),
       _ioc_owner(owner),
-      _ioc_socket_fd(socket_fd),
       _ioc_selector(nullptr),
-      _ioc_spec(nullptr),
+      _ioc_spec(spec),
       _flags(shouldTimeOut),
+      _ioc_socket_fd(socket_fd),
+      _ioc_refcnt(1),
       _ioc_timestamp(vespalib::steady_clock::now()),
       _ioc_lock(),
-      _ioc_cond(),
-      _ioc_refcnt(1)
+      _ioc_cond()
 {
-    _ioc_spec = strdup(spec);
-    assert(_ioc_spec != nullptr);
 }
 
 
 FNET_IOComponent::~FNET_IOComponent()
 {
-    free(_ioc_spec);
     assert(_ioc_selector == nullptr);
 }
 

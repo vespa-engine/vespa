@@ -53,7 +53,7 @@ public:
 class FNET_Connection : public FNET_IOComponent
 {
 public:
-    enum State {
+    enum State : uint8_t {
         FNET_CONNECTING,
         FNET_CONNECTED,
         FNET_CLOSING,
@@ -117,9 +117,6 @@ private:
     FNET_IConnectionCleanupHandler *_cleanup;  // cleanup handler
 
     static std::atomic<uint64_t> _num_connections; // total number of connections
-
-    FNET_Connection(const FNET_Connection &);
-    FNET_Connection &operator=(const FNET_Connection &);
 
 
     /**
@@ -245,6 +242,8 @@ private:
      */
     vespalib::string GetPeerSpec() const;
 public:
+    FNET_Connection(const FNET_Connection &) = delete;
+    FNET_Connection &operator=(const FNET_Connection &) = delete;
 
     /**
      * Construct a connection in server aspect.

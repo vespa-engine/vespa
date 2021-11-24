@@ -4,8 +4,7 @@
 #include <vespa/eval/eval/key_gen.h>
 #include <thread>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 std::mutex CompileCache::_lock{};
 CompileCache::Map CompileCache::_cached{};
@@ -148,5 +147,4 @@ CompileCache::CompileTask::run()
     result->cond.notify_all();
 }
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

@@ -9,42 +9,30 @@ FRT_Method::FRT_Method(const char * name, const char * paramSpec, const char * r
                        FRT_METHOD_PT method, FRT_Invokable * handler)
     : _hashNext(nullptr),
       _listNext(nullptr),
-      _name(strdup(name)),
-      _paramSpec(strdup(paramSpec)),
-      _returnSpec(strdup(returnSpec)),
+      _name(name),
+      _paramSpec(paramSpec),
+      _returnSpec(returnSpec),
       _method(method),
       _handler(handler),
-      _docLen(0),
-      _doc(nullptr)
+      _doc()
 {
-    assert(_name != nullptr);
-    assert(_paramSpec != nullptr);
-    assert(_returnSpec != nullptr);
 }
 
-FRT_Method::~FRT_Method() {
-    free(_name);
-    free(_paramSpec);
-    free(_returnSpec);
-    free(_doc);
-}
+FRT_Method::~FRT_Method() = default;
 
 void
 FRT_Method::SetDocumentation(FRT_Values *values) {
-    free(_doc);
-    _docLen = values->GetLength();
-    _doc = (char *) malloc(_docLen);
-    assert(_doc != nullptr);
+    _doc.resize(values->GetLength());
 
-    FNET_DataBuffer buf(_doc, _docLen);
+    FNET_DataBuffer buf(&_doc[0], _doc.size());
     values->EncodeCopy(&buf);
 }
 
 void
 FRT_Method::GetDocumentation(FRT_Values *values) {
-    FNET_DataBuffer buf(_doc, _docLen);
-    buf.FreeToData(_docLen);
-    values->DecodeCopy(&buf, _docLen);
+    FNET_DataBuffer buf(&_doc[0], _doc.size());
+    buf.FreeToData(_doc.size());
+    values->DecodeCopy(&buf, _doc.size());
 }
 
 FRT_ReflectionManager::FRT_ReflectionManager()
