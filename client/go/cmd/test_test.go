@@ -47,6 +47,13 @@ func TestTestWithoutAssertions(t *testing.T) {
 	assert.Equal(t, "a test must have at least one assertion, but none were found in 'testdata/tests/system-test/foo/query.json'\n", errBytes)
 }
 
+func TestSuiteWithoutTests(t *testing.T) {
+	client := &mockHttpClient{}
+	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/staging-test"}}, t, client)
+	assert.Equal(t, "Failed to find any tests at 'testdata/tests/staging-test'\n", outBytes)
+	assert.Equal(t, "", errBytes)
+}
+
 func TestSingleTest(t *testing.T) {
 	client := &mockHttpClient{}
 	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
