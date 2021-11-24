@@ -42,6 +42,7 @@ case $SHOULD_BUILD in
     make -C client/go -j ${NUM_THREADS}
     ;;
   *)
+    go version
     make -C client/go -j ${NUM_THREADS}
     ./bootstrap.sh java
     time mvn -V $VESPA_MAVEN_EXTRA_OPTS install
