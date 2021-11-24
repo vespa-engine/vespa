@@ -67,7 +67,7 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 	if stat, err := os.Stat(rootPath); err != nil {
 		fatalErr(err, "Failed reading specified test path")
 	} else if stat.IsDir() {
-		tests, err := os.ReadDir(rootPath)
+		tests, err := ioutil.ReadDir(rootPath) // TODO: Use os.ReadDir when >= 1.16 is required.
 		if err != nil {
 			fatalErr(err, "Failed reading specified test directory")
 		}
