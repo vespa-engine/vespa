@@ -11,8 +11,6 @@ import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -81,14 +79,7 @@ class ServerMetricReporter {
         }
 
         private void addResponseMetrics(HttpResponseStatisticsCollector statisticsCollector) {
-            for (var metricEntry : statisticsCollector.takeStatistics()) {
-                Map<String, Object> dimensions = new HashMap<>();
-                dimensions.put(MetricDefinitions.METHOD_DIMENSION, metricEntry.method);
-                dimensions.put(MetricDefinitions.SCHEME_DIMENSION, metricEntry.scheme);
-                dimensions.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, metricEntry.requestType);
-                dimensions.put(MetricDefinitions.PROTOCOL_DIMENSION, metricEntry.protocol);
-                metric.add(metricEntry.name, metricEntry.value, metric.createContext(dimensions));
-            }
+            statisticsCollector.reportSnapshot(metric);
         }
 
         private void setJettyThreadpoolMetrics() {

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.AsyncContextEvent;
@@ -18,12 +19,21 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.ObjLongConsumer;
+import java.util.stream.Collectors;
 
 /**
  * HttpResponseStatisticsCollector collects statistics about HTTP response types aggregated by category
@@ -33,7 +43,7 @@ import java.util.concurrent.atomic.LongAdder;
  *
  * @author ollivir
  */
-public class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful {
+class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful {
 
     static final String requestTypeAttribute = "requestType";
 
@@ -41,48 +51,12 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     private final List<String> monitoringHandlerPaths;
     private final List<String> searchHandlerPaths;
 
-    public enum HttpMethod {
-        GET, PATCH, POST, PUT, DELETE, OPTIONS, HEAD, OTHER
-    }
-
-    public enum HttpScheme {
-        HTTP, HTTPS, OTHER
-    }
-
-    public enum HttpProtocol {
-        HTTP1, HTTP2, OTHER
-    }
-
-    private static final String[] HTTP_RESPONSE_GROUPS = {
-            MetricDefinitions.RESPONSES_1XX,
-            MetricDefinitions.RESPONSES_2XX,
-            MetricDefinitions.RESPONSES_3XX,
-            MetricDefinitions.RESPONSES_4XX,
-            MetricDefinitions.RESPONSES_5XX,
-            MetricDefinitions.RESPONSES_401,
-            MetricDefinitions.RESPONSES_403
-    };
-
     private final AtomicLong inFlight = new AtomicLong();
-    private final LongAdder[][][][][] statistics; // TODO Rewrite me to a smarter data structure
+    private final ConcurrentMap<StatusCodeMetric, LongAdder> statistics = new ConcurrentHashMap<>();
 
-    public HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths) {
+    HttpResponseStatisticsCollector(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths) {
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
-        statistics = new LongAdder[HttpProtocol.values().length][HttpScheme.values().length][HttpMethod.values().length][][];
-        for (int protocol = 0; protocol < HttpProtocol.values().length; protocol++) {
-            for (int scheme = 0; scheme < HttpScheme.values().length; ++scheme) {
-                for (int method = 0; method < HttpMethod.values().length; method++) {
-                    statistics[protocol][scheme][method] = new LongAdder[HTTP_RESPONSE_GROUPS.length][];
-                    for (int group = 0; group < HTTP_RESPONSE_GROUPS.length; group++) {
-                        statistics[protocol][scheme][method][group] = new LongAdder[HttpRequest.RequestType.values().length];
-                        for (int requestType = 0; requestType < HttpRequest.RequestType.values().length; requestType++) {
-                            statistics[protocol][scheme][method][group][requestType] = new LongAdder();
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private final AsyncListener completionWatcher = new AsyncListener() {
@@ -133,18 +107,10 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     }
 
     private void observeEndOfRequest(Request request, HttpServletResponse flushableResponse) throws IOException {
-        int group = groupIndex(request);
-        if (group >= 0) {
-            HttpProtocol protocol = getProtocol(request);
-            HttpScheme scheme = getScheme(request);
-            HttpMethod method = getMethod(request);
-            HttpRequest.RequestType requestType = getRequestType(request);
-
-            statistics[protocol.ordinal()][scheme.ordinal()][method.ordinal()][group][requestType.ordinal()].increment();
-            if (group == 5 || group == 6) { // if 401/403, also increment 4xx
-                statistics[protocol.ordinal()][scheme.ordinal()][method.ordinal()][3][requestType.ordinal()].increment();
-            }
-        }
+        var metrics = StatusCodeMetric.of(request, monitoringHandlerPaths, searchHandlerPaths);
+        metrics.forEach(metric ->
+                statistics.computeIfAbsent(metric, __ -> new LongAdder())
+                        .increment());
 
         long live = inFlight.decrementAndGet();
         FutureCallback shutdownCb = shutdown.get();
@@ -158,108 +124,24 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         }
     }
 
-    private int groupIndex(Request request) {
-        int index = request.getResponse().getStatus();
-        if (index == 401) {
-            return 5;
-        }
-        if (index == 403) {
-            return 6;
-        }
-
-        index = index / 100 - 1; // 1xx = 0, 2xx = 1 etc.
-        if (index < 0 || index >= statistics[0][0].length) {
-            return -1;
-        } else {
-            return index;
-        }
-    }
-
-    private HttpScheme getScheme(Request request) {
-        switch (request.getScheme()) {
-            case "http":
-                return HttpScheme.HTTP;
-            case "https":
-                return HttpScheme.HTTPS;
-            default:
-                return HttpScheme.OTHER;
-        }
-    }
-
-    private HttpMethod getMethod(Request request) {
-        switch (request.getMethod()) {
-        case "GET":
-            return HttpMethod.GET;
-        case "PATCH":
-            return HttpMethod.PATCH;
-        case "POST":
-            return HttpMethod.POST;
-        case "PUT":
-            return HttpMethod.PUT;
-        case "DELETE":
-            return HttpMethod.DELETE;
-        case "OPTIONS":
-            return HttpMethod.OPTIONS;
-        case "HEAD":
-            return HttpMethod.HEAD;
-        default:
-            return HttpMethod.OTHER;
-        }
-    }
-
-    private HttpProtocol getProtocol(Request request) {
-        switch (request.getProtocol()) {
-            case "HTTP/1":
-            case "HTTP/1.0":
-            case "HTTP/1.1":
-                return HttpProtocol.HTTP1;
-            case "HTTP/2":
-            case "HTTP/2.0":
-                return HttpProtocol.HTTP2;
-            default:
-                return HttpProtocol.OTHER;
-        }
-    }
-
-    private HttpRequest.RequestType getRequestType(Request request) {
-        HttpRequest.RequestType requestType = (HttpRequest.RequestType)request.getAttribute(requestTypeAttribute);
-        if (requestType != null) return requestType;
-
-        // Deduce from path and method:
-        String path = request.getRequestURI();
-        for (String monitoringHandlerPath : monitoringHandlerPaths) {
-            if (path.startsWith(monitoringHandlerPath)) return HttpRequest.RequestType.MONITORING;
-        }
-        for (String searchHandlerPath : searchHandlerPaths) {
-            if (path.startsWith(searchHandlerPath)) return HttpRequest.RequestType.READ;
-        }
-        if ("GET".equals(request.getMethod())) {
-            return HttpRequest.RequestType.READ;
-        } else {
-            return HttpRequest.RequestType.WRITE;
-        }
-    }
-
-    public List<StatisticsEntry> takeStatistics() {
+    List<StatisticsEntry> takeStatistics() {
         var ret = new ArrayList<StatisticsEntry>();
-        for (HttpProtocol protocol : HttpProtocol.values()) {
-            int protocolIndex = protocol.ordinal();
-            for (HttpScheme scheme : HttpScheme.values()) {
-                int schemeIndex = scheme.ordinal();
-                for (HttpMethod method : HttpMethod.values()) {
-                    int methodIndex = method.ordinal();
-                    for (int group = 0; group < HTTP_RESPONSE_GROUPS.length; group++) {
-                        for (HttpRequest.RequestType type : HttpRequest.RequestType.values()) {
-                            long value = statistics[protocolIndex][schemeIndex][methodIndex][group][type.ordinal()].sumThenReset();
-                            if (value > 0) {
-                                ret.add(new StatisticsEntry(protocol.name().toLowerCase(), scheme.name().toLowerCase(), method.name(), HTTP_RESPONSE_GROUPS[group], type.name().toLowerCase(), value));
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        consume((metric, value) -> ret.add(new StatisticsEntry(metric, value)));
         return ret;
+    }
+
+    void reportSnapshot(Metric metricAggregator) {
+        consume((metric, value) -> {
+            Metric.Context ctx = metricAggregator.createContext(metric.dimensions.asMap());
+            metricAggregator.add(metric.name, value, ctx);
+        });
+    }
+
+    private void consume(ObjLongConsumer<StatusCodeMetric> consumer) {
+        statistics.forEach((metric, adder) -> {
+            long value = adder.sumThenReset();
+            if (value > 0) consumer.accept(metric, value);
+        });
     }
 
     @Override
@@ -294,34 +176,171 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         return futureCallback != null && futureCallback.isDone();
     }
 
-    public static class StatisticsEntry {
+    static class Dimensions {
+        final String protocol;
+        final String scheme;
+        final String method;
+        final String requestType;
+        final int statusCode;
 
-        public final String protocol;
-        public final String scheme;
-        public final String method;
-        public final String name;
-        public final String requestType;
-        public final long value;
-
-        public StatisticsEntry(String protocol, String scheme, String method, String name, String requestType, long value) {
+        private Dimensions(String protocol, String scheme, String method, String requestType, int statusCode) {
             this.protocol = protocol;
             this.scheme = scheme;
             this.method = method;
-            this.name = name;
             this.requestType = requestType;
-            this.value = value;
+            this.statusCode = statusCode;
+        }
+
+        static Dimensions of(Request req, Collection<String> monitoringHandlerPaths,
+                             Collection<String> searchHandlerPaths) {
+            String requestType = requestType(req, monitoringHandlerPaths, searchHandlerPaths);
+            return new Dimensions(protocol(req), scheme(req), method(req), requestType, statusCode(req));
+        }
+
+        Map<String, Object> asMap() {
+            Map<String, Object> builder = new HashMap<>();
+            builder.put(MetricDefinitions.PROTOCOL_DIMENSION, protocol);
+            builder.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
+            builder.put(MetricDefinitions.METHOD_DIMENSION, method);
+            builder.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, requestType);
+            builder.put(MetricDefinitions.STATUS_CODE_DIMENSION, (long) statusCode);
+            return Map.copyOf(builder);
+        }
+
+        private static String protocol(Request req) {
+            switch (req.getProtocol()) {
+                case "HTTP/1":
+                case "HTTP/1.0":
+                case "HTTP/1.1":
+                    return "http1";
+                case "HTTP/2":
+                case "HTTP/2.0":
+                    return "http2";
+                default:
+                    return "other";
+            }
+        }
+
+        private static String scheme(Request req) {
+            switch (req.getScheme()) {
+                case "http":
+                case "https":
+                    return req.getScheme();
+                default:
+                    return "other";
+            }
+        }
+
+        private static String method(Request req) {
+            switch (req.getMethod()) {
+                case "GET":
+                case "PATCH":
+                case "POST":
+                case "PUT":
+                case "DELETE":
+                case "OPTIONS":
+                case "HEAD":
+                    return req.getMethod();
+                default:
+                    return "other";
+            }
+        }
+
+        private static int statusCode(Request req) { return req.getResponse().getStatus(); }
+
+        private static String requestType(Request req, Collection<String> monitoringHandlerPaths,
+                                          Collection<String> searchHandlerPaths) {
+            HttpRequest.RequestType requestType = (HttpRequest.RequestType)req.getAttribute(requestTypeAttribute);
+            if (requestType != null) return requestType.name().toLowerCase();
+            // Deduce from path and method:
+            String path = req.getRequestURI();
+            for (String monitoringHandlerPath : monitoringHandlerPaths) {
+                if (path.startsWith(monitoringHandlerPath)) return "monitoring";
+            }
+            for (String searchHandlerPath : searchHandlerPaths) {
+                if (path.startsWith(searchHandlerPath)) return "read";
+            }
+            if ("GET".equals(req.getMethod())) return "read";
+            else return "write";
+        }
+
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Dimensions that = (Dimensions) o;
+            return statusCode == that.statusCode && Objects.equals(protocol, that.protocol)
+                    && Objects.equals(scheme, that.scheme) && Objects.equals(method, that.method)
+                    && Objects.equals(requestType, that.requestType);
         }
 
         @Override
-        public String toString() {
-            return "protocol: " + protocol +
-                   ", scheme: " + scheme +
-                   ", method: " + method +
-                   ", name: " + name +
-                   ", requestType: " + requestType +
-                   ", value: " + value;
+        public int hashCode() {
+            return Objects.hash(protocol, scheme, method, requestType, statusCode);
         }
 
     }
 
+    static class StatusCodeMetric {
+        final Dimensions dimensions;
+        final String name;
+
+        private StatusCodeMetric(Dimensions dimensions, String name) {
+            this.dimensions = dimensions;
+            this.name = name;
+        }
+
+        static Collection<StatusCodeMetric> of(Request req, Collection<String> monitoringHandlerPaths,
+                                   Collection<String> searchHandlerPaths) {
+            Dimensions dimensions = Dimensions.of(req, monitoringHandlerPaths, searchHandlerPaths);
+            return metricNames(req).stream()
+                    .map(name -> new StatusCodeMetric(dimensions, name))
+                    .collect(Collectors.toSet());
+        }
+
+        @SuppressWarnings("removal")
+        private static Collection<String> metricNames(Request req) {
+            int code = req.getResponse().getStatus();
+            if (code == 401) return Set.of(MetricDefinitions.RESPONSES_401, MetricDefinitions.RESPONSES_4XX);
+            else if (code == 403) return Set.of(MetricDefinitions.RESPONSES_403, MetricDefinitions.RESPONSES_4XX);
+            else if (code < 200) return Set.of(MetricDefinitions.RESPONSES_1XX);
+            else if (code < 300) return Set.of(MetricDefinitions.RESPONSES_2XX);
+            else if (code < 400) return Set.of(MetricDefinitions.RESPONSES_3XX);
+            else if (code < 500) return Set.of(MetricDefinitions.RESPONSES_4XX);
+            else return Set.of(MetricDefinitions.RESPONSES_5XX);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            StatusCodeMetric that = (StatusCodeMetric) o;
+            return Objects.equals(dimensions, that.dimensions) && Objects.equals(name, that.name);
+        }
+
+        @Override public int hashCode() { return Objects.hash(dimensions, name); }
+    }
+
+    static class StatisticsEntry {
+        final Dimensions dimensions;
+        final String name;
+        final long value;
+
+        StatisticsEntry(StatusCodeMetric metric, long value) {
+            this.dimensions = metric.dimensions;
+            this.name = metric.name;
+            this.value = value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            StatisticsEntry that = (StatisticsEntry) o;
+            return value == that.value && Objects.equals(dimensions, that.dimensions) && Objects.equals(name, that.name);
+        }
+
+        @Override public int hashCode() { return Objects.hash(dimensions, name, value); }
+    }
 }

@@ -17,6 +17,7 @@ class MetricDefinitions {
     static final String REQUEST_SERVER_NAME_DIMENSION = "requestServerName";
     static final String FILTER_CHAIN_ID_DIMENSION = "chainId";
     static final String PROTOCOL_DIMENSION = "protocol";
+    static final String STATUS_CODE_DIMENSION = "statusCode";
 
     static final String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
     static final String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
@@ -49,8 +50,8 @@ class MetricDefinitions {
     static final String RESPONSES_3XX = "http.status.3xx";
     static final String RESPONSES_4XX = "http.status.4xx";
     static final String RESPONSES_5XX = "http.status.5xx";
-    static final String RESPONSES_401 = "http.status.401";
-    static final String RESPONSES_403 = "http.status.403";
+    @Deprecated(forRemoval = true, since = "7") static final String RESPONSES_401 = "http.status.401";
+    @Deprecated(forRemoval = true, since = "7") static final String RESPONSES_403 = "http.status.403";
 
     static final String STARTED_MILLIS = "serverStartedMillis";
 

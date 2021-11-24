@@ -590,20 +590,20 @@ public class HttpServerTest {
         {
             driver.client().newPost("/status.html").execute();
             var entry = waitForStatistics(statisticsCollector);
-            assertEquals("http", entry.scheme);
-            assertEquals("POST", entry.method);
+            assertEquals("http", entry.dimensions.scheme);
+            assertEquals("POST", entry.dimensions.method);
             assertEquals("http.status.2xx", entry.name);
-            assertEquals("write", entry.requestType);
+            assertEquals("write", entry.dimensions.requestType);
             assertEquals(1, entry.value);
         }
 
         {
             driver.client().newGet("/status.html").execute();
             var entry = waitForStatistics(statisticsCollector);
-            assertEquals("http", entry.scheme);
-            assertEquals("GET", entry.method);
+            assertEquals("http", entry.dimensions.scheme);
+            assertEquals("GET", entry.dimensions.method);
             assertEquals("http.status.2xx", entry.name);
-            assertEquals("read", entry.requestType);
+            assertEquals("read", entry.dimensions.requestType);
             assertEquals(1, entry.value);
         }
 
@@ -611,7 +611,7 @@ public class HttpServerTest {
             handler.setRequestType(Request.RequestType.READ);
             driver.client().newPost("/status.html").execute();
             var entry = waitForStatistics(statisticsCollector);
-            assertEquals("Handler overrides request type", "read", entry.requestType);
+            assertEquals("Handler overrides request type", "read", entry.dimensions.requestType);
         }
 
         assertTrue(driver.close());
