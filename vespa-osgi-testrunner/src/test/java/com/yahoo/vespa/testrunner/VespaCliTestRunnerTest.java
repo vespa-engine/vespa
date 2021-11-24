@@ -56,7 +56,7 @@ class VespaCliTestRunnerTest {
         Path systemTests = Files.createDirectory(tests.resolve("system-test"));
         ProcessBuilder builder = runner.testRunProcessBuilder(TestRunner.Suite.SYSTEM_TEST, testConfig);
         assertEquals(List.of("vespa", "test", systemTests.toAbsolutePath().toString(),
-                             "--application", "t.a.i.",
+                             "--application", "t.a.i",
                              "--zone", "dev.aws-us-east-1c"),
                      builder.command());
         assertEquals("{\"endpoints\":[{\"cluster\":\"default\",\"url\":\"https://dev.endpoint:443/\"}]}",
