@@ -97,7 +97,7 @@ endif
 #
 
 install:
-	bash -c 'while true; do date; df -h; ps -ef; sleep 60; done &'
+	bash -c 'while true; do date; df -h; ps axjfww; sleep 60; done &'
 	env GOBIN=$(BIN) go install -x $(GO_FLAGS) ./...
 
 manpages: install
