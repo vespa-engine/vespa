@@ -188,6 +188,7 @@ BuildRequires: java-11-openjdk-devel
 BuildRequires: rpm-build
 BuildRequires: make
 BuildRequires: git
+BuildRequires: golang
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
 BuildRequires: bison >= 3.0.0
