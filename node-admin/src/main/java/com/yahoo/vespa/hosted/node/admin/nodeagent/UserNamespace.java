@@ -14,8 +14,8 @@ public class UserNamespace {
      * Real value in /proc/sys/fs/overflowuid or overflowgid, hardcode default value*/
     private static final int OVERFLOW_ID = 65_534;
 
-    private volatile int uidOffset;
-    private volatile int gidOffset;
+    private final int uidOffset;
+    private final int gidOffset;
     private final int idRangeSize;
 
     public UserNamespace(int uidOffset, int gidOffset, int idRangeSize) {
@@ -31,12 +31,6 @@ public class UserNamespace {
 
     public int idRangeSize() { return idRangeSize; }
     public int overflowId() { return OVERFLOW_ID; }
-
-    // Remove after migration to mapped namespaces is complete, make fields final
-    public void setOffsets(int idOffset) {
-        this.uidOffset = idOffset;
-        this.gidOffset = idOffset;
-    }
 
     @Override
     public boolean equals(Object o) {
