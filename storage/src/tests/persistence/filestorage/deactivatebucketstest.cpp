@@ -88,7 +88,7 @@ TEST_F(DeactivateBucketsTest, buckets_deactivated_when_node_goes_from_maintenanc
 {
     EXPECT_TRUE(is_active(test_bucket()));
     _node->getStateUpdater().setClusterState(state_of("storage:2 .1.s:m distributor:2"));
-    _node->getStateUpdater().setClusterState(state_of("storage:2 distributor:2"));
+    _node->getStateUpdater().setClusterState(state_of("storage:2 .1.s:d distributor:2"));
     EXPECT_FALSE(is_active(test_bucket()));
 }
 
