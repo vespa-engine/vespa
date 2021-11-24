@@ -370,7 +370,12 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 	if err := opts.Target.PrepareApiRequest(request, sigKeyId); err != nil {
 		return 0, err
 	}
-	response, err := util.HttpDo(request, time.Minute*10, serviceDescription)
+
+	var response *http.Response
+	util.Spinner("Uploading application package ...", func() error {
+		response, err = util.HttpDo(request, time.Minute*10, serviceDescription)
+		return err
+	})
 	if err != nil {
 		return 0, err
 	}

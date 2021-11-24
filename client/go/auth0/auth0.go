@@ -157,6 +157,7 @@ func (a *Auth0) PrepareSystem(ctx context.Context) (System, error) {
 		if err != nil {
 			// ask and guide the user through the login process:
 			fmt.Println(fmt.Errorf("failed to renew access token, %s", err))
+			fmt.Print("\n")
 			s, err = RunLogin(ctx, a, true)
 			if err != nil {
 				return System{}, err
