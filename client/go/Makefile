@@ -97,6 +97,8 @@ endif
 #
 
 install:
+	/usr/local/go/bin/go version
+	go version
 	env GOBIN=$(BIN) /usr/local/go/bin/go install $(GO_FLAGS) ./...
 
 manpages: install
