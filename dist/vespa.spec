@@ -6,6 +6,11 @@
 # Only strip debug info
 %global _find_debuginfo_opts -g
 
+# Go binaries' build-ids are not recognized by RPMs yet, see
+# https://github.com/rpm-software-management/rpm/issues/367 and
+# https://github.com/tpokorra/lbs-mono-fedora/issues/3#issuecomment-219857688.
+%undefine _missing_build_ids_terminate_build
+
 # Force special prefix for Vespa
 %define _prefix /opt/vespa
 %define _vespa_deps_prefix /opt/vespa-deps
@@ -754,6 +759,7 @@ fi
 %dir %{_prefix}/conf/vespa-feed-client
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
+%{_prefix}/bin/vespa
 %{_prefix}/bin/vespa-feed-client
 %{_prefix}/conf/vespa-feed-client/logging.properties
 %{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
