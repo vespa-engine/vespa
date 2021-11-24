@@ -79,5 +79,7 @@ public interface ZmsClient extends AutoCloseable {
 
     Set<String> listPolicies(AthenzDomain domain);
 
+    void deleteRole(AthenzRole athenzRole);
+
     void close();
 }

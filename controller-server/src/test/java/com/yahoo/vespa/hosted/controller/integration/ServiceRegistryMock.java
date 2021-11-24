@@ -44,6 +44,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
+import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
 
 /**
@@ -86,6 +88,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final PlanRegistry planRegistry = new PlanRegistryMock();
     private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
     private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
+    private final RoleMaintainer roleMaintainer = new RoleMaintainerMock();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -265,6 +268,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public BillingDatabaseClient billingDatabase() {
         return billingDb;
+    }
+
+    @Override
+    public RoleMaintainer roleMaintainer() {
+        return roleMaintainer;
     }
 
     public ConfigServerMock configServerMock() {
