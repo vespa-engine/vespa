@@ -6,7 +6,6 @@ package cmd
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -130,20 +129,18 @@ func getTargetType() string {
 	return target
 }
 
-func getService(service string, sessionOrRunID int64, cluster string) *vespa.Service {
+func getService(service string, sessionOrRunID int64) *vespa.Service {
 	t := getTarget()
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
 		log.Printf("Waiting up to %d %s for service to become available ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
 	}
-	s, err := t.Service(service, timeout, sessionOrRunID, cluster)
+	s, err := t.Service(service, timeout, sessionOrRunID)
 	if err != nil {
 		fatalErr(err, "Invalid service: ", service)
 	}
 	return s
 }
-
-func getEndpointsOverride() string { return os.Getenv("VESPA_CLI_ENDPOINTS") }
 
 func getSystem() string { return os.Getenv("VESPA_CLI_CLOUD_SYSTEM") }
 
@@ -178,17 +175,15 @@ func getTarget() vespa.Target {
 	case "local":
 		return vespa.LocalTarget()
 	case "cloud":
+		deployment := deploymentFromArgs()
 		cfg, err := LoadConfig()
 		if err != nil {
 			fatalErr(err, "Could not load config")
 			return nil
 		}
-		deployment := deploymentFromArgs()
-		endpoints := getEndpointsFromEnv()
-
 		var apiKey []byte = nil
 		apiKey, err = ioutil.ReadFile(cfg.APIKeyPath(deployment.Application.Tenant))
-		if !vespa.Auth0AccessTokenEnabled() && endpoints == nil {
+		if !vespa.Auth0AccessTokenEnabled() {
 			if err != nil {
 				fatalErrHint(err, "Deployment to cloud requires an API key. Try 'vespa api-key'")
 			}
@@ -233,15 +228,14 @@ func getTarget() vespa.Target {
 			},
 			cfg.AuthConfigPath(),
 			getSystemName(),
-			cloudAuth,
-			endpoints)
+			cloudAuth)
 	}
 	fatalErrHint(fmt.Errorf("Invalid target: %s", targetType), "Valid targets are 'local', 'cloud' or an URL")
 	return nil
 }
 
 func waitForService(service string, sessionOrRunID int64) {
-	s := getService(service, sessionOrRunID, "")
+	s := getService(service, sessionOrRunID)
 	timeout := time.Duration(waitSecsArg) * time.Second
 	if timeout > 0 {
 		log.Printf("Waiting up to %d %s for service to become ready ...", color.Cyan(waitSecsArg), color.Cyan("seconds"))
@@ -276,33 +270,4 @@ func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.T
 		opts.Deployment = deployment
 	}
 	return opts
-}
-
-func getEndpointsFromEnv() map[string]string {
-	endpointsString := getEndpointsOverride()
-	if endpointsString == "" {
-		return nil
-	}
-
-	var endpoints endpoints
-	urlsByCluster := make(map[string]string)
-	if err := json.Unmarshal([]byte(endpointsString), &endpoints); err != nil {
-		fatalErrHint(err, "Endpoints must be valid JSON")
-	}
-	if len(endpoints.Endpoints) == 0 {
-		fatalErr(fmt.Errorf("endpoints must be non-empty"))
-	}
-	for _, endpoint := range endpoints.Endpoints {
-		urlsByCluster[endpoint.Cluster] = endpoint.URL
-	}
-	return urlsByCluster
-}
-
-type endpoints struct {
-	Endpoints []endpoint `json:"endpoints"`
-}
-
-type endpoint struct {
-	Cluster string `json:"cluster"`
-	URL     string `json:"url"`
 }

@@ -39,6 +39,7 @@ type Service struct {
 	BaseURL    string
 	Name       string
 	TLSOptions TLSOptions
+	Target     *Target
 }
 
 // Target represents a Vespa platform, running named Vespa services.
@@ -47,7 +48,7 @@ type Target interface {
 	Type() string
 
 	// Service returns the service for given name. If timeout is non-zero, wait for the service to converge.
-	Service(name string, timeout time.Duration, sessionOrRunID int64, cluster string) (*Service, error)
+	Service(name string, timeout time.Duration, sessionOrRunID int64) (*Service, error)
 
 	// PrintLog writes the logs of this deployment using given options to control output.
 	PrintLog(options LogOptions) error
@@ -128,7 +129,7 @@ func (s *Service) Description() string {
 
 func (t *customTarget) Type() string { return t.targetType }
 
-func (t *customTarget) Service(name string, timeout time.Duration, sessionOrRunID int64, cluster string) (*Service, error) {
+func (t *customTarget) Service(name string, timeout time.Duration, sessionID int64) (*Service, error) {
 	if timeout > 0 && name != deployService {
 		if err := t.waitForConvergence(timeout); err != nil {
 			return nil, err
@@ -170,7 +171,7 @@ func (t *customTarget) urlWithPort(serviceName string) (string, error) {
 }
 
 func (t *customTarget) waitForConvergence(timeout time.Duration) error {
-	deployer, err := t.Service(deployService, 0, 0, "")
+	deployer, err := t.Service(deployService, 0, 0)
 	if err != nil {
 		return err
 	}
@@ -240,8 +241,8 @@ func (t *cloudTarget) resolveEndpoint(cluster string) (string, error) {
 
 func (t *cloudTarget) Type() string { return t.targetType }
 
-func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, cluster string) (*Service, error) {
-	if name != deployService && t.urlsByCluster == nil {
+func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64) (*Service, error) {
+	if name != deployService {
 		if err := t.waitForEndpoints(timeout, runID); err != nil {
 			return nil, err
 		}
@@ -250,13 +251,13 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 	case deployService:
 		return &Service{Name: name, BaseURL: t.apiURL}, nil
 	case queryService:
-		queryURL, err := t.resolveEndpoint(cluster)
+		queryURL, err := t.resolveEndpoint("")
 		if err != nil {
 			return nil, err
 		}
 		return &Service{Name: name, BaseURL: queryURL, TLSOptions: t.tlsOptions}, nil
 	case documentService:
-		documentURL, err := t.resolveEndpoint(cluster)
+		documentURL, err := t.resolveEndpoint("")
 		if err != nil {
 			return nil, err
 		}
@@ -488,7 +489,7 @@ func CustomTarget(baseURL string) Target {
 
 // CloudTarget creates a Target for the Vespa Cloud platform.
 func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions TLSOptions, logOptions LogOptions,
-	authConfigPath string, systemName string, cloudAuth string, urlsByCluster map[string]string) Target {
+	authConfigPath string, systemName string, cloudAuth string) Target {
 	return &cloudTarget{
 		apiURL:         apiURL,
 		targetType:     cloudTargetType,
@@ -499,7 +500,6 @@ func CloudTarget(apiURL string, deployment Deployment, apiKey []byte, tlsOptions
 		authConfigPath: authConfigPath,
 		systemName:     systemName,
 		cloudAuth:      cloudAuth,
-		urlsByCluster:  urlsByCluster,
 	}
 }
 
