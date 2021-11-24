@@ -1,0 +1,12 @@
+{
+  "root": {
+    "id": "toplevel",
+    "coverage": {
+      "full": true
+    },
+    "fields": {
+      "totalCount" : 1
+    },
+    "children": [{}]
+  }
+}

@@ -1,0 +1,13 @@
+{
+    "assertions": [
+        {
+            "response": {
+                "body": {
+                    "root": {
+                        "children": []
+                    }
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,17 @@
+{
+    "assertions": [
+        {
+            "response": {
+                "body": {
+                    "root": {
+                        "children": [
+                            {
+                                "relevance": 0.381862373599
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}

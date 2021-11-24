@@ -1,0 +1,64 @@
+{
+    "defaults": {
+        "cluster": "container",
+        "parameters": {
+            "timeout": "3.4s"
+        }
+    },
+    "assertions": [
+        {
+            "name": "feed music",
+            "request": {
+                "method": "POST",
+                "body": "foo/body.json",
+                "uri": "/document/v1/test/music/docid/doc"
+            }
+        },
+        {
+            "name": "re-feed music",
+            "request": {
+                "method": "POST",
+                "body": { 
+                    "fields": {
+                        "artist": "Foo Fighters"
+                    }
+                },
+                "uri": "/document/v1/test/music/docid/doc"
+            }
+        },
+        {
+            "name": "query for foo",
+            "request": {
+                "uri": "/search/?presentation.timing=true",
+                "parameters": {
+                    "query": "artist: foo"
+                }
+            },
+            "response": {
+                "code": 200,
+                "body": "../body.json"
+            }
+        },
+        {
+            "name": "query for foo again",
+            "request": {
+                "uri": "/search/?presentation.timing=true",
+                "parameters": "foo/query.json"
+            },
+            "response": {
+                "body": {
+                    "root": {
+                        "children": [
+                            {
+                                "fields": {
+                                    "artist": "Foo Fighters"
+                                },
+                                "relevance": 0.381862383599
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}
