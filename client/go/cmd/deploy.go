@@ -9,7 +9,6 @@ import (
 	"log"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -66,10 +65,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		target := getTarget()
 		opts := getDeploymentOpts(cfg, pkg, target)
 
-		util.Spinner(color.Yellow("Uploading application package ...").String(), func() error {
-			sessionOrRunID, err = vespa.Deploy(opts)
-			return err
-		})
+		sessionOrRunID, err = vespa.Deploy(opts)
 
 		if err == nil {
 			fmt.Print("\n")
