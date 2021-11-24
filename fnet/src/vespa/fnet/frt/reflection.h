@@ -3,7 +3,8 @@
 #pragma once
 
 #include "invokable.h"
-#include <cstdint>
+#include <string>
+#include <vector>
 
 class FRT_Values;
 class FRT_Supervisor;
@@ -14,20 +15,18 @@ class FRT_Method
     friend class FRT_ReflectionManager;
 
 private:
-    FRT_Method      *_hashNext;      // list of methods in hash bucket
-    FRT_Method      *_listNext;      // list of all methods
-    char            *_name;          // method name
-    char            *_paramSpec;     // method parameter spec
-    char            *_returnSpec;    // method return spec
-    FRT_METHOD_PT    _method;        // method pointer
-    FRT_Invokable   *_handler;       // method handler
-    uint32_t         _docLen;        // method documentation length
-    char            *_doc;           // method documentation
-
-    FRT_Method(const FRT_Method &);
-    FRT_Method &operator=(const FRT_Method &);
+    FRT_Method        *_hashNext;      // list of methods in hash bucket
+    FRT_Method        *_listNext;      // list of all methods
+    std::string        _name;          // method name
+    std::string        _paramSpec;     // method parameter spec
+    std::string        _returnSpec;    // method return spec
+    FRT_METHOD_PT      _method;        // method pointer
+    FRT_Invokable     *_handler;       // method handler
+    std::vector<char>  _doc;           // method documentation
 
 public:
+    FRT_Method(const FRT_Method &) = delete;
+    FRT_Method &operator=(const FRT_Method &) = delete;
     FRT_Method(const char    *name,
                const char    *paramSpec,
                const char    *returnSpec,
@@ -37,9 +36,9 @@ public:
     ~FRT_Method();
 
     FRT_Method *GetNext() { return _listNext; }
-    const char *GetName() { return _name; }
-    const char *GetParamSpec() { return _paramSpec; }
-    const char *GetReturnSpec() { return _returnSpec; }
+    const char *GetName() { return _name.c_str(); }
+    const char *GetParamSpec() { return _paramSpec.c_str(); }
+    const char *GetReturnSpec() { return _returnSpec.c_str(); }
     FRT_METHOD_PT GetMethod() { return _method; }
     FRT_Invokable *GetHandler() { return _handler; }
     void SetDocumentation(FRT_Values *values);

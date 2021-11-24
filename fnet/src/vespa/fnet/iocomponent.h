@@ -21,9 +21,6 @@ class FNET_IOComponent
 {
     friend class FNET_TransportThread;
 
-    FNET_IOComponent(const FNET_IOComponent &);
-    FNET_IOComponent &operator=(const FNET_IOComponent &);
-
     using Selector = vespalib::Selector<FNET_IOComponent>;
 
     struct Flags {
@@ -44,16 +41,18 @@ protected:
     FNET_IOComponent        *_ioc_next;          // next in list
     FNET_IOComponent        *_ioc_prev;          // prev in list
     FNET_TransportThread    *_ioc_owner;         // owner(TransportThread) ref.
-    int                      _ioc_socket_fd;     // source of events.
     Selector                *_ioc_selector;      // attached event selector
-    char                    *_ioc_spec;          // connect/listen spec
+    std::string              _ioc_spec;          // connect/listen spec
     Flags                    _flags;             // Compressed representation of boolean flags;
+    int                      _ioc_socket_fd;     // source of events.
+    uint32_t                 _ioc_refcnt;        // reference counter
     vespalib::steady_time    _ioc_timestamp;     // last I/O activity
     std::mutex               _ioc_lock;          // synchronization
     std::condition_variable  _ioc_cond;          // synchronization
-    uint32_t                 _ioc_refcnt;        // reference counter
 
 public:
+    FNET_IOComponent(const FNET_IOComponent &) = delete;
+    FNET_IOComponent &operator=(const FNET_IOComponent &) = delete;
 
     /**
      * Construct an IOComponent with the given owner. The socket that
@@ -80,7 +79,7 @@ public:
     /**
      * @return connect/listen spec
      **/
-    const char *GetSpec() const { return _ioc_spec; }
+    const char *GetSpec() const { return _ioc_spec.c_str(); }
 
     /*
      * Get a guard to gain exclusive access.
