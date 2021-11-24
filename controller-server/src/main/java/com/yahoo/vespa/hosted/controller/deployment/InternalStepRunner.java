@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -859,8 +860,12 @@ public class InternalStepRunner implements StepRunner {
                                              spec.athenzDomain(),
                                              spec.requireInstance(id.application().instance()).athenzService(zone.environment(), zone.region()));
 
-        try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
+        try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + deploymentXml.length + 1000)) {
+            // Copy contents of submitted application-test.zip, and ensure required directories exist within the zip.
             zipBuilder.add(testPackage);
+            zipBuilder.add("artifacts/.ignore-" + UUID.randomUUID(), new byte[0]);
+            zipBuilder.add("tests/.ignore-" + UUID.randomUUID(), new byte[0]);
+
             zipBuilder.add("services.xml", servicesXml);
             zipBuilder.add("deployment.xml", deploymentXml);
             if (useTesterCertificate)
@@ -948,6 +953,7 @@ public class InternalStepRunner implements StepRunner {
                 "        <component id=\"com.yahoo.vespa.testrunner.VespaCliTestRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
                 "            <config name=\"com.yahoo.vespa.testrunner.vespa-cli-test-runner\">\n" +
                 "                <artifactsPath>artifacts</artifactsPath>\n" +
+                "                <testsPath>tests</testsPath>\n" +
                 "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
                 "            </config>\n" +
                 "        </component>\n" +
