@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.Executors;
 
+import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -45,6 +46,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -304,22 +306,19 @@ public class SearchHandlerTest {
         assertOkResult(driver.sendRequest(request), jsonResult);
     }
 
-    private boolean waitForMetric(String key) {
-        try {
-            for (int i = 0; i < 10; i++) {
-                if (metric.metrics().containsKey(key)) return true;
-                Thread.sleep(20);
-            }
-        } catch (InterruptedException e) {
+    private void assertMetricPresent(String key) {
+        for (int i = 0; i < 200; i++) {
+            if (metric.metrics().containsKey(key)) return;
+            uncheckInterrupted(() -> Thread.sleep(1));
         }
-        return false;
+        fail(String.format("Could not find metric with key '%s' in '%s'", key, metric));
     }
 
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
         assertEquals(expected, response.readAll());
         assertEquals(200, response.getStatus());
         assertEquals(selfHostname, response.getResponse().headers().get(myHostnameHeader).get(0));
-        assertTrue(waitForMetric(SearchHandler.RENDER_LATENCY_METRIC));
+        assertMetricPresent(SearchHandler.RENDER_LATENCY_METRIC);
     }
 
     @Test
