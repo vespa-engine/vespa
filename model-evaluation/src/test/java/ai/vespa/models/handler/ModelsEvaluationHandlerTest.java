@@ -206,13 +206,6 @@ public class ModelsEvaluationHandlerTest {
     }
 
     @Test
-    public void testMnistSavedEvaluateDefaultFunctionShouldFail() {
-        String url = "http://localhost/model-evaluation/v1/mnist_saved/eval";
-        String expected = "{\"error\":\"More than one function is available in model 'mnist_saved', but no name is given. Available functions: imported_ml_function_mnist_saved_dnn_hidden1_add, serving_default.y\"}";
-        handler.assertResponse(url, 404, expected);
-    }
-
-    @Test
     public void testVespaModelShortOutput() {
         Map<String, String> properties = new HashMap<>();
         properties.put("format.tensors", "short");

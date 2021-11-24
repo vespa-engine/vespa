@@ -61,8 +61,8 @@ public class OnnxEvaluationHandlerTest {
     @Test
     public void testEvaluationWithoutSpecifyingOutput() {
         String url = "http://localhost/model-evaluation/v1/add_mul/eval";
-        String expected = "{\"error\":\"More than one function is available in model 'add_mul', but no name is given. Available functions: output1, output2\"}";
-        handler.assertResponse(url, 404, expected);
+        String expected = "{\"error\":\"Argument 'input1' must be bound to a value of type tensor<float>(d0[1])\"}";
+        handler.assertResponse(url, 400, expected);
     }
 
     @Test
@@ -89,6 +89,19 @@ public class OnnxEvaluationHandlerTest {
         properties.put("input2", "tensor<float>(d0[1]):[3]");
         String url = "http://localhost/model-evaluation/v1/add_mul/output2/eval";
         String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":5.0}]}";  // output2 is an add
+        handler.assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
+    public void testEvaluateAllOutputs() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("input1", "tensor<float>(d0[1]):[2]");
+        properties.put("input2", "tensor<float>(d0[1]):[3]");
+        String url = "http://localhost/model-evaluation/v1/add_mul/eval";  // remember to add to discovery!
+        String expected = "{" +
+                "\"output1\":{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":6.0}]}," +  // output1 is a mul
+                "\"output2\":{\"cells\":[{\"address\":{\"d0\":\"0\"},\"value\":5.0}]}" + // output1 is an add
+                "}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
