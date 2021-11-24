@@ -15,6 +15,7 @@ struct IBucketStateCalculator
     virtual bool nodeUp() const = 0;
     virtual bool nodeInitializing() const = 0;
     virtual bool nodeRetired() const = 0;
+    virtual bool nodeMaintenance() const noexcept = 0;
     virtual ~IBucketStateCalculator() = default;
 };
 

@@ -11,7 +11,8 @@ ContentBucketSpace::ContentBucketSpace(document::BucketSpace bucketSpace,
       _lock(),
       _clusterState(),
       _distribution(),
-      _nodeUpInLastNodeStateSeenByProvider(false)
+      _nodeUpInLastNodeStateSeenByProvider(false),
+      _nodeMaintenanceInLastNodeStateSeenByProvider(false)
 {
 }
 
@@ -55,6 +56,20 @@ ContentBucketSpace::setNodeUpInLastNodeStateSeenByProvider(bool nodeUpInLastNode
 {
     std::lock_guard guard(_lock);
     _nodeUpInLastNodeStateSeenByProvider = nodeUpInLastNodeStateSeenByProvider;
+}
+
+bool
+ContentBucketSpace::getNodeMaintenanceInLastNodeStateSeenByProvider() const
+{
+    std::lock_guard guard(_lock);
+    return _nodeMaintenanceInLastNodeStateSeenByProvider;
+}
+
+void
+ContentBucketSpace::setNodeMaintenanceInLastNodeStateSeenByProvider(bool nodeMaintenanceInLastNodeStateSeenByProvider)
+{
+    std::lock_guard guard(_lock);
+    _nodeMaintenanceInLastNodeStateSeenByProvider = nodeMaintenanceInLastNodeStateSeenByProvider;
 }
 
 }

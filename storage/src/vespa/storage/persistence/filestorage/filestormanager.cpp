@@ -23,6 +23,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <algorithm>
 #include <thread>
 
 #include <vespa/log/bufferedlogger.h>
@@ -882,28 +883,64 @@ namespace {
     };
 }
 
+bool
+FileStorManager::maintenance_in_all_spaces(const lib::Node& node) const noexcept
+{
+    return std::ranges::all_of(_component.getBucketSpaceRepo(), [&](const auto& elem) {
+        ContentBucketSpace& bucket_space = *elem.second;
+        auto derived_cluster_state = bucket_space.getClusterState();
+        return derived_cluster_state->getNodeState(node).getState().oneOf("m");
+    });
+}
+
+bool
+FileStorManager::should_deactivate_buckets(const ContentBucketSpace& space,
+                                           bool node_up_in_space,
+                                           bool maintenance_in_all_spaces) noexcept
+{
+    // Important: this MUST match the semantics in proton::BucketHandler::notifyClusterStateChanged()!
+    // Otherwise, the content layer and proton will be out of sync in terms of bucket activation state.
+    if (maintenance_in_all_spaces) {
+        return false;
+    }
+    return ((space.getNodeUpInLastNodeStateSeenByProvider() && !node_up_in_space)
+           || space.getNodeMaintenanceInLastNodeStateSeenByProvider());
+}
+
+void
+FileStorManager::maybe_log_received_cluster_state()
+{
+    if (LOG_WOULD_LOG(debug)) {
+        auto cluster_state_bundle = _component.getStateUpdater().getClusterStateBundle();
+        auto baseline_state = cluster_state_bundle->getBaselineClusterState();
+        LOG(debug, "FileStorManager received baseline cluster state '%s'", baseline_state->toString().c_str());
+    }
+}
+
 void
 FileStorManager::updateState()
 {
-    auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-    lib::ClusterState::CSP state(clusterStateBundle->getBaselineClusterState());
-    lib::Node node(_component.getNodeType(), _component.getIndex());
+    maybe_log_received_cluster_state();
+    const lib::Node node(_component.getNodeType(), _component.getIndex());
+    const bool in_maintenance = maintenance_in_all_spaces(node);
 
-    LOG(debug, "FileStorManager received cluster state '%s'", state->toString().c_str());
     for (const auto &elem : _component.getBucketSpaceRepo()) {
         BucketSpace bucketSpace(elem.first);
-        ContentBucketSpace &contentBucketSpace = *elem.second;
+        ContentBucketSpace& contentBucketSpace = *elem.second;
         auto derivedClusterState = contentBucketSpace.getClusterState();
-        bool nodeUp = derivedClusterState->getNodeState(node).getState().oneOf("uir");
-        // If edge where we go down
-        if (contentBucketSpace.getNodeUpInLastNodeStateSeenByProvider() && !nodeUp) {
-            LOG(debug, "Received cluster state where this node is down; de-activating all buckets in database for bucket space %s", bucketSpace.toString().c_str());
+        const bool node_up_in_space = derivedClusterState->getNodeState(node).getState().oneOf("uir");
+        if (should_deactivate_buckets(contentBucketSpace, node_up_in_space, in_maintenance)) {
+            LOG(debug, "Received cluster state where this node is down; de-activating all buckets "
+                       "in database for bucket space %s", bucketSpace.toString().c_str());
             Deactivator deactivator;
             contentBucketSpace.bucketDatabase().for_each_mutable_unordered(
                     std::ref(deactivator), "FileStorManager::updateState");
         }
-        contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(nodeUp);
-        spi::ClusterState spiState(*derivedClusterState, _component.getIndex(), *contentBucketSpace.getDistribution());
+        contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(node_up_in_space);
+        contentBucketSpace.setNodeMaintenanceInLastNodeStateSeenByProvider(in_maintenance);
+        spi::ClusterState spiState(*derivedClusterState, _component.getIndex(),
+                                   *contentBucketSpace.getDistribution(),
+                                   in_maintenance);
         _provider->setClusterState(bucketSpace, spiState);
     }
 }

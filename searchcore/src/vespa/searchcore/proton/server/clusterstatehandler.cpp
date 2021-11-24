@@ -27,6 +27,7 @@ private:
     bool _nodeUp;
     bool _nodeInitializing;
     bool _nodeRetired;
+    bool _nodeMaintenance;
 
 public:
     ClusterStateAdapter(const ClusterState &calc)
@@ -34,7 +35,8 @@ public:
           _clusterUp(_calc.clusterUp()),
           _nodeUp(_calc.nodeUp()),
           _nodeInitializing(_calc.nodeInitializing()),
-          _nodeRetired(_calc.nodeRetired())
+          _nodeRetired(_calc.nodeRetired()),
+          _nodeMaintenance(_calc.nodeMaintenance())
     {
     }
     vespalib::Trinary shouldBeReady(const document::Bucket &bucket) const override {
@@ -44,6 +46,7 @@ public:
     bool nodeUp() const override { return _nodeUp; }
     bool nodeInitializing() const override { return _nodeInitializing; }
     bool nodeRetired() const override { return _nodeRetired; }
+    bool nodeMaintenance() const noexcept override { return _nodeMaintenance; }
 };
 
 }
@@ -53,11 +56,12 @@ ClusterStateHandler::performSetClusterState(const ClusterState *calc, IGenericRe
 {
     LOG(debug,
         "performSetClusterState(): "
-        "clusterUp(%s), nodeUp(%s), nodeInitializing(%s)"
+        "clusterUp(%s), nodeUp(%s), nodeInitializing(%s), nodeMaintenance(%s)"
         "changedHandlers.size() = %zu",
         (calc->clusterUp() ? "true" : "false"),
         (calc->nodeUp() ? "true" : "false"),
         (calc->nodeInitializing() ? "true" : "false"),
+        (calc->nodeMaintenance() ? "true" : "false"),
         _changedHandlers.size());
     if (!_changedHandlers.empty()) {
         auto newCalc = std::make_shared<ClusterStateAdapter>(*calc);

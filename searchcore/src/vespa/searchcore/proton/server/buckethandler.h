@@ -25,6 +25,7 @@ private:
     documentmetastore::IBucketHandler        *_ready;
     std::vector<IBucketStateChangedHandler *> _changedHandlers;
     bool                                      _nodeUp;
+    bool                                      _nodeMaintenance;
 
     void performSetCurrentState(document::BucketId bucketId,
                                 storage::spi::BucketInfo::ActiveState newState,

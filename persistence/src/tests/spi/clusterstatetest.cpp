@@ -233,4 +233,31 @@ TEST(ClusterStateTest, can_infer_own_node_retired_state)
     EXPECT_TRUE(!node_marked_as_retired_in_state("distributor:3 storage:3 .1.s:r", d, 0));
 }
 
+namespace {
+
+bool
+node_marked_as_maintenance_in_state(const std::string& stateStr,
+                                    const lib::Distribution& d,
+                                    uint16_t node,
+                                    bool maintenance_in_all_spaces)
+{
+    lib::ClusterState s(stateStr);
+    ClusterState state(s, node, d, maintenance_in_all_spaces);
+    return state.nodeMaintenance();
+}
+
+}
+
+// We want to track the maintenance state for the _node_, not just the _bucket space_.
+TEST(ClusterStateTest, node_maintenance_state_is_set_independent_of_bucket_space_state_string)
+{
+    lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
+
+    // Note: it doesn't actually matter what the cluster state string itself says here
+    EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3", d, 0, false));
+    EXPECT_TRUE(node_marked_as_maintenance_in_state("distributor:3 storage:3", d, 0, true));
+    EXPECT_TRUE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:d", d, 0, true));
+    EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:m", d, 0, false));
+}
+
 }
