@@ -125,7 +125,7 @@ func runTest(testPath string, target vespa.Target) string {
 	for i, step := range test.Steps {
 		stepName := step.Name
 		if stepName == "" {
-			stepName = fmt.Sprintf("step %d", i + 1)
+			stepName = fmt.Sprintf("step %d", i+1)
 		}
 		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target)
 		if err != nil {
@@ -355,7 +355,7 @@ func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 }
 
 type test struct {
-	Name       string      `json:"name"`
+	Name     string   `json:"name"`
 	Defaults defaults `json:"defaults"`
 	Steps    []step   `json:"steps"`
 }
