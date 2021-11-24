@@ -4,6 +4,7 @@
 
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/storageframework/generic/clock/timer.h>
+#include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <future>
 #include <memory>
@@ -20,7 +21,6 @@ class ApplyBucketDiffEntryResult;
 struct MessageSender;
 class MessageTracker;
 class MergeBucketInfoSyncer;
-struct MergeHandlerMetrics;
 
 /*
  * State of all bucket diff entry spi operation (putAsync or removeAsync)
@@ -39,6 +39,8 @@ class ApplyBucketDiffState {
     std::unique_ptr<MessageTracker>         _tracker;
     std::shared_ptr<api::StorageReply>      _delayed_reply;
     MessageSender*                          _sender;
+    FileStorThreadMetrics::Op*              _op_metrics;
+    std::optional<framework::MilliSecTimer> _op_start_time;
     vespalib::RetainGuard                   _retain_guard;
     std::optional<framework::MilliSecTimer> _merge_start_time;
 
@@ -53,7 +55,7 @@ public:
     void sync_bucket_info();
     std::future<vespalib::string> get_future();
     void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, std::shared_ptr<api::StorageReply>&& delayed_reply);
-    void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, MessageSender& sender, std::shared_ptr<api::StorageReply>&& delayed_reply);
+    void set_delayed_reply(std::unique_ptr<MessageTracker>&& tracker, MessageSender& sender, FileStorThreadMetrics::Op* op_metrics, const framework::MilliSecTimer& op_start_time, std::shared_ptr<api::StorageReply>&& delayed_reply);
     void set_tracker(std::unique_ptr<MessageTracker>&& tracker);
     void set_merge_start_time(const framework::MilliSecTimer& merge_start_time);
     const spi::Bucket& get_bucket() const noexcept { return _bucket; }
