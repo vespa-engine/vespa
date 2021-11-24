@@ -120,7 +120,7 @@ jobs:
       - checkout: |
           mkdir -p workdir
           cd workdir
-          WORKDIR=$(pwd)
+          WORKDIR=$PWD
           git clone -q https://github.com/vespa-engine/vespa
           (cd vespa && git checkout $VESPA_REF && git tag v$VESPA_VERSION)
           git clone -q https://github.com/vespa-engine/system-test
