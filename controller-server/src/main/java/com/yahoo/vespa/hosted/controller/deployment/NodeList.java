@@ -87,6 +87,10 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
         return matching(NodeWithServices::needsNewConfig);
     }
 
+    public NodeList isStateful() {
+        return matching(NodeWithServices::isStateful);
+    }
+
     /** The nodes that are retiring. */
     public NodeList retiring() {
         return matching(node -> node.node().retired());

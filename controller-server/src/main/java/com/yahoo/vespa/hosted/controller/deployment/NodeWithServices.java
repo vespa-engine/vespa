@@ -82,6 +82,10 @@ public class NodeWithServices {
         return services.stream().anyMatch(service -> wantedConfigGeneration > service.currentGeneration());
     }
 
+    public boolean isStateful() {
+        return node.clusterType() == Node.ClusterType.content || node.clusterType() == Node.ClusterType.combined;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
