@@ -153,7 +153,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         /** The mapping from variable name to index */
         private final ImmutableMap<String, Integer> nameToIndex;
 
-        /** The names which needs to be bound externally when invoking this (i.e not constant or invocation */
+        /** The names which needs to be bound externally when invoking this (i.e. not constant or invocation) */
         private final ImmutableSet<String> arguments;
 
         /** The current values set */

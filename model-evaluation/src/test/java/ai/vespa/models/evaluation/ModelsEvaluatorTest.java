@@ -95,8 +95,8 @@ public class ModelsEvaluatorTest {
             evaluator.bind("argNone", Tensor.from(TensorType.fromSpec("tensor(d1{})"), "{{d1:foo}:0.1}"));
             evaluator.evaluate();
         }
-        catch (IllegalArgumentException e) {
-            assertEquals("'argNone' is not a valid argument in function 'test'. Expected arguments: arg2: tensor(d1{}), arg1: tensor(d0[1])",
+        catch (IllegalStateException e) {
+            assertEquals("Argument 'arg2' must be bound to a value of type tensor(d1{})",
                          Exceptions.toMessageString(e));
         }
 

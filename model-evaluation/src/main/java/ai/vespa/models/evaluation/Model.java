@@ -12,6 +12,7 @@ import com.yahoo.tensor.TensorType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -181,9 +182,7 @@ public class Model {
      */
     public FunctionEvaluator evaluatorOf(String ... names) {  // TODO: Parameter overloading?
         if (names.length == 0) {
-            if (functions.size() > 1)
-                throwUndeterminedFunction("More than one function is available in " + this + ", but no name is given");
-            return evaluatorOf(functions.get(0));
+            return evaluatorOf(functions);
         }
         else if (names.length == 1) {
             String name = names[0];
@@ -230,20 +229,13 @@ public class Model {
         return new FunctionEvaluator(function, requireContextPrototype(function.getName()).copy());
     }
 
-    /**
-     * Returns an evaluator which can be used to evaluate the given model in a single thread once.
-     *
-     * @param names The names identifying the outputs. If none are passed, evaluates all outputs.
-     * @throws IllegalArgumentException if the function is not present.
-     */
-    public MultiFunctionEvaluator multiEvaluatorOf(String ... names) {
-        List<FunctionEvaluator> evaluators;
-        if (names.length == 0) {
-            evaluators = functions.stream().map(this::evaluatorOf).collect(Collectors.toList());
-        } else {
-            evaluators = Arrays.stream(names).map(this::evaluatorOf).collect(Collectors.toList());
+    /** Returns a single-use evaluator of a function */
+    private FunctionEvaluator evaluatorOf(List<ExpressionFunction> functions) {
+        Map<String, LazyArrayContext> contexts = new HashMap<>();
+        for (ExpressionFunction function : functions) {
+            contexts.put(function.getName(), requireContextPrototype(function.getName()).copy());
         }
-        return new MultiFunctionEvaluator(evaluators);
+        return new FunctionEvaluator(functions, contexts);
     }
 
     private void throwUndeterminedFunction(String message) {

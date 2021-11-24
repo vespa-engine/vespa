@@ -35,27 +35,22 @@ public class OnnxEvaluatorTest {
         assertTrue(models.models().containsKey("add_mul"));
         assertTrue(models.models().containsKey("one_layer"));
 
-        FunctionEvaluator function = models.evaluatorOf("add_mul", "output1");
-        function.bind("input1", Tensor.from("tensor<float>(d0[1]):[2]"));
-        function.bind("input2", Tensor.from("tensor<float>(d0[1]):[3]"));
-        assertEquals(6.0, function.evaluate().sum().asDouble(), delta);
-
-        function = models.evaluatorOf("add_mul", "output2");
-        function.bind("input1", Tensor.from("tensor<float>(d0[1]):[2]"));
-        function.bind("input2", Tensor.from("tensor<float>(d0[1]):[3]"));
-        assertEquals(5.0, function.evaluate().sum().asDouble(), delta);
-
-        MultiFunctionEvaluator evaluator = models.multiEvaluatorOf("add_mul");
         Tensor input1 = Tensor.from("tensor<float>(d0[1]):[2]");
         Tensor input2 = Tensor.from("tensor<float>(d0[1]):[3]");
-        Map<String, Tensor> result = evaluator.bind("input1", input1).bind("input2", input2).evaluate();
-        assertEquals(6.0, result.get("output1").sum().asDouble(), delta);
-        assertEquals(5.0, result.get("output2").sum().asDouble(), delta);
 
-        evaluator = models.multiEvaluatorOf("add_mul", "output1");
-        result = evaluator.bind("input1", input1).bind("input2", input2).evaluate();
-        assertTrue("Result does not contain requested output", result.containsKey("output1"));
-        assertFalse("Result contains output that was not requested", result.containsKey("output2"));
+        FunctionEvaluator function = models.evaluatorOf("add_mul", "output1");
+        Tensor result = function.bind("input1", input1).bind("input2", input2).evaluate();
+        assertEquals(6.0, result.sum().asDouble(), delta);
+
+        function = models.evaluatorOf("add_mul", "output2");
+        result = function.bind("input1", input1).bind("input2", input2).evaluate();
+        assertEquals(5.0, result.sum().asDouble(), delta);
+
+        function = models.evaluatorOf("add_mul");  // contains two models
+        result = function.bind("input1", input1).bind("input2", input2).evaluate();
+        assertEquals(6.0, result.sum().asDouble(), delta);
+        assertEquals(6.0, function.result("output1").sum().asDouble(), delta);
+        assertEquals(5.0, function.result("output2").sum().asDouble(), delta);
 
         function = models.evaluatorOf("one_layer");
         function.bind("input", Tensor.from("tensor<float>(d0[2],d1[3]):[[0.1, 0.2, 0.3],[0.4,0.5,0.6]]"));

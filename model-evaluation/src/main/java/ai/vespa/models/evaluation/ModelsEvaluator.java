@@ -60,17 +60,6 @@ public class ModelsEvaluator extends AbstractComponent {
         return requireModel(modelName).evaluatorOf(names);
     }
 
-    /**
-     * Returns a model evaluator which can be used to evaluate multiple functions in a model
-     *
-     * @param modelName the name of the model
-     * @param names the names of the outputs to evaluate, or none if all should be evaluated
-     * @throws IllegalArgumentException if the function or model is not present
-     */
-    public MultiFunctionEvaluator multiEvaluatorOf(String modelName, String ... names) {
-        return requireModel(modelName).multiEvaluatorOf(names);
-    }
-
     /** Returns the given model, or throws a IllegalArgumentException if it does not exist */
     public Model requireModel(String name) {
         Model model = models.get(name);

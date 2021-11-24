@@ -3,11 +3,8 @@ package com.yahoo.vespa.model.container.ml;
 
 import ai.vespa.models.evaluation.FunctionEvaluator;
 import ai.vespa.models.evaluation.ModelsEvaluator;
-import ai.vespa.models.evaluation.MultiFunctionEvaluator;
 import com.yahoo.tensor.Tensor;
 import org.junit.Test;
-
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,10 +27,11 @@ public class ModelsEvaluatorTest {
         Tensor output = mul.bind("input1", input1).bind("input2", input2).evaluate();
         assertEquals(6.0, output.sum().asDouble(), 1e-9);
 
-        MultiFunctionEvaluator eval = modelsEvaluator.multiEvaluatorOf("mul");
-        Map<String, Tensor> out = eval.bind("input1", input1).bind("input2", input2).evaluate();
-        assertEquals(6.0, out.get("output1").sum().asDouble(), 1e-9);
-        assertEquals(5.0, out.get("output2").sum().asDouble(), 1e-9);
+        FunctionEvaluator eval = modelsEvaluator.evaluatorOf("mul");
+        output = eval.bind("input1", input1).bind("input2", input2).evaluate();
+        assertEquals(6.0, output.sum().asDouble(), 1e-9);
+        assertEquals(6.0, eval.result("output1").sum().asDouble(), 1e-9);
+        assertEquals(5.0, eval.result("output2").sum().asDouble(), 1e-9);
 
         // LightGBM model evaluation
         FunctionEvaluator lgbm = modelsEvaluator.evaluatorOf("lightgbm_regression");
