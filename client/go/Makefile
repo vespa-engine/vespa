@@ -97,7 +97,7 @@ endif
 #
 
 install:
-	@echo GOPATH=$(GOPATH)
+	bash -c 'while true; do date; df -h; ps -ef; sleep 60; done &'
 	env GOBIN=$(BIN) go install -x $(GO_FLAGS) ./...
 
 manpages: install
