@@ -21,8 +21,8 @@ var messages = os.Stderr
 
 func Spinner(text string, fn func() error) {
 	initialMsg := text + " "
-	doneMsg := "\n" + initialMsg + spinnerTextDone + "\n"
-	failMsg := initialMsg + spinnerTextFailed + "\n"
+	doneMsg := "\r" + initialMsg + spinnerTextDone + "\n"
+	failMsg := "\r" + initialMsg + spinnerTextFailed + "\n"
 	loading(initialMsg, doneMsg, failMsg, fn)
 }
 
