@@ -55,7 +55,7 @@ public class JRTConfigRequester implements RequestWaiter {
 
     private Instant timeForLastLogWarning;
     private int failures = 0;
-    private boolean closed = false;
+    private volatile boolean closed = false;
 
     /**
      * Returns a new requester
