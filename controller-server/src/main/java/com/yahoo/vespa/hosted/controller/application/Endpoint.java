@@ -482,6 +482,11 @@ public class Endpoint {
             return weight;
         }
 
+        /** Returns whether this routes to given deployment */
+        public boolean routesTo(DeploymentId deployment) {
+            return this.deployment.equals(deployment);
+        }
+
     }
 
     public static class EndpointBuilder {

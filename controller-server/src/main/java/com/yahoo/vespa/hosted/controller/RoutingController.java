@@ -53,6 +53,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -286,7 +288,8 @@ public class RoutingController {
             names.add(assignedRotation.rotationId().asString());
             containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(),
                                                          asString(Endpoint.Scope.global),
-                                                         names));
+                                                         names,
+                                                         OptionalInt.empty()));
         }
         // Add endpoints not backed by a rotation (i.e. other routing methods so that the config server always knows
         // about global names, even when not using rotations)
@@ -295,7 +298,8 @@ public class RoutingController {
                        .forEach((clusterId, clusterEndpoints) -> {
                            containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
                                                                         asString(Endpoint.Scope.global),
-                                                                        clusterEndpoints.mapToList(Endpoint::dnsName)));
+                                                                        clusterEndpoints.mapToList(Endpoint::dnsName),
+                                                                        OptionalInt.empty()));
                        });
         // Add application endpoints
         EndpointList applicationEndpoints = endpoints.scope(Endpoint.Scope.application);
@@ -313,12 +317,21 @@ public class RoutingController {
                                                           RecordData.fqdn(vipHostname),
                                                           Priority.normal);
         }
-        applicationEndpoints.groupingBy(Endpoint::cluster)
-                            .forEach((clusterId, clusterEndpoints) -> {
-                                containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
-                                                                             asString(Endpoint.Scope.application),
-                                                                             clusterEndpoints.mapToList(Endpoint::dnsName)));
-                            });
+        Map<ClusterSpec.Id, EndpointList> applicationEndpointsByCluster = applicationEndpoints.groupingBy(Endpoint::cluster);
+        for (var kv : applicationEndpointsByCluster.entrySet()) {
+            ClusterSpec.Id clusterId = kv.getKey();
+            EndpointList clusterEndpoints = kv.getValue();
+            for (var endpoint : clusterEndpoints) {
+                Optional<Endpoint.Target> matchingTarget = endpoint.targets().stream()
+                                                                   .filter(t -> t.routesTo(deployment))
+                                                                   .findFirst();
+                if (matchingTarget.isEmpty()) throw new IllegalStateException("No target found routing to " + deployment + " in " + endpoint);
+                containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
+                                                             asString(Endpoint.Scope.application),
+                                                             List.of(endpoint.dnsName()),
+                                                             OptionalInt.of(matchingTarget.get().weight())));
+            }
+        }
         return Collections.unmodifiableSet(containerEndpoints);
     }
 

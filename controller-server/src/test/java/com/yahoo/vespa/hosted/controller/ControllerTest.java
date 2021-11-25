@@ -13,7 +13,6 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -37,10 +36,10 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
-import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
-import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
+import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Test;
 
@@ -50,6 +49,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -617,33 +617,45 @@ public class ControllerTest {
 
     @Test
     public void testDnsUpdatesForApplicationEndpoint() {
-        var context = tester.newDeploymentContext("tenant1", "app1", "beta");
+        ApplicationId beta = ApplicationId.from("tenant1", "app1", "beta");
+        ApplicationId main = ApplicationId.from("tenant1", "app1", "main");
+        var context = tester.newDeploymentContext(beta);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("beta,main")
                 .region("us-west-1")
                 .region("us-east-3")
                 .applicationEndpoint("a", "default", "us-west-1",
-                                     Map.of(InstanceName.from("beta"), 2,
-                                            InstanceName.from("main"), 8))
+                                     Map.of(beta.instance(), 2,
+                                            main.instance(), 8))
                 .applicationEndpoint("b", "default", "us-west-1",
-                                     Map.of(InstanceName.from("beta"), 1,
-                                            InstanceName.from("main"), 1))
+                                     Map.of(beta.instance(), 1,
+                                            main.instance(), 1))
                 .applicationEndpoint("c", "default", "us-east-3",
-                                     Map.of(InstanceName.from("beta"), 4,
-                                            InstanceName.from("main"), 6))
+                                     Map.of(beta.instance(), 4,
+                                            main.instance(), 6))
                 .build();
         context.submit(applicationPackage).deploy();
 
-        // Endpoint names are passed to each deployment
-        DeploymentId usWest = context.deploymentIdIn(ZoneId.from("prod", "us-west-1"));
-        DeploymentId usEast = context.deploymentIdIn(ZoneId.from("prod", "us-east-3"));
-        Map<DeploymentId, List<String>> deploymentEndpoints = Map.of(usWest, List.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud", "b.app1.tenant1.us-west-1-r.vespa.oath.cloud"),
-                                                                     usEast, List.of("c.app1.tenant1.us-east-3-r.vespa.oath.cloud"));
-        deploymentEndpoints.forEach((zone, endpointNames) -> {
-            assertEquals("Endpoint names are passed to config server in " + zone,
-                         Set.of(new ContainerEndpoint("default", "application",
-                                                      endpointNames)),
-                         tester.configServer().containerEndpoints().get(zone));
+        ZoneId usWest = ZoneId.from("prod", "us-west-1");
+        ZoneId usEast = ZoneId.from("prod", "us-east-3");
+        // Expected container endpoints are passed to each deployment
+        Map<DeploymentId, Map<String, Integer>> deploymentEndpoints = Map.of(
+                new DeploymentId(beta, usWest), Map.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud", 2,
+                                                       "b.app1.tenant1.us-west-1-r.vespa.oath.cloud", 1),
+                new DeploymentId(main, usWest), Map.of("a.app1.tenant1.us-west-1-r.vespa.oath.cloud", 8,
+                                                       "b.app1.tenant1.us-west-1-r.vespa.oath.cloud", 1),
+                new DeploymentId(beta, usEast), Map.of("c.app1.tenant1.us-east-3-r.vespa.oath.cloud", 4),
+                new DeploymentId(main, usEast), Map.of("c.app1.tenant1.us-east-3-r.vespa.oath.cloud", 6)
+        );
+        deploymentEndpoints.forEach((deployment, endpoints) -> {
+            Set<ContainerEndpoint> expected = endpoints.entrySet().stream()
+                                                       .map(kv -> new ContainerEndpoint("default", "application",
+                                                                                        List.of(kv.getKey()),
+                                                                                        OptionalInt.of(kv.getValue())))
+                                                       .collect(Collectors.toSet());
+            assertEquals("Endpoint names for " + deployment + " are passed to config server",
+                         expected,
+                         tester.configServer().containerEndpoints().get(deployment));
         });
         context.flushDnsUpdates();
 
