@@ -53,7 +53,7 @@ KeywordExtractor::IndexPrefix::~IndexPrefix() = default;
 bool
 KeywordExtractor::IndexPrefix::Match(const char *idxName) const
 {
-    return (strncmp(idxName, _prefix.c_str(), _prefix.size()) == 0);
+    return _prefix.compare(idxName) == 0;
 }
 
 void

@@ -15,7 +15,7 @@ static int cmpname(const void *av, const void *bv)
         *(const DirectoryTraverse::Name *const *) av;
     const DirectoryTraverse::Name *const b =
         *(const DirectoryTraverse::Name *const *) bv;
-    return strcmp(a->_name.c_str(), b->_name.c_str());
+    return a->_name.compare(b->_name.c_str());
 }
 }
 

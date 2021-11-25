@@ -387,7 +387,6 @@ bool
 FastOS_UNIX_File::Delete(void)
 {
     assert( ! IsOpened());
-    assert( ! _filename.empty());
 
     return (unlink(_filename.c_str()) == 0);
 }
