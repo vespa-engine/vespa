@@ -127,4 +127,4 @@ func (c *mockHttpClient) Do(request *http.Request, timeout time.Duration) (*http
 		nil
 }
 
-func (c *mockHttpClient) UseCertificate(certificate tls.Certificate) {}
+func (c *mockHttpClient) UseCertificate(certificates []tls.Certificate) {}

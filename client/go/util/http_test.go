@@ -36,7 +36,7 @@ func (c mockHttpClient) Do(request *http.Request, timeout time.Duration) (respon
 		nil
 }
 
-func (c mockHttpClient) UseCertificate(certificate tls.Certificate) {}
+func (c mockHttpClient) UseCertificate(certificates []tls.Certificate) {}
 
 func TestHttpRequest(t *testing.T) {
 	ActiveHttpClient = mockHttpClient{}

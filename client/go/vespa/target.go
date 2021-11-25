@@ -90,7 +90,7 @@ func (t *customTarget) PrepareApiRequest(req *http.Request, sigKeyId string) err
 // Do sends request to this service. Any required authentication happens automatically.
 func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Response, error) {
 	if s.TLSOptions.KeyPair.Certificate != nil {
-		util.ActiveHttpClient.UseCertificate(s.TLSOptions.KeyPair)
+		util.ActiveHttpClient.UseCertificate([]tls.Certificate{s.TLSOptions.KeyPair})
 	}
 	return util.HttpDo(request, timeout, s.Description())
 }
@@ -536,7 +536,7 @@ type requestFunc func() *http.Request
 
 func wait(fn responseFunc, reqFn requestFunc, certificate *tls.Certificate, timeout time.Duration) (int, error) {
 	if certificate != nil {
-		util.ActiveHttpClient.UseCertificate(*certificate)
+		util.ActiveHttpClient.UseCertificate([]tls.Certificate{*certificate})
 	}
 	var (
 		httpErr    error
