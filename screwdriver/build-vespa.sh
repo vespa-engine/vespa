@@ -40,10 +40,10 @@ case $SHOULD_BUILD in
     mvn -V $VESPA_MAVEN_EXTRA_OPTS install
     ;;
   go)
-    make -C client/go -j ${NUM_THREADS}
+    make -C client/go
     ;;
   *)
-    make -C client/go -j ${NUM_THREADS}
+    make -C client/go
     ./bootstrap.sh java
     time mvn -V $VESPA_MAVEN_EXTRA_OPTS install
     cmake3 -DVESPA_UNPRIVILEGED=no .
