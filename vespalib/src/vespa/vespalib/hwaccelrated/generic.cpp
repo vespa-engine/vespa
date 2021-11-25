@@ -156,13 +156,18 @@ GenericAccelrator::populationCount(const uint64_t *a, size_t sz) const {
 }
 
 double
+GenericAccelrator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const {
+    return helper::euclideanDistance(a, b, sz);
+}
+
+double
 GenericAccelrator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const {
-    return euclideanDistanceT<float, 8>(a, b, sz);
+    return euclideanDistanceT<float, 2>(a, b, sz);
 }
 
 double
 GenericAccelrator::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const {
-    return euclideanDistanceT<double, 4>(a, b, sz);
+    return euclideanDistanceT<double, 2>(a, b, sz);
 }
 
 void

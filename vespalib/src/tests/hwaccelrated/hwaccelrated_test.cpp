@@ -3,6 +3,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/hwaccelrated/generic.h>
+#include <vespa/log/log.h>
+LOG_SETUP("hwaccelrated_test");
 
 using namespace vespalib;
 
@@ -15,26 +17,33 @@ std::vector<T> createAndFill(size_t sz) {
     return v;
 }
 
-template<typename T>
-void verifyEuclideanDistance(const hwaccelrated::IAccelrated & accel) {
-    const size_t testLength(255);
+template<typename T, typename P>
+void verifyEuclideanDistance(const hwaccelrated::IAccelrated & accel, size_t testLength) {
     srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
-        T sum(0);
+        P sum(0);
         for (size_t i(j); i < testLength; i++) {
-            sum += (a[i] - b[i]) * (a[i] - b[i]);
+            P d = P(a[i]) - P(b[i]);
+            sum += d * d;
         }
-        T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
+        P hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
         EXPECT_EQUAL(sum, hwComputedSum);
     }
 }
 
+void
+verifyEuclideanDistance(const hwaccelrated::IAccelrated & accelrator, size_t testLength) {
+    verifyEuclideanDistance<int8_t, float>(accelrator, testLength);
+    verifyEuclideanDistance<float, float>(accelrator, testLength);
+    verifyEuclideanDistance<double, float>(accelrator, testLength);
+}
+
 TEST("test euclidean distance") {
     hwaccelrated::GenericAccelrator genericAccelrator;
-    verifyEuclideanDistance<float>(genericAccelrator);
-    verifyEuclideanDistance<double >(genericAccelrator);
+    verifyEuclideanDistance(hwaccelrated::GenericAccelrator(),255);
+    verifyEuclideanDistance(hwaccelrated::IAccelrated::getAccelerator(),255);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
