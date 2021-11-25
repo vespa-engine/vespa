@@ -6,6 +6,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
+import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.http2.HTTP2Stream;
@@ -17,7 +18,6 @@ import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import javax.servlet.http.HttpServletRequest;
-import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -81,8 +81,10 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             addNonNullValue(builder, request.getHeader("Referer"), RequestLogEntry.Builder::referer);
             addNonNullValue(builder, request.getQueryString(), RequestLogEntry.Builder::rawQuery);
 
-            Principal principal = (Principal) request.getAttribute(ServletRequest.JDISC_REQUEST_PRINCIPAL);
-            addNonNullValue(builder, principal, RequestLogEntry.Builder::userPrincipal);
+            HttpRequest jdiscRequest  = (HttpRequest) request.getAttribute(HttpRequest.class.getName());
+            if (jdiscRequest != null) {
+                addNonNullValue(builder, jdiscRequest.getUserPrincipal(), RequestLogEntry.Builder::userPrincipal);
+            }
 
             String requestFilterId = (String) request.getAttribute(ServletRequest.JDISC_REQUEST_CHAIN);
             addNonNullValue(builder, requestFilterId, (b, chain) -> b.addExtraAttribute("request-chain", chain));

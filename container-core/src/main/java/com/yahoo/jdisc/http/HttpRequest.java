@@ -74,7 +74,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
     private final long jvmRelativeCreatedAt = System.nanoTime();
     private final HeaderFields trailers = new HeaderFields();
     private final Map<String, List<String>> parameters = new HashMap<>();
-    private Principal principal;
+    private volatile Principal principal;
     private final long connectedAt;
     private Method method;
     private Version version;
