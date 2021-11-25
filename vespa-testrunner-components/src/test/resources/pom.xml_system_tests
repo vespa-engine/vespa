@@ -6,7 +6,7 @@
     <version>1.0.0</version>
 
     <properties>
-        <junit_version>5.7.0</junit_version>
+        <junit_version>5.8.1</junit_version>
         <surefire_version>2.22.0</surefire_version>
         <my-comp.jar.path>components/my-comp.jar</my-comp.jar.path>
         <main.jar.path>main.jar</main.jar.path>

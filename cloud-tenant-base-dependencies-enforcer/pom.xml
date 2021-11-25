@@ -32,8 +32,8 @@
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.44.v20210927</jetty.version>
         <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
-        <junit5.version>5.7.0</junit5.version>
-        <junit5.platform.version>1.7.0</junit5.platform.version>
+        <junit5.version>5.8.1</junit5.version>
+        <junit5.platform.version>1.8.1</junit5.platform.version>
         <onnxruntime.version>1.8.0</onnxruntime.version>
         <org.lz4.version>1.8.0</org.lz4.version>
         <org.json.version>20090211</org.json.version>
