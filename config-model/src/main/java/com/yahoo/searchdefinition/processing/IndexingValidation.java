@@ -5,11 +5,11 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
-import com.yahoo.document.PositionDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
@@ -153,7 +153,7 @@ public class IndexingValidation extends Processor {
                                        createCompatType(mapType.getValueType()));
             } else if (origType instanceof WeightedSetDataType) {
                 return DataType.getWeightedSet(createCompatType(((WeightedSetDataType)origType).getNestedType()));
-            } else if (origType == PositionDataType.INSTANCE) {
+            } else if (GeoPos.isPos(origType)) {
                 return DataType.LONG;
             } else {
                 return origType;

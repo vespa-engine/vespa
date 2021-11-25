@@ -8,6 +8,7 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
@@ -34,7 +35,7 @@ public class AdjustPositionSummaryFields extends Processor {
 
     private void scanSummary(DocumentSummary summary) {
         for (SummaryField summaryField : summary.getSummaryFields().values()) {
-            if ( ! isPositionDataType(summaryField.getDataType())) continue;
+            if ( ! GeoPos.isAnyPos(summaryField.getDataType())) continue;
 
             String originalSource = summaryField.getSingleSource();
             if (originalSource.indexOf('.') == -1) { // Eliminate summary fields with pos.x or pos.y as source
@@ -110,10 +111,6 @@ public class AdjustPositionSummaryFields extends Processor {
     private static boolean hasZCurveSuffix(String name) {
         String suffix = PositionDataType.getZCurveFieldName("");
         return name.length() > suffix.length() && name.substring(name.length() - suffix.length()).equals(suffix);
-    }
-
-    private static boolean isPositionDataType(DataType dataType) {
-        return dataType.equals(PositionDataType.INSTANCE) || dataType.equals(DataType.getArray(PositionDataType.INSTANCE));
     }
 
     private static DataType makeZCurveDataType(DataType dataType) {

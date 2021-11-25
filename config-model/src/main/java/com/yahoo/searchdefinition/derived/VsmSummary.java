@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
@@ -37,7 +37,7 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
 
             if (doMapField(schema, summaryField)) {
                 SDField sdField = schema.getConcreteField(summaryField.getName());
-                if (sdField != null && PositionDataType.INSTANCE.equals(sdField.getDataType())) {
+                if (sdField != null && GeoPos.isPos(sdField)) {
                     summaryMap.put(summaryField, Collections.singletonList(summaryField.getName()));
                 } else {
                     summaryMap.put(summaryField, from);
