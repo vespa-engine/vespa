@@ -100,7 +100,7 @@ func (s *Service) Wait(timeout time.Duration) (int, error) {
 	url := s.BaseURL
 	switch s.Name {
 	case deployService:
-		url += "/status.html" // because /ApplicationStatus is not publicly reachable in Vespa Cloud
+		url += "/status.html" // because /ApplicationStatus is not publicly reachable in Vespa Cloud.
 	case queryService, documentService:
 		url += "/ApplicationStatus"
 	default:
