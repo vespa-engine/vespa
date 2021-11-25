@@ -3,11 +3,11 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.subscription.ConfigInstanceUtil;
 import com.yahoo.document.DataType;
-import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
 import com.yahoo.searchdefinition.document.Sorting;
@@ -69,8 +69,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     private static boolean unsupportedFieldType(ImmutableSDField field) {
         return (field.usesStructOrMap() &&
                 !isSupportedComplexField(field) &&
-                !field.getDataType().equals(PositionDataType.INSTANCE) &&
-                !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)));
+                !GeoPos.isAnyPos(field));
     }
 
     /** Returns an attribute by name, or null if it doesn't exist */

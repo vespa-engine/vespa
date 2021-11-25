@@ -2,8 +2,8 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;
@@ -58,9 +58,7 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         if (field.hasFullIndexingDocprocRights())
             docFields.add(field.getName());
 
-        if (field.usesStructOrMap() &&
-            ! field.getDataType().equals(PositionDataType.INSTANCE) &&
-            ! field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE))) {
+        if (field.usesStructOrMap() && ! GeoPos.isAnyPos(field)) {
             return; // unsupported
         }
 

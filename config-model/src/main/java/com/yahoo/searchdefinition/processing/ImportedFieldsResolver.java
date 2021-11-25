@@ -9,6 +9,7 @@ import com.yahoo.searchdefinition.DocumentReferences;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
@@ -49,8 +50,7 @@ public class ImportedFieldsResolver extends Processor {
     private void resolveImportedField(TemporaryImportedField importedField, boolean validate) {
         DocumentReference reference = validateDocumentReference(importedField);
         ImmutableSDField targetField = getTargetField(importedField, reference);
-        if (targetField.getDataType().equals(PositionDataType.INSTANCE) ||
-                targetField.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE))) {
+        if (GeoPos.isAnyPos(targetField)) {
             resolveImportedPositionField(importedField, reference, targetField, validate);
         } else if (isArrayOfSimpleStruct(targetField)) {
             resolveImportedArrayOfStructField(importedField, reference, targetField, validate);

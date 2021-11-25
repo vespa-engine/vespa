@@ -3,9 +3,9 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.DataType;
-import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
@@ -62,8 +62,7 @@ public class ComplexAttributeFieldsValidator extends Validator {
 
     private static boolean isSupportedComplexField(ImmutableSDField field) {
         return (ComplexAttributeFieldUtils.isSupportedComplexField(field) ||
-                field.getDataType().equals(PositionDataType.INSTANCE) ||
-                field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)));
+                GeoPos.isAnyPos(field));
     }
 
     private static String toString(ImmutableSDField field) {

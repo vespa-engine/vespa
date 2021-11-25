@@ -6,7 +6,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.NumericDataType;
-import com.yahoo.document.PositionDataType;
 import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.searchdefinition.Index;
@@ -15,6 +14,7 @@ import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.FieldSet;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -91,12 +91,8 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         }
     }
 
-    private static boolean isPositionArrayField(ImmutableSDField field) {
-        return field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE));
-    }
-
     private static boolean isPositionField(ImmutableSDField field) {
-        return field.getDataType().equals(PositionDataType.INSTANCE) || isPositionArrayField(field);
+        return GeoPos.isAnyPos(field);
     }
 
     @Override

@@ -2,9 +2,9 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
@@ -60,9 +60,8 @@ public class ImportedFields extends Derived implements ImportedFieldsConfig.Prod
 
     private static void considerComplexField(ImportedFieldsConfig.Builder builder, ImportedComplexField field) {
         ImmutableSDField targetField = field.targetField();
-        if (targetField.getDataType().equals(PositionDataType.INSTANCE) ||
-                targetField.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE))) {
-
+        if (GeoPos.isAnyPos(targetField)) {
+            // no action needed
         } else if (isArrayOfSimpleStruct(targetField)) {
             considerNestedFields(builder, field);
         } else if (isMapOfSimpleStruct(targetField)) {

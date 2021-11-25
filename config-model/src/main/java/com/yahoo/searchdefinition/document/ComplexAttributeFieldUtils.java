@@ -59,8 +59,7 @@ public class ComplexAttributeFieldUtils {
     }
 
     private static boolean isStructWithPrimitiveStructFieldAttributes(DataType type, ImmutableSDField field) {
-        if (type instanceof StructDataType &&
-                !(type.equals(PositionDataType.INSTANCE))) {
+        if (type instanceof StructDataType && ! GeoPos.isPos(type)) {
             for (ImmutableSDField structField : field.getStructFields()) {
                 Attribute attribute = structField.getAttributes().get(structField.getName());
                 if (attribute != null) {

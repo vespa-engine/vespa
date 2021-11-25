@@ -8,6 +8,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -142,10 +143,7 @@ public class CreatePositionZCurve extends Processor {
     }
 
     private static boolean isSupportedPositionType(DataType dataType) {
-        if (dataType instanceof ArrayDataType) {
-            dataType = ((ArrayDataType)dataType).getNestedType();
-        }
-        return dataType.equals(PositionDataType.INSTANCE);
+        return GeoPos.isAnyPos(dataType);
     }
 
     private static class RemoveSummary extends ExpressionConverter {
