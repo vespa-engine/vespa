@@ -15,17 +15,16 @@ static int cmpname(const void *av, const void *bv)
         *(const DirectoryTraverse::Name *const *) av;
     const DirectoryTraverse::Name *const b =
         *(const DirectoryTraverse::Name *const *) bv;
-    return strcmp(a->_name, b->_name);
+    return a->_name.compare(b->_name.c_str());
 }
 }
 
 DirectoryTraverse::Name::Name(const char *name)
-    : _name(nullptr),
+    : _name(name),
       _next(nullptr)
 {
-    _name = strdup(name);
 }
-DirectoryTraverse::Name::~Name() { free(_name); }
+DirectoryTraverse::Name::~Name() = default;
 
 DirectoryTraverse::Name *
 DirectoryTraverse::Name::sort(Name *head, int count)
@@ -132,19 +131,15 @@ DirectoryTraverse::ScanSingleDir()
     assert(_nameHead == nullptr);
     assert(_nameCount == 0);
     delete _curDir;
-    free(_fullDirName);
-    _fullDirName = nullptr;
+    _fullDirName.clear();
     _curDir = UnQueueDir();
     if (_curDir == nullptr)
         return;
-    _fullDirName = (char *) malloc(strlen(_baseDir) + 1 +
-                                   strlen(_curDir->_name) + 1);
-    strcpy(_fullDirName, _baseDir);
-    if (_curDir->_name[0] != '\0') {
-        strcat(_fullDirName, "/");
-        strcat(_fullDirName, _curDir->_name);
+    _fullDirName = _baseDir;
+    if ( ! _curDir->_name.empty()) {
+        _fullDirName += "/" + _curDir->_name;
     }
-    FastOS_DirectoryScan *dirscan = new FastOS_DirectoryScan(_fullDirName);
+    FastOS_DirectoryScan *dirscan = new FastOS_DirectoryScan(_fullDirName.c_str());
     while (dirscan->ReadNext()) {
         const char *name = dirscan->GetName();
         if (strcmp(name, ".") == 0 ||
@@ -171,13 +166,8 @@ DirectoryTraverse::NextName()
     if (_nameHead == nullptr)
         return false;
     _curName = UnQueueName();
-    free(_fullName);
-    _fullName = (char *) malloc(strlen(_fullDirName) + 1 +
-                                strlen(_curName->_name) + 1);
-    strcpy(_fullName, _fullDirName);
-    _relName = _fullName + strlen(_baseDir) + 1;
-    strcat(_fullName, "/");
-    strcat(_fullName, _curName->_name);
+    _fullName = _fullDirName + "/" + _curName->_name;
+    _relName = _fullName.c_str() + (_baseDir.size() + 1);
     return true;
 }
 
@@ -193,13 +183,8 @@ DirectoryTraverse::NextRemoveDir()
         return false;
     curName = _rdirHead;
     _rdirHead = curName->_next;
-    free(_fullName);
-    _fullName = (char *) malloc(strlen(_baseDir) + 1 +
-                                strlen(curName->_name) + 1);
-    strcpy(_fullName, _baseDir);
-    _relName = _fullName + strlen(_baseDir) + 1;
-    strcat(_fullName, "/");
-    strcat(_fullName, curName->_name);
+    _fullName = _baseDir + "/" + curName->_name;
+    _relName = _fullName.c_str() + _baseDir.size() + 1;
     delete curName;
     return true;
 }
@@ -226,7 +211,7 @@ DirectoryTraverse::RemoveTree()
         const char *fullname = GetFullName();
         FastOS_File::RemoveDirectory(fullname);
     }
-    FastOS_File::RemoveDirectory(_baseDir);
+    FastOS_File::RemoveDirectory(_baseDir.c_str());
     return true;
 }
 
@@ -252,7 +237,7 @@ DirectoryTraverse::GetTreeSize()
 }
 
 DirectoryTraverse::DirectoryTraverse(const char *baseDir)
-    : _baseDir(nullptr),
+    : _baseDir(baseDir),
       _nameHead(nullptr),
       _nameCount(0),
       _dirHead(nullptr),
@@ -261,11 +246,10 @@ DirectoryTraverse::DirectoryTraverse(const char *baseDir)
       _rdirHead(nullptr),
       _curDir(nullptr),
       _curName(nullptr),
-      _fullDirName(nullptr),
-      _fullName(nullptr),
+      _fullDirName(),
+      _fullName(),
       _relName(nullptr)
 {
-    _baseDir = strdup(baseDir);
     QueueDir("");
     ScanSingleDir();
 }
@@ -273,9 +257,6 @@ DirectoryTraverse::DirectoryTraverse(const char *baseDir)
 
 DirectoryTraverse::~DirectoryTraverse()
 {
-    free(_fullDirName);
-    free(_fullName);
-    free(_baseDir);
     delete _curDir;
     delete _curName;
     PushPushedDirs();

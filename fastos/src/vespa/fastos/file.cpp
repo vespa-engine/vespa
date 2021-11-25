@@ -39,7 +39,7 @@ static const size_t MAX_WRITE_CHUNK_SIZE = 0x4000000; // 64 MB
 FastOS_FileInterface::FastOS_FileInterface(const char *filename)
     : _fAdviseOptions(_defaultFAdviseOptions),
       _writeChunkSize(MAX_WRITE_CHUNK_SIZE),
-      _filename(nullptr),
+      _filename(),
       _openFlags(0),
       _directIOEnabled(false),
       _syncWritesEnabled(false)
@@ -49,10 +49,7 @@ FastOS_FileInterface::FastOS_FileInterface(const char *filename)
 }
 
 
-FastOS_FileInterface::~FastOS_FileInterface()
-{
-    free(_filename);
-}
+FastOS_FileInterface::~FastOS_FileInterface() = default;
 
 bool FastOS_FileInterface::InitializeClass ()
 {
@@ -358,18 +355,14 @@ FastOS_FileInterface::MakeDirIfNotPresentOrExit(const char *name)
 void
 FastOS_FileInterface::SetFileName(const char *filename)
 {
-    if (_filename != nullptr) {
-        free(_filename);
-    }
-
-    _filename = strdup(filename);
+    _filename = filename;
 }
 
 
 const char *
 FastOS_FileInterface::GetFileName() const
 {
-    return (_filename != nullptr) ? _filename : "";
+    return _filename.c_str();
 }
 
 
@@ -502,11 +495,8 @@ void FastOS_FileInterface::dropFromCache() const
 }
 
 FastOS_DirectoryScanInterface::FastOS_DirectoryScanInterface(const char *path)
-    : _searchPath(strdup(path))
+    : _searchPath(path)
 {
 }
 
-FastOS_DirectoryScanInterface::~FastOS_DirectoryScanInterface()
-{
-    free(_searchPath);
-}
+FastOS_DirectoryScanInterface::~FastOS_DirectoryScanInterface() = default;

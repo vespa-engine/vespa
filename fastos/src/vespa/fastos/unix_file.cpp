@@ -258,7 +258,7 @@ FastOS_UNIX_File::Open(unsigned int openFlags, const char *filename)
         }
         unsigned int accessFlags = CalcAccessFlags(openFlags);
 
-        _filedes = open(_filename, accessFlags, 0664);
+        _filedes = open(_filename.c_str(), accessFlags, 0664);
 
         rc = (_filedes != -1);
 
@@ -386,10 +386,9 @@ FastOS_UNIX_File::Delete(const char *name)
 bool
 FastOS_UNIX_File::Delete(void)
 {
-    assert(!IsOpened());
-    assert(_filename != nullptr);
+    assert( ! IsOpened());
 
-    return (unlink(_filename) == 0);
+    return (unlink(_filename.c_str()) == 0);
 }
 
 bool FastOS_UNIX_File::Rename (const char *currentFileName, const char *newFileName)

@@ -1,14 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "process.h"
-#include <cstring>
 
 FastOS_ProcessInterface::FastOS_ProcessInterface (const char *cmdLine,
                          bool pipeStdin,
                          FastOS_ProcessRedirectListener *stdoutListener,
                          FastOS_ProcessRedirectListener *stderrListener,
                          int bufferSize) :
-    _cmdLine(nullptr),
+    _cmdLine(cmdLine),
     _pipeStdin(pipeStdin),
     _stdoutListener(stdoutListener),
     _stderrListener(stderrListener),
@@ -16,10 +15,6 @@ FastOS_ProcessInterface::FastOS_ProcessInterface (const char *cmdLine,
     _next(nullptr),
     _prev(nullptr)
 {
-    _cmdLine = strdup(cmdLine);
 }
 
-FastOS_ProcessInterface::~FastOS_ProcessInterface ()
-{
-    free (_cmdLine);
-}
+FastOS_ProcessInterface::~FastOS_ProcessInterface () = default;

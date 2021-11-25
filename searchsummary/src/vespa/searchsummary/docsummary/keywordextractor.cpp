@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "docsumstate.h"
 #include "keywordextractor.h"
 #include "idocsumenvironment.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
@@ -20,7 +19,7 @@ bool useful(search::ParseItem::ItemCreator creator)
 
 KeywordExtractor::KeywordExtractor(IDocsumEnvironment * env)
     : _env(env),
-      _legalPrefixes(NULL),
+      _legalPrefixes(nullptr),
       _legalIndexes()
 {
 }
@@ -28,7 +27,7 @@ KeywordExtractor::KeywordExtractor(IDocsumEnvironment * env)
 
 KeywordExtractor::~KeywordExtractor()
 {
-    while (_legalPrefixes != NULL) {
+    while (_legalPrefixes != nullptr) {
         IndexPrefix *tmp = _legalPrefixes;
         _legalPrefixes = tmp->_next;
         delete tmp;
@@ -42,32 +41,25 @@ KeywordExtractor::IsLegalIndexName(const char *idxName) const
 }
 
 KeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix, IndexPrefix **list)
-    : _prefix(NULL),
-      _prefixLen(0),
-      _next(NULL)
+    : _prefix(prefix),
+      _next(nullptr)
 {
-    _prefix = strdup(prefix);
-    assert(_prefix != NULL);
-    _prefixLen = strlen(prefix);
     _next = *list;
     *list = this;
 }
 
-KeywordExtractor::IndexPrefix::~IndexPrefix()
-{
-    free(_prefix);
-}
+KeywordExtractor::IndexPrefix::~IndexPrefix() = default;
 
 bool
 KeywordExtractor::IndexPrefix::Match(const char *idxName) const
 {
-    return (strncmp(idxName, _prefix, _prefixLen) == 0);
+    return _prefix.compare(idxName) == 0;
 }
 
 void
 KeywordExtractor::AddLegalIndexSpec(const char *spec)
 {
-    if (spec == NULL)
+    if (spec == nullptr)
         return;
 
     vespalib::string toks(spec); // tokens
@@ -107,9 +99,9 @@ KeywordExtractor::GetLegalIndexSpec()
 {
     vespalib::string spec;
 
-    if (_legalPrefixes != NULL) {
+    if (_legalPrefixes != nullptr) {
         for (IndexPrefix *pt = _legalPrefixes;
-             pt != NULL; pt = pt->_next) {
+             pt != nullptr; pt = pt->_next) {
             if (spec.size() > 0)
                 spec.append(';');
             spec.append(pt->_prefix);
@@ -131,7 +123,7 @@ KeywordExtractor::IsLegalIndex(vespalib::stringref idxS) const
 {
     vespalib::string resolvedIdxName;
 
-    if (_env != NULL) {
+    if (_env != nullptr) {
         resolvedIdxName = _env->lookupIndex(idxS);
     } else {
 
@@ -238,7 +230,7 @@ KeywordExtractor::ExtractKeywords(vespalib::stringref buf) const
 
     // Must now allocate a string and copy the data from the rawbuf
     void *result = malloc(keywords.GetUsedLen());
-    if (result != NULL) {
+    if (result != nullptr) {
         memcpy(result, keywords.GetDrainPos(), keywords.GetUsedLen());
     }
     return static_cast<char *>(result);
