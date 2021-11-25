@@ -12,6 +12,7 @@ import com.yahoo.messagebus.Trace;
 import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.OperationStatus;
 
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,10 +26,12 @@ public class FeedReplyReader implements ReplyHandler {
     private static final Logger log = Logger.getLogger(FeedReplyReader.class.getName());
     private final Metric metric;
     private final DocumentApiMetrics metricsHelper;
+    private final Metric.Context testAndSetMetricCtx;
 
     public FeedReplyReader(Metric metric, DocumentApiMetrics metricsHelper) {
         this.metric = metric;
         this.metricsHelper = metricsHelper;
+        this.testAndSetMetricCtx = metric.createContext(Map.of("operationType", "testAndSet"));
     }
 
     @Override
@@ -52,7 +55,7 @@ public class FeedReplyReader implements ReplyHandler {
             metricsHelper.reportSuccessful(type, latencyInSeconds);
             metric.add(MetricNames.SUCCEEDED, 1, null);
             if (!conditionMet)
-                metric.add(MetricNames.TEST_AND_SET_CONDITION_NOT_MET, 1, null);
+                metric.add(MetricNames.CONDITION_NOT_MET, 1, testAndSetMetricCtx);
             enqueue(context, "Document processed.", ErrorCode.OK, !conditionMet, reply.getTrace());
         }
     }
