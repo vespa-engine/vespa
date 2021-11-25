@@ -244,6 +244,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 .forEach(ce -> ce.names().forEach(
                         name -> endpoints.add(ApplicationClusterEndpoint.builder()
                                                       .scope(ce.scope())
+                                                      .weight(Long.valueOf(ce.weight().orElse(1)).intValue()) // Default to weight=1 if not set
                                                       .sharedL4Routing()
                                                       .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
                                                       .hosts(hosts)

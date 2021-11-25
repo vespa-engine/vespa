@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -90,18 +92,21 @@ public class PrepareParamsTest {
     public void testCorrectParsingWithContainerEndpoints() throws IOException {
         var endpoints = List.of(new ContainerEndpoint("qrs1", ApplicationClusterEndpoint.Scope.global,
                                                       List.of("c1.example.com",
-                                                              "c2.example.com")),
+                                                              "c2.example.com"), OptionalInt.of(3)),
                                 new ContainerEndpoint("qrs2",ApplicationClusterEndpoint.Scope.global,
                                                       List.of("c3.example.com",
                                                               "c4.example.com")));
         var param = "[\n" +
                     "  {\n" +
                     "    \"clusterId\": \"qrs1\",\n" +
-                    "    \"names\": [\"c1.example.com\", \"c2.example.com\"]\n" +
+                    "    \"names\": [\"c1.example.com\", \"c2.example.com\"],\n" +
+                    "    \"scope\": \"global\",\n" +
+                    "    \"weight\": 3\n" +
                     "  },\n" +
                     "  {\n" +
                     "    \"clusterId\": \"qrs2\",\n" +
-                    "    \"names\": [\"c3.example.com\", \"c4.example.com\"]\n" +
+                    "    \"names\": [\"c3.example.com\", \"c4.example.com\"],\n" +
+                    "    \"scope\": \"global\"\n" +
                     "  }\n" +
                     "]";
 

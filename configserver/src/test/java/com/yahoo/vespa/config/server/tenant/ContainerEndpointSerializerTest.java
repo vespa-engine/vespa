@@ -7,6 +7,8 @@ import com.yahoo.slime.Slime;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,7 +52,7 @@ public class ContainerEndpointSerializerTest {
 
     @Test
     public void writeReadSingleEndpoint() {
-        final var endpoint = new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.global, List.of("a", "b"));
+        final var endpoint = new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.global, List.of("a", "b"), OptionalInt.of(1));
         final var serialized = new Slime();
         ContainerEndpointSerializer.endpointToSlime(serialized.setObject(), endpoint);
         final var deserialized = ContainerEndpointSerializer.endpointFromSlime(serialized.get());
