@@ -44,7 +44,12 @@ case $SHOULD_BUILD in
     echo "git version: $(git --version)"
     echo "go version: $(go version)"
 
-    GOTMPDIR="$PWD"/tmp make -C client/go -j ${NUM_THREADS}
+    while true; do du -sh ~/go; sleep 60; done &
+    pid=$!
+
+    make -C client/go -j ${NUM_THREADS}
+
+    kill $pid
     ;;
   *)
     make -C client/go -j ${NUM_THREADS}
