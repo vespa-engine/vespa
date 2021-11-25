@@ -165,7 +165,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("httpapi_succeeded.rate"));
         metrics.add(new Metric("httpapi_failed.rate"));
         metrics.add(new Metric("httpapi_parse_error.rate"));
-        addMetric(metrics, "httpapi_test_and_set_condition_not_met", List.of("rate"));
+        addMetric(metrics, "httpapi_condition_not_met", List.of("rate"));
 
         metrics.add(new Metric("mem.heap.total.average"));
         metrics.add(new Metric("mem.heap.free.average"));
