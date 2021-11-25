@@ -6,17 +6,11 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-func init() {
-	if vespa.Auth0AccessTokenEnabled() {
-		rootCmd.AddCommand(loginCmd)
-	}
-}
-
 var loginCmd = &cobra.Command{
 	Use:               "login",
 	Args:              cobra.NoArgs,
 	Short:             "Authenticate the Vespa CLI",
-	Example:           "$ vespa login",
+	Example:           "$ vespa auth login",
 	DisableAutoGenTag: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()

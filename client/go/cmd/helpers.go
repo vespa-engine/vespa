@@ -205,7 +205,13 @@ func getTarget() vespa.Target {
 		}
 		kp, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
 		if err != nil {
-			fatalErrHint(err, "Deployment to cloud requires a certificate. Try 'vespa cert'")
+			var msg string
+			if vespa.Auth0AccessTokenEnabled() {
+				msg = "Deployment to cloud requires a certificate. Try 'vespa auth cert'"
+			} else {
+				msg = "Deployment to cloud requires a certificate. Try 'vespa cert'"
+			}
+			fatalErrHint(err, msg)
 		}
 		var cloudAuth string
 		if vespa.Auth0AccessTokenEnabled() {
@@ -262,7 +268,13 @@ func getDeploymentOpts(cfg *Config, pkg vespa.ApplicationPackage, target vespa.T
 	if opts.IsCloud() {
 		deployment := deploymentFromArgs()
 		if !opts.ApplicationPackage.HasCertificate() {
-			fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", "Try 'vespa cert'")
+			var msg string
+			if vespa.Auth0AccessTokenEnabled() {
+				msg = "Try 'vespa auth cert'"
+			} else {
+				msg = "Try 'vespa cert'"
+			}
+			fatalErrHint(fmt.Errorf("Missing certificate in application package"), "Applications in Vespa Cloud require a certificate", msg)
 			return opts
 		}
 		var err error
