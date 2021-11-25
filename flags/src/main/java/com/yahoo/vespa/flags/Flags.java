@@ -362,7 +362,7 @@ public class Flags {
 
     public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
             "jdk-version", "11",
-            List.of("hmusum"), "2021-10-25", "2021-11-25",
+            List.of("hmusum"), "2021-10-25", "2022-01-10",
             "JDK version to use on host and inside containers. Note application-id dimension only applies for container, " +
                     "while hostname and node type applies for host.",
             "Takes effect on restart for Docker container and on next host-admin tick for host",
