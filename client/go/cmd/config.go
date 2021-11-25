@@ -155,7 +155,7 @@ func (c *Config) ReadAPIKey(tenantName string) ([]byte, error) {
 }
 
 func (c *Config) AuthConfigPath() string {
-	return filepath.Join(c.Home, "auth0.json")
+	return filepath.Join(c.Home, "auth.json")
 }
 
 func (c *Config) ReadSessionID(app vespa.ApplicationID) (int64, error) {
