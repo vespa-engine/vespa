@@ -53,7 +53,7 @@ KeywordExtractor::IndexPrefix::~IndexPrefix() = default;
 bool
 KeywordExtractor::IndexPrefix::Match(const char *idxName) const
 {
-    return _prefix.compare(idxName) == 0;
+    return vespalib::starts_with(idxName, _prefix);
 }
 
 void
