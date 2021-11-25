@@ -53,9 +53,9 @@ public class FileDistributionAndUrlDownload {
     }
 
     private static ConnectionPool createConnectionPool(Supervisor supervisor, ConfigSourceSet source) {
-        String useFileDistributionConnectionPool = System.getenv("VESPA_USE_FILE_DISTRIBUTION_CONNECTION_POOL");
+        String useFileDistributionConnectionPool = System.getenv("VESPA_CONFIG_PROXY_USE_FILE_DISTRIBUTION_CONNECTION_POOL");
         // TODO: Lower log level or remove when verified
-        log.log(INFO, "VESPA_USE_FILE_DISTRIBUTION_CONNECTION_POOL: " + useFileDistributionConnectionPool);
+        log.log(INFO, "VESPA_CONFIG_PROXY_USE_FILE_DISTRIBUTION_CONNECTION_POOL: " + useFileDistributionConnectionPool);
         if (useFileDistributionConnectionPool != null && useFileDistributionConnectionPool.equalsIgnoreCase("true"))
             return new FileDistributionConnectionPool(source, supervisor);
         else
