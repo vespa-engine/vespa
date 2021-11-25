@@ -44,7 +44,10 @@ case $SHOULD_BUILD in
     echo "git version: $(git --version)"
     echo "go version: $(go version)"
 
-    while true; do du -sh ~/go; sleep 60; done &
+    (
+        set +e
+        while true; do df -h; du -sh ~/go; ps axjfww; sleep 60; done
+    ) &
     pid=$!
 
     make -C client/go -j ${NUM_THREADS}
