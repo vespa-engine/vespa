@@ -329,6 +329,8 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         state = State.CLOSED;
     }
 
+    public boolean isClosed() { return state == State.CLOSED; }
+
     State getState() {
         return state;
     }
