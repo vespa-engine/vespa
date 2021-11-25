@@ -19,7 +19,7 @@ var ActiveHttpClient = CreateClient(time.Second * 10)
 
 type HttpClient interface {
 	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
-	UseCertificate(certificate tls.Certificate)
+	UseCertificate(certificate []tls.Certificate)
 }
 
 type defaultHttpClient struct {
@@ -33,9 +33,9 @@ func (c *defaultHttpClient) Do(request *http.Request, timeout time.Duration) (re
 	return c.client.Do(request)
 }
 
-func (c *defaultHttpClient) UseCertificate(certificate tls.Certificate) {
+func (c *defaultHttpClient) UseCertificate(certificates []tls.Certificate) {
 	c.client.Transport = &http.Transport{TLSClientConfig: &tls.Config{
-		Certificates: []tls.Certificate{certificate},
+		Certificates: certificates,
 	}}
 }
 

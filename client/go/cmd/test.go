@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
@@ -176,13 +177,20 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 		method = "GET"
 	}
 
-	pathAndQuery := step.Request.URI
-	if pathAndQuery == "" {
-		pathAndQuery = "/search/"
+	requestUri := step.Request.URI
+	if requestUri == "" {
+		requestUri = "/search/"
 	}
-	requestUrl, err := url.ParseRequestURI(service.BaseURL + pathAndQuery)
+	requestUrl, err := url.ParseRequestURI(requestUri)
 	if err != nil {
 		return "", "", err
+	}
+	externalEndpoint := requestUrl.IsAbs()
+	if !externalEndpoint {
+		requestUrl, err = url.ParseRequestURI(service.BaseURL + requestUri)
+		if err != nil {
+			return "", "", err
+		}
 	}
 	query := requestUrl.Query()
 	for name, value := range parameters {
@@ -201,7 +209,13 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	}
 	defer request.Body.Close()
 
-	response, err := service.Do(request, 600*time.Second) // Vespa should provide a response within the given request timeout
+	var response *http.Response
+	if externalEndpoint {
+		util.ActiveHttpClient.UseCertificate([]tls.Certificate{})
+		response, err = util.ActiveHttpClient.Do(request, 60*time.Second)
+	} else {
+		response, err = service.Do(request, 600*time.Second) // Vespa should provide a response within the given request timeout
+	}
 	if err != nil {
 		return "", "", err
 	}
