@@ -1,0 +1,9 @@
+{
+    "steps": [
+        {
+            "request": {
+                "uri": "https://my.service:123/path?query=wohoo"
+            }
+        }
+    ]
+}
