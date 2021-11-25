@@ -97,7 +97,7 @@ endif
 #
 
 install:
-	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
+	env GOBIN=$(BIN) go install -x $(GO_FLAGS) ./...
 
 manpages: install
 	mkdir -p $(SHARE)/man/man1

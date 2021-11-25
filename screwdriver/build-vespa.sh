@@ -40,7 +40,10 @@ case $SHOULD_BUILD in
     mvn -V $VESPA_MAVEN_EXTRA_OPTS install
     ;;
   go)
-    make -C client/go -j ${NUM_THREADS}
+    echo "git version: $(git --version)"
+    echo "go version: $(go version)"
+
+    GOTMPDIR="$PWD"/tmp make -C client/go -j ${NUM_THREADS}
     ;;
   *)
     make -C client/go -j ${NUM_THREADS}
