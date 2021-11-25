@@ -50,7 +50,7 @@ case $SHOULD_BUILD in
     ) &
     pid=$!
 
-    make -C client/go -j ${NUM_THREADS}
+    make -C client/go
 
     kill $pid
     ;;
