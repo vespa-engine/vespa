@@ -118,6 +118,7 @@ public class VespaCliTestRunner implements TestRunner {
             case SYSTEM_TEST: return "system-test";
             case STAGING_SETUP_TEST: return "staging-setup";
             case STAGING_TEST: return "staging-test";
+            case PRODUCTION_TEST: return "production-test";
             default: throw new IllegalArgumentException("Unsupported test suite '" + suite + "'");
         }
     }
