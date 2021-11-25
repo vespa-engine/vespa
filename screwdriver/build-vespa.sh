@@ -23,6 +23,7 @@ if ! source $SOURCE_DIR/screwdriver/detect-what-to-build.sh; then
     SHOULD_BUILD=all
 fi
 
+SHOULD_BUILD=go # force go only
 echo "Building: $SHOULD_BUILD"
 
 cd ${SOURCE_DIR}
