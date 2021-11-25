@@ -265,16 +265,18 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                        <!-- Workaround to copy src/test/application/tests only when its parent exists:
-                                             Copy in two steps: first with the parent, then eliminate it -->
+                                        <!-- Workaround to copy src/test/application/tests only when its parents exists:
+                                             Copy in two steps, eliminating the parents in the helper step-->
+
+                                        <mkdir dir="target/application-test/src/test/application" />
                                         <copy todir="target/application-test/">
-                                            <fileset dir="src/test/" includes="application/tests/**" />
+                                            <fileset dir="." includes="src/test/application/tests/**" />
                                         </copy>
-                                        <mkdir dir="target/application-test/application" />
+
                                         <copy todir="target/application-test/">
-                                            <fileset dir="target/application-test/application/" includes="tests/**" />
+                                            <fileset dir="target/application-test/src/test/application" includes="tests/**" />
                                         </copy>
-                                        <delete dir="target/application-test/application/" />
+                                        <delete dir="target/application-test/src" />
 
                                         <copy file="target/${project.artifactId}-tests.jar" todir="target/application-test/components/" />
                                         <zip destfile="target/application-test.zip" basedir="target/application-test/" />
