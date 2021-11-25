@@ -142,7 +142,7 @@ func getSampleAppsZip() *os.File {
 		return f
 	}
 
-	util.Spinner(color.Yellow("Downloading sample apps ...").String(), func() error {
+	err = util.Spinner(color.Yellow("Downloading sample apps ...").String(), func() error {
 		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			fatalErr(err, "Invalid URL")
@@ -162,7 +162,7 @@ func getSampleAppsZip() *os.File {
 			fatalErr(err, "Could not write sample apps to file: ", f.Name())
 			return nil
 		}
-		return nil
+		return err
 	})
 
 	return f

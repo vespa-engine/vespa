@@ -3,7 +3,6 @@
 package util
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -19,18 +18,18 @@ const (
 
 var messages = os.Stderr
 
-func Spinner(text string, fn func() error) {
+func Spinner(text string, fn func() error) error {
 	initialMsg := text + " "
 	doneMsg := "\r" + initialMsg + spinnerTextDone + "\n"
 	failMsg := "\r" + initialMsg + spinnerTextFailed + "\n"
-	loading(initialMsg, doneMsg, failMsg, fn)
+	return loading(initialMsg, doneMsg, failMsg, fn)
 }
 
-func Waiting(fn func() error) {
-	loading("", "", "", fn)
+func Waiting(fn func() error) error {
+	return loading("", "", "", fn)
 }
 
-func loading(initialMsg, doneMsg, failMsg string, fn func() error) {
+func loading(initialMsg, doneMsg, failMsg string, fn func() error) error {
 	done := make(chan struct{})
 	errc := make(chan error)
 	go func() {
@@ -59,9 +58,7 @@ func loading(initialMsg, doneMsg, failMsg string, fn func() error) {
 	errc <- err
 	<-done
 
-	if err != nil {
-		fmt.Println(fmt.Errorf("an unexpected error occurred: %w", err))
-	}
+	return err
 }
 
 func Error(e error, message string) error {

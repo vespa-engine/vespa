@@ -335,9 +335,9 @@ func RunLogin(ctx context.Context, a *Auth0, expired bool) (System, error) {
 	}
 
 	var res auth.Result
-	util.Spinner("Waiting for login to complete in browser ...", func() error {
+	err = util.Spinner("Waiting for login to complete in browser ...", func() error {
 		res, err = a.Authenticator.Wait(ctx, state)
-		return nil
+		return err
 	})
 
 	if err != nil {

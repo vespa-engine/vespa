@@ -372,7 +372,7 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOpts) (int64, error) 
 	}
 
 	var response *http.Response
-	util.Spinner("Uploading application package ...", func() error {
+	err = util.Spinner("Uploading application package ...", func() error {
 		response, err = util.HttpDo(request, time.Minute*10, serviceDescription)
 		return err
 	})
