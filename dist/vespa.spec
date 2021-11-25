@@ -547,7 +547,8 @@ rm -rf %{buildroot}
 cp -r %{installdir} %{buildroot}
 %else
 make install DESTDIR=%{buildroot}
-cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa
+# TODO: Include the vespa program
+#cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa
 %endif
 
 %if %{_create_vespa_service}
