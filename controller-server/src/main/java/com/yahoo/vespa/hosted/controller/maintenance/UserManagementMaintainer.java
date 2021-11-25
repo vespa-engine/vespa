@@ -23,7 +23,7 @@ public class UserManagementMaintainer extends ControllerMaintainer {
     private static final Logger logger = Logger.getLogger(UserManagementMaintainer.class.getName());
 
     public UserManagementMaintainer(Controller controller, Duration interval, RoleMaintainer roleMaintainer) {
-        super(controller, interval, UserManagementMaintainer.class.getSimpleName(), SystemName.allOf(SystemName::isPublic));
+        super(controller, interval);
         this.roleMaintainer = roleMaintainer;
     }
 
