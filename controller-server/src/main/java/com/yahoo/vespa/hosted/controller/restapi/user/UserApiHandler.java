@@ -25,6 +25,7 @@ import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
@@ -176,6 +177,7 @@ public class UserApiHandler extends LoggingRequestHandler {
                 .sorted()
                 .forEach(tenant -> {
                     Cursor tenantObject = tenants.setObject(tenant.value());
+                    tenantObject.setBool("supported", hasSupportedPlan(tenant));
 
                     Cursor tenantRolesObject = tenantObject.setArray("roles");
                     tenantRolesByTenantName.getOrDefault(tenant, List.of())
@@ -404,5 +406,12 @@ public class UserApiHandler extends LoggingRequestHandler {
                 .filter(clazz::isInstance)
                 .map(clazz::cast)
                 .orElseThrow(() -> new IllegalArgumentException("Attribute '" + attributeName + "' was not set on request"));
+    }
+
+    private boolean hasSupportedPlan(TenantName tenantName) {
+        var planId = controller.serviceRegistry().billingController().getPlan(tenantName);
+        return controller.serviceRegistry().planRegistry().plan(planId)
+                .map(Plan::isSupported)
+                .orElse(false);
     }
 }

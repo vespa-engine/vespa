@@ -23,4 +23,7 @@ public interface Plan {
 
     /** Is this a plan that is billed */
     boolean isBilled();
+
+    /** Is this a plan that gets on-call support */
+    boolean isSupported();
 }

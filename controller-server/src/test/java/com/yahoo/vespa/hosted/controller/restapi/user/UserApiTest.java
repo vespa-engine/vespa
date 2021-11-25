@@ -8,6 +8,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -269,5 +270,28 @@ public class UserApiTest extends ControllerContainerCloudTest {
                     request("/user/v1/user").user(user),
                     new File("user-without-trial-capacity-cloud.json"));
         }
+    }
+
+    @Test
+    public void supportTenant() {
+        try (Flags.Replacer ignored = Flags.clearFlagsForTesting(PermanentFlags.MAX_TRIAL_TENANTS.id(), PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id())) {
+            ContainerTester tester = new ContainerTester(container, responseFiles);
+            ((InMemoryFlagSource) tester.controller().flagSource())
+                    .withIntFlag(PermanentFlags.MAX_TRIAL_TENANTS.id(), 10)
+                    .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
+            ControllerTester controller = new ControllerTester(tester);
+            User user = new User("dev@domail", "Joe Developer", "dev", null);
+
+            var tenant1 = controller.createTenant("tenant1", Tenant.Type.cloud);
+            var tenant2 = controller.createTenant("tenant2", Tenant.Type.cloud);
+            controller.serviceRegistry().billingController().setPlan(tenant2, PlanId.from("paid"), false);
+
+            tester.assertResponse(
+                    request("/user/v1/user")
+                            .roles(Role.reader(tenant1), Role.reader(tenant2))
+                            .user(user),
+                    new File("user-with-supported-tenant.json"));
+        }
+
     }
 }
