@@ -37,7 +37,7 @@ public class PomXmlGenerator {
             "    <version>1.0.0</version>\n" +
             "\n" +
             "    <properties>\n" +
-            "        <junit_version>5.7.0</junit_version>\n" +
+            "        <junit_version>5.8.1</junit_version>\n" +
             "        <surefire_version>2.22.0</surefire_version>\n" +
             "%PROPERTIES%" +
             "    </properties>\n" +

@@ -2,7 +2,7 @@
 /**
  * @author bjorncs
  */
-@ExportPackage(version = @Version(major = 5, minor = 7, micro = 0))
+@ExportPackage(version = @Version(major = 5, minor = 8, micro = 1))
 package org.junit.jupiter.api.condition;
 
 import com.yahoo.osgi.annotation.ExportPackage;
