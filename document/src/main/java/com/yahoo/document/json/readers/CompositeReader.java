@@ -3,6 +3,7 @@ package com.yahoo.document.json.readers;
 
 import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.document.DataType;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
@@ -35,6 +36,8 @@ public class CompositeReader {
             }
         } else if (fieldValue instanceof MapFieldValue) {
             MapReader.fillMap(buffer, (MapFieldValue) fieldValue);
+        } else if (PositionDataType.INSTANCE.equals(fieldValue.getDataType())) {
+            GeoPositionReader.fillGeoPosition(buffer, fieldValue);
         } else if (fieldValue instanceof StructuredFieldValue) {
             StructReader.fillStruct(buffer, (StructuredFieldValue) fieldValue);
         } else if (fieldValue instanceof TensorFieldValue) {

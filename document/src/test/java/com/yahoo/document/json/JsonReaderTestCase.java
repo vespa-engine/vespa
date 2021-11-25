@@ -504,18 +504,22 @@ public class JsonReaderTestCase {
         assertEquals("smoke", docType.getName());
     }
 
-    @Test
-    public void testWeightedSet() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testset::whee',",
-                "  'fields': {",
-                "    'actualset': {",
-                "      'nalle': 2,",
-                "      'tralle': 7 }}}"));
+    private Document docFromJson(String json) throws IOException {
+        JsonReader r = createReader(json);
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
         new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
+        return put.getDocument();
+    }
+
+    @Test
+    public void testWeightedSet() throws IOException {
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testset::whee',",
+                "  'fields': {",
+                "    'actualset': {",
+                "      'nalle': 2,",
+                "      'tralle': 7 }}}"));
         FieldValue f = doc.getFieldValue(doc.getField("actualset"));
         assertSame(WeightedSet.class, f.getClass());
         WeightedSet<?> w = (WeightedSet<?>) f;
@@ -526,16 +530,11 @@ public class JsonReaderTestCase {
 
     @Test
     public void testArray() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testarray::whee',",
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testarray::whee',",
                 "  'fields': {",
                 "    'actualarray': [",
                 "      'nalle',",
                 "      'tralle' ]}}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualarray"));
         assertSame(Array.class, f.getClass());
         Array<?> a = (Array<?>) f;
@@ -546,16 +545,11 @@ public class JsonReaderTestCase {
 
     @Test
     public void testMap() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testmap::whee',",
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testmap::whee',",
                         "  'fields': {",
                         "    'actualmap': {",
                         "      'nalle': 'kalle',",
                         "      'tralle': 'skalle' }}}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualmap"));
         assertSame(MapFieldValue.class, f.getClass());
         MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) f;
@@ -566,16 +560,11 @@ public class JsonReaderTestCase {
 
     @Test
     public void testOldMap() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testmap::whee',",
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testmap::whee',",
                 "  'fields': {",
                 "    'actualmap': [",
                 "      { 'key': 'nalle', 'value': 'kalle'},",
                 "      { 'key': 'tralle', 'value': 'skalle'} ]}}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
         FieldValue f = doc.getFieldValue(doc.getField("actualmap"));
         assertSame(MapFieldValue.class, f.getClass());
         MapFieldValue<?, ?> m = (MapFieldValue<?, ?>) f;
@@ -586,14 +575,42 @@ public class JsonReaderTestCase {
 
     @Test
     public void testPositionPositive() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
                 "  'fields': {",
                 "    'singlepos': 'N63.429722;E10.393333' }}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
+        FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
+        assertSame(Struct.class, f.getClass());
+        assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
+        assertEquals(63429722, PositionDataType.getYValue(f).getInteger());
+    }
+
+    @Test
+    public void testPositionOld() throws IOException {
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
+                "  'fields': {",
+                "    'singlepos': {'x':10393333,'y':63429722} }}"));
+        FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
+        assertSame(Struct.class, f.getClass());
+        assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
+        assertEquals(63429722, PositionDataType.getYValue(f).getInteger());
+    }
+
+    @Test
+    public void testGeoPosition() throws IOException {
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
+                "  'fields': {",
+                "    'singlepos': {'lat':63.429722,'lng':10.393333} }}"));
+        FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
+        assertSame(Struct.class, f.getClass());
+        assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
+        assertEquals(63429722, PositionDataType.getYValue(f).getInteger());
+    }
+
+    @Test
+    public void testGeoPositionNoAbbreviations() throws IOException {
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
+                "  'fields': {",
+                "    'singlepos': {'latitude':63.429722,'longitude':10.393333} }}"));
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(10393333, PositionDataType.getXValue(f).getInteger());
@@ -602,14 +619,9 @@ public class JsonReaderTestCase {
 
     @Test
     public void testPositionNegative() throws IOException {
-        JsonReader r = createReader(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
-                        "  'fields': {",
-                        "    'singlepos': 'W46.63;S23.55' }}"));
-        DocumentParseInfo parseInfo = r.parseDocument().get();
-        DocumentType docType = r.readDocumentType(parseInfo.documentId);
-        DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
-        Document doc = put.getDocument();
+        Document doc = docFromJson(inputJson("{ 'put': 'id:unittest:testsinglepos::bamf',",
+                "  'fields': {",
+                "    'singlepos': 'W46.63;S23.55' }}"));
         FieldValue f = doc.getFieldValue(doc.getField("singlepos"));
         assertSame(Struct.class, f.getClass());
         assertEquals(-46630000, PositionDataType.getXValue(f).getInteger());
