@@ -16,15 +16,24 @@ import (
 var overwriteKey bool
 
 func init() {
-	rootCmd.AddCommand(apiKeyCmd)
 	apiKeyCmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
 	apiKeyCmd.MarkPersistentFlagRequired(applicationFlag)
+}
+
+var example string
+
+func apiKeyExample() string {
+	if vespa.Auth0AccessTokenEnabled() {
+		return "$ vespa auth api-key -a my-tenant.my-app.my-instance"
+	} else {
+		return "$ vespa api-key -a my-tenant.my-app.my-instance"
+	}
 }
 
 var apiKeyCmd = &cobra.Command{
 	Use:               "api-key",
 	Short:             "Create a new user API key for authentication with Vespa Cloud",
-	Example:           "$ vespa api-key -a my-tenant.my-app.my-instance",
+	Example:           apiKeyExample(),
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {

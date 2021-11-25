@@ -25,7 +25,7 @@ import (
 
 const accessTokenExpThreshold = 5 * time.Minute
 
-var errUnauthenticated = errors.New("not logged in. Try 'vespa login'")
+var errUnauthenticated = errors.New("not logged in. Try 'vespa auth login'")
 
 type config struct {
 	Systems map[string]System `json:"systems"`
@@ -216,7 +216,7 @@ func (a *Auth0) getSystem() (System, error) {
 
 	s, ok := a.config.Systems[a.system]
 	if !ok {
-		return System{}, fmt.Errorf("unable to find system: %s; run 'vespa login' to configure a new system", a.system)
+		return System{}, fmt.Errorf("unable to find system: %s; run 'vespa auth login' to configure a new system", a.system)
 	}
 
 	return s, nil

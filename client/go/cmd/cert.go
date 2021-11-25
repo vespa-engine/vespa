@@ -16,15 +16,22 @@ import (
 var overwriteCertificate bool
 
 func init() {
-	rootCmd.AddCommand(certCmd)
 	certCmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
 	certCmd.MarkPersistentFlagRequired(applicationFlag)
+}
+
+func certExample() string {
+	if vespa.Auth0AccessTokenEnabled() {
+		return "$ vespa auth cert -a my-tenant.my-app.my-instance"
+	} else {
+		return "$ vespa cert -a my-tenant.my-app.my-instance"
+	}
 }
 
 var certCmd = &cobra.Command{
 	Use:               "cert",
 	Short:             "Create a new private key and self-signed certificate for Vespa Cloud deployment",
-	Example:           "$ vespa cert -a my-tenant.my-app.my-instance",
+	Example:           certExample(),
 	DisableAutoGenTag: true,
 	Args:              cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -66,8 +73,14 @@ var certCmd = &cobra.Command{
 			}
 		}
 		if pkg.IsZip() {
+			var msg string
+			if vespa.Auth0AccessTokenEnabled() {
+				msg = "Try running 'mvn clean' before 'vespa auth cert', and then 'mvn package'"
+			} else {
+				msg = "Try running 'mvn clean' before 'vespa cert', and then 'mvn package'"
+			}
 			fatalErrHint(fmt.Errorf("Cannot add certificate to compressed application package %s", pkg.Path),
-				"Try running 'mvn clean' before 'vespa cert', and then 'mvn package'")
+				msg)
 			return
 		}
 
