@@ -109,7 +109,7 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 		fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 	}
 	if err = json.Unmarshal(testBytes, &test); err != nil {
-		fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
+		fatalErrHint(err, fmt.Sprintf("Failed parsing test at %s", testPath), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 
 	testName := test.Name
@@ -238,7 +238,7 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	if responseBodySpecBytes != nil {
 		err = json.Unmarshal(responseBodySpecBytes, &responseBodySpec)
 		if err != nil {
-			return "", "", err
+			return "", "", fmt.Errorf("invalid response body spec: %w", err)
 		}
 	}
 
