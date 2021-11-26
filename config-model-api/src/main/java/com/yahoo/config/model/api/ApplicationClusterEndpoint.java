@@ -112,6 +112,11 @@ public class ApplicationClusterEndpoint {
             return this;
         }
 
+        public Builder routingMethod(RoutingMethod routingMethod) {
+            this.routingMethod = routingMethod;
+            return this;
+        }
+
         public Builder weight(int weigth) {
             this.weigth = weigth;
             return this;

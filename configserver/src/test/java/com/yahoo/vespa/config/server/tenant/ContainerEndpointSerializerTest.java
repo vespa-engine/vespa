@@ -62,7 +62,7 @@ public class ContainerEndpointSerializerTest {
 
     @Test
     public void writeReadEndpoints() {
-        final var endpoints = List.of(new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.global, List.of("a", "b")));
+        final var endpoints = List.of(new ContainerEndpoint("foo", ApplicationClusterEndpoint.Scope.global, List.of("a", "b"), OptionalInt.of(3), ApplicationClusterEndpoint.RoutingMethod.shared));
         final var serialized = ContainerEndpointSerializer.endpointListToSlime(endpoints);
         final var deserialized = ContainerEndpointSerializer.endpointListFromSlime(serialized);
 
