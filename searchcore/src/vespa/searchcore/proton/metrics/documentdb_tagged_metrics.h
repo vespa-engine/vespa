@@ -5,6 +5,7 @@
 #include "memory_usage_metrics.h"
 #include "executor_threading_service_metrics.h"
 #include "sessionmanager_metrics.h"
+#include "document_db_feeding_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
@@ -202,6 +203,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     SessionCacheMetrics sessionCache;
     DocumentsMetrics documents;
     BucketMoveMetrics bucketMove;
+    DocumentDBFeedingMetrics feeding;
     MemoryUsageMetrics totalMemoryUsage;
     metrics::LongValueMetric totalDiskUsage;
     metrics::DoubleValueMetric heart_beat_age;
