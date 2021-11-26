@@ -58,8 +58,7 @@ private:
     using MonitorReply = search::engine::MonitorReply;
     using MonitorClient = search::engine::MonitorClient;
     using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
-    using ProtonConfigSP = BootstrapConfig::ProtonConfigSP;
-    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
+    using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
     using BucketSpace = document::BucketSpace;
 
     class ProtonFileHeaderContext : public search::common::FileHeaderContext

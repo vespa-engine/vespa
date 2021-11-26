@@ -6,8 +6,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
-namespace vespalib { class ThreadStackExecutorBase; }
-
 namespace proton {
 
 class DocumentDBConfigOwner;
@@ -19,7 +17,7 @@ class DocumentDBConfigOwner;
 class IProtonConfigurerOwner
 {
 public:
-    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
+    using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
     virtual ~IProtonConfigurerOwner() { }
     virtual std::shared_ptr<DocumentDBConfigOwner> addDocumentDB(const DocTypeName &docTypeName,
                                                                  document::BucketSpace bucketSpace,

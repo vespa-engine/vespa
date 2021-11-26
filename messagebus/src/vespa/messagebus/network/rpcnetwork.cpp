@@ -425,8 +425,7 @@ RPCNetwork::shutdown()
 {
     _transport->ShutDown(true);
     _threadPool->Close();
-    _executor->shutdown();
-    _executor->sync();
+    _executor->shutdown().sync();
 }
 
 void

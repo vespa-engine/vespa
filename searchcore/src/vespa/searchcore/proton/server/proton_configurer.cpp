@@ -42,7 +42,7 @@ getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
 }
 
 
-ProtonConfigurer::ProtonConfigurer(vespalib::SyncableThreadExecutor &executor,
+ProtonConfigurer::ProtonConfigurer(vespalib::ThreadExecutor &executor,
                                    IProtonConfigurerOwner &owner,
                                    const std::unique_ptr<IProtonDiskLayout> &diskLayout)
     : IProtonConfigurer(),
@@ -54,13 +54,30 @@ ProtonConfigurer::ProtonConfigurer(vespalib::SyncableThreadExecutor &executor,
       _mutex(),
       _allowReconfig(false),
       _componentConfig(),
-      _diskLayout(diskLayout)
+      _diskLayout(diskLayout),
+      _pendingReconfigureTasks(0)
 {
 }
 
-ProtonConfigurer::~ProtonConfigurer()
-{
-}
+class ProtonConfigurer::ReconfigureTask : public vespalib::Executor::Task {
+public:
+    ReconfigureTask(ProtonConfigurer & configurer)
+        : _configurer(configurer)
+    {
+        _configurer._pendingReconfigureTasks++;
+    }
+    ~ReconfigureTask() {
+        _configurer._pendingReconfigureTasks--;
+    }
+
+    void run() override {
+        _configurer.performReconfigure();
+    }
+private:
+    ProtonConfigurer & _configurer;
+};
+
+ProtonConfigurer::~ProtonConfigurer() = default;
 
 void
 ProtonConfigurer::setAllowReconfig(bool allowReconfig)
@@ -76,7 +93,10 @@ ProtonConfigurer::setAllowReconfig(bool allowReconfig)
         }
     }
     if (!allowReconfig) {
-        _executor.sync(); // drain queued performReconfigure tasks
+        // drain queued performReconfigure tasks
+        while ( _pendingReconfigureTasks > 0) {
+            std::this_thread::sleep_for(1ms);
+        }
     }
 }
 
@@ -102,7 +122,7 @@ ProtonConfigurer::reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     std::lock_guard<std::mutex> guard(_mutex);
     _pendingConfigSnapshot = configSnapshot;
     if (_allowReconfig) {
-        _executor.execute(makeLambdaTask([&]() { performReconfigure(); }));
+        _executor.execute(std::make_unique<ReconfigureTask>(*this));
     }
 }
 

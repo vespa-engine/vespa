@@ -167,7 +167,7 @@ SequencedTaskExecutor::getExecutorIdImPerfect(uint64_t componentId) const {
     return ExecutorId(executorId);
 }
 
-const vespalib::SyncableThreadExecutor*
+const vespalib::ThreadExecutor*
 SequencedTaskExecutor::first_executor() const
 {
     if (_executors.empty()) {

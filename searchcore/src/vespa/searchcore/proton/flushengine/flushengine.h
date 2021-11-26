@@ -119,7 +119,7 @@ public:
     /**
      * Returns the underlying executor. Only used for state explorers.
      */
-    const vespalib::SyncableThreadExecutor& get_executor() const { return _executor; }
+    const vespalib::ThreadExecutor& get_executor() const { return _executor; }
 
     /**
      * Starts the scheduling thread of this manager.

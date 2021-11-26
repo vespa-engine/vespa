@@ -9,6 +9,7 @@
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <map>
 #include <mutex>
+#include <atomic>
 
 namespace proton {
 
@@ -25,17 +26,19 @@ class IProtonDiskLayout;
 class ProtonConfigurer : public IProtonConfigurer
 {
     using DocumentDBs = std::map<DocTypeName, std::pair<std::weak_ptr<IDocumentDBConfigOwner>, std::weak_ptr<DocumentDBDirectoryHolder>>>;
-    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
+    using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
+    class ReconfigureTask;
 
-    SyncableExecutorThreadService _executor;
-    IProtonConfigurerOwner &_owner;
-    DocumentDBs _documentDBs;
-    std::shared_ptr<ProtonConfigSnapshot> _pendingConfigSnapshot;
-    std::shared_ptr<ProtonConfigSnapshot> _activeConfigSnapshot;
-    mutable std::mutex _mutex;
-    bool _allowReconfig;
-    vespalib::SimpleComponentConfigProducer _componentConfig;
+    ExecutorThreadService                     _executor;
+    IProtonConfigurerOwner                   &_owner;
+    DocumentDBs                               _documentDBs;
+    std::shared_ptr<ProtonConfigSnapshot>     _pendingConfigSnapshot;
+    std::shared_ptr<ProtonConfigSnapshot>     _activeConfigSnapshot;
+    mutable std::mutex                        _mutex;
+    bool                                      _allowReconfig;
+    vespalib::SimpleComponentConfigProducer   _componentConfig;
     const std::unique_ptr<IProtonDiskLayout> &_diskLayout;
+    std::atomic<uint64_t>                     _pendingReconfigureTasks;
 
     void performReconfigure();
     bool skipConfig(const ProtonConfigSnapshot *configSnapshot, bool initialConfig);
@@ -48,7 +51,7 @@ class ProtonConfigurer : public IProtonConfigurer
     void pruneInitialDocumentDBDirs(const ProtonConfigSnapshot &configSnapshot);
 
 public:
-    ProtonConfigurer(vespalib::SyncableThreadExecutor &executor,
+    ProtonConfigurer(vespalib::ThreadExecutor &executor,
                      IProtonConfigurerOwner &owner,
                      const std::unique_ptr<IProtonDiskLayout> &diskLayout);
 
