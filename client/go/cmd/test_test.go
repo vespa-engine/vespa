@@ -53,7 +53,7 @@ func TestProductionTest(t *testing.T) {
 func TestTestWithoutAssertions(t *testing.T) {
 	client := &mockHttpClient{}
 	_, errBytes := execute(command{args: []string{"test", "testdata/tests/system-test/foo/query.json"}}, t, client)
-	assert.Equal(t, "Error: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
+	assert.Equal(t, "\nError: a test must have at least one step, but none were found in testdata/tests/system-test/foo/query.json\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestSuiteWithoutTests(t *testing.T) {

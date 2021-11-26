@@ -122,10 +122,12 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, path.Dir(testPath))
 	if err != nil {
+		fmt.Fprintln(stderr)
 		fatalErrHint(err, fmt.Sprintf("Invalid default parameters for %s", testName), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 
 	if len(test.Steps) == 0 {
+		fmt.Fprintln(stderr)
 		fatalErrHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 	for i, step := range test.Steps {
@@ -135,7 +137,8 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 		}
 		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
 		if err != nil {
-			fatalErr(err, fmt.Sprintf("Error in %s", stepName), "See https://cloud.vespa.ai/en/reference/testing")
+			fmt.Fprintln(stderr)
+			fatalErrHint(err, fmt.Sprintf("Error in %s", stepName), "See https://cloud.vespa.ai/en/reference/testing")
 		}
 		if !dryRun {
 			if failure != "" {
@@ -368,7 +371,7 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 			resolvedParametersPath := path.Join(testsPath, parametersPath)
 			parametersRaw, err = ioutil.ReadFile(resolvedParametersPath)
 			if err != nil {
-				fatalErrHint(err, fmt.Sprintf("Failed to read request parameters file at '%s'", resolvedParametersPath), "See https://cloud.vespa.ai/en/reference/testing")
+				return nil, fmt.Errorf("failed to read request parameters at %s: %w", resolvedParametersPath, err)
 			}
 		}
 		var parameters map[string]string
@@ -386,7 +389,7 @@ func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 		resolvedBodyPath := path.Join(testsPath, bodyPath)
 		bodyRaw, err = ioutil.ReadFile(resolvedBodyPath)
 		if err != nil {
-			fatalErrHint(err, fmt.Sprintf("Failed to read body file at '%s'", resolvedBodyPath), "See https://cloud.vespa.ai/en/reference/testing")
+			return nil, fmt.Errorf("failed to read body file at %s: %w", resolvedBodyPath, err)
 		}
 	}
 	return bodyRaw, nil
