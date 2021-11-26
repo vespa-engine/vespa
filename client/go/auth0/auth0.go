@@ -27,12 +27,22 @@ const accessTokenExpThreshold = 5 * time.Minute
 
 var errUnauthenticated = errors.New("not logged in. Try 'vespa auth login'")
 
+type configJsonFormat struct {
+	Version   int       `json:"version"`
+	Providers providers `json:"providers"`
+}
+
+type providers struct {
+	Config config `json:"auth0"`
+}
+
 type config struct {
+	Version int               `json:"version"`
 	Systems map[string]System `json:"systems"`
 }
 
 type System struct {
-	Name        string    `json:"name"`
+	Name        string    `json:"-"`
 	AccessToken string    `json:"access_token,omitempty"`
 	Scopes      []string  `json:"scopes,omitempty"`
 	ExpiresAt   time.Time `json:"expires_at"`
@@ -271,7 +281,7 @@ func (a *Auth0) persistConfig() error {
 		}
 	}
 
-	buf, err := json.MarshalIndent(a.config, "", "    ")
+	buf, err := a.configToJson(&a.config)
 	if err != nil {
 		return err
 	}
@@ -281,6 +291,32 @@ func (a *Auth0) persistConfig() error {
 	}
 
 	return nil
+}
+
+func (a *Auth0) configToJson(cfg *config) ([]byte, error) {
+	cfg.Version = 1
+	r := configJsonFormat{
+		Version: 1,
+		Providers: providers{
+			Config: *cfg,
+		},
+	}
+	return json.MarshalIndent(r, "", "    ")
+}
+
+func (a *Auth0) jsonToConfig(buf []byte) (*config, error) {
+	r := configJsonFormat{}
+	if err := json.Unmarshal(buf, &r); err != nil {
+		return nil, err
+	}
+	cfg := r.Providers.Config
+	systems := cfg.Systems
+	if systems != nil {
+		for n, s := range systems {
+			s.Name = n
+		}
+	}
+	return &cfg, nil
 }
 
 func (a *Auth0) init() error {
@@ -302,10 +338,11 @@ func (a *Auth0) initContext() (err error) {
 		return err
 	}
 
-	if err := json.Unmarshal(buf, &a.config); err != nil {
+	cfg, err := a.jsonToConfig(buf)
+	if err != nil {
 		return err
 	}
-
+	a.config = *cfg
 	return nil
 }
 
