@@ -9,6 +9,7 @@ import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 
 import java.io.File;
@@ -101,7 +102,7 @@ class FileDistributionRpcServer {
     private void downloadFile(Request req) {
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
         log.log(Level.FINE, () -> "getFile() called for file reference '" + fileReference.value() + "'");
-        Optional<File> file = downloader.getFile(fileReference);
+        Optional<File> file = downloader.getFile(fileReference, HostName.getLocalhost());
         if (file.isPresent()) {
             new RequestTracker().trackRequest(file.get().getParentFile());
             req.returnValues().add(new StringValue(file.get().getAbsolutePath()));

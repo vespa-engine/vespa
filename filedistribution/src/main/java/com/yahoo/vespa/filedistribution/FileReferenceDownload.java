@@ -22,6 +22,10 @@ public class FileReferenceDownload {
         this(fileReference, true, "unknown");
     }
 
+    public FileReferenceDownload(FileReference fileReference,  String client) {
+        this(fileReference, true, client);
+    }
+
     public FileReferenceDownload(FileReference fileReference, boolean downloadFromOtherSourceIfNotFound, String client) {
         Objects.requireNonNull(fileReference, "file reference cannot be null");
         this.fileReference = fileReference;

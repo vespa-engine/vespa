@@ -79,7 +79,7 @@ public class FileDownloaderTest {
             fileDownloader.downloads().completedDownloading(fileReference, fileReferenceFullPath);
 
             // Check that we get correct path and content when asking for file reference
-            Optional<File> pathToFile = fileDownloader.getFile(fileReference);
+            Optional<File> pathToFile = getFile(fileReference);
             assertTrue(pathToFile.isPresent());
             String downloadedFile = new File(fileReferenceFullPath, filename).getAbsolutePath();
             assertEquals(new File(fileReferenceFullPath, filename).getAbsolutePath(), downloadedFile);
@@ -96,7 +96,7 @@ public class FileDownloaderTest {
 
             FileReference fileReference = new FileReference("bar");
             File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
-            assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
+            assertFalse(fileReferenceFullPath.getAbsolutePath(), getFile(fileReference).isPresent());
 
             // Verify download status when unable to download
             assertDownloadStatus(fileReference, 0.0);
@@ -107,7 +107,7 @@ public class FileDownloaderTest {
 
             FileReference fileReference = new FileReference("baz");
             File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
-            assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
+            assertFalse(fileReferenceFullPath.getAbsolutePath(), getFile(fileReference).isPresent());
 
             // Verify download status
             assertDownloadStatus(fileReference, 0.0);
@@ -115,7 +115,7 @@ public class FileDownloaderTest {
             // Receives fileReference, should return and make it available to caller
             String filename = "abc.jar";
             receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
-            Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
+            Optional<File> downloadedFile = getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());
             File downloadedFileFullPath = new File(fileReferenceFullPath, filename);
@@ -132,7 +132,7 @@ public class FileDownloaderTest {
 
             FileReference fileReference = new FileReference("fileReferenceToDirWithManyFiles");
             File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
-            assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
+            assertFalse(fileReferenceFullPath.getAbsolutePath(), getFile(fileReference).isPresent());
 
             // Verify download status
             assertDownloadStatus(fileReference, 0.0);
@@ -150,7 +150,7 @@ public class FileDownloaderTest {
             File tarFile = CompressedFileReference.compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
             byte[] tarredContent = IOUtils.readFileBytes(tarFile);
             receiveFile(fileReference, filename, FileReferenceData.Type.compressed, tarredContent);
-            Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
+            Optional<File> downloadedFile = getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());
             File downloadedFoo = new File(fileReferenceFullPath, tempPath.relativize(fooFile.toPath()).toString());
@@ -174,7 +174,7 @@ public class FileDownloaderTest {
 
         FileReference fileReference = new FileReference("fileReference");
         File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
-        assertFalse(fileReferenceFullPath.getAbsolutePath(), fileDownloader.getFile(fileReference).isPresent());
+        assertFalse(fileReferenceFullPath.getAbsolutePath(), getFile(fileReference).isPresent());
 
         // Getting file failed, verify download status and since there was an error is not downloading ATM
         assertDownloadStatus(fileReference, 0.0);
@@ -183,7 +183,7 @@ public class FileDownloaderTest {
         // Receives fileReference, should return and make it available to caller
         String filename = "abc.jar";
         receiveFile(fileReference, filename, FileReferenceData.Type.file, "some other content");
-        Optional<File> downloadedFile = fileDownloader.getFile(fileReference);
+        Optional<File> downloadedFile = getFile(fileReference);
         assertTrue(downloadedFile.isPresent());
         File downloadedFileFullPath = new File(fileReferenceFullPath, filename);
         assertEquals(downloadedFileFullPath.getAbsolutePath(), downloadedFile.get().getAbsolutePath());
@@ -244,13 +244,13 @@ public class FileDownloaderTest {
         // Should download since we do not have the file on disk
         fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy));
         assertTrue(fileDownloader.isDownloading(xyzzy));
-        assertFalse(fileDownloader.getFile(xyzzy).isPresent());
+        assertFalse(getFile(xyzzy).isPresent());
         // Receive files to simulate download
         receiveFile(xyzzy, "xyzzy.jar", FileReferenceData.Type.file, "content");
         // Should not download, since file has already been downloaded
         fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy));
         // and file should be available
-        assertTrue(fileDownloader.getFile(xyzzy).isPresent());
+        assertTrue(getFile(xyzzy).isPresent());
     }
 
     @Test
@@ -294,6 +294,10 @@ public class FileDownloaderTest {
         session.addPart(0, content);
         File file = session.close(hasher.hash(ByteBuffer.wrap(content), 0));
         fileDownloader.downloads().completedDownloading(fileReference, file);
+    }
+
+    private Optional<File> getFile(FileReference fileReference) {
+        return fileDownloader.getFile(fileReference, "test");
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {

@@ -69,8 +69,8 @@ public class FileDownloader implements AutoCloseable {
                                                                    downloadDirectory);
     }
 
-    public Optional<File> getFile(FileReference fileReference) {
-        return getFile(new FileReferenceDownload(fileReference));
+    public Optional<File> getFile(FileReference fileReference, String client) {
+        return getFile(new FileReferenceDownload(fileReference, client));
     }
 
     public Optional<File> getFile(FileReferenceDownload fileReferenceDownload) {
