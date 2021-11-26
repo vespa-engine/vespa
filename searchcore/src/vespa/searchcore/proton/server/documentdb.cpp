@@ -208,7 +208,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _maintenanceController(_writeService.master(), shared_service.shared(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
-      _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter)
+      _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter, *_feedHandler)
 {
     assert(configSnapshot);
 

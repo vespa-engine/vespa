@@ -747,6 +747,20 @@ TEST_F("require that put with different document type repo is ok", FeedHandlerFi
     EXPECT_EQUAL(1, f.tls_writer.store_count);
 }
 
+TEST_F("require that feed stats are updated", FeedHandlerFixture)
+{
+    DocumentContext doc_context("id:ns:searchdocument::foo", *f.schema.builder);
+    auto op =std::make_unique<PutOperation>(doc_context.bucketId, Timestamp(10), std::move(doc_context.doc));
+    FeedTokenContext token_context;
+    f.handler.performOperation(std::move(token_context.token), std::move(op));
+    f.syncMaster(); // wait for initateCommit
+    f.syncMaster(); // wait for onCommitDone
+    auto stats = f.handler.get_stats(false);
+    EXPECT_EQUAL(1u, stats.get_commits());
+    EXPECT_EQUAL(1u, stats.get_operations());
+    EXPECT_LESS(0.0, stats.get_total_latency());
+}
+
 using namespace document;
 
 TEST_F("require that update with a fieldpath update will be rejected", SchemaContext) {
