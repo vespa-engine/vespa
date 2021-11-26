@@ -111,7 +111,7 @@ func runTest(testPath string, target vespa.Target) string {
 
 	testName := test.Name
 	if test.Name == "" {
-		testName = testPath
+		testName = filepath.Base(testPath)
 	}
 	fmt.Fprintf(stdout, "Running %s:", testName)
 

@@ -1,5 +1,5 @@
 Running my test: .... OK
-Running testdata/tests/system-test/wrong-bool-value.json: Failed step 1:
+Running wrong-bool-value.json: Failed step 1:
 Unexpected value at /root/coverage/full: true
 Expected: false
 Actual response:
@@ -38,7 +38,7 @@ Actual response:
   }
 }
 
-Running testdata/tests/system-test/wrong-element-count.json: Failed step 1:
+Running wrong-element-count.json: Failed step 1:
 Unexpected number of elements at /root/children: 1
 Expected: 0
 Actual response:
@@ -77,7 +77,7 @@ Actual response:
   }
 }
 
-Running testdata/tests/system-test/wrong-field-name.json: Failed step 1:
+Running wrong-field-name.json: Failed step 1:
 Missing expected field at /root/fields/totalCountDracula
 Actual response:
 {
@@ -115,7 +115,7 @@ Actual response:
   }
 }
 
-Running testdata/tests/system-test/wrong-float-value.json: Failed step 1:
+Running wrong-float-value.json: Failed step 1:
 Unexpected value at /root/children/0/relevance: 0.38186238359951247
 Expected: 0.381862373599
 Actual response:
@@ -154,7 +154,7 @@ Actual response:
   }
 }
 
-Running testdata/tests/system-test/wrong-int-value.json: Failed step 1:
+Running wrong-int-value.json: Failed step 1:
 Unexpected value at /root/fields/totalCount: 1
 Expected: 2
 Actual response:
@@ -193,7 +193,7 @@ Actual response:
   }
 }
 
-Running testdata/tests/system-test/wrong-null-value.json: Failed step 1:
+Running wrong-null-value.json: Failed step 1:
 Missing expected field at /boot
 Actual response:
 {
@@ -231,7 +231,7 @@ Actual response:
   }
 }
 
-Running testdata/tests/system-test/wrong-string-value.json: Failed step 1:
+Running wrong-string-value.json: Failed step 1:
 Unexpected value at /root/children/0/fields/artist: "Foo Fighters"
 Expected: "Boo Fighters"
 Actual response:
@@ -270,7 +270,7 @@ Actual response:
   }
 }
 
-Running testdata/tests/system-test/wrong-type.json: Failed step 1:
+Running wrong-type.json: Failed step 1:
 Unexpected type at /root/fields/totalCount: 1
 Expected: "1"
 Actual response:
@@ -310,11 +310,11 @@ Actual response:
 }
 
 Failed 8 of 9 tests:
-testdata/tests/system-test/wrong-bool-value.json: step 1: Unexpected value at /root/coverage/full: true
-testdata/tests/system-test/wrong-element-count.json: step 1: Unexpected number of elements at /root/children: 1
-testdata/tests/system-test/wrong-field-name.json: step 1: Missing expected field at /root/fields/totalCountDracula
-testdata/tests/system-test/wrong-float-value.json: step 1: Unexpected value at /root/children/0/relevance: 0.38186238359951247
-testdata/tests/system-test/wrong-int-value.json: step 1: Unexpected value at /root/fields/totalCount: 1
-testdata/tests/system-test/wrong-null-value.json: step 1: Missing expected field at /boot
-testdata/tests/system-test/wrong-string-value.json: step 1: Unexpected value at /root/children/0/fields/artist: "Foo Fighters"
-testdata/tests/system-test/wrong-type.json: step 1: Unexpected type at /root/fields/totalCount: 1
+wrong-bool-value.json: step 1: Unexpected value at /root/coverage/full: true
+wrong-element-count.json: step 1: Unexpected number of elements at /root/children: 1
+wrong-field-name.json: step 1: Missing expected field at /root/fields/totalCountDracula
+wrong-float-value.json: step 1: Unexpected value at /root/children/0/relevance: 0.38186238359951247
+wrong-int-value.json: step 1: Unexpected value at /root/fields/totalCount: 1
+wrong-null-value.json: step 1: Missing expected field at /boot
+wrong-string-value.json: step 1: Unexpected value at /root/children/0/fields/artist: "Foo Fighters"
+wrong-type.json: step 1: Unexpected type at /root/fields/totalCount: 1
