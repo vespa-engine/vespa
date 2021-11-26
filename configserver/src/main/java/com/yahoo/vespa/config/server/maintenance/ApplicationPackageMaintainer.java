@@ -100,7 +100,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                           ? new FileDistributionConnectionPool(configSourceSet, supervisor)
                                           : new JRTConnectionPool(configSourceSet, supervisor),
                                   supervisor,
-                                  downloadDirectory);
+                                  downloadDirectory,
+                                  Duration.ofSeconds(30));
     }
 
     @Override

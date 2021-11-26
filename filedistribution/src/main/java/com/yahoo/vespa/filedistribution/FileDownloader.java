@@ -47,8 +47,8 @@ public class FileDownloader implements AutoCloseable {
         this(connectionPool, supervisor, defaultDownloadDirectory, timeout, defaultSleepBetweenRetries);
     }
 
-    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory) {
-        this(connectionPool, supervisor, downloadDirectory, defaultTimeout, defaultSleepBetweenRetries);
+    public FileDownloader(ConnectionPool connectionPool, Supervisor supervisor, File downloadDirectory, Duration timeout) {
+        this(connectionPool, supervisor, downloadDirectory, timeout, defaultSleepBetweenRetries);
     }
 
     public FileDownloader(ConnectionPool connectionPool,
