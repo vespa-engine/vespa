@@ -140,7 +140,9 @@ $ vespa prod submit`,
 			return
 		}
 		if pkg.TestPath == "" {
-			fatalErrHint(fmt.Errorf("No tests found"), "The application must be a Java maven project, or include basic HTTP tests under src/test/application/")
+			fatalErrHint(fmt.Errorf("No tests found"),
+				"The application must be a Java maven project, or include basic HTTP tests under src/test/application/",
+				"See https://cloud.vespa.ai/en/reference/getting-to-production")
 			return
 		} else {
 			verifyTests(pkg.TestPath, target)
