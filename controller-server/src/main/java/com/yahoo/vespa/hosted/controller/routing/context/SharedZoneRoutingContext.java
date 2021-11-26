@@ -15,12 +15,12 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class SharedRoutingContext implements RoutingContext {
+public class SharedZoneRoutingContext implements RoutingContext {
 
     private final ConfigServer configServer;
     private final ZoneId zone;
 
-    public SharedRoutingContext(ZoneId zone, ConfigServer configServer) {
+    public SharedZoneRoutingContext(ZoneId zone, ConfigServer configServer) {
         this.configServer = Objects.requireNonNull(configServer);
         this.zone = Objects.requireNonNull(zone);
     }

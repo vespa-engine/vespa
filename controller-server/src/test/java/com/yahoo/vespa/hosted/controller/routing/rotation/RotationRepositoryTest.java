@@ -205,10 +205,9 @@ public class RotationRepositoryTest {
 
     private void assertSingleRotation(Rotation expected, List<AssignedRotation> assignedRotations, RotationRepository repository) {
         assertEquals(1, assignedRotations.size());
-        var rotationId = assignedRotations.get(0).rotationId();
-        var rotation = repository.getRotation(rotationId);
-        assertTrue(rotationId + " exists", rotation.isPresent());
-        assertEquals(expected, rotation.get());
+        RotationId rotationId = assignedRotations.get(0).rotationId();
+        Rotation rotation = repository.requireRotation(rotationId);
+        assertEquals(expected, rotation);
     }
 
     private static List<RotationId> rotationIds(List<AssignedRotation> assignedRotations) {

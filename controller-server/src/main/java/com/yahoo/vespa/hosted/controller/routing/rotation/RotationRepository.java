@@ -21,7 +21,6 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -56,9 +55,11 @@ public class RotationRepository {
         return new RotationLock(curator.lockRotations());
     }
 
-    /** Get rotation by given rotationId */
-    public Optional<Rotation> getRotation(RotationId rotationId) {
-        return Optional.of(allRotations.get(rotationId));
+    /** Get rotation with given id */
+    public Rotation requireRotation(RotationId id) {
+        Rotation rotation = allRotations.get(id);
+        if (rotation == null) throw new IllegalArgumentException("No such rotation: '" + id.asString() + "'");
+        return rotation;
     }
 
     /**
