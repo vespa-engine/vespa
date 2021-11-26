@@ -12,6 +12,7 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <future>
 
@@ -42,7 +43,7 @@ getBucketSpace(const BootstrapConfig &bootstrapConfig, const DocTypeName &name)
 }
 
 
-ProtonConfigurer::ProtonConfigurer(vespalib::SyncableThreadExecutor &executor,
+ProtonConfigurer::ProtonConfigurer(vespalib::ThreadExecutor &executor,
                                    IProtonConfigurerOwner &owner,
                                    const std::unique_ptr<IProtonDiskLayout> &diskLayout)
     : IProtonConfigurer(),
@@ -58,9 +59,22 @@ ProtonConfigurer::ProtonConfigurer(vespalib::SyncableThreadExecutor &executor,
 {
 }
 
-ProtonConfigurer::~ProtonConfigurer()
-{
-}
+class ProtonConfigurer::ReconfigureTask : public vespalib::Executor::Task {
+public:
+    ReconfigureTask(ProtonConfigurer & configurer)
+        : _configurer(configurer),
+          _retainGuard(configurer._pendingReconfigureTasks)
+    {}
+
+    void run() override {
+        _configurer.performReconfigure();
+    }
+private:
+    ProtonConfigurer      & _configurer;
+    vespalib::RetainGuard   _retainGuard;
+};
+
+ProtonConfigurer::~ProtonConfigurer() = default;
 
 void
 ProtonConfigurer::setAllowReconfig(bool allowReconfig)
@@ -72,11 +86,12 @@ ProtonConfigurer::setAllowReconfig(bool allowReconfig)
         _allowReconfig = allowReconfig;
         if (allowReconfig) {
             // Ensure that pending config is applied
-            _executor.execute(makeLambdaTask([this]() { performReconfigure(); }));
+            _executor.execute(std::make_unique<ReconfigureTask>(*this));
         }
     }
     if (!allowReconfig) {
-        _executor.sync(); // drain queued performReconfigure tasks
+        // drain queued performReconfigure tasks
+        _pendingReconfigureTasks.waitForZeroRefCount();
     }
 }
 
@@ -102,7 +117,7 @@ ProtonConfigurer::reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapsh
     std::lock_guard<std::mutex> guard(_mutex);
     _pendingConfigSnapshot = configSnapshot;
     if (_allowReconfig) {
-        _executor.execute(makeLambdaTask([&]() { performReconfigure(); }));
+        _executor.execute(std::make_unique<ReconfigureTask>(*this));
     }
 }
 

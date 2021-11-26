@@ -8,6 +8,7 @@
 
 namespace vespalib {
 
+class ThreadExecutor;
 class SyncableThreadExecutor;
 
 /**
@@ -41,7 +42,7 @@ public:
      */
     uint32_t getComponentHashSize() const { return _component2IdImperfect.size(); }
     uint32_t getComponentEffectiveHashSize() const { return _nextId; }
-    const vespalib::SyncableThreadExecutor* first_executor() const;
+    const vespalib::ThreadExecutor* first_executor() const;
 
 private:
     explicit SequencedTaskExecutor(std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> executor);
