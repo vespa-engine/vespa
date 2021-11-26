@@ -328,10 +328,8 @@ IndexMaintainer::flushMemoryIndex(IMemoryIndex &memoryIndex,
         updateDiskIndexSchema(flushDir, *prunedSchema, noSerialNumHigh);
     }
     IndexWriteUtilities::writeSourceSelector(saveInfo, indexId, getAttrTune(),
-                                             _ctx.getFileHeaderContext(),
-                                             serialNum);
-    IndexWriteUtilities::writeSerialNum(serialNum, flushDir,
-                                        _ctx.getFileHeaderContext());
+                                             _ctx.getFileHeaderContext(), serialNum);
+    IndexWriteUtilities::writeSerialNum(serialNum, flushDir, _ctx.getFileHeaderContext());
     return loadDiskIndex(flushDir);
 }
 
@@ -696,7 +694,7 @@ IndexMaintainer::doneFusion(FusionArgs *args, IDiskIndex::SP *new_index)
 }
 
 bool
-IndexMaintainer::makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive)
+IndexMaintainer::makeSureAllRemainingWarmupIsDone(std::shared_ptr<WarmupIndexCollection> keepAlive)
 {
     // called by warmupDone via reconfigurer, warmupDone() doesn't wait for us
     assert(_ctx.getThreadingService().master().isCurrentThread());
@@ -713,13 +711,13 @@ IndexMaintainer::makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP
         LOG(info, "New index warmed up and switched in : %s", warmIndex->toString().c_str());
     }
     LOG(info, "Sync warmupExecutor.");
-    _ctx.getWarmupExecutor().sync();
+    keepAlive->drainPending();
     LOG(info, "Now the keep alive of the warmupindexcollection should be gone.");
     return true;
 }
 
 void
-IndexMaintainer::warmupDone(ISearchableIndexCollection::SP current)
+IndexMaintainer::warmupDone(std::shared_ptr<WarmupIndexCollection> current)
 {
     // Called by a search thread
     LockGuard lock(_new_search_lock);

@@ -257,8 +257,8 @@ class IndexMaintainer : public IIndexManager,
      * result.
      */
     bool reconfigure(std::unique_ptr<Configure> configure);
-    void warmupDone(ISearchableIndexCollection::SP current) override;
-    bool makeSureAllRemainingWarmupIsDone(ISearchableIndexCollection::SP keepAlive);
+    void warmupDone(std::shared_ptr<WarmupIndexCollection> current) override;
+    bool makeSureAllRemainingWarmupIsDone(std::shared_ptr<WarmupIndexCollection> keepAlive);
     void commit_and_wait();
     void commit(vespalib::Gate& gate);
     void pruneRemovedFields(const Schema &schema, SerialNum serialNum);

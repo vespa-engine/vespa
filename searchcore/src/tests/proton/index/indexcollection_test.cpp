@@ -25,7 +25,7 @@ public:
     MockIndexSearchable()
         : _field_length_info()
     {}
-    MockIndexSearchable(const FieldLengthInfo& field_length_info)
+    explicit MockIndexSearchable(const FieldLengthInfo& field_length_info)
         : _field_length_info(field_length_info)
     {}
     FieldLengthInfo get_field_length_info(const vespalib::string& field_name) const override {
@@ -79,17 +79,17 @@ public:
         return std::make_unique<WarmupIndexCollection>(WarmupConfig(1s, false), prev, next, *_warmup, _executor, *this);
     }
 
-    virtual void warmupDone(ISearchableIndexCollection::SP current) override {
+    void warmupDone(std::shared_ptr<WarmupIndexCollection> current) override {
         (void) current;
     }
 
     IndexCollectionTest()
-        : _selector(new FixedSourceSelector(0, "fs1")),
-          _source1(new MockIndexSearchable({3, 5})),
-          _source2(new MockIndexSearchable({7, 11})),
-          _fusion_source(new FakeIndexSearchable),
+        : _selector(std::make_shared<FixedSourceSelector>(0, "fs1")),
+          _source1(std::make_shared<MockIndexSearchable>(FieldLengthInfo(3, 5))),
+          _source2(std::make_shared<MockIndexSearchable>(FieldLengthInfo(7, 11))),
+          _fusion_source(std::make_shared<FakeIndexSearchable>()),
           _executor(1, 128_Ki),
-          _warmup(new FakeIndexSearchable)
+          _warmup(std::make_shared<FakeIndexSearchable>())
     {}
     ~IndexCollectionTest() = default;
 };

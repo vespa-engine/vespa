@@ -26,7 +26,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
         const IGetSerialNum &getSerialNum,
         const DocTypeName &docTypeName,
         searchcorespi::index::IThreadingService &writeService,
-        vespalib::SyncableThreadExecutor &warmupExecutor,
+        vespalib::Executor &warmupExecutor,
         const search::common::FileHeaderContext &fileHeaderContext,
         MetricsWireService &metricsWireService,
         DocumentDBTaggedMetrics &metrics,

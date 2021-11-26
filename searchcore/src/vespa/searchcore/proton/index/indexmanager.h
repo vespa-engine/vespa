@@ -73,7 +73,7 @@ public:
                  SerialNum serialNum,
                  Reconfigurer &reconfigurer,
                  searchcorespi::index::IThreadingService &threadingService,
-                 vespalib::SyncableThreadExecutor & warmupExecutor,
+                 vespalib::Executor & warmupExecutor,
                  const search::TuneFileIndexManager &tuneFileIndexManager,
                  const search::TuneFileAttributes &tuneFileAttributes,
                  const search::common::FileHeaderContext &fileHeaderContext);
