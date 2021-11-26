@@ -16,7 +16,6 @@ private:
     Stats _masterExecutorStats;
     Stats _indexExecutorStats;
     Stats _summaryExecutorStats;
-    Stats _sharedExecutorStats;
     Stats _indexFieldInverterExecutorStats;
     Stats _indexFieldWriterExecutorStats;
     Stats _attributeFieldWriterExecutorStats;
@@ -24,7 +23,6 @@ public:
     ExecutorThreadingServiceStats(Stats masterExecutorStats,
                                   Stats indexExecutorStats,
                                   Stats summaryExecutorStats,
-                                  Stats sharedExecutorStats,
                                   Stats indexFieldInverterExecutorStats,
                                   Stats indexFieldWriterExecutorStats,
                                   Stats attributeFieldWriterExecutorStats);
@@ -33,7 +31,6 @@ public:
     const Stats &getMasterExecutorStats() const { return _masterExecutorStats; }
     const Stats &getIndexExecutorStats() const { return _indexExecutorStats; }
     const Stats &getSummaryExecutorStats() const { return _summaryExecutorStats; }
-    const Stats &getSharedExecutorStats() const { return _sharedExecutorStats; }
     const Stats &getIndexFieldInverterExecutorStats() const { return _indexFieldInverterExecutorStats; }
     const Stats &getIndexFieldWriterExecutorStats() const { return _indexFieldWriterExecutorStats; }
     const Stats &getAttributeFieldWriterExecutorStats() const { return _attributeFieldWriterExecutorStats; }

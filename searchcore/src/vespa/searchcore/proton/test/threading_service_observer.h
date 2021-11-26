@@ -12,9 +12,9 @@ class ThreadingServiceObserver : public searchcorespi::index::IThreadingService
 {
 private:
     searchcorespi::index::IThreadingService &_service;
-    ThreadServiceObserver _master;
-    ThreadServiceObserver _index;
-    ThreadServiceObserver _summary;
+    ThreadServiceObserver  _master;
+    ThreadServiceObserver  _index;
+    ThreadExecutorObserver _summary;
     vespalib::ThreadExecutor & _shared;
     vespalib::SequencedTaskExecutorObserver _indexFieldInverter;
     vespalib::SequencedTaskExecutorObserver _indexFieldWriter;
@@ -29,7 +29,7 @@ public:
     const ThreadServiceObserver &indexObserver() const {
         return _index;
     }
-    const ThreadServiceObserver &summaryObserver() const {
+    const ThreadExecutorObserver &summaryObserver() const {
         return _summary;
     }
 
@@ -43,7 +43,7 @@ public:
     searchcorespi::index::IThreadService &index() override {
         return _index;
     }
-    searchcorespi::index::IThreadService &summary() override {
+    vespalib::ThreadExecutor &summary() override {
         return _summary;
     }
     vespalib::ThreadExecutor &shared() override {

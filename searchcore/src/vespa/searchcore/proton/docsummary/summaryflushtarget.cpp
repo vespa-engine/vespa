@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "summaryflushtarget.h"
-#include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
 using search::IDocumentStore;
@@ -28,7 +27,7 @@ public:
     {
         _currSerial = _docStore.initFlush(currSerial);
     }
-    virtual void run() override {
+    void run() override {
         _docStore.flush(_currSerial);
         updateStats();
     }
@@ -37,17 +36,13 @@ public:
         _stats.setPath(_docStore.getBaseDir());
     }
 
-    virtual SerialNum
-    getFlushSerial() const override
-    {
-        return _currSerial;
-    }
+    SerialNum getFlushSerial() const override { return _currSerial; }
 };
 
 }
 
 SummaryFlushTarget::SummaryFlushTarget(IDocumentStore & docStore,
-                                       searchcorespi::index::IThreadService & summaryService)
+                                       vespalib::Executor & summaryService)
     : IFlushTarget("summary.flush", Type::SYNC, Component::DOCUMENT_STORE),
       _docStore(docStore),
       _summaryService(summaryService),
@@ -60,12 +55,6 @@ IFlushTarget::MemoryGain
 SummaryFlushTarget::getApproxMemoryGain() const
 {
     return MemoryGain(_docStore.memoryUsed(), _docStore.memoryMeta());
-}
-
-IFlushTarget::DiskGain
-SummaryFlushTarget::getApproxDiskGain() const
-{
-    return DiskGain(0, 0);
 }
 
 IFlushTarget::Time
@@ -96,12 +85,5 @@ SummaryFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::I
                                   }));
     return future.get();
 }
-
-uint64_t
-SummaryFlushTarget::getApproxBytesToWriteToDisk() const
-{
-    return 0;
-}
-
 
 } // namespace proton

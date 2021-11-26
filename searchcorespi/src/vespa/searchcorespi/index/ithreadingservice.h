@@ -71,7 +71,7 @@ struct IThreadingService
 
     virtual IThreadService &master() = 0;
     virtual IThreadService &index() = 0;
-    virtual IThreadService &summary() = 0;
+    virtual vespalib::ThreadExecutor &summary() = 0;
     virtual vespalib::ThreadExecutor &shared() = 0;
     virtual vespalib::ISequencedTaskExecutor &indexFieldInverter() = 0;
     virtual vespalib::ISequencedTaskExecutor &indexFieldWriter() = 0;

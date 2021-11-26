@@ -15,23 +15,22 @@ namespace proton {
 class SummaryCompactTarget : public searchcorespi::IFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
-    searchcorespi::index::IThreadService &_summaryService;
+    vespalib::Executor &_summaryService;
     search::IDocumentStore & _docStore;
     FlushStats _lastStats;
 
 public:
-    SummaryCompactTarget(searchcorespi::index::IThreadService & summaryService, search::IDocumentStore & docStore);
+    SummaryCompactTarget(vespalib::Executor & summaryService, search::IDocumentStore & docStore);
 
-    // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const override;
-    virtual   DiskGain getApproxDiskGain() const override;
-    virtual  SerialNum getFlushedSerialNum() const override;
-    virtual       Time getLastFlushTime() const override;
+    MemoryGain getApproxMemoryGain() const override;
+    DiskGain getApproxDiskGain() const override;
+    SerialNum getFlushedSerialNum() const override;
+    Time getLastFlushTime() const override;
 
-    virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 
-    virtual FlushStats getLastFlushStats() const override { return _lastStats; }
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    FlushStats getLastFlushStats() const override { return _lastStats; }
+    uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
 };
 
 } // namespace proton

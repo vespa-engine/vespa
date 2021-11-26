@@ -60,18 +60,6 @@ public:
                          uint32_t field_task_limit,
                          uint32_t summary_task_limit);
 
-    // Expose the underlying executors for stats fetching and testing.
-    // TOD: Remove - This is only used for casting to check the underlying type
-    vespalib::ThreadExecutor &getMasterExecutor() {
-        return _masterExecutor;
-    }
-    vespalib::ThreadExecutor &getIndexExecutor() {
-        return *_indexExecutor;
-    }
-    vespalib::ThreadExecutor &getSummaryExecutor() {
-        return *_summaryExecutor;
-    }
-
     searchcorespi::index::IThreadService &master() override {
         return _masterService;
     }
@@ -79,8 +67,8 @@ public:
         return _indexService;
     }
 
-    searchcorespi::index::IThreadService &summary() override {
-        return _summaryService;
+    vespalib::ThreadExecutor &summary() override {
+        return *_summaryExecutor;
     }
     vespalib::ThreadExecutor &shared() override {
         return _sharedExecutor;

@@ -2,7 +2,6 @@
 
 #include "summarycompacttarget.h"
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/searchcorespi/index/i_thread_service.h>
 #include <future>
 
 using search::IDocumentStore;
@@ -39,7 +38,7 @@ public:
 
 }
 
-SummaryCompactTarget::SummaryCompactTarget(searchcorespi::index::IThreadService & summaryService, IDocumentStore & docStore)
+SummaryCompactTarget::SummaryCompactTarget(vespalib::Executor & summaryService, IDocumentStore & docStore)
     : IFlushTarget("summary.compact", Type::GC, Component::DOCUMENT_STORE),
       _summaryService(summaryService),
       _docStore(docStore),
@@ -80,12 +79,6 @@ SummaryCompactTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search:
     std::future<Task::UP> future = promise.get_future();
     _summaryService.execute(makeLambdaTask([&]() { promise.set_value(std::make_unique<Compacter>(_docStore, _lastStats, currentSerial)); }));
     return future.get();
-}
-
-uint64_t
-SummaryCompactTarget::getApproxBytesToWriteToDisk() const
-{
-    return 0;
 }
 
 } // namespace proton
