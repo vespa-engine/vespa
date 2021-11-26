@@ -7,17 +7,6 @@
 namespace proton::test {
 
 /**
- * Run the given function in the master thread and wait until all threads done.
- */
-template <typename FunctionType>
-void
-runInMasterAndSyncAll(searchcorespi::index::IThreadingService &writeService, FunctionType func)
-{
-    writeService.master().execute(vespalib::makeLambdaTask(std::move(func)));
-    writeService.sync_all_executors();
-}
-
-/**
  * Run the given function in the master thread and wait until done.
  */
 template <typename FunctionType>

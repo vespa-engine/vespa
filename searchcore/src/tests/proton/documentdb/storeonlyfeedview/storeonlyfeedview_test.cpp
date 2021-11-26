@@ -242,7 +242,8 @@ struct FixtureBase {
 
     template <typename FunctionType>
     void runInMasterAndSyncAll(FunctionType func) {
-        test::runInMasterAndSyncAll(writeService, func);
+        test::runInMaster(writeService, func);
+        writeService.sync_all_executors();
     }
     template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
