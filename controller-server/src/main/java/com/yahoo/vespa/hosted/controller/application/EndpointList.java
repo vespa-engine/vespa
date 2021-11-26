@@ -53,7 +53,7 @@ public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> 
         return matching(endpoint -> endpoint.deployments().containsAll(deployments));
     }
 
-    /** Returns the subset of endpoints which target the given deployments */
+    /** Returns the subset of endpoints which target the given deployment */
     public EndpointList targets(DeploymentId deployment) {
         return targets(List.of(deployment));
     }

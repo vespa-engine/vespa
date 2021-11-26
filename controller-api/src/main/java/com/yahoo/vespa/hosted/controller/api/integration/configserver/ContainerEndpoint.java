@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.OptionalInt;
 
 /**
  * This represents a list of one or more names for a container cluster.
@@ -14,11 +15,13 @@ public class ContainerEndpoint {
     private final String clusterId;
     private final String scope;
     private final List<String> names;
+    private final OptionalInt weight;
 
-    public ContainerEndpoint(String clusterId, String scope, List<String> names) {
-        this.clusterId = nonEmpty(clusterId, "message must be non-empty");
+    public ContainerEndpoint(String clusterId, String scope, List<String> names, OptionalInt weight) {
+        this.clusterId = nonEmpty(clusterId, "clusterId must be non-empty");
         this.scope = Objects.requireNonNull(scope, "scope must be non-null");
         this.names = List.copyOf(Objects.requireNonNull(names, "names must be non-null"));
+        this.weight = Objects.requireNonNull(weight, "weight must be non-null");
     }
 
     /** ID of the cluster to which this points */
@@ -39,22 +42,29 @@ public class ContainerEndpoint {
         return names;
     }
 
+    /** The relative weight of this endpoint */
+    public OptionalInt weight() {
+        return weight;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ContainerEndpoint that = (ContainerEndpoint) o;
-        return clusterId.equals(that.clusterId) && scope.equals(that.scope) && names.equals(that.names);
+        return clusterId.equals(that.clusterId) && scope.equals(that.scope) && names.equals(that.names) && weight.equals(that.weight);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(clusterId, scope, names);
+        return Objects.hash(clusterId, scope, names, weight);
     }
 
     @Override
     public String toString() {
-        return "container endpoint for " + clusterId + ": " + names + " [scope=" + scope + "]";
+        return "container endpoint for cluster " + clusterId + ": " + String.join(", ", names) +
+               " [scope=" + scope + ",weight=" +
+               weight.stream().boxed().map(Object::toString).findFirst().orElse("<none>") + "]";
     }
 
     private static String nonEmpty(String s, String message) {
