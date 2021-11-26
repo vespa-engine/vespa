@@ -154,6 +154,7 @@ vespa_define_module(
     src/tests/proton/server/health_adapter
     src/tests/proton/server/memory_flush_config_updater
     src/tests/proton/server/memoryflush
+    src/tests/proton/server/shared_threading_service
     src/tests/proton/statusreport
     src/tests/proton/summaryengine
     src/tests/proton/verify_ranksetup
