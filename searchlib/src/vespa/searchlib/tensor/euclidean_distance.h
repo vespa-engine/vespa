@@ -49,9 +49,7 @@ public:
     static const int8_t *cast(const vespalib::eval::Int8Float * p) { return reinterpret_cast<const int8_t *>(p); }
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override {
         constexpr vespalib::eval::CellType expected = vespalib::eval::get_cell_type<FloatType>();
-        if ((lhs.type != expected) || (rhs.type != expected)) {
-            return SquaredEuclideanDistance::calc(lhs, rhs);
-        }
+        assert(lhs.type == expected && rhs.type == expected);
         auto lhs_vector = lhs.typify<FloatType>();
         auto rhs_vector = rhs.typify<FloatType>();
         size_t sz = lhs_vector.size();
