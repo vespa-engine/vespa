@@ -20,9 +20,17 @@ import java.util.Set;
  */
 public class DocumentManager {
 
+    private boolean useV8GeoPositions = false;
+
+    public DocumentManager useV8GeoPositions(boolean value) {
+        this.useV8GeoPositions = value;
+        return this;
+    }
+
     public DocumentmanagerConfig.Builder produce(DocumentModel model,
                                                  DocumentmanagerConfig.Builder documentConfigBuilder) {
         documentConfigBuilder.enablecompression(false);
+        documentConfigBuilder.usev8geopositions(this.useV8GeoPositions);
         Set<DataType> handled = new HashSet<>();
         for(NewDocumentType documentType : model.getDocumentManager().getTypes()) {
             buildConfig(documentType, documentConfigBuilder, handled);
