@@ -1,45 +1,46 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/proton/common/dummydbowner.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
-#include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchcore/proton/docsummary/documentstoreadapter.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/documentdb.h>
-#include <vespa/searchcore/proton/server/feedhandler.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
+#include <vespa/searchcore/proton/server/feedhandler.h>
 #include <vespa/searchcore/proton/server/idocumentsubdb.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/searchview.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
-#include <vespa/searchcore/proton/matching/querylimiter.h>
-#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
-#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/searchcore/proton/test/bucketfactory.h>
+#include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/encoding/base64.h>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <regex>
 
 #include <vespa/log/log.h>
@@ -176,6 +177,7 @@ public:
     DummyFileHeaderContext _fileHeaderContext;
     TransLogServer _tls;
     vespalib::ThreadStackExecutor _summaryExecutor;
+    MockSharedThreadingService _shared_service;
     storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
     bool _mkdirOk;
     matching::QueryLimiter _queryLimiter;
@@ -196,6 +198,7 @@ public:
           _fileHeaderContext(),
           _tls("tmp", 9013, ".", _fileHeaderContext),
           _summaryExecutor(8, 128_Ki),
+          _shared_service(_summaryExecutor, _summaryExecutor),
           _bucketExecutor(2),
           _mkdirOk(FastOS_File::MakeDirectory("tmpdb")),
           _queryLimiter(),
@@ -224,7 +227,7 @@ public:
         }
         _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
                                   DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
-                                  _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy, _fileHeaderContext,
+                                  _shared_service, _bucketExecutor, _tls, _dummy, _fileHeaderContext,
                                   std::make_unique<MemoryConfigStore>(),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo),
             _ddb->start();

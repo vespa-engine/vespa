@@ -47,12 +47,13 @@ namespace storage::spi { struct BucketExecutor; }
 
 namespace proton {
 class AttributeConfigInspector;
-class IDocumentDBOwner;
-class ITransientResourceUsageProvider;
-struct MetricsWireService;
-class StatusReport;
 class ExecutorThreadingServiceStats;
+class IDocumentDBOwner;
+class ISharedThreadingService;
+class ITransientResourceUsageProvider;
+class StatusReport;
 class TransientResourceUsageProvider;
+struct MetricsWireService;
 
 namespace matching { class SessionManager; }
 
@@ -200,8 +201,7 @@ private:
                document::BucketSpace bucketSpace,
                const ProtonConfig &protonCfg,
                IDocumentDBOwner &owner,
-               vespalib::Executor &warmupExecutor,
-               vespalib::ThreadExecutor &sharedExecutor,
+               ISharedThreadingService& shared_service,
                storage::spi::BucketExecutor &bucketExecutor,
                const search::transactionlog::WriterFactory &tlsWriterFactory,
                MetricsWireService &metricsWireService,
@@ -232,8 +232,7 @@ public:
            document::BucketSpace bucketSpace,
            const ProtonConfig &protonCfg,
            IDocumentDBOwner &owner,
-           vespalib::ThreadExecutor &warmupExecutor,
-           vespalib::ThreadExecutor &sharedExecutor,
+           ISharedThreadingService& shared_service,
            storage::spi::BucketExecutor & bucketExecutor,
            const search::transactionlog::WriterFactory &tlsWriterFactory,
            MetricsWireService &metricsWireService,

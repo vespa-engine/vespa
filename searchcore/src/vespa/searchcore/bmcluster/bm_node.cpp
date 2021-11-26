@@ -1,19 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "bm_node.h"
 #include "bm_cluster.h"
 #include "bm_cluster_params.h"
 #include "bm_message_bus.h"
+#include "bm_node.h"
 #include "bm_node_stats.h"
 #include "bm_storage_chain_builder.h"
 #include "bm_storage_link_context.h"
-#include "storage_api_chain_bm_feed_handler.h"
-#include "storage_api_message_bus_bm_feed_handler.h"
-#include "storage_api_rpc_bm_feed_handler.h"
 #include "document_api_message_bus_bm_feed_handler.h"
 #include "i_bm_distribution.h"
 #include "i_bm_feed_handler.h"
 #include "spi_bm_feed_handler.h"
+#include "storage_api_chain_bm_feed_handler.h"
+#include "storage_api_message_bus_bm_feed_handler.h"
+#include "storage_api_rpc_bm_feed_handler.h"
+#include <tests/proton/common/dummydbowner.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
@@ -39,18 +40,19 @@
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
-#include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
+#include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
-#include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
 #include <vespa/searchcore/proton/server/document_meta_store_read_guards.h>
+#include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
@@ -75,7 +77,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <tests/proton/common/dummydbowner.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".bmcluster.bm_node");
@@ -459,6 +460,7 @@ class MyBmNode : public BmNode
     proton::DummyWireService                   _metrics_wire_service;
     proton::MemoryConfigStores                 _config_stores;
     vespalib::ThreadStackExecutor              _summary_executor;
+    proton::MockSharedThreadingService         _shared_service;
     proton::DummyDBOwner                       _document_db_owner;
     BucketSpace                                _bucket_space;
     std::shared_ptr<DocumentDB>                _document_db;
@@ -523,6 +525,7 @@ MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t nod
       _metrics_wire_service(),
       _config_stores(),
       _summary_executor(8, 128_Ki),
+      _shared_service(_summary_executor, _summary_executor),
       _document_db_owner(),
       _bucket_space(document::test::makeBucketSpace(_doc_type_name.getName())),
       _document_db(),
@@ -594,7 +597,7 @@ MyBmNode::create_document_db(const BmClusterParams& params)
     mgr.nextGeneration(0ms);
     _document_db = DocumentDB::create(_base_dir, mgr.getConfig(), _tls_spec, _query_limiter, _clock, _doc_type_name,
                                       _bucket_space, *bootstrap_config->getProtonConfigSP(), _document_db_owner,
-                                      _summary_executor, _summary_executor, *_persistence_engine, _tls,
+                                      _shared_service, *_persistence_engine, _tls,
                                       _metrics_wire_service, _file_header_context,
                                       _config_stores.getConfigStore(_doc_type_name.toString()),
                                       std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());

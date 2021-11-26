@@ -3,15 +3,19 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <tests/proton/common/dummydbowner.h>
+#include <vespa/config-attributes.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
+#include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/fastos/file.h>
 #include <vespa/persistence/conformancetest/conformancetest.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
@@ -28,13 +32,10 @@
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
+#include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-summary.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -174,6 +175,7 @@ private:
     mutable DummyWireService  _metricsWireService;
     mutable MemoryConfigStores _config_stores;
     vespalib::ThreadStackExecutor _summaryExecutor;
+    MockSharedThreadingService _shared_service;
     storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
 
 public:
@@ -202,7 +204,7 @@ public:
         mgr.nextGeneration(0ms);
         return DocumentDB::create(_baseDir, mgr.getConfig(), _tlsSpec, _queryLimiter, _clock, docType, bucketSpace,
                                   *b->getProtonConfigSP(), const_cast<DocumentDBFactory &>(*this),
-                                  _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _metricsWireService,
+                                  _shared_service, _bucketExecutor, _tls, _metricsWireService,
                                   _fileHeaderContext, _config_stores.getConfigStore(docType.toString()),
                                   std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
     }
@@ -218,6 +220,7 @@ DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsLis
       _clock(),
       _metricsWireService(),
       _summaryExecutor(8, 128_Ki),
+      _shared_service(_summaryExecutor, _summaryExecutor),
       _bucketExecutor(2)
 {}
 DocumentDBFactory::~DocumentDBFactory()  = default;

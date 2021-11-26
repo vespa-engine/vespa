@@ -97,6 +97,8 @@ vespa_add_library(searchcore_server STATIC
     searchhandlerproxy.cpp
     searchview.cpp
     simpleflush.cpp
+    shared_threading_service.cpp
+    shared_threading_service_config.cpp
     storeonlydocsubdb.cpp
     storeonlyfeedview.cpp
     summaryadapter.cpp

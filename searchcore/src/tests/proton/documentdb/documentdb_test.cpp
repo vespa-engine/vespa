@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <tests/proton/common/dummydbowner.h>
+#include <vespa/config-bucketspaces.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/fastos/file.h>
 #include <vespa/document/test/make_bucket_space.h>
+#include <vespa/fastos/file.h>
+#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
@@ -22,17 +24,16 @@
 #include <vespa/searchcore/proton/server/feedhandler.h>
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
-#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
+#include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchcorespi/index/indexflushtarget.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <iostream>
 
 using namespace cloud::config::filedistribution;
@@ -118,6 +119,7 @@ struct Fixture : public FixtureBase {
     DummyWireService _dummy;
     MyDBOwner _myDBOwner;
     vespalib::ThreadStackExecutor _summaryExecutor;
+    MockSharedThreadingService _shared_service;
     HwInfo _hwInfo;
     storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
     DocumentDB::SP _db;
@@ -142,6 +144,7 @@ Fixture::Fixture(bool file_config)
       _dummy(),
       _myDBOwner(),
       _summaryExecutor(8, 128_Ki),
+      _shared_service(_summaryExecutor, _summaryExecutor),
       _hwInfo(),
       _bucketExecutor(2),
       _db(),
@@ -165,7 +168,7 @@ Fixture::Fixture(bool file_config)
     mgr.nextGeneration(0ms);
     _db = DocumentDB::create(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
                              makeBucketSpace(),
-                             *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy,
+                             *b->getProtonConfigSP(), _myDBOwner, _shared_service, _bucketExecutor, _tls, _dummy,
                              _fileHeaderContext, make_config_store(),
                              std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo);
     _db->start();
