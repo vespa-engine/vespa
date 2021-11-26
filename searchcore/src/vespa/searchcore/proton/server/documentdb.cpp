@@ -7,6 +7,7 @@
 #include "documentdb.h"
 #include "documentdbconfigscout.h"
 #include "feedhandler.h"
+#include "i_shared_threading_service.h"
 #include "idocumentdbowner.h"
 #include "idocumentsubdb.h"
 #include "maintenance_jobs_injector.h"
@@ -131,8 +132,7 @@ DocumentDB::create(const vespalib::string &baseDir,
                    document::BucketSpace bucketSpace,
                    const ProtonConfig &protonCfg,
                    IDocumentDBOwner &owner,
-                   vespalib::ThreadExecutor &warmupExecutor,
-                   vespalib::ThreadExecutor &sharedExecutor,
+                   ISharedThreadingService& shared_service,
                    storage::spi::BucketExecutor &bucketExecutor,
                    const search::transactionlog::WriterFactory &tlsWriterFactory,
                    MetricsWireService &metricsWireService,
@@ -143,7 +143,7 @@ DocumentDB::create(const vespalib::string &baseDir,
 {
     return DocumentDB::SP(
             new DocumentDB(baseDir, std::move(currentSnapshot), tlsSpec, queryLimiter, clock, docTypeName, bucketSpace,
-                           protonCfg, owner, warmupExecutor, sharedExecutor, bucketExecutor, tlsWriterFactory,
+                           protonCfg, owner, shared_service, bucketExecutor, tlsWriterFactory,
                            metricsWireService, fileHeaderContext, std::move(config_store), initializeThreads, hwInfo));
 }
 DocumentDB::DocumentDB(const vespalib::string &baseDir,
@@ -155,8 +155,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        document::BucketSpace bucketSpace,
                        const ProtonConfig &protonCfg,
                        IDocumentDBOwner &owner,
-                       vespalib::Executor &warmupExecutor,
-                       vespalib::ThreadExecutor &sharedExecutor,
+                       ISharedThreadingService& shared_service,
                        storage::spi::BucketExecutor & bucketExecutor,
                        const search::transactionlog::WriterFactory &tlsWriterFactory,
                        MetricsWireService &metricsWireService,
@@ -176,7 +175,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _baseDir(baseDir + "/" + _docTypeName.toString()),
       // Only one thread per executor, or performDropFeedView() will fail.
       _writeServiceConfig(configSnapshot->get_threading_service_config()),
-      _writeService(sharedExecutor, _writeServiceConfig, indexing_thread_stack_size),
+      _writeService(shared_service.shared(), _writeServiceConfig, indexing_thread_stack_size),
       _initializeThreads(std::move(initializeThreads)),
       _initConfigSnapshot(),
       _initConfigSerialNum(0u),
@@ -204,9 +203,9 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _writeFilter(),
       _transient_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
-      _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
+      _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, shared_service.warmup(), fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir, hwInfo),
-      _maintenanceController(_writeService.master(), sharedExecutor, _refCount, _docTypeName),
+      _maintenanceController(_writeService.master(), shared_service.shared(), _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter)
