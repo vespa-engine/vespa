@@ -21,6 +21,7 @@ make_distance_function(DistanceMetric variant, CellType cell_type)
         switch (cell_type) {
         case CellType::FLOAT:  return std::make_unique<SquaredEuclideanDistanceHW<float>>();
         case CellType::DOUBLE: return std::make_unique<SquaredEuclideanDistanceHW<double>>();
+        case CellType::INT8: return std::make_unique<SquaredEuclideanDistanceHW<vespalib::eval::Int8Float>>();
         default:               return std::make_unique<SquaredEuclideanDistance>(CellType::FLOAT);
         } 
     case DistanceMetric::Angular:

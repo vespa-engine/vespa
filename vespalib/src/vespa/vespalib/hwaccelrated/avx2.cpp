@@ -11,6 +11,11 @@ Avx2Accelrator::populationCount(const uint64_t *a, size_t sz) const {
 }
 
 double
+Avx2Accelrator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const {
+    return helper::squaredEuclideanDistance(a, b, sz);
+}
+
+double
 Avx2Accelrator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const {
     return avx::euclideanDistanceSelectAlignment<float, 32>(a, b, sz);
 }

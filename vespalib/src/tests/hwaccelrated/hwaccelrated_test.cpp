@@ -3,6 +3,8 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/hwaccelrated/generic.h>
+#include <vespa/log/log.h>
+LOG_SETUP("hwaccelrated_test");
 
 using namespace vespalib;
 
@@ -15,26 +17,34 @@ std::vector<T> createAndFill(size_t sz) {
     return v;
 }
 
-template<typename T>
-void verifyEuclideanDistance(const hwaccelrated::IAccelrated & accel) {
-    const size_t testLength(255);
+template<typename T, typename P>
+void verifyEuclideanDistance(const hwaccelrated::IAccelrated & accel, size_t testLength, double approxFactor) {
     srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
     for (size_t j(0); j < 0x20; j++) {
-        T sum(0);
+        P sum(0);
         for (size_t i(j); i < testLength; i++) {
-            sum += (a[i] - b[i]) * (a[i] - b[i]);
+            P d = P(a[i]) - P(b[i]);
+            sum += d * d;
         }
-        T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
-        EXPECT_EQUAL(sum, hwComputedSum);
+        P hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
+        EXPECT_APPROX(sum, hwComputedSum, sum*approxFactor);
     }
+}
+
+void
+verifyEuclideanDistance(const hwaccelrated::IAccelrated & accelrator, size_t testLength) {
+    verifyEuclideanDistance<int8_t, double>(accelrator, testLength, 0.0);
+    verifyEuclideanDistance<float, double>(accelrator, testLength, 0.0001); // Small deviation requiring EXPECT_APPROX
+    verifyEuclideanDistance<double, double>(accelrator, testLength, 0.0);
 }
 
 TEST("test euclidean distance") {
     hwaccelrated::GenericAccelrator genericAccelrator;
-    verifyEuclideanDistance<float>(genericAccelrator);
-    verifyEuclideanDistance<double >(genericAccelrator);
+    constexpr size_t TEST_LENGTH = 140000; // must be longer than 64k
+    TEST_DO(verifyEuclideanDistance(hwaccelrated::GenericAccelrator(), TEST_LENGTH));
+    TEST_DO(verifyEuclideanDistance(hwaccelrated::IAccelrated::getAccelerator(), TEST_LENGTH));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

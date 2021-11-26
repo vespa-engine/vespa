@@ -74,5 +74,31 @@ orChunks(size_t offset, const std::vector<std::pair<const void *, bool>> & src, 
     }
 }
 
+template<typename TemporaryT=int32_t>
+double squaredEuclideanDistanceT(const int8_t * a, const int8_t * b, size_t sz) __attribute__((noinline));
+template<typename TemporaryT>
+double squaredEuclideanDistanceT(const int8_t * a, const int8_t * b, size_t sz)
+{
+    //Note that this is 3 times faster with int32_t than with int64_t and 16x faster than float
+    TemporaryT sum = 0;
+    for (size_t i(0); i < sz; i++) {
+        int16_t d = int16_t(a[i]) - int16_t(b[i]);
+        sum += d * d;
+    }
+    return sum;
+}
+
+inline double
+squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) {
+    constexpr size_t LOOP_COUNT = 0x10000;
+    double sum(0);
+    size_t i=0;
+    for (; i + LOOP_COUNT <= sz; i += LOOP_COUNT) {
+        sum += squaredEuclideanDistanceT<int32_t>(a + i, b + i, LOOP_COUNT);
+    }
+    sum += squaredEuclideanDistanceT<int32_t>(a + i, b + i, sz - i);
+    return sum;
+}
+
 }
 }

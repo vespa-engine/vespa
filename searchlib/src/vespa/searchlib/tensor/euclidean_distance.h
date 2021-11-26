@@ -44,6 +44,9 @@ public:
         assert(expected_cell_type() == vespalib::eval::get_cell_type<FloatType>());
     }
 
+    static const double *cast(const double * p) { return p; }
+    static const float *cast(const float * p) { return p; }
+    static const int8_t *cast(const vespalib::eval::Int8Float * p) { return reinterpret_cast<const int8_t *>(p); }
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override {
         constexpr vespalib::eval::CellType expected = vespalib::eval::get_cell_type<FloatType>();
         assert(lhs.type == expected && rhs.type == expected);
@@ -51,7 +54,7 @@ public:
         auto rhs_vector = rhs.typify<FloatType>();
         size_t sz = lhs_vector.size();
         assert(sz == rhs_vector.size());
-        return _computer.squaredEuclideanDistance(&lhs_vector[0], &rhs_vector[0], sz);
+        return _computer.squaredEuclideanDistance(cast(&lhs_vector[0]), cast(&rhs_vector[0]), sz);
     }
 
     double calc_with_limit(const vespalib::eval::TypedCells& lhs,

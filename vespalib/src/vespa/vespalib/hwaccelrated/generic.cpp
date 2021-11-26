@@ -34,7 +34,7 @@ multiplyAdd(const T * a, const T * b, size_t sz)
 
 template <typename T, size_t UNROLL>
 double
-euclideanDistanceT(const T * a, const T * b, size_t sz)
+squaredEuclideanDistanceT(const T * a, const T * b, size_t sz)
 {
     T partial[UNROLL];
     for (size_t i(0); i < UNROLL; i++) {
@@ -43,11 +43,13 @@ euclideanDistanceT(const T * a, const T * b, size_t sz)
     size_t i(0);
     for (; i + UNROLL <= sz; i += UNROLL) {
         for (size_t j(0); j < UNROLL; j++) {
-            partial[j] += (a[i+j] - b[i+j]) * (a[i+j] - b[i+j]);
+            T d = a[i+j] - b[i+j];
+            partial[j] += d * d;
         }
     }
     for (;i < sz; i++) {
-        partial[i%UNROLL] += (a[i] - b[i]) * (a[i] - b[i]);
+        T d = a[i] - b[i];
+        partial[i%UNROLL] += d * d;
     }
     double sum(0);
     for (size_t j(0); j < UNROLL; j++) {
@@ -156,13 +158,18 @@ GenericAccelrator::populationCount(const uint64_t *a, size_t sz) const {
 }
 
 double
+GenericAccelrator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const {
+    return helper::squaredEuclideanDistance(a, b, sz);
+}
+
+double
 GenericAccelrator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const {
-    return euclideanDistanceT<float, 8>(a, b, sz);
+    return squaredEuclideanDistanceT<float, 2>(a, b, sz);
 }
 
 double
 GenericAccelrator::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const {
-    return euclideanDistanceT<double, 4>(a, b, sz);
+    return squaredEuclideanDistanceT<double, 2>(a, b, sz);
 }
 
 void
