@@ -137,7 +137,8 @@ public:
 
     template <typename FunctionType>
     void runInMasterAndSyncAll(FunctionType func) {
-        test::runInMasterAndSyncAll(_writeService, func);
+        test::runInMaster(_writeService, func);
+        _writeServiceReal.sync_all_executors();
     }
 
     template <typename FunctionType>

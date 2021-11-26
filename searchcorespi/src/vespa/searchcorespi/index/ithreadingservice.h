@@ -63,8 +63,6 @@ struct IThreadingService
     IThreadingService() = default;
     virtual ~IThreadingService() = default;
 
-    virtual void sync_all_executors() = 0;
-
     /**
      * Block the calling thread until the master thread has capacity to handle more tasks,
      * and then execute the given task in the master thread.
