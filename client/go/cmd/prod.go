@@ -116,7 +116,7 @@ For more information about production deployments in Vespa Cloud see:
 https://cloud.vespa.ai/en/getting-to-production
 https://cloud.vespa.ai/en/automated-deployments`,
 	DisableAutoGenTag: true,
-	Example: `$ mvn package
+	Example: `$ mvn package # when adding custom Java components
 $ vespa prod submit`,
 	Run: func(cmd *cobra.Command, args []string) {
 		target := getTarget()
@@ -139,10 +139,13 @@ $ vespa prod submit`,
 			fatalErrHint(fmt.Errorf("No deployment.xml found"), "Try creating one with vespa prod init")
 			return
 		}
-		if !pkg.IsJava() {
-			// TODO: Loosen this requirement when we start supporting applications with Java in production
-			fatalErrHint(fmt.Errorf("No jar files found in %s", pkg.Path), "Only applications containing Java components are currently supported")
+		if pkg.TestPath == "" {
+			fatalErrHint(fmt.Errorf("No tests found"),
+				"The application must be a Java maven project, or include basic HTTP tests under src/test/application/",
+				"See https://cloud.vespa.ai/en/reference/getting-to-production")
 			return
+		} else {
+			verifyTests(pkg.TestPath, target)
 		}
 		isCI := os.Getenv("CI") != ""
 		if !isCI {
@@ -346,4 +349,13 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 		}
 	}
 	return input
+}
+
+func verifyTests(testsParent string, target vespa.Target) {
+	runTests(filepath.Join(testsParent, "tests", "system-test"), target, true)
+	runTests(filepath.Join(testsParent, "tests", "staging-setup"), target, true)
+	runTests(filepath.Join(testsParent, "tests", "staging-test"), target, true)
+	if util.PathExists(filepath.Join(testsParent, "tests", "production-test")) {
+		runTests(filepath.Join(testsParent, "tests", "production-test"), target, true)
+	}
 }

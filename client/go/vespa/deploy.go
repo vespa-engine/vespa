@@ -139,7 +139,7 @@ func (ap *ApplicationPackage) zipReader(test bool) (io.ReadCloser, error) {
 			tempZip.Close()
 			os.Remove(tempZip.Name())
 		}()
-		if err := zipDir(ap.Path, tempZip.Name()); err != nil {
+		if err := zipDir(zipFile, tempZip.Name()); err != nil {
 			return nil, err
 		}
 		zipFile = tempZip.Name()
@@ -167,6 +167,10 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 		}
 	}
 	if util.PathExists(filepath.Join(zipOrDir, "src", "main", "application")) {
+		if util.PathExists(filepath.Join(zipOrDir, "src", "test", "application")) {
+			return ApplicationPackage{Path: filepath.Join(zipOrDir, "src", "main", "application"),
+				TestPath: filepath.Join(zipOrDir, "src", "test", "application")}, nil
+		}
 		return ApplicationPackage{Path: filepath.Join(zipOrDir, "src", "main", "application")}, nil
 	}
 	if util.PathExists(filepath.Join(zipOrDir, "services.xml")) {
@@ -440,7 +444,10 @@ func zipDir(dir string, destination string) error {
 		}
 		defer file.Close()
 
-		zippath := strings.TrimPrefix(path, dir)
+		zippath, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
 		zipfile, err := w.Create(zippath)
 		if err != nil {
 			return err

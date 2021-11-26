@@ -27,16 +27,15 @@ func init() {
 	rootCmd.AddCommand(testCmd)
 }
 
-// TODO: add link to test doc at cloud.vespa.ai
 var testCmd = &cobra.Command{
 	Use:   "test [tests directory or test file]",
 	Short: "Run a test suite, or a single test",
 	Long: `Run a test suite, or a single test
 
-Runs all JSON test files in the specified directory, or the single JSON
-test file specified.
+Runs all JSON test files in the specified directory (the working
+directory by default), or the single JSON test file specified.
 
-If no directory or file is specified, the working directory is used instead.`,
+See https://cloud.vespa.ai/en/reference/testing.html for details.`,
 	Example: `$ vespa test src/test/application/tests/system-test
 $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 	Args:              cobra.MaximumNArgs(1),
@@ -47,14 +46,11 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 		if len(args) > 0 {
 			testPath = args[0]
 		}
-		if count, failed := runTests(testPath, target); len(failed) != 0 {
+		if count, failed := runTests(testPath, target, false); len(failed) != 0 {
 			fmt.Fprintf(stdout, "\nFailed %d of %d tests:\n", len(failed), count)
 			for _, test := range failed {
 				fmt.Fprintln(stdout, test)
 			}
-			exitFunc(3)
-		} else if count == 0 {
-			fmt.Fprintf(stdout, "Failed to find any tests at %v\n", testPath)
 			exitFunc(3)
 		} else {
 			plural := "s"
@@ -66,15 +62,15 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 	},
 }
 
-func runTests(rootPath string, target vespa.Target) (int, []string) {
+func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string) {
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
-		fatalErr(err, "Failed reading specified test path")
+		fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 	} else if stat.IsDir() {
 		tests, err := ioutil.ReadDir(rootPath) // TODO: Use os.ReadDir when >= 1.16 is required.
 		if err != nil {
-			fatalErr(err, "Failed reading specified test directory")
+			fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 		}
 		previousFailed := false
 		for _, test := range tests {
@@ -84,7 +80,7 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 					fmt.Fprintln(stdout, "")
 					previousFailed = false
 				}
-				failure := runTest(testPath, target)
+				failure := runTest(testPath, target, dryRun)
 				if failure != "" {
 					failed = append(failed, failure)
 					previousFailed = true
@@ -93,64 +89,76 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure := runTest(rootPath, target)
+		failure := runTest(rootPath, target, dryRun)
 		if failure != "" {
 			failed = append(failed, failure)
 		}
 		count++
 	}
+	if count == 0 {
+		fatalErrHint(fmt.Errorf("Failed to find any tests at %s", rootPath), "See https://cloud.vespa.ai/en/reference/testing")
+	}
 	return count, failed
 }
 
 // Runs the test at the given path, and returns the specified test name if the test fails
-func runTest(testPath string, target vespa.Target) string {
+func runTest(testPath string, target vespa.Target, dryRun bool) string {
 	var test test
 	testBytes, err := ioutil.ReadFile(testPath)
 	if err != nil {
-		fatalErr(err, fmt.Sprintf("Failed to read test file at %s", testPath))
+		fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 	}
 	if err = json.Unmarshal(testBytes, &test); err != nil {
-		fatalErr(err, fmt.Sprintf("Failed to parse test file at %s", testPath))
+		fatalErrHint(err, fmt.Sprintf("Failed parsing test at %s", testPath), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 
 	testName := test.Name
 	if test.Name == "" {
 		testName = filepath.Base(testPath)
 	}
-	fmt.Fprintf(stdout, "Running %s:", testName)
+	if !dryRun {
+		fmt.Fprintf(stdout, "Running %s:", testName)
+	}
 
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, path.Dir(testPath))
 	if err != nil {
-		fatalErr(err, fmt.Sprintf("Invalid default parameters for %s", testName))
+		fmt.Fprintln(stderr)
+		fatalErrHint(err, fmt.Sprintf("Invalid default parameters for %s", testName), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 
 	if len(test.Steps) == 0 {
-		fatalErr(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath))
+		fmt.Fprintln(stderr)
+		fatalErrHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 	for i, step := range test.Steps {
 		stepName := step.Name
 		if stepName == "" {
 			stepName = fmt.Sprintf("step %d", i+1)
 		}
-		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target)
+		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
 		if err != nil {
-			fatalErr(err, fmt.Sprintf("Error in %s", stepName))
+			fmt.Fprintln(stderr)
+			fatalErrHint(err, fmt.Sprintf("Error in %s", stepName), "See https://cloud.vespa.ai/en/reference/testing")
 		}
-		if failure != "" {
-			fmt.Fprintf(stdout, " Failed %s:\n%s\n", stepName, longFailure)
-			return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
+		if !dryRun {
+			if failure != "" {
+				fmt.Fprintf(stdout, " Failed %s:\n%s\n", stepName, longFailure)
+				return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
+			}
+			if i == 0 {
+				fmt.Fprintf(stdout, " ")
+			}
+			fmt.Fprint(stdout, ".")
 		}
-		if i == 0 {
-			fmt.Fprintf(stdout, " ")
-		}
-		fmt.Fprint(stdout, ".")
 	}
-	fmt.Fprintln(stdout, " OK")
+	if !dryRun {
+		fmt.Fprintln(stdout, " OK")
+	}
 	return ""
 }
 
 // Asserts specified response is obtained for request, or returns a failure message, or an error if this fails
-func verify(step step, testsPath string, defaultCluster string, defaultParameters map[string]string, target vespa.Target) (string, string, error) {
+func verify(step step, testsPath string, defaultCluster string, defaultParameters map[string]string, target vespa.Target, dryRun bool) (string, string, error) {
 	requestBody, err := getBody(step.Request.BodyRaw, testsPath)
 	if err != nil {
 		return "", "", err
@@ -171,9 +179,12 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 		cluster = defaultCluster
 	}
 
-	service, err := target.Service("query", 0, 0, cluster)
-	if err != nil {
-		return "", "", err
+	var service *vespa.Service
+	if !dryRun {
+		service, err = target.Service("query", 0, 0, cluster)
+		if err != nil {
+			return "", "", err
+		}
 	}
 
 	method := step.Request.Method
@@ -191,7 +202,11 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	}
 	externalEndpoint := requestUrl.IsAbs()
 	if !externalEndpoint {
-		requestUrl, err = url.ParseRequestURI(service.BaseURL + requestUri)
+		baseURL := "http://dummy/"
+		if service != nil {
+			baseURL = service.BaseURL
+		}
+		requestUrl, err = url.ParseRequestURI(baseURL + requestUri)
 		if err != nil {
 			return "", "", err
 		}
@@ -213,6 +228,27 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	}
 	defer request.Body.Close()
 
+	statusCode := step.Response.Code
+	if statusCode == 0 {
+		statusCode = 200
+	}
+
+	responseBodySpecBytes, err := getBody(step.Response.BodyRaw, testsPath)
+	if err != nil {
+		return "", "", err
+	}
+	var responseBodySpec interface{}
+	if responseBodySpecBytes != nil {
+		err = json.Unmarshal(responseBodySpecBytes, &responseBodySpec)
+		if err != nil {
+			return "", "", fmt.Errorf("invalid response body spec: %w", err)
+		}
+	}
+
+	if dryRun {
+		return "", "", nil
+	}
+
 	var response *http.Response
 	if externalEndpoint {
 		util.ActiveHttpClient.UseCertificate([]tls.Certificate{})
@@ -225,26 +261,13 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	}
 	defer response.Body.Close()
 
-	statusCode := step.Response.Code
-	if statusCode == 0 {
-		statusCode = 200
-	}
 	if statusCode != response.StatusCode {
 		failure := fmt.Sprintf("Unexpected status code: %d", response.StatusCode)
 		return failure, fmt.Sprintf("%s\nExpected: %d\nActual response:\n%s", failure, statusCode, util.ReaderToJSON(response.Body)), nil
 	}
 
-	responseBodySpecBytes, err := getBody(step.Response.BodyRaw, testsPath)
-	if err != nil {
-		return "", "", err
-	}
-	if responseBodySpecBytes == nil {
+	if responseBodySpec == nil {
 		return "", "", nil
-	}
-	var responseBodySpec interface{}
-	err = json.Unmarshal(responseBodySpecBytes, &responseBodySpec)
-	if err != nil {
-		return "", "", err
 	}
 
 	responseBodyBytes, err := ioutil.ReadAll(response.Body)
@@ -348,7 +371,7 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 			resolvedParametersPath := path.Join(testsPath, parametersPath)
 			parametersRaw, err = ioutil.ReadFile(resolvedParametersPath)
 			if err != nil {
-				fatalErr(err, fmt.Sprintf("Failed to read request parameters file at '%s'", resolvedParametersPath))
+				return nil, fmt.Errorf("failed to read request parameters at %s: %w", resolvedParametersPath, err)
 			}
 		}
 		var parameters map[string]string
@@ -366,7 +389,7 @@ func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 		resolvedBodyPath := path.Join(testsPath, bodyPath)
 		bodyRaw, err = ioutil.ReadFile(resolvedBodyPath)
 		if err != nil {
-			fatalErr(err, fmt.Sprintf("Failed to read body file at '%s'", resolvedBodyPath))
+			return nil, fmt.Errorf("failed to read body file at %s: %w", resolvedBodyPath, err)
 		}
 	}
 	return bodyRaw, nil
