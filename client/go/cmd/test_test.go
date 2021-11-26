@@ -58,9 +58,8 @@ func TestTestWithoutAssertions(t *testing.T) {
 
 func TestSuiteWithoutTests(t *testing.T) {
 	client := &mockHttpClient{}
-	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/staging-test"}}, t, client)
-	assert.Equal(t, "Failed to find any tests at testdata/tests/staging-test\n", outBytes)
-	assert.Equal(t, "", errBytes)
+	_, errBytes := execute(command{args: []string{"test", "testdata/tests/staging-test"}}, t, client)
+	assert.Equal(t, "Error: Failed to find any tests at testdata/tests/staging-test\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestSingleTest(t *testing.T) {

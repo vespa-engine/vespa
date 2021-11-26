@@ -52,9 +52,6 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 				fmt.Fprintln(stdout, test)
 			}
 			exitFunc(3)
-		} else if count == 0 {
-			fmt.Fprintf(stdout, "Failed to find any tests at %v\n", testPath)
-			exitFunc(3)
 		} else {
 			plural := "s"
 			if count == 1 {
@@ -97,6 +94,9 @@ func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string)
 			failed = append(failed, failure)
 		}
 		count++
+	}
+	if count == 0 {
+		fatalErrHint(fmt.Errorf("Failed to find any tests at %s", rootPath), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 	return count, failed
 }
