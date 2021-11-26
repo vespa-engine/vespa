@@ -167,6 +167,10 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 		}
 	}
 	if util.PathExists(filepath.Join(zipOrDir, "src", "main", "application")) {
+		if util.PathExists(filepath.Join(zipOrDir, "src", "test", "application")) {
+			return ApplicationPackage{Path: filepath.Join(zipOrDir, "src", "main", "application"),
+				TestPath: filepath.Join(zipOrDir, "src", "test", "application")}, nil
+		}
 		return ApplicationPackage{Path: filepath.Join(zipOrDir, "src", "main", "application")}, nil
 	}
 	if util.PathExists(filepath.Join(zipOrDir, "services.xml")) {

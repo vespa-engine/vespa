@@ -16,7 +16,7 @@ import (
 func TestProdInit(t *testing.T) {
 	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := filepath.Join(t.TempDir(), "app")
-	createApplication(t, pkgDir)
+	createApplication(t, pkgDir, false)
 
 	answers := []string{
 		// Regions
@@ -81,7 +81,7 @@ func readFileString(t *testing.T, filename string) string {
 	return string(content)
 }
 
-func createApplication(t *testing.T, pkgDir string) {
+func createApplication(t *testing.T, pkgDir string, java bool) {
 	appDir := filepath.Join(pkgDir, "src", "main", "application")
 	targetDir := filepath.Join(pkgDir, "target")
 	if err := os.MkdirAll(appDir, 0755); err != nil {
@@ -120,15 +120,25 @@ func createApplication(t *testing.T, pkgDir string) {
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(pkgDir, "pom.xml"), []byte(""), 0644); err != nil {
-		t.Fatal(err)
+	if java {
+		if err := ioutil.WriteFile(filepath.Join(pkgDir, "pom.xml"), []byte(""), 0644); err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		testsDir := filepath.Join(pkgDir, "src", "test", "application", "tests", "system-test")
+		if err := os.MkdirAll(testsDir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := ioutil.WriteFile(filepath.Join(testsDir, "test.json"), []byte(""), 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
 func TestProdSubmit(t *testing.T) {
 	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	pkgDir := filepath.Join(t.TempDir(), "app")
-	createApplication(t, pkgDir)
+	createApplication(t, pkgDir, false)
 
 	httpClient := &mockHttpClient{}
 	httpClient.NextResponse(200, `ok`)
@@ -137,7 +147,37 @@ func TestProdSubmit(t *testing.T) {
 	execute(command{homeDir: homeDir, args: []string{"api-key"}}, t, httpClient)
 	execute(command{homeDir: homeDir, args: []string{"cert", pkgDir}}, t, httpClient)
 
-	// Copy an application package pre-assambled with mvn package
+	// Zipping requires relative paths, so much let command run from pkgDir, then reset cwd for subsequent tests.
+	if cwd, err := os.Getwd(); err != nil {
+		t.Fatal(err)
+	} else {
+		defer os.Chdir(cwd)
+	}
+	if err := os.Chdir(pkgDir); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Setenv("CI", "true"); err != nil {
+		t.Fatal(err)
+	}
+	out, err := execute(command{homeDir: homeDir, args: []string{"prod", "submit"}}, t, httpClient)
+	assert.Equal(t, "", err)
+	assert.Contains(t, out, "Success: Submitted")
+	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
+}
+
+func TestProdSubmitWithJava(t *testing.T) {
+	homeDir := filepath.Join(t.TempDir(), ".vespa")
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	createApplication(t, pkgDir, true)
+
+	httpClient := &mockHttpClient{}
+	httpClient.NextResponse(200, `ok`)
+	execute(command{homeDir: homeDir, args: []string{"config", "set", "application", "t1.a1.i1"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"config", "set", "target", "cloud"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"api-key"}}, t, httpClient)
+	execute(command{homeDir: homeDir, args: []string{"cert", pkgDir}}, t, httpClient)
+
+	// Copy an application package pre-assembled with mvn package
 	testAppDir := filepath.Join("testdata", "applications", "withDeployment", "target")
 	zipFile := filepath.Join(testAppDir, "application.zip")
 	copyFile(t, filepath.Join(pkgDir, "target", "application.zip"), zipFile)
