@@ -57,7 +57,11 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 			fmt.Fprintf(stdout, "Failed to find any tests at %v\n", testPath)
 			exitFunc(3)
 		} else {
-			fmt.Fprintf(stdout, "\n%d tests completed successfully\n", count)
+			plural := "s"
+			if count == 1 {
+				plural = ""
+			}
+			fmt.Fprintf(stdout, "\n%d test%s completed successfully\n", count, plural)
 		}
 	},
 }

@@ -45,7 +45,7 @@ func TestProductionTest(t *testing.T) {
 	client := &mockHttpClient{}
 	client.NextStatus(200)
 	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/external.json"}}, t, client)
-	assert.Equal(t, "Running external.json: . OK\n\n1 tests completed successfully\n", outBytes)
+	assert.Equal(t, "Running external.json: . OK\n\n1 test completed successfully\n", outBytes)
 	assert.Equal(t, "", errBytes)
 	assertRequests([]*http.Request{createRequest("GET", "https://my.service:123/path?query=wohoo", "")}, client, t)
 }
