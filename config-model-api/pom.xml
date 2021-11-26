@@ -112,6 +112,26 @@
       <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>abi-check-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default</id>
+            <phase>package</phase>
+            <goals>
+              <goal>abicheck</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>internal-api</id>
+            <phase>package</phase>
+            <goals>
+              <goal>abicheck</goal>
+            </goals>
+            <configuration>
+              <publicApiAnnotation>com.yahoo.api.annotations.InternalApi</publicApiAnnotation>
+              <specFileName>abi-spec-internal.json</specFileName>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

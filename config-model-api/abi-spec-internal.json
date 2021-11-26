@@ -1,0 +1,806 @@
+{
+  "com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder dnsName(com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName)",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder zoneScope()",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder scope(com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope)",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder sharedRouting()",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder sharedL4Routing()",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder weight(int)",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder hosts(java.util.List)",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder clusterId(java.lang.String)",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String value()",
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName sharedNameFrom(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ApplicationId, java.lang.String)",
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName sharedNameFrom(com.yahoo.config.provision.SystemName, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ApplicationId, java.lang.String)",
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName sharedL4NameFrom(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ApplicationId, java.lang.String)",
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName sharedL4NameFrom(com.yahoo.config.provision.SystemName, com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.ApplicationId, java.lang.String)",
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName from(java.lang.String)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ApplicationClusterEndpoint$RoutingMethod": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$RoutingMethod[] values()",
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$RoutingMethod valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.model.api.ApplicationClusterEndpoint$RoutingMethod shared",
+      "public static final enum com.yahoo.config.model.api.ApplicationClusterEndpoint$RoutingMethod sharedLayer4"
+    ]
+  },
+  "com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope[] values()",
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope application",
+      "public static final enum com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope global",
+      "public static final enum com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope zone"
+    ]
+  },
+  "com.yahoo.config.model.api.ApplicationClusterEndpoint": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String toString()",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$DnsName dnsName()",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope scope()",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$RoutingMethod routingMethod()",
+      "public int weight()",
+      "public java.util.List hostNames()",
+      "public java.lang.String clusterId()",
+      "public static com.yahoo.config.model.api.ApplicationClusterEndpoint$Builder builder()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ApplicationClusterInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.util.List endpoints()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ApplicationInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.config.provision.ApplicationId, long, com.yahoo.config.model.api.Model)",
+      "public com.yahoo.config.provision.ApplicationId getApplicationId()",
+      "public long getGeneration()",
+      "public com.yahoo.config.model.api.Model getModel()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ApplicationRoles": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public static com.yahoo.config.model.api.ApplicationRoles fromString(java.lang.String, java.lang.String)",
+      "public java.lang.String applicationContainerRole()",
+      "public java.lang.String applicationHostRole()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ConfigChangeAction$Type": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.model.api.ConfigChangeAction$Type[] values()",
+      "public static com.yahoo.config.model.api.ConfigChangeAction$Type valueOf(java.lang.String)",
+      "public java.lang.String toString()"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.model.api.ConfigChangeAction$Type RESTART",
+      "public static final enum com.yahoo.config.model.api.ConfigChangeAction$Type REFEED",
+      "public static final enum com.yahoo.config.model.api.ConfigChangeAction$Type REINDEX"
+    ]
+  },
+  "com.yahoo.config.model.api.ConfigChangeAction": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.config.model.api.ConfigChangeAction$Type getType()",
+      "public abstract java.lang.String getMessage()",
+      "public abstract java.util.List getServices()",
+      "public java.util.Optional validationId()",
+      "public abstract com.yahoo.config.provision.ClusterSpec$Id clusterId()",
+      "public boolean ignoreForInternalRedeploy()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ConfigChangeRefeedAction": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.model.api.ConfigChangeAction"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.config.model.api.ConfigChangeAction$Type getType()",
+      "public java.lang.String name()",
+      "public abstract java.lang.String getDocumentType()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ConfigChangeReindexAction": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.model.api.ConfigChangeAction"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.config.model.api.ConfigChangeAction$Type getType()",
+      "public java.lang.String name()",
+      "public abstract java.lang.String getDocumentType()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ConfigChangeRestartAction": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.model.api.ConfigChangeAction"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.config.model.api.ConfigChangeAction$Type getType()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ConfigDefinitionRepo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.util.Map getConfigDefinitions()",
+      "public abstract com.yahoo.vespa.config.buildergen.ConfigDefinition get(com.yahoo.vespa.config.ConfigDefinitionKey)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ConfigDefinitionStore": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.vespa.config.ConfigDefinition getConfigDefinition(com.yahoo.vespa.config.ConfigDefinitionKey)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ConfigModelPlugin": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ConfigServerSpec": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.lang.String getHostName()",
+      "public abstract int getConfigServerPort()",
+      "public abstract int getZooKeeperPort()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ContainerEndpoint": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope, java.util.List)",
+      "public void <init>(java.lang.String, com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope, java.util.List, java.util.OptionalInt)",
+      "public java.lang.String clusterId()",
+      "public java.util.List names()",
+      "public com.yahoo.config.model.api.ApplicationClusterEndpoint$Scope scope()",
+      "public java.util.OptionalInt weight()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.EndpointCertificateMetadata": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String, int)",
+      "public java.lang.String keyName()",
+      "public java.lang.String certName()",
+      "public int version()",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.EndpointCertificateSecrets": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String certificate()",
+      "public java.lang.String key()",
+      "public boolean isMissing()"
+    ],
+    "fields": [
+      "public static final com.yahoo.config.model.api.EndpointCertificateSecrets MISSING"
+    ]
+  },
+  "com.yahoo.config.model.api.FileDistribution": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void startDownload(java.lang.String, int, java.util.Set)",
+      "public abstract java.io.File getFileReferencesDir()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.HostInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.util.Collection)",
+      "public java.lang.String getHostname()",
+      "public java.util.Collection getServices()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.HostProvisioner": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.config.provision.HostSpec allocateHost(java.lang.String)",
+      "public abstract java.util.List prepare(com.yahoo.config.provision.ClusterSpec, com.yahoo.config.provision.Capacity, com.yahoo.config.provision.ProvisionLogger)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.Model": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.config.ConfigInstance$Builder getConfigInstance(com.yahoo.vespa.config.ConfigKey, com.yahoo.vespa.config.buildergen.ConfigDefinition)",
+      "public abstract java.util.Set allConfigsProduced()",
+      "public abstract java.util.Collection getHosts()",
+      "public abstract java.util.Set allConfigIds()",
+      "public abstract java.util.Set fileReferences()",
+      "public abstract com.yahoo.config.provision.AllocatedHosts allocatedHosts()",
+      "public boolean allowModelVersionMismatch(java.time.Instant)",
+      "public boolean skipOldConfigModels(java.time.Instant)",
+      "public com.yahoo.component.Version version()",
+      "public com.yahoo.config.model.api.Provisioned provisioned()",
+      "public java.util.Map documentTypesByCluster()",
+      "public java.util.Map indexedDocumentTypesByCluster()",
+      "public java.util.Set applicationClusterInfo()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ModelContext$FeatureFlags": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public double defaultTermwiseLimit()",
+      "public boolean useThreePhaseUpdates()",
+      "public java.lang.String feedSequencerType()",
+      "public int feedTaskLimit()",
+      "public int feedMasterTaskLimit()",
+      "public java.lang.String sharedFieldWriterExecutor()",
+      "public java.lang.String responseSequencerType()",
+      "public int defaultNumResponseThreads()",
+      "public boolean skipCommunicationManagerThread()",
+      "public boolean skipMbusRequestThread()",
+      "public boolean skipMbusReplyThread()",
+      "public boolean useAsyncMessageHandlingOnSchedule()",
+      "public double feedConcurrency()",
+      "public int metricsproxyNumThreads()",
+      "public int largeRankExpressionLimit()",
+      "public int maxUnCommittedMemory()",
+      "public int maxConcurrentMergesPerNode()",
+      "public int maxMergeQueueSize()",
+      "public boolean ignoreMergeQueueLimit()",
+      "public boolean containerDumpHeapOnShutdownTimeout()",
+      "public double containerShutdownTimeout()",
+      "public double diskBloatFactor()",
+      "public int docstoreCompressionLevel()",
+      "public boolean enableFeedBlockInDistributor()",
+      "public java.util.List allowedAthenzProxyIdentities()",
+      "public int maxActivationInhibitedOutOfSyncGroups()",
+      "public java.lang.String jvmOmitStackTraceInFastThrowOption(com.yahoo.config.provision.ClusterSpec$Type)",
+      "public boolean requireConnectivityCheck()",
+      "public double resourceLimitDisk()",
+      "public double resourceLimitMemory()",
+      "public double minNodeRatioPerGroup()",
+      "public boolean newLocationBrokerLogic()",
+      "public int maxConnectionLifeInHosted()",
+      "public int distributorMergeBusyWait()",
+      "public boolean distributorEnhancedMaintenanceScheduling()",
+      "public boolean forwardIssuesAsErrors()",
+      "public boolean asyncApplyBucketDiff()",
+      "public boolean ignoreThreadStackSizes()",
+      "public boolean unorderedMergeChaining()",
+      "public boolean useV8GeoPositions()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ModelContext$ModelFeatureFlag": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.annotation.Annotation"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract",
+      "annotation"
+    ],
+    "methods": [
+      "public abstract java.lang.String[] owners()",
+      "public abstract java.lang.String removeAfter()",
+      "public abstract java.lang.String comment()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ModelContext$Properties": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.config.model.api.ModelContext$FeatureFlags featureFlags()",
+      "public abstract boolean multitenant()",
+      "public abstract com.yahoo.config.provision.ApplicationId applicationId()",
+      "public abstract java.util.List configServerSpecs()",
+      "public abstract com.yahoo.config.provision.HostName loadBalancerName()",
+      "public abstract java.net.URI ztsUrl()",
+      "public abstract java.lang.String athenzDnsSuffix()",
+      "public abstract boolean hostedVespa()",
+      "public abstract com.yahoo.config.provision.Zone zone()",
+      "public abstract java.util.Set endpoints()",
+      "public abstract boolean isBootstrap()",
+      "public abstract boolean isFirstTimeDeployment()",
+      "public java.util.Optional endpointCertificateSecrets()",
+      "public java.util.Optional athenzDomain()",
+      "public java.util.Optional applicationRoles()",
+      "public com.yahoo.config.model.api.Quota quota()",
+      "public java.util.List tenantSecretStores()",
+      "public java.lang.String jvmGCOptions()",
+      "public abstract java.lang.String jvmGCOptions(java.util.Optional)",
+      "public boolean useDedicatedNodeForLogserver()",
+      "public boolean allowDisableMtls()",
+      "public java.util.List operatorCertificates()",
+      "public java.util.List tlsCiphersOverride()",
+      "public java.util.List zoneDnsSuffixes()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ModelContext": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.config.application.api.ApplicationPackage applicationPackage()",
+      "public abstract java.util.Optional previousModel()",
+      "public abstract java.util.Optional permanentApplicationPackage()",
+      "public abstract com.yahoo.config.model.api.HostProvisioner getHostProvisioner()",
+      "public abstract com.yahoo.config.model.api.Provisioned provisioned()",
+      "public abstract com.yahoo.config.application.api.DeployLogger deployLogger()",
+      "public abstract com.yahoo.config.model.api.ConfigDefinitionRepo configDefinitionRepo()",
+      "public abstract com.yahoo.config.application.api.FileRegistry getFileRegistry()",
+      "public abstract java.util.concurrent.ExecutorService getExecutor()",
+      "public java.util.Optional reindexing()",
+      "public abstract com.yahoo.config.model.api.ModelContext$Properties properties()",
+      "public java.util.Optional appDir()",
+      "public java.util.Optional wantedDockerImageRepo()",
+      "public abstract com.yahoo.component.Version modelVespaVersion()",
+      "public abstract com.yahoo.component.Version wantedNodeVespaVersion()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ModelCreateResult": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.config.model.api.Model, java.util.List)",
+      "public com.yahoo.config.model.api.Model getModel()",
+      "public java.util.List getConfigChangeActions()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ModelFactory": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.component.Version version()",
+      "public abstract com.yahoo.config.model.api.Model createModel(com.yahoo.config.model.api.ModelContext)",
+      "public abstract com.yahoo.config.model.api.ModelCreateResult createAndValidateModel(com.yahoo.config.model.api.ModelContext, com.yahoo.config.model.api.ValidationParameters)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ModelState": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.config.model.api.Model getModel()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.PortInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int, java.util.Collection)",
+      "public int getPort()",
+      "public java.util.Collection getTags()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.Provisioned": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void add(com.yahoo.config.provision.ClusterSpec$Id, com.yahoo.config.provision.Capacity)",
+      "public java.util.Map all()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.Quota": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.Optional, java.util.Optional)",
+      "public static com.yahoo.config.model.api.Quota fromSlime(com.yahoo.slime.Inspector)",
+      "public com.yahoo.config.model.api.Quota withBudget(java.math.BigDecimal)",
+      "public com.yahoo.config.model.api.Quota withClusterSize(int)",
+      "public com.yahoo.slime.Slime toSlime()",
+      "public static com.yahoo.config.model.api.Quota unlimited()",
+      "public java.util.Optional maxClusterSize()",
+      "public java.util.Optional budgetAsDecimal()",
+      "public java.util.Optional budget()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.Reindexing$Status": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.time.Instant ready()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.Reindexing": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public java.util.Optional status(java.lang.String, java.lang.String)",
+      "public boolean enabled()"
+    ],
+    "fields": [
+      "public static final com.yahoo.config.model.api.Reindexing DISABLED_INSTANCE"
+    ]
+  },
+  "com.yahoo.config.model.api.ServiceInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String, java.util.Collection, java.util.Map, java.lang.String, java.lang.String)",
+      "public java.lang.String getServiceName()",
+      "public java.lang.String getConfigId()",
+      "public java.lang.String getServiceType()",
+      "public java.util.Optional getProperty(java.lang.String)",
+      "public java.util.Collection getPorts()",
+      "public java.lang.String getHostName()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.SuperModel": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(java.util.Map, boolean)",
+      "public java.util.Map getModelsPerTenant()",
+      "public java.util.Map getModels()",
+      "public boolean isComplete()",
+      "public java.util.List getAllApplicationInfos()",
+      "public java.util.Optional getApplicationInfo(com.yahoo.config.provision.ApplicationId)",
+      "public com.yahoo.config.model.api.SuperModel cloneAndSetApplication(com.yahoo.config.model.api.ApplicationInfo)",
+      "public com.yahoo.config.model.api.SuperModel cloneAndRemoveApplication(com.yahoo.config.provision.ApplicationId)",
+      "public com.yahoo.config.model.api.SuperModel cloneAsComplete()",
+      "public java.util.Set getApplicationIds()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.SuperModelListener": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void applicationActivated(com.yahoo.config.model.api.SuperModel, com.yahoo.config.model.api.ApplicationInfo)",
+      "public abstract void applicationRemoved(com.yahoo.config.model.api.SuperModel, com.yahoo.config.provision.ApplicationId)",
+      "public abstract void notifyOfCompleteness(com.yahoo.config.model.api.SuperModel)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.SuperModelProvider": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void registerListener(com.yahoo.config.model.api.SuperModelListener)",
+      "public abstract com.yahoo.config.model.api.SuperModel getSuperModel()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.TenantSecretStore": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.util.Optional)",
+      "public java.lang.String getName()",
+      "public java.lang.String getAwsId()",
+      "public java.lang.String getRole()",
+      "public java.util.Optional getExternalId()",
+      "public com.yahoo.config.model.api.TenantSecretStore withExternalId(java.lang.String)",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.config.model.api.ValidationParameters$CheckRouting": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.model.api.ValidationParameters$CheckRouting[] values()",
+      "public static com.yahoo.config.model.api.ValidationParameters$CheckRouting valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.model.api.ValidationParameters$CheckRouting TRUE",
+      "public static final enum com.yahoo.config.model.api.ValidationParameters$CheckRouting FALSE"
+    ]
+  },
+  "com.yahoo.config.model.api.ValidationParameters$FailOnIncompatibleChange": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.model.api.ValidationParameters$FailOnIncompatibleChange[] values()",
+      "public static com.yahoo.config.model.api.ValidationParameters$FailOnIncompatibleChange valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.model.api.ValidationParameters$FailOnIncompatibleChange TRUE",
+      "public static final enum com.yahoo.config.model.api.ValidationParameters$FailOnIncompatibleChange FALSE"
+    ]
+  },
+  "com.yahoo.config.model.api.ValidationParameters$IgnoreValidationErrors": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.model.api.ValidationParameters$IgnoreValidationErrors[] values()",
+      "public static com.yahoo.config.model.api.ValidationParameters$IgnoreValidationErrors valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.model.api.ValidationParameters$IgnoreValidationErrors TRUE",
+      "public static final enum com.yahoo.config.model.api.ValidationParameters$IgnoreValidationErrors FALSE"
+    ]
+  },
+  "com.yahoo.config.model.api.ValidationParameters": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.config.model.api.ValidationParameters$IgnoreValidationErrors)",
+      "public void <init>(com.yahoo.config.model.api.ValidationParameters$CheckRouting)",
+      "public void <init>(com.yahoo.config.model.api.ValidationParameters$IgnoreValidationErrors, com.yahoo.config.model.api.ValidationParameters$FailOnIncompatibleChange, com.yahoo.config.model.api.ValidationParameters$CheckRouting)",
+      "public boolean ignoreValidationErrors()",
+      "public boolean failOnIncompatibleChanges()",
+      "public boolean checkRouting()"
+    ],
+    "fields": []
+  }
+}
