@@ -499,7 +499,7 @@ public class QueryCanonicalizerTestCase {
 
         assertNull(QueryCanonicalizer.canonicalize(query));
         query.properties().set("maxQueryItems", 2);
-        assertEquals("Query tree exceeds allowed item count", QueryCanonicalizer.canonicalize(query));
+        assertEquals("Query tree exceeds allowed item count. Configured item limit: 2", QueryCanonicalizer.canonicalize(query));
     }
 
     private void assertCanonicalized(String canonicalForm, String expectedError, Item root) {
