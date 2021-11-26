@@ -27,16 +27,15 @@ func init() {
 	rootCmd.AddCommand(testCmd)
 }
 
-// TODO: add link to test doc at cloud.vespa.ai
 var testCmd = &cobra.Command{
 	Use:   "test [tests directory or test file]",
 	Short: "Run a test suite, or a single test",
 	Long: `Run a test suite, or a single test
 
-Runs all JSON test files in the specified directory, or the single JSON
-test file specified.
+Runs all JSON test files in the specified directory (the working
+directory by default), or the single JSON test file specified.
 
-If no directory or file is specified, the working directory is used instead.`,
+See https://cloud.vespa.ai/en/reference/testing.html for details.`,
 	Example: `$ vespa test src/test/application/tests/system-test
 $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 	Args:              cobra.MaximumNArgs(1),
