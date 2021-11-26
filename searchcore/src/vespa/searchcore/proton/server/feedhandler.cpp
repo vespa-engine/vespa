@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "ddbstate.h"
 #include "feedhandler.h"
+#include "ddbstate.h"
 #include "feedstates.h"
 #include "i_feed_handler_owner.h"
 #include "ifeedview.h"
@@ -429,7 +429,9 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _syncLock(),
       _syncedSerialNum(0),
       _allowSync(false),
-      _heart_beat_time(vespalib::steady_time())
+      _heart_beat_time(vespalib::steady_time()),
+      _stats_lock(),
+      _stats()
 { }
 
 
@@ -515,7 +517,7 @@ FeedHandler::getTransactionLogReplayDone() const {
 }
 
 void
-FeedHandler::onCommitDone(size_t numPendingAtStart) {
+FeedHandler::onCommitDone(size_t numPendingAtStart, vespalib::steady_time start_time) {
     assert(numPendingAtStart <= _numOperationsPendingCommit);
     _numOperationsPendingCommit -= numPendingAtStart;
     _numOperationsCompleted += numPendingAtStart;
@@ -525,18 +527,22 @@ FeedHandler::onCommitDone(size_t numPendingAtStart) {
     }
     LOG(spam, "%zu: onCommitDone(%zu) total=%zu left=%zu",
         _numCommitsCompleted, numPendingAtStart, _numOperationsCompleted, _numOperationsPendingCommit);
+    vespalib::steady_time now = vespalib::steady_clock::now();
+    auto latency = vespalib::to_s(now - start_time);
+    std::lock_guard guard(_stats_lock);
+    _stats.add_commit(numPendingAtStart, latency);
 }
 
 void FeedHandler::enqueCommitTask() {
-    _writeService.master().execute(makeLambdaTask([this]() { initiateCommit(); }));
+    _writeService.master().execute(makeLambdaTask([this, start_time(vespalib::steady_clock::now())]() { initiateCommit(start_time); }));
 }
 
 void
-FeedHandler::initiateCommit() {
+FeedHandler::initiateCommit(vespalib::steady_time start_time) {
     auto onCommitDoneContext = std::make_shared<OnCommitDone>(
             _writeService.master(),
-            makeLambdaTask([this, numPendingAtStart=_numOperationsPendingCommit]() {
-                onCommitDone(numPendingAtStart);
+            makeLambdaTask([this, numPendingAtStart=_numOperationsPendingCommit, start_time]() {
+                onCommitDone(numPendingAtStart, start_time);
             }));
     auto commitResult = _tlsWriter->startCommit(onCommitDoneContext);
     if (_activeFeedView) {
@@ -820,6 +826,16 @@ vespalib::steady_time
 FeedHandler::get_heart_beat_time() const
 {
     return _heart_beat_time.load(std::memory_order_relaxed);
+}
+
+FeedHandlerStats
+FeedHandler::get_stats(bool reset_min_max) const {
+    std::lock_guard guard(_stats_lock);
+    auto result = _stats;
+    if (reset_min_max) {
+        _stats.reset_min_max();
+    }
+    return result;
 }
 
 } // namespace proton

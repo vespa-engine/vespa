@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "feed_handler_stats.h"
 #include "i_inc_serial_num.h"
 #include "i_operation_storer.h"
 #include "idocumentmovehandler.h"
@@ -97,6 +98,8 @@ private:
     SerialNum                              _syncedSerialNum; 
     bool                                   _allowSync; // Sanity check
     std::atomic<vespalib::steady_time>     _heart_beat_time;
+    mutable std::mutex                     _stats_lock;
+    mutable FeedHandlerStats               _stats;
 
     /**
      * Delayed handling of feed operations, in master write thread.
@@ -134,8 +137,8 @@ private:
     FeedStateSP getFeedState() const;
     void changeFeedState(FeedStateSP newState);
     void doChangeFeedState(FeedStateSP newState);
-    void onCommitDone(size_t numPendingAtStart);
-    void initiateCommit();
+    void onCommitDone(size_t numPendingAtStart, vespalib::steady_time start_time);
+    void initiateCommit(vespalib::steady_time start_time);
     void enqueCommitTask();
 public:
     FeedHandler(const FeedHandler &) = delete;
@@ -245,6 +248,7 @@ public:
     [[nodiscard]] CommitResult storeOperationSync(const FeedOperation & op);
     void considerDelayedPrune();
     vespalib::steady_time get_heart_beat_time() const;
+    FeedHandlerStats get_stats(bool reset_min_max) const;
 };
 
 } // namespace proton
