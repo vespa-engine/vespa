@@ -39,9 +39,13 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.provision.SystemName.cd;
+import static com.yahoo.config.provision.SystemName.main;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
@@ -358,32 +362,66 @@ public class ContainerClusterTest {
 
     @Test
     public void generatesCorrectRoutingInfo() {
-
-        assertNames(ApplicationId.from("t1", "a1", "i1"),
+        // main system:
+        assertNames(main,
+                    ApplicationId.from("t1", "a1", "i1"),
                     Set.of(),
                     List.of("search-cluster.i1.a1.t1.endpoint.suffix", "search-cluster--i1--a1--t1.endpoint.suffix"));
 
-        assertNames(ApplicationId.from("t1", "a1", "default"),
+        assertNames(main,
+                    ApplicationId.from("t1", "a1", "default"),
                     Set.of(),
                     List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix"));
 
-        assertNames(ApplicationId.from("t1", "default", "default"),
+        assertNames(main,
+                    ApplicationId.from("t1", "default", "default"),
                     Set.of(),
                     List.of("search-cluster.default.t1.endpoint.suffix", "search-cluster--default--t1.endpoint.suffix"));
 
-        assertNames(ApplicationId.from("t1", "a1", "default"),
+        assertNames(main,
+                    ApplicationId.from("t1", "a1", "default"),
                     Set.of(new ContainerEndpoint("not-in-this-cluster", ApplicationClusterEndpoint.Scope.global, List.of("foo", "bar"))),
                     List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix"));
 
-        assertNames(ApplicationId.from("t1", "a1", "default"),
+        assertNames(main,
+                    ApplicationId.from("t1", "a1", "default"),
                     Set.of(new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z")),
-                           new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.application, List.of("app-rotation.x.y.z"))),
+                           new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.application, List.of("app-rotation.x.y.z"), OptionalInt.of(3))),
                     List.of("search-cluster.a1.t1.endpoint.suffix", "search-cluster--a1--t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
+
+        // cd system:
+        assertNames(cd,
+                    ApplicationId.from("t1", "a1", "i1"),
+                    Set.of(),
+                    List.of("search-cluster.cd.i1.a1.t1.endpoint.suffix", "search-cluster--cd--i1--a1--t1.endpoint.suffix"));
+
+        assertNames(cd,
+                    ApplicationId.from("t1", "a1", "default"),
+                    Set.of(),
+                    List.of("search-cluster.cd.a1.t1.endpoint.suffix", "search-cluster--cd--a1--t1.endpoint.suffix"));
+
+        assertNames(cd,
+                    ApplicationId.from("t1", "default", "default"),
+                    Set.of(),
+                    List.of("search-cluster.cd.default.t1.endpoint.suffix", "search-cluster--cd--default--t1.endpoint.suffix"));
+
+        assertNames(cd,
+                    ApplicationId.from("t1", "a1", "default"),
+                    Set.of(new ContainerEndpoint("not-in-this-cluster", ApplicationClusterEndpoint.Scope.global, List.of("foo", "bar"))),
+                    List.of("search-cluster.cd.a1.t1.endpoint.suffix", "search-cluster--cd--a1--t1.endpoint.suffix"));
+
+        assertNames(cd,
+                    ApplicationId.from("t1", "a1", "default"),
+                    Set.of(new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z")),
+                           new ContainerEndpoint("search-cluster", ApplicationClusterEndpoint.Scope.application, List.of("app-rotation.x.y.z"), OptionalInt.of(3))),
+                    List.of("search-cluster.cd.a1.t1.endpoint.suffix", "search-cluster--cd--a1--t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"));
+
     }
 
-    private void assertNames(ApplicationId appId, Set<ContainerEndpoint> globalEndpoints, List<String> expectedNames) {
+    private void assertNames(SystemName systemName, ApplicationId appId, Set<ContainerEndpoint> globalEndpoints, List<String> expectedNames) {
+        Zone zone = new Zone(systemName, Environment.defaultEnvironment(), RegionName.defaultName());
         DeployState state = new DeployState.Builder()
-                .zone(Zone.defaultZone())
+                .zone(zone)
                 .endpoints(globalEndpoints)
                 .properties(new TestProperties()
                                     .setHostedVespa(true)
@@ -396,7 +434,19 @@ public class ContainerClusterTest {
         cluster.doPrepare(state);
         List<ApplicationClusterEndpoint> endpoints = cluster.endpoints();
         assertEquals(expectedNames.size(), endpoints.size());
-        expectedNames.forEach(expected -> assertTrue("Endpoint not matched " + expected, endpoints.stream().anyMatch(e -> Objects.equals(e.dnsName().value(), expected))));
+        expectedNames.forEach(expected -> assertTrue("Endpoint not matched " + expected + " was: " + endpoints, endpoints.stream().anyMatch(e -> Objects.equals(e.dnsName().value(), expected))));
+
+        List<ContainerEndpoint> endpointsWithWeight =
+                globalEndpoints.stream().filter(endpoint -> endpoint.weight().isPresent()).collect(Collectors.toList());
+        endpointsWithWeight.stream()
+                .filter(ce -> ce.weight().isPresent())
+                .forEach(ce -> assertTrue(endpointsMatch(ce, endpoints)));
+    }
+
+    private boolean endpointsMatch(ContainerEndpoint configuredEndpoint, List<ApplicationClusterEndpoint> clusterEndpoints) {
+        return clusterEndpoints.stream().anyMatch(e ->
+            configuredEndpoint.names().contains(e.dnsName().value()) &&
+            configuredEndpoint.weight().getAsInt() == e.weight());
     }
 
     private void verifyTesterApplicationInstalledBundles(Zone zone, List<String> expectedBundleNames) {

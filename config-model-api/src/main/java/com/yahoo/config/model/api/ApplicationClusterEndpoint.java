@@ -4,6 +4,7 @@ package com.yahoo.config.model.api;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SystemName;
 
 import java.util.List;
 import java.util.Objects;
@@ -17,6 +18,18 @@ import java.util.stream.Stream;
  * @author mortent
  */
 public class ApplicationClusterEndpoint {
+    @Override
+    public String toString() {
+        return "ApplicationClusterEndpoint{" +
+               "dnsName=" + dnsName +
+               ", scope=" + scope +
+               ", routingMethod=" + routingMethod +
+               ", weight=" + weight +
+               ", hostNames=" + hostNames +
+               ", clusterId='" + clusterId + '\'' +
+               '}';
+    }
+
     public enum Scope {application, global, zone}
 
     public enum RoutingMethod {shared, sharedLayer4}
@@ -133,15 +146,15 @@ public class ApplicationClusterEndpoint {
         }
 
         // TODO: remove
-        public static DnsName sharedNameFrom(ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
-            String name = dnsParts(cluster, applicationId)
+        public static DnsName sharedNameFrom(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
+            String name = dnsParts(systemName, cluster, applicationId)
                     .filter(Objects::nonNull)             // remove null values that were "default"
                     .collect(Collectors.joining("--"));
             return new DnsName(sanitize(name) + suffix); // Need to sanitize name since it is considered one label
         }
 
-        public static DnsName sharedL4NameFrom(ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
-            String name = dnsParts(cluster, applicationId)
+        public static DnsName sharedL4NameFrom(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
+            String name = dnsParts(systemName, cluster, applicationId)
                     .filter(Objects::nonNull) // remove null values that were "default"
                     .map(DnsName::sanitize)
                     .collect(Collectors.joining("."));
@@ -152,9 +165,10 @@ public class ApplicationClusterEndpoint {
             return new DnsName(name);
         }
 
-        private static Stream<String> dnsParts(ClusterSpec.Id cluster, ApplicationId applicationId) {
+        private static Stream<String> dnsParts(SystemName systemName, ClusterSpec.Id cluster, ApplicationId applicationId) {
             return Stream.of(
                     nullIfDefault(cluster.value()),
+                    systemPart(systemName),
                     nullIfDefault(applicationId.instance().value()),
                     applicationId.application().value(),
                     applicationId.tenant().value()
@@ -179,6 +193,17 @@ public class ApplicationClusterEndpoint {
 
         private static String nullIfDefault(String string) {
             return Optional.of(string).filter(s -> !s.equals("default")).orElse(null);
+        }
+
+        private static String systemPart(SystemName systemName) {
+            return "cd".equals(systemName.value()) ? systemName.value() : null;
+        }
+
+        @Override
+        public String toString() {
+            return "DnsName{" +
+                   "name='" + name + '\'' +
+                   '}';
         }
     }
 }

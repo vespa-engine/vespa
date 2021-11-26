@@ -210,6 +210,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         for(String suffix : deployState.getProperties().zoneDnsSuffixes()) {
             // L4
             ApplicationClusterEndpoint.DnsName l4Name = ApplicationClusterEndpoint.DnsName.sharedL4NameFrom(
+                    deployState.zone().system(),
                     ClusterSpec.Id.from(getName()),
                     deployState.getProperties().applicationId(),
                     suffix);
@@ -223,6 +224,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
             // L7
             ApplicationClusterEndpoint.DnsName l7Name = ApplicationClusterEndpoint.DnsName.sharedNameFrom(
+                    deployState.zone().system(),
                     ClusterSpec.Id.from(getName()),
                     deployState.getProperties().applicationId(),
                     suffix);
@@ -242,6 +244,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 .forEach(ce -> ce.names().forEach(
                         name -> endpoints.add(ApplicationClusterEndpoint.builder()
                                                       .scope(ce.scope())
+                                                      .weight(Long.valueOf(ce.weight().orElse(1)).intValue()) // Default to weight=1 if not set
                                                       .sharedL4Routing()
                                                       .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
                                                       .hosts(hosts)

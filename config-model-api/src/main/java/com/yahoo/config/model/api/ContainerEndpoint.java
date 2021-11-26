@@ -3,6 +3,9 @@ package com.yahoo.config.model.api;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 /**
  * ContainerEndpoint tracks the service names that a Container Cluster should be
@@ -16,11 +19,17 @@ public class ContainerEndpoint {
     private final String clusterId;
     private final ApplicationClusterEndpoint.Scope scope;
     private final List<String> names;
+    private final OptionalInt weight;
 
     public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names) {
+        this(clusterId, scope, names, OptionalInt.empty());
+    }
+
+    public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names, OptionalInt weight) {
         this.clusterId = Objects.requireNonNull(clusterId);
         this.scope = Objects.requireNonNull(scope);
         this.names = List.copyOf(Objects.requireNonNull(names));
+        this.weight = weight;
     }
 
     public String clusterId() {
@@ -33,6 +42,10 @@ public class ContainerEndpoint {
 
     public ApplicationClusterEndpoint.Scope scope() {
         return scope;
+    }
+
+    public OptionalInt weight() {
+        return weight;
     }
 
     @Override

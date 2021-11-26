@@ -30,6 +30,7 @@ public class ContainerEndpointSerializer {
     private static final String clusterIdField = "clusterId";
     private static final String scopeField = "scope";
     private static final String namesField = "names";
+    private static final String weightField = "weight";
 
     private ContainerEndpointSerializer() {}
 
@@ -39,7 +40,7 @@ public class ContainerEndpointSerializer {
         // TODO: Remove default assignment after 7.500
         final var scope = SlimeUtils.optionalString(inspector.field(scopeField)).orElse(ApplicationClusterEndpoint.Scope.global.name());
         final var namesInspector = inspector.field(namesField);
-
+        final var weight = SlimeUtils.optionalInteger(inspector.field(weightField));
         if (clusterId.isEmpty()) {
             throw new IllegalStateException("'clusterId' missing on serialized ContainerEndpoint");
         }
@@ -59,7 +60,7 @@ public class ContainerEndpointSerializer {
             names.add(containerName);
         });
 
-        return new ContainerEndpoint(clusterId, ApplicationClusterEndpoint.Scope.valueOf(scope), names);
+        return new ContainerEndpoint(clusterId, ApplicationClusterEndpoint.Scope.valueOf(scope), names, weight);
     }
 
     public static List<ContainerEndpoint> endpointListFromSlime(Slime slime) {
@@ -81,7 +82,7 @@ public class ContainerEndpointSerializer {
     public static void endpointToSlime(Cursor cursor, ContainerEndpoint endpoint) {
         cursor.setString(clusterIdField, endpoint.clusterId());
         cursor.setString(scopeField, endpoint.scope().name());
-
+        endpoint.weight().ifPresent(w -> cursor.setLong(weightField, w));
         final var namesInspector = cursor.setArray(namesField);
         endpoint.names().forEach(namesInspector::addString);
     }
