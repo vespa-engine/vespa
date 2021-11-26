@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContex
 import com.yahoo.vespa.hosted.controller.routing.context.ExclusiveZoneRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.context.RoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.context.SharedZoneRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
@@ -259,7 +260,6 @@ public class RoutingController {
         EndpointList endpoints = declaredEndpointsOf(application.get()).targets(deployment);
         EndpointList globalEndpoints = endpoints.scope(Endpoint.Scope.global);
         for (var assignedRotation : instance.rotations()) {
-            var names = new ArrayList<String>();
             EndpointList rotationEndpoints = globalEndpoints.named(assignedRotation.endpointId())
                                                             .requiresRotation();
 
@@ -274,22 +274,23 @@ public class RoutingController {
             }
 
             // Register names in DNS
-            var rotation = rotationRepository.getRotation(assignedRotation.rotationId());
+            Optional<Rotation> rotation = rotationRepository.getRotation(assignedRotation.rotationId());
             if (rotation.isPresent()) {
-                rotationEndpoints.forEach(endpoint -> {
+                for (var endpoint : rotationEndpoints) {
                     controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
                                                                   RecordData.fqdn(rotation.get().name()),
                                                                   Priority.normal);
-                    names.add(endpoint.dnsName());
-                });
+                    List<String> names = List.of(endpoint.dnsName(),
+                                                 // Include rotation ID as a valid name of this container endpoint
+                                                 // (required by global routing health checks)
+                                                 assignedRotation.rotationId().asString());
+                    containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(),
+                                                                 asString(Endpoint.Scope.global),
+                                                                 names,
+                                                                 OptionalInt.empty(),
+                                                                 endpoint.routingMethod()));
+                }
             }
-
-            // Include rotation ID as a valid name of this container endpoint (required by global routing health checks)
-            names.add(assignedRotation.rotationId().asString());
-            containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(),
-                                                         asString(Endpoint.Scope.global),
-                                                         names,
-                                                         OptionalInt.empty()));
         }
         // Add endpoints not backed by a rotation (i.e. other routing methods so that the config server always knows
         // about global names, even when not using rotations)
@@ -299,7 +300,8 @@ public class RoutingController {
                            containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
                                                                         asString(Endpoint.Scope.global),
                                                                         clusterEndpoints.mapToList(Endpoint::dnsName),
-                                                                        OptionalInt.empty()));
+                                                                        OptionalInt.empty(),
+                                                                        RoutingMethod.exclusive));
                        });
         // Add application endpoints
         EndpointList applicationEndpoints = endpoints.scope(Endpoint.Scope.application);
@@ -329,7 +331,8 @@ public class RoutingController {
                 containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
                                                              asString(Endpoint.Scope.application),
                                                              List.of(endpoint.dnsName()),
-                                                             OptionalInt.of(matchingTarget.get().weight())));
+                                                             OptionalInt.of(matchingTarget.get().weight()),
+                                                             endpoint.routingMethod()));
             }
         }
         return Collections.unmodifiableSet(containerEndpoints);
@@ -389,8 +392,8 @@ public class RoutingController {
         var deploymentsByMethod = new HashMap<RoutingMethod, Set<DeploymentId>>();
         for (var deployment : deployments) {
             for (var method : controller.zoneRegistry().routingMethods(deployment.zoneId())) {
-                deploymentsByMethod.putIfAbsent(method, new LinkedHashSet<>());
-                deploymentsByMethod.get(method).add(deployment);
+                deploymentsByMethod.computeIfAbsent(method, k -> new LinkedHashSet<>())
+                                   .add(deployment);
             }
         }
         var routingMethods = new ArrayList<RoutingMethod>();
