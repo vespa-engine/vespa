@@ -7,14 +7,12 @@ namespace proton {
 ExecutorThreadingServiceStats::ExecutorThreadingServiceStats(Stats masterExecutorStats,
                                                              Stats indexExecutorStats,
                                                              Stats summaryExecutorStats,
-                                                             Stats sharedExecutorStats,
                                                              Stats indexFieldInverterExecutorStats,
                                                              Stats indexFieldWriterExecutorStats,
                                                              Stats attributeFieldWriterExecutorStats)
     : _masterExecutorStats(masterExecutorStats),
       _indexExecutorStats(indexExecutorStats),
       _summaryExecutorStats(summaryExecutorStats),
-      _sharedExecutorStats(sharedExecutorStats),
       _indexFieldInverterExecutorStats(indexFieldInverterExecutorStats),
       _indexFieldWriterExecutorStats(indexFieldWriterExecutorStats),
       _attributeFieldWriterExecutorStats(attributeFieldWriterExecutorStats)

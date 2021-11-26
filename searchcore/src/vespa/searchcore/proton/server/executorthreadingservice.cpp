@@ -155,21 +155,20 @@ ExecutorThreadingService::getStats()
     auto master_stats = _masterExecutor.getStats();
     auto index_stats = _indexExecutor->getStats();
     auto summary_stats = _summaryExecutor->getStats();
-    auto shared_stats = _sharedExecutor.getStats();
     if (_shared_field_writer == SharedFieldWriterExecutor::INDEX) {
         auto field_writer_stats = _field_writer->getStats();
-        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats, shared_stats,
+        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats,
                                              field_writer_stats,
                                              field_writer_stats,
                                              _attribute_field_writer_ptr->getStats());
     } else if (_shared_field_writer == SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE) {
         auto field_writer_stats = _field_writer->getStats();
-        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats, shared_stats,
+        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats,
                                              field_writer_stats,
                                              field_writer_stats,
                                              field_writer_stats);
     } else {
-        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats, shared_stats,
+        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats,
                                              _index_field_inverter_ptr->getStats(),
                                              _index_field_writer_ptr->getStats(),
                                              _attribute_field_writer_ptr->getStats());

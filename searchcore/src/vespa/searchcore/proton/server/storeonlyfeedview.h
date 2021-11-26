@@ -153,7 +153,7 @@ protected:
     IGidToLidChangeHandler                  &_gidToLidChangeHandler;
 
 private:
-    searchcorespi::index::IThreadService & summaryExecutor() {
+    vespalib::Executor & summaryExecutor() {
         return _writeService.summary();
     }
     void putSummary(SerialNum serialNum, Lid lid, FutureStream doc, OnOperationDoneType onDone);

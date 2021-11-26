@@ -7,7 +7,6 @@
 #include <vespa/config/print/ostreamconfigwriter.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/juniper/rpinterface.h>
-#include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
@@ -45,12 +44,12 @@ namespace {
 class ShrinkSummaryLidSpaceFlushTarget : public  ShrinkLidSpaceFlushTarget
 {
     using ICompactableLidSpace = search::common::ICompactableLidSpace;
-    searchcorespi::index::IThreadService & _summaryService;
+    vespalib::Executor & _summaryService;
 
 public:
     ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
                                      SerialNum flushedSerialNum, vespalib::system_time lastFlushTime,
-                                     searchcorespi::index::IThreadService & summaryService,
+                                     vespalib::Executor & summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget() override;
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
@@ -59,7 +58,7 @@ public:
 ShrinkSummaryLidSpaceFlushTarget::
 ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
                                  SerialNum flushedSerialNum, vespalib::system_time lastFlushTime,
-                                 searchcorespi::index::IThreadService & summaryService,
+                                 vespalib::Executor & summaryService,
                                  std::shared_ptr<ICompactableLidSpace> target)
     : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, lastFlushTime, std::move(target)),
       _summaryService(summaryService)
@@ -153,9 +152,7 @@ SummaryManager::SummaryManager(vespalib::ThreadExecutor & executor, const LogDoc
                                search::IBucketizer::SP bucketizer)
     : _baseDir(baseDir),
       _docTypeName(docTypeName),
-      _docStore(),
-      _tuneFileSummary(tuneFileSummary),
-      _currentSerial(0u)
+      _docStore()
 {
     _docStore = std::make_shared<LogDocumentStore>(executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
                                                    fileHeaderContext, tlSyncer, std::move(bucketizer));
@@ -167,27 +164,24 @@ void
 SummaryManager::putDocument(uint64_t syncToken, search::DocumentIdT lid, const Document & doc)
 {
     _docStore->write(syncToken, lid, doc);
-    _currentSerial = syncToken;
 }
 
 void
 SummaryManager::putDocument(uint64_t syncToken, search::DocumentIdT lid, const vespalib::nbostream & doc)
 {
     _docStore->write(syncToken, lid, doc);
-    _currentSerial = syncToken;
 }
 
 void
 SummaryManager::removeDocument(uint64_t syncToken, search::DocumentIdT lid)
 {
     _docStore->remove(syncToken, lid);
-    _currentSerial = syncToken;
 }
 
 namespace {
 
 IFlushTarget::SP
-createShrinkLidSpaceFlushTarget(searchcorespi::index::IThreadService & summaryService, IDocumentStore::SP docStore)
+createShrinkLidSpaceFlushTarget(vespalib::Executor & summaryService, IDocumentStore::SP docStore)
 {
     return std::make_shared<ShrinkSummaryLidSpaceFlushTarget>("summary.shrink",
                                                        IFlushTarget::Type::GC,
@@ -200,7 +194,8 @@ createShrinkLidSpaceFlushTarget(searchcorespi::index::IThreadService & summarySe
 
 }
 
-IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThreadService & summaryService)
+IFlushTarget::List
+SummaryManager::getFlushTargets(vespalib::Executor & summaryService)
 {
     IFlushTarget::List ret;
     ret.push_back(std::make_shared<SummaryFlushTarget>(getBackingStore(), summaryService));
@@ -211,7 +206,8 @@ IFlushTarget::List SummaryManager::getFlushTargets(searchcorespi::index::IThread
     return ret;
 }
 
-void SummaryManager::reconfigure(const LogDocumentStore::Config & config) {
+void
+SummaryManager::reconfigure(const LogDocumentStore::Config & config) {
     auto & docStore = dynamic_cast<LogDocumentStore &> (*_docStore);
     docStore.reconfigure(config);
 }

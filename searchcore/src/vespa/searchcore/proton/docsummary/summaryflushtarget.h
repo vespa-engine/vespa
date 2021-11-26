@@ -4,7 +4,6 @@
 #include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
-namespace searchcorespi::index { struct IThreadService; }
 namespace proton {
 
 /**
@@ -14,25 +13,24 @@ class SummaryFlushTarget : public searchcorespi::IFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
     search::IDocumentStore & _docStore;
-    searchcorespi::index::IThreadService & _summaryService;
-    FlushStats _lastStats;
+    vespalib::Executor     & _summaryService;
+    FlushStats               _lastStats;
 
     Task::UP internalInitFlush(SerialNum currentSerial);
 
 public:
     SummaryFlushTarget(search::IDocumentStore & docStore,
-                       searchcorespi::index::IThreadService & summaryService);
+                       vespalib::Executor & summaryService);
 
-    // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const override;
-    virtual   DiskGain getApproxDiskGain() const override;
-    virtual  SerialNum getFlushedSerialNum() const override;
-    virtual       Time getLastFlushTime() const override;
+    MemoryGain getApproxMemoryGain() const override;
+    DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }
+    SerialNum getFlushedSerialNum() const override;
+    Time getLastFlushTime() const override;
 
-    virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
 
-    virtual FlushStats getLastFlushStats() const override { return _lastStats; }
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    FlushStats getLastFlushStats() const override { return _lastStats; }
+    uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
 };
 
 } // namespace proton

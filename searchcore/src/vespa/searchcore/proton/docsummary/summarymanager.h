@@ -12,7 +12,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 
-namespace searchcorespi::index { struct IThreadService; }
 namespace search { class IBucketizer; }
 namespace search::common { class FileHeaderContext; }
 
@@ -58,8 +57,6 @@ private:
     vespalib::string               _baseDir;
     DocTypeName                    _docTypeName;
     std::shared_ptr<search::IDocumentStore> _docStore;
-    const search::TuneFileSummary  _tuneFileSummary;
-    uint64_t                       _currentSerial;
 
 public:
     typedef std::shared_ptr<SummaryManager> SP;
@@ -77,7 +74,7 @@ public:
     void putDocument(uint64_t syncToken, search::DocumentIdT lid, const document::Document & doc);
     void putDocument(uint64_t syncToken, search::DocumentIdT lid, const vespalib::nbostream & doc);
     void removeDocument(uint64_t syncToken, search::DocumentIdT lid);
-    searchcorespi::IFlushTarget::List getFlushTargets(searchcorespi::index::IThreadService & summaryService);
+    searchcorespi::IFlushTarget::List getFlushTargets(vespalib::Executor & summaryService);
 
     ISummarySetup::SP
     createSummarySetup(const vespa::config::search::SummaryConfig &summaryCfg,
