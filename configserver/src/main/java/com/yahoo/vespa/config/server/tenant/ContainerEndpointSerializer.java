@@ -36,9 +36,7 @@ public class ContainerEndpointSerializer {
 
     public static ContainerEndpoint endpointFromSlime(Inspector inspector) {
         final var clusterId = inspector.field(clusterIdField).asString();
-        // Currently assigned endpoints that do not have scope should be interpreted as global endpoints
-        // TODO: Remove default assignment after 7.500
-        final var scope = SlimeUtils.optionalString(inspector.field(scopeField)).orElse(ApplicationClusterEndpoint.Scope.global.name());
+        final var scope = inspector.field(scopeField).asString();
         final var namesInspector = inspector.field(namesField);
         final var weight = SlimeUtils.optionalInteger(inspector.field(weightField));
         if (clusterId.isEmpty()) {
