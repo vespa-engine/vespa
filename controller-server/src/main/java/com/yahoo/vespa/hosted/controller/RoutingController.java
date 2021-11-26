@@ -35,9 +35,9 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingPolicies;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext.ExclusiveDeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext.SharedDeploymentRoutingContext;
-import com.yahoo.vespa.hosted.controller.routing.context.ExclusiveRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.context.ExclusiveZoneRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.context.RoutingContext;
-import com.yahoo.vespa.hosted.controller.routing.context.SharedRoutingContext;
+import com.yahoo.vespa.hosted.controller.routing.context.SharedZoneRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationLock;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationRepository;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
@@ -97,9 +97,9 @@ public class RoutingController {
     /** Create a routing context for given zone */
     public RoutingContext of(ZoneId zone) {
         if (usesSharedRouting(zone)) {
-            return new SharedRoutingContext(zone, controller.serviceRegistry().configServer());
+            return new SharedZoneRoutingContext(zone, controller.serviceRegistry().configServer());
         }
-        return new ExclusiveRoutingContext(zone, routingPolicies);
+        return new ExclusiveZoneRoutingContext(zone, routingPolicies);
     }
 
     public RoutingPolicies policies() {

@@ -13,12 +13,12 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class ExclusiveRoutingContext implements RoutingContext {
+public class ExclusiveZoneRoutingContext implements RoutingContext {
 
     private final RoutingPolicies policies;
     private final ZoneId zone;
 
-    public ExclusiveRoutingContext(ZoneId zone, RoutingPolicies policies) {
+    public ExclusiveZoneRoutingContext(ZoneId zone, RoutingPolicies policies) {
         this.policies = Objects.requireNonNull(policies);
         this.zone = Objects.requireNonNull(zone);
     }
