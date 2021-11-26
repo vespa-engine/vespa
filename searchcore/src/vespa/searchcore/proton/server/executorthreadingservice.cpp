@@ -54,7 +54,6 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
       _summaryExecutor(createExecutorWithOneThread(stackSize, cfg.defaultTaskLimit(), cfg.optimize(), summary_executor)),
       _masterService(_masterExecutor),
       _indexService(*_indexExecutor),
-      _summaryService(*_summaryExecutor),
       _indexFieldInverter(),
       _indexFieldWriter(),
       _attributeFieldWriter(),

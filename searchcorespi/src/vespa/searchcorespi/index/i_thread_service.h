@@ -9,7 +9,7 @@ namespace searchcorespi::index {
 /**
  * Interface for a single thread used for write tasks.
  */
-struct IThreadService : public vespalib::SyncableThreadExecutor
+struct IThreadService : public vespalib::ThreadExecutor
 {
     IThreadService(const IThreadService &) = delete;
     IThreadService & operator = (const IThreadService &) = delete;
@@ -25,6 +25,9 @@ struct IThreadService : public vespalib::SyncableThreadExecutor
      * Returns whether the current thread is the underlying thread.
      */
     virtual bool isCurrentThread() const = 0;
+};
+
+struct ISyncableThreadService : public IThreadService, vespalib::Syncable {
 
 };
 

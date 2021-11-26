@@ -12,10 +12,10 @@ class ThreadingServiceObserver : public searchcorespi::index::IThreadingService
 {
 private:
     searchcorespi::index::IThreadingService &_service;
-    ThreadServiceObserver  _master;
-    ThreadServiceObserver  _index;
-    ThreadExecutorObserver _summary;
-    vespalib::ThreadExecutor & _shared;
+    SyncableThreadServiceObserver  _master;
+    ThreadServiceObserver          _index;
+    ThreadExecutorObserver         _summary;
+    vespalib::ThreadExecutor     & _shared;
     vespalib::SequencedTaskExecutorObserver _indexFieldInverter;
     vespalib::SequencedTaskExecutorObserver _indexFieldWriter;
     vespalib::SequencedTaskExecutorObserver _attributeFieldWriter;
@@ -23,7 +23,7 @@ private:
 public:
     ThreadingServiceObserver(searchcorespi::index::IThreadingService &service);
     ~ThreadingServiceObserver() override;
-    const ThreadServiceObserver &masterObserver() const {
+    const SyncableThreadServiceObserver &masterObserver() const {
         return _master;
     }
     const ThreadServiceObserver &indexObserver() const {
@@ -37,7 +37,7 @@ public:
         _service.blocking_master_execute(std::move(task));
     }
 
-    searchcorespi::index::IThreadService &master() override {
+    searchcorespi::index::ISyncableThreadService &master() override {
         return _master;
     }
     searchcorespi::index::IThreadService &index() override {

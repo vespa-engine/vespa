@@ -14,7 +14,7 @@ struct JobTestBase : public ::testing::Test {
     test::DiskMemUsageNotifier _diskMemUsageNotifier;
     std::unique_ptr<storage::spi::dummy::DummyBucketExecutor> _bucketExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _singleExecutor;
-    std::unique_ptr<searchcorespi::index::IThreadService> _master;
+    std::unique_ptr<searchcorespi::index::ISyncableThreadService> _master;
     std::shared_ptr<MyHandler> _handler;
     MyStorer _storer;
     std::shared_ptr<BlockableMaintenanceJob> _job;

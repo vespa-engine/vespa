@@ -17,7 +17,10 @@ class MonitoredRefCount;
 class Timer;
 
 }
-namespace searchcorespi::index { struct IThreadService; }
+namespace searchcorespi::index {
+    struct IThreadService;
+    struct ISyncableThreadService;
+}
 
 namespace proton {
 
@@ -33,12 +36,13 @@ class MaintenanceController
 {
 public:
     using IThreadService = searchcorespi::index::IThreadService;
+    using ISyncableThreadService = searchcorespi::index::ISyncableThreadService;
     using DocumentDBMaintenanceConfigSP = std::shared_ptr<DocumentDBMaintenanceConfig>;
     using JobList = std::vector<std::shared_ptr<MaintenanceJobRunner>>;
     using UP = std::unique_ptr<MaintenanceController>;
     enum class State {INITIALIZING, STARTED, PAUSED, STOPPING};
 
-    MaintenanceController(IThreadService &masterThread, vespalib::Executor & defaultExecutor, vespalib::MonitoredRefCount & refCount, const DocTypeName &docTypeName);
+    MaintenanceController(ISyncableThreadService &masterThread, vespalib::Executor & defaultExecutor, vespalib::MonitoredRefCount & refCount, const DocTypeName &docTypeName);
 
     ~MaintenanceController();
     void registerJobInMasterThread(IMaintenanceJob::UP job);
@@ -70,14 +74,14 @@ public:
     const MaintenanceDocumentSubDB &    getReadySubDB() const { return _readySubDB; }
     const MaintenanceDocumentSubDB &      getRemSubDB() const { return _remSubDB; }
     const MaintenanceDocumentSubDB & getNotReadySubDB() const { return _notReadySubDB; }
-    IThreadService & masterThread() { return _masterThread; }
+    IThreadService & masterThread();
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
     vespalib::RetainGuard retainDB() { return vespalib::RetainGuard(_refCount); }
 private:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
 
-    IThreadService                   &_masterThread;
+    ISyncableThreadService           &_masterThread;
     vespalib::Executor               &_defaultExecutor;
     vespalib::MonitoredRefCount      &_refCount;
     MaintenanceDocumentSubDB          _readySubDB;

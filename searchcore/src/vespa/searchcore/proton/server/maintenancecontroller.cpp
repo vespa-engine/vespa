@@ -39,7 +39,7 @@ isRunnable(const MaintenanceJobRunner & job, const Executor * master) {
 
 }
 
-MaintenanceController::MaintenanceController(IThreadService &masterThread,
+MaintenanceController::MaintenanceController(ISyncableThreadService &masterThread,
                                              vespalib::Executor & defaultExecutor,
                                              MonitoredRefCount & refCount,
                                              const DocTypeName &docTypeName)
@@ -138,6 +138,11 @@ MaintenanceController::stop()
     _masterThread.execute(makeLambdaTask([this]() { _state = State::STOPPING; killJobs(); }));
     _masterThread.sync();  // Wait for killJobs()
     _masterThread.sync();  // Wait for already scheduled maintenance jobs and performHoldJobs
+}
+
+searchcorespi::index::IThreadService &
+MaintenanceController::masterThread() {
+    return _masterThread;
 }
 
 void
