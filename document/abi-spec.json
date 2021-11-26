@@ -613,6 +613,7 @@
       "public void <init>()",
       "public void <init>(com.yahoo.document.DocumenttypesConfig)",
       "public com.yahoo.document.DocumenttypesConfig$Builder enablecompression(boolean)",
+      "public com.yahoo.document.DocumenttypesConfig$Builder usev8geopositions(boolean)",
       "public com.yahoo.document.DocumenttypesConfig$Builder documenttype(com.yahoo.document.DocumenttypesConfig$Documenttype$Builder)",
       "public com.yahoo.document.DocumenttypesConfig$Builder documenttype(java.util.List)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
@@ -1423,6 +1424,7 @@
       "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.document.DocumenttypesConfig$Builder)",
       "public boolean enablecompression()",
+      "public boolean usev8geopositions()",
       "public java.util.List documenttype()",
       "public com.yahoo.document.DocumenttypesConfig$Documenttype documenttype(int)"
     ],
