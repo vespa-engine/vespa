@@ -63,6 +63,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -248,14 +249,18 @@ public class SessionPreparerTest {
                         "    \"names\": [\n" +
                         "      \"foo.app1.tenant1.global.vespa.example.com\",\n" +
                         "      \"rotation-042.vespa.global.routing\"\n" +
-                        "    ]\n" +
+                        "    ],\n" +
+                        "    \"scope\": \"global\", \n" +
+                        "    \"routingMethod\": \"shared\"\n" +
                         "  },\n" +
                         "  {\n" +
                         "    \"clusterId\": \"bar\",\n" +
                         "    \"names\": [\n" +
                         "      \"bar.app1.tenant1.global.vespa.example.com\",\n" +
                         "      \"rotation-043.vespa.global.routing\"\n" +
-                        "    ]\n" +
+                        "    ],\n" +
+                        "    \"scope\": \"global\",\n" +
+                        "    \"routingMethod\": \"sharedLayer4\"\n" +
                         "  }\n" +
                         "]";
         var applicationId = applicationId("test");
@@ -267,11 +272,15 @@ public class SessionPreparerTest {
         var expected = List.of(new ContainerEndpoint("foo",
                                                      ApplicationClusterEndpoint.Scope.global,
                                                      List.of("foo.app1.tenant1.global.vespa.example.com",
-                                                             "rotation-042.vespa.global.routing")),
+                                                             "rotation-042.vespa.global.routing"),
+                                                     OptionalInt.empty(),
+                                                     ApplicationClusterEndpoint.RoutingMethod.shared),
                                new ContainerEndpoint("bar",
                                                      ApplicationClusterEndpoint.Scope.global,
                                                      List.of("bar.app1.tenant1.global.vespa.example.com",
-                                                             "rotation-043.vespa.global.routing")));
+                                                             "rotation-043.vespa.global.routing"),
+                                                     OptionalInt.empty(),
+                                                     ApplicationClusterEndpoint.RoutingMethod.sharedLayer4));
         assertEquals(expected, readContainerEndpoints(applicationId));
 
 
