@@ -40,7 +40,7 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
     _warmupDone(warmupDone),
     _warmupEndTime(vespalib::steady_clock::now() + warmupConfig.getDuration()),
     _handledTerms(std::make_unique<FieldTermMap>()),
-    _pendingTasks(0)
+    _pendingTasks()
 {
     if (_next->valid()) {
         setCurrentIndex(_next->getCurrentIndex());
@@ -81,7 +81,7 @@ WarmupIndexCollection::~WarmupIndexCollection()
     if (_warmupEndTime != vespalib::steady_time()) {
         LOG(info, "Warmup aborted due to new state change or application shutdown");
     }
-    assert(_pendingTasks == 0);
+    assert(_pendingTasks.has_zero_ref_count());
 }
 
 const ISourceSelector &
@@ -220,23 +220,19 @@ WarmupIndexCollection::getSearchableSP(uint32_t i) const
 
 void
 WarmupIndexCollection::drainPending() {
-    while (_pendingTasks > 0) {
-        std::this_thread::sleep_for(1ms);
-    }
+    _pendingTasks.waitForZeroRefCount();
 }
 
 WarmupIndexCollection::WarmupTask::WarmupTask(std::unique_ptr<MatchData> md, std::shared_ptr<WarmupIndexCollection> warmup)
     : _warmup(std::move(warmup)),
+      _retainGuard(_warmup->_pendingTasks),
       _matchData(std::move(md)),
       _bluePrint(),
       _requestContext()
 {
-    _warmup->_pendingTasks++;
 }
 
-WarmupIndexCollection::WarmupTask::~WarmupTask() {
-    _warmup->_pendingTasks--;
-}
+WarmupIndexCollection::WarmupTask::~WarmupTask() = default;
 
 void
 WarmupIndexCollection::WarmupTask::run()

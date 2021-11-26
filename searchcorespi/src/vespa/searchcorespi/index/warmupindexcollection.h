@@ -5,6 +5,8 @@
 #include "isearchableindexcollection.h"
 #include "warmupconfig.h"
 #include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/vespalib/util/monitored_refcount.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 
 namespace searchcorespi {
@@ -85,9 +87,10 @@ private:
     private:
         void run() override;
         std::shared_ptr<WarmupIndexCollection>  _warmup;
-        std::unique_ptr<MatchData>   _matchData;
-        Blueprint::UP                _bluePrint;
-        FakeRequestContext           _requestContext;
+        vespalib::RetainGuard                   _retainGuard;
+        std::unique_ptr<MatchData>              _matchData;
+        Blueprint::UP                           _bluePrint;
+        FakeRequestContext                      _requestContext;
     };
 
     void fireWarmup(Task::UP task);
@@ -102,7 +105,7 @@ private:
     vespalib::steady_time              _warmupEndTime;
     std::mutex                         _lock;
     std::unique_ptr<FieldTermMap>      _handledTerms;
-    std::atomic<uint64_t>              _pendingTasks;
+    vespalib::MonitoredRefCount        _pendingTasks;
 };
 
 }  // namespace searchcorespi
