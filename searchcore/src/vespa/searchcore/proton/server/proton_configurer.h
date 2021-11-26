@@ -7,9 +7,9 @@
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
+#include <vespa/vespalib/util/monitored_refcount.h>
 #include <map>
 #include <mutex>
-#include <atomic>
 
 namespace proton {
 
@@ -38,7 +38,7 @@ class ProtonConfigurer : public IProtonConfigurer
     bool                                      _allowReconfig;
     vespalib::SimpleComponentConfigProducer   _componentConfig;
     const std::unique_ptr<IProtonDiskLayout> &_diskLayout;
-    std::atomic<uint64_t>                     _pendingReconfigureTasks;
+    vespalib::MonitoredRefCount               _pendingReconfigureTasks;
 
     void performReconfigure();
     bool skipConfig(const ProtonConfigSnapshot *configSnapshot, bool initialConfig);

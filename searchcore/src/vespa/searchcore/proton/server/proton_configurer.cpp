@@ -12,6 +12,7 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <future>
 
@@ -54,27 +55,23 @@ ProtonConfigurer::ProtonConfigurer(vespalib::ThreadExecutor &executor,
       _mutex(),
       _allowReconfig(false),
       _componentConfig(),
-      _diskLayout(diskLayout),
-      _pendingReconfigureTasks(0)
+      _diskLayout(diskLayout)
 {
 }
 
 class ProtonConfigurer::ReconfigureTask : public vespalib::Executor::Task {
 public:
     ReconfigureTask(ProtonConfigurer & configurer)
-        : _configurer(configurer)
-    {
-        _configurer._pendingReconfigureTasks++;
-    }
-    ~ReconfigureTask() {
-        _configurer._pendingReconfigureTasks--;
-    }
+        : _configurer(configurer),
+          _retainGuard(configurer._pendingReconfigureTasks)
+    {}
 
     void run() override {
         _configurer.performReconfigure();
     }
 private:
-    ProtonConfigurer & _configurer;
+    ProtonConfigurer      & _configurer;
+    vespalib::RetainGuard   _retainGuard;
 };
 
 ProtonConfigurer::~ProtonConfigurer() = default;
@@ -89,14 +86,12 @@ ProtonConfigurer::setAllowReconfig(bool allowReconfig)
         _allowReconfig = allowReconfig;
         if (allowReconfig) {
             // Ensure that pending config is applied
-            _executor.execute(makeLambdaTask([this]() { performReconfigure(); }));
+            _executor.execute(std::make_unique<ReconfigureTask>(*this));
         }
     }
     if (!allowReconfig) {
         // drain queued performReconfigure tasks
-        while ( _pendingReconfigureTasks > 0) {
-            std::this_thread::sleep_for(1ms);
-        }
+        _pendingReconfigureTasks.waitForZeroRefCount();
     }
 }
 
