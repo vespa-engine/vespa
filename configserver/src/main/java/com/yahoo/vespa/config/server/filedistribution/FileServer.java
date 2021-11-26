@@ -103,7 +103,7 @@ public class FileServer {
         try {
             return root.getFile(reference).exists();
         } catch (IllegalArgumentException e) {
-            log.log(Level.FINE, () -> "Failed locating file reference '" + reference + "' with error " + e.toString());
+            log.log(Level.FINE, () -> "Failed locating " + reference + ": " + e.getMessage());
         }
         return false;
     }
@@ -121,7 +121,7 @@ public class FileServer {
 
     private void serveFile(FileReference reference, Receiver target) {
         File file = root.getFile(reference);
-        log.log(Level.FINE, () -> "Start serving reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
+        log.log(Level.FINE, () -> "Start serving " + reference + " with file '" + file.getAbsolutePath() + "'");
         boolean success = false;
         String errorDescription = "OK";
         FileReferenceData fileData = EmptyFileReferenceData.empty(reference, file.getName());
@@ -129,15 +129,15 @@ public class FileServer {
             fileData = readFileReferenceData(reference);
             success = true;
         } catch (IOException e) {
-            errorDescription = "For file reference '" + reference.value() + "': failed reading file '" + file.getAbsolutePath() + "'";
+            errorDescription = "For" + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'";
             log.warning(errorDescription + " for sending to '" + target.toString() + "'. " + e.toString());
         }
 
         try {
             target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
-            log.log(Level.FINE, () -> "Done serving file reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
+            log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
         } catch (Exception e) {
-            log.log(Level.WARNING, "Failed serving file reference '" + reference.value() + "': " + Exceptions.toMessageString(e));
+            log.log(Level.WARNING, "Failed serving " + reference + ": " + Exceptions.toMessageString(e));
         } finally {
             fileData.close();
         }
@@ -157,12 +157,12 @@ public class FileServer {
 
     public void serveFile(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
         if (executor instanceof ThreadPoolExecutor)
-            log.log(Level.FINE, () -> "Active threads is now " + ((ThreadPoolExecutor) executor).getActiveCount());
+            log.log(Level.FINE, () -> "Active threads: " + ((ThreadPoolExecutor) executor).getActiveCount());
         executor.execute(() -> serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, request, receiver));
     }
 
     private void serveFileInternal(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
-        log.log(Level.FINE, () -> "Received request for reference '" + fileReference + "' from " + request.target());
+        log.log(Level.FINE, () -> "Received request for file reference '" + fileReference + "' from " + request.target());
 
         boolean fileExists;
         try {

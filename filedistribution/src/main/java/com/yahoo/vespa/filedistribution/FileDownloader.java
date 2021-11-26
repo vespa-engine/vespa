@@ -29,7 +29,7 @@ public class FileDownloader implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(FileDownloader.class.getName());
     private static final Duration defaultTimeout = Duration.ofMinutes(3);
-    private static final Duration defaultSleepBetweenRetries = Duration.ofSeconds(10);
+    private static final Duration defaultSleepBetweenRetries = Duration.ofSeconds(5);
     public static final File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
 
     private final ConnectionPool connectionPool;
