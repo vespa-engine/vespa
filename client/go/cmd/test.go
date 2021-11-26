@@ -116,11 +116,9 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 	if test.Name == "" {
 		testName = filepath.Base(testPath)
 	}
-	verb := "Running"
-	if dryRun {
-		verb = "Validating"
+	if !dryRun {
+		fmt.Fprintf(stdout, "Running %s:", testName)
 	}
-	fmt.Fprintf(stdout, "%s %s:", verb, testName)
 
 	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, path.Dir(testPath))
 	if err != nil {
@@ -139,16 +137,20 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 		if err != nil {
 			fatalErr(err, fmt.Sprintf("Error in %s", stepName), "See https://cloud.vespa.ai/en/reference/testing")
 		}
-		if failure != "" {
-			fmt.Fprintf(stdout, " Failed %s:\n%s\n", stepName, longFailure)
-			return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
+		if !dryRun {
+			if failure != "" {
+				fmt.Fprintf(stdout, " Failed %s:\n%s\n", stepName, longFailure)
+				return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
+			}
+			if i == 0 {
+				fmt.Fprintf(stdout, " ")
+			}
+			fmt.Fprint(stdout, ".")
 		}
-		if i == 0 {
-			fmt.Fprintf(stdout, " ")
-		}
-		fmt.Fprint(stdout, ".")
 	}
-	fmt.Fprintln(stdout, " OK")
+	if !dryRun {
+		fmt.Fprintln(stdout, " OK")
+	}
 	return ""
 }
 

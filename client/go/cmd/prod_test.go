@@ -168,7 +168,6 @@ func TestProdSubmit(t *testing.T) {
 	}
 	out, err := execute(command{homeDir: homeDir, args: []string{"prod", "submit"}}, t, httpClient)
 	assert.Equal(t, "", err)
-	assert.Contains(t, out, "Validating test.json: . OK")
 	assert.Contains(t, out, "Success: Submitted")
 	assert.Contains(t, out, "See https://console.vespa.oath.cloud/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
