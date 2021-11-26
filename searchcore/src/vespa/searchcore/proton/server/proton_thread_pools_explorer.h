@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/net/state_explorer.h>
 
-namespace vespalib { class SyncableThreadExecutor; }
+namespace vespalib { class ThreadExecutor; }
 
 namespace proton {
 
@@ -13,20 +13,20 @@ namespace proton {
  */
 class ProtonThreadPoolsExplorer : public vespalib::StateExplorer {
 private:
-    const vespalib::SyncableThreadExecutor* _shared;
-    const vespalib::SyncableThreadExecutor* _match;
-    const vespalib::SyncableThreadExecutor* _docsum;
-    const vespalib::SyncableThreadExecutor* _flush;
-    const vespalib::SyncableThreadExecutor* _proton;
-    const vespalib::SyncableThreadExecutor* _warmup;
+    const vespalib::ThreadExecutor* _shared;
+    const vespalib::ThreadExecutor* _match;
+    const vespalib::ThreadExecutor* _docsum;
+    const vespalib::ThreadExecutor* _flush;
+    const vespalib::ThreadExecutor* _proton;
+    const vespalib::ThreadExecutor* _warmup;
 
 public:
-    ProtonThreadPoolsExplorer(const vespalib::SyncableThreadExecutor* shared,
-                              const vespalib::SyncableThreadExecutor* match,
-                              const vespalib::SyncableThreadExecutor* docsum,
-                              const vespalib::SyncableThreadExecutor* flush,
-                              const vespalib::SyncableThreadExecutor* proton,
-                              const vespalib::SyncableThreadExecutor* warmup);
+    ProtonThreadPoolsExplorer(const vespalib::ThreadExecutor* shared,
+                              const vespalib::ThreadExecutor* match,
+                              const vespalib::ThreadExecutor* docsum,
+                              const vespalib::ThreadExecutor* flush,
+                              const vespalib::ThreadExecutor* proton,
+                              const vespalib::ThreadExecutor* warmup);
 
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };

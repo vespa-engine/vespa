@@ -80,7 +80,7 @@ IndexManager::IndexManager(const vespalib::string &baseDir,
                            SerialNum serialNum,
                            Reconfigurer &reconfigurer,
                            IThreadingService &threadingService,
-                           vespalib::SyncableThreadExecutor & warmupExecutor,
+                           vespalib::Executor & warmupExecutor,
                            const search::TuneFileIndexManager &tuneFileIndexManager,
                            const search::TuneFileAttributes &tuneFileAttributes,
                            const FileHeaderContext &fileHeaderContext) :

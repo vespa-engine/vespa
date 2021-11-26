@@ -17,13 +17,13 @@ private:
     IThreadingService &_threadingService;
     IIndexManager::Reconfigurer &_reconfigurer;
     const search::common::FileHeaderContext &_fileHeaderContext;
-    vespalib::SyncableThreadExecutor & _warmupExecutor;
+    vespalib::Executor & _warmupExecutor;
 
 public:
     IndexMaintainerContext(IThreadingService &threadingService,
                            IIndexManager::Reconfigurer &reconfigurer,
                            const search::common::FileHeaderContext &fileHeaderContext,
-                           vespalib::SyncableThreadExecutor & warmupExecutor);
+                           vespalib::Executor & warmupExecutor);
 
     /**
      * Returns the treading service that encapsulates the thread model used for writing.
@@ -49,7 +49,7 @@ public:
     /**
      * @return The executor that should be used for warmup.
      */
-    vespalib::SyncableThreadExecutor & getWarmupExecutor() const {  return _warmupExecutor; }
+    vespalib::Executor & getWarmupExecutor() const {  return _warmupExecutor; }
 };
 
 }

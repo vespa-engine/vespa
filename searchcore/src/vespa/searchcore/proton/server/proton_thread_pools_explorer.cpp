@@ -5,18 +5,18 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/threadexecutor.h>
 
-using vespalib::SyncableThreadExecutor;
+using vespalib::ThreadExecutor;
 
 namespace proton {
 
 using explorer::convert_executor_to_slime;
 
-ProtonThreadPoolsExplorer::ProtonThreadPoolsExplorer(const SyncableThreadExecutor* shared,
-                                                     const SyncableThreadExecutor* match,
-                                                     const SyncableThreadExecutor* docsum,
-                                                     const SyncableThreadExecutor* flush,
-                                                     const SyncableThreadExecutor* proton,
-                                                     const SyncableThreadExecutor* warmup)
+ProtonThreadPoolsExplorer::ProtonThreadPoolsExplorer(const ThreadExecutor* shared,
+                                                     const ThreadExecutor* match,
+                                                     const ThreadExecutor* docsum,
+                                                     const ThreadExecutor* flush,
+                                                     const ThreadExecutor* proton,
+                                                     const ThreadExecutor* warmup)
     : _shared(shared),
       _match(match),
       _docsum(docsum),

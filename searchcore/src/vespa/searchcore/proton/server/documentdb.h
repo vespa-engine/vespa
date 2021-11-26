@@ -71,10 +71,15 @@ class DocumentDB : public DocumentDBConfigOwner,
                    public std::enable_shared_from_this<DocumentDB>
 {
 private:
-    using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
+    using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using StatusReportUP = std::unique_ptr<StatusReport>;
     using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;
+    using ConfigComparisonResult = DocumentDBConfig::ComparisonResult;
+    using lock_guard = std::lock_guard<std::mutex>;
+    using SerialNum = search::SerialNum;
+    using Schema = search::index::Schema;
+
 
     DocTypeName                   _docTypeName;
     document::BucketSpace         _bucketSpace;
@@ -85,9 +90,6 @@ private:
     // threads for initializer tasks during proton startup
     InitializeThreads             _initializeThreads;
 
-    typedef search::SerialNum      SerialNum;
-    typedef search::index::Schema  Schema;
-    using lock_guard = std::lock_guard<std::mutex>;
     // variables related to reconfig
     DocumentDBConfig::SP                      _initConfigSnapshot;
     SerialNum                                 _initConfigSerialNum;
@@ -97,10 +99,7 @@ private:
     DocumentDBConfig::SP                      _activeConfigSnapshot;
     int64_t                                   _activeConfigSnapshotGeneration;
     const bool                                _validateAndSanitizeDocStore;
-
-    vespalib::Gate                _initGate;
-
-    typedef DocumentDBConfig::ComparisonResult ConfigComparisonResult;
+    vespalib::Gate                            _initGate;
 
     ClusterStateHandler                             _clusterStateHandler;
     BucketHandler                                   _bucketHandler;
@@ -201,7 +200,7 @@ private:
                document::BucketSpace bucketSpace,
                const ProtonConfig &protonCfg,
                IDocumentDBOwner &owner,
-               vespalib::SyncableThreadExecutor &warmupExecutor,
+               vespalib::Executor &warmupExecutor,
                vespalib::ThreadExecutor &sharedExecutor,
                storage::spi::BucketExecutor &bucketExecutor,
                const search::transactionlog::WriterFactory &tlsWriterFactory,
@@ -233,7 +232,7 @@ public:
            document::BucketSpace bucketSpace,
            const ProtonConfig &protonCfg,
            IDocumentDBOwner &owner,
-           vespalib::SyncableThreadExecutor &warmupExecutor,
+           vespalib::ThreadExecutor &warmupExecutor,
            vespalib::ThreadExecutor &sharedExecutor,
            storage::spi::BucketExecutor & bucketExecutor,
            const search::transactionlog::WriterFactory &tlsWriterFactory,

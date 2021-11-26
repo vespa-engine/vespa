@@ -11,7 +11,7 @@ namespace searchcorespi::index {
 IndexMaintainerContext::IndexMaintainerContext(IThreadingService &threadingService,
                                                IIndexManager::Reconfigurer &reconfigurer,
                                                const FileHeaderContext &fileHeaderContext,
-                                               vespalib::SyncableThreadExecutor & warmupExecutor)
+                                               vespalib::Executor & warmupExecutor)
     : _threadingService(threadingService),
       _reconfigurer(reconfigurer),
       _fileHeaderContext(fileHeaderContext),

@@ -20,7 +20,7 @@ class IndexManagerInitializer :  public initializer::InitializerTask
     search::SerialNum                           _serialNum;
     searchcorespi::IIndexManager::Reconfigurer &_reconfigurer;
     searchcorespi::index::IThreadingService    &_threadingService;
-    vespalib::SyncableThreadExecutor           &_warmupExecutor;
+    vespalib::Executor                         &_warmupExecutor;
     const search::TuneFileIndexManager          _tuneFileIndexManager;
     const search::TuneFileAttributes            _tuneFileAttributes;
     const search::common::FileHeaderContext    &_fileHeaderContext;
@@ -33,7 +33,7 @@ public:
                             search::SerialNum serialNum,
                             searchcorespi::IIndexManager::Reconfigurer & reconfigurer,
                             searchcorespi::index::IThreadingService & threadingService,
-                            vespalib::SyncableThreadExecutor & warmupExecutor,
+                            vespalib::Executor & warmupExecutor,
                             const search::TuneFileIndexManager & tuneFileIndexManager,
                             const search::TuneFileAttributes & tuneFileAttributes,
                             const search::common::FileHeaderContext & fileHeaderContext,
