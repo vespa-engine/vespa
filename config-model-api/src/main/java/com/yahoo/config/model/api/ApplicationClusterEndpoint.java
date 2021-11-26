@@ -145,7 +145,7 @@ public class ApplicationClusterEndpoint {
             return name;
         }
 
-        // TODO: remove when
+        // TODO: remove when 7.508 is latest version
         public static DnsName sharedNameFrom(ClusterSpec.Id cluster, ApplicationId applicationId, String suffix) {
             return sharedNameFrom(SystemName.main, cluster, applicationId, suffix);
         }
