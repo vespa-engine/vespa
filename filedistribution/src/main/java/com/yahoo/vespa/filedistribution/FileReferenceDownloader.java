@@ -80,7 +80,7 @@ public class FileReferenceDownloader {
         Optional<FileReferenceDownload> inProgress = downloads.get(fileReference);
         if (inProgress.isPresent()) return inProgress.get().future();
 
-        log.log(Level.FINE, () -> "Will download file reference '" + fileReference.value() + "' with timeout " + downloadTimeout);
+        log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout);
         downloads.add(fileReferenceDownload);
         downloadExecutor.submit(() -> waitUntilDownloadStarted(fileReferenceDownload));
         return fileReferenceDownload.future();
@@ -99,16 +99,16 @@ public class FileReferenceDownloader {
         if (validateResponse(request)) {
             log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
             if (request.returnValues().get(0).asInt32() == 0) {
-                log.log(Level.FINE, () -> "Found '" + fileReference + "' available at " + connection.getAddress());
+                log.log(Level.FINE, () -> "Found " + fileReference + " available at " + connection.getAddress());
                 return true;
             } else {
-                log.log(logLevel, "'" + fileReference + "' not found at " + connection.getAddress());
+                log.log(logLevel, fileReference + " not found at " + connection.getAddress());
                 return false;
             }
         } else {
             log.log(logLevel, "Downloading " + fileReference + " from " + connection.getAddress() + " failed: " +
                     request + ", error: " + request.errorMessage() + ", will switch config server for next request" +
-                    " (retry " + retryCount + ", rpc timeout " + rpcTimeout(retryCount));
+                    " (retry " + retryCount + ", rpc timeout " + rpcTimeout(retryCount) + ")");
             return false;
         }
     }
