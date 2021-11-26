@@ -140,8 +140,10 @@ $ vespa prod submit`,
 			return
 		}
 		if pkg.TestPath == "" {
-			fatalErrHint(fmt.Errorf("No tests found"), "The application must be a Java maven project, or include basic HTTP tests under src/test/application")
+			fatalErrHint(fmt.Errorf("No tests found"), "The application must be a Java maven project, or include basic HTTP tests under src/test/application/")
 			return
+		} else {
+			verifyTests(pkg.TestPath, target)
 		}
 		isCI := os.Getenv("CI") != ""
 		if !isCI {
@@ -345,4 +347,13 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 		}
 	}
 	return input
+}
+
+func verifyTests(testsParent string, target vespa.Target) {
+	runTests(filepath.Join(testsParent, "tests", "system-test"), target, true)
+	runTests(filepath.Join(testsParent, "tests", "staging-setup"), target, true)
+	runTests(filepath.Join(testsParent, "tests", "staging-test"), target, true)
+	if util.PathExists(filepath.Join(testsParent, "tests", "production-test")) {
+		runTests(filepath.Join(testsParent, "tests", "production-test"), target, true)
+	}
 }

@@ -46,7 +46,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 		if len(args) > 0 {
 			testPath = args[0]
 		}
-		if count, failed := runTests(testPath, target); len(failed) != 0 {
+		if count, failed := runTests(testPath, target, false); len(failed) != 0 {
 			fmt.Fprintf(stdout, "\nFailed %d of %d tests:\n", len(failed), count)
 			for _, test := range failed {
 				fmt.Fprintln(stdout, test)
@@ -65,7 +65,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 	},
 }
 
-func runTests(rootPath string, target vespa.Target) (int, []string) {
+func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string) {
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
@@ -83,7 +83,7 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 					fmt.Fprintln(stdout, "")
 					previousFailed = false
 				}
-				failure := runTest(testPath, target)
+				failure := runTest(testPath, target, dryRun)
 				if failure != "" {
 					failed = append(failed, failure)
 					previousFailed = true
@@ -92,7 +92,7 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure := runTest(rootPath, target)
+		failure := runTest(rootPath, target, dryRun)
 		if failure != "" {
 			failed = append(failed, failure)
 		}
@@ -102,7 +102,7 @@ func runTests(rootPath string, target vespa.Target) (int, []string) {
 }
 
 // Runs the test at the given path, and returns the specified test name if the test fails
-func runTest(testPath string, target vespa.Target) string {
+func runTest(testPath string, target vespa.Target, dryRun bool) string {
 	var test test
 	testBytes, err := ioutil.ReadFile(testPath)
 	if err != nil {
@@ -131,7 +131,7 @@ func runTest(testPath string, target vespa.Target) string {
 		if stepName == "" {
 			stepName = fmt.Sprintf("step %d", i+1)
 		}
-		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target)
+		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
 		if err != nil {
 			fatalErr(err, fmt.Sprintf("Error in %s", stepName))
 		}
@@ -149,7 +149,7 @@ func runTest(testPath string, target vespa.Target) string {
 }
 
 // Asserts specified response is obtained for request, or returns a failure message, or an error if this fails
-func verify(step step, testsPath string, defaultCluster string, defaultParameters map[string]string, target vespa.Target) (string, string, error) {
+func verify(step step, testsPath string, defaultCluster string, defaultParameters map[string]string, target vespa.Target, dryRun bool) (string, string, error) {
 	requestBody, err := getBody(step.Request.BodyRaw, testsPath)
 	if err != nil {
 		return "", "", err
@@ -170,9 +170,12 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 		cluster = defaultCluster
 	}
 
-	service, err := target.Service("query", 0, 0, cluster)
-	if err != nil {
-		return "", "", err
+	var service *vespa.Service
+	if !dryRun {
+		service, err = target.Service("query", 0, 0, cluster)
+		if err != nil {
+			return "", "", err
+		}
 	}
 
 	method := step.Request.Method
@@ -190,7 +193,11 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	}
 	externalEndpoint := requestUrl.IsAbs()
 	if !externalEndpoint {
-		requestUrl, err = url.ParseRequestURI(service.BaseURL + requestUri)
+		baseURL := "http://dummy/"
+		if service != nil {
+			baseURL = service.BaseURL
+		}
+		requestUrl, err = url.ParseRequestURI(baseURL + requestUri)
 		if err != nil {
 			return "", "", err
 		}
@@ -212,6 +219,27 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	}
 	defer request.Body.Close()
 
+	statusCode := step.Response.Code
+	if statusCode == 0 {
+		statusCode = 200
+	}
+
+	responseBodySpecBytes, err := getBody(step.Response.BodyRaw, testsPath)
+	if err != nil {
+		return "", "", err
+	}
+	var responseBodySpec interface{}
+	if responseBodySpecBytes != nil {
+		err = json.Unmarshal(responseBodySpecBytes, &responseBodySpec)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	if dryRun {
+		return "", "", nil
+	}
+
 	var response *http.Response
 	if externalEndpoint {
 		util.ActiveHttpClient.UseCertificate([]tls.Certificate{})
@@ -224,26 +252,13 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	}
 	defer response.Body.Close()
 
-	statusCode := step.Response.Code
-	if statusCode == 0 {
-		statusCode = 200
-	}
 	if statusCode != response.StatusCode {
 		failure := fmt.Sprintf("Unexpected status code: %d", response.StatusCode)
 		return failure, fmt.Sprintf("%s\nExpected: %d\nActual response:\n%s", failure, statusCode, util.ReaderToJSON(response.Body)), nil
 	}
 
-	responseBodySpecBytes, err := getBody(step.Response.BodyRaw, testsPath)
-	if err != nil {
-		return "", "", err
-	}
-	if responseBodySpecBytes == nil {
+	if responseBodySpec == nil {
 		return "", "", nil
-	}
-	var responseBodySpec interface{}
-	err = json.Unmarshal(responseBodySpecBytes, &responseBodySpec)
-	if err != nil {
-		return "", "", err
 	}
 
 	responseBodyBytes, err := ioutil.ReadAll(response.Body)

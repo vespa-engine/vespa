@@ -125,13 +125,20 @@ func createApplication(t *testing.T, pkgDir string, java bool) {
 			t.Fatal(err)
 		}
 	} else {
-		testsDir := filepath.Join(pkgDir, "src", "test", "application", "tests", "system-test")
-		if err := os.MkdirAll(testsDir, 0700); err != nil {
-			t.Fatal(err)
-		}
-		if err := ioutil.WriteFile(filepath.Join(testsDir, "test.json"), []byte(""), 0644); err != nil {
-			t.Fatal(err)
-		}
+		testsDir := filepath.Join(pkgDir, "src", "test", "application", "tests")
+		testBytes, _ := ioutil.ReadAll(strings.NewReader("{\"steps\":[{}]}"))
+		writeTest(filepath.Join(testsDir, "system-test", "test.json"), testBytes, t)
+		writeTest(filepath.Join(testsDir, "staging-setup", "test.json"), testBytes, t)
+		writeTest(filepath.Join(testsDir, "staging-test", "test.json"), testBytes, t)
+	}
+}
+
+func writeTest(path string, content []byte, t *testing.T) {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(path, content, 0644); err != nil {
+		t.Fatal(err)
 	}
 }
 
