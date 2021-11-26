@@ -18,7 +18,7 @@ std::vector<T> createAndFill(size_t sz) {
 }
 
 template<typename T, typename P>
-void verifyEuclideanDistance(const hwaccelrated::IAccelrated & accel, size_t testLength) {
+void verifyEuclideanDistance(const hwaccelrated::IAccelrated & accel, size_t testLength, double approxFactor) {
     srand(1);
     std::vector<T> a = createAndFill<T>(testLength);
     std::vector<T> b = createAndFill<T>(testLength);
@@ -29,21 +29,22 @@ void verifyEuclideanDistance(const hwaccelrated::IAccelrated & accel, size_t tes
             sum += d * d;
         }
         P hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
-        EXPECT_EQUAL(sum, hwComputedSum);
+        EXPECT_APPROX(sum, hwComputedSum, sum*approxFactor);
     }
 }
 
 void
 verifyEuclideanDistance(const hwaccelrated::IAccelrated & accelrator, size_t testLength) {
-    verifyEuclideanDistance<int8_t, float>(accelrator, testLength);
-    verifyEuclideanDistance<float, float>(accelrator, testLength);
-    verifyEuclideanDistance<double, float>(accelrator, testLength);
+    verifyEuclideanDistance<int8_t, double>(accelrator, testLength, 0.0);
+    verifyEuclideanDistance<float, double>(accelrator, testLength, 0.0001); // Small deviation requiring EXPECT_APPROX
+    verifyEuclideanDistance<double, double>(accelrator, testLength, 0.0);
 }
 
 TEST("test euclidean distance") {
     hwaccelrated::GenericAccelrator genericAccelrator;
-    verifyEuclideanDistance(hwaccelrated::GenericAccelrator(),255);
-    verifyEuclideanDistance(hwaccelrated::IAccelrated::getAccelerator(),255);
+    constexpr size_t TEST_LENGTH = 140000; // must be longer than 64k
+    TEST_DO(verifyEuclideanDistance(hwaccelrated::GenericAccelrator(), TEST_LENGTH));
+    TEST_DO(verifyEuclideanDistance(hwaccelrated::IAccelrated::getAccelerator(), TEST_LENGTH));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

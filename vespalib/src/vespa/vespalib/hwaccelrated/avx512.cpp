@@ -24,7 +24,7 @@ Avx512Accelrator::populationCount(const uint64_t *a, size_t sz) const {
 
 double
 Avx512Accelrator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const {
-    return helper::euclideanDistance(a, b, sz);
+    return helper::squaredEuclideanDistance(a, b, sz);
 }
 
 double
