@@ -13,9 +13,6 @@ import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
-import static java.util.logging.Level.INFO;
 
 /**
  * Keeps track of file distribution and url download rpc servers.
@@ -24,7 +21,6 @@ import static java.util.logging.Level.INFO;
  */
 public class FileDistributionAndUrlDownload {
 
-    private static final Logger log = Logger.getLogger(FileDistributionAndUrlDownload.class.getName());
     private static final Duration delay = Duration.ofMinutes(1);
 
     private final FileDistributionRpcServer fileDistributionRpcServer;
@@ -54,8 +50,6 @@ public class FileDistributionAndUrlDownload {
 
     private static ConnectionPool createConnectionPool(Supervisor supervisor, ConfigSourceSet source) {
         String useFileDistributionConnectionPool = System.getenv("VESPA_CONFIG_PROXY_USE_FILE_DISTRIBUTION_CONNECTION_POOL");
-        // TODO: Lower log level or remove when verified
-        log.log(INFO, "VESPA_CONFIG_PROXY_USE_FILE_DISTRIBUTION_CONNECTION_POOL: " + useFileDistributionConnectionPool);
         if (useFileDistributionConnectionPool != null && useFileDistributionConnectionPool.equalsIgnoreCase("true"))
             return new FileDistributionConnectionPool(source, supervisor);
         else
