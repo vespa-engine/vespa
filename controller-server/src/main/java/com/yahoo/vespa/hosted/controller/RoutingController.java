@@ -274,22 +274,20 @@ public class RoutingController {
             }
 
             // Register names in DNS
-            Optional<Rotation> rotation = rotationRepository.getRotation(assignedRotation.rotationId());
-            if (rotation.isPresent()) {
-                for (var endpoint : rotationEndpoints) {
-                    controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
-                                                                  RecordData.fqdn(rotation.get().name()),
-                                                                  Priority.normal);
-                    List<String> names = List.of(endpoint.dnsName(),
-                                                 // Include rotation ID as a valid name of this container endpoint
-                                                 // (required by global routing health checks)
-                                                 assignedRotation.rotationId().asString());
-                    containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(),
-                                                                 asString(Endpoint.Scope.global),
-                                                                 names,
-                                                                 OptionalInt.empty(),
-                                                                 endpoint.routingMethod()));
-                }
+            Rotation rotation = rotationRepository.requireRotation(assignedRotation.rotationId());
+            for (var endpoint : rotationEndpoints) {
+                controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
+                                                              RecordData.fqdn(rotation.name()),
+                                                              Priority.normal);
+                List<String> names = List.of(endpoint.dnsName(),
+                                             // Include rotation ID as a valid name of this container endpoint
+                                             // (required by global routing health checks)
+                                             assignedRotation.rotationId().asString());
+                containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(),
+                                                             asString(Endpoint.Scope.global),
+                                                             names,
+                                                             OptionalInt.empty(),
+                                                             endpoint.routingMethod()));
             }
         }
         // Add endpoints not backed by a rotation (i.e. other routing methods so that the config server always knows
