@@ -326,7 +326,7 @@ class MaintenanceControllerFixture
 public:
     MyExecutor                         _executor;
     MyExecutor                         _genericExecutor;
-    ExecutorThreadService              _threadService;
+    SyncableExecutorThreadService      _threadService;
     DummyBucketExecutor                _bucketExecutor;
     DocTypeName                        _docTypeName;
     test::UserDocumentsBuilder         _builder;

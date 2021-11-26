@@ -69,7 +69,7 @@ struct IThreadingService
      */
     virtual void blocking_master_execute(vespalib::Executor::Task::UP task) = 0;
 
-    virtual IThreadService &master() = 0;
+    virtual ISyncableThreadService &master() = 0;
     virtual IThreadService &index() = 0;
     virtual vespalib::ThreadExecutor &summary() = 0;
     virtual vespalib::ThreadExecutor &shared() = 0;

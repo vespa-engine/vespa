@@ -9,6 +9,7 @@ using vespalib::makeLambdaTask;
 using vespalib::Executor;
 using vespalib::Gate;
 using vespalib::Runnable;
+using vespalib::ThreadExecutor;
 using vespalib::SyncableThreadExecutor;
 
 namespace proton {
@@ -29,11 +30,15 @@ sampleThreadId(FastOS_ThreadId *threadId)
 }
 
 std::unique_ptr<internal::ThreadId>
-getThreadId(SyncableThreadExecutor &executor)
+getThreadId(ThreadExecutor &executor)
 {
     std::unique_ptr<internal::ThreadId> id = std::make_unique<internal::ThreadId>();
-    executor.execute(makeLambdaTask([threadId=&id->_id] { sampleThreadId(threadId);}));
-    executor.sync();
+    vespalib::Gate gate;
+    executor.execute(makeLambdaTask([threadId=&id->_id, &gate] {
+        sampleThreadId(threadId);
+        gate.countDown();
+    }));
+    gate.await();
     return id;
 }
 
@@ -46,7 +51,7 @@ runRunnable(Runnable *runnable, Gate *gate)
 
 } // namespace
 
-ExecutorThreadService::ExecutorThreadService(SyncableThreadExecutor &executor)
+ExecutorThreadService::ExecutorThreadService(ThreadExecutor &executor)
     : _executor(executor),
       _threadId(getThreadId(executor))
 {
@@ -87,6 +92,53 @@ uint32_t ExecutorThreadService::getTaskLimit() const {
 
 void
 ExecutorThreadService::wakeup() {
+    _executor.wakeup();
+}
+
+SyncableExecutorThreadService::SyncableExecutorThreadService(SyncableThreadExecutor &executor)
+    : _executor(executor),
+      _threadId(getThreadId(executor))
+{
+}
+
+SyncableExecutorThreadService::~SyncableExecutorThreadService()  = default;
+
+void
+SyncableExecutorThreadService::run(Runnable &runnable)
+{
+    if (isCurrentThread()) {
+        runnable.run();
+    } else {
+        Gate gate;
+        _executor.execute(makeLambdaTask([runnablePtr=&runnable, gatePtr=&gate] { runRunnable(runnablePtr, gatePtr); }));
+        gate.await();
+    }
+}
+
+bool
+SyncableExecutorThreadService::isCurrentThread() const
+{
+    FastOS_ThreadId currentThreadId = FastOS_Thread::GetCurrentThreadId();
+    return FastOS_Thread::CompareThreadIds(_threadId->_id, currentThreadId);
+}
+
+vespalib::ExecutorStats
+SyncableExecutorThreadService::getStats() {
+    return _executor.getStats();
+}
+
+void
+SyncableExecutorThreadService::setTaskLimit(uint32_t taskLimit) {
+    _executor.setTaskLimit(taskLimit);
+}
+
+uint32_t
+SyncableExecutorThreadService::getTaskLimit() const {
+    return _executor.getTaskLimit();
+}
+
+void
+SyncableExecutorThreadService::wakeup() {
     _executor.wakeup();
 }
 

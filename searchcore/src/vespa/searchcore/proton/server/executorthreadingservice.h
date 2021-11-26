@@ -23,9 +23,8 @@ private:
     std::atomic<uint32_t>                                _master_task_limit;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _indexExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;
-    ExecutorThreadService                                _masterService;
+    SyncableExecutorThreadService                        _masterService;
     ExecutorThreadService                                _indexService;
-    ExecutorThreadService                                _summaryService;
     std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldInverter;
     std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldWriter;
     std::unique_ptr<vespalib::ISequencedTaskExecutor>    _attributeFieldWriter;
@@ -60,7 +59,7 @@ public:
                          uint32_t field_task_limit,
                          uint32_t summary_task_limit);
 
-    searchcorespi::index::IThreadService &master() override {
+    searchcorespi::index::ISyncableThreadService &master() override {
         return _masterService;
     }
     searchcorespi::index::IThreadService &index() override {

@@ -27,7 +27,7 @@ class ProtonConfigurer : public IProtonConfigurer
     using DocumentDBs = std::map<DocTypeName, std::pair<std::weak_ptr<IDocumentDBConfigOwner>, std::weak_ptr<DocumentDBDirectoryHolder>>>;
     using InitializeThreads = std::shared_ptr<vespalib::SyncableThreadExecutor>;
 
-    ExecutorThreadService _executor;
+    SyncableExecutorThreadService _executor;
     IProtonConfigurerOwner &_owner;
     DocumentDBs _documentDBs;
     std::shared_ptr<ProtonConfigSnapshot> _pendingConfigSnapshot;
