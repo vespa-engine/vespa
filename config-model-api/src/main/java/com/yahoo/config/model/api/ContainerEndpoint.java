@@ -20,22 +20,16 @@ public class ContainerEndpoint {
     private final ApplicationClusterEndpoint.Scope scope;
     private final List<String> names;
     private final OptionalInt weight;
-    private final ApplicationClusterEndpoint.RoutingMethod routingMethod;
 
     public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names) {
         this(clusterId, scope, names, OptionalInt.empty());
     }
 
     public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names, OptionalInt weight) {
-        this(clusterId, scope, names, weight, ApplicationClusterEndpoint.RoutingMethod.sharedLayer4);
-    }
-
-    public ContainerEndpoint(String clusterId, ApplicationClusterEndpoint.Scope scope, List<String> names, OptionalInt weight, ApplicationClusterEndpoint.RoutingMethod routingMethod) {
         this.clusterId = Objects.requireNonNull(clusterId);
         this.scope = Objects.requireNonNull(scope);
         this.names = List.copyOf(Objects.requireNonNull(names));
         this.weight = weight;
-        this.routingMethod = routingMethod;
     }
 
     public String clusterId() {
@@ -54,10 +48,6 @@ public class ContainerEndpoint {
         return weight;
     }
 
-    public ApplicationClusterEndpoint.RoutingMethod routingMethod() {
-        return routingMethod;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -65,18 +55,17 @@ public class ContainerEndpoint {
         ContainerEndpoint that = (ContainerEndpoint) o;
         return Objects.equals(clusterId, that.clusterId) &&
                Objects.equals(scope, that.scope) &&
-               Objects.equals(names, that.names) &&
-               Objects.equals(weight, that.weight) &&
-               Objects.equals(routingMethod, that.routingMethod);
+                Objects.equals(names, that.names);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(clusterId, names, scope, weight, routingMethod);
+        return Objects.hash(clusterId, names, scope);
     }
 
     @Override
     public String toString() {
-        return String.format("container endpoint %s -> %s [scope=%s, weight=%s, routingMetod=%s]", clusterId, names, scope, weight, routingMethod);
+        return String.format("container endpoint %s -> %s [scope=%s]", clusterId, names, scope);
     }
+
 }

@@ -237,7 +237,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                   .build());
         }
 
-        // Then get all endpoints provided by controller.
+        // Then get all endpoints provided by controller. Can be created with L4 routing only
         Set<ContainerEndpoint> endpointsFromController = deployState.getEndpoints();
         endpointsFromController.stream()
                 .filter(ce -> ce.clusterId().equals(getName()))
@@ -245,7 +245,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                         name -> endpoints.add(ApplicationClusterEndpoint.builder()
                                                       .scope(ce.scope())
                                                       .weight(Long.valueOf(ce.weight().orElse(1)).intValue()) // Default to weight=1 if not set
-                                                      .routingMethod(ce.routingMethod())
+                                                      .sharedL4Routing()
                                                       .dnsName(ApplicationClusterEndpoint.DnsName.from(name))
                                                       .hosts(hosts)
                                                       .clusterId(getName())
