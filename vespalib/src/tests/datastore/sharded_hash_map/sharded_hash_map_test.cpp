@@ -11,6 +11,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/vespalib/datastore/unique_store_allocator.hpp>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespalib_datastore_shared_hash_test");
@@ -23,6 +24,18 @@ using MyCompare = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
 using MyHashMap = vespalib::datastore::ShardedHashMap;
 using GenerationHandler = vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
+
+namespace {
+
+void consider_yield(uint32_t i)
+{
+    if ((i % 1000) == 0) {
+        // Need to yield sometimes to avoid livelock when running unit test with valgrind
+        std::this_thread::yield();
+    }
+}
+
+}
 
 struct DataStoreShardedHashTest : public ::testing::Test
 {
@@ -142,6 +155,7 @@ DataStoreShardedHashTest::read_work(uint32_t cnt)
             EXPECT_EQ(key, wrapped_entry.value());
             ++found;
         }
+        consider_yield(i);
     }
     _done_read_work += i;
     _found_count += found;
@@ -168,6 +182,7 @@ DataStoreShardedHashTest::write_work(uint32_t cnt)
             remove(key);
         }
         commit();
+        consider_yield(i);
     }
     _done_write_work += cnt;
     _stop_read = 1;
