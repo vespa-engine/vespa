@@ -92,7 +92,8 @@ public class FileReferenceDownloader {
 
     private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection) {
         Request request = createRequest(fileReferenceDownload);
-        connection.invokeSync(request, rpcTimeout(retryCount).getSeconds());
+        Duration rpcTimeout = rpcTimeout(retryCount);
+        connection.invokeSync(request, rpcTimeout.getSeconds());
 
         Level logLevel = (retryCount > 3 ? Level.INFO : Level.FINE);
         FileReference fileReference = fileReferenceDownload.fileReference();
@@ -107,8 +108,9 @@ public class FileReferenceDownloader {
             }
         } else {
             log.log(logLevel, "Downloading " + fileReference + " from " + connection.getAddress() + " failed: " +
-                    request + ", error: " + request.errorMessage() + ", will switch config server for next request" +
-                    " (retry " + retryCount + ", rpc timeout " + rpcTimeout(retryCount) + ")");
+                    request + ", error: " + request.errorCode() + "(" + request.errorMessage() +
+                    "). Will switch config server for next request" +
+                    " (retry " + retryCount + ", rpc timeout " + rpcTimeout + ")");
             return false;
         }
     }
