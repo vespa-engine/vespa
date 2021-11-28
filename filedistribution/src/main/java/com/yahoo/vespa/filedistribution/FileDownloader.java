@@ -6,7 +6,6 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.time.Duration;
@@ -69,16 +68,10 @@ public class FileDownloader implements AutoCloseable {
                                                                    downloadDirectory);
     }
 
-    public Optional<File> getFile(FileReference fileReference, String client) {
-        return getFile(new FileReferenceDownload(fileReference, client));
-    }
-
     public Optional<File> getFile(FileReferenceDownload fileReferenceDownload) {
         try {
             return getFutureFile(fileReferenceDownload).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.log(Level.WARNING, "Failed downloading '" + fileReferenceDownload +
-                                   "', removing from download queue: " + Exceptions.toMessageString(e));
             fileReferenceDownloader.failedDownloading(fileReferenceDownload.fileReference());
             return Optional.empty();
         }

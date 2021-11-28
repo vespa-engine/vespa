@@ -11,6 +11,7 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 
 import java.io.File;
 import java.util.Map;
@@ -102,7 +103,7 @@ class FileDistributionRpcServer {
     private void downloadFile(Request req) {
         FileReference fileReference = new FileReference(req.parameters().get(0).asString());
         log.log(Level.FINE, () -> "getFile() called for file reference '" + fileReference.value() + "'");
-        Optional<File> file = downloader.getFile(fileReference, HostName.getLocalhost());
+        Optional<File> file = downloader.getFile(new FileReferenceDownload(fileReference, HostName.getLocalhost()));
         if (file.isPresent()) {
             new RequestTracker().trackRequest(file.get().getParentFile());
             req.returnValues().add(new StringValue(file.get().getAbsolutePath()));

@@ -297,7 +297,7 @@ public class FileDownloaderTest {
     }
 
     private Optional<File> getFile(FileReference fileReference) {
-        return fileDownloader.getFile(fileReference, "test");
+        return fileDownloader.getFile(new FileReferenceDownload(fileReference, "test"));
     }
 
     private static class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {
