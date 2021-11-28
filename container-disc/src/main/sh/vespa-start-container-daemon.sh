@@ -39,10 +39,6 @@ CP="${VESPA_HOME}/lib/jars/jdisc_core-jar-with-dependencies.jar"
 mkdir -p $bundlecachedir || exit 1
 printenv > $cfpfile || exit 1
 
-# ??? TODO ??? XXX ???
-# LANG=en_US.utf8
-# LC_ALL=C
-
 
 getconfig() {
     qrstartcfg=""
