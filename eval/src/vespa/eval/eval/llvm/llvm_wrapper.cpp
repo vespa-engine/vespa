@@ -725,7 +725,8 @@ LLVMWrapper::compile(llvm::raw_ostream * dumpStream)
     if (dumpStream) {
         _module->print(*dumpStream, nullptr);
     }
-    _engine.reset(llvm::EngineBuilder(std::move(_module)).setOptLevel(llvm::CodeGenOpt::Aggressive).create());
+    // Set relocation model to silence valgrind on CentOS 8 / aarch64
+    _engine.reset(llvm::EngineBuilder(std::move(_module)).setOptLevel(llvm::CodeGenOpt::Aggressive).setRelocationModel(llvm::Reloc::Static).create());
     assert(_engine && "llvm jit not available for your platform");
     _engine->finalizeObject();
 }
