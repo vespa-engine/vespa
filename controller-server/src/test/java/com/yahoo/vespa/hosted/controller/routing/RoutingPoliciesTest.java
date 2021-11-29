@@ -793,18 +793,12 @@ public class RoutingPoliciesTest {
         var applicationPackage = applicationPackageBuilder()
                 .instances("beta,main")
                 .region(zone1.region())
-                .region(zone2.region())
                 .applicationEndpoint("a0", "c0", "us-west-1",
                                      Map.of(betaInstance.instance(), 2,
                                             mainInstance.instance(), 8))
-                .applicationEndpoint("a1", "c1", "us-central-1",
-                                     Map.of(betaInstance.instance(), 4,
-                                            mainInstance.instance(), 0))
                 .build();
-        for (var zone : List.of(zone1, zone2)) {
-            tester.provisionLoadBalancers(2, betaInstance, zone);
-            tester.provisionLoadBalancers(2, mainInstance, zone);
-        }
+        tester.provisionLoadBalancers(1, betaInstance, zone1);
+        tester.provisionLoadBalancers(1, mainInstance, zone1);
 
         // Deploy both instances
         betaContext.submit(applicationPackage).deploy();
@@ -812,35 +806,36 @@ public class RoutingPoliciesTest {
         // Application endpoint points to both instances with correct weights
         DeploymentId betaZone1 = betaContext.deploymentIdIn(zone1);
         DeploymentId mainZone1 = mainContext.deploymentIdIn(zone1);
-        DeploymentId betaZone2 = betaContext.deploymentIdIn(zone2);
-        DeploymentId mainZone2 = mainContext.deploymentIdIn(zone2);
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
                              Map.of(betaZone1, 2,
                                     mainZone1, 8));
-        tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
-                             Map.of(betaZone2, 4,
-                                    mainZone2, 0));
 
-        // Changing routing status updates weight
+        // Changing routing status removes deployment from DNS
         tester.routingPolicies().setRoutingStatus(mainZone1, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
-                             Map.of(betaZone1, 2,
-                                    mainZone1, 0));
-        tester.routingPolicies().setRoutingStatus(mainZone1, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
+                             Map.of(betaZone1, 2));
+
+        // Changing routing status for remaining deployment adds back all deployments, because removing all deployments
+        // puts all IN
+        tester.routingPolicies().setRoutingStatus(betaZone1, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
         tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
                              Map.of(betaZone1, 2,
                                     mainZone1, 8));
 
-        // Changing routing status preserves weights if change in routing status would result in a zero weight sum
-        // Otherwise this would result in both targets have weight 0 and thus traffic would be distributed evenly across
-        // all targets which does not match intention of taking out a deployment
-        tester.routingPolicies().setRoutingStatus(betaZone2, RoutingStatus.Value.out, RoutingStatus.Agent.tenant);
+        // Activating main deployment allows us to deactivate the beta deployment
+        tester.routingPolicies().setRoutingStatus(mainZone1, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
         betaContext.flushDnsUpdates();
-        tester.assertTargets(application, EndpointId.of("a1"), ClusterSpec.Id.from("c1"), 1,
-                             Map.of(betaZone2, 4,
-                                    mainZone2, 0));
+        tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
+                             Map.of(mainZone1, 8));
+
+        // Activate all deployments again
+        tester.routingPolicies().setRoutingStatus(betaZone1, RoutingStatus.Value.in, RoutingStatus.Agent.tenant);
+        betaContext.flushDnsUpdates();
+        tester.assertTargets(application, EndpointId.of("a0"), ClusterSpec.Id.from("c0"), 0,
+                             Map.of(betaZone1, 2,
+                                    mainZone1, 8));
     }
 
     /** Returns an application package builder that satisfies requirements for a directly routed endpoint */
@@ -995,8 +990,8 @@ public class RoutingPoliciesTest {
             for (var zone : zoneWeights.keySet()) {
                 DeploymentId deployment = new DeploymentId(instance, zone);
                 EndpointList regionEndpoints = tester.controller().routing().readEndpointsOf(deployment)
-                                                    .cluster(cluster)
-                                                    .scope(Endpoint.Scope.weighted);
+                                                     .cluster(cluster)
+                                                     .scope(Endpoint.Scope.weighted);
                 Endpoint regionEndpoint = regionEndpoints.first().orElseThrow(() -> new IllegalArgumentException("No region endpoint found for " + cluster + " in " + deployment));
                 zonesByRegionEndpoint.computeIfAbsent(regionEndpoint.dnsName(), (k) -> new ArrayList<>())
                                      .add(zone);

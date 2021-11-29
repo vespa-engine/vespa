@@ -519,9 +519,15 @@ public class CuratorDb {
     }
 
     public Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> readRoutingPolicies() {
+        return readRoutingPolicies((instance) -> true);
+    }
+
+    public Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> readRoutingPolicies(Predicate<ApplicationId> filter) {
         return curator.getChildren(routingPoliciesRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
-                      .collect(Collectors.toUnmodifiableMap(Function.identity(), this::readRoutingPolicies));
+                      .filter(filter)
+                      .collect(Collectors.toUnmodifiableMap(Function.identity(),
+                                                            this::readRoutingPolicies));
     }
 
     public Map<RoutingPolicyId, RoutingPolicy> readRoutingPolicies(ApplicationId application) {

@@ -37,8 +37,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -63,8 +63,25 @@ public class RoutingPolicies {
     }
 
     /** Read all known routing policies for given instance */
-    public Map<RoutingPolicyId, RoutingPolicy> get(ApplicationId application) {
-        return db.readRoutingPolicies(application);
+    public Map<RoutingPolicyId, RoutingPolicy> get(ApplicationId instance) {
+        return db.readRoutingPolicies(instance);
+    }
+
+    /** Read all known routing policies for given application */
+    public Map<RoutingPolicyId, RoutingPolicy> get(TenantAndApplicationId application) {
+        return db.readRoutingPolicies((instance) -> TenantAndApplicationId.from(instance).equals(application))
+                 .values()
+                 .stream()
+                 .map(Map::values)
+                 .flatMap(Collection::stream)
+                 // Collect to LinkedHashMap because we want to preserve the order of routing policy within
+                 // each instance
+                 .collect(Collectors.toMap(RoutingPolicy::id,
+                                           Function.identity(),
+                                           (p1, p2) -> {
+                                               throw new IllegalArgumentException("Duplicate key " + p1.id());
+                                           },
+                                           LinkedHashMap::new));
     }
 
     /** Read all known routing policies for given deployment */
@@ -86,7 +103,7 @@ public class RoutingPolicies {
      */
     public void refresh(ApplicationId instance, DeploymentSpec deploymentSpec, ZoneId zone) {
         LoadBalancerAllocation allocation = new LoadBalancerAllocation(instance, zone, controller.serviceRegistry().configServer()
-                                                                                                    .getLoadBalancers(instance, zone),
+                                                                                                 .getLoadBalancers(instance, zone),
                                                                        deploymentSpec);
         Set<ZoneId> inactiveZones = inactiveZones(instance, deploymentSpec);
         try (var lock = db.lockRoutingPolicies()) {
@@ -96,9 +113,12 @@ public class RoutingPolicies {
             storePoliciesOf(allocation, lock);
             removePoliciesUnreferencedBy(allocation, lock);
 
-            Collection<RoutingPolicy> policies = get(allocation.deployment.applicationId()).values();
-            updateGlobalDnsOf(policies, inactiveZones, lock);
-            updateApplicationDnsOf(policies, inactiveZones, lock);
+            Collection<RoutingPolicy> applicationPolicies = get(TenantAndApplicationId.from(instance)).values();
+            List<RoutingPolicy> instancePolicies = applicationPolicies.stream()
+                                                                      .filter(policy -> policy.id().owner().equals(instance))
+                                                                      .collect(Collectors.toUnmodifiableList());
+            updateGlobalDnsOf(instancePolicies, inactiveZones, lock);
+            updateApplicationDnsOf(applicationPolicies, inactiveZones, lock);
         }
     }
 
@@ -116,18 +136,24 @@ public class RoutingPolicies {
 
     /** Set the status of all global endpoints for given deployment */
     public void setRoutingStatus(DeploymentId deployment, RoutingStatus.Value value, RoutingStatus.Agent agent) {
+        ApplicationId instance = deployment.applicationId();
         try (var lock = db.lockRoutingPolicies()) {
-            var policies = get(deployment.applicationId());
-            var newPolicies = new LinkedHashMap<>(policies);
+            Map<RoutingPolicyId, RoutingPolicy> policies = get(TenantAndApplicationId.from(instance));
+            Map<RoutingPolicyId, RoutingPolicy> effectivePolicies = new LinkedHashMap<>(policies);
             for (var policy : policies.values()) {
                 if (!policy.appliesTo(deployment)) continue;
                 var newPolicy = policy.with(policy.status().with(RoutingStatus.create(value, agent,
                                                                                       controller.clock().instant())));
-                newPolicies.put(policy.id(), newPolicy);
+                effectivePolicies.put(policy.id(), newPolicy);
             }
-            db.writeRoutingPolicies(deployment.applicationId(), newPolicies);
-            updateGlobalDnsOf(newPolicies.values(), Set.of(), lock);
-            updateApplicationDnsOf(newPolicies.values(), Set.of(), lock);
+
+            // Group policies by their instance
+            Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> policiesByInstance = new LinkedHashMap<>();
+            effectivePolicies.forEach((id, policy) -> policiesByInstance.computeIfAbsent(id.owner(), (k) -> new LinkedHashMap<>())
+                                                                        .put(id, policy));
+            policiesByInstance.forEach(db::writeRoutingPolicies);
+            policiesByInstance.forEach((ignored, instancePolicies) -> updateGlobalDnsOf(instancePolicies.values(), Set.of(), lock));
+            updateApplicationDnsOf(effectivePolicies.values(), Set.of(), lock);
         }
     }
 
@@ -214,8 +240,8 @@ public class RoutingPolicies {
         if (routingTable.isEmpty()) return;
 
         Application application = controller.applications().requireApplication(routingTable.keySet().iterator().next().application());
-        Map<DeploymentId, Map<EndpointId, Integer>> targetWeights = targetWeights(application);
         Map<Endpoint, Set<AliasTarget>> targetsByEndpoint = new LinkedHashMap<>();
+        Map<Endpoint, Set<AliasTarget>> inactiveTargetsByEndpoint = new LinkedHashMap<>();
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
             EndpointList endpoints = controller.routing().declaredEndpointsOf(application)
@@ -231,26 +257,54 @@ public class RoutingPolicies {
                 for (var target : endpoint.targets()) {
                     if (!policy.appliesTo(target.deployment())) continue;
                     if (policy.dnsZone().isEmpty()) continue; // Does not support ALIAS records
-                    int weight = target.weight();
-                    if (isConfiguredOut(policy, inactiveZones) && removableFromApplicationEndpoint(policy, application, targetWeights)) {
-                        weight = 0;
-                    }
+                    ZoneRoutingPolicy zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
                     WeightedAliasTarget weightedAliasTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
-                                                                                      target.deployment().zoneId(), weight);
-                    targetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>())
-                                     .add(weightedAliasTarget);
+                                                                                      target.deployment().zoneId(), target.weight());
+                    Set<AliasTarget> activeTargets = targetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
+                    Set<AliasTarget> inactiveTargets = inactiveTargetsByEndpoint.computeIfAbsent(endpoint, (k) -> new LinkedHashSet<>());
+                    if (isConfiguredOut(zonePolicy, policy, inactiveZones)) {
+                        inactiveTargets.add(weightedAliasTarget);
+                    } else {
+                        activeTargets.add(weightedAliasTarget);
+                    }
                 }
             }
         }
+
+        // If all targets are configured OUT, all targets are kept IN. We do this because otherwise removing 100% of
+        // the ALIAS records would cause the application endpoint to stop resolving entirely (NXDOMAIN).
+        for (var kv : targetsByEndpoint.entrySet()) {
+            Endpoint endpoint = kv.getKey();
+            Set<AliasTarget> activeTargets = kv.getValue();
+            if (!activeTargets.isEmpty()) {
+                continue;
+            }
+            Set<AliasTarget> inactiveTargets = inactiveTargetsByEndpoint.get(endpoint);
+            activeTargets.addAll(inactiveTargets);
+            inactiveTargets.clear();
+        }
         targetsByEndpoint.forEach((applicationEndpoint, targets) -> {
             ZoneId targetZone = applicationEndpoint.targets().stream()
-                                             .map(Endpoint.Target::deployment)
-                                             .map(DeploymentId::zoneId)
-                                             .findFirst()
-                                             .get();
+                                                   .map(Endpoint.Target::deployment)
+                                                   .map(DeploymentId::zoneId)
+                                                   .findFirst()
+                                                   .get();
             nameServiceForwarderIn(targetZone).createAlias(RecordName.from(applicationEndpoint.dnsName()),
                                                            targets,
                                                            Priority.normal);
+        });
+        inactiveTargetsByEndpoint.forEach((applicationEndpoint, targets) -> {
+            ZoneId targetZone = applicationEndpoint.targets().stream()
+                                                   .map(Endpoint.Target::deployment)
+                                                   .map(DeploymentId::zoneId)
+                                                   .findFirst()
+                                                   .get();
+            targets.forEach(target -> {
+                nameServiceForwarderIn(targetZone).removeRecords(Record.Type.ALIAS,
+                                                                 RecordName.from(applicationEndpoint.dnsName()),
+                                                                 RecordData.fqdn(target.name().value()),
+                                                                 Priority.normal);
+            });
         });
     }
 
@@ -345,28 +399,6 @@ public class RoutingPolicies {
         }
     }
 
-    /** Returns whether we disable given policy from its application endpoints, taking weights and status of other instances into account */
-    private boolean removableFromApplicationEndpoint(RoutingPolicy policy, Application application, Map<DeploymentId, Map<EndpointId, Integer>> targetWeights) {
-        List<RoutingPolicy> relatedPolicies = application.productionInstances().keySet().stream()
-                                                         .filter(instanceName -> !policy.id().owner().instance().equals(instanceName))
-                                                         .map(instanceName -> application.id().instance(instanceName))
-                                                         .flatMap(instance -> get(instance).values().stream())
-                                                         .filter(relatedPolicy -> relatedPolicy.id().zone().equals(policy.id().zone()) &&
-                                                                                  relatedPolicy.id().cluster().equals(policy.id().cluster()))
-                                                         .collect(Collectors.toUnmodifiableList());
-        for (var endpointId : policy.applicationEndpoints()) {
-            boolean anyIn = relatedPolicies.stream()
-                                           .anyMatch(rp -> rp.applicationEndpoints().contains(endpointId) &&
-                                                           rp.status().routingStatus().value() == RoutingStatus.Value.in &&
-                                                           targetWeights.get(rp.id().deployment())
-                                                                        .get(endpointId) > 0);
-            if (!anyIn) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     /** Returns target weights of application endpoints in given application, grouped by deployment */
     private Map<DeploymentId, Map<EndpointId, Integer>> targetWeights(Application application) {
         Map<DeploymentId, Map<EndpointId, Integer>> weights = new HashMap<>();
@@ -426,22 +458,13 @@ public class RoutingPolicies {
         return Collections.unmodifiableMap(routingTable);
     }
 
-    /** Returns whether the endpoints of given policy are globally configured {@link RoutingStatus.Value#out} */
-    private static boolean isConfiguredOut(ZoneRoutingPolicy zonePolicy, RoutingPolicy policy, Set<ZoneId> inactiveZones) {
-        return isConfiguredOut(policy, Optional.of(zonePolicy), inactiveZones);
-    }
-
     /** Returns whether the endpoints of given policy are configured {@link RoutingStatus.Value#out} */
-    private static boolean isConfiguredOut(RoutingPolicy policy, Set<ZoneId> inactiveZones) {
-        return isConfiguredOut(policy, Optional.empty(), inactiveZones);
-    }
-
-    private static boolean isConfiguredOut(RoutingPolicy policy, Optional<ZoneRoutingPolicy> zonePolicy, Set<ZoneId> inactiveZones) {
+    private static boolean isConfiguredOut(ZoneRoutingPolicy zonePolicy, RoutingPolicy policy, Set<ZoneId> inactiveZones) {
         // A deployment can be configured out from endpoints at any of the following levels:
-        // - zone level (ZoneRoutingPolicy, only applies to global endpoints)
+        // - zone level (ZoneRoutingPolicy)
         // - deployment level (RoutingPolicy)
         // - application package level (deployment.xml)
-        return (zonePolicy.isPresent() && zonePolicy.get().routingStatus().value() == RoutingStatus.Value.out) ||
+        return zonePolicy.routingStatus().value() == RoutingStatus.Value.out ||
                policy.status().routingStatus().value() == RoutingStatus.Value.out ||
                inactiveZones.contains(policy.id().zone());
     }
