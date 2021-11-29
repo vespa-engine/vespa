@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import static org.junit.Assert.assertFalse;
@@ -49,6 +50,7 @@ public class OsApiTest extends ControllerContainerTest {
     @Before
     public void before() {
         tester = new ContainerTester(container, responses);
+        tester.serviceRegistry().clock().setInstant(Instant.ofEpochMilli(1234));
         addUserToHostedOperatorRole(operator);
         zoneRegistryMock().setSystemName(SystemName.cd)
                           .setZones(zone1, zone2, zone3)
