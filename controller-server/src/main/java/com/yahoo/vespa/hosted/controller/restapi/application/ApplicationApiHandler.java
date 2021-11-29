@@ -1776,13 +1776,35 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     /** Trigger deployment to the last known application package for the given application. */
     private HttpResponse deployApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        Inspector buildField = toSlime(request.getData()).get().field("build");
+        long build = buildField.valid() ? buildField.asLong() : -1;
+
         StringBuilder response = new StringBuilder();
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            Change change = Change.of(application.get().latestVersion().get());
+            ApplicationVersion version = build == -1 ? application.get().latestVersion().get()
+                                                     : getApplicationVersion(application.get(), build);
+            Change change = Change.of(version);
             controller.applications().deploymentTrigger().forceChange(id, change);
             response.append("Triggered ").append(change).append(" for ").append(id);
         });
         return new MessageResponse(response.toString());
+    }
+
+    private ApplicationVersion getApplicationVersion(Application application, Long build) {
+        // Check whether this is the latest version, and possibly return that.
+        // Otherwise, look through historic runs for a proper ApplicationVersion.
+        return application.latestVersion()
+                          .filter(version -> version.buildNumber().stream().anyMatch(build::equals))
+                          .or(() -> controller.jobController().deploymentStatus(application).jobs()
+                                            .asList().stream()
+                                            .flatMap(job -> job.runs().values().stream())
+                                            .map(run -> run.versions().targetApplication())
+                                            .filter(version -> version.buildNumber().stream().anyMatch(build::equals))
+                                            .findAny())
+                          .filter(version -> controller.applications().applicationStore().hasBuild(application.id().tenant(),
+                                                                                                   application.id().application(),
+                                                                                                   build))
+                          .orElseThrow(() -> new IllegalArgumentException("Build number '" + build + "' was not found"));
     }
 
     /** Cancel ongoing change for given application, e.g., everything with {"cancel":"all"} */

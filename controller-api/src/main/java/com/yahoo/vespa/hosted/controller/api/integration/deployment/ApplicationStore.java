@@ -27,8 +27,13 @@ public interface ApplicationStore {
     /** Removes diffs for packages before the given build number */
     void pruneDiffs(TenantName tenantName, ApplicationName applicationName, long beforeBuildNumber);
 
-    /** Find application package by given build number */
+    /** Find prod application package by given build number */
     Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber);
+
+    /** Whether the prod application package with the given number is stored. */
+    default boolean hasBuild(TenantName tenant, ApplicationName application, long buildNumber) {
+        return find(tenant, application, buildNumber).isPresent();
+    }
 
     /** Stores the given tenant application package of the given version and diff since previous version. */
     void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage, byte[] diff);

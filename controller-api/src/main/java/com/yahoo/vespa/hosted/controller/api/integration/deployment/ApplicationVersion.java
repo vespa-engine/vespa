@@ -73,21 +73,21 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
                                       Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false);
     }
 
-    /** Creates an version from a completed build, an author email, and build meta data. */
+    /** Creates a version from a completed build, an author email, and build meta data. */
     public static ApplicationVersion from(SourceRevision source, long buildNumber, String authorEmail,
                                           Version compileVersion, Instant buildTime) {
         return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.of(authorEmail),
                                       Optional.of(compileVersion), Optional.of(buildTime), Optional.empty(), Optional.empty(), false);
     }
 
-    /** Creates an version from a completed build, an author email, and build meta data. */
+    /** Creates a version from a completed build, an author email, and build meta data. */
     public static ApplicationVersion from(Optional<SourceRevision> source, long buildNumber, Optional<String> authorEmail,
                                           Optional<Version> compileVersion, Optional<Instant> buildTime,
                                           Optional<String> sourceUrl, Optional<String> commit, boolean deployedDirectly) {
         return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly);
     }
 
-    /** Returns an unique identifier for this version or "unknown" if version is not known */
+    /** Returns a unique identifier for this version or "unknown" if version is not known */
     public String id() {
         if (isUnknown()) return "unknown";
 
