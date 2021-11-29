@@ -32,7 +32,7 @@ public class ApplicationClusterEndpoint {
 
     public enum Scope {application, global, zone}
 
-    public enum RoutingMethod {shared, sharedLayer4}
+    public enum RoutingMethod {shared, sharedLayer4, exclusive}
 
     private final DnsName dnsName;
     private final Scope scope;
@@ -109,6 +109,11 @@ public class ApplicationClusterEndpoint {
 
         public Builder sharedL4Routing() {
             this.routingMethod = RoutingMethod.sharedLayer4;
+            return this;
+        }
+
+        public Builder routingMethod(RoutingMethod routingMethod) {
+            this.routingMethod = routingMethod;
             return this;
         }
 
