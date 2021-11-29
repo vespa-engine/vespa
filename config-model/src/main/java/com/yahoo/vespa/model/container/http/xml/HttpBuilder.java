@@ -115,7 +115,10 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                 throw new IllegalArgumentException(
                         String.format("Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
             }
-            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "Domain in 'access-control' is deprecated and will be removed soon");
+            deployState.getDeployLogger()
+                    .logApplicationPackage(Level.WARNING,
+                            "Domain in 'access-control' is deprecated and is no longer necessary. " +
+                                    "Please remove the 'domain' attribute from the 'access-control' element in services.xml.");
         }
         return tenantDomain != null ? tenantDomain : explicitDomain;
     }
