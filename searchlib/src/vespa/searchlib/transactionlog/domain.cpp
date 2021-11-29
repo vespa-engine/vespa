@@ -462,7 +462,7 @@ Domain::startSession(int sessionId)
     std::lock_guard guard(_sessionLock);
     SessionList::iterator found = _sessions.find(sessionId);
     if (found != _sessions.end()) {
-        found->second->setStartTime(std::chrono::steady_clock::now());
+        found->second->setStartTime(vespalib::steady_clock::now());
         if ( execute(Session::createTask(found->second)).get() == nullptr ) {
             retval = 0;
         } else {
@@ -482,7 +482,7 @@ Domain::closeSession(int sessionId)
         std::lock_guard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
-            sessionRunTime = (std::chrono::steady_clock::now() - found->second->getStartTime());
+            sessionRunTime = (vespalib::steady_clock::now() - found->second->getStartTime());
             retval = 1;
         }
     }
@@ -528,7 +528,7 @@ Domain::scanDir()
         if (ename[wantPrefixLen] != '-')
             continue;
         const char *p = ename + wantPrefixLen + 1;
-        uint64_t num = strtoull(p, NULL, 10);
+        uint64_t num = strtoull(p, nullptr, 10);
         string checkName = fmt("%s-%016" PRIu64, _name.c_str(), num);
         if (strcmp(checkName.c_str(), ename) != 0)
             continue;
