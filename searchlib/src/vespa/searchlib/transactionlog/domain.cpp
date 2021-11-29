@@ -7,6 +7,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
@@ -64,12 +65,16 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
     }
     SerialNumList partIdVector = scanDir();
     const SerialNum lastPart = partIdVector.empty() ? 0 : partIdVector.back();
+    vespalib::MonitoredRefCount pending;
     for (const SerialNum partId : partIdVector) {
         if ( partId != std::numeric_limits<SerialNum>::max()) {
-            _executor.execute(makeLambdaTask([this, partId, lastPart]() { addPart(partId, partId == lastPart); }));
+            _executor.execute(makeLambdaTask([this, partId, lastPart, refGuard=vespalib::RetainGuard(pending)]() {
+                (void) refGuard;
+                addPart(partId, partId == lastPart);
+            }));
         }
     }
-    _executor.sync();
+    pending.waitForZeroRefCount();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
         _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _config.getEncoding(),
                                                         _config.getCompressionlevel(), _fileHeaderContext, false);
