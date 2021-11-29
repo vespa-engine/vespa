@@ -5,7 +5,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
 import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -26,8 +25,8 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     final File file;
     long ts;
 
-    FileConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, File f) {
-        super(key, subscriber);
+    FileConfigSubscription(ConfigKey<T> key, File f) {
+        super(key);
         setGeneration(0L);
         file = f;
         if (!file.exists() && !file.isFile())

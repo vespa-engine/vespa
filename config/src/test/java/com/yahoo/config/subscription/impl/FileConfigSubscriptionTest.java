@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import com.yahoo.foo.SimpletypesConfig;
-import com.yahoo.foo.TestReferenceConfig;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.subscription.DirSource;
-import com.yahoo.config.subscription.FileSource;
+import com.yahoo.foo.SimpletypesConfig;
+import com.yahoo.foo.TestReferenceConfig;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import org.junit.Before;
@@ -43,10 +42,8 @@ public class FileConfigSubscriptionTest {
     @Test
     public void require_that_new_config_is_detected_in_time() throws IOException, InterruptedException {
         writeConfig("intval", "23");
-        ConfigSubscriber subscriber = new ConfigSubscriber(new FileSource(TEST_TYPES_FILE));
         ConfigSubscription<SimpletypesConfig> sub = new FileConfigSubscription<>(
                 new ConfigKey<>(SimpletypesConfig.class, ""),
-                subscriber,
                 TEST_TYPES_FILE);
         assertTrue(sub.nextConfig(1000));
         assertThat(sub.getConfigState().getConfig().intval(), is(23));
@@ -59,10 +56,8 @@ public class FileConfigSubscriptionTest {
     @Test
     public void require_that_new_config_is_detected_on_reload() throws IOException {
         writeConfig("intval", "23");
-        ConfigSubscriber subscriber = new ConfigSubscriber(new FileSource(TEST_TYPES_FILE));
         ConfigSubscription<SimpletypesConfig> sub = new FileConfigSubscription<>(
                 new ConfigKey<>(SimpletypesConfig.class, ""),
-                subscriber,
                 TEST_TYPES_FILE);
         assertTrue(sub.nextConfig(1000));
         assertThat(sub.getConfigState().getConfig().intval(), is(23));
@@ -113,10 +108,8 @@ public class FileConfigSubscriptionTest {
     public void require_that_bad_file_throws_exception() throws IOException {
         // A little trick to ensure that we can create the subscriber, but that we get an error when reading.
         writeConfig("intval", "23");
-        ConfigSubscriber subscriber = new ConfigSubscriber(new FileSource(TEST_TYPES_FILE));
         ConfigSubscription<SimpletypesConfig> sub = new FileConfigSubscription<>(
                 new ConfigKey<>(SimpletypesConfig.class, ""),
-                subscriber,
                 TEST_TYPES_FILE);
         sub.reload(1);
         Files.delete(TEST_TYPES_FILE.toPath()); // delete file so the below statement throws exception

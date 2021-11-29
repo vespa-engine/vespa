@@ -1,15 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
-import static org.junit.Assert.*;
-
+import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.foo.AppConfig;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.StringConfig;
-import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ConfigSetSubscriptionTest {
 

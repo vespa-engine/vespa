@@ -4,7 +4,6 @@ package com.yahoo.config.subscription.impl;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
 import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.PayloadChecksums;
@@ -23,9 +22,9 @@ public class RawConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     final String inputPayload;
     String payload;
 
-    RawConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, String pl) {
-        super(key, subscriber);
-        this.inputPayload = pl;
+    RawConfigSubscription(ConfigKey<T> key, String payload) {
+        super(key);
+        this.inputPayload = payload;
     }
 
     @Override
