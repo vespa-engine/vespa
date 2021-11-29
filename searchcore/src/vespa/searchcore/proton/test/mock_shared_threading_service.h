@@ -18,6 +18,7 @@ public:
     {}
     vespalib::ThreadExecutor& warmup() override { return _warmup; }
     vespalib::ThreadExecutor& shared() override { return _shared; }
+    vespalib::ISequencedTaskExecutor* field_writer() override { return nullptr; }
 };
 
 }

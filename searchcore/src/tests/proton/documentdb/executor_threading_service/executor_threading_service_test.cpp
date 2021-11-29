@@ -10,6 +10,7 @@ using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
 using SharedFieldWriterExecutor = ThreadingServiceConfig::SharedFieldWriterExecutor;
 
+VESPA_THREAD_STACK_TAG(my_field_writer_executor)
 
 SequencedTaskExecutor*
 to_concrete_type(ISequencedTaskExecutor& exec)
@@ -20,14 +21,17 @@ to_concrete_type(ISequencedTaskExecutor& exec)
 class ExecutorThreadingServiceTest : public ::testing::Test {
 public:
     vespalib::ThreadStackExecutor shared_executor;
+    std::unique_ptr<ISequencedTaskExecutor> field_writer_executor;
     std::unique_ptr<ExecutorThreadingService> service;
     ExecutorThreadingServiceTest()
         : shared_executor(1, 1000),
+          field_writer_executor(SequencedTaskExecutor::create(my_field_writer_executor, 3, 200)),
           service()
     {
     }
     void setup(uint32_t indexing_threads, SharedFieldWriterExecutor shared_field_writer) {
         service = std::make_unique<ExecutorThreadingService>(shared_executor,
+                                                             field_writer_executor.get(),
                                                              ThreadingServiceConfig::make(indexing_threads, shared_field_writer));
     }
     SequencedTaskExecutor* index_inverter() {
@@ -38,6 +42,9 @@ public:
     }
     SequencedTaskExecutor* attribute_writer() {
         return to_concrete_type(service->attributeFieldWriter());
+    }
+    SequencedTaskExecutor* field_writer() {
+        return to_concrete_type(*field_writer_executor);
     }
 };
 
@@ -73,6 +80,15 @@ TEST_F(ExecutorThreadingServiceTest, shared_executor_for_index_and_attribute_fie
     EXPECT_EQ(index_inverter(), index_writer());
     EXPECT_EQ(index_inverter(), attribute_writer());
     assert_executor(index_inverter(), 12, 100);
+}
+
+TEST_F(ExecutorThreadingServiceTest, shared_field_writer_specified_from_the_outside)
+{
+    setup(4, SharedFieldWriterExecutor::DOCUMENT_DB);
+    EXPECT_EQ(field_writer(), index_inverter());
+    EXPECT_EQ(field_writer(), index_writer());
+    EXPECT_EQ(field_writer(), attribute_writer());
+    assert_executor(field_writer(), 3, 200);
 }
 
 TEST_F(ExecutorThreadingServiceTest, tasks_limits_can_be_updated)

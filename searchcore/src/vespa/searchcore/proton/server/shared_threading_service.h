@@ -16,6 +16,7 @@ class SharedThreadingService : public ISharedThreadingService {
 private:
     vespalib::ThreadStackExecutor _warmup;
     std::shared_ptr<vespalib::SyncableThreadExecutor> _shared;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _field_writer;
 
 public:
     SharedThreadingService(const SharedThreadingServiceConfig& cfg);
@@ -25,6 +26,7 @@ public:
 
     vespalib::ThreadExecutor& warmup() override { return _warmup; }
     vespalib::ThreadExecutor& shared() override { return *_shared; }
+    vespalib::ISequencedTaskExecutor* field_writer() override { return _field_writer.get(); }
 };
 
 }

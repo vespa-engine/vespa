@@ -16,13 +16,15 @@ ProtonThreadPoolsExplorer::ProtonThreadPoolsExplorer(const ThreadExecutor* share
                                                      const ThreadExecutor* docsum,
                                                      const ThreadExecutor* flush,
                                                      const ThreadExecutor* proton,
-                                                     const ThreadExecutor* warmup)
+                                                     const ThreadExecutor* warmup,
+                                                     const vespalib::ISequencedTaskExecutor* field_writer)
     : _shared(shared),
       _match(match),
       _docsum(docsum),
       _flush(flush),
       _proton(proton),
-      _warmup(warmup)
+      _warmup(warmup),
+      _field_writer(field_writer)
 {
 }
 
@@ -37,6 +39,7 @@ ProtonThreadPoolsExplorer::get_state(const vespalib::slime::Inserter& inserter, 
         convert_executor_to_slime(_flush, object.setObject("flush"));
         convert_executor_to_slime(_proton, object.setObject("proton"));
         convert_executor_to_slime(_warmup, object.setObject("warmup"));
+        convert_executor_to_slime(_field_writer, object.setObject("field_writer"));
     }
 }
 

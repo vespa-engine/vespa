@@ -2,15 +2,23 @@
 
 #pragma once
 
-namespace vespalib { class ThreadExecutor; }
+namespace vespalib {
+class ISequencedTaskExecutor;
+class ThreadExecutor;
+}
 namespace vespalib::slime { struct Cursor; }
 
 namespace proton::explorer {
 
 /**
- * Utility to convert an executor to slime for use with a state explorer.
+ * Utility to convert a thread executor to slime for use with a state explorer.
  */
 void convert_executor_to_slime(const vespalib::ThreadExecutor* executor, vespalib::slime::Cursor& object);
+
+/**
+ * Utility to convert a sequenced task executor to slime for use with a state explorer.
+ */
+void convert_executor_to_slime(const vespalib::ISequencedTaskExecutor* executor, vespalib::slime::Cursor& object);
 
 }
 

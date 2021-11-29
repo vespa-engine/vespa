@@ -14,10 +14,10 @@ class ExecutorThreadingService;
  */
 class ExecutorThreadingServiceExplorer : public vespalib::StateExplorer {
 private:
-    searchcorespi::index::IThreadingService & _service;
+    searchcorespi::index::IThreadingService& _service;
 
 public:
-    ExecutorThreadingServiceExplorer(searchcorespi::index::IThreadingService & service);
+    ExecutorThreadingServiceExplorer(searchcorespi::index::IThreadingService& service);
     ~ExecutorThreadingServiceExplorer();
 
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
