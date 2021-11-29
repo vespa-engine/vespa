@@ -151,6 +151,7 @@ vespa_define_module(
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/wakeup
+    src/tests/wakeupservice
     src/tests/websocket
     src/tests/zcurve
 
