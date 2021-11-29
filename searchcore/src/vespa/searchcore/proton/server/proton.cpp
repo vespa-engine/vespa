@@ -447,11 +447,7 @@ Proton::~Proton()
         _flushEngine->close();
     }
     if (_shared_service) {
-        _shared_service->warmup_raw().sync();
-        _shared_service->shared_raw()->sync();
-        if (_shared_service->field_writer()) {
-            _shared_service->field_writer()->sync_all();
-        }
+        _shared_service->sync_all_executors();
     }
 
     if ( ! _documentDBMap.empty()) {
@@ -946,7 +942,7 @@ Proton::get_child(vespalib::stringref name) const
         return std::make_unique<ResourceUsageExplorer>(_diskMemUsageSampler->writeFilter(),
                                                        _persistenceEngine->get_resource_usage_tracker());
     } else if (name == THREAD_POOLS) {
-        return std::make_unique<ProtonThreadPoolsExplorer>((_shared_service) ? _shared_service->shared_raw().get() : nullptr,
+        return std::make_unique<ProtonThreadPoolsExplorer>((_shared_service) ? &_shared_service->shared() : nullptr,
                                                            (_matchEngine) ? &_matchEngine->get_executor() : nullptr,
                                                            (_summaryEngine) ? &_summaryEngine->get_executor() : nullptr,
                                                            (_flushEngine) ? &_flushEngine->get_executor() : nullptr,
