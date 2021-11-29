@@ -65,9 +65,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 		target := getTarget()
 		opts := getDeploymentOpts(cfg, pkg, target)
 
-		sessionOrRunID, err = vespa.Deploy(opts)
-
-		if err == nil {
+		if sessionOrRunID, err := vespa.Deploy(opts); err == nil {
 			fmt.Print("\n")
 			if opts.IsCloud() {
 				printSuccess("Triggered deployment of ", color.Cyan(pkg.Path), " with run ID ", color.Cyan(sessionOrRunID))

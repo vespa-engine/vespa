@@ -167,6 +167,7 @@ func (a *Auth0) PrepareSystem(ctx context.Context) (System, error) {
 		if err != nil {
 			// ask and guide the user through the login process:
 			fmt.Println(fmt.Errorf("failed to renew access token, %s", err))
+			fmt.Print("\n")
 			s, err = RunLogin(ctx, a, true)
 			if err != nil {
 				return System{}, err
@@ -371,9 +372,9 @@ func RunLogin(ctx context.Context, a *Auth0, expired bool) (System, error) {
 	}
 
 	var res auth.Result
-	util.Spinner("Waiting for login to complete in browser ...", func() error {
+	err = util.Spinner("Waiting for login to complete in browser ...", func() error {
 		res, err = a.Authenticator.Wait(ctx, state)
-		return nil
+		return err
 	})
 
 	if err != nil {
