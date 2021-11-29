@@ -6,6 +6,9 @@
 
 namespace vespalib {
 
+/**
+ * Interface for componets that can benefit from regular wakeup calls.
+ */
 class IWakeup {
 public:
     virtual ~IWakeup() = default;

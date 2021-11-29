@@ -10,6 +10,12 @@
 
 namespace vespalib {
 
+/**
+ * A wakeup service what will do a wakeup call with the frequency specified.
+ * Purpose is to assist thread executors which has lazy threads.
+ * 1 thread doing wakeup is better than many threads waking up regularly by them selves.
+ * Then it can be done with higher frequency with less impact.
+ */
 class WakeupService : public IWakeupService {
 public:
     WakeupService(duration napTime);
