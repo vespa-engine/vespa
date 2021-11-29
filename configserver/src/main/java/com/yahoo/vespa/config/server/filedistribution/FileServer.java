@@ -194,7 +194,10 @@ public class FileServer {
             // Create new FileReferenceDownload with downloadFromOtherSourceIfNotFound set to false
             // to avoid config servers requesting a file reference perpetually, e.g. for a file that does not exist anymore
             FileReferenceDownload newDownload = new FileReferenceDownload(fileReference, false, fileReferenceDownload.client());
-            return downloader.getFile(newDownload).isPresent();
+            boolean fileExists = downloader.getFile(newDownload).isPresent();
+            if ( ! fileExists)
+                log.log(Level.WARNING, "Failed downloading '" + fileReferenceDownload + "'");
+            return fileExists;
         } else {
             log.log(Level.FINE, "File not found, will not download from another source, since request came from another config server");
             return false;
