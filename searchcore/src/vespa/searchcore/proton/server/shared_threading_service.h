@@ -20,9 +20,9 @@ private:
 
 public:
     SharedThreadingService(const SharedThreadingServiceConfig& cfg);
+    ~SharedThreadingService();
 
-    vespalib::SyncableThreadExecutor& warmup_raw() { return _warmup; }
-    std::shared_ptr<vespalib::SyncableThreadExecutor> shared_raw() { return _shared; }
+    void sync_all_executors();
 
     vespalib::ThreadExecutor& warmup() override { return _warmup; }
     vespalib::ThreadExecutor& shared() override { return *_shared; }

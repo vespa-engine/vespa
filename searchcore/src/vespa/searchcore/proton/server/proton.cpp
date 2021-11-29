@@ -447,11 +447,7 @@ Proton::~Proton()
         _flushEngine->close();
     }
     if (_shared_service) {
-        _shared_service->warmup_raw().sync();
-        _shared_service->shared_raw()->sync();
-        if (_shared_service->field_writer()) {
-            _shared_service->field_writer()->sync_all();
-        }
+        _shared_service->sync_all_executors();
     }
 
     if ( ! _documentDBMap.empty()) {

@@ -31,4 +31,15 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
     }
 }
 
+SharedThreadingService::~SharedThreadingService() = default;
+
+void
+SharedThreadingService::sync_all_executors() {
+    _warmup.sync();
+    _shared->sync();
+    if (_field_writer) {
+        _field_writer->sync_all();
+    }
+}
+
 }
