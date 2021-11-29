@@ -42,6 +42,7 @@ public:
     ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor, uint32_t num_treads = 1);
 
     ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor,
+                             vespalib::ISequencedTaskExecutor* field_writer,
                              const ThreadingServiceConfig& cfg,
                              uint32_t stackSize = 128 * 1024);
     ~ExecutorThreadingService() override;

@@ -26,6 +26,7 @@ struct ContentProtonMetrics : metrics::MetricSet
         ExecutorMetrics docsum;
         ExecutorMetrics shared;
         ExecutorMetrics warmup;
+        ExecutorMetrics field_writer;
 
         ProtonExecutorMetrics(metrics::MetricSet *parent);
         ~ProtonExecutorMetrics();

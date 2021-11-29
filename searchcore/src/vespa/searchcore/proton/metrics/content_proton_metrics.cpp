@@ -11,7 +11,8 @@ ContentProtonMetrics::ProtonExecutorMetrics::ProtonExecutorMetrics(metrics::Metr
       match("match", this),
       docsum("docsum", this),
       shared("shared", this),
-      warmup("warmup", this)
+      warmup("warmup", this),
+      field_writer("field_writer", this)
 {
 }
 

@@ -39,10 +39,11 @@ VESPA_THREAD_STACK_TAG(field_writer_executor)
 }
 
 ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor, uint32_t num_treads)
-    : ExecutorThreadingService(sharedExecutor, ThreadingServiceConfig::make(num_treads))
+    : ExecutorThreadingService(sharedExecutor, nullptr, ThreadingServiceConfig::make(num_treads))
 {}
 
 ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor,
+                                                   vespalib::ISequencedTaskExecutor* field_writer,
                                                    const ThreadingServiceConfig& cfg,
                                                    uint32_t stackSize)
 
@@ -76,8 +77,12 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
         _index_field_inverter_ptr = _field_writer.get();
         _index_field_writer_ptr = _field_writer.get();
         _attribute_field_writer_ptr = _field_writer.get();
+    } else if (_shared_field_writer == SharedFieldWriterExecutor::DOCUMENT_DB) {
+        assert(field_writer != nullptr);
+        _index_field_inverter_ptr = field_writer;
+        _index_field_writer_ptr = field_writer;
+        _attribute_field_writer_ptr = field_writer;
     } else {
-        // TODO: Add support for shared field writer across all document dbs.
         _indexFieldInverter = SequencedTaskExecutor::create(index_field_inverter_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
         _indexFieldWriter = SequencedTaskExecutor::create(index_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
         _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
@@ -143,6 +148,7 @@ ExecutorThreadingService::set_task_limits(uint32_t master_task_limit,
     _master_task_limit.store(master_task_limit, std::memory_order_release);
     _indexExecutor->setTaskLimit(field_task_limit);
     _summaryExecutor->setTaskLimit(summary_task_limit);
+    // TODO: Move this to a common place when the field writer is always shared.
     _index_field_inverter_ptr->setTaskLimit(field_task_limit);
     _index_field_writer_ptr->setTaskLimit(field_task_limit);
     _attribute_field_writer_ptr->setTaskLimit(field_task_limit);
@@ -166,6 +172,11 @@ ExecutorThreadingService::getStats()
                                              field_writer_stats,
                                              field_writer_stats,
                                              field_writer_stats);
+    } else if (_shared_field_writer == SharedFieldWriterExecutor::DOCUMENT_DB) {
+        vespalib::ExecutorStats empty_stats;
+        // In this case the field writer stats are reported at a higher level.
+        return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats,
+                                             empty_stats, empty_stats, empty_stats);
     } else {
         return ExecutorThreadingServiceStats(master_stats, index_stats, summary_stats,
                                              _index_field_inverter_ptr->getStats(),

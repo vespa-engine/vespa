@@ -4,7 +4,10 @@
 
 #include <vespa/vespalib/net/state_explorer.h>
 
-namespace vespalib { class ThreadExecutor; }
+namespace vespalib {
+class ISequencedTaskExecutor;
+class ThreadExecutor;
+}
 
 namespace proton {
 
@@ -19,6 +22,7 @@ private:
     const vespalib::ThreadExecutor* _flush;
     const vespalib::ThreadExecutor* _proton;
     const vespalib::ThreadExecutor* _warmup;
+    const vespalib::ISequencedTaskExecutor* _field_writer;
 
 public:
     ProtonThreadPoolsExplorer(const vespalib::ThreadExecutor* shared,
@@ -26,7 +30,8 @@ public:
                               const vespalib::ThreadExecutor* docsum,
                               const vespalib::ThreadExecutor* flush,
                               const vespalib::ThreadExecutor* proton,
-                              const vespalib::ThreadExecutor* warmup);
+                              const vespalib::ThreadExecutor* warmup,
+                              const vespalib::ISequencedTaskExecutor* field_writer);
 
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
