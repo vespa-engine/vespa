@@ -37,8 +37,8 @@ type providers struct {
 }
 
 type config struct {
-	Version int               `json:"version"`
-	Systems map[string]System `json:"systems"`
+	Version int                `json:"version"`
+	Systems map[string]*System `json:"systems"`
 }
 
 type System struct {
@@ -140,19 +140,19 @@ func (a *Auth0) IsLoggedIn() bool {
 // The System access token needs a refresh if:
 // 1. the System scopes are different from the currently required scopes - (auth0 changes).
 // 2. the access token is expired.
-func (a *Auth0) PrepareSystem(ctx context.Context) (System, error) {
+func (a *Auth0) PrepareSystem(ctx context.Context) (*System, error) {
 	if err := a.init(); err != nil {
-		return System{}, err
+		return nil, err
 	}
 	s, err := a.getSystem()
 	if err != nil {
-		return System{}, err
+		return nil, err
 	}
 
 	if s.AccessToken == "" || scopesChanged(s) {
 		s, err = RunLogin(ctx, a, true)
 		if err != nil {
-			return System{}, err
+			return nil, err
 		}
 	} else if isExpired(s.ExpiresAt, accessTokenExpThreshold) {
 		// check if the stored access token is expired:
@@ -170,7 +170,7 @@ func (a *Auth0) PrepareSystem(ctx context.Context) (System, error) {
 			fmt.Print("\n")
 			s, err = RunLogin(ctx, a, true)
 			if err != nil {
-				return System{}, err
+				return nil, err
 			}
 		} else {
 			// persist the updated system with renewed access token
@@ -181,7 +181,7 @@ func (a *Auth0) PrepareSystem(ctx context.Context) (System, error) {
 
 			err = a.AddSystem(s)
 			if err != nil {
-				return System{}, err
+				return nil, err
 			}
 		}
 	}
@@ -196,7 +196,7 @@ func isExpired(t time.Time, threshold time.Duration) bool {
 
 // scopesChanged compare the System scopes
 // with the currently required scopes.
-func scopesChanged(s System) bool {
+func scopesChanged(s *System) bool {
 	want := auth.RequiredScopes()
 	got := s.Scopes
 
@@ -220,14 +220,14 @@ func scopesChanged(s System) bool {
 	return false
 }
 
-func (a *Auth0) getSystem() (System, error) {
+func (a *Auth0) getSystem() (*System, error) {
 	if err := a.init(); err != nil {
-		return System{}, err
+		return nil, err
 	}
 
 	s, ok := a.config.Systems[a.system]
 	if !ok {
-		return System{}, fmt.Errorf("unable to find system: %s; run 'vespa auth login' to configure a new system", a.system)
+		return nil, fmt.Errorf("unable to find system: %s; run 'vespa auth login' to configure a new system", a.system)
 	}
 
 	return s, nil
@@ -235,12 +235,12 @@ func (a *Auth0) getSystem() (System, error) {
 
 // AddSystem assigns an existing, or new System. This is expected to be called
 // after a login has completed.
-func (a *Auth0) AddSystem(s System) error {
+func (a *Auth0) AddSystem(s *System) error {
 	_ = a.init()
 
 	// If we're dealing with an empty file, we'll need to initialize this map.
 	if a.config.Systems == nil {
-		a.config.Systems = map[string]System{}
+		a.config.Systems = map[string]*System{}
 	}
 
 	a.config.Systems[a.system] = s
@@ -257,7 +257,7 @@ func (a *Auth0) removeSystem(s string) error {
 
 	// If we're dealing with an empty file, we'll need to initialize this map.
 	if a.config.Systems == nil {
-		a.config.Systems = map[string]System{}
+		a.config.Systems = map[string]*System{}
 	}
 
 	delete(a.config.Systems, s)
@@ -311,9 +311,8 @@ func (a *Auth0) jsonToConfig(buf []byte) (*config, error) {
 		return nil, err
 	}
 	cfg := r.Providers.Config
-	systems := cfg.Systems
-	if systems != nil {
-		for n, s := range systems {
+	if cfg.Systems != nil {
+		for n, s := range cfg.Systems {
 			s.Name = n
 		}
 	}
@@ -351,14 +350,14 @@ func (a *Auth0) initContext() (err error) {
 // by showing the login instructions, opening the browser.
 // Use `expired` to run the login from other commands setup:
 // this will only affect the messages.
-func RunLogin(ctx context.Context, a *Auth0, expired bool) (System, error) {
+func RunLogin(ctx context.Context, a *Auth0, expired bool) (*System, error) {
 	if expired {
 		fmt.Println("Please sign in to re-authorize the CLI.")
 	}
 
 	state, err := a.Authenticator.Start(ctx)
 	if err != nil {
-		return System{}, fmt.Errorf("could not start the authentication process: %w", err)
+		return nil, fmt.Errorf("could not start the authentication process: %w", err)
 	}
 
 	fmt.Printf("Your Device Confirmation code is: %s\n\n", state.UserCode)
@@ -378,7 +377,7 @@ func RunLogin(ctx context.Context, a *Auth0, expired bool) (System, error) {
 	})
 
 	if err != nil {
-		return System{}, fmt.Errorf("login error: %w", err)
+		return nil, fmt.Errorf("login error: %w", err)
 	}
 
 	fmt.Print("\n")
@@ -399,12 +398,12 @@ func RunLogin(ctx context.Context, a *Auth0, expired bool) (System, error) {
 		ExpiresAt:   time.Now().Add(time.Duration(res.ExpiresIn) * time.Second),
 		Scopes:      auth.RequiredScopes(),
 	}
-	err = a.AddSystem(s)
+	err = a.AddSystem(&s)
 	if err != nil {
-		return System{}, fmt.Errorf("could not add system to config: %w", err)
+		return nil, fmt.Errorf("could not add system to config: %w", err)
 	}
 
-	return s, nil
+	return &s, nil
 }
 
 func RunLogout(a *Auth0) error {
