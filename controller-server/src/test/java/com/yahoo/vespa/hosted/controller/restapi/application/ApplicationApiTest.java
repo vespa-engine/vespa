@@ -525,6 +525,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .userIdentity(USER_ID),
                                 new File("proton-metrics.json"));
 
+        // POST a roll-out of the latest application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/application", POST)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Triggered application change to 1.0.1-commit1 for tenant1.application1.instance1\"}");
+
+        // POST a roll-out of a given revision
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/application", POST)
+                                      .data("{ \"build\": 1 }")
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Triggered application change to 1.0.1-commit1 for tenant1.application1.instance1\"}");
+
         // DELETE (cancel) ongoing change
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
