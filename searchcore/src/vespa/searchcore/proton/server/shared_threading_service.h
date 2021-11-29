@@ -5,6 +5,7 @@
 #include "shared_threading_service_config.h"
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/syncable.h>
+#include <vespa/vespalib/util/invokeserviceimpl.h>
 #include <memory>
 
 namespace proton {
@@ -14,9 +15,12 @@ namespace proton {
  */
 class SharedThreadingService : public ISharedThreadingService {
 private:
+    using Registration = std::unique_ptr<vespalib::IDestructorCallback>;
     vespalib::ThreadStackExecutor _warmup;
     std::shared_ptr<vespalib::SyncableThreadExecutor> _shared;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _field_writer;
+    vespalib::InvokeServiceImpl _invokeService;
+    std::vector<Registration>   _invokeRegistrations;
 
 public:
     SharedThreadingService(const SharedThreadingServiceConfig& cfg);
@@ -28,6 +32,7 @@ public:
     vespalib::ThreadExecutor& warmup() override { return _warmup; }
     vespalib::ThreadExecutor& shared() override { return *_shared; }
     vespalib::ISequencedTaskExecutor* field_writer() override { return _field_writer.get(); }
+    vespalib::InvokeService & invokeService() override { return _invokeService; }
 };
 
 }

@@ -29,7 +29,9 @@
 #include <mutex>
 #include <shared_mutex>
 
-namespace vespalib { class StateServer; }
+namespace vespalib {
+    class StateServer;
+}
 namespace search::transactionlog { class TransLogServerApp; }
 namespace metrics { class MetricLockGuard; }
 namespace storage::spi { struct PersistenceProvider; }
@@ -61,6 +63,7 @@ private:
     using DocumentDBMap = std::map<DocTypeName, DocumentDB::SP>;
     using InitializeThreads = std::shared_ptr<vespalib::ThreadExecutor>;
     using BucketSpace = document::BucketSpace;
+    using InvokeService = vespalib::InvokeService;
 
     class ProtonFileHeaderContext : public search::common::FileHeaderContext
     {
