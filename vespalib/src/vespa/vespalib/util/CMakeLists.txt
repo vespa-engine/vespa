@@ -69,7 +69,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     time.cpp
     unwind_message.cpp
     valgrind.cpp
-    wakeupservice.cpp
+        invokeserviceimpl.cpp
     zstdcompressor.cpp
     DEPENDS
 )

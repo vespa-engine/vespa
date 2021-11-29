@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "executor.h"
 #include "idestructorcallback.h"
 #include <functional>
 
@@ -12,10 +11,10 @@ namespace vespalib {
  * Interface to register for receiving regular invoke calls.
  * The registration will last as long as the returned object is kept alive.
  **/
-class IWakeupService {
+class InvokeService {
 public:
-    virtual ~IWakeupService() = default;
-    virtual std::unique_ptr<IDestructorCallback> registerForInvoke(std::function<void()> func) = 0;
+    virtual ~InvokeService() = default;
+    virtual std::unique_ptr<IDestructorCallback> registerInvoke(std::function<void()> func) = 0;
 };
 
 }

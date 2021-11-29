@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "wakeupservice.h"
+#include "invokeserviceimpl.h"
 #include <cassert>
 
 namespace vespalib {
 
-WakeupService::WakeupService(duration napTime)
+InvokeServiceImpl::InvokeServiceImpl(duration napTime)
     : _naptime(napTime),
       _lock(),
       _closed(false),
@@ -14,7 +14,7 @@ WakeupService::WakeupService(duration napTime)
 {
 }
 
-WakeupService::~WakeupService()
+InvokeServiceImpl::~InvokeServiceImpl()
 {
     {
         std::lock_guard guard(_lock);
@@ -26,9 +26,9 @@ WakeupService::~WakeupService()
     }
 }
 
-class WakeupService::Registration : public IDestructorCallback {
+class InvokeServiceImpl::Registration : public IDestructorCallback {
 public:
-    Registration(WakeupService * service, VoidFunc func) noexcept
+    Registration(InvokeServiceImpl * service, VoidFunc func) noexcept
         : _service(service),
           _func(func)
     { }
@@ -38,22 +38,22 @@ public:
         _service->unregister(_func);
     }
 private:
-    WakeupService * _service;
+    InvokeServiceImpl * _service;
     VoidFunc        _func;
 };
 
 std::unique_ptr<IDestructorCallback>
-WakeupService::registerForInvoke(VoidFunc func) {
+InvokeServiceImpl::registerInvoke(VoidFunc func) {
     std::lock_guard guard(_lock);
     _toWakeup.push_back(func);
     if ( ! _thread) {
-        _thread = std::make_unique<std::thread>(WakeupService::run, this);
+        _thread = std::make_unique<std::thread>(InvokeServiceImpl::run, this);
     }
     return std::make_unique<Registration>(this, func);
 }
 
 void
-WakeupService::unregister(VoidFunc func) {
+InvokeServiceImpl::unregister(VoidFunc func) {
     std::lock_guard guard(_lock);
     auto found = std::find_if(_toWakeup.begin(), _toWakeup.end(), [&func](const VoidFunc & a) {
         return func.target<VoidFunc>() == a.target<VoidFunc>();
@@ -63,7 +63,7 @@ WakeupService::unregister(VoidFunc func) {
 }
 
 void
-WakeupService::runLoop() {
+InvokeServiceImpl::runLoop() {
     bool done = false;
     while ( ! done ) {
         {
@@ -81,7 +81,7 @@ WakeupService::runLoop() {
 }
 
 void
-WakeupService::run(WakeupService * service) {
+InvokeServiceImpl::run(InvokeServiceImpl * service) {
     service->runLoop();
 }
 
