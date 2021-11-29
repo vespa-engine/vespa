@@ -22,6 +22,7 @@ public interface FileDistribution {
      */
     void startDownload(String hostName, int port, Set<FileReference> fileReferences);
 
-    File getFileReferencesDir();
+    // TODO: Remove when 7.508 is latest version in use
+    default File getFileReferencesDir() {return null; }
 
 }

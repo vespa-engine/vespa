@@ -10,7 +10,6 @@ import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 
-import java.io.File;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,26 +23,21 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
     private final static double rpcTimeout = 1.0;
 
     private final Supervisor supervisor;
-    private final File fileReferencesDir;
 
-    public FileDistributionImpl(File fileReferencesDir, Supervisor supervisor) {
-        this.fileReferencesDir = fileReferencesDir;
+    public FileDistributionImpl(Supervisor supervisor) {
         this.supervisor = supervisor;
     }
 
+    /**
+     * Notifies client which file references it should start downloading. It's OK if the call does not succeed,
+     * as this is just a hint to the client to start downloading. Currently the only client is the config server
+     *
+     * @param hostName       host which should be notified about file references to download
+     * @param port           port which should be used when notifying
+     * @param fileReferences set of file references to start downloading
+     */
     @Override
     public void startDownload(String hostName, int port, Set<FileReference> fileReferences) {
-         startDownloadingFileReferences(hostName, port, fileReferences);
-    }
-
-    @Override
-    public File getFileReferencesDir() {
-        return fileReferencesDir;
-    }
-
-    // Notifies client which file references it should start downloading. It's OK if the call does not succeed,
-    // as this is just a hint to the client to start downloading. Currently the only client is the config server
-    private void startDownloadingFileReferences(String hostName, int port, Set<FileReference> fileReferences) {
         Target target = supervisor.connect(new Spec(hostName, port));
         Request request = new Request("filedistribution.setFileReferencesToDownload");
         request.setContext(target);
@@ -51,7 +45,6 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
         log.log(Level.FINE, () -> "Executing " + request.methodName() + " against " + target);
         target.invokeAsync(request, rpcTimeout, this);
     }
-
 
     @Override
     public void handleRequestDone(Request req) {

@@ -127,7 +127,8 @@ public class SessionPreparer {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
-                preparation.writeStateZK();
+                FileReference fileReference = preparation.startDistributionOfApplicationPackage();
+                preparation.writeStateZK(fileReference);
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
             }
@@ -226,16 +227,18 @@ public class SessionPreparer {
             }
         }
 
-        Optional<FileReference> distributedApplicationPackage() {
+        FileReference startDistributionOfApplicationPackage() {
             FileReference fileReference = fileRegistry.addApplicationPackage();
             FileDistribution fileDistribution = fileDistributionFactory.createFileDistribution();
-            log.log(Level.FINE, () -> "Distribute application package for " + applicationId + " ("  + fileReference + ") to other config servers");
-            properties.configServerSpecs().stream()
-                    .filter(spec -> ! spec.getHostName().equals(HostName.getLocalhost()))
-                    .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
+            log.log(Level.FINE, () -> "Ask other config servers to download application package for " +
+                    applicationId + " (" + fileReference + ")");
+            properties.configServerSpecs()
+                      .stream()
+                      .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
+                      .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
 
-            checkTimeout("distributeApplicationPackage");
-            return Optional.of(fileReference);
+            checkTimeout("startDistributionOfApplicationPackage");
+            return fileReference;
         }
 
         void preprocess() {
@@ -261,12 +264,12 @@ public class SessionPreparer {
             checkTimeout("making result from models");
         }
 
-        void writeStateZK() {
+        void writeStateZK(FileReference filereference) {
             log.log(Level.FINE, "Writing application package state to zookeeper");
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
-                                  distributedApplicationPackage(),
+                                  filereference,
                                   dockerImageRepository,
                                   vespaVersion,
                                   logger,
@@ -306,7 +309,7 @@ public class SessionPreparer {
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
                                        ApplicationPackage applicationPackage,
                                        ApplicationId applicationId,
-                                       Optional<FileReference> distributedApplicationPackage,
+                                       FileReference fileReference,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
                                        DeployLogger deployLogger,
@@ -321,7 +324,7 @@ public class SessionPreparer {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             // Note: When changing the below you need to also change similar calls in SessionRepository.createSessionFromExisting()
             zooKeeperClient.writeApplicationId(applicationId);
-            zooKeeperClient.writeApplicationPackageReference(distributedApplicationPackage);
+            zooKeeperClient.writeApplicationPackageReference(Optional.of(fileReference));
             zooKeeperClient.writeVespaVersion(vespaVersion);
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
             zooKeeperClient.writeAthenzDomain(athenzDomain);
