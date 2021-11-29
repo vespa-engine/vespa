@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * @author hmusum
  */
 public class JRTConnection implements Connection {
-    private final static Logger logger = Logger.getLogger(JRTConnection.class.getPackage().getName());
+    private final static Logger logger = Logger.getLogger(JRTConnection.class.getName());
 
     private final String address;
     private final Supervisor supervisor;
