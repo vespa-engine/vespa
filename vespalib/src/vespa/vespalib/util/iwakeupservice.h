@@ -4,17 +4,18 @@
 
 #include "executor.h"
 #include "idestructorcallback.h"
+#include <functional>
 
 namespace vespalib {
 
 /**
- * Interface to register for receiving wakeup calls.
+ * Interface to register for receiving regular invoke calls.
  * The registration will last as long as the returned object is kept alive.
  **/
 class IWakeupService {
 public:
     virtual ~IWakeupService() = default;
-    virtual std::shared_ptr<IDestructorCallback> registerForWakeup(IWakeup * toWakeup) = 0;
+    virtual std::unique_ptr<IDestructorCallback> registerForInvoke(std::function<void()> func) = 0;
 };
 
 }

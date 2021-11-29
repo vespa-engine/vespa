@@ -17,6 +17,7 @@ namespace vespalib {
  * Then it can be done with higher frequency with less impact.
  */
 class WakeupService : public IWakeupService {
+    using VoidFunc = std::function<void()>;
 public:
     WakeupService(duration napTime);
     WakeupService(const WakeupService &) = delete;
@@ -25,17 +26,17 @@ public:
     /**
      * Register the one to be woken up
      */
-    std::shared_ptr<IDestructorCallback> registerForWakeup(IWakeup * toWakeup) override;
+    std::unique_ptr<IDestructorCallback> registerForInvoke(VoidFunc func) override;
 private:
     class Registration;
-    void unregister(IWakeup * toWakeup);
+    void unregister(VoidFunc func);
     void runLoop();
     static void run(WakeupService *);
-    duration                     _naptime;
-    std::mutex                   _lock;
-    bool                         _closed;
-    std::vector<IWakeup *>       _toWakeup;
-    std::unique_ptr<std::thread> _thread;
+    duration                       _naptime;
+    std::mutex                     _lock;
+    bool                           _closed;
+    std::vector<VoidFunc>          _toWakeup;
+    std::unique_ptr<std::thread>   _thread;
 };
 
 }

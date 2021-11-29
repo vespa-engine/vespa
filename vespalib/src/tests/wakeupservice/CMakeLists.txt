@@ -6,3 +6,4 @@ vespa_add_executable(vespalib_wakeupservice_test_app TEST
     vespalib
 )
 vespa_add_test(NAME vespalib_wakeupservice_test_app COMMAND vespalib_wakeupservice_test_app)
+

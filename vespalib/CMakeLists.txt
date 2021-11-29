@@ -150,8 +150,8 @@ vespa_define_module(
     src/tests/util/size_literals
     src/tests/valgrind
     src/tests/visit_ranges
-    src/tests/wakeup
     src/tests/wakeupservice
+    src/tests/wakeup
     src/tests/websocket
     src/tests/zcurve
 

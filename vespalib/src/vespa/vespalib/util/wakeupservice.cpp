@@ -28,37 +28,36 @@ WakeupService::~WakeupService()
 
 class WakeupService::Registration : public IDestructorCallback {
 public:
-    Registration(WakeupService * service, IWakeup * toWakeup) noexcept
+    Registration(WakeupService * service, VoidFunc func) noexcept
         : _service(service),
-          _toWakeup(toWakeup)
+          _func(func)
     { }
     Registration(const Registration &) = delete;
     Registration & operator=(const Registration &) = delete;
     ~Registration() override{
-        _service->unregister(_toWakeup);
+        _service->unregister(_func);
     }
 private:
     WakeupService * _service;
-    IWakeup       * _toWakeup;
+    VoidFunc        _func;
 };
 
-std::shared_ptr<IDestructorCallback>
-WakeupService::registerForWakeup(IWakeup * toWakeup) {
+std::unique_ptr<IDestructorCallback>
+WakeupService::registerForInvoke(VoidFunc func) {
     std::lock_guard guard(_lock);
-    auto found = std::find(_toWakeup.begin(), _toWakeup.end(), toWakeup);
-    if (found != _toWakeup.end()) return std::shared_ptr<IDestructorCallback>();
-
-    _toWakeup.push_back(toWakeup);
+    _toWakeup.push_back(func);
     if ( ! _thread) {
         _thread = std::make_unique<std::thread>(WakeupService::run, this);
     }
-    return std::make_shared<Registration>(this, toWakeup);
+    return std::make_unique<Registration>(this, func);
 }
 
 void
-WakeupService::unregister(IWakeup * toWakeup) {
+WakeupService::unregister(VoidFunc func) {
     std::lock_guard guard(_lock);
-    auto found = std::find(_toWakeup.begin(), _toWakeup.end(), toWakeup);
+    auto found = std::find_if(_toWakeup.begin(), _toWakeup.end(), [&func](const VoidFunc & a) {
+        return func.target<VoidFunc>() == a.target<VoidFunc>();
+    });
     assert (found != _toWakeup.end());
     _toWakeup.erase(found);
 }
@@ -69,8 +68,8 @@ WakeupService::runLoop() {
     while ( ! done ) {
         {
             std::lock_guard guard(_lock);
-            for (IWakeup *toWakeup: _toWakeup) {
-                toWakeup->wakeup();
+            for (VoidFunc & func: _toWakeup) {
+                func();
             }
             done = _closed;
         }
