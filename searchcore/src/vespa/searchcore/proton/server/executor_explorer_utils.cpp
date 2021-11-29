@@ -85,6 +85,9 @@ convert_executor_to_slime(const ThreadExecutor* executor, Cursor& object)
 void
 convert_executor_to_slime(const ISequencedTaskExecutor* executor, Cursor& object)
 {
+    if (executor == nullptr) {
+        return;
+    }
     if (const auto* seq = dynamic_cast<const SequencedTaskExecutor*>(executor)) {
         convert_sequenced_executor_to_slime(*seq, object);
     } else if (const auto* ada = dynamic_cast<const AdaptiveSequencedExecutor*>(executor)) {
