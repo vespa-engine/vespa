@@ -75,17 +75,24 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                 apply(config);
             }
         }
+
         private void apply(DocumentmanagerConfig config) {
             setupAnnotationTypesWithoutPayloads(config);
             setupAnnotationRefTypes(config);
+            setupDatatypesWithRetry(config);
+            addStructInheritance(config);
+            addAnnotationTypePayloads(config);
+            addAnnotationTypeInheritance(config);
+            manager.replaceTemporaryTypes();
+        }
 
-            log.log(Level.FINE, "Configuring document manager with " + config.datatype().size() + " data types.");
-            ArrayList<DocumentmanagerConfig.Datatype> failed = new ArrayList<>(config.datatype());
-            while (!failed.isEmpty()) {
-                ArrayList<DocumentmanagerConfig.Datatype> tmp = failed;
-                failed = new ArrayList<>();
-                for (int i = 0; i < tmp.size(); i++) {
-                    DocumentmanagerConfig.Datatype thisDataType = tmp.get(i);
+        private void setupDatatypesWithRetry(DocumentmanagerConfig config) {
+            var tmp = new ArrayList<DocumentmanagerConfig.Datatype>(config.datatype());
+            log.log(Level.FINE, "Configuring document manager with " + tmp.size() + " data types.");
+            while (! tmp.isEmpty()) {
+                int oldSz = tmp.size();
+                var failed = new ArrayList<DocumentmanagerConfig.Datatype>();
+                for (DocumentmanagerConfig.Datatype thisDataType : tmp) {
                     int id = thisDataType.id();
                     try {
                         registerTypeIdMapping(thisDataType, id);
@@ -93,12 +100,11 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                         failed.add(thisDataType);
                     }
                 }
+                tmp = failed;
+                if (tmp.size() == oldSz) {
+                    throw new IllegalArgumentException("No progress registering datatypes");
+                }
             }
-            addStructInheritance(config);
-            addAnnotationTypePayloads(config);
-            addAnnotationTypeInheritance(config);
-
-            manager.replaceTemporaryTypes();
         }
 
         private void registerTypeIdMapping(DocumentmanagerConfig.Datatype thisDataType, int id) {
