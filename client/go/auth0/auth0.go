@@ -361,6 +361,10 @@ func RunLogin(ctx context.Context, a *Auth0, expired bool) (*System, error) {
 	}
 
 	fmt.Printf("Your Device Confirmation code is: %s\n\n", state.UserCode)
+
+	fmt.Println("If you prefer, you can open the URL directly for verification")
+	fmt.Printf("Your Verification URL: %s\n\n", state.VerificationURI)
+
 	fmt.Println("Press Enter to open the browser to log in or ^C to quit...")
 	fmt.Scanln()
 
