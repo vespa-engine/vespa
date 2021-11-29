@@ -44,6 +44,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.exclusive;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.shared;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.sharedLayer4;
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.application;
@@ -427,7 +428,8 @@ public class ContainerClusterTest {
                     ApplicationId.from("t1", "a1", "default"),
                     Set.of(new ContainerEndpoint("search-cluster", global, List.of("rotation-1.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), sharedLayer4),
                            new ContainerEndpoint("search-cluster", global, List.of("a--b.x.y.z", "rotation-2.x.y.z"), OptionalInt.empty(), shared),
-                           new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4)),
+                           new ContainerEndpoint("search-cluster", application, List.of("app-rotation.x.y.z"), OptionalInt.of(3), sharedLayer4),
+                           new ContainerEndpoint("not-supported", global, List.of("not.supported"), OptionalInt.empty(), exclusive)),
                     List.of("search-cluster.cd.a1.t1.endpoint.suffix", "rotation-1.x.y.z", "rotation-2.x.y.z", "app-rotation.x.y.z"),
                     List.of("search-cluster--cd--a1--t1.endpoint.suffix", "a--b.x.y.z", "rotation-2.x.y.z"));
 

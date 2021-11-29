@@ -51,6 +51,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.shared;
+import static com.yahoo.config.model.api.ApplicationClusterEndpoint.RoutingMethod.sharedLayer4;
+
 /**
  * A container cluster that is typically set up from the user application.
  *
@@ -238,9 +241,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         }
 
         // Then get all endpoints provided by controller.
+        Set<ApplicationClusterEndpoint.RoutingMethod> supportedRoutingMethods = Set.of(shared, sharedLayer4);
         Set<ContainerEndpoint> endpointsFromController = deployState.getEndpoints();
         endpointsFromController.stream()
                 .filter(ce -> ce.clusterId().equals(getName()))
+                .filter(ce -> supportedRoutingMethods.contains(ce.routingMethod()))
                 .forEach(ce -> ce.names().forEach(
                         name -> endpoints.add(ApplicationClusterEndpoint.builder()
                                                       .scope(ce.scope())
