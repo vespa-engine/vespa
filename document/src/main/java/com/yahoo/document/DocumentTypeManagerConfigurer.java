@@ -59,140 +59,218 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         return subscriber;
     }
 
+    /** One-shot configuration; should be called on a newly constructed manager */
     static void configureNewManager(DocumentmanagerConfig config, DocumentTypeManager manager) {
         if (config == null) {
             return;
         }
+        new Apply(config, manager);
+    }
 
-        setupAnnotationTypesWithoutPayloads(config, manager);
-        setupAnnotationRefTypes(config, manager);
+    private static class Apply {
+        public Apply(DocumentmanagerConfig config, DocumentTypeManager manager) {
+            this.manager = manager;
+            this.usev8geopositions = (config == null) ? false : config.usev8geopositions();
+            if (config != null) {
+                apply(config);
+            }
+        }
+        private void apply(DocumentmanagerConfig config) {
+            setupAnnotationTypesWithoutPayloads(config, manager);
+            setupAnnotationRefTypes(config, manager);
 
-        log.log(Level.FINE, "Configuring document manager with " + config.datatype().size() + " data types.");
-        ArrayList<DocumentmanagerConfig.Datatype> failed = new ArrayList<>(config.datatype());
-        while (!failed.isEmpty()) {
-            ArrayList<DocumentmanagerConfig.Datatype> tmp = failed;
-            failed = new ArrayList<>();
-            for (int i = 0; i < tmp.size(); i++) {
-                DocumentmanagerConfig.Datatype thisDataType = tmp.get(i);
+            log.log(Level.FINE, "Configuring document manager with " + config.datatype().size() + " data types.");
+            ArrayList<DocumentmanagerConfig.Datatype> failed = new ArrayList<>(config.datatype());
+            while (!failed.isEmpty()) {
+                ArrayList<DocumentmanagerConfig.Datatype> tmp = failed;
+                failed = new ArrayList<>();
+                for (int i = 0; i < tmp.size(); i++) {
+                    DocumentmanagerConfig.Datatype thisDataType = tmp.get(i);
+                    int id = thisDataType.id();
+                    try {
+                        registerTypeIdMapping(manager, thisDataType, id);
+                    } catch (IllegalArgumentException e) {
+                        failed.add(thisDataType);
+                    }
+                }
+            }
+            addStructInheritance(config, manager);
+            addAnnotationTypePayloads(config, manager);
+            addAnnotationTypeInheritance(config, manager);
+
+            manager.replaceTemporaryTypes();
+        }
+
+        private void registerTypeIdMapping(DocumentTypeManager manager, DocumentmanagerConfig.Datatype thisDataType, int id) {
+            for (var o : thisDataType.arraytype()) {
+                registerArrayType(manager, id, o);
+            }
+            for (var o : thisDataType.maptype()) {
+                registerMapType(manager, id, o);
+            }
+            for (var o : thisDataType.weightedsettype()) {
+                registerWeightedSetType(manager, id, o);
+            }
+            for (var o : thisDataType.structtype()) {
+                registerStructType(manager, id, o);
+            }
+            for (var o : thisDataType.documenttype()) {
+                registerDocumentType(manager, o);
+            }
+            for (var o : thisDataType.referencetype()) {
+                registerReferenceType(manager, id, o);
+            }
+        }
+
+        private void registerArrayType(DocumentTypeManager manager, int id,
+                                       DocumentmanagerConfig.Datatype.Arraytype array) {
+            DataType nestedType = manager.getDataType(array.datatype(), "");
+            ArrayDataType type = new ArrayDataType(nestedType, id);
+            manager.register(type);
+        }
+
+        private void registerMapType(DocumentTypeManager manager, int id,
+                                     DocumentmanagerConfig.Datatype.Maptype map) {
+            DataType keyType = manager.getDataType(map.keytype(), "");
+            DataType valType = manager.getDataType(map.valtype(), "");
+            MapDataType type = new MapDataType(keyType, valType, id);
+            manager.register(type);
+        }
+
+        private void registerWeightedSetType(DocumentTypeManager manager, int id,
+                                             DocumentmanagerConfig.Datatype.Weightedsettype wset) {
+            DataType nestedType = manager.getDataType(wset.datatype(), "");
+            WeightedSetDataType type = new WeightedSetDataType(
+                                                               nestedType, wset.createifnonexistant(), wset.removeifzero(), id);
+            manager.register(type);
+        }
+
+        private void registerDocumentType(DocumentTypeManager manager, DocumentmanagerConfig.Datatype.Documenttype doc) {
+            StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
+            var importedFields = doc.importedfield().stream()
+                .map(f -> f.name())
+                .collect(Collectors.toUnmodifiableSet());
+            DocumentType type = new DocumentType(doc.name(), header, importedFields);
+            for (var parent : doc.inherits()) {
+                DataTypeName name = new DataTypeName(parent.name());
+                DocumentType parentType = manager.getDocumentType(name);
+                if (parentType == null) {
+                    throw new IllegalArgumentException("Could not find document type '" + name + "'.");
+                }
+                type.inherit(parentType);
+            }
+            Map<String, Collection<String>> fieldSets = new HashMap<>(doc.fieldsets().size());
+            for (Map.Entry<String, DocumentmanagerConfig.Datatype.Documenttype.Fieldsets> entry: doc.fieldsets().entrySet()) {
+                fieldSets.put(entry.getKey(), entry.getValue().fields());
+            }
+            type.addFieldSets(fieldSets);
+            manager.register(type);
+        }
+
+        private void registerStructType(DocumentTypeManager manager, int id,
+                                        DocumentmanagerConfig.Datatype.Structtype struct) {
+            StructDataType type = new StructDataType(id, struct.name());
+
+            for (var field : struct.field()) {
+                DataType fieldType = (field.datatype() == id)
+                    ? manager.getDataTypeAndReturnTemporary(field.datatype(), field.detailedtype())
+                    : manager.getDataType(field.datatype(), field.detailedtype());
+
+                if (field.id().size() == 1) {
+                    type.addField(new Field(field.name(), field.id().get(0).id(), fieldType));
+                } else {
+                    type.addField(new Field(field.name(), fieldType));
+                }
+            }
+            /*
+            if (type.equals(PositionDataType.INSTANCE)) {
+                if (this.usev8geopositions) {
+                     // do something special here
+                }
+            }
+            */
+            manager.register(type);
+        }
+
+        private void registerReferenceType(DocumentTypeManager manager, int id,
+                                           DocumentmanagerConfig.Datatype.Referencetype refType) {
+            ReferenceDataType referenceType;
+            if (manager.hasDataType(refType.target_type_id())) {
+                DocumentType targetDocType = (DocumentType)manager.getDataType(refType.target_type_id());
+                referenceType = new ReferenceDataType(targetDocType, id);
+            } else {
+                TemporaryStructuredDataType temporaryTargetType = TemporaryStructuredDataType.createById(refType.target_type_id());
+                referenceType = new ReferenceDataType(temporaryTargetType, id);
+            }
+            // Note: can't combine the above new-statements, as they call different constructors.
+            manager.register(referenceType);
+        }
+
+        private void setupAnnotationRefTypes(DocumentmanagerConfig config, DocumentTypeManager manager) {
+            for (int i = 0; i < config.datatype().size(); i++) {
+                DocumentmanagerConfig.Datatype thisDataType = config.datatype(i);
                 int id = thisDataType.id();
-                try {
-                    registerTypeIdMapping(manager, thisDataType, id);
-                } catch (IllegalArgumentException e) {
-                    failed.add(thisDataType);
+                for (var annRefType : thisDataType.annotationreftype()) {
+                    AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annRefType.annotation());
+                    if (annotationType == null) {
+                        throw new IllegalArgumentException("Found reference to " + annRefType.annotation() + ", which does not exist!");
+                    }
+                    AnnotationReferenceDataType type = new AnnotationReferenceDataType(annotationType, id);
+                    manager.register(type);
                 }
             }
         }
-        addStructInheritance(config, manager);
-        addAnnotationTypePayloads(config, manager);
-        addAnnotationTypeInheritance(config, manager);
 
-        manager.replaceTemporaryTypes();
-    }
-
-    private static void registerTypeIdMapping(DocumentTypeManager manager, DocumentmanagerConfig.Datatype thisDataType, int id) {
-        for (var o : thisDataType.arraytype()) {
-            registerArrayType(manager, id, o);
-        }
-        for (var o : thisDataType.maptype()) {
-            registerMapType(manager, id, o);
-        }
-        for (var o : thisDataType.weightedsettype()) {
-            registerWeightedSetType(manager, id, o);
-        }
-        for (var o : thisDataType.structtype()) {
-            registerStructType(manager, id, o);
-        }
-        for (var o : thisDataType.documenttype()) {
-            registerDocumentType(manager, o);
-        }
-        for (var o : thisDataType.referencetype()) {
-            registerReferenceType(manager, id, o);
-        }
-    }
-
-    private static void registerArrayType(DocumentTypeManager manager, int id,
-                                          DocumentmanagerConfig.Datatype.Arraytype array) {
-        DataType nestedType = manager.getDataType(array.datatype(), "");
-        ArrayDataType type = new ArrayDataType(nestedType, id);
-        manager.register(type);
-    }
-
-    private static void registerMapType(DocumentTypeManager manager, int id,
-                                        DocumentmanagerConfig.Datatype.Maptype map) {
-        DataType keyType = manager.getDataType(map.keytype(), "");
-        DataType valType = manager.getDataType(map.valtype(), "");
-        MapDataType type = new MapDataType(keyType, valType, id);
-        manager.register(type);
-    }
-
-    private static void registerWeightedSetType(DocumentTypeManager manager, int id,
-                                                DocumentmanagerConfig.Datatype.Weightedsettype wset) {
-        DataType nestedType = manager.getDataType(wset.datatype(), "");
-        WeightedSetDataType type = new WeightedSetDataType(
-                nestedType, wset.createifnonexistant(), wset.removeifzero(), id);
-        manager.register(type);
-    }
-
-    private static void registerDocumentType(DocumentTypeManager manager, DocumentmanagerConfig.Datatype.Documenttype doc) {
-        StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
-        var importedFields = doc.importedfield().stream()
-                .map(f -> f.name())
-                .collect(Collectors.toUnmodifiableSet());
-        DocumentType type = new DocumentType(doc.name(), header, importedFields);
-        for (var parent : doc.inherits()) {
-            DataTypeName name = new DataTypeName(parent.name());
-            DocumentType parentType = manager.getDocumentType(name);
-            if (parentType == null) {
-                throw new IllegalArgumentException("Could not find document type '" + name + "'.");
-            }
-            type.inherit(parentType);
-        }
-        Map<String, Collection<String>> fieldSets = new HashMap<>(doc.fieldsets().size());
-        for (Map.Entry<String, DocumentmanagerConfig.Datatype.Documenttype.Fieldsets> entry: doc.fieldsets().entrySet()) {
-            fieldSets.put(entry.getKey(), entry.getValue().fields());
-        }
-        type.addFieldSets(fieldSets);
-        manager.register(type);
-    }
-
-    private static void registerStructType(DocumentTypeManager manager, int id,
-                                           DocumentmanagerConfig.Datatype.Structtype struct) {
-        StructDataType type = new StructDataType(id, struct.name());
-
-        for (var field : struct.field()) {
-            DataType fieldType = (field.datatype() == id)
-                               ? manager.getDataTypeAndReturnTemporary(field.datatype(), field.detailedtype())
-                               : manager.getDataType(field.datatype(), field.detailedtype());
-
-            if (field.id().size() == 1) {
-                type.addField(new Field(field.name(), field.id().get(0).id(), fieldType));
-            } else {
-                type.addField(new Field(field.name(), fieldType));
+        private void setupAnnotationTypesWithoutPayloads(DocumentmanagerConfig config, DocumentTypeManager manager) {
+            for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
+                AnnotationType annotationType = new AnnotationType(annType.name(), annType.id());
+                manager.getAnnotationTypeRegistry().register(annotationType);
             }
         }
-        manager.register(type);
-    }
 
-    private static void registerReferenceType(DocumentTypeManager manager, int id,
-                                              DocumentmanagerConfig.Datatype.Referencetype refType) {
-        ReferenceDataType referenceType;
-        if (manager.hasDataType(refType.target_type_id())) {
-            DocumentType targetDocType = (DocumentType)manager.getDataType(refType.target_type_id());
-            referenceType = new ReferenceDataType(targetDocType, id);
-        } else {
-            TemporaryStructuredDataType temporaryTargetType = TemporaryStructuredDataType.createById(refType.target_type_id());
-            referenceType = new ReferenceDataType(temporaryTargetType, id);
+        private void addAnnotationTypePayloads(DocumentmanagerConfig config, DocumentTypeManager manager) {
+            for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
+                AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annType.id());
+                DataType payload = manager.getDataType(annType.datatype(), "");
+                if (!payload.equals(DataType.NONE)) {
+                    annotationType.setDataType(payload);
+                }
+            }
+
         }
-        // Note: can't combine the above new-statements, as they call different constructors.
-        manager.register(referenceType);
+
+        private void addAnnotationTypeInheritance(DocumentmanagerConfig config, DocumentTypeManager manager) {
+            for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
+                if (annType.inherits().size() > 0) {
+                    AnnotationType inheritedType = manager.getAnnotationTypeRegistry().getType(annType.inherits(0).id());
+                    AnnotationType type = manager.getAnnotationTypeRegistry().getType(annType.id());
+                    type.inherit(inheritedType);
+                }
+            }
+        }
+
+        private void addStructInheritance(DocumentmanagerConfig config, DocumentTypeManager manager) {
+            for (int i = 0; i < config.datatype().size(); i++) {
+                DocumentmanagerConfig.Datatype thisDataType = config.datatype(i);
+                int id = thisDataType.id();
+                for (var struct : thisDataType.structtype()) {
+                    StructDataType thisStruct = (StructDataType) manager.getDataType(id, "");
+
+                    for (var parent : struct.inherits()) {
+                        StructDataType parentStruct = (StructDataType) manager.getDataType(parent.name());
+                        thisStruct.inherit(parentStruct);
+                    }
+                }
+            }
+        }
+
+        private final boolean usev8geopositions;
+        private final DocumentTypeManager manager;
     }
 
     public static DocumentTypeManager configureNewManager(DocumentmanagerConfig config) {
         DocumentTypeManager manager = new DocumentTypeManager();
-        if (config == null) {
-            return manager;
-        }
-        configureNewManager(config, manager);
+        new Apply(config, manager);
         return manager;
     }
 
@@ -211,61 +289,4 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         managerToConfigure.assign(manager);
     }
 
-    private static void setupAnnotationRefTypes(DocumentmanagerConfig config, DocumentTypeManager manager) {
-        for (int i = 0; i < config.datatype().size(); i++) {
-            DocumentmanagerConfig.Datatype thisDataType = config.datatype(i);
-            int id = thisDataType.id();
-            for (var annRefType : thisDataType.annotationreftype()) {
-                AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annRefType.annotation());
-                if (annotationType == null) {
-                    throw new IllegalArgumentException("Found reference to " + annRefType.annotation() + ", which does not exist!");
-                }
-                AnnotationReferenceDataType type = new AnnotationReferenceDataType(annotationType, id);
-                manager.register(type);
-            }
-        }
-    }
-
-    private static void setupAnnotationTypesWithoutPayloads(DocumentmanagerConfig config, DocumentTypeManager manager) {
-        for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
-            AnnotationType annotationType = new AnnotationType(annType.name(), annType.id());
-            manager.getAnnotationTypeRegistry().register(annotationType);
-        }
-    }
-
-    private static void addAnnotationTypePayloads(DocumentmanagerConfig config, DocumentTypeManager manager) {
-        for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
-            AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annType.id());
-            DataType payload = manager.getDataType(annType.datatype(), "");
-            if (!payload.equals(DataType.NONE)) {
-                annotationType.setDataType(payload);
-            }
-        }
-
-    }
-
-    private static void addAnnotationTypeInheritance(DocumentmanagerConfig config, DocumentTypeManager manager) {
-        for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
-            if (annType.inherits().size() > 0) {
-                AnnotationType inheritedType = manager.getAnnotationTypeRegistry().getType(annType.inherits(0).id());
-                AnnotationType type = manager.getAnnotationTypeRegistry().getType(annType.id());
-                type.inherit(inheritedType);
-            }
-        }
-    }
-
-    private static void addStructInheritance(DocumentmanagerConfig config, DocumentTypeManager manager) {
-        for (int i = 0; i < config.datatype().size(); i++) {
-            DocumentmanagerConfig.Datatype thisDataType = config.datatype(i);
-            int id = thisDataType.id();
-            for (var struct : thisDataType.structtype()) {
-                StructDataType thisStruct = (StructDataType) manager.getDataType(id, "");
-
-                for (var parent : struct.inherits()) {
-                    StructDataType parentStruct = (StructDataType) manager.getDataType(parent.name());
-                    thisStruct.inherit(parentStruct);
-                }
-            }
-        }
-    }
 }
