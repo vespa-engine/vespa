@@ -15,8 +15,15 @@ import java.util.*;
  * @author baldersheim
  */
 public class DocumentTypes {
+    private boolean useV8GeoPositions = false;
+
+    public DocumentTypes useV8GeoPositions(boolean value) {
+        this.useV8GeoPositions = value;
+        return this;
+    }
 
     public DocumenttypesConfig.Builder produce(DocumentModel model, DocumenttypesConfig.Builder builder) {
+        builder.usev8geopositions(this.useV8GeoPositions);
         Map<NewDocumentType.Name, NewDocumentType> produced = new HashMap<>();
         for (NewDocumentType documentType : model.getDocumentManager().getTypes()) {
             produceInheritOrder(documentType, builder, produced);

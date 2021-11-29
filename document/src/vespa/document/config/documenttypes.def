@@ -5,6 +5,9 @@ namespace=document
 ## Whether to enable compression in this process.
 enablecompression bool default=false
 
+## Prefer "Vespa 8" format for the "position" type
+usev8geopositions bool default=false
+
 ## The Id of the documenttype. Must be unique among all document types.
 documenttype[].id int
 
