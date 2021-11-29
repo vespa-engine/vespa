@@ -11,18 +11,20 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * An executor that will first try a bounded cached threadpool before falling back to a unbounded
- * single threaded threadpool that will take over dispatching to the primary pool.
+ * An executor that will first try a bounded cached thread pool before falling back to an unbounded
+ * single threaded thread pool that will take over dispatching to the primary pool.
  *
  */
 public class CachedThreadPoolWithFallback implements AutoCloseable, Executor {
     private final ExecutorService primary;
     private final ExecutorService secondary;
-    public CachedThreadPoolWithFallback(String baseName, int corePoolSize, int maximumPoolSize, long keepAlimeTime, TimeUnit timeUnit) {
-        primary = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAlimeTime, timeUnit,
+
+    public CachedThreadPoolWithFallback(String baseName, int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit timeUnit) {
+        primary = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, timeUnit,
                 new SynchronousQueue<>(), ThreadFactoryFactory.getDaemonThreadFactory(baseName + ".primary"));
         secondary = Executors.newSingleThreadExecutor(ThreadFactoryFactory.getDaemonThreadFactory(baseName + ".secondary"));
     }
+
     @Override
     public void execute(Runnable command) {
         try {
@@ -31,6 +33,7 @@ public class CachedThreadPoolWithFallback implements AutoCloseable, Executor {
             secondary.execute(() -> retryForever(command));
         }
     }
+
     private void retryForever(Runnable command) {
         while (true) {
             try {
@@ -51,6 +54,7 @@ public class CachedThreadPoolWithFallback implements AutoCloseable, Executor {
         primary.shutdown();
         join(primary);
     }
+
     private static void join(ExecutorService executor) {
         while (true) {
             try {
@@ -60,4 +64,5 @@ public class CachedThreadPoolWithFallback implements AutoCloseable, Executor {
             } catch (InterruptedException e) {}
         }
     }
+
 }
