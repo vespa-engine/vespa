@@ -7,6 +7,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
@@ -64,23 +65,22 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
     }
     SerialNumList partIdVector = scanDir();
     const SerialNum lastPart = partIdVector.empty() ? 0 : partIdVector.back();
+    vespalib::MonitoredRefCount pending;
     for (const SerialNum partId : partIdVector) {
         if ( partId != std::numeric_limits<SerialNum>::max()) {
-            _executor.execute(makeLambdaTask([this, partId, lastPart]() { addPart(partId, partId == lastPart); }));
+            _executor.execute(makeLambdaTask([this, partId, lastPart, refGuard=vespalib::RetainGuard(pending)]() {
+                (void) refGuard;
+                addPart(partId, partId == lastPart);
+            }));
         }
     }
-    _executor.sync();
+    pending.waitForZeroRefCount();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
         _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _config.getEncoding(),
                                                         _config.getCompressionlevel(), _fileHeaderContext, false);
         vespalib::File::sync(dir());
     }
     _lastSerial = end();
-}
-
-vespalib::Executor::Task::UP
-Domain::execute(vespalib::Executor::Task::UP task) {
-    return _executor.execute(std::move(task));
 }
 
 Domain &
@@ -457,8 +457,8 @@ Domain::startSession(int sessionId)
     std::lock_guard guard(_sessionLock);
     SessionList::iterator found = _sessions.find(sessionId);
     if (found != _sessions.end()) {
-        found->second->setStartTime(std::chrono::steady_clock::now());
-        if ( execute(Session::createTask(found->second)).get() == nullptr ) {
+        found->second->setStartTime(vespalib::steady_clock::now());
+        if ( _executor.execute(Session::createTask(found->second)).get() == nullptr ) {
             retval = 0;
         } else {
             _sessions.erase(sessionId);
@@ -470,14 +470,13 @@ Domain::startSession(int sessionId)
 int
 Domain::closeSession(int sessionId)
 {
-    _executor.sync();
     int retval(-1);
     DurationSeconds sessionRunTime(0);
     {
         std::lock_guard guard(_sessionLock);
         SessionList::iterator found = _sessions.find(sessionId);
         if (found != _sessions.end()) {
-            sessionRunTime = (std::chrono::steady_clock::now() - found->second->getStartTime());
+            sessionRunTime = (vespalib::steady_clock::now() - found->second->getStartTime());
             retval = 1;
         }
     }
@@ -523,7 +522,7 @@ Domain::scanDir()
         if (ename[wantPrefixLen] != '-')
             continue;
         const char *p = ename + wantPrefixLen + 1;
-        uint64_t num = strtoull(p, NULL, 10);
+        uint64_t num = strtoull(p, nullptr, 10);
         string checkName = fmt("%s-%016" PRIu64, _name.c_str(), num);
         if (strcmp(checkName.c_str(), ename) != 0)
             continue;

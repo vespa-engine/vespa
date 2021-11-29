@@ -3,8 +3,6 @@
 
 #include "common.h"
 #include <vespa/vespalib/util/executor.h>
-#include <chrono>
-#include <deque>
 #include <atomic>
 
 class FastOS_FileInterface;
@@ -19,10 +17,10 @@ class Session
 {
 private:
     using Task = vespalib::Executor::Task;
-    using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+    using steady_time = vespalib::steady_time;
 
 public:
-    typedef std::shared_ptr<Session> SP;
+    using SP = std::shared_ptr<Session>;
     Session(const Session &) = delete;
     Session & operator = (const Session &) = delete;
     Session(int sId, const SerialNumRange & r, const DomainSP & d, std::unique_ptr<Destination> destination);
@@ -32,8 +30,8 @@ public:
     bool inSync()    const { return _inSync; }
     bool finished()  const;
     static Task::UP createTask(const Session::SP & session);
-    void setStartTime(time_point startTime) { _startTime = startTime; }
-    time_point getStartTime() const { return _startTime; }
+    void setStartTime(steady_time startTime) { _startTime = startTime; }
+    steady_time getStartTime() const { return _startTime; }
     bool isVisitRunning() const { return _visitRunning; }
 private:
     class VisitTask : public Task {
@@ -60,7 +58,7 @@ private:
     std::atomic<bool>            _visitRunning;
     std::atomic<bool>            _inSync;
     std::atomic<bool>            _finished;
-    time_point                   _startTime;
+    steady_time                  _startTime;
 };
 
 }
