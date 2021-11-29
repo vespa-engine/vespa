@@ -83,11 +83,6 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
     _lastSerial = end();
 }
 
-vespalib::Executor::Task::UP
-Domain::execute(vespalib::Executor::Task::UP task) {
-    return _executor.execute(std::move(task));
-}
-
 Domain &
 Domain::setConfig(const DomainConfig & cfg) {
     _config = cfg;
@@ -463,7 +458,7 @@ Domain::startSession(int sessionId)
     SessionList::iterator found = _sessions.find(sessionId);
     if (found != _sessions.end()) {
         found->second->setStartTime(vespalib::steady_clock::now());
-        if ( execute(Session::createTask(found->second)).get() == nullptr ) {
+        if ( _executor.execute(Session::createTask(found->second)).get() == nullptr ) {
             retval = 0;
         } else {
             _sessions.erase(sessionId);
@@ -475,7 +470,6 @@ Domain::startSession(int sessionId)
 int
 Domain::closeSession(int sessionId)
 {
-    _executor.sync();
     int retval(-1);
     DurationSeconds sessionRunTime(0);
     {

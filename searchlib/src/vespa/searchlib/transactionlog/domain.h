@@ -53,7 +53,6 @@ public:
     getDir(const vespalib::string & base, const vespalib::string & domain) {
         return base + "/" + domain;
     }
-    vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task);
     uint64_t size() const;
     Domain & setConfig(const DomainConfig & cfg);
 private:
