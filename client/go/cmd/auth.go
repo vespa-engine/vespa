@@ -8,6 +8,8 @@ import (
 func init() {
 	if vespa.Auth0AccessTokenEnabled() {
 		rootCmd.AddCommand(authCmd)
+		rootCmd.AddCommand(deprecatedCertCmd)
+		rootCmd.AddCommand(deprecatedApiKeyCmd)
 		authCmd.AddCommand(certCmd)
 		authCmd.AddCommand(apiKeyCmd)
 		authCmd.AddCommand(loginCmd)
