@@ -118,9 +118,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             deployState.getDeployLogger()
                     .logApplicationPackage(Level.WARNING,
                             "Domain in 'access-control' is deprecated and is no longer necessary. " +
-                                    "Please remove the 'domain' attribute from the 'access-control' element in services.xml. " +
-                                    "Mismatch between the Athenz domain associated with your tenant and the 'domain' " +
-                                    "attribute will be handled as an error.");
+                                    "Please remove the 'domain' attribute from the 'access-control' element in services.xml.");
         }
         return tenantDomain != null ? tenantDomain : explicitDomain;
     }
