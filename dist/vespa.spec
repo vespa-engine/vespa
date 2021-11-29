@@ -542,7 +542,7 @@ mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
        .
 
 make %{_smp_mflags}
-env GOTMPDIR=$(pwd)/client/go make -C client/go
+make -C client/go
 %endif
 
 %install
