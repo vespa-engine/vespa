@@ -7,11 +7,23 @@
 namespace vespalib {
 
 /**
+ * Interface for componets that can benefit from regular wakeup calls.
+ */
+class IWakeup {
+public:
+    virtual ~IWakeup() = default;
+    /**
+     * In case you have a lazy executor that naps inbetween.
+     **/
+    virtual void wakeup() = 0;
+};
+
+/**
  * An executor decouples the execution of a task from the request of
  * executing that task. Also, tasks are typically executed
  * concurrently in multiple threads.
  **/
-class Executor
+class Executor : public IWakeup
 {
 public:
     /**
@@ -37,10 +49,6 @@ public:
      **/
     virtual Task::UP execute(Task::UP task) = 0;
 
-    /**
-     * In case you have a lazy executor that naps inbetween.
-     **/
-    virtual void wakeup() = 0;
     virtual ~Executor() = default;
 };
 

@@ -14,7 +14,7 @@ namespace vespalib {
  * Interface class to run multiple tasks in parallel, but tasks with same
  * id has to be run in sequence.
  */
-class ISequencedTaskExecutor
+class ISequencedTaskExecutor : public vespalib::IWakeup
 {
 public:
     class ExecutorId {
@@ -62,7 +62,7 @@ public:
     /**
      * Call this one to ensure you get the attention of the workers.
      */
-    virtual void wakeup() { }
+    void wakeup() override { }
 
     /**
      * Wrap lambda function into a task and schedule it to be run.
