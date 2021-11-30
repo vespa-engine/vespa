@@ -465,6 +465,21 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void settingANoOpChangeIsANoOp() {
+        var app = tester.newDeploymentContext().submit().deploy();
+        ApplicationVersion appVersion0 = app.lastSubmission().get();
+        app.submit().deploy();
+        ApplicationVersion appVersion1 = app.lastSubmission().get();
+
+        // Triggering a roll-out of an already deployed application is a no-op.
+        assertEquals(Change.empty(), app.instance().change());
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
+        assertEquals(Change.empty(), app.instance().change());
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion1));
+        assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
     public void stepIsCompletePreciselyWhenItShouldBe() {
         var app1 = tester.newDeploymentContext("tenant1", "app1", "default");
         var app2 = tester.newDeploymentContext("tenant1", "app2", "default");

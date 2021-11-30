@@ -277,8 +277,13 @@ public class DeploymentTrigger {
     /** Overrides the given instance's platform and application changes with any contained in the given change. */
     public void forceChange(ApplicationId instanceId, Change change) {
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
-            applications().store(application.with(instanceId.instance(),
-                                                  instance -> instance.withChange(change.onTopOf(application.get().require(instanceId.instance()).change()))));
+            Change newChange = change.onTopOf(application.get().require(instanceId.instance()).change());
+            application = application.with(instanceId.instance(),
+                                           instance -> instance.withChange(newChange));
+            DeploymentStatus newStatus = jobs.deploymentStatus(application.get());
+            application = application.with(instanceId.instance(),
+                                           instance -> instance.withChange(remainingChange(instance, newStatus)));
+            applications().store(application);
         });
     }
 
