@@ -32,7 +32,6 @@ public class ClusterModel {
     static final double idealDiskLoad = 0.6;
 
     private final Application application;
-    private final Cluster cluster;
     /** The current nodes of this cluster, or empty if this models a new cluster not yet deployed */
     private final NodeList nodes;
     private final Clock clock;
@@ -51,7 +50,6 @@ public class ClusterModel {
                         MetricsDb metricsDb,
                         Clock clock) {
         this.application = application;
-        this.cluster = cluster;
         this.nodes = clusterNodes;
         this.clock = clock;
         this.scalingDuration = computeScalingDuration(cluster, clusterSpec);
@@ -67,7 +65,6 @@ public class ClusterModel {
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
         this.application = application;
-        this.cluster = cluster;
         this.nodes = null;
         this.clock = clock;
 
@@ -75,8 +72,6 @@ public class ClusterModel {
         this.clusterTimeseries = clusterTimeseries;
         this.nodeTimeseries = nodeTimeseries;
     }
-
-    public Cluster cluster() { return cluster; }
 
     /** Returns the predicted duration of a rescaling of this cluster */
     public Duration scalingDuration() { return scalingDuration; }

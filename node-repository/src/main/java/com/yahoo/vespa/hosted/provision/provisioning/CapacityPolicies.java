@@ -29,11 +29,11 @@ public class CapacityPolicies {
         this.sharedHosts = type -> PermanentFlags.SHARED_HOST.bindTo(nodeRepository.flagSource()).value().isEnabled(type.name());
     }
 
-    public int decideSize(int requested, boolean required, boolean canFail, boolean isTester, ClusterSpec cluster) {
-        if (isTester) return 1;
+    public int decideSize(int requested, Capacity capacity, ClusterSpec cluster, ApplicationId application) {
+        if (application.instance().isTester()) return 1;
 
-        ensureRedundancy(requested, cluster, canFail);
-        if (required) return requested;
+        ensureRedundancy(requested, cluster, capacity.canFail());
+        if (capacity.isRequired()) return requested;
         switch(zone.environment()) {
             case dev : case test : return 1;
             case perf : return Math.min(requested, 3);
@@ -43,11 +43,11 @@ public class CapacityPolicies {
         }
     }
 
-    public NodeResources decideNodeResources(NodeResources target, boolean required, ClusterSpec cluster) {
+    public NodeResources decideNodeResources(NodeResources target, Capacity capacity, ClusterSpec cluster) {
         if (target.isUnspecified())
             target = defaultNodeResources(cluster.type());
 
-        if (required) return target;
+        if (capacity.isRequired()) return target;
 
         // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
         if (zone.environment() == Environment.dev && !zone.getCloud().dynamicProvisioning())

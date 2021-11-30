@@ -152,10 +152,6 @@ public class ProvisioningTester {
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }
     public InMemoryFlagSource flagSource() { return (InMemoryFlagSource) nodeRepository.flagSource(); }
 
-    public int decideSize(int size, Capacity capacity, ClusterSpec cluster, ApplicationId application) {
-        return capacityPolicies.decideSize(size, capacity.isRequired(), capacity.canFail(), application.instance().isTester(), cluster);
-    }
-
     public Node patchNode(Node node, UnaryOperator<Node> patcher) {
         return patchNodes(List.of(node), patcher).get(0);
     }
