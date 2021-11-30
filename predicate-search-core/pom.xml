@@ -42,6 +42,10 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>abi-check-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr3-maven-plugin</artifactId>
                 <executions>

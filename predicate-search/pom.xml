@@ -57,6 +57,10 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>abi-check-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <descriptorRefs>
