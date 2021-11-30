@@ -21,6 +21,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author bratseth
+ */
 public class MetricsV2MetricsFetcherTest {
 
     private static final double delta = 0.00000001;

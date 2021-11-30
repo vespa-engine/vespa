@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-
 import java.nio.ByteBuffer;
 
-
 /**
- * A place holder for null queries to make searchers easier to write.
+ * A placeholder for null queries to make searchers easier to write.
  *
  * @author Steinar Knutsen
  */

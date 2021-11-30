@@ -4,7 +4,9 @@ package com.yahoo.vespa.service.duper;
 import com.yahoo.config.provision.NodeType;
 
 public class ConfigServerHostApplication extends HostAdminApplication {
+
     public ConfigServerHostApplication() {
         super("configserver-host", NodeType.confighost);
     }
+
 }

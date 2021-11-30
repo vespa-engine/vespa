@@ -45,11 +45,11 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
     static final ConfigServerApplication configServerApplication = new ConfigServerApplication();
     static final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
     static final TenantHostApplication tenantHostApplication = new TenantHostApplication();
-    static final DevHostApplication devHostApplicaton = new DevHostApplication();
+    static final DevHostApplication devHostApplication = new DevHostApplication();
 
     private final Map<ApplicationId, InfraApplication> supportedInfraApplications;
 
-    private static CriticalRegionChecker disallowedDuperModeLockAcquisitionRegions =
+    private static final CriticalRegionChecker disallowedDuperModeLockAcquisitionRegions =
             new CriticalRegionChecker("duper model deadlock detection");
 
     private final ReentrantLock lock = new ReentrantLock(true);
@@ -68,13 +68,14 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
     }
 
     /** Non-private for testing */
-    public DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider, DuperModel duperModel, FlagSource flagSource, SystemName system) {
+    public DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider,
+                             DuperModel duperModel, FlagSource flagSource, SystemName system) {
         this.duperModel = duperModel;
 
         if (system == SystemName.dev) {
             // TODO (mortent): Support controllerApplication in dev system
             supportedInfraApplications =
-                    Stream.of(devHostApplicaton, configServerApplication)
+                    Stream.of(devHostApplication, configServerApplication)
                     .collect(Collectors.toUnmodifiableMap(InfraApplication::getApplicationId, Function.identity()));
         } else if (multitenant) {
             supportedInfraApplications =
@@ -129,9 +130,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
         return Optional.ofNullable(supportedInfraApplications.get(applicationId));
     }
 
-    /**
-     * Returns true if application is considered an infrastructure application by the DuperModel.
-     */
+    /** Returns true if application is considered an infrastructure application by the DuperModel. */
     public boolean isSupportedInfraApplication(ApplicationId applicationId) {
         return supportedInfraApplications.containsKey(applicationId);
     }
@@ -234,4 +233,5 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
             lock.unlock();
         }
     }
+
 }

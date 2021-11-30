@@ -18,4 +18,5 @@ public interface InfraDeployer {
 
     /** Deploys all supported infrastructure applications in this zone. */
     void activateAllSupportedInfraApplications(boolean propagateException);
+
 }
