@@ -31,7 +31,11 @@ ConfigSubscription::nextUpdate(int64_t generation, std::chrono::milliseconds tim
     if (_closed || !_holder->poll()) {
         return false;
     }
+    auto old = std::move(_next);
     _next = _holder->provide();
+    if (old) {
+        _next->merge(*old);
+    }
     if (isGenerationNewer(_next->getGeneration(), generation)) {
         return true;
     }
