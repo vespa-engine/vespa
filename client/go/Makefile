@@ -114,7 +114,7 @@ clean:
 	rm -rf $(BIN) $(SHARE) $(DIST)
 
 test:
-	env $(GOPROXY_OVERRIDE) go test ./...
+	env $(GOPROXY_OVERRIDE) go test -x ./...
 
 checkfmt:
 	@bash -c "diff --line-format='%L' <(echo -n) <(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
