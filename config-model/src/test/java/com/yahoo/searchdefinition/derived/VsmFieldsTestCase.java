@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class VsmFieldsTestCase {
 
+    @SuppressWarnings("deprecation")
     @Test
     public void reference_type_field_is_unsearchable() {
         Schema schema = new Schema("test", new Application(MockApplicationPackage.createEmpty()), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());

@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNotEquals;
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.10
  */
+@SuppressWarnings("deprecation")
 public class TemporaryStructuredDataTypeTestCase {
     @Test
     public void basic() {

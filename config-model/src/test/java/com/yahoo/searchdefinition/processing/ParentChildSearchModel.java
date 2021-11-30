@@ -44,6 +44,7 @@ public class ParentChildSearchModel {
         return result;
     }
 
+    @SuppressWarnings("deprecation")
     protected static SDField createRefField(String parentType, String fieldName) {
         return new TemporarySDField(fieldName, ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create(parentType)));
     }

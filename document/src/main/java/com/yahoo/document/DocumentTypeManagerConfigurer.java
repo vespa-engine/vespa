@@ -194,6 +194,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             manager.register(type);
         }
 
+        @SuppressWarnings("deprecation")
         private void registerReferenceType(int id, DocumentmanagerConfig.Datatype.Referencetype refType) {
             ReferenceDataType referenceType;
             if (manager.hasDataType(refType.target_type_id())) {

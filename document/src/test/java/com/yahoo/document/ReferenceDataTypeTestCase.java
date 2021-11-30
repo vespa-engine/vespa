@@ -72,6 +72,7 @@ public class ReferenceDataTypeTestCase {
         assertTrue(fixture.refType.isValueCompatible(fixture.refTypeClone.createFieldValue()));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void reference_type_can_be_constructed_with_temporary_structured_data_type() {
         TemporaryStructuredDataType tempType = new TemporaryStructuredDataType("cooldoc");
@@ -81,6 +82,7 @@ public class ReferenceDataTypeTestCase {
         assertEquals(tempType, refType.getTargetType());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void can_replace_temporary_target_data_type() {
         TemporaryStructuredDataType tempType = new TemporaryStructuredDataType("cooldoc");

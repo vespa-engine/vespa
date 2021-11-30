@@ -44,6 +44,7 @@ public class DocumentManager {
         return documentConfigBuilder;
     }
 
+    @SuppressWarnings("deprecation")
     private void buildConfig(DataTypeCollection type, DocumentmanagerConfig.Builder documentConfigBuilder, Set<DataType> built) {
         for (DataType dataType : type.getTypes()) {
             if (built.contains(dataType)) continue;

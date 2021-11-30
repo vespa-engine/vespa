@@ -5,7 +5,9 @@ import com.yahoo.document.datatypes.FieldValue;
 
 /**
  * @author Einar M R Rosenvinge
+ * @deprecated will be removed soon
  */
+@Deprecated
 class TemporaryDataType extends DataType {
 
     private final String detailedType;

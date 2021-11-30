@@ -332,6 +332,7 @@ public final class Attribute implements Cloneable, Serializable {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private DataType createReferenceDataType() {
         if (!referenceDocumentType.isPresent()) {
             throw new IllegalStateException("Referenced document type is not set!");

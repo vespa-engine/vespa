@@ -165,6 +165,7 @@ public class DocumentTypeManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     DataType getDataTypeAndReturnTemporary(int code, String detailedType) {
         if (hasDataType(code)) {
             return getDataType(code, detailedType);
@@ -186,6 +187,7 @@ public class DocumentTypeManager {
      *
      * @param type The datatype to register
      */
+    @SuppressWarnings("deprecation")
     void registerSingleType(DataType type) {
         if (type instanceof TensorDataType) return; // built-in dynamic: Created on the fly
         if (dataTypes.containsKey(type.getId())) {
@@ -315,6 +317,7 @@ public class DocumentTypeManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void replaceTemporaryTypes(DataType type, List<DataType> seenStructs) {
         if (type instanceof WeightedSetDataType) {
             replaceTemporaryTypesInWeightedSet((WeightedSetDataType) type, seenStructs);
@@ -356,6 +359,7 @@ public class DocumentTypeManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void replaceTemporaryTypeInReference(ReferenceDataType referenceDataType) {
         if (referenceDataType.getTargetType() instanceof TemporaryStructuredDataType) {
             referenceDataType.setTargetType((DocumentType) getDataType(referenceDataType.getTargetType().getId()));
@@ -363,6 +367,7 @@ public class DocumentTypeManager {
         // TODO should we recursively invoke replaceTemporaryTypes for the target type? It should only ever be a doc type
     }
 
+    @SuppressWarnings("deprecation")
     private void replaceTemporaryTypesInCollection(CollectionDataType collectionDataType, List<DataType> seenStructs) {
         if (collectionDataType.getNestedType() instanceof TemporaryDataType) {
             collectionDataType.setNestedType(getDataType(collectionDataType.getNestedType().getCode(), ""));
@@ -371,6 +376,7 @@ public class DocumentTypeManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void replaceTemporaryTypesInMap(MapDataType mapDataType, List<DataType> seenStructs) {
         if (mapDataType.getValueType() instanceof TemporaryDataType) {
             mapDataType.setValueType(getDataType(mapDataType.getValueType().getCode(), ""));
@@ -385,6 +391,7 @@ public class DocumentTypeManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void replaceTemporaryTypesInWeightedSet(WeightedSetDataType weightedSetDataType, List<DataType> seenStructs) {
         if (weightedSetDataType.getNestedType() instanceof TemporaryDataType) {
             weightedSetDataType.setNestedType(getDataType(weightedSetDataType.getNestedType().getCode(), ""));

@@ -27,6 +27,7 @@ public class ReferenceDataType extends DataType {
      * of the target document type might not yet be known. The temporary data type should be
      * replaced later using setTargetType().
      */
+    @SuppressWarnings("deprecation")
     public ReferenceDataType(TemporaryStructuredDataType temporaryTargetType, int id) {
         this((StructuredDataType) temporaryTargetType, id);
     }
@@ -54,6 +55,7 @@ public class ReferenceDataType extends DataType {
     /**
      * Creates a new type where the numeric ID is based on the hash of targetType
      */
+    @SuppressWarnings("deprecation")
     public static ReferenceDataType createWithInferredId(TemporaryStructuredDataType targetType) {
         return new ReferenceDataType(targetType);
     }
@@ -67,6 +69,7 @@ public class ReferenceDataType extends DataType {
      * @throws IllegalStateException if the previously stored target type is already a concrete
      *     instance (not TemporaryStructuredDataType).
      */
+    @SuppressWarnings("deprecation")
     public void setTargetType(StructuredDataType targetType) {
         if (! (this.targetType instanceof TemporaryStructuredDataType)) {
             throw new IllegalStateException(String.format(
