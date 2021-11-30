@@ -83,7 +83,6 @@ public class CuratorDatabaseClient {
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
         initZK();
-        curator.delete(containerImagesPath); // TODO(mpolden): Remove after 2021-11-08
     }
 
     public List<String> cluster() {
