@@ -102,7 +102,7 @@ ConfigSubscription::flip()
         _current = std::move(_next);
         _lastGenerationChanged = _current->getGeneration();
     } else {
-        _current.reset(new ConfigUpdate(_current->getValue(), false, _next->getGeneration()));
+        _current = std::make_unique<ConfigUpdate>(_current->getValue(), false, _next->getGeneration());
     }
     _isChanged = change;
 }

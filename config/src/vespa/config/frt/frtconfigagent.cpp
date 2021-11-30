@@ -71,7 +71,7 @@ FRTConfigAgent::handleUpdatedGeneration(const ConfigKey & key, const ConfigState
     if (LOG_WOULD_LOG(spam)) {
         LOG(spam, "updating holder for key %s,", key.toString().c_str());
     }
-    _holder->handle(ConfigUpdate::UP(new ConfigUpdate(_latest, changed, newState.generation)));
+    _holder->handle(std::make_unique<ConfigUpdate>(_latest, changed, newState.generation));
     _numConfigured++;
 }
 

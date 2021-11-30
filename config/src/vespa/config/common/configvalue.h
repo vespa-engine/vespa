@@ -35,8 +35,8 @@ public:
     const vespalib::string & getLine(int i) const { return _lines.at(i);  }
     const std::vector<vespalib::string> & getLines() const { return _lines;  }
     std::vector<vespalib::string> getLegacyFormat() const;
-    const vespalib::string asJson() const;
-    const vespalib::string getXxhash64() const { return _xxhash64; }
+    vespalib::string asJson() const;
+    const vespalib::string& getXxhash64() const { return _xxhash64; }
 
     void serializeV1(::vespalib::slime::Cursor & cursor) const;
     void serializeV2(::vespalib::slime::Cursor & cursor) const;
