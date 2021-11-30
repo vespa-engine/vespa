@@ -38,6 +38,8 @@ using search::AttributeVector;
 using search::CacheStats;
 using search::DocumentMetaData;
 using vespalib::IDestructorCallback;
+using vespalib::Gate;
+using vespalib::GateCallback;
 using search::SearchableStats;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
@@ -404,7 +406,7 @@ MyAttributeWriter::~MyAttributeWriter() = default;
 struct MyTransport : public feedtoken::ITransport
 {
     ResultUP lastResult;
-    vespalib::Gate _gate;
+    Gate _gate;
     MyTracer &_tracer;
     MyTransport(MyTracer &tracer);
     ~MyTransport();
@@ -610,8 +612,8 @@ struct FixtureBase
     void moveAndWait(const DocumentContext &docCtx, uint32_t fromLid, uint32_t toLid) {
         MoveOperation op(docCtx.bid, docCtx.ts, docCtx.doc, DbDocumentId(pc._params._subDbId, fromLid), pc._params._subDbId);
         op.setTargetLid(toLid);
-        vespalib::Gate gate;
-        runInMaster([&, onDone=std::make_shared<vespalib::GateCallback>(gate)]() { performMove(op, std::move(onDone)); });
+        Gate gate;
+        runInMaster([&, onDone=std::make_shared<GateCallback>(gate)]() { performMove(op, std::move(onDone)); });
         gate.await();
     }
 
@@ -621,12 +623,12 @@ struct FixtureBase
         getFeedView().handleDeleteBucket(op);
     }
 
-    void performForceCommit(vespalib::IDestructorCallback::SP onDone) {
+    void performForceCommit(IDestructorCallback::SP onDone) {
         getFeedView().forceCommit(serial, std::move(onDone));
     }
     void forceCommitAndWait() {
-        vespalib::Gate gate;
-        runInMaster([this, onDone=std::make_shared<vespalib::GateCallback>(gate)]() {
+        Gate gate;
+        runInMaster([this, onDone=std::make_shared<GateCallback>(gate)]() {
             performForceCommit(std::move(onDone));
         });
         gate.await();
@@ -650,14 +652,18 @@ struct FixtureBase
         return docs;
     }
 
-    void performCompactLidSpace(uint32_t wantedLidLimit) {
+    void performCompactLidSpace(uint32_t wantedLidLimit, IDestructorCallback::SP onDone) {
         auto &fv = getFeedView();
         CompactLidSpaceOperation op(0, wantedLidLimit);
         op.setSerialNum(++serial);
-        fv.handleCompactLidSpace(op);
+        fv.handleCompactLidSpace(op, std::move(onDone));
     }
     void compactLidSpaceAndWait(uint32_t wantedLidLimit) {
-        runInMasterAndSyncAll([&]() { performCompactLidSpace(wantedLidLimit); });
+        Gate gate;
+        runInMaster([&]() {
+            performCompactLidSpace(wantedLidLimit, std::make_shared<GateCallback>(gate));
+        });
+        gate.await();
     }
     void assertChangeHandler(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {
         _gidToLidChangeHandler->assertChanges(expGid, expLid, expChanges);
@@ -1159,7 +1165,11 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
     EXPECT_TRUE(assertThreadObserver(5, 4, 4, f.writeServiceObserver()));
     CompactLidSpaceOperation op(0, 2);
     op.setSerialNum(0);
-    f.runInMasterAndSyncAll([&]() { f.fv.handleCompactLidSpace(op); });
+    Gate gate;
+    f.runInMaster([&, onDone=std::make_shared<GateCallback>(gate)]() {
+        f.fv.handleCompactLidSpace(op, std::move(onDone));
+    });
+    gate.await();
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
     EXPECT_TRUE(assertThreadObserver(6, 6, 5, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);

@@ -745,7 +745,7 @@ handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp)
 }
 
 void
-StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
+StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone)
 {
     assert(_params._subDbId == op.getSubDbId());
     const SerialNum serialNum = op.getSerialNum();
@@ -754,7 +754,7 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
         auto commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
                                                                 _pendingLidsForCommit->produceSnapshot(),
                                                                 _gidToLidChangeHandler.grab_pending_changes(),
-                                                                DoneCallback()));
+                                                                onDone));
         commitContext->holdUnblockShrinkLidSpace();
         internalForceCommit(CommitParam(serialNum), commitContext);
     }

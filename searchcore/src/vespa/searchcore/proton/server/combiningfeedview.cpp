@@ -241,11 +241,11 @@ handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp)
 }
 
 void
-CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
+CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone)
 {
     uint32_t subDbId = op.getSubDbId();
     assert(subDbId < _views.size());
-    _views[subDbId]->handleCompactLidSpace(op);
+    _views[subDbId]->handleCompactLidSpace(op, std::move(onDone));
 }
 
 void

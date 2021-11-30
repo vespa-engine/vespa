@@ -167,9 +167,9 @@ SearchableFeedView::performIndexForceCommit(SerialNum serialNum, OnForceCommitDo
 }
 
 void
-SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
+SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone)
 {
-    Parent::handleCompactLidSpace(op);
+    Parent::handleCompactLidSpace(op, onDone);
     vespalib::Gate gate;
     _writeService.index().execute(
             makeLambdaTask([this, &op, &gate]() {

@@ -58,7 +58,7 @@ public:
 
     ~SearchableFeedView() override;
     const IIndexWriter::SP &getIndexWriter() const { return _indexWriter; }
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
 };
 
 } // namespace proton

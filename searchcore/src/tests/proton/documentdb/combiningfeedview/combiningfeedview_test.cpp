@@ -87,7 +87,7 @@ struct MyFeedView : public test::DummyFeedView
     void handleMove(const MoveOperation &, IDestructorCallback::SP) override { ++_handleMove; }
     void heartBeat(SerialNum) override { ++_heartBeat; }
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override { ++_handlePrune; }
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override {
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback) override {
         _wantedLidLimit = op.getLidLimit();
     }
 };
@@ -429,7 +429,7 @@ TEST_F("require that calculator can be updated", Fixture)
 
 TEST_F("require that compactLidSpace() is sent to correct feed view", Fixture)
 {
-    f._view.handleCompactLidSpace(CompactLidSpaceOperation(1, 99));
+    f._view.handleCompactLidSpace(CompactLidSpaceOperation(1, 99), IDestructorCallback::SP());
     EXPECT_EQUAL(0u, f._ready._view->_wantedLidLimit);
     EXPECT_EQUAL(99u, f._removed._view->_wantedLidLimit);
     EXPECT_EQUAL(0u, f._notReady._view->_wantedLidLimit);

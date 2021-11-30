@@ -64,7 +64,7 @@ public:
     void forceCommit(search::SerialNum serialNum) { forceCommit(CommitParam(serialNum)); }
     void forceCommitAndWait(CommitParam param);
     virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation & pruneOp) = 0;
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) = 0;
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) = 0;
 };
 
 } // namespace proton

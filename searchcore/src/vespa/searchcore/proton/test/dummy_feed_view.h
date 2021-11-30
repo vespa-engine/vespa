@@ -30,7 +30,7 @@ struct DummyFeedView : public IFeedView
     void handleMove(const MoveOperation &, std::shared_ptr<vespalib::IDestructorCallback>) override {}
     void heartBeat(search::SerialNum) override {}
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}
-    void handleCompactLidSpace(const CompactLidSpaceOperation &) override {}
+    void handleCompactLidSpace(const CompactLidSpaceOperation &, DoneCallback) override {}
     void forceCommit(const CommitParam &, DoneCallback) override { }
 };
 

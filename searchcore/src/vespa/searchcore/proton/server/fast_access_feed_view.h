@@ -62,7 +62,7 @@ public:
         return _docIdLimit;
     }
 
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
 };
 
 } // namespace proton

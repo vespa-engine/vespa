@@ -245,7 +245,7 @@ public:
      * Called by writer thread.
      */
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
     std::shared_ptr<PendingLidTrackerBase> getUncommittedLidTracker() { return _pendingLidsForCommit; }
 };
 
