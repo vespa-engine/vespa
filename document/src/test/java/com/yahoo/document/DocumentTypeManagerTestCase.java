@@ -525,6 +525,7 @@ search annotationsimplicitstruct {
         assertReferenceTypePresentInManager(manager, 87654321, "referenced_type2");
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void no_temporary_targets_in_references_or_names() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.replaced_temporary.cfg");

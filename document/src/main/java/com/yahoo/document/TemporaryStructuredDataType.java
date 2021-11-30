@@ -5,8 +5,10 @@ package com.yahoo.document;
  * Internal class, DO NOT USE!!
  * Only public because it must be used from com.yahoo.searchdefinition.parser.
  *
+ * @deprecated will be removed soon
  * @author Einar M R Rosenvinge
  */
+@Deprecated // TODO: Remove on Vespa 8
 public class TemporaryStructuredDataType extends StructDataType {
 
     TemporaryStructuredDataType(String name) {

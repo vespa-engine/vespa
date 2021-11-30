@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNull;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class TemporaryDataTypeTestCase {
 
     @Test
