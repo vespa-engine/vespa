@@ -1162,8 +1162,8 @@ public class DeploymentSpecTest {
         var spec = DeploymentSpec.fromXml("<deployment>" +
                                           "   <instance id='default'>" +
                                           "      <prod>" +
-                                          "         <region active=\"true\">us-east</region>" +
-                                          "         <region active=\"true\">us-west</region>" +
+                                          "         <region>us-east</region>" +
+                                          "         <region>us-west</region>" +
                                           "      </prod>" +
                                           "      <endpoints>" +
                                           "         <endpoint id=\"foo\" container-id=\"bar\">" +
