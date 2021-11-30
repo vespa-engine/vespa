@@ -16,6 +16,13 @@ GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
 DIST_TARGETS := dist-mac dist-mac-arm64 dist-linux dist-linux-arm64 dist-win32 dist-win64
 
+GOPROXY_OVERRIDE :=
+ifndef GOPROXY
+ifeq ($(shell go env GOPROXY),direct)
+GOPROXY_OVERRIDE := GOPROXY=https://proxy.golang.org,direct
+endif
+endif
+
 all: test checkfmt install
 
 #
@@ -75,7 +82,7 @@ $(DIST_TARGETS): DIST_NAME=vespa-cli_$(VERSION)_$(GOOS)_$(GOARCH)
 $(DIST_TARGETS): dist-version manpages
 $(DIST_TARGETS):
 	mkdir -p $(DIST)/$(DIST_NAME)/bin
-	env GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o $(DIST)/$(DIST_NAME)/bin $(GO_FLAGS) ./...
+	env GOOS=$(GOOS) GOARCH=$(GOARCH) $(GOPROXY_OVERRIDE) go build -o $(DIST)/$(DIST_NAME)/bin $(GO_FLAGS) ./...
 	cp -a $(GIT_ROOT)/LICENSE $(DIST)/$(DIST_NAME)
 	if [ "$(GOOS)" = "windows" ]; then \
 		cd $(DIST) && zip -r $(DIST)/$(DIST_NAME).zip $(DIST_NAME); \
@@ -97,7 +104,7 @@ endif
 #
 
 install:
-	env GOBIN=$(BIN) go install $(GO_FLAGS) ./...
+	env GOBIN=$(BIN) $(GOPROXY_OVERRIDE) go install $(GO_FLAGS) ./...
 
 manpages: install
 	mkdir -p $(SHARE)/man/man1
@@ -107,7 +114,7 @@ clean:
 	rm -rf $(BIN) $(SHARE) $(DIST)
 
 test:
-	go test ./...
+	env $(GOPROXY_OVERRIDE) go test ./...
 
 checkfmt:
 	@bash -c "diff --line-format='%L' <(echo -n) <(gofmt -l .)" || { echo "one or more files need to be formatted: try make fmt to fix this automatically"; exit 1; }
