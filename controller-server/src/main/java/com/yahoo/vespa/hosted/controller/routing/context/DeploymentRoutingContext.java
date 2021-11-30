@@ -49,7 +49,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
 
     /** Configure routing for the deployment in this context, using given deployment spec */
     public final void configure(DeploymentSpec deploymentSpec) {
-        controller.policies().refresh(deployment.applicationId(), deploymentSpec, deployment.zoneId());
+        controller.policies().refresh(deployment, deploymentSpec);
     }
 
     /** Routing method of this context */
@@ -60,7 +60,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
     /** Read the routing policy for given cluster in this deployment */
     public final Optional<RoutingPolicy> routingPolicy(ClusterSpec.Id cluster) {
         RoutingPolicyId id = new RoutingPolicyId(deployment.applicationId(), cluster, deployment.zoneId());
-        return Optional.ofNullable(controller.policies().get(deployment).get(id));
+        return controller.policies().read(deployment).of(id);
     }
 
     /**
@@ -142,8 +142,8 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
         public RoutingStatus routingStatus() {
             // Status for a deployment applies to all clusters within the deployment, so we use the status from the
             // first matching policy here
-            return controller.policies().get(deployment).values().stream()
-                             .findFirst()
+            return controller.policies().read(deployment)
+                             .first()
                              .map(RoutingPolicy::status)
                              .map(RoutingPolicy.Status::routingStatus)
                              .orElse(RoutingStatus.DEFAULT);

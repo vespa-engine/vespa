@@ -30,7 +30,7 @@ public class ExclusiveZoneRoutingContext implements RoutingContext {
 
     @Override
     public RoutingStatus routingStatus() {
-        return policies.get(zone).routingStatus();
+        return policies.read(zone).routingStatus();
     }
 
     @Override

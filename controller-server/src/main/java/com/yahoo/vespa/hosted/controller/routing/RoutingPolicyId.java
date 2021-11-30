@@ -60,4 +60,9 @@ public class RoutingPolicyId {
         return Objects.hash(owner, cluster, zone);
     }
 
+    @Override
+    public String toString() {
+        return "routing policy for " + cluster + ", in " + zone + ", owned by " + owner;
+    }
+
 }

@@ -11,15 +11,15 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -50,11 +50,11 @@ public class RoutingPolicySerializer {
     private static final String changedAtField = "changedAt";
     private static final String statusField = "status";
 
-    public Slime toSlime(Map<RoutingPolicyId, RoutingPolicy> routingPolicies) {
+    public Slime toSlime(List<RoutingPolicy> routingPolicies) {
         var slime = new Slime();
         var root = slime.setObject();
         var policyArray = root.setArray(routingPoliciesField);
-        routingPolicies.values().forEach(policy -> {
+        routingPolicies.forEach(policy -> {
             var policyObject = policyArray.addObject();
             policyObject.setString(clusterField, policy.id().cluster().value());
             policyObject.setString(zoneField, policy.id().zone().value());
@@ -70,8 +70,8 @@ public class RoutingPolicySerializer {
         return slime;
     }
 
-    public Map<RoutingPolicyId, RoutingPolicy> fromSlime(ApplicationId owner, Slime slime) {
-        var policies = new LinkedHashMap<RoutingPolicyId, RoutingPolicy>();
+    public List<RoutingPolicy> fromSlime(ApplicationId owner, Slime slime) {
+        List<RoutingPolicy> policies = new ArrayList<>();
         var root = slime.get();
         var field = root.field(routingPoliciesField);
         field.traverse((ArrayTraverser) (i, inspect) -> {
@@ -82,15 +82,15 @@ public class RoutingPolicySerializer {
             RoutingPolicyId id = new RoutingPolicyId(owner,
                                                      ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                                      ZoneId.from(inspect.field(zoneField).asString()));
-            policies.put(id, new RoutingPolicy(id,
-                                               HostName.from(inspect.field(canonicalNameField).asString()),
-                                               SlimeUtils.optionalString(inspect.field(dnsZoneField)),
-                                               instanceEndpoints,
-                                               applicationEndpoints,
-                                               new RoutingPolicy.Status(inspect.field(loadBalancerActiveField).asBool(),
-                                                                        globalRoutingFromSlime(inspect.field(globalRoutingField)))));
+            policies.add(new RoutingPolicy(id,
+                                           HostName.from(inspect.field(canonicalNameField).asString()),
+                                           SlimeUtils.optionalString(inspect.field(dnsZoneField)),
+                                           instanceEndpoints,
+                                           applicationEndpoints,
+                                           new RoutingPolicy.Status(inspect.field(loadBalancerActiveField).asBool(),
+                                                                    globalRoutingFromSlime(inspect.field(globalRoutingField)))));
         });
-        return Collections.unmodifiableMap(policies);
+        return Collections.unmodifiableList(policies);
     }
 
     public void globalRoutingToSlime(RoutingStatus routingStatus, Cursor object) {
