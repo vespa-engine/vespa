@@ -139,12 +139,7 @@ jobs:
           cd $WORKDIR/vespa
           export FACTORY_VESPA_VERSION=$VESPA_VERSION
           NUM_THREADS=$(( $(nproc) + 2 ))
-
           time make -C client/go BIN=$WORKDIR/vespa-install/opt/vespa/bin
-          # Otherwise verify-rpm-build fails in find-debuginfo.sh with:
-          # dwz: dwz.c:9899: read_dwarf: Assertion `data != ((void *)0) && data->d_buf != ((void *)0)' failed.
-          strip -g $WORKDIR/vespa-install/opt/vespa/bin/vespa
-
           time ./bootstrap.sh java
           time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS install
           cmake3 -DVESPA_UNPRIVILEGED=no .
