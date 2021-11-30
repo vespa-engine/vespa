@@ -139,9 +139,6 @@ jobs:
           cd $WORKDIR/vespa
           export FACTORY_VESPA_VERSION=$VESPA_VERSION
           NUM_THREADS=$(( $(nproc) + 2 ))
-          git --version
-          which git
-          go version
           time make -C client/go BIN=$WORKDIR/vespa-install/opt/vespa/bin
           time ./bootstrap.sh java
           time mvn -T $NUM_THREADS $VESPA_MAVEN_EXTRA_OPTS install
