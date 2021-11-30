@@ -4,6 +4,7 @@
 namespace vespalib {
 class ISequencedTaskExecutor;
 class ThreadExecutor;
+class InvokeService;
 }
 
 namespace proton {
@@ -38,6 +39,11 @@ public:
      * TODO: Make this a reference when it is always shared.
      */
     virtual vespalib::ISequencedTaskExecutor* field_writer() = 0;
+
+    /**
+     * Returns an InvokeService intended for regular wakeup calls.
+     */
+    virtual vespalib::InvokeService & invokeService() = 0;
 };
 
 }

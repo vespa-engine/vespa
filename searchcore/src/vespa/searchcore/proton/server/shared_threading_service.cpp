@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/invokeserviceimpl.h>
 
 VESPA_THREAD_STACK_TAG(proton_field_writer_executor)
 VESPA_THREAD_STACK_TAG(proton_shared_executor)
@@ -18,7 +19,9 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
     : _warmup(cfg.warmup_threads(), 128_Ki, proton_warmup_executor),
       _shared(std::make_shared<vespalib::BlockingThreadStackExecutor>(cfg.shared_threads(), 128_Ki,
                                                                       cfg.shared_task_limit(), proton_shared_executor)),
-      _field_writer()
+      _field_writer(),
+      _invokeService(5ms),
+      _invokeRegistrations()
 {
     const auto& fw_cfg = cfg.field_writer_config();
     if (fw_cfg.shared_field_writer() == SharedFieldWriterExecutor::DOCUMENT_DB) {
@@ -28,6 +31,11 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
                                                                 fw_cfg.optimize(),
                                                                 fw_cfg.kindOfwatermark(),
                                                                 fw_cfg.reactionTime());
+        if (fw_cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT) {
+            _invokeRegistrations.push_back(_invokeService.registerInvoke([executor = _field_writer.get()]() {
+                executor->wakeup();
+            }));
+        }
     }
 }
 

@@ -5,6 +5,7 @@
 #include "threading_service_config.h"
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/invokeservice.h>
 
 namespace proton {
 
@@ -17,6 +18,7 @@ class ExecutorThreadingServiceStats;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
+    using Registration = std::unique_ptr<vespalib::IDestructorCallback>;
     vespalib::ThreadExecutor                           & _sharedExecutor;
     vespalib::ThreadStackExecutor                        _masterExecutor;
     ThreadingServiceConfig::SharedFieldWriterExecutor    _shared_field_writer;
@@ -32,6 +34,7 @@ private:
     vespalib::ISequencedTaskExecutor*                    _index_field_inverter_ptr;
     vespalib::ISequencedTaskExecutor*                    _index_field_writer_ptr;
     vespalib::ISequencedTaskExecutor*                    _attribute_field_writer_ptr;
+    std::vector<Registration>                            _invokeRegistrations;
 
     void syncOnce();
 public:
@@ -43,6 +46,7 @@ public:
 
     ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor,
                              vespalib::ISequencedTaskExecutor* field_writer,
+                             vespalib::InvokeService * invokeService,
                              const ThreadingServiceConfig& cfg,
                              uint32_t stackSize = 128 * 1024);
     ~ExecutorThreadingService() override;

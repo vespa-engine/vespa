@@ -40,6 +40,7 @@
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/invokeserviceimpl.h>
 #ifdef __linux__
 #include <malloc.h>
 #endif

@@ -39,11 +39,12 @@ VESPA_THREAD_STACK_TAG(field_writer_executor)
 }
 
 ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor, uint32_t num_treads)
-    : ExecutorThreadingService(sharedExecutor, nullptr, ThreadingServiceConfig::make(num_treads))
+    : ExecutorThreadingService(sharedExecutor, nullptr, nullptr, ThreadingServiceConfig::make(num_treads))
 {}
 
 ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor,
                                                    vespalib::ISequencedTaskExecutor* field_writer,
+                                                   vespalib::InvokeService * invokerService,
                                                    const ThreadingServiceConfig& cfg,
                                                    uint32_t stackSize)
 
@@ -61,12 +62,20 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
       _field_writer(),
       _index_field_inverter_ptr(),
       _index_field_writer_ptr(),
-      _attribute_field_writer_ptr()
+      _attribute_field_writer_ptr(),
+      _invokeRegistrations()
 {
+    if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
+        _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_indexExecutor.get()](){ executor->wakeup();}));
+        _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_summaryExecutor.get()](){ executor->wakeup();}));
+    }
     if (_shared_field_writer == SharedFieldWriterExecutor::INDEX) {
         _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 2, cfg.defaultTaskLimit());
         _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
                                                               cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+        if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
+            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](){ executor->wakeup();}));
+        }
         _index_field_inverter_ptr = _field_writer.get();
         _index_field_writer_ptr = _field_writer.get();
         _attribute_field_writer_ptr = _attributeFieldWriter.get();
@@ -74,6 +83,9 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
     } else if (_shared_field_writer == SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE) {
         _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 3, cfg.defaultTaskLimit(),
                                                       cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+        if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
+            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_field_writer.get()](){ executor->wakeup();}));
+        }
         _index_field_inverter_ptr = _field_writer.get();
         _index_field_writer_ptr = _field_writer.get();
         _attribute_field_writer_ptr = _field_writer.get();
@@ -87,6 +99,9 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
         _indexFieldWriter = SequencedTaskExecutor::create(index_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
         _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
                                                               cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+        if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
+            _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](){ executor->wakeup();}));
+        }
         _index_field_inverter_ptr = _indexFieldInverter.get();
         _index_field_writer_ptr = _indexFieldWriter.get();
         _attribute_field_writer_ptr = _attributeFieldWriter.get();
