@@ -82,10 +82,12 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                 applications().put(application.get().with(updatedCluster), lock);
                 if (advice.isPresent() && advice.target().isPresent() && !cluster.get().targetResources().equals(advice.target())) {
                     // 2. Also autoscale
-                    logAutoscaling(advice.target().get(), applicationId, clusterNodes);
+                    ClusterResources before = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository()).advertisedResources();
                     try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
-                        if (deployment.isValid())
+                        if (deployment.isValid()) {
                             deployment.activate();
+                            logAutoscaling(before, advice.target().get(), applicationId, clusterNodes);
+                        }
                     }
                 }
             }
@@ -121,10 +123,9 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         return cluster.with(event.withCompletion(completionTime));
     }
 
-    private void logAutoscaling(ClusterResources target, ApplicationId application, NodeList clusterNodes) {
-        ClusterResources current = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository()).advertisedResources();
-        log.info("Autoscaling " + application + " " + clusterNodes.clusterSpec() + ":" +
-                 "\nfrom " + toString(current) + "\nto   " + toString(target));
+    private void logAutoscaling(ClusterResources from, ClusterResources to, ApplicationId application, NodeList clusterNodes) {
+        log.info("Autoscaled " + application + " " + clusterNodes.clusterSpec() + ":" +
+                 "\nfrom " + toString(from) + "\nto   " + toString(to));
     }
 
     static String toString(ClusterResources r) {
