@@ -22,9 +22,6 @@
     {
       "instance": "instance1",
       "deploying": {
-        "version": "7"
-      },
-      "outstandingChange": {
         "revision": {
           "buildNumber": 1,
           "hash": "1.0.1-commit1",

@@ -358,9 +358,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        ATHENZ_TENANT_DOMAIN_2,
                                        id2.application());
 
-        // Trigger upgrade and then application change
-        deploymentTester.applications().deploymentTrigger().triggerChange(id2, Change.of(Version.fromString("7.0")));
-
         // POST an application package and a test jar, submitting a new application for production deployment.
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
@@ -386,11 +383,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/instance1/environment/prod/region/us-west-1", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"message\":\"Deactivated tenant2.application2.instance1 in prod.us-west-1\"}");
-
-        // GET application having both change and outstanding change
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
-                                      .userIdentity(USER_ID),
-                              new File("application2.json"));
 
         // GET application having both change and outstanding change
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
