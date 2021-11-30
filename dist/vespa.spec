@@ -53,6 +53,7 @@ BuildRequires: python3-pytest
 BuildRequires: devtoolset-10-gcc-c++
 BuildRequires: devtoolset-10-libatomic-devel
 BuildRequires: devtoolset-10-binutils
+BuildRequires: devtoolset-10-dwz
 BuildRequires: rh-maven35
 %define _devtoolset_enable /opt/rh/devtoolset-10/enable
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
