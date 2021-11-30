@@ -5,7 +5,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.CfgConfigPayloadBuilder;
 import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -32,8 +31,8 @@ public class JarConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     private ZipEntry zipEntry = null;
 
     // jar:configs/app.jar!/configs/
-    JarConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, String jarName, String path) {
-        super(key, subscriber);
+    JarConfigSubscription(ConfigKey<T> key, String jarName, String path) {
+        super(key);
         this.jarName = jarName;
         this.path = path;
     }

@@ -34,6 +34,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     private JRTConfigRequester requester;
     private final TimingValues timingValues;
+    private final ConfigSubscriber subscriber;
 
     // Last time we got an OK JRT callback
     private Instant lastOK = Instant.MIN;
@@ -46,8 +47,9 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     private ConfigSourceSet sources;
 
     public JRTConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source, TimingValues timingValues) {
-        super(key, subscriber);
+        super(key);
         this.timingValues = timingValues;
+        this.subscriber = subscriber;
         if (source instanceof ConfigSourceSet) {
             this.sources = (ConfigSourceSet) source;
         }

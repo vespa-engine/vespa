@@ -31,7 +31,6 @@ import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 public abstract class ConfigSubscription<T extends ConfigInstance> {
 
     protected static final Logger log = Logger.getLogger(ConfigSubscription.class.getName());
-    protected final ConfigSubscriber subscriber;
     private final AtomicReference<ConfigState<T>> config = new AtomicReference<>();
     protected final ConfigKey<T> key;
     protected final Class<T> configClass;
@@ -100,12 +99,10 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
      * Initializes one subscription
      *
      * @param key        a {@link ConfigKey}
-     * @param subscriber the subscriber for this subscription
      */
-    ConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber) {
+    ConfigSubscription(ConfigKey<T> key) {
         this.key = key;
         this.configClass = key.getConfigClass();
-        this.subscriber = subscriber;
         this.config.set(new ConfigState<>());
         getConfigState().getChecksums().removeChecksumsOfType(MD5);  // TODO: Temporary until we don't use md5 anymore
     }
@@ -120,17 +117,16 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     public static <T extends ConfigInstance> ConfigSubscription<T> get(ConfigKey<T> key, ConfigSubscriber subscriber,
                                                                        ConfigSource source, TimingValues timingValues) {
         String configId = key.getConfigId();
-        if (source instanceof RawSource || configId.startsWith("raw:")) return getRawSub(key, subscriber, source);
-        if (source instanceof FileSource || configId.startsWith("file:")) return getFileSub(key, subscriber, source);
-        if (source instanceof DirSource || configId.startsWith("dir:")) return getDirFileSub(key, subscriber, source);
-        if (source instanceof JarSource || configId.startsWith("jar:")) return getJarSub(key, subscriber, source);
-        if (source instanceof ConfigSet) return new ConfigSetSubscription<>(key, subscriber, source);
+        if (source instanceof RawSource || configId.startsWith("raw:")) return getRawSub(key, source);
+        if (source instanceof FileSource || configId.startsWith("file:")) return getFileSub(key, source);
+        if (source instanceof DirSource || configId.startsWith("dir:")) return getDirFileSub(key, source);
+        if (source instanceof JarSource || configId.startsWith("jar:")) return getJarSub(key, source);
+        if (source instanceof ConfigSet) return new ConfigSetSubscription<>(key, source);
         if (source instanceof ConfigSourceSet) return new JRTConfigSubscription<>(key, subscriber, source, timingValues);
         throw new IllegalArgumentException("Unknown source type: " + source);
     }
 
-    private static <T extends ConfigInstance> JarConfigSubscription<T> getJarSub(
-            ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source) {
+    private static <T extends ConfigInstance> JarConfigSubscription<T> getJarSub(ConfigKey<T> key, ConfigSource source) {
         String jarName;
         String path = "config/";
         if (source instanceof JarSource) {
@@ -141,29 +137,24 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
             jarName = key.getConfigId().replace("jar:", "").replaceFirst("\\!/.*", "");
             if (key.getConfigId().contains("!/")) path = key.getConfigId().replaceFirst(".*\\!/", "");
         }
-        return new JarConfigSubscription<>(key, subscriber, jarName, path);
+        return new JarConfigSubscription<>(key, jarName, path);
     }
 
-    private static <T extends ConfigInstance> ConfigSubscription<T> getFileSub(
-            ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source) {
+    private static <T extends ConfigInstance> ConfigSubscription<T> getFileSub(ConfigKey<T> key, ConfigSource source) {
         File file = ((source instanceof FileSource))
                 ? ((FileSource) source).getFile()
                 : new File(key.getConfigId().replace("file:", ""));
-        return new FileConfigSubscription<>(key, subscriber, file);
+        return new FileConfigSubscription<>(key, file);
     }
 
-    private static <T extends ConfigInstance> ConfigSubscription<T> getRawSub(ConfigKey<T> key,
-                                                                              ConfigSubscriber subscriber,
-                                                                              ConfigSource source) {
+    private static <T extends ConfigInstance> ConfigSubscription<T> getRawSub(ConfigKey<T> key, ConfigSource source) {
         String payload = ((source instanceof RawSource)
                 ? ((RawSource) source).payload
                 : key.getConfigId().replace("raw:", ""));
-        return new RawConfigSubscription<>(key, subscriber, payload);
+        return new RawConfigSubscription<>(key, payload);
     }
 
-    private static <T extends ConfigInstance> ConfigSubscription<T> getDirFileSub(ConfigKey<T> key,
-                                                                                  ConfigSubscriber subscriber,
-                                                                                  ConfigSource source) {
+    private static <T extends ConfigInstance> ConfigSubscription<T> getDirFileSub(ConfigKey<T> key, ConfigSource source) {
         String dir = key.getConfigId().replace("dir:", "");
         if (source instanceof DirSource) {
             dir = ((DirSource) source).getDir().toString();
@@ -174,7 +165,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         if (!file.exists()) {
             throw new IllegalArgumentException("Could not find a config file for '" + key.getName() + "' in '" + dir + "'");
         }
-        return new FileConfigSubscription<>(key, subscriber, file);
+        return new FileConfigSubscription<>(key, file);
     }
 
     @SuppressWarnings("unchecked")
@@ -182,8 +173,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     public boolean equals(Object o) {
         if (o instanceof ConfigSubscription) {
             ConfigSubscription<T> other = (ConfigSubscription<T>) o;
-            return key.equals(other.key) &&
-                    subscriber.equals(other.subscriber);
+            return key.equals(other.key);
         }
         return false;
     }
@@ -330,10 +320,6 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     }
 
     public boolean isClosed() { return state == State.CLOSED; }
-
-    State getState() {
-        return state;
-    }
 
     /**
      * Returns the file name corresponding to the given key's defName.

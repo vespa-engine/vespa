@@ -4,7 +4,6 @@ package com.yahoo.config.subscription.impl;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigSet;
 import com.yahoo.config.subscription.ConfigSource;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.lang.reflect.Constructor;
@@ -19,8 +18,8 @@ public class ConfigSetSubscription<T extends ConfigInstance> extends ConfigSubsc
     private final ConfigSet set;
     private final ConfigKey<T> subKey;
 
-    ConfigSetSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource cset) {
-        super(key, subscriber);
+    ConfigSetSubscription(ConfigKey<T> key, ConfigSource cset) {
+        super(key);
         if (!(cset instanceof ConfigSet)) throw new IllegalArgumentException("Source is not a ConfigSet: " + cset);
         this.set = (ConfigSet) cset;
         subKey = new ConfigKey<>(configClass, key.getConfigId());
