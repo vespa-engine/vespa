@@ -477,9 +477,10 @@ public class DeploymentSpecXmlReader {
 
     private boolean readActive(Element regionTag) {
         String activeValue = regionTag.getAttribute("active");
+        if ("".equals(activeValue)) return true; // Default to active
         if ("true".equals(activeValue)) return true;
         if ("false".equals(activeValue)) return false;
-        throw new IllegalArgumentException("Region tags must have an 'active' attribute set to 'true' or 'false' " +
+        throw new IllegalArgumentException("Value of 'active' attribute in region tag must be 'true' or 'false' " +
                                            "to control whether this region should receive traffic from the global endpoint of this application");
     }
 
