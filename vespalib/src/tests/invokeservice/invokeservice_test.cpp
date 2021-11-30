@@ -7,6 +7,11 @@ using namespace vespalib;
 struct InvokeCounter {
     InvokeCounter() : _count(0) {}
     void inc() noexcept { _count++; }
+    void wait_for_atleast(uint64_t n) {
+        while (_count <= n) {
+            std::this_thread::sleep_for(1ms);
+        }
+    }
     std::atomic<uint64_t> _count;
 };
 
@@ -27,20 +32,35 @@ TEST("require that wakeup is called") {
 
 TEST("require that same wakeup can be registered multiple times.") {
     InvokeCounter a;
+    InvokeCounter b;
+    InvokeCounter c;
     InvokeServiceImpl service(1ms);
     EXPECT_EQUAL(0u, a._count);
     auto ra1 = service.registerInvoke([&a]() noexcept { a.inc(); });
     EXPECT_TRUE(ra1);
+    auto rb = service.registerInvoke([&b]() noexcept { b.inc(); });
+    EXPECT_TRUE(rb);
+    auto rc = service.registerInvoke([&c]() noexcept { c.inc(); });
+    EXPECT_TRUE(rc);
+    a.wait_for_atleast(1);
+    b.wait_for_atleast(1);
+    c.wait_for_atleast(1);
     auto ra2 = service.registerInvoke([&a]() noexcept { a.inc(); });
-    while (a._count == 0) {
-        std::this_thread::sleep_for(1ms);
-    }
-    ra1.reset();
-    uint64_t countAtStop = a._count;
-    ra2 = service.registerInvoke([&a]() noexcept { a.inc(); });
     EXPECT_TRUE(ra2);
+    a.wait_for_atleast(1);
+    b.wait_for_atleast(1);
+    c.wait_for_atleast(1);
+
+    rb.reset();
+    uint64_t countAtStop = b._count;
+    uint64_t a_count = a._count;
+    uint64_t c_count = c._count;
     std::this_thread::sleep_for(1s);
-    EXPECT_LESS(countAtStop, a._count);
+    EXPECT_EQUAL(countAtStop, b._count);
+
+    uint64_t diff_c = c._count - c_count;
+    uint64_t diff_a = a._count - a_count;
+    EXPECT_LESS((diff_c*3)/2, diff_a); // diff_c*3/2 should still be smaller than diff_a(2x)
 }
 
 

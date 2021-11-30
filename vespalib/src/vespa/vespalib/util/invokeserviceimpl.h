@@ -23,12 +23,13 @@ public:
     std::unique_ptr<IDestructorCallback> registerInvoke(VoidFunc func) override;
 private:
     class Registration;
-    void unregister(VoidFunc func);
+    void unregister(uint64_t id);
     void runLoop();
     duration                       _naptime;
     std::mutex                     _lock;
+    uint64_t                       _currId;
     bool                           _closed;
-    std::vector<VoidFunc>          _toWakeup;
+    std::vector<std::pair<uint64_t, VoidFunc>> _toWakeup;
     std::unique_ptr<std::thread>   _thread;
 };
 
