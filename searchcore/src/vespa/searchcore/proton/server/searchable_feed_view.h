@@ -42,7 +42,7 @@ private:
     void performIndexHeartBeat(SerialNum serialNum);
 
     void internalDeleteBucket(const DeleteBucketOperation &delOp) override;
-    void heartBeatIndexedFields(SerialNum serialNum) override;
+    void heartBeatIndexedFields(SerialNum serialNum, DoneCallback onDone) override;
 
     void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc, OnOperationDoneType onWriteDone) override;
     void updateIndexedFields(SerialNum serialNum, search::DocumentIdT lid, FutureDoc newDoc, OnOperationDoneType onWriteDone) override;
@@ -58,7 +58,7 @@ public:
 
     ~SearchableFeedView() override;
     const IIndexWriter::SP &getIndexWriter() const { return _indexWriter; }
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
 };
 
 } // namespace proton

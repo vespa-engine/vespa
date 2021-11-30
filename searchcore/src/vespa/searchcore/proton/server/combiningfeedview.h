@@ -75,9 +75,9 @@ public:
     void handleDeleteBucket(const DeleteBucketOperation &delOp) override;
     void prepareMove(MoveOperation &putOp) override;
     void handleMove(const MoveOperation &moveOp, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) override;
-    void heartBeat(search::SerialNum serialNum) override;
+    void heartBeat(search::SerialNum serialNum, DoneCallback onDone) override;
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
 
     // Called by document db executor
     void setCalculator(const std::shared_ptr<IBucketStateCalculator> &newCalc);

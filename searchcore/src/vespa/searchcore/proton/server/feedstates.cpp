@@ -102,7 +102,7 @@ public:
     void replay(const CreateBucketOperation &) override {
     }
     void replay(const CompactLidSpaceOperation &op) override {
-        _feed_view_ptr->handleCompactLidSpace(op);
+        _feed_view_ptr->handleCompactLidSpace(op, vespalib::IDestructorCallback::SP());
     }
     NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
         return _config_store;

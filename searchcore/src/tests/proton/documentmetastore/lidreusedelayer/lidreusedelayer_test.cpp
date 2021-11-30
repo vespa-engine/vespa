@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("lidreusedelayer_test");
@@ -136,12 +137,6 @@ public:
     }
 
     template <typename FunctionType>
-    void runInMasterAndSyncAll(FunctionType func) {
-        test::runInMaster(_writeService, func);
-        _writeServiceReal.sync_all_executors();
-    }
-
-    template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
         test::runInMasterAndSync(_writeService, func);
     }
@@ -150,15 +145,9 @@ public:
         _store.removes_complete(lids);
     }
 
-    void performCycleLids(const std::vector<uint32_t> &lids) {
-        _writeService.master().execute(makeLambdaTask([this, lids]() { cycledLids(lids);}));
-    }
+    void performCycleLids(const std::vector<uint32_t> &lids, vespalib::IDestructorCallback::SP onDone);
 
-    void cycleLids(const std::vector<uint32_t> &lids) {
-        if (lids.empty())
-            return;
-        _writeService.index().execute(makeLambdaTask([this, lids]() { performCycleLids(lids);}));
-    }
+    void cycleLids(const std::vector<uint32_t> &lids, vespalib::IDestructorCallback::SP onDone);
 
     void delayReuse(uint32_t lid) {
         runInMasterAndSync([&]() { _lidReuseDelayer->delayReuse(lid); });
@@ -169,9 +158,31 @@ public:
     }
 
     void commit() {
-        runInMasterAndSyncAll([&]() { cycleLids(_lidReuseDelayer->getReuseLids()); });
+        vespalib::Gate gate;
+        test::runInMaster(_writeService, [this, onDone=std::make_shared<vespalib::GateCallback>(gate)]() {
+            cycleLids(_lidReuseDelayer->getReuseLids(), std::move(onDone));
+        });
+        gate.await();
     }
 };
+
+void
+Fixture::cycleLids(const std::vector<uint32_t> &lids, vespalib::IDestructorCallback::SP onDone) {
+    if (lids.empty())
+        return;
+    _writeService.index().execute(makeLambdaTask([this, lids, onDone]() {
+        (void) onDone;
+        performCycleLids(lids, onDone);
+    }));
+}
+
+void
+Fixture::performCycleLids(const std::vector<uint32_t> &lids, vespalib::IDestructorCallback::SP onDone) {
+    _writeService.master().execute(makeLambdaTask([this, lids, onDone]() {
+        (void) onDone;
+        cycledLids(lids);
+    }));
+}
 
 TEST_F("require that nothing happens before free list is active", Fixture)
 {

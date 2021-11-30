@@ -263,11 +263,11 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 }
 
 void
-StoreOnlyFeedView::heartBeatIndexedFields(SerialNum ) {}
+StoreOnlyFeedView::heartBeatIndexedFields(SerialNum, DoneCallback ) {}
 
 
 void
-StoreOnlyFeedView::heartBeatAttributes(SerialNum ) {}
+StoreOnlyFeedView::heartBeatAttributes(SerialNum, DoneCallback ) {}
 
 void
 StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate & upd,
@@ -368,9 +368,10 @@ StoreOnlyFeedView::removeSummaries(SerialNum serialNum, const LidVector & lids, 
 }
 
 void
-StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
+StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum, DoneCallback onDone) {
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, this] {
+            makeLambdaTask([serialNum, this, onDone] {
+                (void) onDone;
                 _summaryAdapter->heartBeat(serialNum);
             }));
 }
@@ -720,14 +721,14 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
 }
 
 void
-StoreOnlyFeedView::heartBeat(SerialNum serialNum)
+StoreOnlyFeedView::heartBeat(SerialNum serialNum, DoneCallback onDone)
 {
     assert(_writeService.master().isCurrentThread());
     _metaStore.removeAllOldGenerations();
     _metaStore.commit(CommitParam(serialNum));
-    heartBeatSummary(serialNum);
-    heartBeatIndexedFields(serialNum);
-    heartBeatAttributes(serialNum);
+    heartBeatSummary(serialNum, onDone);
+    heartBeatIndexedFields(serialNum, onDone);
+    heartBeatAttributes(serialNum, onDone);
 }
 
 // CombiningFeedView calls this only for the removed subdb.
@@ -745,7 +746,7 @@ handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp)
 }
 
 void
-StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
+StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone)
 {
     assert(_params._subDbId == op.getSubDbId());
     const SerialNum serialNum = op.getSerialNum();
@@ -754,7 +755,7 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
         auto commitContext(std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
                                                                 _pendingLidsForCommit->produceSnapshot(),
                                                                 _gidToLidChangeHandler.grab_pending_changes(),
-                                                                DoneCallback()));
+                                                                onDone));
         commitContext->holdUnblockShrinkLidSpace();
         internalForceCommit(CommitParam(serialNum), commitContext);
     }

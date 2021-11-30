@@ -109,7 +109,7 @@ public:
     void update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
                 OnWriteDoneType onWriteDone, IFieldUpdateCallback & onUpdate) override;
     void update(SerialNum serialNum, const Document &doc, DocumentIdT lid, OnWriteDoneType onWriteDone) override;
-    void heartBeat(SerialNum serialNum) override;
+    void heartBeat(SerialNum serialNum, OnWriteDoneType onDone) override;
     void compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum) override;
     const proton::IAttributeManager::SP &getAttributeManager() const override {
         return _mgr;

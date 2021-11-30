@@ -45,7 +45,7 @@ private:
 
     void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone) override;
 
-    void heartBeatAttributes(SerialNum serialNum) override;
+    void heartBeatAttributes(SerialNum serialNum, DoneCallback onDone) override;
 
 protected:
     void internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone) override;
@@ -62,7 +62,7 @@ public:
         return _docIdLimit;
     }
 
-    void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
+    void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
 };
 
 } // namespace proton

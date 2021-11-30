@@ -114,12 +114,12 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
         StoreOnlyFeedView::removeIndexedFields(s, l, onWriteDone);
         ++removeMultiIndexFieldsCount;
     }
-    void heartBeatIndexedFields(SerialNum s) override {
-        StoreOnlyFeedView::heartBeatIndexedFields(s);
+    void heartBeatIndexedFields(SerialNum s, IDestructorCallbackSP onDone) override {
+        StoreOnlyFeedView::heartBeatIndexedFields(s, onDone);
         ++heartBeatIndexedFieldsCount;
     }
-    void heartBeatAttributes(SerialNum s) override {
-        StoreOnlyFeedView::heartBeatAttributes(s);
+    void heartBeatAttributes(SerialNum s, IDestructorCallbackSP onDone) override {
+        StoreOnlyFeedView::heartBeatAttributes(s, onDone);
         ++heartBeatAttributesCount;
     }
 };
@@ -399,7 +399,11 @@ TEST_F("require that heartbeat propagates and commits meta store", Fixture)
     EXPECT_EQUAL(0, f.feedview->heartBeatIndexedFieldsCount);
     EXPECT_EQUAL(0, f.feedview->heartBeatAttributesCount);
     EXPECT_EQUAL(0, f.heartbeatCount);
-    f.runInMasterAndSyncAll([&]() { f.feedview->heartBeat(2); });
+    vespalib::Gate gate;
+    f.runInMaster([&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
+        f.feedview->heartBeat(2, std::move(onDone));
+    });
+    gate.await();
     EXPECT_EQUAL(2u, f.metaStore->getStatus().getLastSyncToken());
     EXPECT_EQUAL(1, f.feedview->heartBeatIndexedFieldsCount);
     EXPECT_EQUAL(1, f.feedview->heartBeatAttributesCount);

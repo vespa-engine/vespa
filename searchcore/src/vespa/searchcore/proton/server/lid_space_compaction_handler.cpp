@@ -93,7 +93,7 @@ void
 LidSpaceCompactionHandler::handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<IDestructorCallback> compact_done_context)
 {
     assert(_subDb.sub_db_id() == op.getSubDbId());
-    _subDb.feed_view()->handleCompactLidSpace(op);
+    _subDb.feed_view()->handleCompactLidSpace(op, compact_done_context);
     _subDb.feed_view()->forceCommit(CommitParam(op.getSerialNum()), std::move(compact_done_context));
 }
 
