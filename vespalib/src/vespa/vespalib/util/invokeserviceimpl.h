@@ -25,7 +25,6 @@ private:
     class Registration;
     void unregister(VoidFunc func);
     void runLoop();
-    static void run(InvokeServiceImpl *);
     duration                       _naptime;
     std::mutex                     _lock;
     bool                           _closed;

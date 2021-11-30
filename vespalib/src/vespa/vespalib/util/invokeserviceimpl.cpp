@@ -47,7 +47,7 @@ InvokeServiceImpl::registerInvoke(VoidFunc func) {
     std::lock_guard guard(_lock);
     _toWakeup.push_back(func);
     if ( ! _thread) {
-        _thread = std::make_unique<std::thread>(InvokeServiceImpl::run, this);
+        _thread = std::make_unique<std::thread>([this]() { runLoop(); });
     }
     return std::make_unique<Registration>(this, func);
 }
@@ -78,11 +78,6 @@ InvokeServiceImpl::runLoop() {
         }
     }
 
-}
-
-void
-InvokeServiceImpl::run(InvokeServiceImpl * service) {
-    service->runLoop();
 }
 
 }
