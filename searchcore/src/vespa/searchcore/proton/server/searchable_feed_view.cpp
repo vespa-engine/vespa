@@ -157,9 +157,9 @@ SearchableFeedView::removeIndexedFields(SerialNum serialNum, const LidVector &li
 }
 
 void
-SearchableFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp)
+SearchableFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone)
 {
-    Parent::internalDeleteBucket(delOp);
+    Parent::internalDeleteBucket(delOp, onDone);
 }
 
 void

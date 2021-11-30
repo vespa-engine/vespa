@@ -41,7 +41,7 @@ private:
     void performIndexRemove(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
     void performIndexHeartBeat(SerialNum serialNum);
 
-    void internalDeleteBucket(const DeleteBucketOperation &delOp) override;
+    void internalDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone) override;
     void heartBeatIndexedFields(SerialNum serialNum, DoneCallback onDone) override;
 
     void putIndexedFields(SerialNum serialNum, search::DocumentIdT lid, const DocumentSP &newDoc, OnOperationDoneType onWriteDone) override;

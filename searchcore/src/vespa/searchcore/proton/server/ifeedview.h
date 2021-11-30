@@ -29,7 +29,8 @@ protected:
     IFeedView() = default;
 public:
     using SP = std::shared_ptr<IFeedView>;
-    using DoneCallback = std::shared_ptr<vespalib::IDestructorCallback>;
+    using DoneCallback = const std::shared_ptr<vespalib::IDestructorCallback> &;
+    using IDestructorCallbackSP = std::shared_ptr<vespalib::IDestructorCallback>;
     using CommitParam = search::CommitParam;
 
     IFeedView(const IFeedView &) = delete;
@@ -55,16 +56,16 @@ public:
     virtual void prepareRemove(RemoveOperation &rmOp) = 0;
     virtual void handleRemove(FeedToken token, const RemoveOperation &rmOp) = 0;
     virtual void prepareDeleteBucket(DeleteBucketOperation &delOp) = 0;
-    virtual void handleDeleteBucket(const DeleteBucketOperation &delOp) = 0;
     virtual void prepareMove(MoveOperation &putOp) = 0;
+    virtual void handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone) = 0;
     virtual void handleMove(const MoveOperation &putOp, DoneCallback onDone) = 0;
     virtual void heartBeat(search::SerialNum serialNum, DoneCallback onDone) = 0;
     virtual void forceCommit(const CommitParam & param, DoneCallback onDone) = 0;
-    void forceCommit(CommitParam param) { forceCommit(param, DoneCallback()); }
+    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation & pruneOp, DoneCallback onDone) = 0;
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) = 0;
+    void forceCommit(CommitParam param) { forceCommit(param, IDestructorCallbackSP()); }
     void forceCommit(search::SerialNum serialNum) { forceCommit(CommitParam(serialNum)); }
     void forceCommitAndWait(CommitParam param);
-    virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation & pruneOp) = 0;
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) = 0;
 };
 
 } // namespace proton
