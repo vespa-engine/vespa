@@ -253,6 +253,7 @@ MergeOperation::deleteSourceOnlyNodes(
             return;
         }
         _removeOperation->setIdealStateManager(_manager);
+        _removeOperation->setPriority(getPriority());
         
         if (_removeOperation->onStartInternal(sender)) {
             _ok = _removeOperation->ok();

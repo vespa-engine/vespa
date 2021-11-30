@@ -68,6 +68,7 @@ MergeOperationTest::setup_simple_merge_op(const std::vector<uint16_t>& nodes)
 
     auto op = std::make_shared<MergeOperation>(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), nodes));
     op->setIdealStateManager(&getIdealStateManager());
+    op->setPriority(api::StorageMessage::Priority(125));
     op->start(_sender, framework::MilliSecTime(0));
     return op;
 }
@@ -601,6 +602,16 @@ TEST_F(MergeOperationTest, unordered_merges_only_sent_iff_config_enabled_and_all
               "cluster state version: 0, nodes: [2, 1], chain: [], "
               "reasons to start: ) => 1",
               _sender.getLastCommand(true));
+}
+
+TEST_F(MergeOperationTest, delete_bucket_inherits_merge_priority) {
+    auto op = setup_simple_merge_op();
+    ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
+    sendReply(*op);
+    ASSERT_NO_FATAL_FAILURE(assert_simple_delete_bucket_command());
+    auto del_cmd = std::dynamic_pointer_cast<api::DeleteBucketCommand>(_sender.commands().back());
+    ASSERT_TRUE(del_cmd);
+    EXPECT_EQ(int(del_cmd->getPriority()), int(op->getPriority()));
 }
 
 } // storage::distributor
