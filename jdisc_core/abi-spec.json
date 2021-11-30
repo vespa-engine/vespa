@@ -1,0 +1,1265 @@
+{
+  "com.yahoo.jdisc.AbstractResource": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.SharedResource"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "protected void <init>()",
+      "public final com.yahoo.jdisc.ResourceReference refer()",
+      "public final com.yahoo.jdisc.ResourceReference refer(java.lang.Object)",
+      "public final void release()",
+      "public final int retainCount()",
+      "protected void destroy()",
+      "public java.lang.String currentState()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.Container": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.SharedResource",
+      "com.yahoo.jdisc.Timer"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.jdisc.handler.RequestHandler resolveHandler(com.yahoo.jdisc.Request)",
+      "public abstract java.lang.Object getInstance(com.google.inject.Key)",
+      "public abstract java.lang.Object getInstance(java.lang.Class)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.HeaderFields": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.Map"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public int size()",
+      "public boolean isEmpty()",
+      "public boolean containsKey(java.lang.Object)",
+      "public boolean containsValue(java.lang.Object)",
+      "public boolean contains(java.lang.String, java.lang.String)",
+      "public boolean containsIgnoreCase(java.lang.String, java.lang.String)",
+      "public void add(java.lang.String, java.lang.String)",
+      "public void add(java.lang.String, java.util.List)",
+      "public void addAll(java.util.Map)",
+      "public java.util.List put(java.lang.String, java.lang.String)",
+      "public java.util.List put(java.lang.String, java.util.List)",
+      "public void putAll(java.util.Map)",
+      "public java.util.List remove(java.lang.Object)",
+      "public boolean remove(java.lang.String, java.lang.String)",
+      "public void clear()",
+      "public java.util.List get(java.lang.Object)",
+      "public java.lang.String getFirst(java.lang.String)",
+      "public boolean isTrue(java.lang.String)",
+      "public java.util.Set keySet()",
+      "public java.util.Collection values()",
+      "public java.util.Set entrySet()",
+      "public java.lang.String toString()",
+      "public java.util.List entries()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic java.lang.Object remove(java.lang.Object)",
+      "public bridge synthetic java.lang.Object put(java.lang.Object, java.lang.Object)",
+      "public bridge synthetic java.lang.Object get(java.lang.Object)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.Metric$Context": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "com.yahoo.jdisc.Metric": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void set(java.lang.String, java.lang.Number, com.yahoo.jdisc.Metric$Context)",
+      "public abstract void add(java.lang.String, java.lang.Number, com.yahoo.jdisc.Metric$Context)",
+      "public abstract com.yahoo.jdisc.Metric$Context createContext(java.util.Map)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.NoopSharedResource": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.SharedResource"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public final com.yahoo.jdisc.ResourceReference refer()",
+      "public final com.yahoo.jdisc.ResourceReference refer(java.lang.Object)",
+      "public final void release()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.ReferencedResource": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.AutoCloseable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.SharedResource, com.yahoo.jdisc.ResourceReference)",
+      "public com.yahoo.jdisc.SharedResource getResource()",
+      "public com.yahoo.jdisc.ResourceReference getReference()",
+      "public void close()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.References": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.jdisc.ResourceReference fromResource(com.yahoo.jdisc.SharedResource)"
+    ],
+    "fields": [
+      "public static final com.yahoo.jdisc.ResourceReference NOOP_REFERENCE"
+    ]
+  },
+  "com.yahoo.jdisc.Request$RequestType": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.jdisc.Request$RequestType[] values()",
+      "public static com.yahoo.jdisc.Request$RequestType valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.jdisc.Request$RequestType READ",
+      "public static final enum com.yahoo.jdisc.Request$RequestType WRITE",
+      "public static final enum com.yahoo.jdisc.Request$RequestType MONITORING"
+    ]
+  },
+  "com.yahoo.jdisc.Request": {
+    "superClass": "com.yahoo.jdisc.AbstractResource",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI)",
+      "public void <init>(com.yahoo.jdisc.service.CurrentContainer, java.net.URI, boolean)",
+      "public void <init>(com.yahoo.jdisc.Request, java.net.URI)",
+      "public com.yahoo.jdisc.Container container()",
+      "public java.net.URI getUri()",
+      "public com.yahoo.jdisc.Request setUri(java.net.URI)",
+      "public boolean isServerRequest()",
+      "public com.yahoo.jdisc.Request setServerRequest(boolean)",
+      "public com.yahoo.jdisc.application.BindingMatch getBindingMatch()",
+      "public com.yahoo.jdisc.Request setBindingMatch(com.yahoo.jdisc.application.BindingMatch)",
+      "public java.util.Map context()",
+      "public com.yahoo.jdisc.HeaderFields headers()",
+      "public void setTimeoutManager(com.yahoo.jdisc.TimeoutManager)",
+      "public com.yahoo.jdisc.TimeoutManager getTimeoutManager()",
+      "public void setTimeout(long, java.util.concurrent.TimeUnit)",
+      "public java.lang.Long getTimeout(java.util.concurrent.TimeUnit)",
+      "public java.lang.Long timeRemaining(java.util.concurrent.TimeUnit)",
+      "public long timeElapsed(java.util.concurrent.TimeUnit)",
+      "public long creationTime(java.util.concurrent.TimeUnit)",
+      "public boolean isCancelled()",
+      "public void cancel()",
+      "public com.yahoo.jdisc.handler.ContentChannel connect(com.yahoo.jdisc.handler.ResponseHandler)",
+      "protected void destroy()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.ResourceReference": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.AutoCloseable"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void close()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.Response$Status": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [],
+    "fields": [
+      "public static final int CONTINUE",
+      "public static final int SWITCHING_PROTOCOLS",
+      "public static final int PROCESSING",
+      "public static final int OK",
+      "public static final int CREATED",
+      "public static final int ACCEPTED",
+      "public static final int NON_AUTHORITATIVE_INFORMATION",
+      "public static final int NO_CONTENT",
+      "public static final int RESET_CONTENT",
+      "public static final int PARTIAL_CONTENT",
+      "public static final int MULTI_STATUS",
+      "public static final int MULTIPLE_CHOICES",
+      "public static final int MOVED_PERMANENTLY",
+      "public static final int FOUND",
+      "public static final int SEE_OTHER",
+      "public static final int NOT_MODIFIED",
+      "public static final int USE_PROXY",
+      "public static final int TEMPORARY_REDIRECT",
+      "public static final int BAD_REQUEST",
+      "public static final int UNAUTHORIZED",
+      "public static final int PAYMENT_REQUIRED",
+      "public static final int FORBIDDEN",
+      "public static final int NOT_FOUND",
+      "public static final int METHOD_NOT_ALLOWED",
+      "public static final int NOT_ACCEPTABLE",
+      "public static final int PROXY_AUTHENTICATION_REQUIRED",
+      "public static final int REQUEST_TIMEOUT",
+      "public static final int CONFLICT",
+      "public static final int GONE",
+      "public static final int LENGTH_REQUIRED",
+      "public static final int PRECONDITION_FAILED",
+      "public static final int REQUEST_TOO_LONG",
+      "public static final int REQUEST_URI_TOO_LONG",
+      "public static final int UNSUPPORTED_MEDIA_TYPE",
+      "public static final int REQUESTED_RANGE_NOT_SATISFIABLE",
+      "public static final int EXPECTATION_FAILED",
+      "public static final int INSUFFICIENT_SPACE_ON_RESOURCE",
+      "public static final int METHOD_FAILURE",
+      "public static final int UNPROCESSABLE_ENTITY",
+      "public static final int LOCKED",
+      "public static final int FAILED_DEPENDENCY",
+      "public static final int TOO_MANY_REQUESTS",
+      "public static final int INTERNAL_SERVER_ERROR",
+      "public static final int NOT_IMPLEMENTED",
+      "public static final int BAD_GATEWAY",
+      "public static final int SERVICE_UNAVAILABLE",
+      "public static final int GATEWAY_TIMEOUT",
+      "public static final int VERSION_NOT_SUPPORTED",
+      "public static final int INSUFFICIENT_STORAGE"
+    ]
+  },
+  "com.yahoo.jdisc.Response": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int)",
+      "public void <init>(int, java.lang.Throwable)",
+      "public java.util.Map context()",
+      "public com.yahoo.jdisc.HeaderFields headers()",
+      "public int getStatus()",
+      "public com.yahoo.jdisc.Response setStatus(int)",
+      "public java.lang.Throwable getError()",
+      "public com.yahoo.jdisc.Response setError(java.lang.Throwable)",
+      "public void setRequestType(com.yahoo.jdisc.Request$RequestType)",
+      "public com.yahoo.jdisc.Request$RequestType getRequestType()",
+      "public static void dispatchTimeout(com.yahoo.jdisc.handler.ResponseHandler)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.SharedResource$Debug": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.jdisc.SharedResource$Debug[] values()",
+      "public static com.yahoo.jdisc.SharedResource$Debug valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.jdisc.SharedResource$Debug NO",
+      "public static final enum com.yahoo.jdisc.SharedResource$Debug SIMPLE",
+      "public static final enum com.yahoo.jdisc.SharedResource$Debug STACK"
+    ]
+  },
+  "com.yahoo.jdisc.SharedResource": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.jdisc.ResourceReference refer()",
+      "public com.yahoo.jdisc.ResourceReference refer(java.lang.Object)",
+      "public abstract void release()"
+    ],
+    "fields": [
+      "public static final java.lang.String SYSTEM_PROPERTY_NAME_DEBUG",
+      "public static final com.yahoo.jdisc.SharedResource$Debug DEBUG"
+    ]
+  },
+  "com.yahoo.jdisc.TimeoutManager": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void scheduleTimeout(com.yahoo.jdisc.Request)",
+      "public void unscheduleTimeout(com.yahoo.jdisc.Request)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.Timer$ClockAdapter": {
+    "superClass": "java.time.Clock",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.time.ZoneId getZone()",
+      "public java.time.Clock withZone(java.time.ZoneId)",
+      "public java.time.Instant instant()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.Timer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract long currentTimeMillis()",
+      "public java.time.Instant currentTime()",
+      "public java.time.Clock toUtcClock()",
+      "public static com.yahoo.jdisc.Timer fromClock(java.time.Clock)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.AbstractRequestHandler": {
+    "superClass": "com.yahoo.jdisc.AbstractResource",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.RequestHandler"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void handleTimeout(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.BindingNotFoundException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.net.URI)",
+      "public java.net.URI uri()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.BlockingContentWriter": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
+      "public void write(java.nio.ByteBuffer)",
+      "public void close()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.BufferedContentChannel": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.ContentChannel"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void connectTo(com.yahoo.jdisc.handler.ContentChannel)",
+      "public boolean isConnected()",
+      "public com.yahoo.jdisc.handler.ReadableContentChannel toReadable()",
+      "public com.yahoo.jdisc.handler.ContentInputStream toStream()",
+      "public void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
+      "public void close(com.yahoo.jdisc.handler.CompletionHandler)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.CallableRequestDispatch": {
+    "superClass": "com.yahoo.jdisc.handler.RequestDispatch",
+    "interfaces": [
+      "java.util.concurrent.Callable"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public final com.yahoo.jdisc.Response call()",
+      "public bridge synthetic java.lang.Object call()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.CallableResponseDispatch": {
+    "superClass": "com.yahoo.jdisc.handler.ResponseDispatch",
+    "interfaces": [
+      "java.util.concurrent.Callable"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.handler.ResponseHandler)",
+      "public final java.lang.Boolean call()",
+      "public bridge synthetic java.lang.Object call()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.CompletionHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void completed()",
+      "public abstract void failed(java.lang.Throwable)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.ContentChannel": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
+      "public abstract void close(com.yahoo.jdisc.handler.CompletionHandler)",
+      "public void onError(java.lang.Throwable)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.ContentInputStream": {
+    "superClass": "com.yahoo.jdisc.handler.UnsafeContentInputStream",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.handler.ReadableContentChannel)",
+      "public void finalize()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.DelegatedRequestHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.RequestHandler"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.jdisc.handler.RequestHandler getDelegate()",
+      "public com.yahoo.jdisc.handler.RequestHandler getDelegateRecursive()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.FastContentOutputStream": {
+    "superClass": "com.yahoo.jdisc.handler.AbstractContentOutputStream",
+    "interfaces": [
+      "com.google.common.util.concurrent.ListenableFuture"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
+      "public void <init>(com.yahoo.jdisc.handler.FastContentWriter)",
+      "protected void doFlush(java.nio.ByteBuffer)",
+      "protected void doClose()",
+      "public boolean cancel(boolean)",
+      "public boolean isCancelled()",
+      "public boolean isDone()",
+      "public java.lang.Boolean get()",
+      "public java.lang.Boolean get(long, java.util.concurrent.TimeUnit)",
+      "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
+      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.FastContentWriter": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.google.common.util.concurrent.ListenableFuture",
+      "java.lang.AutoCloseable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
+      "public void write(java.lang.String)",
+      "public void write(byte[])",
+      "public void write(byte[], int, int)",
+      "public void write(java.nio.ByteBuffer)",
+      "public void close()",
+      "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
+      "public boolean cancel(boolean)",
+      "public boolean isCancelled()",
+      "public boolean isDone()",
+      "public java.lang.Boolean get()",
+      "public java.lang.Boolean get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.FutureCompletion": {
+    "superClass": "com.google.common.util.concurrent.AbstractFuture",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.CompletionHandler"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void completed()",
+      "public void failed(java.lang.Throwable)",
+      "public final boolean cancel(boolean)",
+      "public final boolean isCancelled()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.FutureConjunction": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.google.common.util.concurrent.ListenableFuture"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void addOperand(com.google.common.util.concurrent.ListenableFuture)",
+      "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
+      "public final boolean cancel(boolean)",
+      "public final boolean isCancelled()",
+      "public final boolean isDone()",
+      "public final java.lang.Boolean get()",
+      "public final java.lang.Boolean get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.FutureResponse": {
+    "superClass": "com.google.common.util.concurrent.AbstractFuture",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.ResponseHandler"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
+      "public void <init>(com.yahoo.jdisc.handler.ResponseHandler)",
+      "public com.yahoo.jdisc.handler.ContentChannel handleResponse(com.yahoo.jdisc.Response)",
+      "public final boolean cancel(boolean)",
+      "public final boolean isCancelled()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.NullContent": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.ContentChannel"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
+      "public void close(com.yahoo.jdisc.handler.CompletionHandler)"
+    ],
+    "fields": [
+      "public static final com.yahoo.jdisc.handler.NullContent INSTANCE"
+    ]
+  },
+  "com.yahoo.jdisc.handler.OverloadException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.Throwable)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.ReadableContentChannel": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.ContentChannel",
+      "java.lang.Iterable"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
+      "public void close(com.yahoo.jdisc.handler.CompletionHandler)",
+      "public java.util.Iterator iterator()",
+      "public int available()",
+      "public java.nio.ByteBuffer read()",
+      "public void failed(java.lang.Throwable)",
+      "public com.yahoo.jdisc.handler.ContentInputStream toStream()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.RequestDeniedException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.Request)",
+      "public com.yahoo.jdisc.Request request()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.RequestDispatch": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.google.common.util.concurrent.ListenableFuture",
+      "com.yahoo.jdisc.handler.ResponseHandler"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "protected abstract com.yahoo.jdisc.Request newRequest()",
+      "protected java.lang.Iterable requestContent()",
+      "public final com.yahoo.jdisc.handler.ContentChannel connect()",
+      "public final com.yahoo.jdisc.handler.FastContentWriter connectFastWriter()",
+      "public final com.google.common.util.concurrent.ListenableFuture dispatch()",
+      "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
+      "public final boolean cancel(boolean)",
+      "public final boolean isCancelled()",
+      "public final boolean isDone()",
+      "public final com.yahoo.jdisc.Response get()",
+      "public final com.yahoo.jdisc.Response get(long, java.util.concurrent.TimeUnit)",
+      "public com.yahoo.jdisc.handler.ContentChannel handleResponse(com.yahoo.jdisc.Response)",
+      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.RequestHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.SharedResource"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.jdisc.handler.ContentChannel handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)",
+      "public abstract void handleTimeout(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.ResponseDispatch": {
+    "superClass": "com.google.common.util.concurrent.ForwardingListenableFuture",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "protected abstract com.yahoo.jdisc.Response newResponse()",
+      "protected java.lang.Iterable responseContent()",
+      "public final com.yahoo.jdisc.handler.ContentChannel connect(com.yahoo.jdisc.handler.ResponseHandler)",
+      "public final com.yahoo.jdisc.handler.FastContentWriter connectFastWriter(com.yahoo.jdisc.handler.ResponseHandler)",
+      "public final com.google.common.util.concurrent.ListenableFuture dispatch(com.yahoo.jdisc.handler.ResponseHandler)",
+      "protected final com.google.common.util.concurrent.ListenableFuture delegate()",
+      "public final boolean cancel(boolean)",
+      "public final boolean isCancelled()",
+      "public static varargs com.yahoo.jdisc.handler.ResponseDispatch newInstance(int, java.nio.ByteBuffer[])",
+      "public static com.yahoo.jdisc.handler.ResponseDispatch newInstance(int, java.lang.Iterable)",
+      "public static varargs com.yahoo.jdisc.handler.ResponseDispatch newInstance(com.yahoo.jdisc.Response, java.nio.ByteBuffer[])",
+      "public static com.yahoo.jdisc.handler.ResponseDispatch newInstance(com.yahoo.jdisc.Response, java.lang.Iterable)",
+      "protected bridge synthetic java.util.concurrent.Future delegate()",
+      "protected bridge synthetic java.lang.Object delegate()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.ResponseHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.jdisc.handler.ContentChannel handleResponse(com.yahoo.jdisc.Response)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.ThreadedRequestHandler": {
+    "superClass": "com.yahoo.jdisc.handler.AbstractRequestHandler",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "protected void <init>(java.util.concurrent.Executor)",
+      "public final void setTimeout(long, java.util.concurrent.TimeUnit)",
+      "public final long getTimeout(java.util.concurrent.TimeUnit)",
+      "public final com.yahoo.jdisc.handler.ContentChannel handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)",
+      "protected void handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.BufferedContentChannel, com.yahoo.jdisc.handler.ResponseHandler)",
+      "protected void handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ReadableContentChannel, com.yahoo.jdisc.handler.ResponseHandler)",
+      "protected void handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ContentInputStream, com.yahoo.jdisc.handler.ResponseHandler)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.handler.UnsafeContentInputStream": {
+    "superClass": "java.io.InputStream",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.jdisc.handler.ReadableContentChannel)",
+      "public int read()",
+      "public int read(byte[], int, int)",
+      "public int available()",
+      "public void close()",
+      "public synchronized void mark(int)",
+      "public synchronized void reset()",
+      "public boolean markSupported()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.service.AbstractClientProvider": {
+    "superClass": "com.yahoo.jdisc.handler.AbstractRequestHandler",
+    "interfaces": [
+      "com.yahoo.jdisc.service.ClientProvider"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void start()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.service.AbstractServerProvider": {
+    "superClass": "com.yahoo.jdisc.AbstractResource",
+    "interfaces": [
+      "com.yahoo.jdisc.service.ServerProvider"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "protected void <init>(com.yahoo.jdisc.service.CurrentContainer)",
+      "public final com.yahoo.jdisc.service.CurrentContainer container()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.service.BindingSetNotFoundException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String bindingSet()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.service.ClientProvider": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.RequestHandler"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void start()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.service.ContainerNotReadyException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.service.CurrentContainer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.jdisc.Container newReference(java.net.URI, java.lang.Object)",
+      "public com.yahoo.jdisc.Container newReference(java.net.URI)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.service.NoBindingSetSelectedException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.net.URI)",
+      "public java.net.URI uri()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.service.ServerProvider": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.SharedResource"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void start()",
+      "public abstract void close()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.MockMetric": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.Metric"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void set(java.lang.String, java.lang.Number, com.yahoo.jdisc.Metric$Context)",
+      "public void add(java.lang.String, java.lang.Number, com.yahoo.jdisc.Metric$Context)",
+      "public com.yahoo.jdisc.Metric$Context createContext(java.util.Map)",
+      "public java.util.Map metrics()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.NonWorkingClientProvider": {
+    "superClass": "com.yahoo.jdisc.NoopSharedResource",
+    "interfaces": [
+      "com.yahoo.jdisc.service.ClientProvider"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void start()",
+      "public com.yahoo.jdisc.handler.ContentChannel handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)",
+      "public void handleTimeout(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.NonWorkingCompletionHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.CompletionHandler"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void completed()",
+      "public void failed(java.lang.Throwable)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.NonWorkingContentChannel": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.ContentChannel"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void write(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
+      "public void close(com.yahoo.jdisc.handler.CompletionHandler)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.NonWorkingOsgiFramework": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.application.OsgiFramework"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public java.util.List installBundle(java.lang.String)",
+      "public void startBundles(java.util.List, boolean)",
+      "public void refreshPackages()",
+      "public org.osgi.framework.BundleContext bundleContext()",
+      "public java.util.List bundles()",
+      "public java.util.List getBundles(org.osgi.framework.Bundle)",
+      "public void allowDuplicateBundles(java.util.Collection)",
+      "public void start()",
+      "public void stop()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.NonWorkingRequest": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public static varargs com.yahoo.jdisc.Request newInstance(java.lang.String, com.google.inject.Module[])"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.NonWorkingRequestHandler": {
+    "superClass": "com.yahoo.jdisc.NoopSharedResource",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.RequestHandler"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.jdisc.handler.ContentChannel handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)",
+      "public void handleTimeout(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.NonWorkingResponseHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.ResponseHandler"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.jdisc.handler.ContentChannel handleResponse(com.yahoo.jdisc.Response)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.NonWorkingServerProvider": {
+    "superClass": "com.yahoo.jdisc.NoopSharedResource",
+    "interfaces": [
+      "com.yahoo.jdisc.service.ServerProvider"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void start()",
+      "public void close()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.ServerProviderConformanceTest$Adapter": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.google.inject.Module newConfigModule()",
+      "public abstract java.lang.Class getServerProviderClass()",
+      "public abstract java.lang.Object newClient(com.yahoo.jdisc.service.ServerProvider)",
+      "public abstract java.lang.Object executeRequest(java.lang.Object, boolean)",
+      "public abstract java.lang.Iterable newResponseContent()",
+      "public abstract void validateResponse(java.lang.Object)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.ServerProviderConformanceTest$ConformanceException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.jdisc.test.ServerProviderConformanceTest$Event)",
+      "public java.lang.String getMessage()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.ServerProviderConformanceTest": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public abstract void testContainerNotReadyException()",
+      "public abstract void testBindingSetNotFoundException()",
+      "public abstract void testNoBindingSetSelectedException()",
+      "public abstract void testBindingNotFoundException()",
+      "public abstract void testRequestHandlerWithSyncCloseResponse()",
+      "public abstract void testRequestHandlerWithSyncWriteResponse()",
+      "public abstract void testRequestHandlerWithSyncHandleResponse()",
+      "public abstract void testRequestHandlerWithAsyncHandleResponse()",
+      "public abstract void testRequestException()",
+      "public abstract void testRequestExceptionWithSyncCloseResponse()",
+      "public abstract void testRequestExceptionWithSyncWriteResponse()",
+      "public abstract void testRequestNondeterministicExceptionWithSyncHandleResponse()",
+      "public abstract void testRequestExceptionBeforeResponseWriteWithSyncHandleResponse()",
+      "public abstract void testRequestExceptionAfterResponseWriteWithSyncHandleResponse()",
+      "public abstract void testRequestNondeterministicExceptionWithAsyncHandleResponse()",
+      "public abstract void testRequestExceptionBeforeResponseWriteWithAsyncHandleResponse()",
+      "public abstract void testRequestExceptionAfterResponseCloseNoContentWithAsyncHandleResponse()",
+      "public abstract void testRequestExceptionAfterResponseWriteWithAsyncHandleResponse()",
+      "public abstract void testRequestContentWriteWithSyncCompletion()",
+      "public abstract void testRequestContentWriteWithAsyncCompletion()",
+      "public abstract void testRequestContentWriteWithNondeterministicSyncFailure()",
+      "public abstract void testRequestContentWriteWithSyncFailureBeforeResponseWrite()",
+      "public abstract void testRequestContentWriteWithSyncFailureAfterResponseWrite()",
+      "public abstract void testRequestContentWriteWithNondeterministicAsyncFailure()",
+      "public abstract void testRequestContentWriteWithAsyncFailureBeforeResponseWrite()",
+      "public abstract void testRequestContentWriteWithAsyncFailureAfterResponseWrite()",
+      "public abstract void testRequestContentWriteWithAsyncFailureAfterResponseCloseNoContent()",
+      "public abstract void testRequestContentWriteNondeterministicException()",
+      "public abstract void testRequestContentWriteExceptionBeforeResponseWrite()",
+      "public abstract void testRequestContentWriteExceptionAfterResponseWrite()",
+      "public abstract void testRequestContentWriteExceptionAfterResponseCloseNoContent()",
+      "public abstract void testRequestContentWriteNondeterministicExceptionWithSyncCompletion()",
+      "public abstract void testRequestContentWriteExceptionBeforeResponseWriteWithSyncCompletion()",
+      "public abstract void testRequestContentWriteExceptionAfterResponseWriteWithSyncCompletion()",
+      "public abstract void testRequestContentWriteExceptionAfterResponseCloseNoContentWithSyncCompletion()",
+      "public abstract void testRequestContentWriteNondeterministicExceptionWithAsyncCompletion()",
+      "public abstract void testRequestContentWriteExceptionBeforeResponseWriteWithAsyncCompletion()",
+      "public abstract void testRequestContentWriteExceptionAfterResponseWriteWithAsyncCompletion()",
+      "public abstract void testRequestContentWriteExceptionAfterResponseCloseNoContentWithAsyncCompletion()",
+      "public abstract void testRequestContentWriteExceptionWithNondeterministicSyncFailure()",
+      "public abstract void testRequestContentWriteExceptionWithSyncFailureBeforeResponseWrite()",
+      "public abstract void testRequestContentWriteExceptionWithSyncFailureAfterResponseWrite()",
+      "public abstract void testRequestContentWriteExceptionWithSyncFailureAfterResponseCloseNoContent()",
+      "public abstract void testRequestContentWriteExceptionWithNondeterministicAsyncFailure()",
+      "public abstract void testRequestContentWriteExceptionWithAsyncFailureBeforeResponseWrite()",
+      "public abstract void testRequestContentWriteExceptionWithAsyncFailureAfterResponseWrite()",
+      "public abstract void testRequestContentWriteExceptionWithAsyncFailureAfterResponseCloseNoContent()",
+      "public abstract void testRequestContentCloseWithSyncCompletion()",
+      "public abstract void testRequestContentCloseWithAsyncCompletion()",
+      "public abstract void testRequestContentCloseWithNondeterministicSyncFailure()",
+      "public abstract void testRequestContentCloseWithSyncFailureBeforeResponseWrite()",
+      "public abstract void testRequestContentCloseWithSyncFailureAfterResponseWrite()",
+      "public abstract void testRequestContentCloseWithSyncFailureAfterResponseCloseNoContent()",
+      "public abstract void testRequestContentCloseWithNondeterministicAsyncFailure()",
+      "public abstract void testRequestContentCloseWithAsyncFailureBeforeResponseWrite()",
+      "public abstract void testRequestContentCloseWithAsyncFailureAfterResponseWrite()",
+      "public abstract void testRequestContentCloseWithAsyncFailureAfterResponseCloseNoContent()",
+      "public abstract void testRequestContentCloseNondeterministicException()",
+      "public abstract void testRequestContentCloseExceptionBeforeResponseWrite()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseWrite()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseCloseNoContent()",
+      "public abstract void testRequestContentCloseNondeterministicExceptionWithSyncCompletion()",
+      "public abstract void testRequestContentCloseExceptionBeforeResponseWriteWithSyncCompletion()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseWriteWithSyncCompletion()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseCloseNoContentWithSyncCompletion()",
+      "public abstract void testRequestContentCloseNondeterministicExceptionWithAsyncCompletion()",
+      "public abstract void testRequestContentCloseExceptionBeforeResponseWriteWithAsyncCompletion()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseWriteWithAsyncCompletion()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseCloseNoContentWithAsyncCompletion()",
+      "public abstract void testRequestContentCloseNondeterministicExceptionWithSyncFailure()",
+      "public abstract void testRequestContentCloseExceptionBeforeResponseWriteWithSyncFailure()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseWriteWithSyncFailure()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseCloseNoContentWithSyncFailure()",
+      "public abstract void testRequestContentCloseNondeterministicExceptionWithAsyncFailure()",
+      "public abstract void testRequestContentCloseExceptionBeforeResponseWriteWithAsyncFailure()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseWriteWithAsyncFailure()",
+      "public abstract void testRequestContentCloseExceptionAfterResponseCloseNoContentWithAsyncFailure()",
+      "public abstract void testResponseWriteCompletionException()",
+      "public abstract void testResponseCloseCompletionException()",
+      "public abstract void testResponseCloseCompletionExceptionNoContent()",
+      "protected varargs void runTest(com.yahoo.jdisc.test.ServerProviderConformanceTest$Adapter, com.google.inject.Module[])"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.TestDriver": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.application.ContainerActivator",
+      "com.yahoo.jdisc.service.CurrentContainer"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.jdisc.application.ContainerBuilder newContainerBuilder()",
+      "public com.yahoo.jdisc.application.DeactivatedContainer activateContainer(com.yahoo.jdisc.application.ContainerBuilder)",
+      "public com.yahoo.jdisc.Container newReference(java.net.URI)",
+      "public com.yahoo.jdisc.core.BootstrapLoader bootstrapLoader()",
+      "public com.yahoo.jdisc.application.Application application()",
+      "public com.yahoo.jdisc.application.OsgiFramework osgiFramework()",
+      "public com.yahoo.jdisc.handler.ContentChannel connectRequest(java.lang.String, com.yahoo.jdisc.handler.ResponseHandler)",
+      "public java.util.concurrent.Future dispatchRequest(java.lang.String, com.yahoo.jdisc.handler.ResponseHandler)",
+      "public void scheduleClose()",
+      "public boolean awaitClose(long, java.util.concurrent.TimeUnit)",
+      "public boolean close()",
+      "public com.yahoo.jdisc.handler.RequestDispatch newRequestDispatch(java.lang.String, com.yahoo.jdisc.handler.ResponseHandler)",
+      "public static varargs com.yahoo.jdisc.test.TestDriver newInjectedApplicationInstance(java.lang.Class, com.google.inject.Module[])",
+      "public static varargs com.yahoo.jdisc.test.TestDriver newInjectedApplicationInstanceWithoutOsgi(java.lang.Class, com.google.inject.Module[])",
+      "public static varargs com.yahoo.jdisc.test.TestDriver newInjectedApplicationInstance(com.yahoo.jdisc.application.Application, com.google.inject.Module[])",
+      "public static varargs com.yahoo.jdisc.test.TestDriver newInjectedApplicationInstanceWithoutOsgi(com.yahoo.jdisc.application.Application, com.google.inject.Module[])",
+      "public static varargs com.yahoo.jdisc.test.TestDriver newSimpleApplicationInstance(com.google.inject.Module[])",
+      "public static varargs com.yahoo.jdisc.test.TestDriver newSimpleApplicationInstanceWithoutOsgi(com.google.inject.Module[])",
+      "public static varargs com.yahoo.jdisc.test.TestDriver newApplicationBundleInstance(java.lang.String, boolean, com.google.inject.Module[])",
+      "public static varargs com.yahoo.jdisc.test.TestDriver newInstance(com.yahoo.jdisc.application.OsgiFramework, java.lang.String, boolean, com.google.inject.Module[])",
+      "public static com.yahoo.jdisc.core.FelixFramework newOsgiFramework()",
+      "public static com.yahoo.jdisc.application.OsgiFramework newNonWorkingOsgiFramework()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.test.TestTimer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.Timer"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(java.time.Instant)",
+      "public void setMillis(long)",
+      "public void advanceMillis(long)",
+      "public void advanceSeconds(long)",
+      "public void advanceMinutes(long)",
+      "public void advance(java.time.Duration)",
+      "public java.time.Instant currentTime()",
+      "public long currentTimeMillis()"
+    ],
+    "fields": []
+  }
+}

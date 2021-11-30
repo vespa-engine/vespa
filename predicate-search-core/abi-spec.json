@@ -1,0 +1,309 @@
+{
+  "com.yahoo.document.predicate.BinaryFormat": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static byte[] encode(com.yahoo.document.predicate.Predicate)",
+      "public static com.yahoo.document.predicate.Predicate decode(byte[])"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.BooleanPredicate": {
+    "superClass": "com.yahoo.document.predicate.PredicateValue",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(boolean)",
+      "public boolean getValue()",
+      "public com.yahoo.document.predicate.BooleanPredicate setValue(boolean)",
+      "public com.yahoo.document.predicate.BooleanPredicate clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.Conjunction": {
+    "superClass": "com.yahoo.document.predicate.PredicateOperator",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public varargs void <init>(com.yahoo.document.predicate.Predicate[])",
+      "public void <init>(java.util.List)",
+      "public com.yahoo.document.predicate.Conjunction addOperand(com.yahoo.document.predicate.Predicate)",
+      "public com.yahoo.document.predicate.Conjunction addOperands(java.util.Collection)",
+      "public com.yahoo.document.predicate.Conjunction setOperands(java.util.Collection)",
+      "public java.util.List getOperands()",
+      "public com.yahoo.document.predicate.Conjunction clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.Disjunction": {
+    "superClass": "com.yahoo.document.predicate.PredicateOperator",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public varargs void <init>(com.yahoo.document.predicate.Predicate[])",
+      "public void <init>(java.util.List)",
+      "public com.yahoo.document.predicate.Disjunction addOperand(com.yahoo.document.predicate.Predicate)",
+      "public com.yahoo.document.predicate.Disjunction addOperands(java.util.Collection)",
+      "public com.yahoo.document.predicate.Disjunction setOperands(java.util.Collection)",
+      "public java.util.List getOperands()",
+      "public com.yahoo.document.predicate.Disjunction clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.FeatureConjunction": {
+    "superClass": "com.yahoo.document.predicate.PredicateOperator",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.List)",
+      "public static boolean isValidFeatureConjunctionOperand(com.yahoo.document.predicate.Predicate)",
+      "public java.util.List getOperands()",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "public com.yahoo.document.predicate.FeatureConjunction clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.FeatureRange": {
+    "superClass": "com.yahoo.document.predicate.PredicateValue",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.Long, java.lang.Long)",
+      "public com.yahoo.document.predicate.FeatureRange setKey(java.lang.String)",
+      "public java.lang.String getKey()",
+      "public com.yahoo.document.predicate.FeatureRange setFromInclusive(java.lang.Long)",
+      "public java.lang.Long getFromInclusive()",
+      "public com.yahoo.document.predicate.FeatureRange setToInclusive(java.lang.Long)",
+      "public java.lang.Long getToInclusive()",
+      "public void addPartition(com.yahoo.document.predicate.RangePartition)",
+      "public java.util.List getEdgePartitions()",
+      "public java.util.List getPartitions()",
+      "public void clearPartitions()",
+      "public com.yahoo.document.predicate.FeatureRange clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "public static com.yahoo.document.predicate.FeatureRange buildFromMixedIn(java.lang.String, java.util.List, int)",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.FeatureSet": {
+    "superClass": "com.yahoo.document.predicate.PredicateValue",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public varargs void <init>(java.lang.String, java.lang.String[])",
+      "public void <init>(java.lang.String, java.util.Collection)",
+      "public com.yahoo.document.predicate.FeatureSet setKey(java.lang.String)",
+      "public java.lang.String getKey()",
+      "public com.yahoo.document.predicate.FeatureSet addValue(java.lang.String)",
+      "public com.yahoo.document.predicate.FeatureSet addValues(java.util.Collection)",
+      "public com.yahoo.document.predicate.FeatureSet setValues(java.util.Collection)",
+      "public java.util.Set getValues()",
+      "public com.yahoo.document.predicate.FeatureSet clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "protected void appendNegatedTo(java.lang.StringBuilder)",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.Negation": {
+    "superClass": "com.yahoo.document.predicate.PredicateOperator",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.document.predicate.Predicate)",
+      "public com.yahoo.document.predicate.Negation setOperand(com.yahoo.document.predicate.Predicate)",
+      "public com.yahoo.document.predicate.Predicate getOperand()",
+      "public java.util.List getOperands()",
+      "public com.yahoo.document.predicate.Negation clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.Predicate": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Cloneable"
+    ],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.document.predicate.Predicate clone()",
+      "public final java.lang.String toString()",
+      "protected abstract void appendTo(java.lang.StringBuilder)",
+      "protected static void appendQuotedTo(java.lang.String, java.lang.StringBuilder)",
+      "public static java.lang.String asciiEncode(java.lang.String)",
+      "public static java.lang.String asciiDecode(java.lang.String)",
+      "public static com.yahoo.document.predicate.Predicate fromBinary(byte[])",
+      "public static com.yahoo.document.predicate.Predicate fromString(java.lang.String)",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.PredicateHash": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static long hash64(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.PredicateOperator": {
+    "superClass": "com.yahoo.document.predicate.Predicate",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public abstract java.util.List getOperands()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.Predicates$FeatureBuilder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.document.predicate.FeatureRange lessThan(long)",
+      "public com.yahoo.document.predicate.FeatureRange lessThanOrEqualTo(long)",
+      "public com.yahoo.document.predicate.FeatureRange greaterThan(long)",
+      "public com.yahoo.document.predicate.FeatureRange greaterThanOrEqualTo(long)",
+      "public com.yahoo.document.predicate.FeatureRange inRange(long, long)",
+      "public com.yahoo.document.predicate.Negation notInRange(long, long)",
+      "public varargs com.yahoo.document.predicate.FeatureSet inSet(java.lang.String[])",
+      "public varargs com.yahoo.document.predicate.Negation notInSet(java.lang.String[])"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.Predicates": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static varargs com.yahoo.document.predicate.Conjunction and(com.yahoo.document.predicate.Predicate[])",
+      "public static varargs com.yahoo.document.predicate.Disjunction or(com.yahoo.document.predicate.Predicate[])",
+      "public static com.yahoo.document.predicate.Negation not(com.yahoo.document.predicate.Predicate)",
+      "public static com.yahoo.document.predicate.BooleanPredicate value(boolean)",
+      "public static com.yahoo.document.predicate.Predicates$FeatureBuilder feature(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.RangeEdgePartition": {
+    "superClass": "com.yahoo.document.predicate.RangePartition",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, long, int, int)",
+      "public long getValue()",
+      "public int getLowerBound()",
+      "public int getUpperBound()",
+      "public com.yahoo.document.predicate.RangeEdgePartition clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "public long encodeBounds()",
+      "public bridge synthetic com.yahoo.document.predicate.RangePartition clone()",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.RangePartition": {
+    "superClass": "com.yahoo.document.predicate.PredicateValue",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, long, long, boolean)",
+      "public java.lang.String getLabel()",
+      "public com.yahoo.document.predicate.RangePartition clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "protected void appendTo(java.lang.StringBuilder)",
+      "public bridge synthetic com.yahoo.document.predicate.Predicate clone()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.document.predicate.SimplePredicates": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static com.yahoo.document.predicate.Predicate newPredicate()",
+      "public static com.yahoo.document.predicate.Predicate newString(java.lang.String)",
+      "public static varargs java.util.List newStrings(java.lang.String[])"
+    ],
+    "fields": []
+  }
+}

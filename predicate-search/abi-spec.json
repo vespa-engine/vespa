@@ -1,0 +1,159 @@
+{
+  "com.yahoo.search.predicate.Config$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.search.predicate.Config$Builder setArity(int)",
+      "public com.yahoo.search.predicate.Config$Builder setLowerBound(long)",
+      "public com.yahoo.search.predicate.Config$Builder setUpperBound(long)",
+      "public com.yahoo.search.predicate.Config$Builder setUseConjunctionAlgorithm(boolean)",
+      "public com.yahoo.search.predicate.Config build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.predicate.Config": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void writeToOutputStream(java.io.DataOutputStream)",
+      "public static com.yahoo.search.predicate.Config fromInputStream(java.io.DataInputStream)"
+    ],
+    "fields": [
+      "public final int arity",
+      "public final long lowerBound",
+      "public final long upperBound",
+      "public final boolean useConjunctionAlgorithm"
+    ]
+  },
+  "com.yahoo.search.predicate.Hit": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Comparable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int)",
+      "public void <init>(int, long)",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public int getDocId()",
+      "public long getSubquery()",
+      "public int compareTo(com.yahoo.search.predicate.Hit)",
+      "public bridge synthetic int compareTo(java.lang.Object)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.predicate.PredicateIndex$Searcher": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.util.stream.Stream search(com.yahoo.search.predicate.PredicateQuery)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.predicate.PredicateIndex": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void rebuildPostingListCache()",
+      "public com.yahoo.search.predicate.PredicateIndex$Searcher searcher()",
+      "public void writeToOutputStream(java.io.DataOutputStream)",
+      "public static com.yahoo.search.predicate.PredicateIndex fromInputStream(java.io.DataInputStream)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.predicate.PredicateIndexBuilder$PredicateIndexStats": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.List, com.yahoo.search.predicate.index.SimpleIndex$Builder, com.yahoo.search.predicate.index.SimpleIndex$Builder, com.yahoo.search.predicate.index.PredicateIntervalStore$Builder, com.yahoo.search.predicate.index.conjunction.ConjunctionIndexBuilder, int, int)",
+      "public void putValues(java.util.Map)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.predicate.PredicateIndexBuilder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int)",
+      "public void <init>(int, long, long)",
+      "public void <init>(com.yahoo.search.predicate.Config)",
+      "public void indexDocument(int, com.yahoo.document.predicate.Predicate)",
+      "public com.yahoo.search.predicate.PredicateIndex build()",
+      "public int getZeroConstraintDocCount()",
+      "public com.yahoo.search.predicate.PredicateIndexBuilder$PredicateIndexStats getStats()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.predicate.PredicateQuery$Feature": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String, long)"
+    ],
+    "fields": [
+      "public final java.lang.String key",
+      "public final java.lang.String value",
+      "public final long subqueryBitmap",
+      "public final long featureHash"
+    ]
+  },
+  "com.yahoo.search.predicate.PredicateQuery$RangeFeature": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, long, long)"
+    ],
+    "fields": [
+      "public final java.lang.String key",
+      "public final long value",
+      "public final long subqueryBitmap"
+    ]
+  },
+  "com.yahoo.search.predicate.PredicateQuery": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void addFeature(java.lang.String, java.lang.String)",
+      "public void addFeature(java.lang.String, java.lang.String, long)",
+      "public void addRangeFeature(java.lang.String, long)",
+      "public void addRangeFeature(java.lang.String, long, long)",
+      "public java.util.List getFeatures()",
+      "public java.util.List getRangeFeatures()"
+    ],
+    "fields": []
+  }
+}
