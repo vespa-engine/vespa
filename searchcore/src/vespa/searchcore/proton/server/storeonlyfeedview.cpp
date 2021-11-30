@@ -263,11 +263,11 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 }
 
 void
-StoreOnlyFeedView::heartBeatIndexedFields(SerialNum ) {}
+StoreOnlyFeedView::heartBeatIndexedFields(SerialNum, DoneCallback ) {}
 
 
 void
-StoreOnlyFeedView::heartBeatAttributes(SerialNum ) {}
+StoreOnlyFeedView::heartBeatAttributes(SerialNum, DoneCallback ) {}
 
 void
 StoreOnlyFeedView::updateAttributes(SerialNum, Lid, const DocumentUpdate & upd,
@@ -368,9 +368,10 @@ StoreOnlyFeedView::removeSummaries(SerialNum serialNum, const LidVector & lids, 
 }
 
 void
-StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum) {
+StoreOnlyFeedView::heartBeatSummary(SerialNum serialNum, DoneCallback onDone) {
     summaryExecutor().execute(
-            makeLambdaTask([serialNum, this] {
+            makeLambdaTask([serialNum, this, onDone] {
+                (void) onDone;
                 _summaryAdapter->heartBeat(serialNum);
             }));
 }
@@ -720,14 +721,14 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
 }
 
 void
-StoreOnlyFeedView::heartBeat(SerialNum serialNum)
+StoreOnlyFeedView::heartBeat(SerialNum serialNum, DoneCallback onDone)
 {
     assert(_writeService.master().isCurrentThread());
     _metaStore.removeAllOldGenerations();
     _metaStore.commit(CommitParam(serialNum));
-    heartBeatSummary(serialNum);
-    heartBeatIndexedFields(serialNum);
-    heartBeatAttributes(serialNum);
+    heartBeatSummary(serialNum, onDone);
+    heartBeatIndexedFields(serialNum, onDone);
+    heartBeatAttributes(serialNum, onDone);
 }
 
 // CombiningFeedView calls this only for the removed subdb.

@@ -85,7 +85,7 @@ struct MyFeedView : public test::DummyFeedView
     void handleDeleteBucket(const DeleteBucketOperation &) override { ++_handleDeleteBucket; }
     void prepareMove(MoveOperation &) override { ++_prepareMove; }
     void handleMove(const MoveOperation &, IDestructorCallback::SP) override { ++_handleMove; }
-    void heartBeat(SerialNum) override { ++_heartBeat; }
+    void heartBeat(SerialNum, DoneCallback) override { ++_heartBeat; }
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override { ++_handlePrune; }
     void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback) override {
         _wantedLidLimit = op.getLidLimit();
@@ -371,7 +371,7 @@ TEST_F("require that delete bucket is sent to all feed views", Fixture)
 
 TEST_F("require that heart beat is sent to all feed views", Fixture)
 {
-    f._view.heartBeat(5);
+    f._view.heartBeat(5, IDestructorCallback::SP());
     EXPECT_EQUAL(1u, f._ready._view->_heartBeat);
     EXPECT_EQUAL(1u, f._removed._view->_heartBeat);
     EXPECT_EQUAL(1u, f._notReady._view->_heartBeat);

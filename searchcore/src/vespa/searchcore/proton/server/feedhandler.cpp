@@ -754,7 +754,7 @@ FeedHandler::handleOperation(FeedToken token, FeedOperation::UP op)
 }
 
 void
-FeedHandler::handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx)
+FeedHandler::handleMove(MoveOperation &op, vespalib::IDestructorCallback::SP moveDoneCtx)
 {
     assert(_writeService.master().isCurrentThread());
     op.set_prepare_serial_num(inc_prepare_serial_num());
@@ -771,7 +771,7 @@ FeedHandler::heartBeat()
 {
     assert(_writeService.master().isCurrentThread());
     _heart_beat_time.store(vespalib::steady_clock::now());
-    _activeFeedView->heartBeat(_serialNum);
+    _activeFeedView->heartBeat(_serialNum, vespalib::IDestructorCallback::SP());
 }
 
 FeedHandler::RPC::Result

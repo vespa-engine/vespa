@@ -218,10 +218,10 @@ CombiningFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
 }
 
 void
-CombiningFeedView::heartBeat(search::SerialNum serialNum)
+CombiningFeedView::heartBeat(search::SerialNum serialNum, DoneCallback onDone)
 {
     for (const auto &view : _views) {
-        view->heartBeat(serialNum);
+        view->heartBeat(serialNum, onDone);
     }
 }
 

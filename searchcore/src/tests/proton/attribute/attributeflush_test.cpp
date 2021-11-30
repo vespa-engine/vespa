@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/idestructorcallback.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -568,13 +569,13 @@ Test::requireThatShrinkWorks()
     EXPECT_FALSE(av->canShrinkLidSpace());
     EXPECT_EQUAL(1000u, av->getNumDocs());
     EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
-    aw.heartBeat(51);
+    aw.heartBeat(51, IDestructorCallback::SP());
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_FALSE(av->canShrinkLidSpace());
     EXPECT_EQUAL(ft->getApproxMemoryGain().getBefore(),
                  ft->getApproxMemoryGain().getAfter());
     g.reset();
-    aw.heartBeat(52);
+    aw.heartBeat(52, IDestructorCallback::SP());
     EXPECT_TRUE(av->wantShrinkLidSpace());
     EXPECT_TRUE(av->canShrinkLidSpace());
     EXPECT_TRUE(ft->getApproxMemoryGain().getBefore() >

@@ -367,7 +367,7 @@ struct MyAttributeWriter : public IAttributeWriter
         (void) doc;
         (void) lid;
     }
-    void heartBeat(SerialNum) override { ++_heartBeatCount; }
+    void heartBeat(SerialNum, OnWriteDoneType) override { ++_heartBeatCount; }
     void compactLidSpace(uint32_t wantedLidLimit, SerialNum ) override {
         _wantedLidLimit = wantedLidLimit;
     }
@@ -1053,7 +1053,11 @@ TEST_F("require that removes are not remembered", SearchableFeedViewFixture)
 TEST_F("require that heartbeat propagates to index- and attributeadapter",
        SearchableFeedViewFixture)
 {
-    f.runInMasterAndSyncAll([&]() { f.fv.heartBeat(2); });
+    vespalib::Gate gate;
+    f.runInMaster([&, onDone = std::make_shared<vespalib::GateCallback>(gate)]() {
+        f.fv.heartBeat(2, std::move(onDone));
+    });
+    gate.await();
     EXPECT_EQUAL(1, f.miw._heartBeatCount);
     EXPECT_EQUAL(1, f.maw._heartBeatCount);
 }

@@ -55,9 +55,9 @@ FastAccessFeedView::removeAttributes(SerialNum serialNum, const LidVector &lidsT
 }
 
 void
-FastAccessFeedView::heartBeatAttributes(SerialNum serialNum)
+FastAccessFeedView::heartBeatAttributes(SerialNum serialNum, DoneCallback onDone)
 {
-    _attributeWriter->heartBeat(serialNum);
+    _attributeWriter->heartBeat(serialNum, onDone);
 }
 
 FastAccessFeedView::FastAccessFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params, const Context &ctx)

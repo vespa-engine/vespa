@@ -45,7 +45,7 @@ private:
 
     void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone) override;
 
-    void heartBeatAttributes(SerialNum serialNum) override;
+    void heartBeatAttributes(SerialNum serialNum, DoneCallback onDone) override;
 
 protected:
     void internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone) override;
