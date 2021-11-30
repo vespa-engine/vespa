@@ -2548,6 +2548,55 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_getter_is_non_null_onl
     }
 }
 
+TEST_F(TopLevelBucketDBUpdaterTest, node_feature_sets_are_aggregated_from_nodes_and_propagated_to_stripes) {
+    lib::ClusterState state("distributor:1 storage:3");
+    set_cluster_state(state);
+    uint32_t expected_msgs = message_count(3), dummy_buckets_to_return = 1;
+
+    // Known feature sets are initially empty.
+    auto stripes = distributor_stripes();
+    for (auto* s : stripes) {
+        for (uint16_t i : {0, 1, 2}) {
+            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).unordered_merge_chaining);
+        }
+    }
+
+    ASSERT_EQ(expected_msgs, _sender.commands().size());
+    for (uint32_t i = 0; i < _sender.commands().size(); i++) {
+        ASSERT_NO_FATAL_FAILURE(fake_bucket_reply(state, *_sender.command(i),
+                                                  dummy_buckets_to_return, [i](auto& reply) noexcept {
+            // Pretend nodes 1 and 2 are on a shiny version with unordered merge chaining supported.
+            // Node 0 does not support the fanciness.
+            if (i > 0) {
+                reply.supported_node_features().unordered_merge_chaining = true;
+            }
+        }));
+    }
+
+    // Node features should be propagated to all stripes
+    for (auto* s : stripes) {
+        EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).unordered_merge_chaining);
+        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).unordered_merge_chaining);
+        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).unordered_merge_chaining);
+    }
+}
+
+TEST_F(TopLevelBucketDBUpdaterTest, outdated_bucket_info_reply_is_ignored) {
+    set_cluster_state("version:1 distributor:1 storage:1");
+    ASSERT_EQ(message_count(1), _sender.commands().size());
+    auto req = std::dynamic_pointer_cast<api::RequestBucketInfoCommand>(_sender.commands().front());
+    _sender.clear();
+    // Force a new pending cluster state which overwrites the pending one.
+    lib::ClusterState new_state("version:2 distributor:1 storage:2");
+    set_cluster_state(new_state);
+
+    const api::StorageMessageAddress& address(*req->getAddress());
+    bool handled = bucket_db_updater().onRequestBucketInfoReply(
+            make_fake_bucket_reply(new_state, *req, address.getIndex(), 0, 0));
+    EXPECT_TRUE(handled); // Should be returned as handled even though it's technically ignored.
+}
+
+
 struct BucketDBUpdaterSnapshotTest : TopLevelBucketDBUpdaterTest {
     lib::ClusterState empty_state;
     std::shared_ptr<lib::ClusterState> initial_baseline;
@@ -2676,39 +2725,6 @@ TEST_F(BucketDBUpdaterSnapshotTest, snapshot_is_unroutable_if_stale_reads_disabl
                                                                "version:2 distributor:2 .0.s:d storage:4", 0, 0));
     auto def_rs = stripe_of_bucket(default_bucket).bucket_db_updater().read_snapshot_for_bucket(default_bucket);
     EXPECT_FALSE(def_rs.is_routable());
-}
-
-TEST_F(BucketDBUpdaterSnapshotTest, node_feature_sets_are_aggregated_from_nodes_and_propagated_to_stripes) {
-    lib::ClusterState state("distributor:1 storage:3");
-    set_cluster_state(state);
-    uint32_t expected_msgs = message_count(3), dummy_buckets_to_return = 1;
-
-    // Known feature sets are initially empty.
-    auto stripes = distributor_stripes();
-    for (auto* s : stripes) {
-        for (uint16_t i : {0, 1, 2}) {
-            EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(i).unordered_merge_chaining);
-        }
-    }
-
-    ASSERT_EQ(expected_msgs, _sender.commands().size());
-    for (uint32_t i = 0; i < _sender.commands().size(); i++) {
-        ASSERT_NO_FATAL_FAILURE(fake_bucket_reply(state, *_sender.command(i),
-                                                  dummy_buckets_to_return, [i](auto& reply) noexcept {
-            // Pretend nodes 1 and 2 are on a shiny version with unordered merge chaining supported.
-            // Node 0 does not support the fanciness.
-            if (i > 0) {
-                reply.supported_node_features().unordered_merge_chaining = true;
-            }
-        }));
-    }
-
-    // Node features should be propagated to all stripes
-    for (auto* s : stripes) {
-        EXPECT_FALSE(s->node_supported_features_repo().node_supported_features(0).unordered_merge_chaining);
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(1).unordered_merge_chaining);
-        EXPECT_TRUE(s->node_supported_features_repo().node_supported_features(2).unordered_merge_chaining);
-    }
 }
 
 }

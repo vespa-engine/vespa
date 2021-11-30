@@ -85,7 +85,7 @@ private:
 
     bool should_defer_state_enabling() const noexcept;
     bool has_pending_cluster_state() const;
-    bool pending_cluster_state_accepted(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
+    void attempt_accept_reply_by_current_pending_state(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
     bool is_pending_cluster_state_completed() const;
     void process_completed_pending_cluster_state(StripeAccessGuard& guard);
     void activate_pending_cluster_state(StripeAccessGuard& guard);
