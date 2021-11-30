@@ -659,6 +659,7 @@ struct FixtureBase
             performCompactLidSpace(wantedLidLimit, std::make_shared<GateCallback>(gate));
         });
         gate.await();
+        _writeService.master().sync();
     }
     void assertChangeHandler(document::GlobalId expGid, uint32_t expLid, uint32_t expChanges) {
         _gidToLidChangeHandler->assertChanges(expGid, expLid, expChanges);
@@ -1173,6 +1174,7 @@ TEST_F("require that compactLidSpace() doesn't propagate to "
         f.fv.handleCompactLidSpace(op, std::move(onDone));
     });
     gate.await();
+    f._writeService.master().sync();
     // Delayed holdUnblockShrinkLidSpace() in index thread, then master thread
     EXPECT_TRUE(assertThreadObserver(6, 6, 5, f.writeServiceObserver()));
     EXPECT_EQUAL(0u, f.metaStoreObserver()._compactLidSpaceLidLimit);
