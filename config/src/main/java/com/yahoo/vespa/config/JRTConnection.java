@@ -53,7 +53,6 @@ public class JRTConnection implements Connection {
         if (target == null || !target.isValid()) {
             logger.log(Level.INFO, "Connecting to " + address);
             target = supervisor.connect(new Spec(address));
-            logger.log(Level.FINE, "Connected to " + address);
         }
         return target;
     }
