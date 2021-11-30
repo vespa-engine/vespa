@@ -31,7 +31,11 @@ ConfigSubscription::nextUpdate(int64_t generation, std::chrono::milliseconds tim
     if (_closed || !_holder->poll()) {
         return false;
     }
+    auto old = std::move(_next);
     _next = _holder->provide();
+    if (old) {
+        _next->merge(*old);
+    }
     if (isGenerationNewer(_next->getGeneration(), generation)) {
         return true;
     }
@@ -98,7 +102,7 @@ ConfigSubscription::flip()
         _current = std::move(_next);
         _lastGenerationChanged = _current->getGeneration();
     } else {
-        _current.reset(new ConfigUpdate(_current->getValue(), false, _next->getGeneration()));
+        _current = std::make_unique<ConfigUpdate>(_current->getValue(), false, _next->getGeneration());
     }
     _isChanged = change;
 }

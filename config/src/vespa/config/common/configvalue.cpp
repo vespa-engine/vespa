@@ -55,7 +55,7 @@ ConfigValue::getLegacyFormat() const
     return lines;
 }
 
-const vespalib::string
+vespalib::string
 ConfigValue::asJson() const {
     if (_payload) {
         const vespalib::slime::Inspector & payload(_payload->getSlimePayload());
