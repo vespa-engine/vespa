@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
@@ -56,7 +55,7 @@ public class AutoscalingIntegrationTest {
         ClusterResources max = new ClusterResources(2, 1, nodes);
 
         Application application = tester.nodeRepository().applications().get(application1).orElse(Application.empty(application1))
-                                        .withCluster(cluster1.id(), false, Capacity.from(min, max));
+                                        .withCluster(cluster1.id(), false, min, max);
         try (Mutex lock = tester.nodeRepository().nodes().lock(application1)) {
             tester.nodeRepository().applications().put(application, lock);
         }

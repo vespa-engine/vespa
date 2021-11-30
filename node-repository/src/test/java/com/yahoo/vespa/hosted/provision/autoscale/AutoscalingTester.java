@@ -48,15 +48,11 @@ class AutoscalingTester {
 
     /** Creates an autoscaling tester with a single host type ready */
     public AutoscalingTester(NodeResources hostResources) {
-        this(Environment.prod, hostResources);
+        this(hostResources, null);
     }
 
-    public AutoscalingTester(Environment environment, NodeResources hostResources) {
-        this(environment, hostResources, null);
-    }
-
-    public AutoscalingTester(Environment environment, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
-        this(new Zone(environment, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
+    public AutoscalingTester(NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
+        this(new Zone(Environment.prod, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
         provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
@@ -255,7 +251,6 @@ class AutoscalingTester {
                               cluster.exclusive(),
                               cluster.minResources(),
                               cluster.maxResources(),
-                              cluster.required(),
                               cluster.suggestedResources(),
                               cluster.targetResources(),
                               List.of(), // Remove scaling events
@@ -300,9 +295,10 @@ class AutoscalingTester {
         ((MemoryMetricsDb)nodeMetricsDb()).clearClusterMetrics(application, cluster);
     }
 
-    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId, Capacity capacity) {
+    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
+                                       ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
-                                                  .withCluster(clusterId, false, capacity);
+                                                  .withCluster(clusterId, false, min, max);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
@@ -313,7 +309,7 @@ class AutoscalingTester {
     public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                      ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
-                                                  .withCluster(clusterId, false, Capacity.from(min, max));
+                                                  .withCluster(clusterId, false, min, max);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }

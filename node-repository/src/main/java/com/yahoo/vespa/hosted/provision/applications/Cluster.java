@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.applications;
 
-import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
@@ -26,7 +25,6 @@ public class Cluster {
     private final ClusterSpec.Id id;
     private final boolean exclusive;
     private final ClusterResources min, max;
-    private boolean required;
     private final Optional<Suggestion> suggested;
     private final Optional<ClusterResources> target;
 
@@ -38,7 +36,6 @@ public class Cluster {
                    boolean exclusive,
                    ClusterResources minResources,
                    ClusterResources maxResources,
-                   boolean required,
                    Optional<Suggestion> suggestedResources,
                    Optional<ClusterResources> targetResources,
                    List<ScalingEvent> scalingEvents,
@@ -47,7 +44,6 @@ public class Cluster {
         this.exclusive = exclusive;
         this.min = Objects.requireNonNull(minResources);
         this.max = Objects.requireNonNull(maxResources);
-        this.required = required;
         this.suggested = Objects.requireNonNull(suggestedResources);
         Objects.requireNonNull(targetResources);
         if (targetResources.isPresent() && ! targetResources.get().isWithin(minResources, maxResources))
@@ -60,20 +56,14 @@ public class Cluster {
 
     public ClusterSpec.Id id() { return id; }
 
-    /** Returns whether the nodes allocated to this cluster must be on host exclusively dedicated to this application */
-    public boolean exclusive() { return exclusive; }
-
     /** Returns the configured minimal resources in this cluster */
     public ClusterResources minResources() { return min; }
 
     /** Returns the configured maximal resources in this cluster */
     public ClusterResources maxResources() { return max; }
 
-    /**
-     * Returns whether the resources of this cluster are required to be within the specified min and max.
-     * Otherwise they may be adjusted by capacity policies.
-     */
-    public boolean required() { return required; }
+    /** Returns whether the nodes allocated to this cluster must be on host exclusively dedicated to this application */
+    public boolean exclusive() { return exclusive; }
 
     /**
      * Returns the computed resources (between min and max, inclusive) this cluster should
@@ -107,18 +97,16 @@ public class Cluster {
     /** The latest autoscaling status of this cluster, or unknown (never null) if none */
     public AutoscalingStatus autoscalingStatus() { return autoscalingStatus; }
 
-    public Cluster withConfiguration(boolean exclusive, Capacity capacity) {
-        return new Cluster(id, exclusive,
-                           capacity.minResources(), capacity.maxResources(), capacity.isRequired(),
-                           suggested, target, scalingEvents, autoscalingStatus);
+    public Cluster withConfiguration(boolean exclusive, ClusterResources min, ClusterResources max) {
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     public Cluster withSuggested(Optional<Suggestion> suggested) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     public Cluster withTarget(Optional<ClusterResources> target) {
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     /** Add or update (based on "at" time) a scaling event */
@@ -132,12 +120,12 @@ public class Cluster {
             scalingEvents.add(scalingEvent);
 
         prune(scalingEvents);
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     public Cluster with(AutoscalingStatus autoscalingStatus) {
         if (autoscalingStatus.equals(this.autoscalingStatus)) return this;
-        return new Cluster(id, exclusive, min, max, required, suggested, target, scalingEvents, autoscalingStatus);
+        return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
     @Override
@@ -166,11 +154,6 @@ public class Cluster {
                 return i;
         }
         return -1;
-    }
-
-    public static Cluster create(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
-        return new Cluster(id, exclusive, requested.minResources(), requested.maxResources(), requested.isRequired(),
-                           Optional.empty(), Optional.empty(), List.of(), AutoscalingStatus.empty());
     }
 
     public static class Suggestion {

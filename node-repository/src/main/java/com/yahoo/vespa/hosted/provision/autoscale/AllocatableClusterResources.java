@@ -8,7 +8,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.List;
@@ -55,14 +54,14 @@ public class AllocatableClusterResources {
 
     public AllocatableClusterResources(ClusterResources realResources,
                                        NodeResources advertisedResources,
-                                       ClusterResources idealResources,
+                                       NodeResources idealResources,
                                        ClusterSpec clusterSpec) {
         this.nodes = realResources.nodes();
         this.groups = realResources.groups();
         this.realResources = realResources.nodeResources();
         this.advertisedResources = advertisedResources;
         this.clusterSpec = clusterSpec;
-        this.fulfilment = fulfilment(realResources, idealResources);
+        this.fulfilment = fulfilment(realResources.nodeResources(), idealResources);
     }
 
     /**
@@ -100,10 +99,10 @@ public class AllocatableClusterResources {
      */
     public double fulfilment() { return fulfilment; }
 
-    private static double fulfilment(ClusterResources realResources, ClusterResources idealResources) {
-        double vcpuFulfilment     = Math.min(1, realResources.totalResources().vcpu()     / idealResources.totalResources().vcpu());
-        double memoryGbFulfilment = Math.min(1, realResources.totalResources().memoryGb() / idealResources.totalResources().memoryGb());
-        double diskGbFulfilment   = Math.min(1, realResources.totalResources().diskGb()   / idealResources.totalResources().diskGb());
+    private static double fulfilment(NodeResources realResources, NodeResources idealResources) {
+        double vcpuFulfilment     = Math.min(1, realResources.vcpu()     / idealResources.vcpu());
+        double memoryGbFulfilment = Math.min(1, realResources.memoryGb() / idealResources.memoryGb());
+        double diskGbFulfilment   = Math.min(1, realResources.diskGb()   / idealResources.diskGb());
         return (vcpuFulfilment + memoryGbFulfilment + diskGbFulfilment) / 3;
     }
 
@@ -139,25 +138,21 @@ public class AllocatableClusterResources {
     public static Optional<AllocatableClusterResources> from(ClusterResources wantedResources,
                                                              ClusterSpec clusterSpec,
                                                              Limits applicationLimits,
-                                                             boolean required,
                                                              NodeList hosts,
                                                              NodeRepository nodeRepository) {
-        var capacityPolicies = new CapacityPolicies(nodeRepository);
         var systemLimits = new NodeResourceLimits(nodeRepository);
         boolean exclusive = clusterSpec.isExclusive();
-        int actualNodes = capacityPolicies.decideSize(wantedResources.nodes(), required, true, false, clusterSpec);
         if ( !clusterSpec.isExclusive() && !nodeRepository.zone().getCloud().dynamicProvisioning()) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
             advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec.type(), exclusive); // Ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
-            advertisedResources = capacityPolicies.decideNodeResources(advertisedResources, required, clusterSpec); // Adjust to what we can request
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) return Optional.empty();
             if (matchesAny(hosts, advertisedResources))
-                    return Optional.of(new AllocatableClusterResources(wantedResources.withNodes(actualNodes).with(realResources),
+                    return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
                                                                        advertisedResources,
-                                                                       wantedResources,
+                                                                       wantedResources.nodeResources(),
                                                                        clusterSpec));
             else
                 return Optional.empty();
@@ -168,7 +163,6 @@ public class AllocatableClusterResources {
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
                 NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
-                advertisedResources = capacityPolicies.decideNodeResources(advertisedResources, required, clusterSpec); // Adjust to what we can get
                 NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive);
 
                 // Adjust where we don't need exact match to the flavor
@@ -184,9 +178,9 @@ public class AllocatableClusterResources {
 
                 if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
                 if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) continue;
-                var candidate = new AllocatableClusterResources(wantedResources.withNodes(actualNodes).with(realResources),
+                var candidate = new AllocatableClusterResources(wantedResources.with(realResources),
                                                                 advertisedResources,
-                                                                wantedResources,
+                                                                wantedResources.nodeResources(),
                                                                 clusterSpec);
                 if (best.isEmpty() || candidate.preferableTo(best.get()))
                     best = Optional.of(candidate);
