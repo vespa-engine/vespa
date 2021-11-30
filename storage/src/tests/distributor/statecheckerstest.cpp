@@ -858,7 +858,7 @@ TEST_F(StateCheckersTest, delete_extra_copies) {
 
     EXPECT_EQ("[Removing all copies since bucket is empty:node(idx=0,crc=0x0,"
               "docs=0/0,bytes=0/0,trusted=false,active=false,ready=false)]"
-              " (pri 100)",
+              " (pri 120)",
               testDeleteExtraCopies("0=0", 2, PendingMessage(), "", true)) << "Remove empty buckets";
 
     EXPECT_EQ("[Removing redundant in-sync copy from node 2]",

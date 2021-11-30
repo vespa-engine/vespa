@@ -103,7 +103,7 @@ priority_activate_no_existing_active int default=100
 priority_activate_with_existing_active int default=100
 
 ## Deletion of bucket copy.
-priority_delete_bucket_copy int default=100
+priority_delete_bucket_copy int default=120
 
 ## Joining caused by bucket siblings getting sufficiently small to fit into a
 ## single bucket.
