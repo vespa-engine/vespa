@@ -240,13 +240,13 @@ public class DeploymentContext {
     public DeploymentContext addInactiveRoutingPolicy(ZoneId zone) {
         var clusterId = "default-inactive";
         var id = new RoutingPolicyId(instanceId, ClusterSpec.Id.from(clusterId), zone);
-        var policies = new LinkedHashMap<>(tester.controller().curator().readRoutingPolicies(instanceId));
+        var policies = new LinkedHashMap<>(tester.controller().routing().policies().read(instanceId).asMap());
         policies.put(id, new RoutingPolicy(id, HostName.from("lb-host"),
                                            Optional.empty(),
                                            Set.of(EndpointId.of("default")),
                                            Set.of(),
                                            new RoutingPolicy.Status(false, RoutingStatus.DEFAULT)));
-        tester.controller().curator().writeRoutingPolicies(instanceId, policies);
+        tester.controller().curator().writeRoutingPolicies(instanceId, List.copyOf(policies.values()));
         return this;
     }
 

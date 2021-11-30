@@ -41,7 +41,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -124,22 +123,33 @@ public class RoutingPoliciesTest {
         context2.submit(applicationPackage3).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context2.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
 
+        // A deployment of app2 is removed
+        var applicationPackage4 = applicationPackageBuilder()
+                .region(zone1.region())
+                .endpoint("r0", "c0")
+                .allow(ValidationId.globalEndpointChange)
+                .allow(ValidationId.deploymentRemoval)
+                .build();
+        context2.submit(applicationPackage4).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        tester.assertTargets(context2.instanceId(), EndpointId.of("r0"), 0, zone1);
+        assertEquals(1, tester.policiesOf(context2.instanceId()).size());
+
         // All endpoints for app1 are removed
-        ApplicationPackage applicationPackage4 = applicationPackageBuilder()
+        ApplicationPackage applicationPackage5 = applicationPackageBuilder()
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
                 .allow(ValidationId.globalEndpointChange)
                 .build();
-        context1.submit(applicationPackage4).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
+        context1.submit(applicationPackage5).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
         tester.assertTargets(context1.instanceId(), EndpointId.of("r0"), 0);
         tester.assertTargets(context1.instanceId(), EndpointId.of("r1"), 0);
         tester.assertTargets(context1.instanceId(), EndpointId.of("r2"), 0);
         var policies = tester.policiesOf(context1.instanceId());
         assertEquals(clustersPerZone * numberOfDeployments, policies.size());
         assertTrue("Rotation membership is removed from all policies",
-                   policies.stream().allMatch(policy -> policy.instanceEndpoints().isEmpty()));
-        assertEquals("Rotations for " + context2.application() + " are not removed", 2, tester.aliasDataOf(endpoint4).size());
+                   policies.asList().stream().allMatch(policy -> policy.instanceEndpoints().isEmpty()));
+        assertEquals("Rotations for " + context2.application() + " are not removed", 1, tester.aliasDataOf(endpoint4).size());
     }
 
     @Test
@@ -306,8 +316,8 @@ public class RoutingPoliciesTest {
                 "c1.app1.tenant1.us-central-1.vespa.oath.cloud"
         );
         assertEquals(expectedRecords, tester.recordNames());
-        assertTrue("Removes stale routing policies " + context2.application(), tester.routingPolicies().get(context2.instanceId()).isEmpty());
-        assertEquals("Keeps routing policies for " + context1.application(), 4, tester.routingPolicies().get(context1.instanceId()).size());
+        assertTrue("Removes stale routing policies " + context2.application(), tester.routingPolicies().read(context2.instanceId()).isEmpty());
+        assertEquals("Keeps routing policies for " + context1.application(), 4, tester.routingPolicies().read(context1.instanceId()).size());
     }
 
     @Test
@@ -490,13 +500,13 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone2);
 
         // Status details is stored in policy
-        var policy1 = tester.routingPolicies().get(context.deploymentIdIn(zone1)).values().iterator().next();
+        var policy1 = tester.routingPolicies().read(context.deploymentIdIn(zone1)).first().get();
         assertEquals(RoutingStatus.Value.out, policy1.status().routingStatus().value());
         assertEquals(RoutingStatus.Agent.tenant, policy1.status().routingStatus().agent());
         assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().routingStatus().changedAt());
 
         // Other zone remains in
-        var policy2 = tester.routingPolicies().get(context.deploymentIdIn(zone2)).values().iterator().next();
+        var policy2 = tester.routingPolicies().read(context.deploymentIdIn(zone2)).first().get();
         assertEquals(RoutingStatus.Value.in, policy2.status().routingStatus().value());
         assertEquals(RoutingStatus.Agent.system, policy2.status().routingStatus().agent());
         assertEquals(Instant.EPOCH, policy2.status().routingStatus().changedAt());
@@ -515,7 +525,7 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
         tester.assertTargets(context.instanceId(), EndpointId.of("r1"), 0, zone1, zone2);
 
-        policy1 = tester.routingPolicies().get(context.deploymentIdIn(zone1)).values().iterator().next();
+        policy1 = tester.routingPolicies().read(context.deploymentIdIn(zone1)).first().get();
         assertEquals(RoutingStatus.Value.in, policy1.status().routingStatus().value());
         assertEquals(RoutingStatus.Agent.tenant, policy1.status().routingStatus().agent());
         assertEquals(changedAt.truncatedTo(ChronoUnit.MILLIS), policy1.status().routingStatus().changedAt());
@@ -568,9 +578,9 @@ public class RoutingPoliciesTest {
         tester.assertTargets(context1.instanceId(), EndpointId.defaultId(), 0, zone1);
         tester.assertTargets(context2.instanceId(), EndpointId.defaultId(), 0, zone1);
         for (var context : contexts) {
-            var policies = tester.routingPolicies().get(context.instanceId());
+            var policies = tester.routingPolicies().read(context.instanceId());
             assertTrue("Global routing status for policy remains " + RoutingStatus.Value.in,
-                       policies.values().stream()
+                       policies.asList().stream()
                                .map(RoutingPolicy::status)
                                .map(RoutingPolicy.Status::routingStatus)
                                .map(RoutingStatus::value)
@@ -668,7 +678,7 @@ public class RoutingPoliciesTest {
         // Setting zone (containing active deployment) out puts all deployments in
         tester.routingPolicies().setRoutingStatus(zone1, RoutingStatus.Value.out);
         context.flushDnsUpdates();
-        assertEquals(RoutingStatus.Value.out, tester.routingPolicies().get(zone1).routingStatus().value());
+        assertEquals(RoutingStatus.Value.out, tester.routingPolicies().read(zone1).routingStatus().value());
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, ImmutableMap.of(zone1, 0L, zone2, 0L));
 
         // Setting zone back in removes the currently inactive deployment
@@ -680,7 +690,7 @@ public class RoutingPoliciesTest {
         tester.routingPolicies().setRoutingStatus(context.deploymentIdIn(zone2), RoutingStatus.Value.in,
                                                   RoutingStatus.Agent.tenant);
         context.flushDnsUpdates();
-        for (var policy : tester.routingPolicies().get(context.instanceId()).values()) {
+        for (var policy : tester.routingPolicies().read(context.instanceId())) {
             assertSame(RoutingStatus.Value.in, policy.status().routingStatus().value());
         }
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
@@ -693,7 +703,7 @@ public class RoutingPoliciesTest {
         RecordName name = RecordName.from("cfg.prod.us-west-1.test.vip");
 
         tester.provisionLoadBalancers(1, app, zone1);
-        tester.routingPolicies().refresh(app, DeploymentSpec.empty, zone1);
+        tester.routingPolicies().refresh(new DeploymentId(app, zone1), DeploymentSpec.empty);
         new NameServiceDispatcher(tester.tester.controller(), Duration.ofSeconds(Integer.MAX_VALUE)).run();
 
         List<Record> records = tester.controllerTester().nameService().findRecords(Record.Type.CNAME, name);
@@ -931,8 +941,8 @@ public class RoutingPoliciesTest {
             provisionLoadBalancers(clustersPerZone, application, false, zones);
         }
 
-        private Collection<RoutingPolicy> policiesOf(ApplicationId instance) {
-            return tester.controller().curator().readRoutingPolicies(instance).values();
+        private RoutingPolicyList policiesOf(ApplicationId instance) {
+            return tester.controller().routing().policies().read(instance);
         }
 
         private Set<String> recordNames() {

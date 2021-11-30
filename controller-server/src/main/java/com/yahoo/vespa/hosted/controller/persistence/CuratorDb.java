@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
@@ -27,11 +28,9 @@ import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntrySerializer;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
-import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
-import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
-import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -514,15 +513,21 @@ public class CuratorDb {
 
     // -------------- Routing policies ----------------------------------------
 
-    public void writeRoutingPolicies(ApplicationId application, Map<RoutingPolicyId, RoutingPolicy> policies) {
+    public void writeRoutingPolicies(ApplicationId application, List<RoutingPolicy> policies) {
+        for (var policy : policies) {
+            if (!policy.id().owner().equals(application)) {
+                throw new IllegalArgumentException(policy.id() + " does not belong to the application being written: " +
+                                                   application.toShortString());
+            }
+        }
         curator.set(routingPolicyPath(application), asJson(routingPolicySerializer.toSlime(policies)));
     }
 
-    public Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> readRoutingPolicies() {
+    public Map<ApplicationId, List<RoutingPolicy>> readRoutingPolicies() {
         return readRoutingPolicies((instance) -> true);
     }
 
-    public Map<ApplicationId, Map<RoutingPolicyId, RoutingPolicy>> readRoutingPolicies(Predicate<ApplicationId> filter) {
+    public Map<ApplicationId, List<RoutingPolicy>> readRoutingPolicies(Predicate<ApplicationId> filter) {
         return curator.getChildren(routingPoliciesRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
                       .filter(filter)
@@ -530,9 +535,9 @@ public class CuratorDb {
                                                             this::readRoutingPolicies));
     }
 
-    public Map<RoutingPolicyId, RoutingPolicy> readRoutingPolicies(ApplicationId application) {
+    public List<RoutingPolicy> readRoutingPolicies(ApplicationId application) {
         return readSlime(routingPolicyPath(application)).map(slime -> routingPolicySerializer.fromSlime(application, slime))
-                                                        .orElseGet(Map::of);
+                                                        .orElseGet(List::of);
     }
 
     public void writeZoneRoutingPolicy(ZoneRoutingPolicy policy) {

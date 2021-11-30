@@ -118,7 +118,7 @@ public class RoutingController {
         // Avoid reading application more than once per call to this
         Supplier<DeploymentSpec> deploymentSpec = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())).deploymentSpec());
         // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
-        for (var policy : routingPolicies.get(deployment).values()) {
+        for (var policy : routingPolicies.read(deployment)) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
                 if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, deploymentSpec.get())) continue;
