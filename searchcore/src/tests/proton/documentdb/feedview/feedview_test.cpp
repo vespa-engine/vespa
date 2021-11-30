@@ -651,7 +651,7 @@ struct FixtureBase
         auto &fv = getFeedView();
         CompactLidSpaceOperation op(0, wantedLidLimit);
         op.setSerialNum(++serial);
-        fv.handleCompactLidSpace(op, std::move(onDone));
+        fv.handleCompactLidSpace(op, onDone);
     }
     void compactLidSpaceAndWait(uint32_t wantedLidLimit) {
         Gate gate;
