@@ -104,7 +104,10 @@ manpages: install
 	$(BIN)/vespa man $(SHARE)/man/man1
 
 clean:
-	rm -rf $(BIN) $(SHARE) $(DIST)
+	rm -rf $(DIST)
+	rm -f $(BIN)/vespa $(SHARE)/man/man1/vespa.1 $(SHARE)/man/man1/vespa-*.1
+	rmdir -p $(BIN) &> /dev/null || true
+	rmdir -p $(SHARE)/man/man1 &> /dev/null || true
 
 test:
 	go test ./...
