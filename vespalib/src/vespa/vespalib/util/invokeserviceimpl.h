@@ -29,7 +29,7 @@ private:
     std::mutex                     _lock;
     uint64_t                       _currId;
     bool                           _closed;
-    std::vector<std::pair<uint64_t, VoidFunc>> _toWakeup;
+    std::vector<std::pair<uint64_t, VoidFunc>> _toInvoke;
     std::unique_ptr<std::thread>   _thread;
 };
 

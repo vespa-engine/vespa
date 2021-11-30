@@ -21,9 +21,7 @@ TEST("require that wakeup is called") {
     EXPECT_EQUAL(0u, a._count);
     auto ra = service.registerInvoke([&a]() noexcept { a.inc(); });
     EXPECT_TRUE(ra);
-    while (a._count == 0) {
-        std::this_thread::sleep_for(1ms);
-    }
+    a.wait_for_atleast(1);
     ra.reset();
     uint64_t countAtStop = a._count;
     std::this_thread::sleep_for(1s);
@@ -47,9 +45,6 @@ TEST("require that same wakeup can be registered multiple times.") {
     c.wait_for_atleast(1);
     auto ra2 = service.registerInvoke([&a]() noexcept { a.inc(); });
     EXPECT_TRUE(ra2);
-    a.wait_for_atleast(1);
-    b.wait_for_atleast(1);
-    c.wait_for_atleast(1);
 
     rb.reset();
     uint64_t countAtStop = b._count;
