@@ -30,6 +30,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     generationholder.cpp
     hdr_abort.cpp
     host_name.cpp
+    invokeserviceimpl.cpp
     issue.cpp
     joinable.cpp
     latch.cpp
@@ -69,7 +70,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     time.cpp
     unwind_message.cpp
     valgrind.cpp
-        invokeserviceimpl.cpp
     zstdcompressor.cpp
     DEPENDS
 )
