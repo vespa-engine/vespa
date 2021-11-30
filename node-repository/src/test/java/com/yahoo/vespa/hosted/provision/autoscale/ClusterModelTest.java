@@ -2,12 +2,12 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.applications.AutoscalingStatus;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.Status;
 import org.junit.Test;
@@ -15,7 +15,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.IntFunction;
 
 import static org.junit.Assert.assertEquals;
@@ -73,14 +72,9 @@ public class ClusterModelTest {
     }
 
     private Cluster cluster(NodeResources resources) {
-        return new Cluster(ClusterSpec.Id.from("test"),
-                          false,
-                           new ClusterResources(5, 1, resources),
-                           new ClusterResources(5, 1, resources),
-                           Optional.empty(),
-                           Optional.empty(),
-                           List.of(),
-                           AutoscalingStatus.empty());
+        return Cluster.create(ClusterSpec.Id.from("test"),
+                              false,
+                              Capacity.from(new ClusterResources(5, 1, resources)));
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
