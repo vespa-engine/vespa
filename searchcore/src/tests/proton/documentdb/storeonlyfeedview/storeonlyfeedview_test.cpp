@@ -114,11 +114,11 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
         StoreOnlyFeedView::removeIndexedFields(s, l, onWriteDone);
         ++removeMultiIndexFieldsCount;
     }
-    void heartBeatIndexedFields(SerialNum s, IDestructorCallbackSP onDone) override {
+    void heartBeatIndexedFields(SerialNum s, DoneCallback onDone) override {
         StoreOnlyFeedView::heartBeatIndexedFields(s, onDone);
         ++heartBeatIndexedFieldsCount;
     }
-    void heartBeatAttributes(SerialNum s, IDestructorCallbackSP onDone) override {
+    void heartBeatAttributes(SerialNum s, DoneCallback onDone) override {
         StoreOnlyFeedView::heartBeatAttributes(s, onDone);
         ++heartBeatAttributesCount;
     }
@@ -383,7 +383,11 @@ TEST_F("require that prune removed documents removes documents",
     PruneRemovedDocumentsOperation op(lids->getDocIdLimit(), subdb_id);
     op.setLidsToRemove(lids);
     op.setSerialNum(1);  // allows use of meta store.
-    f.runInMasterAndSyncAll([&]() { f.feedview->handlePruneRemovedDocuments(op); });
+    vespalib::Gate gate;
+    f.runInMaster([&, onDone=std::make_shared<vespalib::GateCallback>(gate)]() {
+        f.feedview->handlePruneRemovedDocuments(op, std::move(onDone));
+    });
+    gate.await();
 
     EXPECT_EQUAL(2, f.removeCount);
     EXPECT_FALSE(f.metaStore->validLid(1));

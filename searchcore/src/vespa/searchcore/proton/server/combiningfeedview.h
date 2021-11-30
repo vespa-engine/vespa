@@ -72,11 +72,11 @@ public:
     void prepareRemove(RemoveOperation &rmOp) override;
     void handleRemove(FeedToken token, const RemoveOperation &rmOp) override;
     void prepareDeleteBucket(DeleteBucketOperation &delOp) override;
-    void handleDeleteBucket(const DeleteBucketOperation &delOp) override;
     void prepareMove(MoveOperation &putOp) override;
-    void handleMove(const MoveOperation &moveOp, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) override;
+    void handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone) override;
+    void handleMove(const MoveOperation &moveOp, DoneCallback onDone) override;
     void heartBeat(search::SerialNum serialNum, DoneCallback onDone) override;
-    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp) override;
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, DoneCallback onDone) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op, DoneCallback onDone) override;
 
     // Called by document db executor

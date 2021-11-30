@@ -16,7 +16,6 @@
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
-#include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -180,7 +179,7 @@ StoreOnlyFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
     internalForceCommit(param, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
                                                                     _pendingLidsForCommit->produceSnapshot(),
                                                                     _gidToLidChangeHandler.grab_pending_changes(),
-                                                                    std::move(onDone)));
+                                                                    onDone));
 }
 
 void
@@ -615,7 +614,7 @@ void
 StoreOnlyFeedView::removeIndexedFields(SerialNum , const LidVector &, OnWriteDoneType ) {}
 
 size_t
-StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attributes)
+StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remove_index_and_attributes, DoneCallback onWriteDone)
 {
     const SerialNum serialNum = op.getSerialNum();
     const LidVectorContext::SP &ctx = op.getLidsToRemove(_params._subDbId);
@@ -632,10 +631,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
         _lidReuseDelayer.delayReuse(lidsToRemove);
     }
-    std::shared_ptr<vespalib::IDestructorCallback> onWriteDone;
-    vespalib::Executor::Task::UP removeBatchDoneTask;
-    removeBatchDoneTask = makeLambdaTask([]() {});
-    onWriteDone = std::make_shared<search::ScheduleTaskCallback>(_writeService.master(), std::move(removeBatchDoneTask));
+
     if (remove_index_and_attributes) {
         removeIndexedFields(serialNum, lidsToRemove, onWriteDone);
         removeAttributes(serialNum, lidsToRemove, onWriteDone);
@@ -661,15 +657,15 @@ StoreOnlyFeedView::prepareDeleteBucket(DeleteBucketOperation &delOp)
 }
 
 void
-StoreOnlyFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp)
+StoreOnlyFeedView::handleDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone)
 {
-    internalDeleteBucket(delOp);
+    internalDeleteBucket(delOp, onDone);
 }
 
 void
-StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp)
+StoreOnlyFeedView::internalDeleteBucket(const DeleteBucketOperation &delOp, DoneCallback onDone)
 {
-    size_t rm_count = removeDocuments(delOp, true);
+    size_t rm_count = removeDocuments(delOp, true, onDone);
     LOG(debug, "internalDeleteBucket(): docType(%s), bucket(%s), lidsToRemove(%zu)",
         _params._docTypeName.toString().c_str(), delOp.getBucketId().toString().c_str(), rm_count);
 }
@@ -687,7 +683,7 @@ StoreOnlyFeedView::prepareMove(MoveOperation &moveOp)
 
 // CombiningFeedView calls this for both source and target subdb.
 void
-StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::SP doneCtx)
+StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, DoneCallback doneCtx)
 {
     assert(moveOp.getValidDbdId());
     assert(moveOp.getValidPrevDbdId());
@@ -716,7 +712,7 @@ StoreOnlyFeedView::handleMove(const MoveOperation &moveOp, IDestructorCallback::
         putIndexedFields(serialNum, moveOp.getLid(), doc, onWriteDone);
     }
     if (docAlreadyExists && moveOp.changedDbdId()) {
-        internalRemove(std::move(doneCtx), _pendingLidsForCommit->produce(moveOp.getPrevLid()), serialNum, moveOp.getPrevLid());
+        internalRemove(doneCtx, _pendingLidsForCommit->produce(moveOp.getPrevLid()), serialNum, moveOp.getPrevLid());
     }
 }
 
@@ -734,11 +730,11 @@ StoreOnlyFeedView::heartBeat(SerialNum serialNum, DoneCallback onDone)
 // CombiningFeedView calls this only for the removed subdb.
 void
 StoreOnlyFeedView::
-handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp)
+handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &pruneOp, DoneCallback onDone)
 {
     assert(_params._subDbType == SubDbType::REMOVED);
     assert(pruneOp.getSubDbId() == _params._subDbId);
-    uint32_t rm_count = removeDocuments(pruneOp, false);
+    uint32_t rm_count = removeDocuments(pruneOp, false, onDone);
 
     LOG(debug, "MinimalFeedView::handlePruneRemovedDocuments called, doctype(%s) %u lids pruned, limit %u",
         _params._docTypeName.toString().c_str(), rm_count,

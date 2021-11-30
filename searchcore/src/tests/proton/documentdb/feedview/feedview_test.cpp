@@ -515,11 +515,6 @@ struct FixtureBase
     }
 
     template <typename FunctionType>
-    void runInMasterAndSyncAll(FunctionType func) {
-        test::runInMaster(_writeService, func);
-        _writeServiceReal.sync_all_executors();
-    }
-    template <typename FunctionType>
     void runInMaster(FunctionType func) {
         test::runInMaster(_writeService, func);
     }
@@ -617,10 +612,10 @@ struct FixtureBase
         gate.await();
     }
 
-    void performDeleteBucket(DeleteBucketOperation &op) {
+    void performDeleteBucket(DeleteBucketOperation &op, IDestructorCallback::SP onDone) {
         getFeedView().prepareDeleteBucket(op);
         op.setSerialNum(++serial);
-        getFeedView().handleDeleteBucket(op);
+        getFeedView().handleDeleteBucket(op, onDone);
     }
 
     void performForceCommit(IDestructorCallback::SP onDone) {
@@ -656,7 +651,7 @@ struct FixtureBase
         auto &fv = getFeedView();
         CompactLidSpaceOperation op(0, wantedLidLimit);
         op.setSerialNum(++serial);
-        fv.handleCompactLidSpace(op, std::move(onDone));
+        fv.handleCompactLidSpace(op, onDone);
     }
     void compactLidSpaceAndWait(uint32_t wantedLidLimit) {
         Gate gate;
@@ -950,7 +945,11 @@ TEST_F("require that handleDeleteBucket() removes documents", SearchableFeedView
 
     // delete bucket for user 1
     DeleteBucketOperation op(docs[0].bid);
-    f.runInMasterAndSyncAll([&]() { f.performDeleteBucket(op); });
+    vespalib::Gate gate;
+    f.runInMaster([&, onDone=std::make_shared<GateCallback>(gate)]() {
+        f.performDeleteBucket(op, std::move(onDone));
+    });
+    gate.await();
     f.dms_commit();
 
     EXPECT_EQUAL(0u, f.getBucketDB()->get(docs[0].bid).getDocumentCount());

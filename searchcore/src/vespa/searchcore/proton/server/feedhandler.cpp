@@ -281,7 +281,7 @@ FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op) {
     _activeFeedView->prepareDeleteBucket(op);
     appendOperation(op, token);
     // Delete documents in bucket
-    _activeFeedView->handleDeleteBucket(op);
+    _activeFeedView->handleDeleteBucket(op, token);
     // Delete bucket itself, should no longer have documents.
     _bucketDBHandler->handleDeleteBucket(op.getBucketId());
 
@@ -375,7 +375,9 @@ FeedHandler::changeFeedState(FeedStateSP newState)
     if (_writeService.master().isCurrentThread()) {
         doChangeFeedState(std::move(newState));
     } else {
-        _writeService.master().execute(makeLambdaTask([this, newState=std::move(newState)] () { doChangeFeedState(std::move(newState));}));
+        _writeService.master().execute(makeLambdaTask([this, newState=std::move(newState)] () {
+            doChangeFeedState(std::move(newState));
+        }));
         _writeService.master().sync();
     }
 }
@@ -793,13 +795,13 @@ FeedHandler::eof()
 }
 
 void
-FeedHandler::
-performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp)
+FeedHandler::performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp)
 {
     const LidVectorContext::SP lids_to_remove = pruneOp.getLidsToRemove();
+    vespalib::IDestructorCallback::SP onDone;
     if (lids_to_remove && lids_to_remove->getNumLids() != 0) {
-        appendOperation(pruneOp, DoneCallback());
-        _activeFeedView->handlePruneRemovedDocuments(pruneOp);
+        appendOperation(pruneOp, onDone);
+        _activeFeedView->handlePruneRemovedDocuments(pruneOp, onDone);
     }
 }
 

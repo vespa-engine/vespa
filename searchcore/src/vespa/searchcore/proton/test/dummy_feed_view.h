@@ -25,11 +25,11 @@ struct DummyFeedView : public IFeedView
     void prepareRemove(RemoveOperation &) override {}
     void handleRemove(FeedToken, const RemoveOperation &) override {}
     void prepareDeleteBucket(DeleteBucketOperation &) override {}
-    void handleDeleteBucket(const DeleteBucketOperation &) override {}
+    void handleDeleteBucket(const DeleteBucketOperation &, DoneCallback) override {}
     void prepareMove(MoveOperation &) override {}
-    void handleMove(const MoveOperation &, std::shared_ptr<vespalib::IDestructorCallback>) override {}
+    void handleMove(const MoveOperation &, DoneCallback) override {}
     void heartBeat(search::SerialNum, DoneCallback) override {}
-    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &) override {}
+    void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &, DoneCallback) override {}
     void handleCompactLidSpace(const CompactLidSpaceOperation &, DoneCallback) override {}
     void forceCommit(const CommitParam &, DoneCallback) override { }
 };

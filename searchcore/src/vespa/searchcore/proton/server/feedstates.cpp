@@ -20,6 +20,7 @@ using search::transactionlog::client::RPC;
 using search::SerialNum;
 using vespalib::Executor;
 using vespalib::makeLambdaTask;
+using vespalib::IDestructorCallback;
 using vespalib::make_string;
 using proton::bucketdb::IBucketDBHandler;
 
@@ -83,7 +84,7 @@ public:
     }
 
     void replay(const DeleteBucketOperation &op) override {
-        _feed_view_ptr->handleDeleteBucket(op);
+        _feed_view_ptr->handleDeleteBucket(op, IDestructorCallback::SP());
     }
     void replay(const SplitBucketOperation &op) override {
         _bucketDBHandler.handleSplit(op.getSerialNum(), op.getSource(),
@@ -94,15 +95,15 @@ public:
                                     op.getSource2(), op.getTarget());
     }
     void replay(const PruneRemovedDocumentsOperation &op) override {
-        _feed_view_ptr->handlePruneRemovedDocuments(op);
+        _feed_view_ptr->handlePruneRemovedDocuments(op, IDestructorCallback::SP());
     }
     void replay(const MoveOperation &op) override {
-        _feed_view_ptr->handleMove(op, vespalib::IDestructorCallback::SP());
+        _feed_view_ptr->handleMove(op, IDestructorCallback::SP());
     }
     void replay(const CreateBucketOperation &) override {
     }
     void replay(const CompactLidSpaceOperation &op) override {
-        _feed_view_ptr->handleCompactLidSpace(op, vespalib::IDestructorCallback::SP());
+        _feed_view_ptr->handleCompactLidSpace(op, IDestructorCallback::SP());
     }
     NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
         return _config_store;
