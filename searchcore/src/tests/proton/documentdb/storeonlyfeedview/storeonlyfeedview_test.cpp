@@ -241,11 +241,6 @@ struct FixtureBase {
     }
 
     template <typename FunctionType>
-    void runInMasterAndSyncAll(FunctionType func) {
-        test::runInMaster(writeService, func);
-        writeService.sync_all_executors();
-    }
-    template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
         test::runInMasterAndSync(writeService, func);
     }
@@ -288,6 +283,18 @@ struct MoveFixture : public FixtureBase<MoveOperationFeedView> {
         feedview->clearWriteDoneContexts();
         EXPECT_EQUAL(0, outstandingMoveOps);
     }
+
+    void handleMove(const MoveOperation & op) {
+        auto ctx = beginMoveOp();
+        runInMasterAndSync([&, ctx]() {
+            feedview->handleMove(op, std::move(ctx));
+        });
+        while (ctx.use_count() > 2) {
+            LOG(info, "use_count = %ld", ctx.use_count());
+            std::this_thread::sleep_for(1s);
+        }
+        ctx.reset();
+    }
 };
 
 TEST_F("require that prepareMove sets target db document id", Fixture)
@@ -323,7 +330,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
         MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id + 1, 1), subdb_id);
         TEST_DO(f.assertPutCount(0));
         f.runInMasterAndSync([&]() { f.feedview->prepareMove(*op); });
-        f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+        f.handleMove(*op);
         TEST_DO(f.assertPutCount(1));
         TEST_DO(f.assertAndClearMoveOp());
         lid = op->getDbDocumentId().getLid();
@@ -335,7 +342,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
         MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id, 1), subdb_id + 1);
         op->setDbDocumentId(DbDocumentId(subdb_id + 1, 1));
         TEST_DO(f.assertRemoveCount(0));
-        f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+        f.handleMove(*op);
         EXPECT_FALSE(f.metaStore->validLid(lid));
         TEST_DO(f.assertRemoveCount(1));
         TEST_DO(f.assertAndClearMoveOp());
@@ -363,7 +370,7 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
     op->setTargetLid(1);
     TEST_DO(f.assertPutCount(0));
     TEST_DO(f.assertRemoveCount(0));
-    f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+    f.handleMove(*op);
     TEST_DO(f.assertPutCount(1));
     TEST_DO(f.assertRemoveCount(1));
     TEST_DO(f.assertAndClearMoveOp());
