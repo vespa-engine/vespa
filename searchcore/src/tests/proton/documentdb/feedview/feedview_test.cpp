@@ -621,9 +621,16 @@ struct FixtureBase
         getFeedView().handleDeleteBucket(op);
     }
 
-    void performForceCommit() { getFeedView().forceCommit(serial); }
+    void performForceCommit(vespalib::IDestructorCallback::SP onDone) {
+        getFeedView().forceCommit(serial, std::move(onDone));
+    }
     void forceCommitAndWait() {
-        runInMasterAndSyncAll([&]() { performForceCommit(); });
+        vespalib::Gate gate;
+        runInMaster([this, onDone=std::make_shared<vespalib::GateCallback>(gate)]() {
+            performForceCommit(std::move(onDone));
+        });
+        gate.await();
+        _writeService.master().sync();
     }
 
     bool assertTrace(const vespalib::string &exp) {
@@ -715,8 +722,7 @@ struct SearchableFeedViewFixture : public FixtureBase
            SearchableFeedView::Context(iw))
     {
     }
-    ~SearchableFeedViewFixture() override
-    {
+    ~SearchableFeedViewFixture() override {
         forceCommitAndWait();
     }
     IFeedView &getFeedView() override { return fv; }
@@ -733,8 +739,7 @@ struct FastAccessFeedViewFixture : public FixtureBase
            FastAccessFeedView::Context(aw, _docIdLimit))
     {
     }
-    ~FastAccessFeedViewFixture() override
-    {
+    ~FastAccessFeedViewFixture() override {
         forceCommitAndWait();
     }
     IFeedView &getFeedView() override { return fv; }
