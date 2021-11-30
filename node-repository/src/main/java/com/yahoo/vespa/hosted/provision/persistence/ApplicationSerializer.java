@@ -48,6 +48,7 @@ public class ApplicationSerializer {
     private static final String exclusiveKey = "exclusive";
     private static final String minResourcesKey = "min";
     private static final String maxResourcesKey = "max";
+    private static final String requiredKey = "required";
     private static final String suggestedKey = "suggested";
     private static final String resourcesKey = "resources";
     private static final String targetResourcesKey = "target";
@@ -99,7 +100,6 @@ public class ApplicationSerializer {
     }
 
     private static Status statusFromSlime(Inspector statusObject) {
-        if ( ! statusObject.valid()) return Status.initial(); // TODO: Remove this line after March 2021
         return new Status(statusObject.field(currentReadShareKey).asDouble(),
                           statusObject.field(maxReadShareKey).asDouble());
     }
@@ -118,6 +118,7 @@ public class ApplicationSerializer {
         clusterObject.setBool(exclusiveKey, cluster.exclusive());
         toSlime(cluster.minResources(), clusterObject.setObject(minResourcesKey));
         toSlime(cluster.maxResources(), clusterObject.setObject(maxResourcesKey));
+        clusterObject.setBool(requiredKey, cluster.required());
         cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject(suggestedKey)));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject(targetResourcesKey)));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray(scalingEventsKey));
@@ -130,6 +131,7 @@ public class ApplicationSerializer {
                            clusterObject.field(exclusiveKey).asBool(),
                            clusterResourcesFromSlime(clusterObject.field(minResourcesKey)),
                            clusterResourcesFromSlime(clusterObject.field(maxResourcesKey)),
+                           clusterObject.field(requiredKey).asBool(),
                            optionalSuggestionFromSlime(clusterObject.field(suggestedKey)),
                            optionalClusterResourcesFromSlime(clusterObject.field(targetResourcesKey)),
                            scalingEventsFromSlime(clusterObject.field(scalingEventsKey)),
