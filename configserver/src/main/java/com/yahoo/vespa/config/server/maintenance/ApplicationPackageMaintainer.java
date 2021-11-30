@@ -43,6 +43,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     private final ApplicationRepository applicationRepository;
     private final File downloadDirectory;
     private final ConfigserverConfig configserverConfig;
+    private final Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
     private final FileDownloader fileDownloader;
 
     ApplicationPackageMaintainer(ApplicationRepository applicationRepository,
@@ -54,7 +55,10 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         this.configserverConfig = applicationRepository.configserverConfig();
         this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
         boolean useFileDistributionConnectionPool = Flags.USE_FILE_DISTRIBUTION_CONNECTION_POOL.bindTo(flagSource).value();
-        this.fileDownloader = createFileDownloader(configserverConfig, useFileDistributionConnectionPool, downloadDirectory);
+        this.fileDownloader = createFileDownloader(configserverConfig,
+                                                   useFileDistributionConnectionPool,
+                                                   downloadDirectory,
+                                                   supervisor);
     }
 
     @Override
@@ -95,8 +99,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     private static FileDownloader createFileDownloader(ConfigserverConfig configserverConfig,
                                                        boolean useFileDistributionConnectionPool,
-                                                       File downloadDirectory) {
-        Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
+                                                       File downloadDirectory,
+                                                       Supervisor supervisor) {
         List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(configserverConfig);
         ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
 
@@ -112,6 +116,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     @Override
     public void awaitShutdown() {
+        supervisor.transport().shutdown().join();
         fileDownloader.close();
         super.awaitShutdown();
     }
