@@ -66,7 +66,7 @@ public abstract class Session implements Comparable<Session>  {
 
     @Override
     public String toString() {
-        return "Session,id=" + sessionId;
+        return "Session,id=" + sessionId + ",status=" + getStatus();
     }
 
     public long getActiveSessionAtCreate() {

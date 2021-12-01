@@ -87,7 +87,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                     if (fileDownloader.getFile(download).isEmpty()) {
                         failures++;
                         log.info("Failed downloading application package (" + appFileReference + ")" +
-                                         " for " + applicationId + " (session " + sessionId + ")");
+                                         " for " + applicationId + " (session "  +
+                                         applicationRepository.getActiveSession(applicationId) + ")");
                         continue;
                     }
                 }
