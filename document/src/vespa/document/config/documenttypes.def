@@ -1,6 +1,6 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-namespace=document
+namespace=document.config
 
 ## Whether to enable compression in this process.
 enablecompression bool default=false
