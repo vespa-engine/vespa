@@ -99,6 +99,8 @@ ifeq ($(VERSION),$(DEVEL_VERSION))
 	$(error Invalid release version: $(VERSION). Try 'git checkout vX.Y.Z' or 'env VERSION=X.Y.Z make ...')
 endif
 
+install-all: all manpages
+
 #
 # Development targets
 #
