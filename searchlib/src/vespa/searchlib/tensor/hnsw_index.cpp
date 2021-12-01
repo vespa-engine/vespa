@@ -191,6 +191,7 @@ HnswIndex::remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t lev
 {
     LinkArray new_links;
     auto old_links = _graph.get_link_array(remove_from, level);
+    new_links.reserve(old_links.size());
     for (uint32_t id : old_links) {
         if (id != remove_id) new_links.push_back(id);
     }
