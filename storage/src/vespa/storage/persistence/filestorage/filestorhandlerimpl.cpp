@@ -55,7 +55,8 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
       _bucketIdFactory(_component.getBucketIdFactory()),
       _getNextMessageTimeout(100ms),
       _max_active_merges_per_stripe(per_stripe_merge_limit(numThreads, numStripes)),
-      _paused(false)
+      _paused(false),
+      _last_active_operations_stats()
 {
     assert(numStripes > 0);
     _stripes.reserve(numStripes);
@@ -296,6 +297,34 @@ FileStorHandlerImpl::abortQueuedOperations(const AbortBucketOperationsCommand& c
     }
 }
 
+namespace {
+
+void
+update_active_operations_metrics(ActiveOperationsMetrics& metrics, ActiveOperationsStats stats, std::optional<ActiveOperationsStats>& last_stats)
+{
+    auto delta_stats = stats;
+    if (last_stats.has_value()) {
+        delta_stats -= last_stats.value();
+    }
+    last_stats = stats;
+    uint32_t size_samples = delta_stats.get_size_samples();
+    if (size_samples != 0) {
+        double min_size = delta_stats.get_min_size().value_or(0);
+        double max_size = delta_stats.get_max_size().value_or(0);
+        double avg_size = ((double) delta_stats.get_total_size()) / size_samples;
+        metrics.size.addValueBatch(avg_size, size_samples, min_size, max_size);
+    }
+    uint32_t latency_samples = delta_stats.get_latency_samples();
+    if (latency_samples != 0) {
+        double min_latency = delta_stats.get_min_latency().value_or(0.0);
+        double max_latency = delta_stats.get_max_latency().value_or(0.0);
+        double avg_latency = delta_stats.get_total_latency() / latency_samples;
+        metrics.latency.addValueBatch(avg_latency, latency_samples, min_latency, max_latency);
+    }
+}
+
+}
+
 void
 FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
 {
@@ -307,6 +336,8 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
         const auto & m = stripe->averageQueueWaitingTime;
         _metrics->averageQueueWaitingTime.addTotalValueWithCount(m.getTotal(), m.getCount());
     }
+    auto active_operations_stats = get_active_operations_stats(true);
+    update_active_operations_metrics(_metrics->active_operations, active_operations_stats, _last_active_operations_stats);
 }
 
 bool
@@ -852,7 +883,8 @@ FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSe
       _cond(std::make_unique<std::condition_variable>()),
       _queue(std::make_unique<PriorityQueue>()),
       _lockedBuckets(),
-      _active_merges(0)
+      _active_merges(0),
+      _active_operations_stats()
 {}
 
 FileStorHandler::LockedMessage
@@ -1030,6 +1062,7 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     auto iter = _lockedBuckets.find(bucket);
     assert(iter != _lockedBuckets.end());
     auto& entry = iter->second;
+    Clock::time_point start_time;
 
     if (reqOfReleasedLock == api::LockingRequirements::Exclusive) {
         assert(entry._exclusiveLock);
@@ -1038,14 +1071,18 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
             assert(_active_merges > 0);
             --_active_merges;
         }
+        start_time = entry._exclusiveLock.value().timestamp;
         entry._exclusiveLock.reset();
     } else {
         assert(!entry._exclusiveLock);
         auto shared_iter = entry._sharedLocks.find(lockMsgId);
         assert(shared_iter != entry._sharedLocks.end());
+        start_time = shared_iter->second.timestamp;
         entry._sharedLocks.erase(shared_iter);
     }
-
+    Clock::time_point now_ts = Clock::now();
+    double latency = std::chrono::duration<double>(now_ts - start_time).count();
+    _active_operations_stats.operation_done(latency);
     if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
         _lockedBuckets.erase(iter); // No more locks held
     }
@@ -1070,6 +1107,7 @@ FileStorHandlerImpl::Stripe::lock(const monitor_guard &, const document::Bucket 
         (void) inserted;
         assert(inserted.second);
     }
+    _active_operations_stats.operation_started();
 }
 
 bool
@@ -1102,6 +1140,17 @@ FileStorHandlerImpl::Stripe::operationIsInhibited(const monitor_guard & guard, c
         return true;
     }
     return isLocked(guard, bucket, msg.lockingRequirements());
+}
+
+ActiveOperationsStats
+FileStorHandlerImpl::Stripe::get_active_operations_stats(bool reset_min_max) const
+{
+    std::lock_guard<std::mutex> guard(*_lock);
+    auto result = _active_operations_stats;
+    if (reset_min_max) {
+        _active_operations_stats.reset_min_max();
+    }
+    return result;
 }
 
 FileStorHandlerImpl::BucketLock::BucketLock(const monitor_guard & guard, Stripe& stripe,
@@ -1241,6 +1290,17 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
             out << "<b>" << entry.first.toString() << "</b><br>\n";
         }
     }
+}
+
+ActiveOperationsStats
+FileStorHandlerImpl::get_active_operations_stats(bool reset_min_max) const
+{
+    ActiveOperationsStats result;
+    for (const auto & stripe : _stripes) {
+        auto stats = stripe.get_active_operations_stats(reset_min_max);
+        result.merge(stats);
+    }
+    return result;
 }
 
 void

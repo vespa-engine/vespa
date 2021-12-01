@@ -29,6 +29,7 @@ namespace framework {
     class HttpUrlPath;
 }
 
+class ActiveOperationsStats;
 class FileStorHandlerImpl;
 struct FileStorMetrics;
 struct MessageSender;
@@ -233,6 +234,7 @@ public:
 
     virtual std::string dumpQueue() const = 0;
 
+    virtual ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const = 0;
 };
 
 } // storage

@@ -206,7 +206,8 @@ FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::str
       waitingForLockHitRate("waitingforlockrate", {},
               "Amount of times a filestor thread has needed to wait for "
               "lock to take next message in queue.", this),
-      lockWaitTime("lockwaittime", {}, "Amount of time waiting used waiting for lock.", this)
+      lockWaitTime("lockwaittime", {}, "Amount of time waiting used waiting for lock.", this),
+      active_operations(this)
 {
     pendingMerges.unsetOnZeroValue();
     waitingForLockHitRate.unsetOnZeroValue();
