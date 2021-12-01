@@ -363,7 +363,7 @@ public class SessionRepository {
                 deleted++;
             }
             // Avoid deleting too many in one run
-            if (deleted > 100)
+            if (deleted >= 2)
                 break;
         }
         return deleted;
