@@ -40,12 +40,12 @@ namespace {
 
 class MySummaryAdapter : public test::MockSummaryAdapter {
 private:
-    int &_rmCount;
-    int &_putCount;
-    int &_heartbeatCount;
+    std::atomic<int> &_rmCount;
+    std::atomic<int> &_putCount;
+    std::atomic<int> &_heartbeatCount;
 
 public:
-    MySummaryAdapter(int &removeCount, int &putCount, int &heartbeatCount) noexcept
+    MySummaryAdapter(std::atomic<int> &removeCount, std::atomic<int> &putCount, std::atomic<int> &heartbeatCount) noexcept
         : _rmCount(removeCount),
           _putCount(putCount),
           _heartbeatCount(heartbeatCount) {
@@ -78,18 +78,18 @@ struct MyMinimalFeedViewBase
 struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedView {
     using UP = std::unique_ptr<MyMinimalFeedView>;
 
-    int removeMultiAttributesCount;
-    int removeMultiIndexFieldsCount;
-    int heartBeatAttributesCount;
-    int heartBeatIndexedFieldsCount;
-    int &outstandingMoveOps;
+    std::atomic<int> removeMultiAttributesCount;
+    std::atomic<int> removeMultiIndexFieldsCount;
+    std::atomic<int> heartBeatAttributesCount;
+    std::atomic<int> heartBeatIndexedFieldsCount;
+    std::atomic<int> &outstandingMoveOps;
 
     MyMinimalFeedView(const ISummaryAdapter::SP &summaryAdapter,
                       const DocumentMetaStore::SP &metaStore,
                       searchcorespi::index::IThreadingService &writeService,
                       const PersistentParams &params,
                       std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
-                      int &outstandingMoveOps_) :
+                      std::atomic<int> &outstandingMoveOps_) :
         MyMinimalFeedViewBase(),
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
                                                      search::index::Schema::SP(),
@@ -127,17 +127,18 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
 struct MoveOperationFeedView : public MyMinimalFeedView {
     using UP = std::unique_ptr<MoveOperationFeedView>;
 
-    int putAttributesCount;
-    int putIndexFieldsCount;
-    int removeAttributesCount;
-    int removeIndexFieldsCount;
+    std::atomic<int> putAttributesCount;
+    std::atomic<int> putIndexFieldsCount;
+    std::atomic<int> removeAttributesCount;
+    std::atomic<int> removeIndexFieldsCount;
     std::vector<IDestructorCallback::SP> onWriteDoneContexts;
+    std::mutex _mutex;
     MoveOperationFeedView(const ISummaryAdapter::SP &summaryAdapter,
                           const DocumentMetaStore::SP &metaStore,
                           searchcorespi::index::IThreadingService &writeService,
                           const PersistentParams &params,
                           std::shared_ptr<PendingLidTrackerBase> pendingLidsForCommit,
-                          int &outstandingMoveOps_) :
+                          std::atomic<int> &outstandingMoveOps_) :
             MyMinimalFeedView(summaryAdapter, metaStore, writeService,
                               params, std::move(pendingLidsForCommit), outstandingMoveOps_),
             putAttributesCount(0),
@@ -149,30 +150,50 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
     void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, OnPutDoneType onWriteDone) override {
         ++putAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
+        std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
      void putIndexedFields(SerialNum, search::DocumentIdT, const document::Document::SP &,
                            OnOperationDoneType onWriteDone) override {
         ++putIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
+         std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
     void removeAttributes(SerialNum, search::DocumentIdT, OnRemoveDoneType onWriteDone) override {
         ++removeAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
+        std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
     void removeIndexedFields(SerialNum, search::DocumentIdT, OnRemoveDoneType onWriteDone) override {
         ++removeIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
+        std::lock_guard guard(_mutex);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    void clearWriteDoneContexts() { onWriteDoneContexts.clear(); }
+    void clearWriteDoneContexts() {
+        std::lock_guard guard(_mutex);
+        onWriteDoneContexts.clear();
+    }
+    void waitFor(uint32_t expected) {
+        while (true) {
+            std::lock_guard guard(_mutex);
+            if (expected == onWriteDoneContexts.size()) {
+                bool ok = true;
+                for (uint32_t i(0); ok && i < expected; i++) {
+                    // One for attributes, and one for indexes
+                    ok = (onWriteDoneContexts[i].use_count() == 2);
+                }
+                if (ok) return;
+            }
+        }
+    }
 };
 
 struct MoveOperationCallback : public IDestructorCallback {
-    int &outstandingMoveOps;
-    explicit MoveOperationCallback(int &outstandingMoveOps_) noexcept : outstandingMoveOps(outstandingMoveOps_) {
+    std::atomic<int> &outstandingMoveOps;
+    explicit MoveOperationCallback(std::atomic<int> &outstandingMoveOps_) noexcept : outstandingMoveOps(outstandingMoveOps_) {
         ++outstandingMoveOps;
     }
     ~MoveOperationCallback() override {
@@ -185,10 +206,10 @@ const uint32_t subdb_id = 0;
 
 template <typename FeedViewType>
 struct FixtureBase {
-    int removeCount;
-    int putCount;
-    int heartbeatCount;
-    int outstandingMoveOps;
+    std::atomic<int> removeCount;
+    std::atomic<int> putCount;
+    std::atomic<int> heartbeatCount;
+    std::atomic<int> outstandingMoveOps;
     DocumentMetaStore::SP metaStore;
     vespalib::ThreadStackExecutor sharedExecutor;
     ExecutorThreadingService writeService;
@@ -241,11 +262,6 @@ struct FixtureBase {
     }
 
     template <typename FunctionType>
-    void runInMasterAndSyncAll(FunctionType func) {
-        test::runInMaster(writeService, func);
-        writeService.sync_all_executors();
-    }
-    template <typename FunctionType>
     void runInMasterAndSync(FunctionType func) {
         test::runInMasterAndSync(writeService, func);
     }
@@ -288,11 +304,25 @@ struct MoveFixture : public FixtureBase<MoveOperationFeedView> {
         feedview->clearWriteDoneContexts();
         EXPECT_EQUAL(0, outstandingMoveOps);
     }
+
+    void handleMove(const MoveOperation & op, long expected) {
+        auto ctx = beginMoveOp();
+        runInMasterAndSync([&, ctx]() {
+            feedview->handleMove(op, std::move(ctx));
+        });
+        // First we wait for everything propagated to MinimalFeedView
+        while (ctx.use_count() > (expected + 1)) {
+            LOG(info, "use_count = %ld", ctx.use_count());
+            std::this_thread::sleep_for(1s);
+        }
+        // And then we must wait for everyone else to finish up too.
+        feedview->waitFor(expected*2);
+    }
 };
 
 TEST_F("require that prepareMove sets target db document id", Fixture)
 {
-    Document::SP doc(new Document);
+    auto doc = std::make_shared<Document>();
     MoveOperation op(BucketId(20, 42), Timestamp(10), doc, 1, subdb_id + 1);
     f.runInMasterAndSync([&]() { f.feedview->prepareMove(op); });
 
@@ -323,7 +353,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
         MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id + 1, 1), subdb_id);
         TEST_DO(f.assertPutCount(0));
         f.runInMasterAndSync([&]() { f.feedview->prepareMove(*op); });
-        f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+        f.handleMove(*op, 1);
         TEST_DO(f.assertPutCount(1));
         TEST_DO(f.assertAndClearMoveOp());
         lid = op->getDbDocumentId().getLid();
@@ -335,7 +365,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
         MoveOperation::UP op = makeMoveOp(DbDocumentId(subdb_id, 1), subdb_id + 1);
         op->setDbDocumentId(DbDocumentId(subdb_id + 1, 1));
         TEST_DO(f.assertRemoveCount(0));
-        f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+        f.handleMove(*op, 1);
         EXPECT_FALSE(f.metaStore->validLid(lid));
         TEST_DO(f.assertRemoveCount(1));
         TEST_DO(f.assertAndClearMoveOp());
@@ -344,7 +374,7 @@ TEST_F("require that handleMove() adds document to target and removes it from so
 
 TEST_F("require that handleMove() handles move within same subdb and propagates destructor callback", MoveFixture)
 {
-    Document::SP doc(new Document);
+    auto doc = std::make_shared<Document>();
     DocumentId doc1id("id:test:foo:g=foo:1");
     uint32_t docSize = 1;
     f.runInMasterAndSync([&]() {
@@ -363,7 +393,7 @@ TEST_F("require that handleMove() handles move within same subdb and propagates 
     op->setTargetLid(1);
     TEST_DO(f.assertPutCount(0));
     TEST_DO(f.assertRemoveCount(0));
-    f.runInMasterAndSyncAll([&]() { f.feedview->handleMove(*op, f.beginMoveOp()); });
+    f.handleMove(*op, 2);
     TEST_DO(f.assertPutCount(1));
     TEST_DO(f.assertRemoveCount(1));
     TEST_DO(f.assertAndClearMoveOp());
@@ -377,7 +407,7 @@ TEST_F("require that prune removed documents removes documents",
 {
     f.addDocsToMetaStore(3);
 
-    LidVectorContext::SP lids(new LidVectorContext(4));
+    auto lids = std::make_shared<LidVectorContext>(4);
     lids->addLid(1);
     lids->addLid(3);
     PruneRemovedDocumentsOperation op(lids->getDocIdLimit(), subdb_id);

@@ -111,14 +111,6 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
 ExecutorThreadingService::~ExecutorThreadingService() = default;
 
 void
-ExecutorThreadingService::sync_all_executors() {
-    // We have multiple patterns where task A posts to B which post back to A
-    for (size_t i = 0; i < 2; i++) {
-        syncOnce();
-    }
-}
-
-void
 ExecutorThreadingService::blocking_master_execute(vespalib::Executor::Task::UP task)
 {
     uint32_t limit = master_task_limit();
@@ -126,22 +118,6 @@ ExecutorThreadingService::blocking_master_execute(vespalib::Executor::Task::UP t
         _masterExecutor.wait_for_task_count(limit);
     }
     _masterExecutor.execute(std::move(task));
-}
-
-void
-ExecutorThreadingService::syncOnce() {
-    bool isMasterThread = _masterService.isCurrentThread();
-    if (!isMasterThread) {
-        _masterExecutor.sync();
-    }
-    _attribute_field_writer_ptr->sync_all();
-    _indexExecutor->sync();
-    _summaryExecutor->sync();
-    _index_field_inverter_ptr->sync_all();
-    _index_field_writer_ptr->sync_all();
-    if (!isMasterThread) {
-        _masterExecutor.sync();
-    }
 }
 
 void

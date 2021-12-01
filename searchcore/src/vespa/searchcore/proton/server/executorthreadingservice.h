@@ -36,7 +36,6 @@ private:
     vespalib::ISequencedTaskExecutor*                    _attribute_field_writer_ptr;
     std::vector<Registration>                            _invokeRegistrations;
 
-    void syncOnce();
 public:
     using OptimizeFor = vespalib::Executor::OptimizeFor;
     /**
@@ -50,8 +49,6 @@ public:
                              const ThreadingServiceConfig& cfg,
                              uint32_t stackSize = 128 * 1024);
     ~ExecutorThreadingService() override;
-
-    void sync_all_executors();
 
     void blocking_master_execute(vespalib::Executor::Task::UP task) override;
 
