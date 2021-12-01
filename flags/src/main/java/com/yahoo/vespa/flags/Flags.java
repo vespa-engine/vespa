@@ -215,13 +215,13 @@ public class Flags {
 
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2021-12-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2022-02-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
     public static final UnboundBooleanFlag GENERATE_NON_MTLS_ENDPOINT = defineFeatureFlag(
             "generate-non-mtls-endpoint", true,
-            List.of("tokle"), "2021-02-18", "2021-12-01",
+            List.of("tokle"), "2021-02-18", "2022-02-01",
             "Whether to generate the non-mtls endpoint",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
