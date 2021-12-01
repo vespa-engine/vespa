@@ -217,8 +217,8 @@ public class DocumentTypeManagerTestCase {
         assertNull(banana.getField("newfield"));
         assertEquals(new Field("arrayfloat", 9489, new ArrayDataType(DataType.FLOAT, 99)), customtypes.getField("arrayfloat"));
 
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.updated.cfg");
-
+        var sub = DocumentTypeManagerConfigurer.configure(manager, "file:src/test/document/documentmanager.updated.cfg");
+        sub.close();
         banana = manager.getDocumentType(new DataTypeName("banana"));
         customtypes = manager.getDocumentType(new DataTypeName("customtypes"));
 
@@ -513,7 +513,8 @@ search annotationsimplicitstruct {
 
     private static DocumentTypeManager createConfiguredManager(String configFilePath) {
         DocumentTypeManager manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, configFilePath);
+        var sub = DocumentTypeManagerConfigurer.configure(manager, configFilePath);
+        sub.close();
         return manager;
     }
 

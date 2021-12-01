@@ -95,7 +95,8 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
     static DocumentTypeManager setUpDocType(String filename) {
         DocumentTypeManager dcMan = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(dcMan, filename);
+        var sub = DocumentTypeManagerConfigurer.configure(dcMan, filename);
+        sub.close();
         return dcMan;
     }
 

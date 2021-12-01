@@ -21,8 +21,8 @@ public class DocInDocTestCase {
     @Test
     public void testDocInDoc() {
         DocumentTypeManager manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/documentmanager.docindoc.cfg");
-
+        var sub = DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/documentmanager.docindoc.cfg");
+        sub.close();
         Document inner1 = new Document(manager.getDocumentType("docindoc"), "id:inner:docindoc::one");
         inner1.setFieldValue("name", new StringFieldValue("Donald Duck"));
         inner1.setFieldValue("content", new StringFieldValue("Lives in Duckburg"));

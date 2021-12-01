@@ -19,7 +19,9 @@ public class Bug6394548TestCase {
     @Test
     public void testSerializeAndDeserializeMultipleAdjacentStructAnnotations() {
         DocumentTypeManager manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.6394548.cfg");
+        var sub = DocumentTypeManagerConfigurer.configure
+            (manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.6394548.cfg");
+        sub.close();
 
         AnnotationTypeRegistry registry = manager.getAnnotationTypeRegistry();
         AnnotationType featureSetType = registry.getType("morty.RICK_FEATURESET");
