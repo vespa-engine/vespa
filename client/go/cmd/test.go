@@ -25,6 +25,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(testCmd)
+	testCmd.PersistentFlags().StringVarP(&zoneArg, zoneFlag, "z", "dev.aws-us-east-1c", "The zone to use for deployment")
 }
 
 var testCmd = &cobra.Command{
