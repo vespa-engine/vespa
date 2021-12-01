@@ -45,26 +45,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag MAP_USER_NAMESPACE = defineFeatureFlag(
-            "map-user-namespace", false,
-            List.of("freva"), "2021-10-18", "2021-12-01",
-            "Whether host-admin should start containers with mapped UID/GID, will also chown all files under container storage.",
-            "Takes effect on next container restart.",
-            APPLICATION_ID, NODE_TYPE, HOSTNAME);
-
-    public static final UnboundBooleanFlag USE_CGROUPS_V2 = defineFeatureFlag(
-            "use-cgroups-v2", false,
-            List.of("freva"), "2021-10-27", "2021-12-01",
-            "Whether a host should use CGroups v2",
-            "Will attempt to switch on next host admin tick (requires reboot).",
-            NODE_TYPE, HOSTNAME);
-
-    public static final UnboundBooleanFlag MOUNT_READONLY = defineFeatureFlag(
-            "mount-readonly", false,
-            List.of("freva"), "2021-11-04", "2021-12-01",
-            "Whether host-admin should mount container-data and credential directories read-only when starting container",
-            "Takes effect on next container restart.");
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
