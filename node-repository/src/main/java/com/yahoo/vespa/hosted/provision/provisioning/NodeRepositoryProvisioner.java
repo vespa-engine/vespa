@@ -97,9 +97,13 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
             ClusterResources target = decideTargetResources(application, cluster, requested);
-            int nodeCount = capacityPolicies.decideSize(target.nodes(), requested, cluster, application);
+            int nodeCount = capacityPolicies.decideSize(target.nodes(),
+                                                        requested.isRequired(),
+                                                        requested.canFail(),
+                                                        application.instance().isTester(),
+                                                        cluster);
             groups = Math.min(target.groups(), nodeCount); // cannot have more groups than nodes
-            resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested, cluster);
+            resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested.isRequired(), cluster);
             boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
             nodeSpec = NodeSpec.from(nodeCount, resources, exclusive, requested.canFail());
             logIfDownscaled(target.nodes(), nodeCount, cluster, logger);
@@ -141,7 +145,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
         try (Mutex lock = nodeRepository.nodes().lock(applicationId)) {
             var application = nodeRepository.applications().get(applicationId).orElse(Application.empty(applicationId))
-                              .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested.minResources(), requested.maxResources());
+                              .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested);
             nodeRepository.applications().put(application, lock);
             var cluster = application.cluster(clusterSpec.id()).get();
             return cluster.targetResources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested));

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -33,6 +34,7 @@ public class ApplicationSerializerTest {
                                  false,
                                  new ClusterResources( 8, 4, new NodeResources(1, 2,  3,  4)),
                                  new ClusterResources(12, 6, new NodeResources(3, 6, 21, 24)),
+                                 true,
                                  Optional.empty(),
                                  Optional.empty(),
                                  List.of(),
@@ -42,6 +44,7 @@ public class ApplicationSerializerTest {
                                  true,
                                  new ClusterResources( 8, 4, minResources),
                                  new ClusterResources(14, 7, new NodeResources(3, 6, 21, 24)),
+                                 false,
                                  Optional.of(new Cluster.Suggestion(new ClusterResources(20, 10,
                                                                                          new NodeResources(0.5, 4, 14, 16)),
                                                                     Instant.ofEpochMilli(1234L))),
@@ -72,6 +75,7 @@ public class ApplicationSerializerTest {
             assertEquals(originalCluster.exclusive(), serializedCluster.exclusive());
             assertEquals(originalCluster.minResources(), serializedCluster.minResources());
             assertEquals(originalCluster.maxResources(), serializedCluster.maxResources());
+            assertEquals(originalCluster.required(), serializedCluster.required());
             assertEquals(originalCluster.suggestedResources(), serializedCluster.suggestedResources());
             assertEquals(originalCluster.targetResources(), serializedCluster.targetResources());
             assertEquals(originalCluster.scalingEvents(), serializedCluster.scalingEvents());
