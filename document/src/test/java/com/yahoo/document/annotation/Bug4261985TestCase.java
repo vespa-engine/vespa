@@ -23,7 +23,9 @@ public class Bug4261985TestCase {
     @Test
     public void testAnnotate() {
         DocumentTypeManager manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.bug4261985.cfg");
+        var sub = DocumentTypeManagerConfigurer.configure
+            (manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.bug4261985.cfg");
+        sub.close();
 
         DocumentType type = manager.getDocumentType("blog");
         Document doc = new Document(type, "id:this:blog::is:a:test");

@@ -23,7 +23,9 @@ public class Bug4475379TestCase {
     @Test
     public void testClone() {
         DocumentTypeManager manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.bug4475379.cfg");
+        var sub = DocumentTypeManagerConfigurer.configure
+            (manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.bug4475379.cfg");
+        sub.close();
 
         DocumentType type = manager.getDocumentType("blog");
         Document doc = new Document(type, "id:this:blog::is:a:test");

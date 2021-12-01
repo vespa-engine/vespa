@@ -114,7 +114,9 @@ public class SystemTestCase {
     @Before
     public void setUp() {
         manager = new DocumentTypeManager();
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.systemtest.cfg");
+        var sub = DocumentTypeManagerConfigurer.configure
+            (manager, "file:src/test/java/com/yahoo/document/annotation/documentmanager.systemtest.cfg");
+        sub.close();
     }
 
     @Test

@@ -36,7 +36,8 @@ public class VespaXMLReaderTestCase {
 
     @Before
     public void setUp() {
-        DocumentTypeManagerConfigurer.configure(manager, "file:src/test/vespaxmlparser/documentmanager2.cfg");
+        var sub = DocumentTypeManagerConfigurer.configure(manager, "file:src/test/vespaxmlparser/documentmanager2.cfg");
+        sub.close();
     }
 
     @Test

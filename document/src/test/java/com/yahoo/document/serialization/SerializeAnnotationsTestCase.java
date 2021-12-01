@@ -44,9 +44,9 @@ public class SerializeAnnotationsTestCase {
 
     @Before
     public void setUp() {
-        DocumentTypeManagerConfigurer.configure(docMan,
-                                                "file:src/tests/serialization/" +
-                                                "annotation.serialize.test.cfg");
+        var sub = DocumentTypeManagerConfigurer.configure
+            (docMan, "file:src/tests/serialization/annotation.serialize.test.cfg");
+        sub.close();
     }
 
     @Test
