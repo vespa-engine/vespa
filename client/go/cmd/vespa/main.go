@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	if cmd.Execute() != nil {
+	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
