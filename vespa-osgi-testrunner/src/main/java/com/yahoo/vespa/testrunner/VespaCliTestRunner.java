@@ -9,6 +9,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
@@ -107,6 +108,7 @@ public class VespaCliTestRunner implements TestRunner {
     private Path ensureHomeDirectoryForVespaCli() {
         if (vespaCliHome == null) {
             vespaCliHome = uncheck(() -> Files.createTempDirectory(VespaCliTestRunner.class.getSimpleName()));
+            vespaCliHome.toFile().deleteOnExit();
         }
         return vespaCliHome;
     }
