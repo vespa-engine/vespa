@@ -14,6 +14,7 @@ import java.io.InputStream;
  * @author Thomas Gundersen
  * @author Steinar Knutsen
  */
+@SuppressWarnings("deprecation")
 public class XMLFeeder extends Feeder {
     public XMLFeeder(DocumentTypeManager docMan, SimpleFeedAccess sender, InputStream stream) {
         super(docMan, new VespaFeedSender(sender), stream);

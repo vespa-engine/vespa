@@ -18,6 +18,7 @@ import static org.junit.Assert.*;
 public class PositionParserTestCase {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatPositionStringsCanBeParsed() throws Exception {
         DocumentTypeManager mgr = new DocumentTypeManager();
         mgr.register(PositionDataType.INSTANCE);

@@ -40,6 +40,7 @@ public class Destination implements MessageHandler {
     private final SyncSession local;
     private final RPCMessageBus bus;
 
+    @SuppressWarnings("deprecation")
     public Destination(String slobrokConfigId, String documentManagerConfigId) {
 
         DocumentAccessParams params = new DocumentAccessParams();

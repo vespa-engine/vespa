@@ -17,6 +17,7 @@ import java.util.Iterator;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class SystemTestCase {
 
     DocumentTypeManager manager;

@@ -44,6 +44,7 @@ public class DocumentTypeTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testInheritance() {
         DocumentTypeManager typeManager = new DocumentTypeManager();
 

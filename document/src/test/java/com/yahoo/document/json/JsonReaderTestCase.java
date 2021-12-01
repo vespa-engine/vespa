@@ -91,6 +91,7 @@ import static org.junit.Assert.fail;
  * @author Steinar Knutsen
  * @author bratseth
  */
+@SuppressWarnings("deprecation")
 public class JsonReaderTestCase {
 
     private DocumentTypeManager types;

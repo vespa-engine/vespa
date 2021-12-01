@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 public class UriParserTestCase {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatUriFieldsCanBeParsed() throws Exception {
         DocumentTypeManager mgr = new DocumentTypeManager();
         DocumentType docType = new DocumentType("my_doc");

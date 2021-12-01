@@ -18,6 +18,7 @@ import static org.junit.Assert.fail;
 /**
  * Test for field sets
  */
+@SuppressWarnings("deprecation")
 public class FieldSetTestCase extends DocumentTestCaseBase {
 
     @Test

@@ -37,6 +37,7 @@ public class DocumentProtocol implements Protocol {
     private static final Logger log = Logger.getLogger(DocumentProtocol.class.getName());
     private final RoutingPolicyRepository routingPolicyRepository = new RoutingPolicyRepository();
     private final RoutableRepository routableRepository;
+    @SuppressWarnings("deprecation")
     private final DocumentTypeManager docMan;
 
     /** The name of this protocol. */
@@ -238,24 +239,29 @@ public class DocumentProtocol implements Protocol {
         return Priority.valueOf(name);
     }
 
+    @Deprecated
     public DocumentProtocol(DocumentTypeManager docMan) {
         this(docMan, null, new LoadTypeSet());
     }
 
+    @Deprecated
     public DocumentProtocol(DocumentTypeManager docMan, String configId) {
         this(docMan, configId, new LoadTypeSet());
     }
 
+    @Deprecated
     public DocumentProtocol(DocumentTypeManager documentTypeManager, LoadTypeSet loadTypes,
                             DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
         this(requireNonNull(documentTypeManager), null, requireNonNull(loadTypes),
         requireNonNull(policiesConfig), requireNonNull(distributionConfig));
     }
 
+    @Deprecated
     public DocumentProtocol(DocumentTypeManager docMan, String configId, LoadTypeSet set) {
         this(docMan, configId == null ? "client" : configId, set, null, null);
     }
 
+    @Deprecated
     private DocumentProtocol(DocumentTypeManager docMan, String configId, LoadTypeSet set,
                              DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
         if (docMan != null)
@@ -540,6 +546,7 @@ public class DocumentProtocol implements Protocol {
         return routableRepository.getRoutableTypes(version);
     }
 
+    @Deprecated
     final public DocumentTypeManager getDocumentTypeManager() { return docMan; }
 
 }

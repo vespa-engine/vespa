@@ -62,8 +62,7 @@ import java.util.stream.Stream;
  * @author Simon Thoresen Hult
  */
 public class SimpleFeeder implements ReplyHandler {
-
-
+    @SuppressWarnings("deprecation")
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
     private final List<InputStream> inputStreams;
     private final PrintStream out;
@@ -268,6 +267,7 @@ public class SimpleFeeder implements ReplyHandler {
         return in.readNBytes(buf, 0, buf.length);
     }
 
+    @SuppressWarnings("deprecation")
     static class VespaV1FeedReader implements FeedReader {
         private final InputStream in;
         private final DocumentTypeManager mgr;
@@ -364,6 +364,7 @@ public class SimpleFeeder implements ReplyHandler {
     }
 
     SourceSession getSourceSession() { return session; }
+    @SuppressWarnings("deprecation")
     private FeedReader createFeedReader(InputStream in) throws Exception {
         in.mark(8);
         byte [] b = new byte[2];
@@ -488,6 +489,7 @@ public class SimpleFeeder implements ReplyHandler {
         return out.toString();
     }
 
+    @SuppressWarnings("deprecation")
     private static RPCMessageBus newMessageBus(DocumentTypeManager docTypeMgr, FeederParams params) {
         return new RPCMessageBus(new MessageBusParams().addProtocol(new DocumentProtocol(docTypeMgr)),
                                  new RPCNetworkParams().setSlobrokConfigId(params.getConfigId())

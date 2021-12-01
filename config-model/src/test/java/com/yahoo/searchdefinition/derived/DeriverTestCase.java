@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class DeriverTestCase extends AbstractSchemaTestCase {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testDeriveDocManager() {
         DocumentTypeManager dtm = new DocumentTypeManager(new DocumentmanagerConfig(
                 Deriver.getDocumentManagerConfig(List.of(

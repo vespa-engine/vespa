@@ -139,6 +139,7 @@ public class MapTestCase {
         assertCorrectSerialization(floatToTwoDimArray, map);
     }
 
+    @SuppressWarnings("deprecation")
     private void assertCorrectSerialization(MapDataType mapType, MapFieldValue<? extends FieldValue, ? extends FieldValue> map) {
         Field f = new Field("", mapType);
         DocumentTypeManager man = new DocumentTypeManager();

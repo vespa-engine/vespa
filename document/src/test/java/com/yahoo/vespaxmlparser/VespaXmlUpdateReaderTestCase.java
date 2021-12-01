@@ -240,6 +240,7 @@ public class VespaXmlUpdateReaderTestCase {
         return readUpdateHelper(null, documentXml);
     }
 
+    @SuppressWarnings("deprecation")
     private static DocumentUpdate readUpdateHelper(Field field, String documentXml) throws Exception {
         DocumentTypeManager docManager = new DocumentTypeManager();
         DocumentType docType = new DocumentType("my_type");

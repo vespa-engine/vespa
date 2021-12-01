@@ -29,6 +29,7 @@ public class DocTestCase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private class Service {
         private DocumentTypeManager getDocumentTypeManager() {
             return null;
@@ -231,6 +232,7 @@ public class DocTestCase {
         text.setSpanTree(tree);
     }
 
+    @SuppressWarnings("deprecation")
     public void simple5() {
         //the following two lines work inside process(Document, Arguments, Processing) in a DocumentProcessor
         DocumentTypeManager dtm = processing.getService().getDocumentTypeManager();

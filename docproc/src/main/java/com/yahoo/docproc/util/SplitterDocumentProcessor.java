@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 /**
  * @author Einar M R Rosenvinge
  */
+@Deprecated
 public class SplitterDocumentProcessor extends DocumentProcessor {
 
     private static Logger log = Logger.getLogger(SplitterDocumentProcessor.class.getName());

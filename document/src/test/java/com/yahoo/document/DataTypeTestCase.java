@@ -15,6 +15,7 @@ import static org.junit.Assert.*;
 /**
  * @author bratseth
  */
+@SuppressWarnings("deprecation")
 public class DataTypeTestCase {
 
     @Test

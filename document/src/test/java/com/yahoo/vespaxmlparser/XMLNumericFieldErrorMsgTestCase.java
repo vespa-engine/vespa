@@ -18,6 +18,7 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.29
  */
+@SuppressWarnings("deprecation")
 public class XMLNumericFieldErrorMsgTestCase {
 
     private static DocumentTypeManager setupTypes() {

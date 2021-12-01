@@ -46,6 +46,7 @@ import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
  */
 public abstract class DocumentAccess {
 
+    @SuppressWarnings("deprecation")
     private final DocumentTypeManager documentTypeManager;
     private final ConfigSubscriber documentTypeConfigSubscriber;
 
@@ -86,6 +87,7 @@ public abstract class DocumentAccess {
      *
      * @param params the parameters to use for setup
      */
+    @SuppressWarnings("deprecation")
     protected DocumentAccess(DocumentAccessParams params) {
         if (params.documentmanagerConfig().isPresent()) { // our config has been injected into the creator
             documentTypeManager = new DocumentTypeManager(params.documentmanagerConfig().get());
@@ -170,6 +172,7 @@ public abstract class DocumentAccess {
     }
 
     /** Returns the {@link DocumentTypeManager} used by this DocumentAccess. */
+    @SuppressWarnings("deprecation")
     public DocumentTypeManager getDocumentTypeManager() { return documentTypeManager; }
 
 }

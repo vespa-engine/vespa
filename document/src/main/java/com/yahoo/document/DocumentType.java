@@ -145,6 +145,7 @@ public class DocumentType extends StructuredDataType {
     }
 
     @Override
+    @Deprecated
     protected void register(DocumentTypeManager manager, List<DataType> seenTypes) {
         seenTypes.add(this);
         for (DocumentType type : getInheritedTypes()) {

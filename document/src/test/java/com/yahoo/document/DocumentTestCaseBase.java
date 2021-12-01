@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertNotNull;
 
+@SuppressWarnings("deprecation")
 public class DocumentTestCaseBase {
 
     protected Field byteField = null;

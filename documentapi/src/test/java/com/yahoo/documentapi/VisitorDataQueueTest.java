@@ -19,6 +19,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("deprecation")
 public class VisitorDataQueueTest {
 
     private final DocumentTypeManager docMan = new DocumentTypeManager();

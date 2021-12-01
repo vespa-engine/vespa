@@ -10,6 +10,7 @@ import com.yahoo.document.DocumentTypeManager;
  *
  * @author geirst
  */
+@SuppressWarnings("deprecation")
 public class TestDocumentFactory {
 
     private final DocumentTypeManager typeManager;

@@ -45,6 +45,7 @@ import static org.junit.Assert.fail;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class DocumentUpdateTestCase {
 
     private DocumentTypeManager docMan;

@@ -62,6 +62,7 @@ public abstract class CollectionDataType extends DataType {
     }
 
     @Override
+    @Deprecated
     protected void register(DocumentTypeManager manager, List<DataType> seenTypes) {
         seenTypes.add(this);
         if (!seenTypes.contains(getNestedType())) {

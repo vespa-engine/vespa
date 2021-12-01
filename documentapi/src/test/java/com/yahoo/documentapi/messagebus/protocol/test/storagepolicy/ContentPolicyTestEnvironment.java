@@ -47,6 +47,7 @@ public abstract class ContentPolicyTestEnvironment {
     protected boolean debug = true;
 
     @Before
+    @SuppressWarnings("deprecation")
     public void setUp() throws Exception {
         DocumentTypeManager manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer.configure(manager, "file:./test/cfg/testdoc.cfg");

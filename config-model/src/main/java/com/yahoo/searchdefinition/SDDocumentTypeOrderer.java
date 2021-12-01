@@ -21,6 +21,7 @@ public class SDDocumentTypeOrderer {
     List<SDDocumentType> processingOrder = new LinkedList<>();
     private final DeployLogger deployLogger;
 
+    @SuppressWarnings("deprecation")
     public SDDocumentTypeOrderer(List<SDDocumentType> sdTypes, DeployLogger deployLogger) {
         this.deployLogger = deployLogger;
         for (SDDocumentType type : sdTypes) {

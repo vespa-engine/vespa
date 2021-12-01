@@ -49,6 +49,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Steinar Knutsen
  */
+@SuppressWarnings("deprecation")
 public class JsonWriterTestCase {
 
     private static final JsonFactory parserFactory = new JsonFactory();

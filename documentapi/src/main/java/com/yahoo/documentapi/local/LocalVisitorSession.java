@@ -47,6 +47,7 @@ public class LocalVisitorSession implements VisitorSession {
     private final AtomicReference<Phaser> phaser;
     private final ProgressToken token;
 
+    @SuppressWarnings("deprecation")
     public LocalVisitorSession(LocalDocumentAccess access, VisitorParameters parameters) throws ParseException {
         this.selector = new DocumentSelector(parameters.getDocumentSelection());
         this.fieldSet = new FieldSetRepo().parse(access.getDocumentTypeManager(), parameters.fieldSet());

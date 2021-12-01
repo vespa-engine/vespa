@@ -46,6 +46,7 @@ public class RoutableFactoryTestCase {
     private DestinationSession dstSession;
 
     @Before
+    @SuppressWarnings("deprecation")
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         DocumentTypeManager docMan = new DocumentTypeManager();

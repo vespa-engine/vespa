@@ -39,6 +39,7 @@ public class PolicyFactoryTestCase {
     private SourceSession src;
 
     @Before
+    @SuppressWarnings("deprecation")
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         srv = new TestServer(new MessageBusParams().addProtocol(new DocumentProtocol(new DocumentTypeManager())),

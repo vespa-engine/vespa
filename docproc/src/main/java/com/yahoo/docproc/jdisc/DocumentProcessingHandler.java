@@ -40,6 +40,7 @@ import static com.yahoo.component.chain.model.ChainsModelBuilder.buildFromConfig
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class DocumentProcessingHandler extends AbstractRequestHandler {
 
     private static final Logger log = Logger.getLogger(DocumentProcessingHandler.class.getName());

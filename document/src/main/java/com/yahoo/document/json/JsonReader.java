@@ -27,6 +27,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.expectArrayStart
  * @author Steinar Knutsen
  * @author dybis
  */
+@SuppressWarnings("deprecation")
 public class JsonReader {
 
     public Optional<DocumentParseInfo> parseDocument() throws IOException {

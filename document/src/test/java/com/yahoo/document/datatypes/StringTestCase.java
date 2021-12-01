@@ -197,6 +197,7 @@ public class StringTestCase extends AbstractTypesTest {
      * Test for bug 4066566. No assertions, but works if it runs without exceptions.
      */
     @Test
+    @SuppressWarnings("deprecation")
     public void testAnnotatorConsumer() {
         DocumentTypeManager manager = new DocumentTypeManager();
         DocumentTypeManagerConfigurer
@@ -214,6 +215,7 @@ public class StringTestCase extends AbstractTypesTest {
         doc = serializeAndDeserialize(doc, manager);
     }
 
+    @SuppressWarnings("deprecation")
     private Document serializeAndDeserialize(Document doc, DocumentTypeManager manager) {
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
         DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
@@ -224,6 +226,7 @@ public class StringTestCase extends AbstractTypesTest {
         return new Document(deserializer);
     }
 
+    @SuppressWarnings("deprecation")
     public Document annotate(Document document, DocumentTypeManager manager) {
         AnnotationTypeRegistry registry = manager.getAnnotationTypeRegistry();
 

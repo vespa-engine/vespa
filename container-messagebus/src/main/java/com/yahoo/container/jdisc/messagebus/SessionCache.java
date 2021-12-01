@@ -79,6 +79,7 @@ public final class SessionCache extends AbstractComponent {
 
     }
 
+    @SuppressWarnings("deprecation")
     public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
                         DocumentmanagerConfig documentmanagerConfig,
                         LoadTypeConfig loadTypeConfig, MessagebusConfig messagebusConfig,

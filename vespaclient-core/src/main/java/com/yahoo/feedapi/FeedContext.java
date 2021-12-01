@@ -7,6 +7,7 @@ import com.yahoo.clientmetrics.ClientMetrics;
 import java.util.Map;
 import java.util.TreeMap;
 
+@SuppressWarnings("deprecation")
 public class FeedContext {
     
     private final SessionFactory factory;

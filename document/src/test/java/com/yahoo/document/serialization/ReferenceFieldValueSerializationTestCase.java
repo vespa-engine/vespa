@@ -18,6 +18,7 @@ import java.io.IOException;
  */
 public class ReferenceFieldValueSerializationTestCase {
 
+    @SuppressWarnings("deprecation")
     static class Fixture {
         final TestDocumentFactory documentFactory;
         // Note: these must match their C++ serialization test counterparts.

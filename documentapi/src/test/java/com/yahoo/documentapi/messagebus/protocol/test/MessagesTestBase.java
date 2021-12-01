@@ -19,6 +19,7 @@ import static org.junit.Assert.*;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("deprecation")
 public abstract class MessagesTestBase {
 
     protected enum Language {

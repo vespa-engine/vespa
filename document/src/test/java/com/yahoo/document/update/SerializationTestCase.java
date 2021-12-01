@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotEquals;
  *
  * @author bratseth
  */
+@SuppressWarnings("deprecation")
 public class SerializationTestCase {
 
     private DocumentType documentType;

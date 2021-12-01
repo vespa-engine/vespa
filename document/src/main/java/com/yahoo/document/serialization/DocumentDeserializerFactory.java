@@ -9,6 +9,7 @@ import com.yahoo.io.GrowableByteBuffer;
  *
  * @author geirst
  */
+@SuppressWarnings("deprecation")
 public class DocumentDeserializerFactory {
 
     /**

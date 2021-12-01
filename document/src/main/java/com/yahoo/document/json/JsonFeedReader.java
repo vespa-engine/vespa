@@ -26,12 +26,14 @@ import java.io.InputStream;
  *
  * @author Steinar Knutsen
  */
+
 public class JsonFeedReader implements FeedReader {
 
     private final JsonReader reader;
     private InputStream stream;
     private static final JsonFactory jsonFactory = new JsonFactoryBuilder().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES).build();
 
+    @SuppressWarnings("deprecation")
     public JsonFeedReader(InputStream stream, DocumentTypeManager docMan) {
         reader = new JsonReader(docMan, stream, jsonFactory);
         this.stream = stream;

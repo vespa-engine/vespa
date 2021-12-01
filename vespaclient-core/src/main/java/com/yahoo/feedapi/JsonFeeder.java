@@ -12,6 +12,7 @@ import com.yahoo.vespaxmlparser.FeedReader;
  *
  * @author steinar
  */
+@SuppressWarnings("deprecation")
 public class JsonFeeder extends Feeder {
     public JsonFeeder(DocumentTypeManager docMan, SimpleFeedAccess sender, InputStream stream) {
         super(docMan, new VespaFeedSender(sender), stream);

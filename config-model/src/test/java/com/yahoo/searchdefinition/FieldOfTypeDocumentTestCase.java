@@ -19,6 +19,7 @@ import static org.junit.Assert.assertSame;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class FieldOfTypeDocumentTestCase extends AbstractSchemaTestCase {
 
     @Test

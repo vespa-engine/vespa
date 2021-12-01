@@ -13,6 +13,7 @@ import java.io.InputStream;
 /**
  * @author thomasg
  */
+@Deprecated
 public class VespaXMLReader {
     DocumentTypeManager docTypeManager;
     XMLStreamReader reader;

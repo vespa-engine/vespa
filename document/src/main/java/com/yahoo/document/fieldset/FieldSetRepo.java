@@ -31,6 +31,7 @@ public class FieldSetRepo {
         }
     }
 
+    @SuppressWarnings("deprecation")
     FieldSet parseFieldCollection(DocumentTypeManager docMan, String docType, String fieldNames) {
         DocumentType type = docMan.getDocumentType(docType);
         if (type == null) {
@@ -55,6 +56,7 @@ public class FieldSetRepo {
         return collection;
     }
 
+    @Deprecated
     public FieldSet parse(DocumentTypeManager docMan, String fieldSet) {
         if (fieldSet.length() == 0) {
             throw new IllegalArgumentException("Illegal field set value \"\"");

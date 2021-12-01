@@ -16,6 +16,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author thomasg
  */
+@SuppressWarnings("deprecation")
 public class DocumentCalculatorTestCase {
 
     DocumentType testDocType = null;

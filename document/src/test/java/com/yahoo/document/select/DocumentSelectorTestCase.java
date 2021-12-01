@@ -47,6 +47,7 @@ import static org.junit.Assert.fail;
  * @author Simon Thoresen Hult
  * @author bratseth
  */
+@SuppressWarnings("deprecation")
 public class DocumentSelectorTestCase {
 
     @Rule

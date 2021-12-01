@@ -26,6 +26,7 @@ import java.util.Optional;
  * If you are looking to parse only a single document or update, use VespaXMLDocumentReader
  * or VespaXMLUpdateReader respectively.
  */
+@Deprecated
 public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
 
     /**

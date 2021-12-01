@@ -76,6 +76,7 @@ public abstract class StructuredDataType extends DataType {
     }
 
     @Override
+    @Deprecated
     protected void register(DocumentTypeManager manager, List<DataType> seenTypes) {
         seenTypes.add(this);
         for (Field field : getFields()) {

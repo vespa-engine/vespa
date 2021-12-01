@@ -27,6 +27,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class ProcessingUpdateTestCase {
 
     private DocumentPut put;

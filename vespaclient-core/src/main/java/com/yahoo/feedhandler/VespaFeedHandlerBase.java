@@ -10,7 +10,7 @@ import com.yahoo.search.query.ParameterParser;
 
 
 import java.io.InputStream;
-
+@SuppressWarnings("deprecation")
 public abstract class VespaFeedHandlerBase {
 
     protected FeedContext context;

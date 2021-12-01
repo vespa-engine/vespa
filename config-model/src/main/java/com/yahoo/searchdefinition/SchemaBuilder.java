@@ -45,6 +45,7 @@ import java.util.Set;
  * search objects using the {@link #getSchema(String)} method.
  */
 // NOTE: Since this was created we have added Application, and much of the content in this should migrate there.
+@SuppressWarnings("deprecation")
 public class SchemaBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();

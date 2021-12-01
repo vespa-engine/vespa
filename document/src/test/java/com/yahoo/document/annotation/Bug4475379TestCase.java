@@ -18,6 +18,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  */
+@SuppressWarnings("deprecation")
 public class Bug4475379TestCase {
 
     @Test

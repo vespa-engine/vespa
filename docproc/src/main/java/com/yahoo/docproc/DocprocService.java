@@ -44,6 +44,7 @@ public class DocprocService extends AbstractComponent {
     /** The current state of this service */
     private boolean acceptingNewProcessings = true;
     public static SchemaMap schemaMap = new SchemaMap();
+    @SuppressWarnings("deprecation")
     private DocumentTypeManager documentTypeManager = null;
 
     private DocprocService(ComponentId id, int numThreads) {
@@ -68,6 +69,7 @@ public class DocprocService extends AbstractComponent {
      * @param mgr the document type manager to use.
      * @param numThreads to have in the thread pool
      */
+    @SuppressWarnings("deprecation")
     public DocprocService(ComponentId id, CallStack stack, DocumentTypeManager mgr, int numThreads) {
         this(id, numThreads);
         setCallStack(stack);
@@ -94,10 +96,12 @@ public class DocprocService extends AbstractComponent {
         threadPool.shutdown();
     }
 
+    @Deprecated
     public DocumentTypeManager getDocumentTypeManager() {
         return documentTypeManager;
     }
 
+    @Deprecated
     public void setDocumentTypeManager(DocumentTypeManager documentTypeManager) {
         this.documentTypeManager = documentTypeManager;
     }

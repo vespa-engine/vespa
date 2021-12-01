@@ -14,6 +14,7 @@ import com.yahoo.jdisc.Metric;
  * @author Einar M R Rosenvinge
  * @see com.yahoo.docproc.jdisc.DocumentProcessingHandler
  */
+@SuppressWarnings("deprecation")
 public class DocumentProcessingHandlerParameters {
 
     private int maxNumThreads = 0;

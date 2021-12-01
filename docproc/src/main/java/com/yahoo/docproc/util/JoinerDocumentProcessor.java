@@ -15,12 +15,10 @@ import java.util.logging.Level;
 
 import java.util.logging.Logger;
 
-import static com.yahoo.docproc.util.SplitterDocumentProcessor.validate;
-import static com.yahoo.docproc.util.SplitterDocumentProcessor.doProcessOuterDocument;
-
 /**
  * @author Einar M R Rosenvinge
  */
+@Deprecated
 public class JoinerDocumentProcessor extends DocumentProcessor {
 
     private static Logger log = Logger.getLogger(JoinerDocumentProcessor.class.getName());
@@ -35,12 +33,12 @@ public class JoinerDocumentProcessor extends DocumentProcessor {
         this.arrayFieldName = cfg.arrayFieldName();
         this.contextFieldName = cfg.contextFieldName();
         manager = DocumentTypeManagerConfigurer.configureNewManager(documentmanagerConfig);
-        validate(manager, documentTypeName, arrayFieldName);
+        com.yahoo.docproc.util.SplitterDocumentProcessor.validate(manager, documentTypeName, arrayFieldName);
     }
 
     @Override
     public Progress process(Processing processing) {
-        if ( ! doProcessOuterDocument(processing.getVariable(contextFieldName), documentTypeName)) {
+        if ( ! com.yahoo.docproc.util.SplitterDocumentProcessor.doProcessOuterDocument(processing.getVariable(contextFieldName), documentTypeName)) {
             return Progress.DONE;
         }
 

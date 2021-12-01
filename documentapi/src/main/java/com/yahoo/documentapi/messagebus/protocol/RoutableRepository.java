@@ -49,6 +49,7 @@ final class RoutableRepository {
      * @param data    The byte array containing the encoded routable.
      * @return The decoded routable.
      */
+    @SuppressWarnings("deprecation")
     Routable decode(DocumentTypeManager docMan, Version version, byte[] data) {
         if (data == null || data.length == 0) {
             log.log(Level.SEVERE, "Received empty byte array for deserialization.");

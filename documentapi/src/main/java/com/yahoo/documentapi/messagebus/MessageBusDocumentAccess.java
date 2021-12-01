@@ -53,6 +53,7 @@ public class MessageBusDocumentAccess extends DocumentAccess {
      *
      * @param params All parameters for construction.
      */
+    @SuppressWarnings("deprecation")
     public MessageBusDocumentAccess(MessageBusParams params) {
         super(params);
         this.params = params;

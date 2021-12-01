@@ -95,7 +95,7 @@ public abstract class FieldValue extends Identifiable implements Comparable<Fiel
         return this;
     }
 
-    class RecursiveIteratorHandler extends FieldPathIteratorHandler {
+    static class RecursiveIteratorHandler extends FieldPathIteratorHandler {
         FieldValue retVal = null;
         boolean multiValue = false;
 

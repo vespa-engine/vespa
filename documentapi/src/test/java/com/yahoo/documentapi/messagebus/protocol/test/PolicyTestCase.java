@@ -70,6 +70,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("deprecation")
 public class PolicyTestCase {
 
     private static final int TIMEOUT = 300;

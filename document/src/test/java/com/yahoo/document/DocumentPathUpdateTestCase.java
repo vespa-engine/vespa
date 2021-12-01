@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class DocumentPathUpdateTestCase {
 
     DocumentTypeManager docMan;

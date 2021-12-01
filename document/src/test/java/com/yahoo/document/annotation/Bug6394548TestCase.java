@@ -17,6 +17,7 @@ import static org.junit.Assert.*;
 
 public class Bug6394548TestCase {
     @Test
+    @SuppressWarnings("deprecation")
     public void testSerializeAndDeserializeMultipleAdjacentStructAnnotations() {
         DocumentTypeManager manager = new DocumentTypeManager();
         var sub = DocumentTypeManagerConfigurer.configure

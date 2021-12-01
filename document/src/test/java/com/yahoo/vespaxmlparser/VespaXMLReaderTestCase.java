@@ -27,6 +27,7 @@ import static org.junit.Assert.*;
  *
  * @author sveina
  */
+@SuppressWarnings("deprecation")
 public class VespaXMLReaderTestCase {
 
     private final DocumentTypeManager manager = new DocumentTypeManager();

@@ -810,6 +810,7 @@ public class SpanTreeTestCase extends AbstractTypesTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testCyclicReferences() {
         DocumentTypeManager docMan = new DocumentTypeManager();
         AnnotationTypeRegistry reg = docMan.getAnnotationTypeRegistry();

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Einar M R Rosenvinge
  */
-@SuppressWarnings({"unchecked"})
+@SuppressWarnings({"unchecked", "deprecation"})
 public class SplitterJoinerTestCase {
 
     @Test

@@ -35,6 +35,7 @@ import static com.yahoo.test.json.JsonTestHelper.inputJson;
  *
  * @author Vegard Sjonfjell
  */
+@SuppressWarnings("deprecation")
 public class DocumentUpdateJsonSerializerTest {
 
     final static TensorType sparseTensorType = new TensorType.Builder().mapped("x").mapped("y").build();

@@ -7,7 +7,6 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import java.util.logging.Level;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,7 +17,9 @@ import java.util.stream.Collectors;
  * Configures the Vespa document manager from a config id.
  *
  * @author Einar M R Rosenvinge
+ * @deprecated Will become non-public on Vespa 8
  */
+@Deprecated
 public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSubscriber<DocumentmanagerConfig>{
 
     private final static Logger log = Logger.getLogger(DocumentTypeManagerConfigurer.class.getName());
@@ -76,9 +77,9 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        private Map<Integer, DataType> typesById = new HashMap<>();
-        private Map<String, DataType> typesByName = new HashMap<>();
-        private Map<Integer, DocumentmanagerConfig.Datatype> configMap = new HashMap<>();
+        private final Map<Integer, DataType> typesById = new HashMap<>();
+        private final Map<String, DataType> typesByName = new HashMap<>();
+        private final Map<Integer, DocumentmanagerConfig.Datatype> configMap = new HashMap<>();
 
         private void inProgress(DataType type) {
             var old = typesById.put(type.getId(), type);

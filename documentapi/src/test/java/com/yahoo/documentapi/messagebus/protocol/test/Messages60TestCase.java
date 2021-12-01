@@ -605,6 +605,7 @@ public class Messages60TestCase extends MessagesTestBase {
     public class testPutDocumentMessage implements RunnableTest {
 
         @Override
+        @SuppressWarnings("deprecation")
         public void run() {
             PutDocumentMessage msg = new PutDocumentMessage(new DocumentPut(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::")));
 
@@ -643,6 +644,7 @@ public class Messages60TestCase extends MessagesTestBase {
     public class testUpdateDocumentMessage implements RunnableTest {
 
         @Override
+        @SuppressWarnings("deprecation")
         public void run() {
             DocumentType docType = protocol.getDocumentTypeManager().getDocumentType("testdoc");
             DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("id:ns:testdoc::"));
@@ -883,6 +885,7 @@ public class Messages60TestCase extends MessagesTestBase {
 
     public class testGetDocumentReply implements RunnableTest {
 
+        @SuppressWarnings("deprecation")
         public void run() {
             GetDocumentReply reply = new GetDocumentReply(new Document(protocol.getDocumentTypeManager().getDocumentType("testdoc"), "id:ns:testdoc::"));
             assertEquals(47, serialize("GetDocumentReply", reply));

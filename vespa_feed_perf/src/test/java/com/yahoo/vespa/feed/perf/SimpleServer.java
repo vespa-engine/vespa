@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("deprecation")
 public class SimpleServer {
 
     private final DocumentTypeManager documentMgr;

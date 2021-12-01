@@ -240,11 +240,13 @@ public abstract class DataType extends Identifiable implements Serializable, Com
      * Registers this type in the given document manager.
      *
      * @param manager the DocumentTypeManager to register in.
+     * @deprecated Will become non-public on Vespa 8
      */
+    @Deprecated
     public final void register(DocumentTypeManager manager) {
         register(manager, new LinkedList<>());
     }
-
+    @Deprecated
     protected void register(DocumentTypeManager manager, List<DataType> seenTypes) {
         manager.registerSingleType(this);
     }

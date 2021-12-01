@@ -47,6 +47,7 @@ import static org.junit.Assert.fail;
  * @author <a href="thomasg@yahoo-inc.com>Thomas Gundersen</a>
  * @author bratseth
  */
+@SuppressWarnings("deprecation")
 public class DocumentTestCase extends DocumentTestCaseBase {
 
     private static final String SERTEST_DOC_AS_XML_HEAD =

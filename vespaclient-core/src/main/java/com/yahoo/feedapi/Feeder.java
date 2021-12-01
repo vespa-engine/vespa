@@ -20,6 +20,7 @@ import com.yahoo.vespaxmlparser.FeedReader;
  * @author Thomas Gundersen
  * @author steinar
  */
+@SuppressWarnings("deprecation")
 public abstract class Feeder {
 
     protected final InputStream stream;

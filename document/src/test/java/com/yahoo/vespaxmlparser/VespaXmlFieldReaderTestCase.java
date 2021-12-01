@@ -80,6 +80,7 @@ public class VespaXmlFieldReaderTestCase {
                      "Field 'my_tensor': XML input for fields of type TENSOR is not supported. Please use JSON input instead.");
     }
 
+    @SuppressWarnings("deprecation")
     private class MockedReaderFixture {
         public DocumentTypeManager mgr;
         public DocumentType docType;
@@ -135,6 +136,7 @@ public class VespaXmlFieldReaderTestCase {
         fixture.assertReadPositionEquals(3000000, 4000000);
     }
 
+    @SuppressWarnings("deprecation")
     private static void assertThrows(Field field, String fieldXml, String expected) throws Exception {
         DocumentTypeManager docManager = new DocumentTypeManager();
         DocumentType docType = new DocumentType("my_type");
@@ -166,6 +168,7 @@ public class VespaXmlFieldReaderTestCase {
                    "</document>");
     }
 
+    @SuppressWarnings("deprecation")
     private static void assertRead(Predicate expected, String documentXml) throws Exception {
         DocumentTypeManager docManager = new DocumentTypeManager();
         DocumentType docType = new DocumentType("my_type");

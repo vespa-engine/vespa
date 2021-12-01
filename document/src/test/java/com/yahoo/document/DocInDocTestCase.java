@@ -16,6 +16,7 @@ import static org.junit.Assert.assertNotSame;
 /**
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation")
 public class DocInDocTestCase {
 
     @Test

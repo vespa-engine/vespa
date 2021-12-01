@@ -12,6 +12,7 @@ import java.util.logging.Logger;
  * @author    baldersheim
  * @since     2010-02-19
  */
+@SuppressWarnings("deprecation")
 public class SearchDef {
     private final static Logger log = Logger.getLogger(SearchDef.class.getName());
     /// Name of the searchdefinition

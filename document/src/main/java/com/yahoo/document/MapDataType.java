@@ -79,6 +79,7 @@ public class MapDataType extends DataType {
     }
 
     @Override
+    @Deprecated
     protected void register(DocumentTypeManager manager,
             List<DataType> seenTypes) {
         seenTypes.add(this);

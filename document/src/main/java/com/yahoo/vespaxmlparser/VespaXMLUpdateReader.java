@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 
+@Deprecated
 public class VespaXMLUpdateReader extends VespaXMLFieldReader implements DocumentUpdateReader {
     public VespaXMLUpdateReader(String fileName, DocumentTypeManager docTypeManager) throws Exception {
         super(fileName, docTypeManager);
