@@ -311,14 +311,12 @@ bool
 TopLevelBucketDBUpdater::onRequestBucketInfoReply(
         const std::shared_ptr<api::RequestBucketInfoReply>& repl)
 {
-    if (pending_cluster_state_accepted(repl)) {
-        return true;
-    }
-    return false;
+    attempt_accept_reply_by_current_pending_state(repl);
+    return true;
 }
 
-bool
-TopLevelBucketDBUpdater::pending_cluster_state_accepted(
+void
+TopLevelBucketDBUpdater::attempt_accept_reply_by_current_pending_state(
         const std::shared_ptr<api::RequestBucketInfoReply>& repl)
 {
     if (_pending_cluster_state.get()
@@ -328,11 +326,14 @@ TopLevelBucketDBUpdater::pending_cluster_state_accepted(
             auto guard = _stripe_accessor.rendezvous_and_hold_all();
             process_completed_pending_cluster_state(*guard);
         }
-        return true;
+    } else {
+        // Reply is not recognized, so its corresponding command must have been
+        // sent by a previous, preempted cluster state. We must still swallow the
+        // reply to prevent it from being passed further down a storage chain that
+        // does not expect it.
+        LOG(spam, "Reply %s was not accepted by pending cluster state",
+            repl->toString().c_str());
     }
-    LOG(spam, "Reply %s was not accepted by pending cluster state",
-        repl->toString().c_str());
-    return false;
 }
 
 void
