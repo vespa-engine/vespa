@@ -542,7 +542,7 @@ mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
        .
 
 make %{_smp_mflags}
-VERSION=%{version} make -C client/go
+VERSION=%{version} make -C client/go install-all
 %endif
 
 %install
@@ -553,6 +553,8 @@ cp -r %{installdir} %{buildroot}
 %else
 make install DESTDIR=%{buildroot}
 cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa
+mkdir -p %{buildroot}/usr/share
+cp -a client/go/share/* %{buildroot}/usr/share
 %endif
 # Otherwise installation may fail for find-debuginfo.sh/dwz:
 # dwz: dwz.c:9899: read_dwarf: Assertion `data != ((void *)0) && data->d_buf != ((void *)0)' failed.
@@ -780,6 +782,8 @@ fi
 %{_prefix}/conf/vespa-feed-client/logging.properties
 %{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-feed-client-cli-jar-with-dependencies.jar
+%docdir /usr/share/man
+/usr/share/man
 
 %files config-model-fat
 %if %{_defattr_is_vespa_vespa}
