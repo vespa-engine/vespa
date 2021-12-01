@@ -6,8 +6,11 @@ package main
 
 import (
 	"github.com/vespa-engine/vespa/client/go/cmd"
+	"os"
 )
 
 func main() {
-	cmd.Execute()
+	if err := cmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
