@@ -559,6 +559,8 @@ cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa
 %if 0%{?el7}
 strip %{buildroot}%{_prefix}/bin/vespa
 %endif
+mkdir -p %{buildroot}/usr/share
+cp -a client/go/share/* %{buildroot}/usr/share
 
 %if %{_create_vespa_service}
 mkdir -p %{buildroot}/usr/lib/systemd/system
@@ -780,6 +782,8 @@ fi
 %{_prefix}/conf/vespa-feed-client/logging.properties
 %{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-feed-client-cli-jar-with-dependencies.jar
+%docdir /usr/share/man
+/usr/share/man
 
 %files config-model-fat
 %if %{_defattr_is_vespa_vespa}
