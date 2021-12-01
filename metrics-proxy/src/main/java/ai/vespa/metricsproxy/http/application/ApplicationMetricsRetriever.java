@@ -6,13 +6,13 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import org.apache.hc.client5.http.HttpHostConnectException;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
@@ -71,8 +71,8 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
 
     @Override
     public void run() {
-        try {
-            while (true) {
+        while (true) {
+            try {
                 ConsumerId [] consumers;
                 synchronized (pollThread) {
                     consumers = consumerSet.toArray(new ConsumerId[0]);
@@ -92,8 +92,12 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                     pollThread.wait(timeUntilNextPoll.toMillis());
                     if (stopped) return;
                 }
+            } catch (InterruptedException e) {
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Got unknown exception:", e);
             }
-        } catch (InterruptedException e) {}
+        }
+
     }
 
     @Override
@@ -162,9 +166,8 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 if ((result != null) && result) numOk++;
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 Throwable cause = e.getCause();
-                if ( e instanceof ExecutionException && (cause != null) && (cause instanceof HttpHostConnectException)) {
-                    // Remove once we have some track time.
-                    log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() +  "' : " + cause.getMessage());
+                if ( e instanceof ExecutionException && (cause instanceof SocketException)) {
+                    log.log(Level.FINE, "Failed retrieving metrics for '" + entry.getKey() +  "' : " + cause.getMessage());
                 } else {
                     log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);
                 }
