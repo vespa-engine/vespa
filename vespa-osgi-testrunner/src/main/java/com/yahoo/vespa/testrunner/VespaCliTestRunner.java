@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.SortedMap;
@@ -28,6 +30,7 @@ import static com.yahoo.vespa.testrunner.TestRunner.Status.ERROR;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.RUNNING;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -41,6 +44,8 @@ public class VespaCliTestRunner implements TestRunner {
     private final Path artifactsPath;
     private final Path testsPath;
     private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
+
+    private Path vespaCliHome = null;
 
     @Inject
     public VespaCliTestRunner(VespaCliTestRunnerConfig config) {
@@ -99,6 +104,13 @@ public class VespaCliTestRunner implements TestRunner {
         }
     }
 
+    private Path ensureHomeDirectoryForVespaCli() {
+        if (vespaCliHome == null) {
+            vespaCliHome = uncheck(() -> Files.createTempDirectory(VespaCliTestRunner.class.getSimpleName()));
+        }
+        return vespaCliHome;
+    }
+
     ProcessBuilder testRunProcessBuilder(Suite suite, TestConfig config) throws IOException {
         Path suitePath = getChildDirectory(testsPath, toSuiteDirectoryName(suite))
                 .orElseThrow(() -> new IllegalStateException("No tests found, for suite '" + suite + "'"));
@@ -107,6 +119,7 @@ public class VespaCliTestRunner implements TestRunner {
                                                     "--application", config.application().toFullString(),
                                                     "--zone", config.zone().value());
         builder.redirectErrorStream(true);
+        builder.environment().put("VESPA_CLI_HOME", ensureHomeDirectoryForVespaCli().toString());
         builder.environment().put("VESPA_CLI_ENDPOINTS", toEndpointsConfig(config));
         builder.environment().put("VESPA_CLI_DATA_PLANE_KEY_FILE", artifactsPath.resolve("key").toAbsolutePath().toString());
         builder.environment().put("VESPA_CLI_DATA_PLANE_CERT_FILE", artifactsPath.resolve("cert").toAbsolutePath().toString());
