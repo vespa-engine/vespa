@@ -198,7 +198,7 @@ public class NodesV2ApiTest {
                         Utf8.toBytes("{\"currentVespaVersion\": \"6.43.0\",\"currentDockerImage\": \"docker-registry.domain.tld:8080/dist/vespa:6.45.0\"}"), Request.Method.PATCH),
                         "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-                        Utf8.toBytes("{\"openStackId\": \"patched-openstackid\"}"), Request.Method.PATCH),
+                        Utf8.toBytes("{\"id\": \"patched-id\"}"), Request.Method.PATCH),
                 "{\"message\":\"Updated host4.yahoo.com\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
@@ -383,7 +383,7 @@ public class NodesV2ApiTest {
 
     @Test
     public void post_controller_node() throws Exception {
-        String data = "[{\"hostname\":\"controller1.yahoo.com\", \"openStackId\":\"fake-controller1.yahoo.com\"," +
+        String data = "[{\"hostname\":\"controller1.yahoo.com\", \"id\":\"fake-controller1.yahoo.com\"," +
                       createIpAddresses("127.0.0.1") +
                       "\"flavor\":\"default\"" +
                       ", \"type\":\"controller\"}]";
@@ -873,14 +873,14 @@ public class NodesV2ApiTest {
         String host = "parent2.yahoo.com";
         // Test adding with overrides
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                          ("[{\"hostname\":\"" + host + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                                          ("[{\"hostname\":\"" + host + "\"," + createIpAddresses("::1") + "\"id\":\"osid-123\"," +
                                            "\"flavor\":\"large-variant\",\"resources\":{\"diskGb\":1234,\"memoryGb\":4321}}]").getBytes(StandardCharsets.UTF_8),
                                           Request.Method.POST),
                 400,
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can only override disk GB for configured flavor\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[{\"hostname\":\"" + host + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                        ("[{\"hostname\":\"" + host + "\"," + createIpAddresses("::1") + "\"id\":\"osid-123\"," +
                                 "\"flavor\":\"large-variant\",\"type\":\"host\",\"resources\":{\"diskGb\":1234}}]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
@@ -892,7 +892,7 @@ public class NodesV2ApiTest {
         String tenant = "node-1-3.yahoo.com";
         String resources = "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":1234.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"slow\",\"storageType\":\"remote\"}";
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[{\"hostname\":\"" + tenant + "\"," + createIpAddresses("::2") + "\"openStackId\":\"osid-124\"," +
+                        ("[{\"hostname\":\"" + tenant + "\"," + createIpAddresses("::2") + "\"id\":\"osid-124\"," +
                                 "\"type\":\"tenant\"," + resources + "}]").
                                 getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
@@ -920,14 +920,14 @@ public class NodesV2ApiTest {
         String resources = "\"resources\":{\"vcpu\":5.0,\"memoryGb\":4321.0,\"diskGb\":1234.0,\"bandwidthGbps\":0.3,\"diskSpeed\":\"slow\",\"storageType\":\"local\"}";
         // Test adding new node with resources
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                                          ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                                          ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"id\":\"osid-123\"," +
                                            resources.replace("\"memoryGb\":4321.0,", "") + "}]").getBytes(StandardCharsets.UTF_8),
                                           Request.Method.POST),
                               400,
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Required field 'memoryGb' is missing\"}");
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," + resources + "}]")
+                        ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"id\":\"osid-123\"," + resources + "}]")
                                 .getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
@@ -1029,13 +1029,13 @@ public class NodesV2ApiTest {
     private static String asDockerNodeJson(String hostname, NodeType nodeType, String parentHostname, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
                createIpAddresses(ipAddress) +
-               "\"openStackId\":\"" + hostname + "\",\"flavor\":\"d-1-1-100\"" +
+               "\"id\":\"" + hostname + "\",\"flavor\":\"d-1-1-100\"" +
                (nodeType != NodeType.tenant ? ",\"type\":\"" + nodeType +  "\"" : "") +
                "}";
     }
 
     private static String asNodeJson(String hostname, String flavor, String... ipAddress) {
-        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
+        return "{\"hostname\":\"" + hostname + "\", \"id\":\"" + hostname + "\"," +
                 createIpAddresses(ipAddress) +
                 "\"flavor\":\"" + flavor + "\"}";
     }
@@ -1048,7 +1048,7 @@ public class NodesV2ApiTest {
     private static String asNodeJson(String hostname, NodeType nodeType, String flavor, Optional<TenantName> reservedTo,
                                      Optional<ApplicationId> exclusiveTo, Optional<String> switchHostname,
                                      List<String> additionalHostnames, String... ipAddress) {
-        return "{\"hostname\":\"" + hostname + "\", \"openStackId\":\"" + hostname + "\"," +
+        return "{\"hostname\":\"" + hostname + "\", \"id\":\"" + hostname + "\"," +
                createIpAddresses(ipAddress) +
                "\"flavor\":\"" + flavor + "\"" +
                (reservedTo.map(tenantName -> ", \"reservedTo\":\"" + tenantName.value() + "\"").orElse("")) +

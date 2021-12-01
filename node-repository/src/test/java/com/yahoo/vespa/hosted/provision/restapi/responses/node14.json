@@ -1,6 +1,6 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host14.yahoo.com",
-  "id": "host14.yahoo.com",
+  "id": "node14",
   "state": "active",
   "type": "tenant",
   "hostname": "host14.yahoo.com",

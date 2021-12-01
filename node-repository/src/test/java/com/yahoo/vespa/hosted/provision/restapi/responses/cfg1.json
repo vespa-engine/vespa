@@ -1,6 +1,6 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/cfg1.yahoo.com",
-  "id": "cfg1.yahoo.com",
+  "id": "cfg1",
   "state": "ready",
   "type": "config",
   "hostname": "cfg1.yahoo.com",

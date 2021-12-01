@@ -1,6 +1,6 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/controller1.yahoo.com",
-  "id": "controller1.yahoo.com",
+  "id": "fake-controller1.yahoo.com",
   "state": "provisioned",
   "type": "controller",
   "hostname": "controller1.yahoo.com",

@@ -267,7 +267,13 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         inspector.field("additionalHostnames").traverse((ArrayTraverser) (i, item) ->
                 addressPool.add(new Address(item.asString())));
 
-        Node.Builder builder = Node.create(inspector.field("openStackId").asString(),
+        final String id;
+        if (inspector.field("id").valid()) {
+            id = inspector.field("id").asString();
+        } else {
+            id = inspector.field("openStackId").asString(); // TODO(mpolden): Remove when clients stop sending this field
+        }
+        Node.Builder builder = Node.create(id,
                                            IP.Config.of(ipAddresses, ipAddressPool, addressPool),
                                            inspector.field("hostname").asString(),
                                            flavorFromSlime(inspector),

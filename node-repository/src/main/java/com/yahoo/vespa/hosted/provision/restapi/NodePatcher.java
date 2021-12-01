@@ -174,8 +174,9 @@ public class NodePatcher {
                                              clock.instant());
             case "reports" :
                 return nodeWithPatchedReports(node, value);
-            case "openStackId" :
-                return node.withOpenStackId(asString(value));
+            case "id" :
+            case "openStackId" : // TODO(mpolden): Remove when clients stop sending this field
+                return node.withId(asString(value));
             case "diskGb":
             case "minDiskAvailableGb":
                 return node.with(node.flavor().with(node.flavor().resources().withDiskGb(value.asDouble())), Agent.operator, clock.instant());

@@ -69,13 +69,13 @@ public final class Node implements Nodelike {
     }
 
     /** Creates a node builder in the initial state (provisioned) */
-    public static Node.Builder create(String openStackId, IP.Config ipConfig, String hostname, Flavor flavor, NodeType type) {
-        return new Node.Builder(openStackId, hostname, flavor, State.provisioned, type).ipConfig(ipConfig);
+    public static Node.Builder create(String id, IP.Config ipConfig, String hostname, Flavor flavor, NodeType type) {
+        return new Node.Builder(id, hostname, flavor, State.provisioned, type).ipConfig(ipConfig);
     }
 
     /** Creates a node builder */
-    public static Node.Builder create(String openStackId, String hostname, Flavor flavor, Node.State state, NodeType type) {
-        return new Node.Builder(openStackId, hostname, flavor, state, type);
+    public static Node.Builder create(String id, String hostname, Flavor flavor, Node.State state, NodeType type) {
+        return new Node.Builder(id, hostname, flavor, state, type);
     }
 
     /** DO NOT USE: public for serialization purposes. See {@code create} helper methods. */
@@ -328,9 +328,9 @@ public final class Node implements Nodelike {
                         allocation, history, type, reports, modelName, reservedTo, exclusiveToApplicationId, exclusiveToClusterType, switchHostname, trustStoreItems);
     }
 
-    /** Returns a copy of this with the openStackId set */
-    public Node withOpenStackId(String openStackId) {
-        return new Node(openStackId, ipConfig, hostname, parentHostname, flavor, status, state,
+    /** Returns a copy of this with given id set */
+    public Node withId(String id) {
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state,
                         allocation, history, type, reports, modelName, reservedTo, exclusiveToApplicationId, exclusiveToClusterType, switchHostname, trustStoreItems);
     }
 
