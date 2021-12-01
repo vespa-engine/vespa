@@ -2,10 +2,9 @@
 package com.yahoo.vespa.hosted.provision.applications;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
@@ -59,12 +58,12 @@ public class Application {
      * Returns an application with the given cluster having the min and max resource limits of the given cluster.
      * If the cluster has a target which is not inside the new limits, the target is removed.
      */
-    public Application withCluster(ClusterSpec.Id id, boolean exclusive, ClusterResources min, ClusterResources max) {
+    public Application withCluster(ClusterSpec.Id id, boolean exclusive, Capacity requested) {
         Cluster cluster = clusters.get(id);
         if (cluster == null)
-            cluster = new Cluster(id, exclusive, min, max, Optional.empty(), Optional.empty(), List.of(), AutoscalingStatus.empty());
+            cluster = Cluster.create(id, exclusive, requested);
         else
-            cluster = cluster.withConfiguration(exclusive, min, max);
+            cluster = cluster.withConfiguration(exclusive, requested);
         return with(cluster);
     }
 
