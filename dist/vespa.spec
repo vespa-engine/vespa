@@ -553,14 +553,14 @@ cp -r %{installdir} %{buildroot}
 %else
 make install DESTDIR=%{buildroot}
 cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa
+mkdir -p %{buildroot}/usr/share
+cp -a client/go/share/* %{buildroot}/usr/share
 %endif
 # Otherwise installation may fail for find-debuginfo.sh/dwz:
 # dwz: dwz.c:9899: read_dwarf: Assertion `data != ((void *)0) && data->d_buf != ((void *)0)' failed.
 %if 0%{?el7}
 strip %{buildroot}%{_prefix}/bin/vespa
 %endif
-mkdir -p %{buildroot}/usr/share
-cp -a client/go/share/* %{buildroot}/usr/share
 
 %if %{_create_vespa_service}
 mkdir -p %{buildroot}/usr/lib/systemd/system
