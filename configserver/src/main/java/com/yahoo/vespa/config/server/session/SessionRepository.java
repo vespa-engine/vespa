@@ -346,16 +346,25 @@ public class SessionRepository {
     }
 
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
+        List<Long> remoteSessionsFromZooKeeper = getRemoteSessionsFromZooKeeper();
+        log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
+
         int deleted = 0;
-        for (long sessionId : getRemoteSessionsFromZooKeeper()) {
+        for (long sessionId : remoteSessionsFromZooKeeper) {
             Session session = remoteSessionCache.get(sessionId);
-            if (session == null) continue; // Internal sessions not in sync with zk, continue
+            if (session == null) {
+                log.log(Level.FINE, () -> "Remote session " + sessionId + " is null, creating a new one");
+                session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
+            }
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
                 deleteRemoteSessionFromZooKeeper(session);
                 deleted++;
             }
+            // Avoid deleting too many in one run
+            if (deleted >= 2)
+                break;
         }
         return deleted;
     }
