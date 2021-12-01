@@ -2018,9 +2018,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             return ErrorResponse.forbidden("Only operators can forget a tenant");
 
         controller.tenants().delete(TenantName.from(tenantName),
-                                    () -> accessControlRequests.credentials(TenantName.from(tenantName),
+                                    Optional.of(accessControlRequests.credentials(TenantName.from(tenantName),
                                                                       toSlime(request.getData()).get(),
-                                                                      request.getJDiscRequest()),
+                                                                      request.getJDiscRequest())),
                                     forget);
 
         return new MessageResponse("Deleted tenant " + tenantName);

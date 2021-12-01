@@ -161,7 +161,7 @@ public class TenantController {
     }
 
     /** Deletes the given tenant. */
-    public void delete(TenantName tenant, Supplier<Credentials> credentials, boolean forget) {
+    public void delete(TenantName tenant, Optional<Credentials> credentials, boolean forget) {
         try (Lock lock = lock(tenant)) {
             Tenant oldTenant = get(tenant, true)
                     .orElseThrow(() -> new NotExistsException("Could not delete tenant '" + tenant + "': Tenant not found"));
@@ -171,7 +171,7 @@ public class TenantController {
                     throw new IllegalArgumentException("Could not delete tenant '" + tenant.value()
                             + "': This tenant has active applications");
 
-                accessControl.deleteTenant(tenant, credentials.get());
+                credentials.ifPresent(creds -> accessControl.deleteTenant(tenant, creds));
                 controller.notificationsDb().removeNotifications(NotificationSource.from(tenant));
             }
 
