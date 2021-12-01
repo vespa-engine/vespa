@@ -1,11 +1,11 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host4.yahoo.com",
-  "id": "host4.yahoo.com",
+  "id": "patched-id",
   "state": "active",
   "type": "tenant",
   "hostname": "host4.yahoo.com",
   "parentHostname": "parent.yahoo.com",
-  "openStackId": "patched-openstackid",
+  "openStackId": "patched-id",
   "flavor": "d-2-8-100",
   "cpuCores": 2.0,
   "resources":{"vcpu":2.0,"memoryGb":8.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"fast","storageType":"remote"},

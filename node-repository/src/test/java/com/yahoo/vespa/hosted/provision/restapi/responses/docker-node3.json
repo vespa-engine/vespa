@@ -1,6 +1,6 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/dockerhost3.yahoo.com",
-  "id": "dockerhost3.yahoo.com",
+  "id": "dockerhost3",
   "state": "active",
   "type": "host",
   "hostname": "dockerhost3.yahoo.com",
