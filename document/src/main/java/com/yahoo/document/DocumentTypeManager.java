@@ -190,6 +190,12 @@ public class DocumentTypeManager {
     @SuppressWarnings("deprecation")
     void registerSingleType(DataType type) {
         if (type instanceof TensorDataType) return; // built-in dynamic: Created on the fly
+        if (type instanceof TemporaryDataType) {
+            throw new IllegalArgumentException("TemporaryDataType no longer supported: " + type);
+        }
+        if (type instanceof TemporaryStructuredDataType) {
+            throw new IllegalArgumentException("TemporaryStructuredDataType no longer supported: " + type);
+        }
         if (dataTypes.containsKey(type.getId())) {
             DataType existingType = dataTypes.get(type.getId());
             if (((type instanceof TemporaryDataType) || (type instanceof TemporaryStructuredDataType))
@@ -308,96 +314,6 @@ public class DocumentTypeManager {
 
     public AnnotationTypeRegistry getAnnotationTypeRegistry() {
         return annotationTypeRegistry;
-    }
-
-    void replaceTemporaryTypes() {
-        for (DataType type : dataTypes.values()) {
-            List<DataType> seenStructs = new LinkedList<>();
-            replaceTemporaryTypes(type, seenStructs);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void replaceTemporaryTypes(DataType type, List<DataType> seenStructs) {
-        if (type instanceof WeightedSetDataType) {
-            replaceTemporaryTypesInWeightedSet((WeightedSetDataType) type, seenStructs);
-        } else if (type instanceof MapDataType) {
-            replaceTemporaryTypesInMap((MapDataType) type, seenStructs);
-        } else if (type instanceof CollectionDataType) {
-            replaceTemporaryTypesInCollection((CollectionDataType) type, seenStructs);
-        } else if (type instanceof StructDataType) {
-            replaceTemporaryTypesInStruct((StructDataType) type, seenStructs);
-        } else if (type instanceof PrimitiveDataType) {
-            //OK because these types are always present
-        } else if (type instanceof AnnotationReferenceDataType) {
-            //OK because this type is always present
-        } else if (type instanceof DocumentType) {
-            //OK because this type is always present
-        } else if (type instanceof TensorDataType) {
-            //OK because this type is always present
-        } else if (type instanceof ReferenceDataType) {
-            replaceTemporaryTypeInReference((ReferenceDataType) type);
-        } else if (type instanceof TemporaryDataType) {
-            throw new IllegalStateException("TemporaryDataType registered in DocumentTypeManager, BUG!!");
-        } else {
-            log.warning("Don't know how to replace temporary data types in " + type);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void replaceTemporaryTypesInStruct(StructDataType structDataType, List<DataType> seenStructs) {
-        seenStructs.add(structDataType);
-        for (Field field : structDataType.getFieldsThisTypeOnly()) {
-            DataType fieldType = field.getDataType();
-            if (fieldType instanceof TemporaryDataType) {
-                field.setDataType(getDataType(fieldType.getCode(), ((TemporaryDataType)fieldType).getDetailedType()));
-            } else {
-                if (!seenStructs.contains(fieldType)) {
-                    replaceTemporaryTypes(fieldType, seenStructs);
-                }
-            }
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void replaceTemporaryTypeInReference(ReferenceDataType referenceDataType) {
-        if (referenceDataType.getTargetType() instanceof TemporaryStructuredDataType) {
-            referenceDataType.setTargetType((DocumentType) getDataType(referenceDataType.getTargetType().getId()));
-        }
-        // TODO should we recursively invoke replaceTemporaryTypes for the target type? It should only ever be a doc type
-    }
-
-    @SuppressWarnings("deprecation")
-    private void replaceTemporaryTypesInCollection(CollectionDataType collectionDataType, List<DataType> seenStructs) {
-        if (collectionDataType.getNestedType() instanceof TemporaryDataType) {
-            collectionDataType.setNestedType(getDataType(collectionDataType.getNestedType().getCode(), ""));
-        } else {
-            replaceTemporaryTypes(collectionDataType.getNestedType(), seenStructs);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void replaceTemporaryTypesInMap(MapDataType mapDataType, List<DataType> seenStructs) {
-        if (mapDataType.getValueType() instanceof TemporaryDataType) {
-            mapDataType.setValueType(getDataType(mapDataType.getValueType().getCode(), ""));
-        } else {
-            replaceTemporaryTypes(mapDataType.getValueType(), seenStructs);
-        }
-
-        if (mapDataType.getKeyType() instanceof TemporaryDataType) {
-            mapDataType.setKeyType(getDataType(mapDataType.getKeyType().getCode(), ""));
-        } else {
-            replaceTemporaryTypes(mapDataType.getKeyType(), seenStructs);
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void replaceTemporaryTypesInWeightedSet(WeightedSetDataType weightedSetDataType, List<DataType> seenStructs) {
-        if (weightedSetDataType.getNestedType() instanceof TemporaryDataType) {
-            weightedSetDataType.setNestedType(getDataType(weightedSetDataType.getNestedType().getCode(), ""));
-        } else {
-            replaceTemporaryTypes(weightedSetDataType.getNestedType(), seenStructs);
-        }
     }
 
     public void shutdown() {
