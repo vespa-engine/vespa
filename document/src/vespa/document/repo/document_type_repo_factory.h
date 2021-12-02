@@ -5,7 +5,7 @@
 #include <memory>
 #include <mutex>
 #include <map>
-#include <vespa/document/config/doctypecfg.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 
 namespace document {
 

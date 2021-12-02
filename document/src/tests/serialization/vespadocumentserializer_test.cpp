@@ -5,7 +5,7 @@
 #include <vespa/document/annotation/span.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/config/config-documenttypes.h>
-#include <vespa/document/config/doctypecfg.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/annotationreferencedatatype.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/documenttype.h>

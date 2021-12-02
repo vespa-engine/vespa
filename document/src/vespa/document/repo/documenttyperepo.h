@@ -4,7 +4,7 @@
 
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/document/config/doctypecfg.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 
 namespace document {
 

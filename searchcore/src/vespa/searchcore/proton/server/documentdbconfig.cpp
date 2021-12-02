@@ -9,7 +9,7 @@
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/document/config/doctypecfg.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>

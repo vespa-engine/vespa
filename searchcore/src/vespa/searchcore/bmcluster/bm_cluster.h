@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/document/config/doctypecfg.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include "bm_cluster_params.h"
 #include <memory>
 #include <vector>

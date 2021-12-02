@@ -2,7 +2,7 @@
 
 #include "bootstrapconfig.h"
 #include <vespa/config-bucketspaces.h>
-#include <vespa/document/config/doctypecfg.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 
 using namespace vespa::config::search;
 using namespace config;

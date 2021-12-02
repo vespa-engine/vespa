@@ -6,7 +6,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
-#include <vespa/document/config/doctypecfg.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/config-documenttypes.h>

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "document_db_maintenance_config.h"
-#include <vespa/document/config/doctypecfg.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/matching/ranking_constants.h>
