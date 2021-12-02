@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
+import com.yahoo.config.application.api.DeploymentSpec.DeprecatedElement;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelSteps;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.application.api.DeploymentSpec.Steps;
@@ -66,6 +67,7 @@ public class DeploymentSpecXmlReader {
     private static final String testerFlavorAttribute = "tester-flavor";
 
     private final boolean validate;
+    private final List<DeprecatedElement> deprecatedElements = new ArrayList<>();
 
     /** Creates a validating reader */
     public DeploymentSpecXmlReader() {
@@ -92,6 +94,7 @@ public class DeploymentSpecXmlReader {
 
     /** Reads a deployment spec from XML */
     public DeploymentSpec read(String xmlForm) {
+        deprecatedElements.clear();
         Element root = XML.getDocument(xmlForm).getDocumentElement();
         if ( ! root.getTagName().equals(deploymentTag))
             illegal("The root tag must be <deployment>");
@@ -126,7 +129,8 @@ public class DeploymentSpecXmlReader {
                                   stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   applicationEndpoints,
-                                  xmlForm);
+                                  xmlForm,
+                                  deprecatedElements);
     }
 
     /**
@@ -404,6 +408,7 @@ public class DeploymentSpecXmlReader {
     private Optional<String> readGlobalServiceId(Element environmentTag) {
         String globalServiceId = environmentTag.getAttribute("global-service-id");
         if (globalServiceId == null || globalServiceId.isEmpty()) return Optional.empty();
+        deprecate(environmentTag, List.of("global-service-id"), "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
         return Optional.of(globalServiceId);
     }
 
@@ -478,10 +483,15 @@ public class DeploymentSpecXmlReader {
     private boolean readActive(Element regionTag) {
         String activeValue = regionTag.getAttribute("active");
         if ("".equals(activeValue)) return true; // Default to active
+        deprecate(regionTag, List.of("active"), "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
         if ("true".equals(activeValue)) return true;
         if ("false".equals(activeValue)) return false;
         throw new IllegalArgumentException("Value of 'active' attribute in region tag must be 'true' or 'false' " +
                                            "to control whether this region should receive traffic from the global endpoint of this application");
+    }
+
+    private void deprecate(Element element, List<String> attributes, String message) {
+        deprecatedElements.add(new DeprecatedElement(element.getTagName(), attributes, message));
     }
 
     private static boolean isEmptySpec(Element root) {
