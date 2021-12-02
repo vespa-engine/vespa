@@ -133,10 +133,10 @@ public class Endpoint {
         return routingMethod.isShared() && scope == Scope.global;
     }
 
-    /** Returns the upstream ID of given deployment. This *must* match what the routing layer generates */
-    public String upstreamIdOf(DeploymentId deployment) {
+    /** Returns the upstream name of given deployment. This *must* match what the routing layer generates */
+    public String upstreamName(DeploymentId deployment) {
         if (!routingMethod.isShared()) throw new IllegalArgumentException("Routing method " + routingMethod + " does not have upstream name");
-        return upstreamIdOf(cluster.value(), deployment.applicationId(), deployment.zoneId());
+        return upstreamName(cluster.value(), deployment.applicationId(), deployment.zoneId());
     }
 
     @Override
@@ -269,7 +269,7 @@ public class Endpoint {
         return suffix;
     }
 
-    private static String upstreamIdOf(String name, ApplicationId application, ZoneId zone) {
+    private static String upstreamName(String name, ApplicationId application, ZoneId zone) {
         return Stream.of(namePart(name, ""),
                          instancePart(Optional.of(application.instance()), ""),
                          application.application().value(),

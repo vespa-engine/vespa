@@ -386,6 +386,12 @@ public class Flags {
             "Takes effect on container reboot",
             ZONE_ID, HOSTNAME);
 
+    public static final UnboundBooleanFlag CHANGE_ROUTING_STATUS_OF_ALL_UPSTREAMS = defineFeatureFlag(
+            "change-routing-status-of-all-upstreams", false,
+            List.of("mpolden"), "2021-12-02", "2021-12-15",
+            "Whether the controller should send all known upstreams to configserver when changing routing status of a deployment",
+            "Takes effect on the next change in routing status");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

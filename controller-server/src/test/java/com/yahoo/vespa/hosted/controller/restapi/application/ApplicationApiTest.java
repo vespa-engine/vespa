@@ -52,7 +52,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -1877,7 +1876,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         RoutingStatus status = context.routingStatus();
         assertEquals(value, status.value());
         assertEquals(agent, status.agent());
-        assertEquals(changedAt.truncatedTo(ChronoUnit.SECONDS), status.changedAt());
+        assertEquals(changedAt, status.changedAt());
     }
 
     private static class RequestBuilder implements Supplier<Request> {

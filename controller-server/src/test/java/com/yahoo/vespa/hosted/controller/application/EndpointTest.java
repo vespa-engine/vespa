@@ -387,8 +387,8 @@ public class EndpointTest {
                 "c2.i2.a2.t2.us-north-1.prod",
                 Endpoint.of(instance2).target(EndpointId.of("ignored2"), ClusterSpec.Id.from("c2"), List.of(zone2)).on(Port.tls(4443)).in(SystemName.main)
         );
-        tests1.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(zone)));
-        tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamIdOf(zone2)));
+        tests1.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamName(zone)));
+        tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.upstreamName(zone2)));
     }
 
 }
