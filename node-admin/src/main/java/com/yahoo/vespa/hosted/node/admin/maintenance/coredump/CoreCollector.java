@@ -84,7 +84,8 @@ public class CoreCollector {
 
     List<String> readBacktrace(NodeAgentContext context, ContainerPath coredumpPath, String binPath, boolean allThreads) {
         String threads = allThreads ? "thread apply all bt" : "bt";
-        String[] command = {getGdbPath(context), "-n", "-ex", threads, "-batch", binPath, coredumpPath.pathInContainer()};
+        String[] command = {getGdbPath(context), "-n", "-ex", "set print frame-arguments none",
+                            "-ex", threads, "-batch", binPath, coredumpPath.pathInContainer()};
 
         CommandResult result = container.executeCommandInContainer(context, context.users().root(), command);
         if (result.getExitCode() != 0)
