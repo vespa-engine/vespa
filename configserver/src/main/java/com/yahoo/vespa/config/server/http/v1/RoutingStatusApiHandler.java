@@ -14,6 +14,8 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
@@ -41,7 +43,7 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
 
     private static final Path ROUTING_ROOT = Path.fromString("/routing/v1/");
     private static final Path DEPLOYMENT_STATUS_ROOT = ROUTING_ROOT.append("status");
-    private static final Path ZONE_STATUS_ROOT = ROUTING_ROOT.append("zone-inactive");
+    private static final Path ZONE_STATUS = ROUTING_ROOT.append("zone-inactive");
 
     private final Curator curator;
     private final Clock clock;
@@ -57,6 +59,8 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         this.curator = Objects.requireNonNull(curator);
         this.clock = Objects.requireNonNull(clock);
         this.deployer = Objects.requireNonNull(deployer);
+
+        curator.create(DEPLOYMENT_STATUS_ROOT);
     }
 
     private static RestApi createRestApiDefinition(RoutingStatusApiHandler self) {
@@ -77,6 +81,7 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
     private SlimeJsonResponse listInactiveDeployments(RestApi.RequestContext context) {
         List<String> inactiveDeployments = curator.getChildren(DEPLOYMENT_STATUS_ROOT).stream()
                                                   .filter(upstreamName -> deploymentStatus(upstreamName).status() == RoutingStatus.out)
+                                                  .sorted()
                                                   .collect(Collectors.toUnmodifiableList());
         Slime slime = new Slime();
         Cursor rootArray = slime.setArray();
@@ -100,28 +105,24 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
 
     /** Change routing status of a deployment */
     private SlimeJsonResponse changeDeploymentStatus(RestApi.RequestContext context) {
-        String upstreamName = upstreamName(context);
+        List<String> upstreamNames = upstreamNames(context);
         ApplicationId instance = instance(context);
-        Path path = deploymentStatusPath(upstreamName);
-
         RestApi.RequestContext.RequestContent requestContent = context.requestContentOrThrow();
         Slime requestBody = Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(requestContent.content().readAllBytes()));
         DeploymentRoutingStatus wantedStatus = deploymentRoutingStatusFromSlime(requestBody, clock.instant());
-        DeploymentRoutingStatus currentStatus = deploymentStatus(upstreamName);
-        if (wantedStatus.status() == currentStatus.status()) { // No change
-            return new SlimeJsonResponse(toSlime(currentStatus));
-        }
+        DeploymentRoutingStatus currentStatus = deploymentStatus(upstreamNames.get(0));
 
         // Redeploy application so that a new LbServicesConfig containing the updated status is generated and consumed
         // by routing layer. This is required to update weights for application endpoints when routing status for a
         // deployment is changed
-        curator.set(path, toJsonBytes(wantedStatus));
+        changeStatus(upstreamNames, wantedStatus);
         try {
             deployer.deployFromLocalActive(instance, Duration.ofMinutes(1));
         } catch (Exception e) {
+
             log.log(Level.SEVERE, "Failed to redeploy " + instance + ". Reverting routing status to " +
                                   currentStatus.status(), e);
-            curator.set(path, toJsonBytes(currentStatus));
+            changeStatus(upstreamNames, currentStatus);
             throw new RestApiException.InternalServerError("Failed to change status to " +
                                                            wantedStatus.status() + ", reverting to "
                                                            + currentStatus.status() +
@@ -136,10 +137,10 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
     private SlimeJsonResponse changeZoneStatus(RestApi.RequestContext context) {
         boolean in = context.request().getMethod() == HttpRequest.Method.DELETE;
         if (in) {
-            curator.delete(ZONE_STATUS_ROOT);
+            curator.delete(ZONE_STATUS);
             return new SlimeJsonResponse(toSlime(RoutingStatus.in));
         } else {
-            curator.create(ZONE_STATUS_ROOT);
+            curator.create(ZONE_STATUS);
             return new SlimeJsonResponse(toSlime(RoutingStatus.out));
         }
     }
@@ -147,6 +148,19 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
     /** Read the status for zone */
     private SlimeJsonResponse zoneStatus(RestApi.RequestContext context) {
         return new SlimeJsonResponse(toSlime(zoneStatus()));
+    }
+
+    /** Change the status of one or more upstream names */
+    private void changeStatus(List<String> upstreamNames, DeploymentRoutingStatus newStatus) {
+        CuratorTransaction transaction = new CuratorTransaction(curator);
+        for (var upstreamName : upstreamNames) {
+            Path path = deploymentStatusPath(upstreamName);
+            if (curator.exists(path)) {
+                transaction.add(CuratorOperations.delete(path.getAbsolute()));
+            }
+            transaction.add(CuratorOperations.create(path.getAbsolute(), toJsonBytes(newStatus)));
+        }
+        transaction.commit();
     }
 
     /** Read the status for a deployment */
@@ -172,7 +186,7 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
     }
 
     private RoutingStatus zoneStatus() {
-        return curator.exists(ZONE_STATUS_ROOT) ? RoutingStatus.out : RoutingStatus.in;
+        return curator.exists(ZONE_STATUS) ? RoutingStatus.out : RoutingStatus.in;
     }
 
     protected Path deploymentStatusPath(String upstreamName) {
@@ -180,11 +194,21 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
     }
 
     private static String upstreamName(RestApi.RequestContext context) {
-        String upstreamName = context.pathParameters().getStringOrThrow("upstreamName");
-        if (upstreamName.contains(" ")) {
-            throw new RestApiException.BadRequest("Invalid upstream name: '" + upstreamName + "'");
+        return upstreamNames(context).get(0);
+    }
+
+    private static List<String> upstreamNames(RestApi.RequestContext context) {
+        List<String> upstreamNames = List.of(context.pathParameters().getStringOrThrow("upstreamName")
+                                                    .split(","));
+        if (upstreamNames.isEmpty()) {
+            throw new RestApiException.BadRequest("At least one upstream name must be specified");
         }
-        return upstreamName;
+        for (var upstreamName : upstreamNames) {
+            if (upstreamName.contains(" ")) {
+                throw new RestApiException.BadRequest("Invalid upstream name: '" + upstreamName + "'");
+            }
+        }
+        return upstreamNames;
     }
 
     private static ApplicationId instance(RestApi.RequestContext context) {
