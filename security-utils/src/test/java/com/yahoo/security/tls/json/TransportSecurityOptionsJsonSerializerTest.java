@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
@@ -46,7 +46,7 @@ public class TransportSecurityOptionsJsonSerializerTest {
                 .withHostnameValidationDisabled(false)
                 .withAuthorizedPeers(
                         new AuthorizedPeers(
-                                new HashSet<>(Arrays.asList(
+                                new LinkedHashSet<>(Arrays.asList(
                                         new PeerPolicy("cfgserver", "cfgserver policy description", singleton(new Role("myrole")), Arrays.asList(
                                                 RequiredPeerCredential.of(CN, "mycfgserver"),
                                                 RequiredPeerCredential.of(SAN_DNS, "*.suffix.com"),
