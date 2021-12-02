@@ -284,6 +284,8 @@ private:
     static std::unique_ptr<api::StorageReply> makeQueueTimeoutReply(api::StorageMessage& msg);
     static bool messageMayBeAborted(const api::StorageMessage& msg);
 
+    void update_active_operations_metrics();
+
     // Implements framework::MetricUpdateHook
     void updateMetrics(const MetricLockGuard &) override;
 

@@ -297,11 +297,12 @@ FileStorHandlerImpl::abortQueuedOperations(const AbortBucketOperationsCommand& c
     }
 }
 
-namespace {
-
 void
-update_active_operations_metrics(ActiveOperationsMetrics& metrics, ActiveOperationsStats stats, std::optional<ActiveOperationsStats>& last_stats)
+FileStorHandlerImpl::update_active_operations_metrics()
 {
+    auto& metrics = _metrics->active_operations;
+    auto stats = get_active_operations_stats(true);
+    auto& last_stats = _last_active_operations_stats;
     auto delta_stats = stats;
     if (last_stats.has_value()) {
         delta_stats -= last_stats.value();
@@ -323,8 +324,6 @@ update_active_operations_metrics(ActiveOperationsMetrics& metrics, ActiveOperati
     }
 }
 
-}
-
 void
 FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
 {
@@ -336,8 +335,7 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
         const auto & m = stripe->averageQueueWaitingTime;
         _metrics->averageQueueWaitingTime.addTotalValueWithCount(m.getTotal(), m.getCount());
     }
-    auto active_operations_stats = get_active_operations_stats(true);
-    update_active_operations_metrics(_metrics->active_operations, active_operations_stats, _last_active_operations_stats);
+    update_active_operations_metrics();
 }
 
 bool
@@ -1145,7 +1143,7 @@ FileStorHandlerImpl::Stripe::operationIsInhibited(const monitor_guard & guard, c
 ActiveOperationsStats
 FileStorHandlerImpl::Stripe::get_active_operations_stats(bool reset_min_max) const
 {
-    std::lock_guard<std::mutex> guard(*_lock);
+    std::lock_guard guard(*_lock);
     auto result = _active_operations_stats;
     if (reset_min_max) {
         _active_operations_stats.reset_min_max();
