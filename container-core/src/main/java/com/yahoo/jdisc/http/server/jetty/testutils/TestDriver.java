@@ -10,7 +10,6 @@ import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.server.jetty.FilterBindings;
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServer;
 import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
@@ -84,7 +83,6 @@ public class TestDriver implements AutoCloseable {
                 new AbstractModule() {
                     @Override
                     protected void configure() {
-                        bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
                         bind(ServerConfig.class).toInstance(serverConfig);
                         bind(ConnectorConfig.class).toInstance(connectorConfig);
                         bind(FilterBindings.class).toInstance(new FilterBindings.Builder().build());
@@ -92,8 +90,7 @@ public class TestDriver implements AutoCloseable {
                         bind(RequestLog.class).toInstance(new VoidRequestLog());
                     }
                 },
-                new ConnectorFactoryRegistryModule(connectorConfig),
-                new ServletModule());
+                new ConnectorFactoryRegistryModule(connectorConfig));
     }
 
     public static class Builder {

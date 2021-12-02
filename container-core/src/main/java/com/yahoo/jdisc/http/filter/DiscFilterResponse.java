@@ -1,20 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
+import com.yahoo.jdisc.HeaderFields;
+import com.yahoo.jdisc.http.Cookie;
+import com.yahoo.jdisc.http.HttpResponse;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-
-import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse;
-
-import com.yahoo.jdisc.HeaderFields;
-import com.yahoo.jdisc.http.Cookie;
-
-
-import com.yahoo.jdisc.http.HttpResponse;
 
 /**
  * This class was made abstract from 5.27. Test cases that need
@@ -24,11 +20,11 @@ import com.yahoo.jdisc.http.HttpResponse;
  */
 public abstract class DiscFilterResponse {
 
-	private final ServletOrJdiscHttpResponse parent;
+	private final HttpResponse parent;
 	private final HeaderFields untreatedHeaders;
 	private final List<Cookie> untreatedCookies;
 
-	public DiscFilterResponse(ServletOrJdiscHttpResponse parent) {
+	public DiscFilterResponse(HttpResponse parent) {
 		this.parent = parent;
 
         this.untreatedHeaders = new HeaderFields();
@@ -116,12 +112,7 @@ public abstract class DiscFilterResponse {
 	/**
 	 * Return the parent HttpResponse
      */
-	public HttpResponse getParentResponse() {
-        if (parent instanceof HttpResponse)
-            return (HttpResponse)parent;
-        throw new UnsupportedOperationException(
-                "getParentResponse is not supported for " + parent.getClass().getName());
-	}
+	public HttpResponse getParentResponse() { return parent; }
 
     public void addCookie(JDiscCookieWrapper cookie) {
         if(cookie != null) {

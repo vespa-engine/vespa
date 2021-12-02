@@ -7,7 +7,6 @@ import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Version;
-import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -37,7 +36,7 @@ public abstract class DiscFilterRequest {
     protected static final int DEFAULT_HTTP_PORT = 80;
     protected static final int DEFAULT_HTTPS_PORT = 443;
 
-    private final ServletOrJdiscHttpRequest parent;
+    private final HttpRequest parent;
     protected final Map<String, List<String>> untreatedParams;
     private final HeaderFields untreatedHeaders;
     private List<Cookie> untreatedCookies = null;
@@ -45,7 +44,7 @@ public abstract class DiscFilterRequest {
     private String[] roles = null;
     private boolean overrideIsUserInRole = false;
 
-    public DiscFilterRequest(ServletOrJdiscHttpRequest parent) {
+    public DiscFilterRequest(HttpRequest parent) {
         this.parent = parent;
 
         // save untreated headers from parent
