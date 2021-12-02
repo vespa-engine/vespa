@@ -102,17 +102,17 @@ public class PeerAuthorizerTest {
     }
 
     @Test
-    public void can_exact_match_policy_with_san_uri_pattern() {
+    public void can_match_policy_with_san_uri_pattern() {
         RequiredPeerCredential cnRequirement = createRequiredCredential(CN, "*.matching.cn");
-        RequiredPeerCredential sanUriRequirement = createRequiredCredential(SAN_URI, "myscheme://my/exact/uri");
+        RequiredPeerCredential sanUriRequirement = createRequiredCredential(SAN_URI, "myscheme://my/*/uri");
         PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(POLICY_1, createRoles(ROLE_1), cnRequirement, sanUriRequirement));
 
-        AuthorizationResult result = authorizer.authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.irrelevant.san"), singletonList("myscheme://my/exact/uri")));
+        AuthorizationResult result = authorizer.authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.irrelevant.san"), singletonList("myscheme://my/matching/uri")));
         assertAuthorized(result);
         assertThat(result.assumedRoles()).extracting(Role::name).containsOnly(ROLE_1);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1);
 
-        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", emptyList(), singletonList("myscheme://my/nonmatching/uri"))));
+        assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", emptyList(), singletonList("myscheme://my/nonmatching/url"))));
     }
 
     private static X509Certificate createCertificate(String subjectCn, List<String> sanDns, List<String> sanUri) {
