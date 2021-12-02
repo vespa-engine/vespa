@@ -2,6 +2,7 @@
 package com.yahoo.vespa.configmodel.producers;
 
 import com.yahoo.document.*;
+import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.DataTypeCollection;
@@ -68,7 +69,7 @@ public class DocumentTypes {
         builder.documenttype(db);
     }
 
-    private void buildConfig(Set<FieldSet> fieldSets, com.yahoo.document.DocumenttypesConfig.Documenttype.Builder db) {
+    private void buildConfig(Set<FieldSet> fieldSets, DocumenttypesConfig.Documenttype.Builder db) {
         for (FieldSet fs : fieldSets) {
             buildConfig(fs, db);
         }

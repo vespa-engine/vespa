@@ -10,7 +10,7 @@ import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.ModelConfig;
-import com.yahoo.document.DocumenttypesConfig;
+import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.messagebus.MessagebusConfig;

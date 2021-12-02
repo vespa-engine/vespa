@@ -5,7 +5,7 @@ import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.document.DocumenttypesConfig;
+import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SchemaBuilder;
