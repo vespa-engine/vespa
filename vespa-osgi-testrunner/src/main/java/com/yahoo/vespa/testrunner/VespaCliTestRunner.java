@@ -116,7 +116,8 @@ public class VespaCliTestRunner implements TestRunner {
 
         ProcessBuilder builder = new ProcessBuilder("vespa", "test", suitePath.toAbsolutePath().toString(),
                                                     "--application", config.application().toFullString(),
-                                                    "--zone", config.zone().value());
+                                                    "--zone", config.zone().value(),
+                                                    "--target", "cloud");
         builder.redirectErrorStream(true);
         builder.environment().put("VESPA_CLI_HOME", ensureHomeDirectoryForVespaCli().toString());
         builder.environment().put("VESPA_CLI_ENDPOINTS", toEndpointsConfig(config));
