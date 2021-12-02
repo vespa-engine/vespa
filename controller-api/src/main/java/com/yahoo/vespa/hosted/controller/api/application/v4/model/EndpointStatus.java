@@ -1,59 +1,45 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
+import java.time.Instant;
+import java.util.Objects;
+
 /**
- * Represent the operational status of a service endpoint (where the endpoint itself
- * is identified by the container cluster id).
- *
- * The status of an endpoint may be assigned from the controller.
+ * Represent the routing status for all endpoints of a deployment.
  *
  * @author smorgrav
  */
 public class EndpointStatus {
+
     private final String agent;
-    private final String reason;
     private final Status status;
-    private final long epoch;
+    private final Instant changedAt;
+
+    public EndpointStatus(Status status, String agent, Instant changedAt) {
+        this.status = Objects.requireNonNull(status);
+        this.agent = Objects.requireNonNull(agent);
+        this.changedAt = Objects.requireNonNull(changedAt);
+    }
+
+    /** Returns the agent responsible setting this status */
+    public String agent() {
+        return agent;
+    }
+
+    /** Returns the current status */
+    public Status status() {
+        return status;
+    }
+
+    /** Returns when this was last changed */
+    public Instant changedAt() {
+        return changedAt;
+    }
 
     public enum Status {
         in,
         out,
         unknown;
-    }
-
-    public EndpointStatus(Status status, String reason, String agent, long epoch) {
-        this.status = status;
-        this.reason = reason;
-        this.agent = agent;
-        this.epoch = epoch;
-    }
-
-    /**
-     * @return The agent responsible setting this status
-     */
-    public String getAgent() {
-        return agent;
-    }
-
-    /**
-     * @return The reason for this status (e.g. 'incident INCXXX')
-     */
-    public String getReason() {
-        return reason;
-    }
-
-    /**
-     * @return The current status
-     */
-    public Status getStatus() {
-        return status;
-    }
-
-    /**
-     * @return The epoch for when this status became active, in seconds
-     */
-    public long getEpoch() {
-        return epoch;
     }
 
 }

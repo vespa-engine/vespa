@@ -551,8 +551,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String upstreamName) {
-        EndpointStatus result = new EndpointStatus(EndpointStatus.Status.in, "", "", 1497618757L);
-        return endpoints.getOrDefault(deployment, result);
+        EndpointStatus status = new EndpointStatus(EndpointStatus.Status.in, "", Instant.ofEpochSecond(1497618757L));
+        return endpoints.getOrDefault(deployment, status);
     }
 
     @Override

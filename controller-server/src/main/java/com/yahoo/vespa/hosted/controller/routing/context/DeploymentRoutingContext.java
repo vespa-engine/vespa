@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -90,9 +89,8 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
             EndpointStatus newStatus = new EndpointStatus(value == RoutingStatus.Value.in
                                                                   ? EndpointStatus.Status.in
                                                                   : EndpointStatus.Status.out,
-                                                          "",
                                                           agent.name(),
-                                                          clock.instant().getEpochSecond());
+                                                          clock.instant());
             try {
                 configServer.setGlobalRotationStatus(deployment, upstreamNames(), newStatus);
             } catch (Exception e) {
@@ -112,15 +110,15 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
             EndpointStatus status = configServer.getGlobalRotationStatus(deployment, upstreamName);
             RoutingStatus.Agent agent;
             try {
-                agent = RoutingStatus.Agent.valueOf(status.getAgent().toLowerCase());
+                agent = RoutingStatus.Agent.valueOf(status.agent().toLowerCase());
             } catch (IllegalArgumentException e) {
                 agent = RoutingStatus.Agent.unknown;
             }
-            return new RoutingStatus(status.getStatus() == EndpointStatus.Status.in
+            return new RoutingStatus(status.status() == EndpointStatus.Status.in
                                              ? RoutingStatus.Value.in
                                              : RoutingStatus.Value.out,
                                      agent,
-                                     Instant.ofEpochSecond(status.getEpoch()));
+                                     status.changedAt());
         }
 
         private List<String> upstreamNames() {
@@ -138,9 +136,8 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
             EndpointStatus newStatus = new EndpointStatus(value == RoutingStatus.Value.in
                                                                   ? EndpointStatus.Status.in
                                                                   : EndpointStatus.Status.out,
-                                                          "",
                                                           agent.name(),
-                                                          clock.instant().getEpochSecond());
+                                                          clock.instant());
             primaryEndpoint().ifPresent(endpoint -> {
                 try {
                     configServer.setGlobalRotationStatus(deployment, List.of(endpoint.upstreamName(deployment)), newStatus);
@@ -158,15 +155,15 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
             if (status.isEmpty()) return RoutingStatus.DEFAULT;
             RoutingStatus.Agent agent;
             try {
-                agent = RoutingStatus.Agent.valueOf(status.get().getAgent().toLowerCase());
+                agent = RoutingStatus.Agent.valueOf(status.get().agent().toLowerCase());
             } catch (IllegalArgumentException e) {
                 agent = RoutingStatus.Agent.unknown;
             }
-            return new RoutingStatus(status.get().getStatus() == EndpointStatus.Status.in
+            return new RoutingStatus(status.get().status() == EndpointStatus.Status.in
                                              ? RoutingStatus.Value.in
                                              : RoutingStatus.Value.out,
                                      agent,
-                                     Instant.ofEpochSecond(status.get().getEpoch()));
+                                     status.get().changedAt());
         }
 
         private Optional<Endpoint> primaryEndpoint() {
