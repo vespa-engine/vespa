@@ -4,6 +4,6 @@
   <staging/>
   <prod global-service-id="query">
     <region>us-east-3</region>
-    <region active="false">us-west-1</region>
+    <region invalid="invalid">us-west-1</region>
   </prod>
 </deployment>

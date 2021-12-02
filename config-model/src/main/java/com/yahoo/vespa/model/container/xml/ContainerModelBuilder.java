@@ -209,7 +209,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addServerProviders(deployState, spec, cluster);
 
         // Must be added after nodes:
-        addAthensCopperArgos(cluster, context);
+        addDeploymentSpecConfig(cluster, context, deployState.getDeployLogger());
         addZooKeeper(cluster, spec);
 
         addParameterStoreValidationHandler(cluster, deployState);
@@ -307,19 +307,23 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addComponent(cloudSecretStore);
     }
 
-    private void addAthensCopperArgos(ApplicationContainerCluster cluster, ConfigModelContext context) {
+    private void addDeploymentSpecConfig(ApplicationContainerCluster cluster, ConfigModelContext context, DeployLogger deployLogger) {
         if ( ! context.getDeployState().isHosted()) return;
-        app.getDeployment().map(DeploymentSpec::fromXml)
-                .ifPresent(deploymentSpec -> {
-                    addIdentityProvider(cluster,
-                                        context.getDeployState().getProperties().configServerSpecs(),
-                                        context.getDeployState().getProperties().loadBalancerName(),
-                                        context.getDeployState().getProperties().ztsUrl(),
-                                        context.getDeployState().getProperties().athenzDnsSuffix(),
-                                        context.getDeployState().zone(),
-                                        deploymentSpec);
-                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getEndpoints(), deploymentSpec);
-                });
+        Optional<DeploymentSpec> deploymentSpec = app.getDeployment().map(DeploymentSpec::fromXml);
+        if (deploymentSpec.isEmpty()) return;
+
+        for (var deprecatedElement : deploymentSpec.get().deprecatedElements()) {
+            deployLogger.log(WARNING, deprecatedElement.humanReadableString());
+        }
+
+        addIdentityProvider(cluster,
+                            context.getDeployState().getProperties().configServerSpecs(),
+                            context.getDeployState().getProperties().loadBalancerName(),
+                            context.getDeployState().getProperties().ztsUrl(),
+                            context.getDeployState().getProperties().athenzDnsSuffix(),
+                            context.getDeployState().zone(),
+                            deploymentSpec.get());
+        addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getEndpoints(), deploymentSpec.get());
     }
 
     private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {

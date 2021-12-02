@@ -1060,6 +1060,42 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         }
     }
 
+    @Test
+    public void logs_deployment_spec_deprecations() throws Exception {
+        String containerService = joinLines("<container id='foo' version='1.0'>",
+                                       "  <nodes>",
+                                       "    <node hostalias='host1' />",
+                                       "  </nodes>",
+                                       "</container>");
+        String deploymentXml = joinLines("<deployment version='1.0'>",
+                                         "  <prod global-service-id='foo'>",
+                                         "    <region active='true'>us-east-1</region>",
+                                         "  </prod>",
+                                         "</deployment>");
+
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
+                .withServices(containerService)
+                .withDeploymentSpec(deploymentXml)
+                .build();
+
+        TestLogger logger = new TestLogger();
+        DeployState deployState = new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .zone(new Zone(Environment.prod, RegionName.from("us-east-1")))
+                .properties(new TestProperties().setHostedVespa(true))
+                .deployLogger(logger)
+                .build();
+
+        createModel(root, deployState, null, DomBuilderTest.parse(containerService));
+        assertFalse(logger.msgs.isEmpty());
+        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
+        assertEquals(Level.WARNING, logger.msgs.get(1).getFirst());
+        assertEquals("Element 'prod' contains deprecated attribute: 'global-service-id'. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
+                     logger.msgs.get(0).getSecond());
+        assertEquals("Element 'region' contains deprecated attribute: 'active'. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
+                     logger.msgs.get(1).getSecond());
+    }
+
     private void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
         Component<?, ?> component = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
         assertNotNull(component);

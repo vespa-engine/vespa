@@ -39,7 +39,8 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Optional.empty(),
                                                                   List.of(),
-                                                                  "<deployment version='1.0'/>");
+                                                                  "<deployment version='1.0'/>",
+                                                                  List.of());
 
     private final List<Step> steps;
 
@@ -48,6 +49,7 @@ public class DeploymentSpec {
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
     private final List<Endpoint> endpoints;
+    private final List<DeprecatedElement> deprecatedElements;
 
     private final String xmlForm;
 
@@ -56,13 +58,15 @@ public class DeploymentSpec {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<AthenzService> athenzService,
                           List<Endpoint> endpoints,
-                          String xmlForm) {
+                          String xmlForm,
+                          List<DeprecatedElement> deprecatedElements) {
         this.steps = List.copyOf(Objects.requireNonNull(steps));
         this.majorVersion = Objects.requireNonNull(majorVersion);
         this.athenzDomain = Objects.requireNonNull(athenzDomain);
         this.athenzService = Objects.requireNonNull(athenzService);
         this.xmlForm = Objects.requireNonNull(xmlForm);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
+        this.deprecatedElements = List.copyOf(Objects.requireNonNull(deprecatedElements));
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
         validateAthenz();
@@ -199,6 +203,11 @@ public class DeploymentSpec {
     /** Returns the application-level endpoints of this, if any */
     public List<Endpoint> endpoints() {
         return endpoints;
+    }
+
+    /** Returns the deprecated elements used when creating this */
+    public List<DeprecatedElement> deprecatedElements() {
+        return deprecatedElements;
     }
 
     private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
@@ -576,5 +585,37 @@ public class DeploymentSpec {
         
     }
 
+    /**
+     * Represents a deprecated XML element in {@link com.yahoo.config.application.api.DeploymentSpec}, or the deprecated
+     * attribute(s) of an element.
+     */
+    public static class DeprecatedElement {
+
+        private final String tagName;
+        private final List<String> attributes;
+        private final String message;
+
+        public DeprecatedElement(String tagName, List<String> attributes, String message) {
+            this.tagName = Objects.requireNonNull(tagName);
+            this.attributes = Objects.requireNonNull(attributes);
+            this.message = Objects.requireNonNull(message);
+            if (message.isBlank()) throw new IllegalArgumentException("message must be non-empty");
+        }
+
+        public String humanReadableString() {
+            if (attributes.isEmpty()) {
+                return "Element '" + tagName + "' is deprecated. " + message;
+            }
+            return "Element '" + tagName + "' contains deprecated attribute" + (attributes.size() > 1 ? "s" : "") + ": " +
+                   attributes.stream().map(attr -> "'" + attr + "'").collect(Collectors.joining(", ")) +
+                   ". " + message;
+        }
+
+        @Override
+        public String toString() {
+            return humanReadableString();
+        }
+
+    }
 
 }
