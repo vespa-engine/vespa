@@ -1555,7 +1555,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (primaryEndpoint.isPresent()) {
             DeploymentRoutingContext context = controller.routing().of(deploymentId);
             RoutingStatus status = context.routingStatus();
-            array.addString(primaryEndpoint.get().upstreamIdOf(deploymentId));
+            array.addString(primaryEndpoint.get().upstreamName(deploymentId));
             Cursor statusObject = array.addObject();
             statusObject.setString("status", status.value().name());
             statusObject.setString("reason", "");

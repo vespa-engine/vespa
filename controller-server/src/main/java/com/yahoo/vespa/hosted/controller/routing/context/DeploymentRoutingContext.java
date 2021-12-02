@@ -88,7 +88,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
                                                           clock.instant().getEpochSecond());
             primaryEndpoint().ifPresent(endpoint -> {
                 try {
-                    configServer.setGlobalRotationStatus(deployment, endpoint.upstreamIdOf(deployment), newStatus);
+                    configServer.setGlobalRotationStatus(deployment, endpoint.upstreamName(deployment), newStatus);
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to set rotation status of " + endpoint + " in " + deployment, e);
                 }
@@ -98,7 +98,7 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
         @Override
         public RoutingStatus routingStatus() {
             Optional<EndpointStatus> status = primaryEndpoint().map(endpoint -> {
-                var upstreamName = endpoint.upstreamIdOf(deployment);
+                var upstreamName = endpoint.upstreamName(deployment);
                 return configServer.getGlobalRotationStatus(deployment, upstreamName);
             });
             if (status.isEmpty()) return RoutingStatus.DEFAULT;
