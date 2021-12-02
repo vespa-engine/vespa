@@ -5,8 +5,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
@@ -191,12 +196,38 @@ public class AutoscalingMaintainerTest {
         var tester = new AutoscalingMaintainerTester(new MockDeployer.ApplicationContext(app1, cluster1, app1Capacity));
         ManualClock clock = tester.clock();
 
-        // deploy
         tester.deploy(app1, cluster1, app1Capacity);
 
         autoscale(false, Duration.ofMinutes( 1), Duration.ofMinutes( 5), clock, app1, cluster1, tester);
         autoscale( true, Duration.ofMinutes(19), Duration.ofMinutes(10), clock, app1, cluster1, tester);
         autoscale( true, Duration.ofMinutes(40), Duration.ofMinutes(20), clock, app1, cluster1, tester);
+    }
+
+    @Test
+    public void test_cd_autoscaling_test() {
+        ApplicationId app1 = AutoscalingMaintainerTester.makeApplicationId("app1");
+        ClusterSpec cluster1 = AutoscalingMaintainerTester.containerClusterSpec();
+        NodeResources resources = new NodeResources(1, 4, 50, 1);
+        ClusterResources min = new ClusterResources( 2, 1, resources);
+        ClusterResources max = new ClusterResources(3, 1, resources);
+        var capacity = Capacity.from(min, max);
+        var tester = new AutoscalingMaintainerTester(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east3")),
+                                                     new MockDeployer.ApplicationContext(app1, cluster1, capacity));
+        ManualClock clock = tester.clock();
+
+        tester.deploy(app1, cluster1, capacity);
+        assertEquals(2,
+                     tester.nodeRepository().nodes().list(Node.State.active)
+                           .owner(app1)
+                           .cluster(cluster1.id())
+                           .size());
+
+        autoscale(false, Duration.ofMinutes( 1), Duration.ofMinutes( 5), clock, app1, cluster1, tester);
+        assertEquals(3,
+                     tester.nodeRepository().nodes().list(Node.State.active)
+                           .owner(app1)
+                           .cluster(cluster1.id())
+                           .size());
     }
 
     private void autoscale(boolean down, Duration completionTime, Duration expectedWindow,

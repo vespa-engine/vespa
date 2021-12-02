@@ -52,11 +52,15 @@ class AutoscalingTester {
     }
 
     public AutoscalingTester(Environment environment, NodeResources hostResources) {
-        this(environment, hostResources, null);
+        this(new Zone(environment, RegionName.from("us-east")), hostResources, null);
     }
 
-    public AutoscalingTester(Environment environment, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
-        this(new Zone(environment, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
+    public AutoscalingTester(Zone zone, NodeResources hostResources) {
+        this(zone, hostResources, null);
+    }
+
+    public AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
+        this(zone, List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
         provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }

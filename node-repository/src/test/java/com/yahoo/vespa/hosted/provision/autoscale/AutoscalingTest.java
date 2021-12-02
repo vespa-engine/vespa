@@ -15,6 +15,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
@@ -529,7 +530,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
 
         { // No memory tax
-            AutoscalingTester tester = new AutoscalingTester(Environment.prod, hostResources,
+            AutoscalingTester tester = new AutoscalingTester(new Zone(Environment.prod, RegionName.from("us-east")),
+                                                             hostResources,
                                                              new OnlySubtractingWhenForecastingCalculator(0));
 
             ApplicationId application1 = tester.applicationId("app1");
@@ -545,7 +547,8 @@ public class AutoscalingTest {
         }
 
         { // 15 Gb memory tax
-            AutoscalingTester tester = new AutoscalingTester(Environment.prod, hostResources,
+            AutoscalingTester tester = new AutoscalingTester(new Zone(Environment.prod, RegionName.from("us-east")),
+                                                             hostResources,
                                                              new OnlySubtractingWhenForecastingCalculator(15));
 
             ApplicationId application1 = tester.applicationId("app1");
@@ -733,26 +736,6 @@ public class AutoscalingTest {
         tester.addLoadMeasurements(application1, cluster1.id(), 100, t ->  0.0, t -> 10.0);
         tester.assertResources("Write only -> smallest possible",
                                5, 1, 2.1,  100, 100,
-                               tester.autoscale(application1, cluster1.id(), capacity).target());
-    }
-
-    @Test
-    public void test_cd_autoscaling_test() {
-        NodeResources resources = new NodeResources(1, 4, 50, 1);
-        ClusterResources min = new ClusterResources( 2, 1, resources);
-        ClusterResources max = new ClusterResources(3, 1, resources);
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-        tester.deploy(application1, cluster1, 2, 1, resources);
-
-        tester.addQueryRateMeasurements(application1, cluster1.id(),
-                                        500, t -> 0.0);
-        tester.addCpuMeasurements(0.5f, 1f, 10, application1);
-
-        tester.assertResources("Advice to scale up since observed growth is much faster than scaling time",
-                               3, 1, 1,  4, 50,
                                tester.autoscale(application1, cluster1.id(), capacity).target());
     }
 
