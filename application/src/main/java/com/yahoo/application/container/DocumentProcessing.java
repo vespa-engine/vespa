@@ -23,6 +23,7 @@ import java.util.Map;
  * @author Einar M R Rosenvinge
  */
 @Beta
+@SuppressWarnings("deprecation")
 public final class DocumentProcessing {
 
     private final DocumentProcessingHandler handler;
