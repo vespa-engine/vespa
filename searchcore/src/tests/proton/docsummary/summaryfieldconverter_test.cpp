@@ -8,6 +8,7 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/base/field.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/datatype/arraydatatype.h>
 #include <vespa/document/datatype/datatype.h>
@@ -61,8 +62,6 @@ using document::Document;
 using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
-using document::DocumenttypesConfig;
-using document::DocumenttypesConfigBuilder;
 using document::DoubleFieldValue;
 using document::FeatureSet;
 using document::Field;

@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/config-bucketspaces.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -25,7 +26,6 @@ LOG_SETUP(".proton.server.fileconfigmanager");
 
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
-using document::DocumenttypesConfig;
 using search::IndexMetaInfo;
 using search::SerialNum;
 using search::index::Schema;

@@ -16,6 +16,7 @@
 #include <vespa/searchlib/query/base.h>
 #include <persistence/spi/types.h>
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>

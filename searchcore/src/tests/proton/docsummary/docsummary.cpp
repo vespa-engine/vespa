@@ -3,6 +3,7 @@
 #include <tests/proton/common/dummydbowner.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -46,6 +47,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("docsummary_test");
 
+using config::ConfigGetter;
+
 using namespace cloud::config::filedistribution;
 using namespace document;
 using namespace search::docsummary;
@@ -56,7 +59,6 @@ using namespace search;
 using namespace std::chrono_literals;
 
 using vespalib::IDestructorCallback;
-using document::DocumenttypesConfig;
 using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::index::DummyFileHeaderContext;
@@ -183,7 +185,7 @@ public:
     matching::QueryLimiter _queryLimiter;
     vespalib::Clock _clock;
     DummyWireService _dummy;
-    config::DirSpec _spec;
+    ::config::DirSpec _spec;
     DocumentDBConfigHelper _configMgr;
     DocumentDBConfig::DocumenttypesConfigSP _documenttypesConfig;
     const std::shared_ptr<const DocumentTypeRepo> _repo;
@@ -1127,12 +1129,12 @@ Fixture::Fixture()
       _markupFields()
 {
     std::string cfgId("summary");
-    _summaryCfg = config::ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
-        cfgId, config::FileSpec(TEST_PATH("summary.cfg")));
+    _summaryCfg = ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
+        cfgId, ::config::FileSpec(TEST_PATH("summary.cfg")));
     _resultCfg.ReadConfig(*_summaryCfg, cfgId.c_str());
     std::string mapCfgId("summarymap");
-    std::unique_ptr<vespa::config::search::SummarymapConfig> mapCfg = config::ConfigGetter<vespa::config::search::SummarymapConfig>::getConfig(
-        mapCfgId, config::FileSpec(TEST_PATH("summarymap.cfg")));
+    std::unique_ptr<vespa::config::search::SummarymapConfig> mapCfg = ::config::ConfigGetter<vespa::config::search::SummarymapConfig>::getConfig(
+        mapCfgId, ::config::FileSpec(TEST_PATH("summarymap.cfg")));
     for (size_t i = 0; i < mapCfg->override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = mapCfg->override[i];
         if (o.command == "dynamicteaser") {

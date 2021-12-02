@@ -29,6 +29,7 @@
 #include <vespa/config-upgrading.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/document/bucket/bucketspace.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -85,8 +86,6 @@ using cloud::config::SlobroksConfigBuilder;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
 using config::ConfigSet;
 using document::BucketSpace;
-using document::DocumenttypesConfig;
-using document::DocumenttypesConfigBuilder;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::Field;
@@ -483,7 +482,7 @@ class MyBmNode : public BmNode
 
     void create_document_db(const BmClusterParams&  params);
 public:
-    MyBmNode(const vespalib::string &base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port);
+    MyBmNode(const vespalib::string &base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port);
     ~MyBmNode() override;
     void initialize_persistence_provider() override;
     void create_bucket(const document::Bucket& bucket) override;
@@ -500,7 +499,7 @@ public:
     void merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState &baseline_state) override;
 };
 
-MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
+MyBmNode::MyBmNode(const vespalib::string& base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port)
     : BmNode(),
       _cluster(cluster),
       _document_types(std::move(document_types)),
@@ -800,7 +799,7 @@ MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::C
 }
 
 std::unique_ptr<BmNode>
-BmNode::create(const vespalib::string& base_dir, int base_port, uint32_t node_idx, BmCluster &cluster, const BmClusterParams& params, std::shared_ptr<document::DocumenttypesConfig> document_types, int slobrok_port)
+BmNode::create(const vespalib::string& base_dir, int base_port, uint32_t node_idx, BmCluster &cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port)
 {
     return std::make_unique<MyBmNode>(base_dir, base_port, node_idx, cluster, params, std::move(document_types), slobrok_port);
 }

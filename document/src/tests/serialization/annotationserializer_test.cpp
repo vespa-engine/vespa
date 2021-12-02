@@ -4,6 +4,7 @@
 #include <vespa/document/annotation/alternatespanlist.h>
 #include <vespa/document/annotation/annotation.h>
 #include <vespa/document/annotation/spantree.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/serialization/annotationdeserializer.h>
 #include <vespa/document/serialization/annotationserializer.h>
@@ -17,7 +18,6 @@
 #include <algorithm>
 
 
-using document::DocumenttypesConfig;
 using std::fstream;
 using std::ostringstream;
 using std::string;

@@ -253,7 +253,7 @@ private:
     };
 
     const Schema & _schema;
-    document::DocumenttypesConfig _doctypes_config;
+    document::config::DocumenttypesConfig _doctypes_config;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
     const document::DocumentType &_docType;
     document::Document::UP _doc;    // the document we are about to generate
@@ -300,7 +300,7 @@ public:
 
     const document::DocumentType &getDocumentType() const { return _docType; }
     const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepo() const { return _repo; }
-    document::DocumenttypesConfig getDocumenttypesConfig() const { return _doctypes_config; }
+    document::config::DocumenttypesConfig getDocumenttypesConfig() const { return _doctypes_config; }
 };
 
 }

@@ -2,13 +2,13 @@
 
 #include "bootstrapconfig.h"
 #include <vespa/config-bucketspaces.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 
 using namespace vespa::config::search;
 using namespace config;
 using document::DocumentTypeRepo;
 using search::TuneFileDocumentDB;
 using vespa::config::search::core::ProtonConfig;
-using document::DocumenttypesConfig;
 
 namespace {
     template <typename T>

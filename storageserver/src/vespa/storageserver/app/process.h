@@ -34,7 +34,7 @@ protected:
     config::ConfigSubscriber _configSubscriber;
 
 private:
-    config::ConfigHandle<document::DocumenttypesConfig>::UP _documentHandler;
+    config::ConfigHandle<document::config::DocumenttypesConfig>::UP _documentHandler;
     std::vector<DocumentTypeRepoSP> _repos;
 
 public:

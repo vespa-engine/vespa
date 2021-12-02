@@ -5,12 +5,9 @@
 #include <memory>
 #include <mutex>
 #include <map>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 
 namespace document {
-
-namespace internal {
-    class InternalDocumenttypesType;
-}
 
 class DocumentTypeRepo;
 
@@ -19,7 +16,6 @@ class DocumentTypeRepo;
  * for equal config.
  */
 class DocumentTypeRepoFactory {
-    using DocumenttypesConfig = const internal::InternalDocumenttypesType;
     struct DocumentTypeRepoEntry {
         std::weak_ptr<const DocumentTypeRepo> repo;
         std::unique_ptr<const DocumenttypesConfig> config;

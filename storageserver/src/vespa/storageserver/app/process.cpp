@@ -21,7 +21,7 @@ Process::Process(const config::ConfigUri & configUri)
 void
 Process::setupConfig(milliseconds subscribeTimeout)
 {
-    _documentHandler = _configSubscriber.subscribe<document::DocumenttypesConfig>(_configUri.getConfigId(), subscribeTimeout);
+    _documentHandler = _configSubscriber.subscribe<document::config::DocumenttypesConfig>(_configUri.getConfigId(), subscribeTimeout);
     if (!_configSubscriber.nextConfig()) {
         throw vespalib::TimeoutException("Could not subscribe to document config within timeout");
     }

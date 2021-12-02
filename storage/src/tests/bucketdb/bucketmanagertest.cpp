@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -29,7 +30,6 @@
 LOG_SETUP(".test.bucketdb.bucketmanager");
 
 using config::ConfigGetter;
-using document::DocumenttypesConfig;
 using config::FileSpec;
 using document::DocumentType;
 using document::DocumentTypeRepo;

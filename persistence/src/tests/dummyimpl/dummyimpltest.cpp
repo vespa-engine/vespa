@@ -15,7 +15,7 @@ struct DummyPersistenceFactory : public ConformanceTest::PersistenceFactory {
     using Repo = document::DocumentTypeRepo;
 
     std::unique_ptr<PersistenceProvider>
-    getPersistenceImplementation(const std::shared_ptr<const Repo>& repo, const Repo::DocumenttypesConfig&) override {
+    getPersistenceImplementation(const std::shared_ptr<const Repo>& repo, const DocumenttypesConfig&) override {
         return std::make_unique<dummy::DummyPersistence>(repo);
     }
 

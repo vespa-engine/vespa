@@ -8,6 +8,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 

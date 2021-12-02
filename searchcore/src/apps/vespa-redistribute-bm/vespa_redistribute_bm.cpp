@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -38,8 +39,6 @@ using namespace std::chrono_literals;
 
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
-using document::DocumenttypesConfig;
-using document::DocumenttypesConfigBuilder;
 using search::bmcluster::AvgSampler;
 using search::bmcluster::BmClusterController;
 using search::bmcluster::IBmFeedHandler;

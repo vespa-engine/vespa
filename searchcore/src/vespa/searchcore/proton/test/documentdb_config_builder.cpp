@@ -6,6 +6,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-indexschema.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/document/config/config-documenttypes.h>
@@ -13,7 +14,6 @@
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
 
-using document::DocumenttypesConfig;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
 using vespa::config::search::RankProfilesConfig;

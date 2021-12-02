@@ -3,6 +3,7 @@
 #include "testbase.h"
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/base/testdocrepo.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <fcntl.h>

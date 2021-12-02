@@ -96,7 +96,7 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
     auto resultConfig = std::make_unique<ResultConfig>();
     if (!resultConfig->ReadConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str())) {
         std::ostringstream oss;
-        config::OstreamConfigWriter writer(oss);
+        ::config::OstreamConfigWriter writer(oss);
         writer.write(summaryCfg);
         throw IllegalArgumentException
             (make_string("Could not initialize summary result config for directory '%s' based on summary config '%s'",

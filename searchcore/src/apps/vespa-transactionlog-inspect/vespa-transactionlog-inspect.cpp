@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -25,7 +26,6 @@ using namespace search;
 using namespace search::common;
 using namespace search::transactionlog;
 
-using document::DocumenttypesConfig;
 using document::DocumentTypeRepo;
 
 typedef std::shared_ptr<DocumenttypesConfig> DocumenttypesConfigSP;

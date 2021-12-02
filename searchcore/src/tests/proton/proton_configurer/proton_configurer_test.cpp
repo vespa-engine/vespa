@@ -7,6 +7,7 @@
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
@@ -41,8 +42,6 @@ using vespa::config::content::core::BucketspacesConfigBuilder;
 using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
 using config::ConfigUri;
 using document::DocumentTypeRepo;
-using document::DocumenttypesConfig;
-using document::DocumenttypesConfigBuilder;
 using search::TuneFileDocumentDB;
 using std::map;
 using search::index::Schema;

@@ -14,15 +14,15 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+using config::ConfigGetter;
+using config::FileSpec;
+using vespalib::string;
+using document::test::makeDocumentBucket;
 using namespace document;
 using namespace storage::api;
 using namespace std;
 using namespace storage::lib;
 using namespace ::testing;
-using config::ConfigGetter;
-using config::FileSpec;
-using vespalib::string;
-using document::test::makeDocumentBucket;
 
 namespace storage::distributor {
 

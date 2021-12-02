@@ -26,7 +26,7 @@ TEST("testSearchDocType") {
     s.addSummaryField(Schema::SummaryField("sa", DataType::STRING));
 
     DocTypeBuilder docTypeBuilder(s);
-    document::DocumenttypesConfig config = docTypeBuilder.makeConfig();
+    document::config::DocumenttypesConfig config = docTypeBuilder.makeConfig();
     DocumentTypeRepo repo(config);
     const DocumentType *docType = repo.getDocumentType("searchdocument");
     ASSERT_TRUE(docType);
@@ -57,7 +57,7 @@ TEST("require that multiple fields can have the same type") {
     s.addIndexField(Schema::IndexField("array1", DataType::STRING, CollectionType::ARRAY));
     s.addIndexField(Schema::IndexField("array2", DataType::STRING, CollectionType::ARRAY));
     DocTypeBuilder docTypeBuilder(s);
-    document::DocumenttypesConfig config = docTypeBuilder.makeConfig();
+    document::config::DocumenttypesConfig config = docTypeBuilder.makeConfig();
     DocumentTypeRepo repo(config);
     const DocumentType *docType = repo.getDocumentType("searchdocument");
     ASSERT_TRUE(docType);

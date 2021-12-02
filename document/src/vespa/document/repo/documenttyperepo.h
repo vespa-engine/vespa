@@ -4,11 +4,11 @@
 
 #include <memory>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 
 namespace document {
 
 namespace internal {
-    class InternalDocumenttypesType;
     class DocumentTypeMap;
 }
 
@@ -19,7 +19,6 @@ class DocumentType;
 
 class DocumentTypeRepo {
 public:
-    using DocumenttypesConfig = const internal::InternalDocumenttypesType;
     struct Handler {
         virtual ~Handler() = default;
         virtual void handle(const DocumentType & type) = 0;

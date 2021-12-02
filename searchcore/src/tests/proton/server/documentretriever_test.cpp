@@ -190,7 +190,7 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
 
 MyDocumentStore::~MyDocumentStore() = default;
 
-document::DocumenttypesConfig getRepoConfig() {
+DocumenttypesConfig getRepoConfig() {
     const int32_t doc_type_id = 787121340;
 
     DocumenttypesConfigBuilderHelper builder;

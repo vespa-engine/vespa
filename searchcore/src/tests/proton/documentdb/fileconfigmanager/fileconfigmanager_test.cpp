@@ -8,6 +8,7 @@
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
@@ -40,10 +41,10 @@ vespalib::string myId("myconfigid");
 DocumentDBConfig::SP
 makeBaseConfigSnapshot()
 {
-    config::DirSpec spec(TEST_PATH("cfg"));
+    ::config::DirSpec spec(TEST_PATH("cfg"));
 
     DBCM dbcm(spec, "test");
-    DocumenttypesConfigSP dtcfg(config::ConfigGetter<DocumenttypesConfig>::getConfig("", spec).release());
+    DocumenttypesConfigSP dtcfg(::config::ConfigGetter<DocumenttypesConfig>::getConfig("", spec).release());
     auto b = std::make_shared<BootstrapConfig>(1, dtcfg,
                                                std::make_shared<DocumentTypeRepo>(*dtcfg),
                                                std::make_shared<ProtonConfig>(),

@@ -485,7 +485,7 @@ void StorageNode::configure(std::unique_ptr<StorDistributionConfig> config) {
     }
 }
 void
-StorageNode::configure(std::unique_ptr<document::DocumenttypesConfig> config,
+StorageNode::configure(std::unique_ptr<document::config::DocumenttypesConfig> config,
                        bool hasChanged, int64_t generation)
 {
     log_config_received(*config);

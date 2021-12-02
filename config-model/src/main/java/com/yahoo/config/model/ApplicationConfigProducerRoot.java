@@ -15,7 +15,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.document.DocumenttypesConfig;
+import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;

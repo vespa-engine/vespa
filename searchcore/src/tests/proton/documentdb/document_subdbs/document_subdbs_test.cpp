@@ -274,7 +274,7 @@ struct MyConfigSnapshot
                                  std::make_shared<FiledistributorrpcConfig>(),
                                  std::make_shared<BucketspacesConfig>(),
                                  tuneFileDocumentDB, HwInfo());
-        config::DirSpec spec(cfgDir);
+        ::config::DirSpec spec(cfgDir);
         DocumentDBConfigHelper mgr(spec, "searchdocument");
         mgr.forwardConfig(_bootstrap);
         mgr.nextGeneration(1ms);

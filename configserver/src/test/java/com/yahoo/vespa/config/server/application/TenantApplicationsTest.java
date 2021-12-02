@@ -203,7 +203,7 @@ public class TenantApplicationsTest {
         configNames = applications.listConfigs(ApplicationId.defaultId(), Optional.of(vespaVersion), true);
         assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "", "document.config")));
-        assertTrue(configNames.contains(new ConfigKey<>("documenttypes", "", "document")));
+        assertTrue(configNames.contains(new ConfigKey<>("documenttypes", "", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("documentmanager", "container", "document.config")));
         assertTrue(configNames.contains(new ConfigKey<>("health-monitor", "container", "container.jdisc.config")));
         assertTrue(configNames.contains(new ConfigKey<>("specific", "container", "project")));
