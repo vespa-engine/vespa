@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
@@ -29,6 +30,21 @@ public class CapacityPolicies {
         this.sharedHosts = type -> PermanentFlags.SHARED_HOST.bindTo(nodeRepository.flagSource()).value().isEnabled(type.name());
     }
 
+    public Capacity applyOn(Capacity capacity, boolean isTester, ClusterSpec cluster) {
+        return capacity.withLimits(applyOn(capacity.minResources(), capacity, isTester, cluster),
+                                   applyOn(capacity.maxResources(), capacity, isTester, cluster));
+    }
+
+    public ClusterResources applyOn(ClusterResources resources, Capacity capacity, boolean isTester, ClusterSpec cluster) {
+        int nodes = decideSize(resources.nodes(), capacity.isRequired(),
+                                                  capacity.canFail(),
+                                                  isTester,
+                                                  cluster);
+        int groups = Math.min(resources.groups(), nodes); // cannot have more groups than nodes
+        var nodeResources = decideNodeResources(resources.nodeResources(), capacity.isRequired(), cluster);
+        return new ClusterResources(nodes, groups, nodeResources);
+    }
+
     public int decideSize(int requested, boolean required, boolean canFail, boolean isTester, ClusterSpec cluster) {
         if (isTester) return 1;
 
@@ -44,9 +60,6 @@ public class CapacityPolicies {
     }
 
     public NodeResources decideNodeResources(NodeResources target, boolean required, ClusterSpec cluster) {
-        if (target.isUnspecified())
-            target = defaultNodeResources(cluster.type());
-
         if (required) return target;
 
         // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively

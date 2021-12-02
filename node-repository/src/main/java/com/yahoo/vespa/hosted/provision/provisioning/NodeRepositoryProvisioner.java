@@ -84,8 +84,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     @Override
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity requested,
                                   ProvisionLogger logger) {
-        log.log(Level.FINE, () -> "Received deploy prepare request for " + requested +
-                                  " for application " + application + ", cluster " + cluster);
+        log.log(Level.FINE, "Received deploy prepare request for " + requested +
+                            " for application " + application + ", cluster " + cluster);
 
         if (cluster.group().isPresent()) throw new IllegalArgumentException("Node requests cannot specify a group");
 
@@ -96,17 +96,16 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
-            ClusterResources target = decideTargetResources(application, cluster, requested);
-            int nodeCount = capacityPolicies.decideSize(target.nodes(),
-                                                        requested.isRequired(),
-                                                        requested.canFail(),
-                                                        application.instance().isTester(),
-                                                        cluster);
-            groups = Math.min(target.groups(), nodeCount); // cannot have more groups than nodes
-            resources = capacityPolicies.decideNodeResources(target.nodeResources(), requested.isRequired(), cluster);
-            boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
-            nodeSpec = NodeSpec.from(nodeCount, resources, exclusive, requested.canFail());
-            logIfDownscaled(target.nodes(), nodeCount, cluster, logger);
+            var actual = capacityPolicies.applyOn(requested, application.instance().isTester(), cluster);
+            ClusterResources target = decideTargetResources(application, cluster, actual);
+
+            boolean exclusive = capacityPolicies.decideExclusivity(actual, cluster.isExclusive());
+            nodeSpec = NodeSpec.from(target.nodes(), target.nodeResources(), exclusive, actual.canFail());
+            logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
+            groups = target.groups();
+            resources = target.nodeResources();
+            if (resources.isUnspecified())
+                resources = capacityPolicies.defaultNodeResources(cluster.type());
         }
         else {
             groups = 1; // type request with multiple groups is not supported
@@ -190,10 +189,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                   .advertisedResources();
     }
 
-    private void logIfDownscaled(int targetNodes, int actualNodes, ClusterSpec cluster, ProvisionLogger logger) {
-        if (zone.environment().isManuallyDeployed() && actualNodes < targetNodes)
-            logger.log(Level.INFO, "Requested " + targetNodes + " nodes for " + cluster +
-                                   ", downscaling to " + actualNodes + " nodes in " + zone.environment());
+    private void logIfDownscaled(int requestedMinNodes, int actualMinNodes, ClusterSpec cluster, ProvisionLogger logger) {
+        if (zone.environment().isManuallyDeployed() && actualMinNodes < requestedMinNodes)
+            logger.log(Level.INFO, "Requested " + requestedMinNodes + " nodes for " + cluster +
+                                   ", downscaling to " + actualMinNodes + " nodes in " + zone.environment());
     }
 
     private List<HostSpec> asSortedHosts(List<Node> nodes, NodeResources requestedResources) {
