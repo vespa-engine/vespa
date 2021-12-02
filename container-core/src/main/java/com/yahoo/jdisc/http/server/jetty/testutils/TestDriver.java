@@ -92,8 +92,7 @@ public class TestDriver implements AutoCloseable {
                         bind(RequestLog.class).toInstance(new VoidRequestLog());
                     }
                 },
-                new ConnectorFactoryRegistryModule(connectorConfig),
-                new ServletModule());
+                new ConnectorFactoryRegistryModule(connectorConfig));
     }
 
     public static class Builder {

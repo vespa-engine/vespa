@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.ca.restapi;
 
 import com.yahoo.application.container.handler.Request;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
+import com.yahoo.jdisc.http.server.jetty.RequestUtils;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -95,7 +95,7 @@ public class CertificateAuthorityApiTest extends ContainerTester {
                                            instanceRefreshJson(csr),
                                            Request.Method.POST,
                                            principal);
-        request.getAttributes().put(ServletRequest.JDISC_REQUEST_X509CERT, new X509Certificate[]{certificate});
+        request.getAttributes().put(RequestUtils.JDISC_REQUEST_X509CERT, new X509Certificate[]{certificate});
         assertIdentityResponse(request);
 
         // POST instance refresh with ZTS client
@@ -136,7 +136,7 @@ public class CertificateAuthorityApiTest extends ContainerTester {
                 instanceRefreshJson(csr),
                 Request.Method.POST,
                 principal);
-        request.getAttributes().put(ServletRequest.JDISC_REQUEST_X509CERT, new X509Certificate[]{cert});
+        request.getAttributes().put(RequestUtils.JDISC_REQUEST_X509CERT, new X509Certificate[]{cert});
         assertResponse(
                 400,
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/foobar failed: Mismatch between instance ID in URL path and instance ID in CSR [instanceId=foobar,instanceIdFromCsr=1.cluster1.default.app1.tenant1.us-north-1.prod.node]\"}",

@@ -6,7 +6,8 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
+import com.yahoo.jdisc.http.server.jetty.RequestUtils;
+
 import java.util.logging.Level;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
@@ -168,7 +169,7 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
     }
 
     private List<X509Certificate> getRequestCertificateChain(HttpRequest request) {
-        return Optional.ofNullable(request.getJDiscRequest().context().get(ServletRequest.JDISC_REQUEST_X509CERT))
+        return Optional.ofNullable(request.getJDiscRequest().context().get(RequestUtils.JDISC_REQUEST_X509CERT))
                 .map(X509Certificate[].class::cast)
                 .map(Arrays::asList)
                 .orElse(Collections.emptyList());

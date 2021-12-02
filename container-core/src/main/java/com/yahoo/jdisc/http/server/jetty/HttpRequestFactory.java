@@ -2,7 +2,6 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.Utf8Appendable;
@@ -32,7 +31,7 @@ class HttpRequestFactory {
                     HttpRequest.Version.fromString(servletRequest.getProtocol()),
                     new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
                     getConnection((Request) servletRequest).getCreatedTimeStamp());
-            httpRequest.context().put(ServletRequest.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
+            httpRequest.context().put(RequestUtils.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
             servletRequest.setAttribute(HttpRequest.class.getName(), httpRequest);
             return httpRequest;
         } catch (Utf8Appendable.NotUtf8Exception e) {

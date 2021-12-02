@@ -7,7 +7,6 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse;
 
 import java.util.List;
 
@@ -16,7 +15,7 @@ import java.util.List;
  *
  * @author Einar M R Rosenvinge
  */
-public class HttpResponse extends Response implements ServletOrJdiscHttpResponse {
+public class HttpResponse extends Response {
 
     private final HeaderFields trailers = new HeaderFields();
     private boolean chunkedEncodingEnabled = true;
@@ -54,12 +53,10 @@ public class HttpResponse extends Response implements ServletOrJdiscHttpResponse
         return message;
     }
 
-    @Override
     public void copyHeaders(HeaderFields target) {
         target.addAll(headers());
     }
 
-    @Override
     public List<Cookie> decodeSetCookieHeader() {
         return CookieHelper.decodeSetCookieHeader(headers());
     }
