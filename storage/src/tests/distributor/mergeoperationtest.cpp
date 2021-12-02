@@ -25,6 +25,7 @@ vespalib::string _g_storage("storage");
 }
 
 struct MergeOperationTest : Test, DistributorStripeTestUtil {
+    using Priority = storage::api::StorageMessage::Priority;
     OperationSequencer _operation_sequencer;
 
     void SetUp() override {
@@ -38,8 +39,9 @@ struct MergeOperationTest : Test, DistributorStripeTestUtil {
     }
 
     std::shared_ptr<MergeOperation> setup_minimal_merge_op();
-    std::shared_ptr<MergeOperation> setup_simple_merge_op(const std::vector<uint16_t>& nodes);
-    std::shared_ptr<MergeOperation> setup_simple_merge_op();
+    std::shared_ptr<MergeOperation> setup_simple_merge_op(const std::vector<uint16_t>& nodes,
+                                                          Priority merge_pri = 120);
+    std::shared_ptr<MergeOperation> setup_simple_merge_op(Priority merge_pri = 120);
     void assert_simple_merge_bucket_command();
     void assert_simple_delete_bucket_command();
     MergeBucketMetricSet& get_merge_metrics();
@@ -55,7 +57,7 @@ MergeOperationTest::setup_minimal_merge_op()
 }
 
 std::shared_ptr<MergeOperation> 
-MergeOperationTest::setup_simple_merge_op(const std::vector<uint16_t>& nodes)
+MergeOperationTest::setup_simple_merge_op(const std::vector<uint16_t>& nodes, Priority merge_pri)
 {
     getClock().setAbsoluteTimeInSeconds(10);
 
@@ -68,15 +70,15 @@ MergeOperationTest::setup_simple_merge_op(const std::vector<uint16_t>& nodes)
 
     auto op = std::make_shared<MergeOperation>(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), nodes));
     op->setIdealStateManager(&getIdealStateManager());
-    op->setPriority(api::StorageMessage::Priority(125));
+    op->setPriority(merge_pri);
     op->start(_sender, framework::MilliSecTime(0));
     return op;
 }
 
 std::shared_ptr<MergeOperation>
-MergeOperationTest::setup_simple_merge_op()
+MergeOperationTest::setup_simple_merge_op(Priority merge_pri)
 {
-    return setup_simple_merge_op({0, 1, 2});
+    return setup_simple_merge_op({0, 1, 2}, merge_pri);
 }
 
 void
@@ -605,13 +607,25 @@ TEST_F(MergeOperationTest, unordered_merges_only_sent_iff_config_enabled_and_all
 }
 
 TEST_F(MergeOperationTest, delete_bucket_inherits_merge_priority) {
-    auto op = setup_simple_merge_op();
+    auto op = setup_simple_merge_op(Priority(125));
     ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
     sendReply(*op);
     ASSERT_NO_FATAL_FAILURE(assert_simple_delete_bucket_command());
     auto del_cmd = std::dynamic_pointer_cast<api::DeleteBucketCommand>(_sender.commands().back());
     ASSERT_TRUE(del_cmd);
     EXPECT_EQ(int(del_cmd->getPriority()), int(op->getPriority()));
+    EXPECT_EQ(int(del_cmd->getPriority()), 125);
+}
+
+// TODO less magical numbers, but the priority mapping is technically config...
+TEST_F(MergeOperationTest, delete_bucket_priority_is_capped_to_feed_pri_120) {
+    auto op = setup_simple_merge_op(Priority(119));
+    ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
+    sendReply(*op);
+    ASSERT_NO_FATAL_FAILURE(assert_simple_delete_bucket_command());
+    auto del_cmd = std::dynamic_pointer_cast<api::DeleteBucketCommand>(_sender.commands().back());
+    ASSERT_TRUE(del_cmd);
+    EXPECT_EQ(int(del_cmd->getPriority()), 120);
 }
 
 } // storage::distributor
