@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
+#include <vespa/vespalib/datastore/i_compactable.h>
 #include <vespa/vespalib/datastore/unique_store_allocator.h>
 #include <vespa/vespalib/datastore/unique_store_comparator.h>
 
@@ -17,6 +18,7 @@
 LOG_SETUP("vespalib_datastore_shared_hash_test");
 
 using vespalib::datastore::EntryRef;
+using vespalib::datastore::ICompactable;
 using RefT = vespalib::datastore::EntryRefT<22>;
 using MyAllocator = vespalib::datastore::UniqueStoreAllocator<uint32_t, RefT>;
 using MyDataStore = vespalib::datastore::DataStoreT<RefT>;
@@ -34,6 +36,27 @@ void consider_yield(uint32_t i)
         std::this_thread::yield();
     }
 }
+
+class MyCompactable : public ICompactable
+{
+    MyAllocator& _allocator;
+    std::vector<EntryRef>& _new_refs;
+public:
+    MyCompactable(MyAllocator& allocator, std::vector<EntryRef>& new_refs)
+        : ICompactable(),
+          _allocator(allocator),
+          _new_refs(new_refs)
+    {
+    }
+    ~MyCompactable() override = default;
+
+    EntryRef move(EntryRef ref) override {
+        auto new_ref = _allocator.move(ref);
+        _allocator.hold(ref);
+        _new_refs.emplace_back(new_ref);
+        return new_ref;
+    }
+};
 
 }
 
@@ -257,7 +280,8 @@ TEST_F(DataStoreShardedHashTest, move_keys_works)
     std::vector<EntryRef> refs;
     _hash_map.foreach_key([&refs](EntryRef ref) { refs.emplace_back(ref); });
     std::vector<EntryRef> new_refs;
-    _hash_map.move_keys([this, &new_refs](EntryRef ref) { auto new_ref = _allocator.move(ref); _allocator.hold(ref); new_refs.emplace_back(new_ref); return new_ref; });
+    MyCompactable my_compactable(_allocator, new_refs);
+    _hash_map.move_keys(my_compactable, std::vector<bool>(RefT::numBuffers(), true), RefT::offset_bits);
     std::vector<EntryRef> verify_new_refs;
     _hash_map.foreach_key([&verify_new_refs](EntryRef ref) { verify_new_refs.emplace_back(ref); });
     EXPECT_EQ(50u, refs.size());
