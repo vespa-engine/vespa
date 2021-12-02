@@ -16,6 +16,7 @@
 #pragma once
 
 #include "filestorhandler.h"
+#include "active_operations_stats.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/common/servicelayercomponent.h>
@@ -136,6 +137,7 @@ public:
         PriorityQueue & exposeQueue() { return *_queue; }
         BucketIdx & exposeBucketIdx() { return bmi::get<2>(*_queue); }
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
+        ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
         bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
         FileStorHandler::LockedMessage get_next_async_message(monitor_guard& guard);
@@ -153,6 +155,7 @@ public:
         std::unique_ptr<PriorityQueue>  _queue;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_merges;
+        mutable ActiveOperationsStats   _active_operations_stats;
     };
 
     class BucketLock : public FileStorHandler::BucketLockInterface {
@@ -232,6 +235,9 @@ public:
     // Implements ResumeGuard::Callback
     void resume() override;
 
+    // Use only for testing
+    framework::MetricUpdateHook& get_metric_update_hook_for_testing() { return *this; }
+
 private:
     ServiceLayerComponent   _component;
     std::atomic<DiskState>  _state;
@@ -246,6 +252,7 @@ private:
     mutable std::mutex              _pauseMonitor;
     mutable std::condition_variable _pauseCond;
     std::atomic<bool>               _paused;
+    std::optional<ActiveOperationsStats> _last_active_operations_stats;
 
     // Returns the index in the targets array we are sending to, or -1 if none of them match.
     int calculateTargetBasedOnDocId(const api::StorageMessage& msg, std::vector<RemapInfo*>& targets);
@@ -276,6 +283,8 @@ private:
      */
     static std::unique_ptr<api::StorageReply> makeQueueTimeoutReply(api::StorageMessage& msg);
     static bool messageMayBeAborted(const api::StorageMessage& msg);
+
+    void update_active_operations_metrics();
 
     // Implements framework::MetricUpdateHook
     void updateMetrics(const MetricLockGuard &) override;
@@ -322,6 +331,7 @@ private:
         return _stripes[stripeId].getNextMessage(timeout);
     }
 
+    ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const override;
 };
 
 } // storage

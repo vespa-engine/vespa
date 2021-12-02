@@ -11,6 +11,7 @@
 #pragma once
 
 #include "merge_handler_metrics.h"
+#include "active_operations_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/summetric.h>
 
@@ -147,7 +148,8 @@ public:
     metrics::LongAverageMetric queueSize;
     metrics::LongAverageMetric pendingMerges;
     metrics::DoubleAverageMetric waitingForLockHitRate;
-    metrics::DoubleAverageMetric lockWaitTime;
+    metrics::DoubleAverageMetric lockWaitTime; // unused
+    ActiveOperationsMetrics      active_operations;
 
     FileStorDiskMetrics(const std::string& name, const std::string& description, MetricSet* owner);
     ~FileStorDiskMetrics() override;
