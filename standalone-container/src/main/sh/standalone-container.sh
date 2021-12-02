@@ -97,6 +97,11 @@ Fail() {
 
 FixDataDirectory() {
     if ! [ -d "$1" ]; then
+        if [ -e "$1" ]; then
+            # TODO: Remove this if-branch once >=7.511 has rolled out everywhere
+            echo "Removing file '$1'"
+            rm "$1"
+        fi
         echo "Creating data directory '$1'"
         mkdir -p "$1" || exit 1
     fi
@@ -156,6 +161,7 @@ StartCommand() {
     FixDataDirectory "$(dirname "$cfpfile")"
     printenv > "$cfpfile"
     FixDataDirectory "$bundlecachedir"
+    FixDataDirectory "$VESPA_HOME/var/crash"
 
     java \
         -Xms128m -Xmx2048m \
