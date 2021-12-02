@@ -37,8 +37,6 @@ public class NodeRepositoryNode {
     private Set<String> additionalIpAddresses;
     @JsonProperty("additionalHostnames")
     private List<String> additionalHostnames;
-    @JsonProperty("openStackId")
-    private String openStackId;
     @JsonProperty("flavor")
     private String flavor;
     @JsonProperty("resources")
@@ -160,14 +158,6 @@ public class NodeRepositoryNode {
 
     public void setAdditionalHostnames(List<String> additionalHostnames) {
         this.additionalHostnames = additionalHostnames;
-    }
-
-    public String getOpenStackId() {
-        return openStackId;
-    }
-
-    public void setOpenStackId(String openStackId) {
-        this.openStackId = openStackId;
     }
 
     public String getFlavor() {
@@ -348,6 +338,10 @@ public class NodeRepositoryNode {
         return orchestratorStatus;
     }
 
+    public void setOrchestratorStatus(String orchestratorStatus) {
+        this.orchestratorStatus = orchestratorStatus;
+    }
+
     public Long suspendedSinceMillis() {
         return suspendedSinceMillis;
     }
@@ -447,7 +441,6 @@ public class NodeRepositoryNode {
                ", ipAddresses=" + ipAddresses +
                ", additionalIpAddresses=" + additionalIpAddresses +
                ", additionalHostnames=" + additionalHostnames +
-               ", openStackId='" + openStackId + '\'' +
                ", flavor='" + flavor + '\'' +
                ", resources=" + resources +
                ", requestedResources=" + requestedResources +
