@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.List;
 
+@SuppressWarnings("deprecation")
 public class VespaFeeder {
 
     private final Arguments args;
