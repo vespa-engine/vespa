@@ -565,13 +565,18 @@ public class JobController {
                        for (JobType type : jobs(id))
                            locked(id, type, deactivateTester, __ -> {
                                try (Lock ___ = curator.lock(id, type)) {
-                                   deactivateTester(tester, type);
+                                   try {
+                                       deactivateTester(tester, type);
+                                   }
+                                   catch (Exception e) {
+                                       // It's probably already deleted, so if we fail, that's OK.
+                                   }
                                    curator.deleteRunData(id, type);
                                    logs.delete(id);
                                }
                            });
                    }
-                   catch (TimeoutException e) {
+                   catch (Exception e) {
                        return; // Don't remove the data if we couldn't clean up all resources.
                    }
                    curator.deleteRunData(id);
