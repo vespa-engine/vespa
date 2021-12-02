@@ -30,14 +30,6 @@ public:
     ExecutorStats getStats() override;
     void wakeup() override;
 
-#if 0
-    static std::unique_ptr<ISequencedTaskExecutor>
-    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit = 1000,
-           OptimizeFor optimize = OptimizeFor::LATENCY, uint32_t kindOfWatermark = 0) {
-        return create(func, threads, taskLimit, optimize, kindOfWatermark, 100ms);
-    }
-
-#endif
     static std::unique_ptr<ISequencedTaskExecutor>
     create(Runnable::init_fun_t func, uint32_t threads);
     static std::unique_ptr<ISequencedTaskExecutor>
