@@ -33,6 +33,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 @Provides({ IndexingProcessor.PROVIDED_NAME })
 @Before({ IndexingProcessor.INDEXING_END })
 @After({ IndexingProcessor.INDEXING_START, "*" })
+@SuppressWarnings("deprecation")
 public class IndexingProcessor extends DocumentProcessor {
 
     public final static String PROVIDED_NAME = "indexedDocument";
