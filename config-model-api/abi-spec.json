@@ -280,6 +280,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.application.api.DeploymentSpec$DeprecatedElement": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.util.List, java.lang.String)",
+      "public java.lang.String humanReadableString()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.application.api.DeploymentSpec$ParallelSteps": {
     "superClass": "com.yahoo.config.application.api.DeploymentSpec$Steps",
     "interfaces": [],
@@ -375,7 +388,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List, java.lang.String)",
+      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.List, java.lang.String, java.util.List)",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
       "public java.util.Optional athenzDomain()",
@@ -387,6 +400,7 @@
       "public java.util.List instanceNames()",
       "public java.util.List instances()",
       "public java.util.List endpoints()",
+      "public java.util.List deprecatedElements()",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.io.Reader)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String, boolean)",
