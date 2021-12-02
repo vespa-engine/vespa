@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -85,12 +84,12 @@ public interface ConfigServer {
     /**
      * Set new status for a endpoint of a single deployment.
      *
-     * @param deployment   The deployment to change
-     * @param upstreamName The upstream to modify. Upstream name is a unique identifier for the global route of a
-     *                     deployment in the shared routing layer
-     * @param status       The new status
+     * @param deployment    The deployment to change
+     * @param upstreamNames The upstream names to modify. Upstream name is a unique identifier for the routing status
+     *                      of a cluster in a deployment
+     * @param status        The new status
      */
-    void setGlobalRotationStatus(DeploymentId deployment, String upstreamName, EndpointStatus status);
+    void setGlobalRotationStatus(DeploymentId deployment, List<String> upstreamNames, EndpointStatus status);
 
     /**
      * Set the new status for an entire zone.

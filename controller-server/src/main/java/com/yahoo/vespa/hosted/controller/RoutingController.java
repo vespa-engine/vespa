@@ -74,6 +74,7 @@ public class RoutingController {
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
     private final BooleanFlag hideSharedRoutingEndpoint;
+    private final BooleanFlag changeRoutingStatusOfAllUpstreams;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -82,6 +83,7 @@ public class RoutingController {
                                                          controller.applications(),
                                                          controller.curator());
         this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
+        this.changeRoutingStatusOfAllUpstreams = Flags.CHANGE_ROUTING_STATUS_OF_ALL_UPSTREAMS.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -90,7 +92,8 @@ public class RoutingController {
             return new SharedDeploymentRoutingContext(deployment,
                                                       this,
                                                       controller.serviceRegistry().configServer(),
-                                                      controller.clock());
+                                                      controller.clock(),
+                                                      changeRoutingStatusOfAllUpstreams.value());
         }
         return new ExclusiveDeploymentRoutingContext(deployment, this);
     }
