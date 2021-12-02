@@ -36,41 +36,54 @@ var apiKeyCmd = &cobra.Command{
 	Example:           apiKeyExample(),
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := LoadConfig()
-		if err != nil {
-			fatalErr(err, "Could not load config")
-			return
-		}
-		app := getApplication()
-		apiKeyFile := cfg.APIKeyPath(app.Tenant)
-		if util.PathExists(apiKeyFile) && !overwriteKey {
-			printErrHint(fmt.Errorf("File %s already exists", apiKeyFile), "Use -f to overwrite it")
-			printPublicKey(apiKeyFile, app.Tenant)
-			return
-		}
-		apiKey, err := vespa.CreateAPIKey()
-		if err != nil {
-			fatalErr(err, "Could not create API key")
-			return
-		}
-		if err := ioutil.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
-			printSuccess("API private key written to ", apiKeyFile)
-			printPublicKey(apiKeyFile, app.Tenant)
-			if vespa.Auth0AccessTokenEnabled() {
-				if err == nil {
-					if err := cfg.Set(cloudAuthFlag, "api-key"); err != nil {
-						fatalErr(err, "Could not write config")
-					}
-					if err := cfg.Write(); err != nil {
-						fatalErr(err)
-					}
+	Run:               doApiKey,
+}
+
+var deprecatedApiKeyCmd = &cobra.Command{
+	Use:               "api-key",
+	Short:             "Create a new user API key for authentication with Vespa Cloud",
+	Example:           apiKeyExample(),
+	DisableAutoGenTag: true,
+	Args:              cobra.ExactArgs(0),
+	Hidden:            true,
+	Deprecated:        "use 'vespa auth api-key' instead",
+	Run:               doApiKey,
+}
+
+func doApiKey(_ *cobra.Command, _ []string) {
+	cfg, err := LoadConfig()
+	if err != nil {
+		fatalErr(err, "Could not load config")
+		return
+	}
+	app := getApplication()
+	apiKeyFile := cfg.APIKeyPath(app.Tenant)
+	if util.PathExists(apiKeyFile) && !overwriteKey {
+		printErrHint(fmt.Errorf("File %s already exists", apiKeyFile), "Use -f to overwrite it")
+		printPublicKey(apiKeyFile, app.Tenant)
+		return
+	}
+	apiKey, err := vespa.CreateAPIKey()
+	if err != nil {
+		fatalErr(err, "Could not create API key")
+		return
+	}
+	if err := ioutil.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
+		printSuccess("API private key written to ", apiKeyFile)
+		printPublicKey(apiKeyFile, app.Tenant)
+		if vespa.Auth0AccessTokenEnabled() {
+			if err == nil {
+				if err := cfg.Set(cloudAuthFlag, "api-key"); err != nil {
+					fatalErr(err, "Could not write config")
+				}
+				if err := cfg.Write(); err != nil {
+					fatalErr(err)
 				}
 			}
-		} else {
-			fatalErr(err, "Failed to write ", apiKeyFile)
 		}
-	},
+	} else {
+		fatalErr(err, "Failed to write ", apiKeyFile)
+	}
 }
 
 func printPublicKey(apiKeyFile, tenant string) {
