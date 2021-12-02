@@ -18,6 +18,8 @@ class MemoryUsage;
 }
 namespace vespalib::datastore {
 
+class IFilteredCompactable;
+
 class ShardedHashComparator {
 public:
     ShardedHashComparator(const EntryComparator& comp, const EntryRef key_ref, uint32_t num_shards)
@@ -156,7 +158,7 @@ public:
     size_t size() const noexcept { return _count; }
     MemoryUsage get_memory_usage() const;
     void foreach_key(const std::function<void(EntryRef)>& callback) const;
-    void move_keys(const std::function<EntryRef(EntryRef)>& callback);
+    void move_keys(IFilteredCompactable& compactable);
     bool normalize_values(const std::function<EntryRef(EntryRef)>& normalize);
 };
 

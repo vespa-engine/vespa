@@ -11,7 +11,7 @@
 namespace vespalib::datastore {
 
 class EntryComparator;
-struct ICompactable;
+struct IFilteredCompactable;
 class IUniqueStoreDictionaryReadSnapshot;
 class UniqueStoreAddResult;
 
@@ -28,7 +28,7 @@ public:
     virtual UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry) = 0;
     virtual EntryRef find(const EntryComparator& comp) = 0;
     virtual void remove(const EntryComparator& comp, EntryRef ref) = 0;
-    virtual void move_entries(ICompactable& compactable) = 0;
+    virtual void move_keys(IFilteredCompactable& compactable) = 0;
     virtual uint32_t get_num_uniques() const = 0;
     virtual vespalib::MemoryUsage get_memory_usage() const = 0;
     virtual void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) = 0;

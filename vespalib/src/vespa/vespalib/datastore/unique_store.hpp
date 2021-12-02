@@ -87,7 +87,7 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::remove(EntryRef ref)
 namespace uniquestore {
 
 template <typename RefT>
-class CompactionContext : public UniqueStoreRemapper<RefT>, public ICompactable {
+class CompactionContext : public UniqueStoreRemapper<RefT>, public IFilteredCompactable {
 private:
     using DictionaryTraits = btree::BTreeTraits<32, 32, 7, true>;
     using Dictionary = btree::BTree<EntryRef, uint32_t,
@@ -113,24 +113,22 @@ private:
 
     EntryRef move(EntryRef oldRef) override {
         RefT iRef(oldRef);
-        assert(iRef.valid());
         uint32_t buffer_id = iRef.bufferId();
-        if (_compacting_buffer[buffer_id]) {
-            auto &inner_mapping = _mapping[buffer_id];
-            assert(iRef.unscaled_offset() < inner_mapping.size());
-            EntryRef &mappedRef = inner_mapping[iRef.unscaled_offset()];
-            assert(!mappedRef.valid());
-            EntryRef newRef = _store.move(oldRef);
-            mappedRef = newRef;
-            return newRef;
-        } else {
-            return oldRef;
-        }
+        auto &inner_mapping = _mapping[buffer_id];
+        assert(iRef.unscaled_offset() < inner_mapping.size());
+        EntryRef &mappedRef = inner_mapping[iRef.unscaled_offset()];
+        assert(!mappedRef.valid());
+        EntryRef newRef = _store.move(oldRef);
+        mappedRef = newRef;
+        return newRef;
     }
     
     void fillMapping() {
-        _dict.move_entries(*this);
+        _dict.move_keys(*this);
     }
+
+    uint32_t get_entry_ref_offset_bits() const override { return RefT::offset_bits; }
+    std::vector<bool> get_compacting_buffers() const override { return _compacting_buffer; }
 
 public:
     CompactionContext(DataStoreBase &dataStore,
@@ -138,7 +136,7 @@ public:
                       ICompactable &store,
                       std::vector<uint32_t> bufferIdsToCompact)
         : UniqueStoreRemapper<RefT>(),
-          ICompactable(),
+          IFilteredCompactable(),
           _dataStore(dataStore),
           _dict(dict),
           _store(store),

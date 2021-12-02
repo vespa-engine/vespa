@@ -18,6 +18,7 @@ public:
     uint32_t ref() const noexcept { return _ref; }
     uint32_t hash() const noexcept { return _ref; }
     bool valid() const noexcept { return _ref != 0u; }
+    uint32_t buffer_id(uint32_t offset_bits) const noexcept { return _ref >> offset_bits; }
     bool operator==(const EntryRef &rhs) const noexcept { return _ref == rhs._ref; }
     bool operator!=(const EntryRef &rhs) const noexcept { return _ref != rhs._ref; }
     bool operator <(const EntryRef &rhs) const noexcept { return _ref < rhs._ref; }
@@ -31,6 +32,7 @@ public:
 template <uint32_t OffsetBits, uint32_t BufferBits = 32u - OffsetBits>
 class EntryRefT : public EntryRef {
 public:
+    static constexpr uint32_t offset_bits = OffsetBits;
     EntryRefT() noexcept : EntryRef() {}
     EntryRefT(size_t offset_, uint32_t bufferId_) noexcept;
     EntryRefT(const EntryRef & ref_) noexcept : EntryRef(ref_.ref()) {}

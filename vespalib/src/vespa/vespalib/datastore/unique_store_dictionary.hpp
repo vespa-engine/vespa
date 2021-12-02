@@ -4,7 +4,7 @@
 
 #include "datastore.hpp"
 #include "entry_comparator_wrapper.h"
-#include "i_compactable.h"
+#include "i_filtered_compactable.h"
 #include "unique_store_add_result.h"
 #include "unique_store_dictionary.h"
 #include "unique_store_btree_dictionary_read_snapshot.hpp"
@@ -139,26 +139,30 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::remove(const 
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_entries(ICompactable &compactable)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_keys(IFilteredCompactable &compactable)
 {
     if constexpr (has_btree_dictionary) {
+        auto compacting_buffers = compactable.get_compacting_buffers();
+        auto offset_bits = compactable.get_entry_ref_offset_bits();
         auto itr = this->_btree_dict.begin();
         while (itr.valid()) {
             EntryRef oldRef(itr.getKey());
-            EntryRef newRef(compactable.move(oldRef));
-            if (newRef != oldRef) {
+            assert(oldRef.valid());
+            uint32_t buffer_id = oldRef.buffer_id(offset_bits);
+            if (compacting_buffers[buffer_id]) {
+                EntryRef newRef(compactable.move(oldRef));
                 this->_btree_dict.thaw(itr);
                 itr.writeKey(newRef);
                 if constexpr (has_hash_dictionary) {
-                        auto result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), oldRef);
-                        assert(result != nullptr && result->first.load_relaxed() == oldRef);
-                        result->first.store_release(newRef);
-                    }
+                    auto result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), oldRef);
+                    assert(result != nullptr && result->first.load_relaxed() == oldRef);
+                    result->first.store_release(newRef);
+                }
             }
             ++itr;
         }
     } else {
-        this->_hash_dict.move_keys([&compactable](EntryRef old_ref) { return compactable.move(old_ref); });
+        this->_hash_dict.move_keys(compactable);
     }
 }
 

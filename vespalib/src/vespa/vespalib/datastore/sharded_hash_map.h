@@ -10,8 +10,9 @@
 namespace vespalib { class MemoryUsage; }
 namespace vespalib::datastore {
 
-class FixedSizeHashMap;
 class EntryComparator;
+class FixedSizeHashMap;
+class IFilteredCompactable;
 
 /*
  * Hash map over keys in data store, meant to support a faster
@@ -56,7 +57,7 @@ public:
     const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
     MemoryUsage get_memory_usage() const;
     void foreach_key(std::function<void(EntryRef)> callback) const;
-    void move_keys(std::function<EntryRef(EntryRef)> callback);
+    void move_keys(IFilteredCompactable& compactable);
     bool normalize_values(std::function<EntryRef(EntryRef)> normalize);
     bool has_held_buffers() const;
     void compact_worst_shard();
