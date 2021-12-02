@@ -96,16 +96,16 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
-            var actual = capacityPolicies.applyOn(requested, application.instance().isTester(), cluster);
+            var actual = capacityPolicies.applyOn(requested, application);
             ClusterResources target = decideTargetResources(application, cluster, actual);
-
             boolean exclusive = capacityPolicies.decideExclusivity(actual, cluster.isExclusive());
-            nodeSpec = NodeSpec.from(target.nodes(), target.nodeResources(), exclusive, actual.canFail());
+            ensureRedundancy(target.nodes(), cluster, actual.canFail(), application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
+
             groups = target.groups();
-            resources = target.nodeResources();
-            if (resources.isUnspecified())
-                resources = capacityPolicies.defaultNodeResources(cluster.type());
+            resources = target.nodeResources().isUnspecified() ? capacityPolicies.defaultNodeResources(cluster.type())
+                                                               : target.nodeResources();
+            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail());
         }
         else {
             groups = 1; // type request with multiple groups is not supported
@@ -187,6 +187,24 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                                       limits)
                                   .orElseThrow(() -> newNoAllocationPossible(current.clusterSpec(), limits))
                                   .advertisedResources();
+    }
+
+    /**
+     * Throw if the node count is 1 for container and content clusters and we're in a production zone
+     *
+     * @throws IllegalArgumentException if only one node is requested and we can fail
+     */
+    private void ensureRedundancy(int nodeCount, ClusterSpec cluster, boolean canFail, ApplicationId application) {
+        if (! application.instance().isTester() &&
+            canFail &&
+            nodeCount == 1 &&
+            requiresRedundancy(cluster.type()) &&
+            zone.environment().isProduction())
+            throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy. Not fulfilled for " + cluster);
+    }
+
+    private static boolean requiresRedundancy(ClusterSpec.Type clusterType) {
+        return clusterType.isContent() || clusterType.isContainer();
     }
 
     private void logIfDownscaled(int requestedMinNodes, int actualMinNodes, ClusterSpec cluster, ProvisionLogger logger) {

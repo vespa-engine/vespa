@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 
@@ -45,6 +46,7 @@ class AutoscalingTester {
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
     private final MockHostResourcesCalculator hostResourcesCalculator;
+    private final CapacityPolicies capacityPolicies;
 
     /** Creates an autoscaling tester with a single host type ready */
     public AutoscalingTester(NodeResources hostResources) {
@@ -79,6 +81,7 @@ class AutoscalingTester {
 
         hostResourcesCalculator = new MockHostResourcesCalculator(zone);
         autoscaler = new Autoscaler(nodeRepository());
+        capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
     }
 
     public ProvisioningTester provisioning() { return provisioningTester; }
@@ -304,13 +307,14 @@ class AutoscalingTester {
         ((MemoryMetricsDb)nodeMetricsDb()).clearClusterMetrics(application, cluster);
     }
 
-    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId, Capacity capacity) {
+    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
+        capacity = capacityPolicies.applyOn(capacity, applicationId);
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
-                                                  .withCluster(clusterId, false, capacity);
+                                                  .withCluster(cluster.id(), false, capacity);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
-        return autoscaler.autoscale(application, application.clusters().get(clusterId),
+        return autoscaler.autoscale(application, application.clusters().get(cluster.id()),
                                     nodeRepository().nodes().list(Node.State.active).owner(applicationId));
     }
 
