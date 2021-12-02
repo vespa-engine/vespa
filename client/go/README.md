@@ -9,5 +9,4 @@ Vespa documentation: https://docs.vespa.ai
 Developer notes:
 
     $ brew install go
-    $ make test
-
+    $ make install
