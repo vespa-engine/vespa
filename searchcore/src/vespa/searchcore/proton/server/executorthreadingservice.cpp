@@ -72,7 +72,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
     if (_shared_field_writer == SharedFieldWriterExecutor::INDEX) {
         _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 2, cfg.defaultTaskLimit());
         _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
-                                                              cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+                                                              cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
             _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](){ executor->wakeup();}));
         }
@@ -82,7 +82,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
 
     } else if (_shared_field_writer == SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE) {
         _field_writer = SequencedTaskExecutor::create(field_writer_executor, cfg.indexingThreads() * 3, cfg.defaultTaskLimit(),
-                                                      cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+                                                      cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
             _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_field_writer.get()](){ executor->wakeup();}));
         }
@@ -98,7 +98,7 @@ ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sha
         _indexFieldInverter = SequencedTaskExecutor::create(index_field_inverter_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
         _indexFieldWriter = SequencedTaskExecutor::create(index_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit());
         _attributeFieldWriter = SequencedTaskExecutor::create(attribute_field_writer_executor, cfg.indexingThreads(), cfg.defaultTaskLimit(),
-                                                              cfg.optimize(), cfg.kindOfwatermark(), cfg.reactionTime());
+                                                              cfg.optimize(), cfg.kindOfwatermark());
         if (cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT && invokerService) {
             _invokeRegistrations.push_back(invokerService->registerInvoke([executor=_attributeFieldWriter.get()](){ executor->wakeup();}));
         }
