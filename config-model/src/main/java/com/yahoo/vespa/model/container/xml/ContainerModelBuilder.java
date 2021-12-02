@@ -47,7 +47,6 @@ import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomHandlerBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
-import com.yahoo.vespa.model.builder.xml.dom.ServletBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.docproc.DomDocprocChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.processing.DomProcessingBuilder;
@@ -523,9 +522,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return http;
     }
 
+    // TODO Vespa 8: Remove
     private void addServlets(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        for (Element servletElem : XML.getChildren(spec, "servlet"))
-            cluster.addServlet(new ServletBuilder().build(deployState, cluster, servletElem));
+        if (XML.getChildren(spec, "servlet").size() > 0)
+            throw new IllegalArgumentException("The 'servlet' tag is no longer supported in services.xml. Please use a handler instead.");
     }
 
     private void addDocumentApi(Element spec, ApplicationContainerCluster cluster) {

@@ -38,7 +38,7 @@ public class AccessControlOnFirstDeploymentValidator extends Validator {
                     || ! cluster.getHttp().getAccessControl().isPresent()
                     || ! cluster.getHttp().getAccessControl().get().writeEnabled)
 
-                if (hasHandlerThatNeedsProtection(cluster) || ! cluster.getAllServlets().isEmpty())
+                if (hasHandlerThatNeedsProtection(cluster))
                     offendingClusters.add(cluster.getName());
         }
         if (! offendingClusters.isEmpty())

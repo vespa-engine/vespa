@@ -31,7 +31,7 @@ public class AwsAccessControlValidator extends Validator {
                     || ! http.getAccessControl().get().writeEnabled
                     || ! http.getAccessControl().get().readEnabled)
 
-                if (hasHandlerThatNeedsProtection(cluster) || ! cluster.getAllServlets().isEmpty())
+                if (hasHandlerThatNeedsProtection(cluster))
                     offendingClusters.add(cluster.getName());
         }
         if (! offendingClusters.isEmpty())

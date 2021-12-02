@@ -34,10 +34,8 @@ import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
-import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
@@ -319,40 +317,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         createModel(root, clusterElem);
     }
-
-    @Test
-    public void servlets_are_included_in_ServletPathConfig() {
-        createClusterWithServlet();
-        ServletPathsConfig servletPathsConfig = root.getConfig(ServletPathsConfig.class, "default");
-        assertThat(servletPathsConfig.servlets().values().iterator().next().path(), is("p/a/t/h"));
-    }
-
-    @Test
-    public void servletconfig_is_produced() {
-        createClusterWithServlet();
-
-        String configId = getContainerCluster("default").getServletMap().
-                               values().iterator().next().getConfigId();
-
-        ServletConfigConfig servletConfig = root.getConfig(ServletConfigConfig.class, configId);
-
-        assertThat(servletConfig.map().get("myKey"), is("myValue"));
-    }
-
-    private void createClusterWithServlet() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>",
-                "  <servlet id='myServlet' class='myClass' bundle='myBundle'>",
-                "    <path>p/a/t/h</path>",
-                "    <servlet-config>",
-                "      <myKey>myValue</myKey>",
-                "    </servlet-config>",
-                "  </servlet>",
-                "</container>");
-
-        createModel(root, clusterElem);
-    }
-
 
     @Test
     public void processing_handler_bindings_can_be_overridden() {
