@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 /**
  * Maintains user management resources.
- * For now, ensures there's no discrepnacy between expected tenant/application roles and Auth0 roles
+ * For now, ensures there's no discrepnacy between expected tenant/application roles and auth0/athenz roles
  *
  * @author olaa
  */
@@ -41,6 +41,8 @@ public class UserManagementMaintainer extends ControllerMaintainer {
             roleMaintainer.tenantsToDelete(tenants)
                     .forEach(tenant -> {
                         logger.warning(tenant.name() + " has a non-existing Athenz domain. Deleting");
+                        controller().applications().asList(tenant.name())
+                                .forEach(application -> controller().applications().deleteApplication(application.id(), Optional.empty()));
                         controller().tenants().delete(tenant.name(), Optional.empty(), false);
                     });
         }

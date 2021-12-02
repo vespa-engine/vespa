@@ -88,7 +88,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final PlanRegistry planRegistry = new PlanRegistryMock();
     private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
     private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
-    private final RoleMaintainer roleMaintainer = new RoleMaintainerMock();
+    private final RoleMaintainerMock roleMaintainer = new RoleMaintainerMock();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -291,4 +291,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         return endpointCertificateMock;
     }
 
+    public RoleMaintainerMock roleMaintainerMock() {
+        return roleMaintainer;
+    }
 }
