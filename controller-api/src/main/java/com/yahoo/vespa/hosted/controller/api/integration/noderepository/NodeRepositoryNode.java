@@ -348,6 +348,10 @@ public class NodeRepositoryNode {
         return orchestratorStatus;
     }
 
+    public void setOrchestratorStatus(String orchestratorStatus) {
+        this.orchestratorStatus = orchestratorStatus;
+    }
+
     public Long suspendedSinceMillis() {
         return suspendedSinceMillis;
     }
