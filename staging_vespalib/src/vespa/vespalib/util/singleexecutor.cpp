@@ -7,7 +7,7 @@
 namespace vespalib {
 
 SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit)
-    : SingleExecutor(func, taskLimit, taskLimit/10, 5ms)
+    : SingleExecutor(func, taskLimit, taskLimit/10, 100ms)
 { } 
 
 SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t watermark, duration reactionTime)

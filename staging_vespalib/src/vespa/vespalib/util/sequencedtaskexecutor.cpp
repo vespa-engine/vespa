@@ -40,8 +40,23 @@ find(uint16_t key, const uint16_t values[], size_t numValues) {
 }
 
 std::unique_ptr<ISequencedTaskExecutor>
-SequencedTaskExecutor::create(vespalib::Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit,
-                              OptimizeFor optimize, uint32_t kindOfWatermark, duration reactionTime)
+SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads) {
+    return create(func, threads, 1000);
+}
+
+std::unique_ptr<ISequencedTaskExecutor>
+SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit) {
+    return create(func, threads, taskLimit, OptimizeFor::LATENCY);
+}
+
+std::unique_ptr<ISequencedTaskExecutor>
+SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit, OptimizeFor optimize) {
+    return create(func, threads, taskLimit, optimize, 0);
+}
+
+std::unique_ptr<ISequencedTaskExecutor>
+SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit,
+                              OptimizeFor optimize, uint32_t kindOfWatermark)
 {
     if (optimize == OptimizeFor::ADAPTIVE) {
         size_t num_strands = std::min(taskLimit, threads*32);
@@ -52,7 +67,7 @@ SequencedTaskExecutor::create(vespalib::Runnable::init_fun_t func, uint32_t thre
         for (uint32_t id = 0; id < threads; ++id) {
             if (optimize == OptimizeFor::THROUGHPUT) {
                 uint32_t watermark = kindOfWatermark == 0 ? taskLimit / 2 : kindOfWatermark;
-                executors.push_back(std::make_unique<SingleExecutor>(func, taskLimit, watermark, reactionTime));
+                executors.push_back(std::make_unique<SingleExecutor>(func, taskLimit, watermark, 100ms));
             } else {
                 executors.push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, func));
             }

@@ -30,13 +30,15 @@ public:
     ExecutorStats getStats() override;
     void wakeup() override;
 
-    /*
-     * Note that if you choose Optimize::THROUGHPUT, you must ensure only a single producer, or synchronize on the outside.
-     *
-     */
     static std::unique_ptr<ISequencedTaskExecutor>
-    create(vespalib::Runnable::init_fun_t, uint32_t threads, uint32_t taskLimit = 1000,
-           OptimizeFor optimize = OptimizeFor::LATENCY, uint32_t kindOfWatermark = 0, duration reactionTime = 10ms);
+    create(Runnable::init_fun_t func, uint32_t threads);
+    static std::unique_ptr<ISequencedTaskExecutor>
+    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit);
+    static std::unique_ptr<ISequencedTaskExecutor>
+    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit, OptimizeFor optimize);
+    static std::unique_ptr<ISequencedTaskExecutor>
+    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit,
+           OptimizeFor optimize, uint32_t kindOfWatermark);
     /**
      * For testing only
      */

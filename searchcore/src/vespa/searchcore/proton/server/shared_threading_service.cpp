@@ -20,7 +20,7 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
       _shared(std::make_shared<vespalib::BlockingThreadStackExecutor>(cfg.shared_threads(), 128_Ki,
                                                                       cfg.shared_task_limit(), proton_shared_executor)),
       _field_writer(),
-      _invokeService(5ms),
+      _invokeService(cfg.field_writer_config().reactionTime()),
       _invokeRegistrations()
 {
     const auto& fw_cfg = cfg.field_writer_config();
@@ -29,8 +29,7 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
                                                                 fw_cfg.indexingThreads() * 3,
                                                                 fw_cfg.defaultTaskLimit(),
                                                                 fw_cfg.optimize(),
-                                                                fw_cfg.kindOfwatermark(),
-                                                                fw_cfg.reactionTime());
+                                                                fw_cfg.kindOfwatermark());
         if (fw_cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT) {
             _invokeRegistrations.push_back(_invokeService.registerInvoke([executor = _field_writer.get()]() {
                 executor->wakeup();
