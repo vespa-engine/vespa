@@ -8,12 +8,13 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * Maintains user management resources.
- * For now, ensures there's no discrepnacy between expected tenant/application roles and Auth0 roles
+ * For now, ensures there's no discrepnacy between expected tenant/application roles and auth0/athenz roles
  *
  * @author olaa
  */
@@ -39,8 +40,10 @@ public class UserManagementMaintainer extends ControllerMaintainer {
         if (!controller().system().isPublic()) {
             roleMaintainer.tenantsToDelete(tenants)
                     .forEach(tenant -> {
-                        // TODO: controller().tenants().delete(tenant.name());
-                        logger.fine("Want to delete tenant " + tenant.name());
+                        logger.warning(tenant.name() + " has a non-existing Athenz domain. Deleting");
+                        controller().applications().asList(tenant.name())
+                                .forEach(application -> controller().applications().deleteApplication(application.id(), Optional.empty()));
+                        controller().tenants().delete(tenant.name(), Optional.empty(), false);
                     });
         }
 

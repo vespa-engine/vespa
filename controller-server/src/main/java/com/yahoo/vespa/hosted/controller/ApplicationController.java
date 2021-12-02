@@ -561,6 +561,10 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      */
     public void deleteApplication(TenantAndApplicationId id, Credentials credentials) {
+        deleteApplication(id, Optional.of(credentials));
+    }
+
+    public void deleteApplication(TenantAndApplicationId id, Optional<Credentials> credentials) {
         lockApplicationOrThrow(id, application -> {
             var deployments = application.get().instances().values().stream()
                                          .filter(instance -> ! instance.deployments().isEmpty())
@@ -580,7 +584,7 @@ public class ApplicationController {
             applicationStore.removeAllTesters(id.tenant(), id.application());
             applicationStore.putMetaTombstone(id.tenant(), id.application(), clock.instant());
 
-            accessControl.deleteApplication(id, credentials);
+            credentials.ifPresent(creds -> accessControl.deleteApplication(id, creds));
             curator.removeApplication(id);
 
             controller.jobController().collectGarbage();

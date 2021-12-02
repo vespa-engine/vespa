@@ -894,6 +894,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Forget a deleted tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).properties(Map.of("forget", "true"))
+                        .data("{\"athensDomain\":\"domain1\"}")
+                        .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT)
                         .userIdentity(HOSTED_VESPA_OPERATOR),
                 "{\"message\":\"Deleted tenant tenant1\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET).properties(Map.of("includeDeleted", "true"))
