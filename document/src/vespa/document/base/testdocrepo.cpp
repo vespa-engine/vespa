@@ -75,7 +75,7 @@ TestDocRepo::getDocumentType(const vespalib::string &t) const {
 }
 
 DocumenttypesConfig readDocumenttypesConfig(const char *file_name) {
-    config::FileConfigReader<DocumenttypesConfig> reader(file_name);
+    ::config::FileConfigReader<DocumenttypesConfig> reader(file_name);
     return DocumenttypesConfig(*reader.read());
 }
 

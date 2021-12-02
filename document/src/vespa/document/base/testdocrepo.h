@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/document/config/config-documenttypes.h>
+#include <vespa/document/config/doctypecfg.h>
 #include <vespa/document/datatype/datatype.h>
 
 namespace document {

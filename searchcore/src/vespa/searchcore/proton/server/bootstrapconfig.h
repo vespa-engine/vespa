@@ -50,7 +50,7 @@ public:
                     const HwInfo & hwInfo);
     ~BootstrapConfig();
 
-    const document::DocumenttypesConfig &getDocumenttypesConfig() const { return *_documenttypes; }
+    const document::config::DocumenttypesConfig &getDocumenttypesConfig() const { return *_documenttypes; }
     const FiledistributorrpcConfig &getFiledistributorrpcConfig() const { return *_fileDistributorRpc; }
     const FiledistributorrpcConfigSP &getFiledistributorrpcConfigSP() const { return _fileDistributorRpc; }
     const DocumenttypesConfigSP &getDocumenttypesConfigSP() const { return _documenttypes; }

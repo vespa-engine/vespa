@@ -34,7 +34,7 @@ struct OperationTargetResolverTest : Test, DistributorStripeTestUtil {
 
     void SetUp() override {
         _repo.reset(new document::DocumentTypeRepo(
-                *config::ConfigGetter<document::DocumenttypesConfig>::getConfig(
+                *config::ConfigGetter<DocumenttypesConfig>::getConfig(
                     "config-doctypes",
                     config::FileSpec("../config-doctypes.cfg"))));
         _html_type = _repo->getDocumentType("text/html");

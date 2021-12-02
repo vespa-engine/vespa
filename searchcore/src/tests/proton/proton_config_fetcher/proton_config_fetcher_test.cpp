@@ -13,6 +13,7 @@
 #include <vespa/searchcore/config/config-ranking-expressions.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/document/config/doctypecfg.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/vespalib/util/varholder.h>
@@ -40,8 +41,6 @@ using vespa::config::content::core::BucketspacesConfigBuilder;
 
 using config::ConfigUri;
 using document::DocumentTypeRepo;
-using document::DocumenttypesConfig;
-using document::DocumenttypesConfigBuilder;
 using search::TuneFileDocumentDB;
 using std::map;
 using vespalib::VarHolder;

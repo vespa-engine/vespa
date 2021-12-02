@@ -146,7 +146,7 @@ std::unique_ptr<CFG> getConfig() {
 }
 
 std::shared_ptr<const document::DocumentTypeRepo> getRepo() {
-    typedef document::DocumenttypesConfig DCFG;
+    typedef document::config::DocumenttypesConfig DCFG;
     std::unique_ptr<DCFG> dcfg = getConfig<DCFG>();
     std::shared_ptr<const document::DocumentTypeRepo> ret;
     if (dcfg.get() != 0) {
@@ -180,7 +180,7 @@ App::Main()
     fprintf(stderr, "input feed: %s\n", feedFile.c_str());
     fprintf(stderr, "output directory: %s\n", dirName.c_str());
     vespalib::mkdir(dirName);
-    typedef document::DocumenttypesConfig DCFG;
+    typedef document::config::DocumenttypesConfig DCFG;
     if (!writeConfig(getConfig<DCFG>(), dirName)) {
         fprintf(stderr, "error: could not save config to disk\n");
         return 1;

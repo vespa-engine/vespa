@@ -36,7 +36,7 @@ const string doc_type_name = "test";
 const string header_name = doc_type_name + ".header";
 const string body_name = doc_type_name + ".body";
 
-document::DocumenttypesConfig
+document::config::DocumenttypesConfig
 makeDocTypeRepoConfig()
 {
     const int32_t doc_type_id = 787121340;

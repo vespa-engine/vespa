@@ -73,7 +73,7 @@ makeSchema()
     return schema;
 }
 
-document::DocumenttypesConfig
+document::config::DocumenttypesConfig
 makeDocTypeRepoConfig()
 {
     const int32_t doc_type_id = 787121340;

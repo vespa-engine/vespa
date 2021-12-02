@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 
+#include <vespa/document/config/doctypecfg.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
