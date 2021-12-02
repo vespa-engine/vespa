@@ -62,7 +62,7 @@ public class RoutingStatusApiHandlerTest {
                            statusOut());
         }
         String actual = responseAsString(executeRequest(Method.GET, "/routing/v1/status", null));
-        assertEquals("[\"foo\",\"bar\"]", actual);
+        assertEquals("[\"bar\",\"foo\"]", actual);
     }
 
     @Test
@@ -88,8 +88,20 @@ public class RoutingStatusApiHandlerTest {
         // Read status stored in old format (path exists, but without content)
         curator.set(Path.fromString("/routing/v1/status/" + upstreamName), new byte[0]);
         response = responseAsString(executeRequest(Method.GET, "/routing/v1/status/" + upstreamName + "?application=" + instance.serializedForm(), null));
-
         assertEquals(response("OUT", "", "", clock.instant()), response);
+
+        // Change status of multiple upstreams
+        deployer.failNextDeployment(false);
+        String upstreamName2 = "upstream2";
+        String upstreams = upstreamName + "," + upstreamName2;
+        response = responseAsString(executeRequest(Method.PUT, "/routing/v1/status/" + upstreams + "?application=" + instance.serializedForm(),
+                                                   statusOut()));
+        String outResponse = response("OUT", "issue-XXX", "operator", clock.instant());
+        assertEquals(outResponse, response);
+        for (var upstreamName : List.of(upstreamName, upstreamName2)) {
+            response = responseAsString(executeRequest(Method.GET, "/routing/v1/status/" + upstreamName + "?application=" + instance.serializedForm(), null));
+            assertEquals(outResponse, response);
+        }
     }
 
     @Test
