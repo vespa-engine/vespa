@@ -1081,7 +1081,7 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
         entry._sharedLocks.erase(shared_iter);
     }
     Clock::time_point now_ts = Clock::now();
-    double latency = std::chrono::duration<double>(now_ts - start_time).count();
+    double latency = std::chrono::duration<double, std::milli>(now_ts - start_time).count();
     _active_operations_stats.operation_done(latency);
     if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
         _lockedBuckets.erase(iter); // No more locks held
