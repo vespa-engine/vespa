@@ -33,9 +33,7 @@ var certCmd = &cobra.Command{
 	Example:           certExample(),
 	DisableAutoGenTag: true,
 	Args:              cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		doCert(args)
-	},
+	Run:               doCert,
 }
 
 var deprecatedCertCmd = &cobra.Command{
@@ -46,12 +44,10 @@ var deprecatedCertCmd = &cobra.Command{
 	Args:              cobra.MaximumNArgs(1),
 	Deprecated:        "use 'vespa auth cert' instead",
 	Hidden:            true,
-	Run: func(cmd *cobra.Command, args []string) {
-		doCert(args)
-	},
+	Run:               doCert,
 }
 
-func doCert(args []string) {
+func doCert(_ *cobra.Command, args []string) {
 	app := getApplication()
 	pkg, err := vespa.FindApplicationPackage(applicationSource(args), false)
 	if err != nil {

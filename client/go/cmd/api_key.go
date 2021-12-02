@@ -36,9 +36,7 @@ var apiKeyCmd = &cobra.Command{
 	Example:           apiKeyExample(),
 	DisableAutoGenTag: true,
 	Args:              cobra.ExactArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
-		doApiKey()
-	},
+	Run:               doApiKey,
 }
 
 var deprecatedApiKeyCmd = &cobra.Command{
@@ -49,12 +47,10 @@ var deprecatedApiKeyCmd = &cobra.Command{
 	Args:              cobra.ExactArgs(0),
 	Hidden:            true,
 	Deprecated:        "use 'vespa auth api-key' instead",
-	Run: func(cmd *cobra.Command, args []string) {
-		doApiKey()
-	},
+	Run:               doApiKey,
 }
 
-func doApiKey() {
+func doApiKey(_ *cobra.Command, _ []string) {
 	cfg, err := LoadConfig()
 	if err != nil {
 		fatalErr(err, "Could not load config")
