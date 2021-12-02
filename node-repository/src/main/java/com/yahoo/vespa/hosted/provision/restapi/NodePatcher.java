@@ -175,7 +175,6 @@ public class NodePatcher {
             case "reports" :
                 return nodeWithPatchedReports(node, value);
             case "id" :
-            case "openStackId" : // TODO(mpolden): Remove when clients stop sending this field
                 return node.withId(asString(value));
             case "diskGb":
             case "minDiskAvailableGb":

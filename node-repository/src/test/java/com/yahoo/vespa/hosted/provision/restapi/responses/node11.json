@@ -5,7 +5,6 @@
   "type": "tenant",
   "hostname": "host11.yahoo.com",
   "parentHostname": "parent.host.yahoo.com",
-  "openStackId": "host11.yahoo.com",
   "flavor": "[vcpu: 1.0, memory: 1.0 Gb, disk 100.0 Gb, bandwidth: 0.3 Gbps]",
   "resources":{"vcpu":1.0,"memoryGb":1.0,"diskGb":100.0,"bandwidthGbps":0.3,"diskSpeed":"fast","storageType":"any"},
   "realResources":{"vcpu":1.0,"memoryGb":1.0,"diskGb":100.0,"bandwidthGbps":0.3,"diskSpeed":"fast","storageType":"any"},
