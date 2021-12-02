@@ -253,7 +253,10 @@ MergeOperation::deleteSourceOnlyNodes(
             return;
         }
         _removeOperation->setIdealStateManager(_manager);
-        _removeOperation->setPriority(getPriority());
+        // We cap the DeleteBucket pri so that it FIFOs with the default feed priority (120).
+        // Not doing this risks preempting feed ops with deletes, elevating latencies.
+        // TODO less magical numbers, but the priority mapping is technically config...
+        _removeOperation->setPriority(std::max(api::StorageMessage::Priority(120), getPriority()));
         
         if (_removeOperation->onStartInternal(sender)) {
             _ok = _removeOperation->ok();
