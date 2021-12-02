@@ -21,6 +21,7 @@ import java.util.*;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("deprecation")
 public class ScriptManager {
 
     private static final FastLogger log = FastLogger.getLogger(ScriptManager.class.getName());

@@ -5,7 +5,6 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -16,10 +15,11 @@ import static org.junit.Assert.assertNull;
 /**
  * @author Simon Thoresen Hult
  */
+@SuppressWarnings("deprecation")
 public class ScriptManagerTestCase {
 
     @Test
-    public void requireThatScriptsAreAppliedToSubType() throws ParseException {
+    public void requireThatScriptsAreAppliedToSubType() {
         DocumentTypeManager typeMgr = new DocumentTypeManager();
         typeMgr.configure("file:src/test/cfg/documentmanager_inherit.cfg");
         DocumentType docType = typeMgr.getDocumentType("newssummary");
@@ -35,7 +35,7 @@ public class ScriptManagerTestCase {
     }
 
     @Test
-    public void requireThatScriptsAreAppliedToSuperType() throws ParseException {
+    public void requireThatScriptsAreAppliedToSuperType() {
         DocumentTypeManager typeMgr = new DocumentTypeManager();
         typeMgr.configure("file:src/test/cfg/documentmanager_inherit.cfg");
         DocumentType docType = typeMgr.getDocumentType("newsarticle");
