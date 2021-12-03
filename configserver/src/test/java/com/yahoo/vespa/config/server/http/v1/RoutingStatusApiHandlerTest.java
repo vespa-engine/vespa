@@ -93,7 +93,7 @@ public class RoutingStatusApiHandlerTest {
         // Change status of multiple upstreams
         deployer.failNextDeployment(false);
         String upstreamName2 = "upstream2";
-        String upstreams = upstreamName + "," + upstreamName2;
+        String upstreams = upstreamName + "," + upstreamName2 + "," + upstreamName2;
         response = responseAsString(executeRequest(Method.PUT, "/routing/v1/status/" + upstreams + "?application=" + instance.serializedForm(),
                                                    statusOut()));
         String outResponse = response("OUT", "issue-XXX", "operator", clock.instant());
