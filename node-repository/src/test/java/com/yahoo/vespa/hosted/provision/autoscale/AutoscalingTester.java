@@ -24,7 +24,6 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.provisioning.CapacityPolicies;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 
@@ -46,7 +45,6 @@ class AutoscalingTester {
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
     private final MockHostResourcesCalculator hostResourcesCalculator;
-    private final CapacityPolicies capacityPolicies;
 
     /** Creates an autoscaling tester with a single host type ready */
     public AutoscalingTester(NodeResources hostResources) {
@@ -54,15 +52,11 @@ class AutoscalingTester {
     }
 
     public AutoscalingTester(Environment environment, NodeResources hostResources) {
-        this(new Zone(environment, RegionName.from("us-east")), hostResources, null);
+        this(environment, hostResources, null);
     }
 
-    public AutoscalingTester(Zone zone, NodeResources hostResources) {
-        this(zone, hostResources, null);
-    }
-
-    public AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
-        this(zone, List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
+    public AutoscalingTester(Environment environment, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
+        this(new Zone(environment, RegionName.from("us-east")), List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
         provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
@@ -81,7 +75,6 @@ class AutoscalingTester {
 
         hostResourcesCalculator = new MockHostResourcesCalculator(zone);
         autoscaler = new Autoscaler(nodeRepository());
-        capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
     }
 
     public ProvisioningTester provisioning() { return provisioningTester; }
@@ -307,14 +300,13 @@ class AutoscalingTester {
         ((MemoryMetricsDb)nodeMetricsDb()).clearClusterMetrics(application, cluster);
     }
 
-    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
-        capacity = capacityPolicies.applyOn(capacity, applicationId);
+    public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId, Capacity capacity) {
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
-                                                  .withCluster(cluster.id(), false, capacity);
+                                                  .withCluster(clusterId, false, capacity);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
-        return autoscaler.autoscale(application, application.clusters().get(cluster.id()),
+        return autoscaler.autoscale(application, application.clusters().get(clusterId),
                                     nodeRepository().nodes().list(Node.State.active).owner(applicationId));
     }
 
