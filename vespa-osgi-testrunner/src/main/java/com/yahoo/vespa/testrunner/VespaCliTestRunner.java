@@ -84,13 +84,10 @@ public class VespaCliTestRunner implements TestRunner {
         try {
             TestConfig testConfig = TestConfig.fromJson(config);
             process = testRunProcessBuilder(suite, testConfig).start();
-            BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            in.lines().forEach(line -> {
-                if (line.length() > 1 << 13)
-                    line = line.substring(0, 1 << 13) + " ... (this log entry was truncated due to size)";
 
-                log(Level.INFO, line, null);
-            });
+            HtmlLogger htmlLogger = new HtmlLogger();
+            BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            in.lines().forEach(line -> log(htmlLogger.toLog(line)));
             status.set(process.waitFor() == 0 ? SUCCESS : process.waitFor() == 3 ? FAILURE : ERROR);
         }
         catch (Exception e) {
@@ -139,6 +136,10 @@ public class VespaCliTestRunner implements TestRunner {
     private void log(Level level, String message, Throwable thrown) {
         LogRecord record = new LogRecord(level, message);
         record.setThrown(thrown);
+        log(record);
+    }
+
+    private void log(LogRecord record) {
         logger.log(record);
         log.put(record.getSequenceNumber(), record);
     }
