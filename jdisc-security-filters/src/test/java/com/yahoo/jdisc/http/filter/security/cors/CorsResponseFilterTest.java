@@ -2,11 +2,11 @@
 package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.yahoo.jdisc.http.Cookie;
-import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.filter.DiscFilterResponse;
 import com.yahoo.jdisc.http.filter.RequestView;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilter;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
+import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -78,7 +78,7 @@ public class CorsResponseFilterTest {
         Map<String, String> headers = new HashMap<>();
 
         TestResponse() {
-            super(mock(HttpResponse.class));
+            super(mock(ServletOrJdiscHttpResponse.class));
         }
 
         @Override

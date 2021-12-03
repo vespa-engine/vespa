@@ -2,12 +2,14 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.Inject;
+import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
+import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.service.AbstractServerProvider;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.http.HttpField;
@@ -22,6 +24,7 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.log.JavaUtilLog;
@@ -29,12 +32,14 @@ import org.eclipse.jetty.util.log.Log;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import javax.management.remote.JMXServiceURL;
+import javax.servlet.DispatcherType;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,9 +63,12 @@ public class JettyHttpServer extends AbstractServerProvider {
     public JettyHttpServer(CurrentContainer container,
                            Metric metric,
                            ServerConfig serverConfig,
+                           ServletPathsConfig servletPathsConfig,
                            FilterBindings filterBindings,
                            Janitor janitor,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
+                           ComponentRegistry<ServletHolder> servletHolders,
+                           FilterInvoker filterInvoker,
                            RequestLog requestLog,
                            ConnectionLog connectionLog) {
         super(container);
@@ -90,13 +98,18 @@ public class JettyHttpServer extends AbstractServerProvider {
                                                      serverConfig);
 
         ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(jDiscContext));
+        FilterHolder jDiscFilterInvokerFilter = new FilterHolder(new JDiscFilterInvokerFilter(jDiscContext, filterInvoker));
+
         List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
                                                       .map(JDiscServerConnector.class::cast)
                                                       .collect(toList());
 
         server.setHandler(getHandlerCollection(serverConfig,
+                                               servletPathsConfig,
                                                connectors,
-                                               jdiscServlet));
+                                               jdiscServlet,
+                                               servletHolders,
+                                               jDiscFilterInvokerFilter));
         this.metricsReporter = new ServerMetricReporter(metric, server);
     }
 
@@ -137,9 +150,19 @@ public class JettyHttpServer extends AbstractServerProvider {
     }
 
     private HandlerCollection getHandlerCollection(ServerConfig serverConfig,
+                                                   ServletPathsConfig servletPathsConfig,
                                                    List<JDiscServerConnector> connectors,
-                                                   ServletHolder jdiscServlet) {
+                                                   ServletHolder jdiscServlet,
+                                                   ComponentRegistry<ServletHolder> servletHolders,
+                                                   FilterHolder jDiscFilterInvokerFilter) {
         ServletContextHandler servletContextHandler = createServletContextHandler();
+
+        servletHolders.allComponentsById().forEach((id, servlet) -> {
+            String path = getServletPath(servletPathsConfig, id);
+            servletContextHandler.addServlet(servlet, path);
+            servletContextHandler.addFilter(jDiscFilterInvokerFilter, path, EnumSet.allOf(DispatcherType.class));
+        });
+
         servletContextHandler.addServlet(jdiscServlet, "/*");
 
         List<ConnectorConfig> connectorConfigs = connectors.stream().map(JDiscServerConnector::connectorConfig).collect(toList());
@@ -166,6 +189,10 @@ public class JettyHttpServer extends AbstractServerProvider {
         HandlerCollection handlerCollection = new HandlerCollection();
         handlerCollection.setHandlers(new Handler[] { statisticsHandler });
         return handlerCollection;
+    }
+
+    private static String getServletPath(ServletPathsConfig servletPathsConfig, ComponentId id) {
+        return "/" + servletPathsConfig.servlets(id.stringValue()).path();
     }
 
     private ServletContextHandler createServletContextHandler() {

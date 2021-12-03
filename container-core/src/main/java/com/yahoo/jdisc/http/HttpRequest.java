@@ -7,6 +7,7 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.util.MultiMap;
@@ -30,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * @author Anirudha Khanna
  * @author Einar M R Rosenvinge
  */
-public class HttpRequest extends Request {
+public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
 
     public enum Method {
         OPTIONS,
@@ -140,6 +141,7 @@ public class HttpRequest extends Request {
     }
 
     /** Returns the remote address, or null if unresolved */
+    @Override
     public String getRemoteHostAddress() {
         if (remoteAddress instanceof InetSocketAddress) {
             InetAddress remoteInetAddress =  ((InetSocketAddress) remoteAddress).getAddress();
@@ -152,6 +154,7 @@ public class HttpRequest extends Request {
         }
     }
 
+    @Override
     public String getRemoteHostName() {
         if (remoteAddress instanceof InetSocketAddress) {
             InetAddress remoteInetAddress = ((InetSocketAddress) remoteAddress).getAddress();
@@ -163,6 +166,7 @@ public class HttpRequest extends Request {
         }
     }
 
+    @Override
     public int getRemotePort() {
         if (remoteAddress instanceof InetSocketAddress)
             return ((InetSocketAddress) remoteAddress).getPort();
@@ -198,6 +202,7 @@ public class HttpRequest extends Request {
      * @param unit the unit to return the time in
      * @return the timestamp of when the underlying HTTP channel was connected, or request creation time
      */
+    @Override
     public long getConnectedAt(TimeUnit unit) {
         return unit.convert(connectedAt, TimeUnit.MILLISECONDS);
     }
@@ -229,6 +234,7 @@ public class HttpRequest extends Request {
         return parameters;
     }
 
+    @Override
     public void copyHeaders(HeaderFields target) {
         target.addAll(headers());
     }
