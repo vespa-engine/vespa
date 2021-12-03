@@ -30,7 +30,6 @@ public class TestRunnerTest {
 
     private Path artifactsPath;
     private Path testPath;
-    private Path logFile;
     private Path configFile;
     private Path settingsFile;
 
@@ -40,14 +39,13 @@ public class TestRunnerTest {
         Files.createFile(artifactsPath.resolve("my-tests.jar"));
         Files.createFile(artifactsPath.resolve("my-fat-test.jar"));
         testPath = tmp.newFolder("testData").toPath();
-        logFile = tmp.newFile("maven.log").toPath();
         configFile = tmp.newFile("testConfig.json").toPath();
         settingsFile = tmp.newFile("settings.xml").toPath();
     }
 
     @Test
     public void ansiCodesAreConvertedToHtml() throws InterruptedException {
-        TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
+        TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
                                            __ -> new ProcessBuilder("echo", Ansi.ansi().fg(Ansi.Color.RED).a("Hello!").reset().toString()));
         runner.test(SYSTEM_TEST, new byte[0]);
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
@@ -64,7 +62,7 @@ public class TestRunnerTest {
     @Test
     public void noTestJarIsAFailure() throws InterruptedException, IOException {
         Files.delete(artifactsPath.resolve("my-tests.jar"));
-        TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
+        TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
                                            __ -> new ProcessBuilder("This is a command that doesn't exist, for sure!"));
         runner.test(SYSTEM_TEST, new byte[0]);
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
@@ -80,7 +78,7 @@ public class TestRunnerTest {
 
     @Test
     public void errorLeadsToError() throws InterruptedException {
-        TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
+        TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
                                            __ -> new ProcessBuilder("false"));
         runner.test(SYSTEM_TEST, new byte[0]);
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
@@ -92,7 +90,7 @@ public class TestRunnerTest {
 
     @Test
     public void failureLeadsToFailure() throws InterruptedException {
-        TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
+        TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
                                            __ -> new ProcessBuilder("false"));
         runner.test(SYSTEM_TEST, new byte[0]);
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
@@ -104,7 +102,7 @@ public class TestRunnerTest {
 
     @Test
     public void filesAreGenerated() throws InterruptedException, IOException {
-        TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
+        TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
                                            __ -> new ProcessBuilder("echo", "Hello!"));
         runner.test(SYSTEM_TEST, "config".getBytes());
         while (runner.getStatus() == TestRunner.Status.RUNNING) {
@@ -113,12 +111,11 @@ public class TestRunnerTest {
         assertEquals("config", new String(Files.readAllBytes(configFile)));
         assertTrue(Files.exists(testPath.resolve("pom.xml")));
         assertTrue(Files.exists(settingsFile));
-        assertEquals("Hello!\n", new String(Files.readAllBytes(logFile)));
     }
 
     @Test
     public void runnerCanBeReused() throws InterruptedException, IOException {
-        TestRunner runner = new TestRunner(artifactsPath, testPath, logFile, configFile, settingsFile,
+        TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
                                            __ -> new ProcessBuilder("sleep", "0.1"));
         runner.test(SYSTEM_TEST, "config".getBytes());
         assertEquals(TestRunner.Status.RUNNING, runner.getStatus());

@@ -9,7 +9,6 @@ import org.fusesource.jansi.HtmlAnsiOutputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -57,7 +56,6 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
 
     private final Path artifactsPath;
     private final Path testPath;
-    private final Path logFile;
     private final Path configFile;
     private final Path settingsFile;
     private final Function<TestProfile, ProcessBuilder> testBuilder;
@@ -69,16 +67,14 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
     public TestRunner(TestRunnerConfig config) {
         this(config.artifactsPath(),
              vespaHome.resolve("tmp/test"),
-             vespaHome.resolve("logs/vespa/maven.log"),
              vespaHome.resolve("tmp/config.json"),
              vespaHome.resolve("tmp/settings.xml"),
              profile -> mavenProcessFrom(profile, config));
     }
 
-    TestRunner(Path artifactsPath, Path testPath, Path logFile, Path configFile, Path settingsFile, Function<TestProfile, ProcessBuilder> testBuilder) {
+    TestRunner(Path artifactsPath, Path testPath, Path configFile, Path settingsFile, Function<TestProfile, ProcessBuilder> testBuilder) {
         this.artifactsPath = artifactsPath;
         this.testPath = testPath;
-        this.logFile = logFile;
         this.configFile = configFile;
         this.settingsFile = settingsFile;
         this.testBuilder = testBuilder;
@@ -154,9 +150,7 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
         }
 
         boolean success;
-        // The AnsiOutputStream filters out ANSI characters, leaving the file contents pure.
-        try (PrintStream fileStream = new PrintStream(new AnsiOutputStream(new BufferedOutputStream(new FileOutputStream(logFile.toFile()))));
-             ByteArrayOutputStream logBuffer = new ByteArrayOutputStream();
+        try (ByteArrayOutputStream logBuffer = new ByteArrayOutputStream();
              PrintStream logPlainFormatter = new PrintStream(new AnsiOutputStream(logBuffer));
              PrintStream logFormatter = new PrintStream(new HtmlAnsiOutputStream(logBuffer))){
             writeTestApplicationPom(testProfile);
@@ -166,7 +160,6 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
             Process mavenProcess = builder.start();
             BufferedReader in = new BufferedReader(new InputStreamReader(mavenProcess.getInputStream()));
             in.lines().forEach(line -> {
-                fileStream.println(line);
                 logFormatter.print(line);
                 String message = logBuffer.toString(UTF_8);
                 if (message.length() > 1 << 13) {
@@ -185,11 +178,6 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
             record.setThrown(exception);
             logger.log(record);
             log.put(record.getSequenceNumber(), record);
-            try (PrintStream file = new PrintStream(new FileOutputStream(logFile.toFile(), true))) {
-                file.println(record.getMessage());
-                exception.printStackTrace(file);
-            }
-            catch (IOException ignored) { }
             status = exception instanceof NoTestsException ? Status.FAILURE : Status.ERROR;
             return;
         }
