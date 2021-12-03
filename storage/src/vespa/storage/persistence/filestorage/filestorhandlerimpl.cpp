@@ -1308,10 +1308,10 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
     }
 
     std::lock_guard mergeGuard(_mergeStatesLock);
-    out << "<tr><td>Active merge operations</td><td>" << _mergeStates.size() << "</td></tr>\n";
+    out << "<p>Active merge operations: " << _mergeStates.size() << "</p>\n";
     if (verbose) {
         out << "<h4>Active merges</h4>\n";
-        if (_mergeStates.size() == 0) {
+        if (_mergeStates.empty()) {
             out << "None\n";
         }
         for (auto & entry : _mergeStates) {
