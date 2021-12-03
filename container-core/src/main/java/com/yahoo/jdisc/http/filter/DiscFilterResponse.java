@@ -2,7 +2,9 @@
 package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.HeaderFields;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.Cookie;
+import com.yahoo.jdisc.http.CookieHelper;
 import com.yahoo.jdisc.http.HttpResponse;
 
 import java.io.IOException;
@@ -13,22 +15,24 @@ import java.util.Enumeration;
 import java.util.List;
 
 /**
- * This class was made abstract from 5.27. Test cases that need
- * a concrete instance should create a {@link JdiscFilterResponse}.
+ * Response type for {@link SecurityResponseFilter}.
  *
- * @author tejalk
+ * @author Tejal Knot
+ * @author bjorncs
  */
-public abstract class DiscFilterResponse {
+public class DiscFilterResponse {
 
-	private final HttpResponse parent;
+	private final Response parent;
 	private final HeaderFields untreatedHeaders;
 	private final List<Cookie> untreatedCookies;
 
-	public DiscFilterResponse(HttpResponse parent) {
+	public DiscFilterResponse(HttpResponse parent) { this((Response)parent); }
+
+	DiscFilterResponse(Response parent) {
 		this.parent = parent;
 
         this.untreatedHeaders = new HeaderFields();
-        parent.copyHeaders(untreatedHeaders);
+		untreatedHeaders.addAll(parent.headers());
 
 		this.untreatedCookies = getCookies();
 	}
@@ -71,48 +75,71 @@ public abstract class DiscFilterResponse {
      * <p>
      * If the header had already been set, the new value overwrites the previous one.
      */
-    public abstract void setHeader(String name, String value);
+	public void setHeader(String name, String value) {
+		parent.headers().put(name, value);
+	}
 
-    public abstract void removeHeaders(String name);
-
-	/**
-     * Sets a header with the given name and value.
-     * <p>
-     * If the header had already been set, the new value overwrites the previous one.
-     */
-	public abstract void setHeaders(String name, String value);
+	public void removeHeaders(String name) {
+		parent.headers().remove(name);
+	}
 
 	/**
      * Sets a header with the given name and value.
      * <p>
      * If the header had already been set, the new value overwrites the previous one.
      */
-	public abstract void setHeaders(String name, List<String> values);
+	public void setHeaders(String name, String value) {
+		parent.headers().put(name, value);
+	}
+
+	/**
+     * Sets a header with the given name and value.
+     * <p>
+     * If the header had already been set, the new value overwrites the previous one.
+     */
+	public void setHeaders(String name, List<String> values) {
+		parent.headers().put(name, values);
+	}
 
     /**
      * Adds a header with the given name and value
      * @see com.yahoo.jdisc.HeaderFields#add
      */
-    public abstract void addHeader(String name, String value);
-
-	public abstract String getHeader(String name);
-
-	public List<Cookie> getCookies() {
-		return parent.decodeSetCookieHeader();
+    public void addHeader(String name, String value) {
+		parent.headers().add(name, value);
 	}
 
-	public abstract void setCookies(List<Cookie> cookies);
+	public String getHeader(String name) {
+		List<String> values = parent.headers().get(name);
+		if (values == null || values.isEmpty()) {
+			return null;
+		}
+		return values.get(values.size() - 1);
+	}
+
+	public List<Cookie> getCookies() {
+		return CookieHelper.decodeSetCookieHeader(parent.headers());
+	}
+
+	public void setCookies(List<Cookie> cookies) {
+		CookieHelper.encodeSetCookieHeader(parent.headers(), cookies);
+	}
 
 	public int getStatus() {
 	    return parent.getStatus();
 	}
 
-	public abstract void setStatus(int status);
+	public void setStatus(int status) {
+		parent.setStatus(status);
+	}
 
 	/**
 	 * Return the parent HttpResponse
+	 *
+	 * @deprecated Use methods on {@link DiscFilterResponse} instead
      */
-	public HttpResponse getParentResponse() { return parent; }
+	@Deprecated(forRemoval = true, since = "7.511")
+	public HttpResponse getParentResponse() { return (HttpResponse) parent; }
 
     public void addCookie(JDiscCookieWrapper cookie) {
         if(cookie != null) {

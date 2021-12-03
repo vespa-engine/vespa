@@ -30,7 +30,7 @@ public class SecurityResponseFilterChain extends AbstractResource implements Res
 
     @Override
     public void filter(Response response, Request request) {
-        DiscFilterResponse discFilterResponse = new JdiscFilterResponse(response);
+        DiscFilterResponse discFilterResponse = new DiscFilterResponse(response);
         RequestView requestView = new RequestViewImpl(request);
         filter(requestView, discFilterResponse);
     }
