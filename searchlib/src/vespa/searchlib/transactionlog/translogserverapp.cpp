@@ -42,7 +42,6 @@ getCompression(searchlib::TranslogserverConfig::Compression::Type type)
 {
     switch (type) {
         case searchlib::TranslogserverConfig::Compression::Type::NONE:
-            return Encoding::Compression::none;
         case searchlib::TranslogserverConfig::Compression::Type::NONE_MULTI:
             return Encoding::Compression::none_multi;
         case searchlib::TranslogserverConfig::Compression::Type::LZ4:

@@ -11,7 +11,7 @@ class DomainConfig {
 public:
     using duration = vespalib::duration;
     DomainConfig();
-    DomainConfig & setEncoding(Encoding v)          { _encoding = v; return *this; }
+    DomainConfig & setEncoding(Encoding v);
     DomainConfig & setPartSizeLimit(size_t v)       { _partSizeLimit = v; return *this; }
     DomainConfig & setChunkSizeLimit(size_t v)      { _chunkSizeLimit = v; return *this; }
     DomainConfig & setCompressionLevel(uint8_t v)   { _compressionLevel = v; return *this; }
