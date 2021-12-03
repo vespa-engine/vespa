@@ -2,6 +2,7 @@
 
 #include "fixed_size_hash_map.h"
 #include "entry_comparator.h"
+#include "i_compactable.h"
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <cassert>
@@ -181,15 +182,17 @@ FixedSizeHashMap::foreach_key(const std::function<void(EntryRef)>& callback) con
 }
 
 void
-FixedSizeHashMap::move_keys(const std::function<EntryRef(EntryRef)>& callback)
+FixedSizeHashMap::move_keys(ICompactable& compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits)
 {
     for (auto& chain_head : _chain_heads) {
         uint32_t node_idx = chain_head.load_relaxed();
         while (node_idx != no_node_idx) {
             auto& node = _nodes[node_idx];
             EntryRef old_ref = node.get_kv().first.load_relaxed();
-            EntryRef new_ref = callback(old_ref);
-            if (new_ref != old_ref) {
+            assert(old_ref.valid());
+            uint32_t buffer_id = old_ref.buffer_id(entry_ref_offset_bits);
+            if (compacting_buffers[buffer_id]) {
+                EntryRef new_ref = compactable.move(old_ref);
                 node.get_kv().first.store_release(new_ref);
             }
             node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);

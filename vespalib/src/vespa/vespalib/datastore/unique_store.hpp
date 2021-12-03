@@ -113,23 +113,18 @@ private:
 
     EntryRef move(EntryRef oldRef) override {
         RefT iRef(oldRef);
-        assert(iRef.valid());
         uint32_t buffer_id = iRef.bufferId();
-        if (_compacting_buffer[buffer_id]) {
-            auto &inner_mapping = _mapping[buffer_id];
-            assert(iRef.unscaled_offset() < inner_mapping.size());
-            EntryRef &mappedRef = inner_mapping[iRef.unscaled_offset()];
-            assert(!mappedRef.valid());
-            EntryRef newRef = _store.move(oldRef);
-            mappedRef = newRef;
-            return newRef;
-        } else {
-            return oldRef;
-        }
+        auto &inner_mapping = _mapping[buffer_id];
+        assert(iRef.unscaled_offset() < inner_mapping.size());
+        EntryRef &mappedRef = inner_mapping[iRef.unscaled_offset()];
+        assert(!mappedRef.valid());
+        EntryRef newRef = _store.move(oldRef);
+        mappedRef = newRef;
+        return newRef;
     }
     
     void fillMapping() {
-        _dict.move_entries(*this);
+        _dict.move_keys(*this, _compacting_buffer, RefT::offset_bits);
     }
 
 public:
