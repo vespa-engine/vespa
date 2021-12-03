@@ -483,11 +483,11 @@ WriteableFileChunk::writeData(const ProcessedChunkQ & chunks, size_t sz)
 void
 WriteableFileChunk::updateChunkInfo(const ProcessedChunkQ & chunks, const ChunkMetaV & cmetaV, size_t sz)
 {
-    std::lock_guard guard(_lock);
     uint32_t maxChunkId(0);
     for (const auto & chunk : chunks) {
         maxChunkId = std::max(chunk->getChunkId(), maxChunkId);
     }
+    std::lock_guard guard(_lock);
     if (maxChunkId >= _chunkInfo.size()) {
         _chunkInfo.reserve(vespalib::roundUp2inN(maxChunkId+1));
     }
