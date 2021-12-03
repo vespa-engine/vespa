@@ -4,7 +4,6 @@ package com.yahoo.config.subscription.impl;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
@@ -25,7 +24,7 @@ import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
- * A config subscription for a config instance, gets config using Vespa RPC from a config source
+ * A config subscription for a config instance, gets config using RPC from a config source
  * (config proxy or config server).
  *
  * @author vegardh
@@ -44,15 +43,13 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
      * but has not yet been handled.
      */
     private BlockingQueue<JRTClientConfigRequest> reqQueue = new LinkedBlockingQueue<>();
-    private ConfigSourceSet sources;
+    private final ConfigSourceSet sources;
 
-    public JRTConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSource source, TimingValues timingValues) {
+    public JRTConfigSubscription(ConfigKey<T> key, ConfigSubscriber subscriber, ConfigSourceSet source, TimingValues timingValues) {
         super(key);
         this.timingValues = timingValues;
         this.subscriber = subscriber;
-        if (source instanceof ConfigSourceSet) {
-            this.sources = (ConfigSourceSet) source;
-        }
+        this.sources = source;
     }
 
     @Override

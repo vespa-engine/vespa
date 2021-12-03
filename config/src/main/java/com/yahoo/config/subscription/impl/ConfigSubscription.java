@@ -122,7 +122,7 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         if (source instanceof DirSource || configId.startsWith("dir:")) return getDirFileSub(key, source);
         if (source instanceof JarSource || configId.startsWith("jar:")) return getJarSub(key, source);
         if (source instanceof ConfigSet) return new ConfigSetSubscription<>(key, source);
-        if (source instanceof ConfigSourceSet) return new JRTConfigSubscription<>(key, subscriber, source, timingValues);
+        if (source instanceof ConfigSourceSet) return new JRTConfigSubscription<>(key, subscriber, (ConfigSourceSet) source, timingValues);
         throw new IllegalArgumentException("Unknown source type: " + source);
     }
 

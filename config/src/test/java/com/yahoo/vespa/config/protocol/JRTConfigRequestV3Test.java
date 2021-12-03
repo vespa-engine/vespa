@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.config.subscription.ConfigSet;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
@@ -192,7 +191,11 @@ public class JRTConfigRequestV3Test {
     @Test
     public void created_from_subscription() {
         ConfigSubscriber subscriber = new ConfigSubscriber();
-        JRTConfigSubscription<SimpletypesConfig> sub = new JRTConfigSubscription<>(new ConfigKey<>(SimpletypesConfig.class, configId), subscriber, new ConfigSet(), new TimingValues());
+        JRTConfigSubscription<SimpletypesConfig> sub =
+                new JRTConfigSubscription<>(new ConfigKey<>(SimpletypesConfig.class, configId),
+                                            subscriber,
+                                            new ConfigSourceSet(),
+                                            new TimingValues());
         JRTClientConfigRequest request = createReq(sub, Trace.createNew(9));
         assertThat(request.getConfigKey().getName(), is(SimpletypesConfig.CONFIG_DEF_NAME));
         JRTServerConfigRequest serverRequest = createReq(request.getRequest());
