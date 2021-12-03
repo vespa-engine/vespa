@@ -6,7 +6,7 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,17 +22,14 @@ import java.util.Set;
  *
  * @author Ulf Lilleengen
  */
+// TODO: These should be stored in each schema as everything else
 public class RankProfileRegistry {
 
     private final Map<String, Map<String, RankProfile>> rankProfiles = new LinkedHashMap<>();
-    private static final String MAGIC_GLOBAL_RANKPROFILES = "[MAGIC_GLOBAL_RANKPROFILES]";
+    private static final String globalRankProfilesKey = "[global]";
 
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
-
-    public RankProfileRegistry() {
-
-    }
 
     public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Schema schema) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
@@ -42,14 +39,10 @@ public class RankProfileRegistry {
     }
 
     private String extractName(ImmutableSchema search) {
-        return search != null ? search.getName() : MAGIC_GLOBAL_RANKPROFILES;
+        return search != null ? search.getName() : globalRankProfilesKey;
     }
 
-    /**
-     * Adds a rank profile to this registry
-     *
-     * @param rankProfile the rank profile to add
-     */
+    /** Adds a rank profile to this registry */
     public void add(RankProfile rankProfile) {
         String searchName = extractName(rankProfile.getSearch());
         if ( ! rankProfiles.containsKey(searchName)) {
@@ -91,7 +84,7 @@ public class RankProfileRegistry {
     }
 
     public RankProfile getGlobal(String name) {
-        Map<String, RankProfile> profiles = rankProfiles.get(MAGIC_GLOBAL_RANKPROFILES);
+        Map<String, RankProfile> profiles = rankProfiles.get(globalRankProfilesKey);
         if (profiles == null) return null;
         return profiles.get(name);
     }
@@ -103,12 +96,13 @@ public class RankProfileRegistry {
             RankProfile parentProfile = resolve(parent, name);
             if (parentProfile != null) return parentProfile;
         }
-        return get(MAGIC_GLOBAL_RANKPROFILES, name);
+        return get(globalRankProfilesKey, name);
     }
 
     /**
      * Rank profiles that are collected across clusters.
-     * @return A set of global {@link RankProfile} instances.
+     *
+     * @return a set of global {@link RankProfile} instances
      */
     public Collection<RankProfile> all() {
         List<RankProfile> all = new ArrayList<>();
@@ -119,26 +113,28 @@ public class RankProfileRegistry {
     }
 
     /**
-     * Returns the rank profiles of a given search definition.
+     * Retrieve all rank profiles for a schema
      *
-     * @param search the searchdefinition to get rank profiles for
+     * @param schema the schema to fetch rank profiles for, or null for the global ones
      * @return a collection of {@link RankProfile} instances
      */
-    public Collection<RankProfile> rankProfilesOf(String search) {
-        Map<String, RankProfile> mapping = rankProfiles.get(search);
-        if (mapping == null) {
-            return Collections.emptyList();
-        }
-        return mapping.values();
-    }
+    public Collection<RankProfile> rankProfilesOf(ImmutableSchema schema) {
+        String key = schema == null ? globalRankProfilesKey : schema.getName();
 
-    /**
-     * Retrieve all rank profiles for a search definition
-     * @param search search definition to fetch rank profiles for, or null for the global ones
-     * @return Collection of RankProfiles
-     */
-    public Collection<RankProfile> rankProfilesOf(ImmutableSchema search) {
-        return rankProfilesOf(extractName(search));
+        if ( ! rankProfiles.containsKey(key)) return List.of();
+
+        var profiles = new LinkedHashMap<>(rankProfiles.get(key));
+        // Add all profiles in inherited schemas, unless they are already present (overridden)
+        while (schema != null && schema.inherited().isPresent()) {
+            schema = schema.inherited().get();
+            var inheritedProfiles = rankProfiles.get(schema.getName());
+            if (inheritedProfiles != null) {
+                for (Map.Entry<String, RankProfile> inheritedProfile : inheritedProfiles.entrySet()) {
+                    profiles.putIfAbsent(inheritedProfile.getKey(), inheritedProfile.getValue());
+                }
+            }
+        }
+        return profiles.values();
     }
 
 }
