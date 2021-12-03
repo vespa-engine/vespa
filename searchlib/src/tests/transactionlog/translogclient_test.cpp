@@ -5,6 +5,7 @@
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastos/file.h>
 #include <thread>
 
@@ -568,10 +569,14 @@ TEST("partialUpdateTest") {
 }
 
 TEST("testCrcVersions") {
-    createAndFillDomain("ccitt_crc32", Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none), 0);
-    createAndFillDomain("xxh64", Encoding(Encoding::Crc::xxh64, Encoding::Compression::none), 1);
+    try {
+        createAndFillDomain("ccitt_crc32", Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none), 0);
+        ASSERT_TRUE(false);
+    } catch (vespalib::IllegalArgumentException & e) {
+        EXPECT_TRUE(e.getMessage().find("Compression:none is not allowed for the tls") != vespalib::string::npos);
+    }
+    createAndFillDomain("xxh64", Encoding(Encoding::Crc::xxh64, Encoding::Compression::zstd), 0);
 
-    verifyDomain("ccitt_crc32");
     verifyDomain("xxh64");
 }
 
