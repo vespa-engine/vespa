@@ -27,7 +27,7 @@ class PersistenceUtil;
 
 class MessageTracker : protected Types {
 public:
-    typedef std::unique_ptr<MessageTracker> UP;
+    using UP = std::unique_ptr<MessageTracker>;
 
     MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender,
                    FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg);
@@ -80,6 +80,10 @@ public:
     void sendReply();
 
     bool checkForError(const spi::Result& response);
+
+    // Returns a non-nullptr notifier instance iff the underlying operation wants to be notified
+    // when the sync phase is complete. Otherwise returns a nullptr shared_ptr.
+    std::shared_ptr<FileStorHandler::OperationSyncPhaseDoneNotifier> sync_phase_done_notifier_or_nullptr() const;
 
     static MessageTracker::UP
     createForTesting(const framework::MilliSecTimer & timer, PersistenceUtil & env, MessageSender & replySender,

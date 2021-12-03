@@ -29,9 +29,29 @@ PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequen
 
 PersistenceHandler::~PersistenceHandler() = default;
 
+// Guard that allows an operation that may be executed in an async fashion to
+// be explicitly notified when the sync phase of the operation is done, i.e.
+// when the persistence thread is no longer working on it. An operation that
+// does not care about such notifications can safely return a nullptr notifier,
+// in which case the guard is a no-op.
+class OperationSyncPhaseTrackingGuard {
+    std::shared_ptr<FileStorHandler::OperationSyncPhaseDoneNotifier> _maybe_notifier;
+public:
+    explicit OperationSyncPhaseTrackingGuard(const MessageTracker& tracker)
+        : _maybe_notifier(tracker.sync_phase_done_notifier_or_nullptr())
+    {}
+
+    ~OperationSyncPhaseTrackingGuard() {
+        if (_maybe_notifier) {
+            _maybe_notifier->signal_operation_sync_phase_done();
+        }
+    }
+};
+
 MessageTracker::UP
 PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTracker::UP tracker) const
 {
+    OperationSyncPhaseTrackingGuard sync_guard(*tracker);
     switch (msg.getType().getId()) {
     case api::MessageType::GET_ID:
         return _simpleHandler.handleGet(static_cast<api::GetCommand&>(msg), std::move(tracker));

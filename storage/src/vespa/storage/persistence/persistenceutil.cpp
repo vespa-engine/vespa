@@ -155,6 +155,15 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
     }
 }
 
+std::shared_ptr<FileStorHandler::OperationSyncPhaseDoneNotifier>
+MessageTracker::sync_phase_done_notifier_or_nullptr() const
+{
+    if (_bucketLock->wants_sync_phase_done_notification()) {
+        return _bucketLock;
+    }
+    return {};
+}
+
 PersistenceUtil::PersistenceUtil(const ServiceLayerComponent& component, FileStorHandler& fileStorHandler,
                                  FileStorThreadMetrics& metrics, spi::PersistenceProvider& provider)
     : _component(component),
