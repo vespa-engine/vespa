@@ -443,7 +443,7 @@ FBench::Main(int argc, char *argv[])
             keepAlive = false;
             break;
         case 'd':
-            base64Decode = false;
+            base64Decode = true;
             break;
         case 'x': 
             // consuming x for backwards compability. This turned on header benchmark data
