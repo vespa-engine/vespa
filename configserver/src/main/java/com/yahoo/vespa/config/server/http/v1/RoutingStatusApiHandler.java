@@ -117,11 +117,12 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         // Redeploy application so that a new LbServicesConfig containing the updated status is generated and consumed
         // by routing layer. This is required to update weights for application endpoints when routing status for a
         // deployment is changed
+        log.log(Level.INFO, "Changing routing status of " + instance + " from " +
+                            currentStatus.status() + " to " + wantedStatus.status());
         changeStatus(upstreamNames, wantedStatus);
         try {
             deployer.deployFromLocalActive(instance, Duration.ofMinutes(1));
         } catch (Exception e) {
-
             log.log(Level.SEVERE, "Failed to redeploy " + instance + ". Reverting routing status to " +
                                   currentStatus.status(), e);
             changeStatus(upstreamNames, currentStatus);
@@ -138,6 +139,8 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
     /** Change routing status of a zone */
     private SlimeJsonResponse changeZoneStatus(RestApi.RequestContext context) {
         boolean in = context.request().getMethod() == HttpRequest.Method.DELETE;
+        log.log(Level.INFO, "Changing routing status of zone from " + zoneStatus() + " to " +
+                            (in ? RoutingStatus.in : RoutingStatus.out));
         if (in) {
             curator.delete(ZONE_STATUS);
             return new SlimeJsonResponse(toSlime(RoutingStatus.in));
