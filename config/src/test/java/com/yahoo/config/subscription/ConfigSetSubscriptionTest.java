@@ -2,6 +2,7 @@
 package com.yahoo.config.subscription;
 
 import com.yahoo.config.subscription.impl.ConfigSubscription;
+import com.yahoo.config.subscription.impl.JrtConfigRequesters;
 import com.yahoo.foo.AppConfig;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.StringConfig;
@@ -18,21 +19,21 @@ public class ConfigSetSubscriptionTest {
 
     @Test
     public void testConfigSubscription() {
-        ConfigSubscriber subscriber = new ConfigSubscriber();
         ConfigSet configSet = new ConfigSet();
         AppConfig.Builder a0builder = new AppConfig.Builder().message("A message, 0").times(88);
         configSet.addBuilder("app/0", a0builder);
         AppConfig.Builder a1builder = new AppConfig.Builder().message("A message, 1").times(89);
         configSet.addBuilder("app/1", a1builder);
 
+        JrtConfigRequesters requesters = new JrtConfigRequesters();
         ConfigSubscription<AppConfig> c1 = ConfigSubscription.get(
                 new ConfigKey<>(AppConfig.class, "app/0"),
-                subscriber,
+                requesters,
                 configSet,
                 new TimingValues());
         ConfigSubscription<AppConfig> c2 = ConfigSubscription.get(
                 new ConfigKey<>(AppConfig.class, "app/1"),
-                subscriber,
+                requesters,
                 configSet,
                 new TimingValues());
 
@@ -42,14 +43,13 @@ public class ConfigSetSubscriptionTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testUnknownKey() {
-        ConfigSubscriber subscriber = new ConfigSubscriber();
         ConfigSet configSet = new ConfigSet();
         AppConfig.Builder a0builder = new AppConfig.Builder().message("A message, 0").times(88);
         configSet.addBuilder("app/0", a0builder);
 
         ConfigSubscription.get(
                 new ConfigKey<>(SimpletypesConfig.class, "simpletypes/1"),
-                subscriber,
+                new JrtConfigRequesters(),
                 configSet,
                 new TimingValues());
     }

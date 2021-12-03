@@ -4,6 +4,7 @@ package com.yahoo.config.subscription;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
+import com.yahoo.config.subscription.impl.JrtConfigRequesters;
 import com.yahoo.foo.AppConfig;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.vespa.config.ConfigKey;
@@ -29,9 +30,10 @@ public class ConfigSubscriptionTest {
     public void testEquals() {
         ConfigSubscriber sub = new ConfigSubscriber();
 
-        ConfigSubscription<SimpletypesConfig> a = createSubscription(sub, "test");
-        ConfigSubscription<SimpletypesConfig> b = createSubscription(sub, "test");
-        ConfigSubscription<SimpletypesConfig> c = createSubscription(sub, "test2");
+        JrtConfigRequesters requesters = new JrtConfigRequesters();
+        ConfigSubscription<SimpletypesConfig> a = createSubscription(requesters, "test");
+        ConfigSubscription<SimpletypesConfig> b = createSubscription(requesters, "test");
+        ConfigSubscription<SimpletypesConfig> c = createSubscription(requesters, "test2");
         assertEquals(b, a);
         assertEquals(a, a);
         assertEquals(b, b);
@@ -39,21 +41,21 @@ public class ConfigSubscriptionTest {
         assertNotEquals(c, a);
         assertNotEquals(c, b);
 
-        ConfigSubscriber subscriber = new ConfigSubscriber();
         ConfigSet configSet = new ConfigSet();
         AppConfig.Builder a0builder = new AppConfig.Builder().message("A message, 0").times(88);
         configSet.addBuilder("app/0", a0builder);
         AppConfig.Builder a1builder = new AppConfig.Builder().message("A message, 1").times(89);
         configSet.addBuilder("app/1", a1builder);
 
+
         ConfigSubscription<AppConfig> c1 = ConfigSubscription.get(
                 new ConfigKey<>(AppConfig.class, "app/0"),
-                subscriber,
+                requesters,
                 configSet,
                 new TimingValues());
         ConfigSubscription<AppConfig> c2 = ConfigSubscription.get(
                 new ConfigKey<>(AppConfig.class, "app/1"),
-                subscriber,
+                requesters,
                 configSet,
                 new TimingValues());
 
@@ -86,9 +88,9 @@ public class ConfigSubscriptionTest {
         }
     }
 
-    private ConfigSubscription<SimpletypesConfig> createSubscription(ConfigSubscriber sub, String configId) {
+    private ConfigSubscription<SimpletypesConfig> createSubscription(JrtConfigRequesters requesters, String configId) {
         return ConfigSubscription.get(new ConfigKey<>(SimpletypesConfig.class, configId),
-                                      sub, new RawSource("boolval true"), new TimingValues());
+                                      requesters, new RawSource("boolval true"), new TimingValues());
     }
 
     private static class TestConfigSubscriber extends ConfigSubscriber {
