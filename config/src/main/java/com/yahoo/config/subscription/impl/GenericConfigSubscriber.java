@@ -1,20 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import java.util.List;
-import java.util.Map;
-
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigHandle;
-import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 
+import java.util.List;
+import java.util.Map;
+
 /**
- * A subscriber that can subscribe without the class. Used by configproxy.
+ * A subscriber that can subscribe without the class. Used by config proxy.
  *
  * @author Vegard Havdal
  */
@@ -22,7 +21,7 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
 
     /**
      * Constructs a new subscriber using the given pool of requesters (JRTConfigRequester holds 1 connection which in
-     * turn is subject to failover across the elems in the source set.)
+     * turn is subject to failover across the elements in the source set.)
      * The behaviour is undefined if the map key is different from the source set the requester was built with.
      * See also {@link JRTConfigRequester#JRTConfigRequester(com.yahoo.vespa.config.ConnectionPool, com.yahoo.vespa.config.TimingValues)}
      *
@@ -41,7 +40,7 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
      * @param timingValues {@link TimingValues}
      * @return generic handle
      */
-    public GenericConfigHandle subscribe(ConfigKey<RawConfig> key, List<String> defContent, ConfigSource source, TimingValues timingValues) {
+    public GenericConfigHandle subscribe(ConfigKey<RawConfig> key, List<String> defContent, ConfigSourceSet source, TimingValues timingValues) {
         checkStateBeforeSubscribe();
         GenericJRTConfigSubscription sub = new GenericJRTConfigSubscription(key, defContent, this, source, timingValues);
         GenericConfigHandle handle = new GenericConfigHandle(sub);
