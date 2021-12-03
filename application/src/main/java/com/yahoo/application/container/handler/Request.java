@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container.handler;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 import net.jcip.annotations.Immutable;
 
 import java.nio.charset.StandardCharsets;

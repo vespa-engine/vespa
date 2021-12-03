@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.prelude.fastsearch.FastHit;

@@ -4,7 +4,7 @@ package com.yahoo.metrics.simple;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 
 /**
  * Single-use builder for the immutable Point instances used to set dimensions

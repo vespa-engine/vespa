@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 
 /**
  * This class represents a lookup in a multivalue document

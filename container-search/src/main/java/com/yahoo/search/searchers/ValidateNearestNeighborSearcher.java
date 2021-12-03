@@ -2,7 +2,7 @@
 
 package com.yahoo.search.searchers;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearestNeighborItem;

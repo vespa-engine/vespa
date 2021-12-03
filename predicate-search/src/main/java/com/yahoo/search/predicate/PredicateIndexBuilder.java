@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 import com.google.inject.Inject;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
