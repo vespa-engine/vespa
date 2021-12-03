@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A deployment routing context, which extends {@link RoutingContext} to support routing configuration of a deployment.
@@ -125,7 +126,10 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
             List<String> upstreamNames = controller.readEndpointsOf(deployment)
                                                    .scope(Endpoint.Scope.zone)
                                                    .shared()
-                                                   .mapToList(endpoint -> endpoint.upstreamName(deployment));
+                                                   .asList().stream()
+                                                   .map(endpoint -> endpoint.upstreamName(deployment))
+                                                   .distinct()
+                                                   .collect(Collectors.toList());
             if (upstreamNames.isEmpty()) {
                 throw new IllegalArgumentException("No upstream names found for " + deployment);
             }

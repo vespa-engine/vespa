@@ -21,10 +21,12 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -105,12 +107,12 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
 
     /** Change routing status of a deployment */
     private SlimeJsonResponse changeDeploymentStatus(RestApi.RequestContext context) {
-        List<String> upstreamNames = upstreamNames(context);
+        Set<String> upstreamNames = upstreamNames(context);
         ApplicationId instance = instance(context);
         RestApi.RequestContext.RequestContent requestContent = context.requestContentOrThrow();
         Slime requestBody = Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(requestContent.content().readAllBytes()));
         DeploymentRoutingStatus wantedStatus = deploymentRoutingStatusFromSlime(requestBody, clock.instant());
-        DeploymentRoutingStatus currentStatus = deploymentStatus(upstreamNames.get(0));
+        DeploymentRoutingStatus currentStatus = deploymentStatus(upstreamNames.iterator().next());
 
         // Redeploy application so that a new LbServicesConfig containing the updated status is generated and consumed
         // by routing layer. This is required to update weights for application endpoints when routing status for a
@@ -151,7 +153,7 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
     }
 
     /** Change the status of one or more upstream names */
-    private void changeStatus(List<String> upstreamNames, DeploymentRoutingStatus newStatus) {
+    private void changeStatus(Set<String> upstreamNames, DeploymentRoutingStatus newStatus) {
         CuratorTransaction transaction = new CuratorTransaction(curator);
         for (var upstreamName : upstreamNames) {
             Path path = deploymentStatusPath(upstreamName);
@@ -194,12 +196,13 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
     }
 
     private static String upstreamName(RestApi.RequestContext context) {
-        return upstreamNames(context).get(0);
+        return upstreamNames(context).iterator().next();
     }
 
-    private static List<String> upstreamNames(RestApi.RequestContext context) {
-        List<String> upstreamNames = List.of(context.pathParameters().getStringOrThrow("upstreamName")
-                                                    .split(","));
+    private static Set<String> upstreamNames(RestApi.RequestContext context) {
+        Set<String> upstreamNames = Arrays.stream(context.pathParameters().getStringOrThrow("upstreamName")
+                                                         .split(","))
+                                          .collect(Collectors.toSet());
         if (upstreamNames.isEmpty()) {
             throw new RestApiException.BadRequest("At least one upstream name must be specified");
         }
