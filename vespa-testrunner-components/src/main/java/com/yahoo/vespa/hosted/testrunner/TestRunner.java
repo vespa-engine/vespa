@@ -3,15 +3,11 @@ package com.yahoo.vespa.hosted.testrunner;
 
 import com.google.inject.Inject;
 import com.yahoo.vespa.defaults.Defaults;
-import org.fusesource.jansi.AnsiOutputStream;
-import org.fusesource.jansi.HtmlAnsiOutputStream;
+import com.yahoo.vespa.testrunner.HtmlLogger;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +25,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.SEVERE;
 
 /**
@@ -39,7 +34,6 @@ import static java.util.logging.Level.SEVERE;
 public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
 
     private static final Logger logger = Logger.getLogger(TestRunner.class.getName());
-    private static final Level HTML = new Level("html", 1) { };
     private static final Path vespaHome = Paths.get(Defaults.getDefaults().vespaHome());
     private static final String settingsXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                                               "<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"\n" +
@@ -150,26 +144,17 @@ public class TestRunner implements com.yahoo.vespa.testrunner.TestRunner {
         }
 
         boolean success;
-        try (ByteArrayOutputStream logBuffer = new ByteArrayOutputStream();
-             PrintStream logPlainFormatter = new PrintStream(new AnsiOutputStream(logBuffer));
-             PrintStream logFormatter = new PrintStream(new HtmlAnsiOutputStream(logBuffer))){
+        try {
             writeTestApplicationPom(testProfile);
             Files.write(configFile, testConfig);
             Files.write(settingsFile, settingsXml.getBytes());
 
             Process mavenProcess = builder.start();
             BufferedReader in = new BufferedReader(new InputStreamReader(mavenProcess.getInputStream()));
+            HtmlLogger htmlLogger = new HtmlLogger();
             in.lines().forEach(line -> {
-                logFormatter.print(line);
-                String message = logBuffer.toString(UTF_8);
-                if (message.length() > 1 << 13) {
-                    logBuffer.reset();
-                    logPlainFormatter.print(line); // Avoid HTML since we don't know what we'll strip here.
-                    message = logBuffer.toString(UTF_8).substring(0, 1 << 13) + " ... (this log entry was truncated due to size)";
-                }
-                LogRecord record = new LogRecord(HTML, message);
-                log.put(record.getSequenceNumber(), record);
-                logBuffer.reset();
+                LogRecord html = htmlLogger.toLog(line);
+                log.put(html.getSequenceNumber(), html);
             });
             success = mavenProcess.waitFor() == 0;
         }

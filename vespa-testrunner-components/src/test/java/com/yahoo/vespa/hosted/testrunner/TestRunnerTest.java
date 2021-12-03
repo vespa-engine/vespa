@@ -44,22 +44,6 @@ public class TestRunnerTest {
     }
 
     @Test
-    public void ansiCodesAreConvertedToHtml() throws InterruptedException {
-        TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
-                                           __ -> new ProcessBuilder("echo", Ansi.ansi().fg(Ansi.Color.RED).a("Hello!").reset().toString()));
-        runner.test(SYSTEM_TEST, new byte[0]);
-        while (runner.getStatus() == TestRunner.Status.RUNNING) {
-            Thread.sleep(10);
-        }
-        Iterator<LogRecord> log = runner.getLog(-1).iterator();
-        log.next();
-        LogRecord record = log.next();
-        assertEquals("<span style=\"color: red;\">Hello!</span>", record.getMessage());
-        assertEquals(0, runner.getLog(record.getSequenceNumber()).size());
-        assertEquals(TestRunner.Status.SUCCESS, runner.getStatus());
-    }
-
-    @Test
     public void noTestJarIsAFailure() throws InterruptedException, IOException {
         Files.delete(artifactsPath.resolve("my-tests.jar"));
         TestRunner runner = new TestRunner(artifactsPath, testPath, configFile, settingsFile,
