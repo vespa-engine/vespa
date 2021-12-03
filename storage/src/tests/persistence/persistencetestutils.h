@@ -50,6 +50,8 @@ public:
         api::LockingRequirements lockingRequirements() const noexcept override {
             return api::LockingRequirements::Shared;
         }
+        void signal_operation_sync_phase_done() noexcept override {}
+        bool wants_sync_phase_done_notification() const noexcept override { return false; }
         static std::shared_ptr<NoBucketLock> make(document::Bucket bucket) {
             return std::make_shared<NoBucketLock>(bucket);
         }
@@ -78,6 +80,8 @@ public:
         api::LockingRequirements lockingRequirements() const noexcept override {
             return api::LockingRequirements::Exclusive;
         }
+        void signal_operation_sync_phase_done() noexcept override {}
+        bool wants_sync_phase_done_notification() const noexcept override { return false; }
         static std::shared_ptr<MockBucketLock> make(document::Bucket bucket, MockBucketLocks& locks) {
             return std::make_shared<MockBucketLock>(bucket, locks);
         }
