@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.config;
 
-import com.google.common.annotations.Beta;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,7 +52,6 @@ public final class FeedParams {
          * @param silentUpgrade true for reducing "false" 4xx/5xx.
          * @return this, for chaining
          */
-        @Beta
         public Builder setSilentUpgrade(boolean silentUpgrade) {
             this.silentUpgrade = silentUpgrade;
             return this;
@@ -184,7 +181,6 @@ public final class FeedParams {
         /**
          * Set what frequency to poll for async responses. Default is 10hz (every 0.1s), but 1000hz  when using SyncFeedClient
          */
-        @Beta
         public Builder setIdlePollFrequency(Double idlePollFrequency) {
             this.idlePollFrequency = idlePollFrequency;
             return this;

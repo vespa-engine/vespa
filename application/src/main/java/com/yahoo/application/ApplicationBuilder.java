@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.text.Utf8;

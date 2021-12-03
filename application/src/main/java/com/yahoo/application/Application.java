@@ -7,7 +7,7 @@ import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.application.container.JDisc;
 import com.yahoo.application.container.impl.StandaloneContainerRunner;
 import com.yahoo.application.content.ContentCluster;

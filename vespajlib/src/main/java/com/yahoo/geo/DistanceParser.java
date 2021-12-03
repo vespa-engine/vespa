@@ -2,7 +2,7 @@
 
 package com.yahoo.geo;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 
 /**
  * Utility for parsing a geographical distance with unit.
