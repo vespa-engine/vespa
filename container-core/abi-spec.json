@@ -1661,9 +1661,7 @@
   },
   "com.yahoo.jdisc.http.HttpRequest": {
     "superClass": "com.yahoo.jdisc.Request",
-    "interfaces": [
-      "com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest"
-    ],
+    "interfaces": [],
     "attributes": [
       "public"
     ],
@@ -1723,9 +1721,7 @@
   },
   "com.yahoo.jdisc.http.HttpResponse": {
     "superClass": "com.yahoo.jdisc.Response",
-    "interfaces": [
-      "com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse"
-    ],
+    "interfaces": [],
     "attributes": [
       "public"
     ],
@@ -2168,15 +2164,14 @@
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
-      "public",
-      "abstract"
+      "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest)",
-      "public abstract java.lang.String getMethod()",
+      "public void <init>(com.yahoo.jdisc.http.HttpRequest)",
+      "public java.lang.String getMethod()",
       "public com.yahoo.jdisc.http.HttpRequest$Version getVersion()",
       "public java.net.URI getUri()",
-      "public abstract void setUri(java.net.URI)",
+      "public void setUri(java.net.URI)",
       "public com.yahoo.jdisc.http.HttpRequest getParentRequest()",
       "public java.lang.String getRemoteAddr()",
       "public void setRemoteAddr(java.lang.String)",
@@ -2186,8 +2181,8 @@
       "public void setAttribute(java.lang.String, java.lang.Object)",
       "public boolean containsAttribute(java.lang.String)",
       "public void removeAttribute(java.lang.String)",
-      "public abstract java.lang.String getParameter(java.lang.String)",
-      "public abstract java.util.Enumeration getParameterNames()",
+      "public java.lang.String getParameter(java.lang.String)",
+      "public java.util.Enumeration getParameterNames()",
       "public java.util.List getParameterNamesAsList()",
       "public java.util.Enumeration getParameterValues(java.lang.String)",
       "public java.util.List getParameterValuesAsList(java.lang.String)",
@@ -2198,16 +2193,16 @@
       "public java.util.Map getUntreatedParams()",
       "public com.yahoo.jdisc.HeaderFields getUntreatedHeaders()",
       "public java.util.List getUntreatedCookies()",
-      "public abstract void addHeader(java.lang.String, java.lang.String)",
+      "public void addHeader(java.lang.String, java.lang.String)",
       "public long getDateHeader(java.lang.String)",
-      "public abstract java.lang.String getHeader(java.lang.String)",
-      "public abstract java.util.Enumeration getHeaderNames()",
-      "public abstract java.util.List getHeaderNamesAsList()",
-      "public abstract java.util.Enumeration getHeaders(java.lang.String)",
-      "public abstract java.util.List getHeadersAsList(java.lang.String)",
-      "public abstract void removeHeaders(java.lang.String)",
-      "public abstract void setHeaders(java.lang.String, java.lang.String)",
-      "public abstract void setHeaders(java.lang.String, java.util.List)",
+      "public java.lang.String getHeader(java.lang.String)",
+      "public java.util.Enumeration getHeaderNames()",
+      "public java.util.List getHeaderNamesAsList()",
+      "public java.util.Enumeration getHeaders(java.lang.String)",
+      "public java.util.List getHeadersAsList(java.lang.String)",
+      "public void removeHeaders(java.lang.String)",
+      "public void setHeaders(java.lang.String, java.lang.String)",
+      "public void setHeaders(java.lang.String, java.util.List)",
       "public int getIntHeader(java.lang.String)",
       "public com.yahoo.container.jdisc.RequestView asRequestView()",
       "public java.util.List getCookies()",
@@ -2222,20 +2217,20 @@
       "public void setScheme(java.lang.String, boolean)",
       "public java.lang.String getServerName()",
       "public int getServerPort()",
-      "public abstract java.security.Principal getUserPrincipal()",
+      "public java.security.Principal getUserPrincipal()",
       "public boolean isSecure()",
       "public boolean isUserInRole(java.lang.String)",
       "public void setOverrideIsUserInRole(boolean)",
       "public void setRemoteHost(java.lang.String)",
       "public void setRemoteUser(java.lang.String)",
-      "public abstract void setUserPrincipal(java.security.Principal)",
-      "public abstract java.util.List getClientCertificateChain()",
+      "public void setUserPrincipal(java.security.Principal)",
+      "public java.util.List getClientCertificateChain()",
       "public void setUserRoles(java.lang.String[])",
       "public java.lang.String getContentType()",
       "public java.lang.String getCharacterEncoding()",
       "public void setCharacterEncoding(java.lang.String)",
       "public void addCookie(com.yahoo.jdisc.http.filter.JDiscCookieWrapper)",
-      "public abstract void clearCookies()",
+      "public void clearCookies()",
       "public com.yahoo.jdisc.http.filter.JDiscCookieWrapper[] getWrappedCookies()",
       "public static boolean isMultipart(com.yahoo.jdisc.http.filter.DiscFilterRequest)"
     ],
@@ -2251,27 +2246,26 @@
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
-      "public",
-      "abstract"
+      "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse)",
+      "public void <init>(com.yahoo.jdisc.http.HttpResponse)",
       "public java.util.Enumeration getAttributeNames()",
       "public java.lang.Object getAttribute(java.lang.String)",
       "public void setAttribute(java.lang.String, java.lang.Object)",
       "public void removeAttribute(java.lang.String)",
       "public com.yahoo.jdisc.HeaderFields getUntreatedHeaders()",
       "public java.util.List getUntreatedCookies()",
-      "public abstract void setHeader(java.lang.String, java.lang.String)",
-      "public abstract void removeHeaders(java.lang.String)",
-      "public abstract void setHeaders(java.lang.String, java.lang.String)",
-      "public abstract void setHeaders(java.lang.String, java.util.List)",
-      "public abstract void addHeader(java.lang.String, java.lang.String)",
-      "public abstract java.lang.String getHeader(java.lang.String)",
+      "public void setHeader(java.lang.String, java.lang.String)",
+      "public void removeHeaders(java.lang.String)",
+      "public void setHeaders(java.lang.String, java.lang.String)",
+      "public void setHeaders(java.lang.String, java.util.List)",
+      "public void addHeader(java.lang.String, java.lang.String)",
+      "public java.lang.String getHeader(java.lang.String)",
       "public java.util.List getCookies()",
-      "public abstract void setCookies(java.util.List)",
+      "public void setCookies(java.util.List)",
       "public int getStatus()",
-      "public abstract void setStatus(int)",
+      "public void setStatus(int)",
       "public com.yahoo.jdisc.http.HttpResponse getParentResponse()",
       "public void addCookie(com.yahoo.jdisc.http.filter.JDiscCookieWrapper)",
       "public void sendError(int)",
@@ -2328,24 +2322,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.jdisc.http.HttpRequest)",
-      "public com.yahoo.jdisc.http.HttpRequest getParentRequest()",
-      "public void setUri(java.net.URI)",
-      "public java.lang.String getMethod()",
-      "public java.lang.String getParameter(java.lang.String)",
-      "public java.util.Enumeration getParameterNames()",
-      "public void addHeader(java.lang.String, java.lang.String)",
-      "public java.lang.String getHeader(java.lang.String)",
-      "public java.util.Enumeration getHeaderNames()",
-      "public java.util.List getHeaderNamesAsList()",
-      "public java.util.Enumeration getHeaders(java.lang.String)",
-      "public java.util.List getHeadersAsList(java.lang.String)",
-      "public void removeHeaders(java.lang.String)",
-      "public void setHeaders(java.lang.String, java.lang.String)",
-      "public void setHeaders(java.lang.String, java.util.List)",
-      "public java.security.Principal getUserPrincipal()",
-      "public void setUserPrincipal(java.security.Principal)",
-      "public java.util.List getClientCertificateChain()",
-      "public void clearCookies()"
+      "public com.yahoo.jdisc.http.HttpRequest getParentRequest()"
     ],
     "fields": []
   },
@@ -2418,21 +2395,6 @@
       "abstract"
     ],
     "methods": [],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.filter.SecurityFilterInvoker": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.jdisc.http.server.jetty.FilterInvoker"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public javax.servlet.http.HttpServletRequest invokeRequestFilterChain(com.yahoo.jdisc.http.filter.RequestFilter, java.net.URI, javax.servlet.http.HttpServletRequest, com.yahoo.jdisc.handler.ResponseHandler)",
-      "public void invokeResponseFilterChain(com.yahoo.jdisc.http.filter.ResponseFilter, java.net.URI, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)"
-    ],
     "fields": []
   },
   "com.yahoo.jdisc.http.filter.SecurityRequestFilter": {

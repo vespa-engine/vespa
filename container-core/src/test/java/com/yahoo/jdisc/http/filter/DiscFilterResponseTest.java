@@ -36,7 +36,7 @@ public class DiscFilterResponseTest {
     public void testGetSetStatus() {
         HttpRequest request = newRequest(URI.create("http://localhost:8080/echo"),
                 HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-        DiscFilterResponse response = new JdiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
+        DiscFilterResponse response = new DiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
 
         Assert.assertEquals(response.getStatus(), HttpResponse.Status.OK);
         response.setStatus(HttpResponse.Status.REQUEST_TIMEOUT);
@@ -47,7 +47,7 @@ public class DiscFilterResponseTest {
     public void testAttributes() {
         HttpRequest request = newRequest(URI.create("http://localhost:8080/echo"),
                 HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-        DiscFilterResponse response = new JdiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
+        DiscFilterResponse response = new DiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
         response.setAttribute("attr_1", "value1");
         Assert.assertEquals(response.getAttribute("attr_1"), "value1");
         List<String> list = Collections.list(response.getAttributeNames());
@@ -60,7 +60,7 @@ public class DiscFilterResponseTest {
     public void testAddHeader() {
         HttpRequest request = newRequest(URI.create("http://localhost:8080/echo"),
                 HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-        DiscFilterResponse response = new JdiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
+        DiscFilterResponse response = new DiscFilterResponse(HttpResponse.newInstance(HttpResponse.Status.OK));
         response.addHeader("header1", "value1");
         Assert.assertEquals(response.getHeader("header1"), "value1");
     }
@@ -70,7 +70,7 @@ public class DiscFilterResponseTest {
         URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
-        DiscFilterResponse response = new JdiscFilterResponse(httpResp);
+        DiscFilterResponse response = new DiscFilterResponse(httpResp);
         response.addCookie(JDiscCookieWrapper.wrap(new Cookie("name", "value")));
 
         List<Cookie> cookies = response.getCookies();
@@ -83,7 +83,7 @@ public class DiscFilterResponseTest {
         URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
-        DiscFilterResponse response = new JdiscFilterResponse(httpResp);
+        DiscFilterResponse response = new DiscFilterResponse(httpResp);
         response.setCookie("name", "value");
         List<Cookie> cookies = response.getCookies();
         Assert.assertEquals(cookies.size(),1);
@@ -96,17 +96,18 @@ public class DiscFilterResponseTest {
         URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
-        DiscFilterResponse response = new JdiscFilterResponse(httpResp);
+        DiscFilterResponse response = new DiscFilterResponse(httpResp);
         response.setHeader("name", "value");
         Assert.assertEquals(response.getHeader("name"), "value");
     }
 
     @Test
+    @SuppressWarnings("removal")
     public void testGetParentResponse() {
         URI uri = URI.create("http://example.com/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
         HttpResponse httpResp = newResponse(httpReq, 200);
-        DiscFilterResponse response = new JdiscFilterResponse(httpResp);
+        DiscFilterResponse response = new DiscFilterResponse(httpResp);
         Assert.assertSame(response.getParentResponse(), httpResp);
     }
 

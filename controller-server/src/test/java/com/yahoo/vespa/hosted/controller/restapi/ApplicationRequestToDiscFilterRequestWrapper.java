@@ -2,13 +2,9 @@
 package com.yahoo.vespa.hosted.controller.restapi;
 
 import com.yahoo.application.container.handler.Request;
-import com.yahoo.jdisc.HeaderFields;
-import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
-import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
 
-import java.net.SocketAddress;
 import java.net.URI;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -16,7 +12,11 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Wraps an {@link Request} into a {@link DiscFilterRequest}. Only a few methods are supported.
@@ -35,70 +35,18 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
     }
 
     public ApplicationRequestToDiscFilterRequestWrapper(Request request, List<X509Certificate> clientCertificateChain) {
-        super(new ServletOrJdiscHttpRequest() {
-            @Override
-            public void copyHeaders(HeaderFields target) {
-                request.getHeaders().forEach(target::add);
-            }
-
-            @Override
-            public Map<String, List<String>> parameters() {
-                return Collections.emptyMap();
-            }
-
-            @Override
-            public URI getUri() {
-                return URI.create(request.getUri()).normalize(); // Consistent with what JDisc does.
-            }
-
-            @Override
-            public HttpRequest.Version getVersion() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getRemoteHostAddress() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public String getRemoteHostName() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public int getRemotePort() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void setRemoteAddress(SocketAddress remoteAddress) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public Map<String, Object> context() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public List<Cookie> decodeCookieHeader() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void encodeCookieHeader(List<Cookie> cookies) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public long getConnectedAt(TimeUnit unit) {
-                throw new UnsupportedOperationException();
-            }
-        });
+        super(createDummyHttpRequest(request));
         this.request = request;
         this.userPrincipal = request.getUserPrincipal().orElse(null);
         this.clientCertificateChain = clientCertificateChain;
+    }
+
+    private static HttpRequest createDummyHttpRequest(Request req) {
+        HttpRequest dummy = mock(HttpRequest.class, invocation -> { throw new UnsupportedOperationException(); });
+        doReturn(URI.create(req.getUri()).normalize()).when(dummy).getUri();
+        doNothing().when(dummy).copyHeaders(any());
+        doReturn(Map.of()).when(dummy).parameters();
+        return dummy;
     }
 
     public Request getUpdatedRequest() {

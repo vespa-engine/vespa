@@ -12,6 +12,11 @@ import javax.servlet.http.HttpServletRequest;
  * @author bjorncs
  */
 public class RequestUtils {
+    public static final String JDISC_REQUEST_X509CERT = "jdisc.request.X509Certificate";
+    public static final String JDISC_REQUEST_CHAIN = "jdisc.request.chain";
+    public static final String JDISC_RESPONSE_CHAIN = "jdisc.response.chain";
+    public static final String SERVLET_REQUEST_X509CERT = "javax.servlet.request.X509Certificate";
+
     private RequestUtils() {}
 
     public static Connection getConnection(Request request) {

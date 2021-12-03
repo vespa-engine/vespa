@@ -1,18 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter.security.cors;
 
-import com.yahoo.jdisc.http.Cookie;
+import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.filter.DiscFilterResponse;
 import com.yahoo.jdisc.http.filter.RequestView;
 import com.yahoo.jdisc.http.filter.SecurityResponseFilter;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig.Builder;
-import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -75,11 +73,9 @@ public class CorsResponseFilterTest {
     }
 
     private static class TestResponse extends DiscFilterResponse {
-        Map<String, String> headers = new HashMap<>();
+        final Map<String, String> headers = new HashMap<>();
 
-        TestResponse() {
-            super(mock(ServletOrJdiscHttpResponse.class));
-        }
+        TestResponse() { super(HttpResponse.newInstance(200)); }
 
         @Override
         public void setHeader(String name, String value) {
@@ -90,23 +86,5 @@ public class CorsResponseFilterTest {
         public String getHeader(String name) {
             return headers.get(name);
         }
-
-        @Override
-        public void removeHeaders(String s) { throw new UnsupportedOperationException(); }
-
-        @Override
-        public void setHeaders(String s, String s1) { throw new UnsupportedOperationException(); }
-
-        @Override
-        public void setHeaders(String s, List<String> list) { throw new UnsupportedOperationException(); }
-
-        @Override
-        public void addHeader(String s, String s1) { throw new UnsupportedOperationException(); }
-
-        @Override
-        public void setCookies(List<Cookie> list) { throw new UnsupportedOperationException(); }
-
-        @Override
-        public void setStatus(int i) { throw new UnsupportedOperationException(); }
     }
 }

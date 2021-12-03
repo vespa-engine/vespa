@@ -7,7 +7,7 @@ import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpRequest.Version;
-import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest;
+import com.yahoo.jdisc.http.server.jetty.RequestUtils;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -16,6 +16,7 @@ import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -23,21 +24,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
  * The Request class on which all filters will operate upon.
- * Test cases that need a concrete
- * instance should create a {@link JdiscFilterRequest}.
  */
-public abstract class DiscFilterRequest {
+public class DiscFilterRequest {
 
     protected static final String HTTPS_PREFIX = "https";
     protected static final int DEFAULT_HTTP_PORT = 80;
     protected static final int DEFAULT_HTTPS_PORT = 443;
 
-    private final ServletOrJdiscHttpRequest parent;
+    private final HttpRequest parent;
     protected final Map<String, List<String>> untreatedParams;
     private final HeaderFields untreatedHeaders;
     private List<Cookie> untreatedCookies = null;
@@ -45,7 +45,7 @@ public abstract class DiscFilterRequest {
     private String[] roles = null;
     private boolean overrideIsUserInRole = false;
 
-    public DiscFilterRequest(ServletOrJdiscHttpRequest parent) {
+    public DiscFilterRequest(HttpRequest parent) {
         this.parent = parent;
 
         // save untreated headers from parent
@@ -55,7 +55,7 @@ public abstract class DiscFilterRequest {
         untreatedParams = new HashMap<>(parent.parameters());
     }
 
-    public abstract String getMethod();
+    public String getMethod() { return parent.getMethod().name(); }
 
     public Version getVersion() {
         return parent.getVersion();
@@ -66,8 +66,12 @@ public abstract class DiscFilterRequest {
     }
 
     @Deprecated
-    public abstract void setUri(URI uri);
+    public void setUri(URI uri) { parent.setUri(uri); }
 
+    /**
+     * @deprecated Use methods on {@link DiscFilterRequest} instead to inspect request
+     */
+    @Deprecated(forRemoval = true, since = "7.511")
     public HttpRequest getParentRequest() {
         throw new UnsupportedOperationException("getParentRequest is not supported for " + parent.getClass().getName());
     }
@@ -125,9 +129,18 @@ public abstract class DiscFilterRequest {
         parent.context().remove(name);
     }
 
-    public abstract String getParameter(String name);
+    public String getParameter(String name) {
+        if(parent.parameters().containsKey(name)) {
+            return parent.parameters().get(name).get(0);
+        }
+        else {
+            return null;
+        }
+    }
 
-    public abstract Enumeration<String> getParameterNames();
+    public Enumeration<String> getParameterNames() {
+        return Collections.enumeration(parent.parameters().keySet());
+    }
 
     public List<String> getParameterNamesAsList() {
         return new ArrayList<String>(parent.parameters().keySet());
@@ -200,7 +213,9 @@ public abstract class DiscFilterRequest {
      * Sets a header with the given name and value.
      * If the header had already been set, the new value overwrites the previous one.
      */
-    public abstract void addHeader(String name, String value);
+    public void addHeader(String name, String value) {
+        parent.headers().add(name, value);
+    }
 
     public long getDateHeader(String name) {
         String value = getHeader(name);
@@ -221,31 +236,43 @@ public abstract class DiscFilterRequest {
         return date.getTime();
     }
 
-    public abstract String getHeader(String name);
+    public String getHeader(String name) {
+        List<String> values = parent.headers().get(name);
+        if (values == null || values.isEmpty()) {
+            return null;
+        }
+        return values.get(values.size() - 1);
+    }
 
-    public abstract Enumeration<String> getHeaderNames();
+    public Enumeration<String> getHeaderNames() { return Collections.enumeration(parent.headers().keySet()); }
 
-    public abstract List<String> getHeaderNamesAsList();
+    public List<String> getHeaderNamesAsList() { return new ArrayList<>(parent.headers().keySet()); }
 
-    public abstract Enumeration<String> getHeaders(String name);
+    public Enumeration<String> getHeaders(String name) { return Collections.enumeration(getHeadersAsList(name)); }
 
-    public abstract List<String> getHeadersAsList(String name);
+    public List<String> getHeadersAsList(String name) {
+        List<String> values = parent.headers().get(name);
+        if(values == null) {
+            return Collections.emptyList();
+        }
+        return parent.headers().get(name);
+    }
 
-    public abstract void removeHeaders(String name);
+    public void removeHeaders(String name) { parent.headers().remove(name); }
 
     /**
      * Sets a header with the given name and value.
      *  If the header had already been set, the new value overwrites the previous one.
      *
      */
-    public abstract void setHeaders(String name, String value);
+    public void setHeaders(String name, String value) { parent.headers().put(name, value); }
 
     /**
      * Sets a header with the given name and value.
      *  If the header had already been set, the new value overwrites the previous one.
      *
      */
-    public abstract void setHeaders(String name, List<String> values);
+    public void setHeaders(String name, List<String> values) { parent.headers().put(name, values); }
 
     public int getIntHeader(String name) {
         String value = getHeader(name);
@@ -340,7 +367,7 @@ public abstract class DiscFilterRequest {
         return port;
     }
 
-    public abstract Principal getUserPrincipal();
+    public Principal getUserPrincipal() { return parent.getUserPrincipal(); }
 
     public boolean isSecure() {
         if(getScheme().equalsIgnoreCase(HTTPS_PREFIX)) {
@@ -383,13 +410,18 @@ public abstract class DiscFilterRequest {
         this.remoteUser = remoteUser;
     }
 
-    public abstract void setUserPrincipal(Principal principal);
+    public void setUserPrincipal(Principal principal) { this.parent.setUserPrincipal(principal); }
 
     /**
      * @return The client certificate chain in ascending order of trust. The first certificate is the one sent from the client.
      *         Returns an empty list if the client did not provide a certificate.
      */
-    public abstract List<X509Certificate> getClientCertificateChain();
+    public List<X509Certificate> getClientCertificateChain() {
+        return Optional.ofNullable(parent.context().get(RequestUtils.JDISC_REQUEST_X509CERT))
+                .map(X509Certificate[].class::cast)
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
+    }
 
     public void setUserRoles(String[] roles) {
         this.roles = roles;
@@ -437,7 +469,7 @@ public abstract class DiscFilterRequest {
         }
     }
 
-    public abstract void clearCookies();
+    public void clearCookies() { parent.headers().remove(HttpHeaders.Names.COOKIE); }
 
     public JDiscCookieWrapper[] getWrappedCookies() {
         List<Cookie> cookies = getCookies();
