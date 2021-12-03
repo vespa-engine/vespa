@@ -8,6 +8,20 @@ LOG_SETUP("enumstore_test");
 
 using Type = search::DictionaryConfig::Type;
 using vespalib::datastore::EntryRef;
+using RefT = vespalib::datastore::EntryRefT<22>;
+
+namespace vespalib::datastore {
+
+/*
+ * Print EntryRef as RefT which is used by test_normalize_posting_lists and
+ * test_foreach_posting_list to differentiate between buffers
+ */
+void PrintTo(const EntryRef &ref, std::ostream* os) {
+    RefT iref(ref);
+    *os << "RefT(" << iref.offset() << "," << iref.bufferId() << ")";
+}
+
+}
 
 namespace search {
 
@@ -597,7 +611,11 @@ public:
 
     void update_posting_idx(EnumIndex enum_idx, EntryRef old_posting_idx, EntryRef new_posting_idx);
     EnumIndex insert_value(size_t value_idx);
-    void test_normalize_posting_lists(bool use_filter);
+    void populate_sample_data(uint32_t cnt);
+    std::vector<EntryRef> get_sample_values(uint32_t cnt);
+    void clear_sample_values(uint32_t cnt);
+    void test_normalize_posting_lists(bool use_filter, bool one_filter);
+    void test_foreach_posting_list(bool one_filter);
     static EntryRef fake_pidx() { return EntryRef(42); }
 };
 
@@ -621,43 +639,146 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::insert_value(size_t val
     return enum_idx;
 }
 
-template <typename EnumStoreTypeAndDictionaryType>
-void
-EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_normalize_posting_lists(bool use_filter)
-{
-    auto value_0_idx = this->insert_value(0);
-    this->update_posting_idx(value_0_idx, EntryRef(), this->fake_pidx());
-    this->store.freeze_dictionary();
-    auto& dict = this->store.get_dictionary();
-    auto root = dict.get_frozen_root();
-    auto find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
-    EXPECT_EQ(value_0_idx, find_result.first);
-    EXPECT_EQ(this->fake_pidx(), find_result.second);
-    std::vector<EntryRef> saved_refs;
-    if (use_filter) {
-        auto dummy = [](std::vector<EntryRef>&) noexcept { };
-        auto save_refs_and_clear = [&saved_refs](std::vector<EntryRef>& refs) { saved_refs.insert(saved_refs.end(), refs.begin(), refs.end()); for (auto& ref : refs) { ref = EntryRef(); } };
-        std::vector<bool> filter(2, true);
-        uint32_t entry_ref_offset_bits = 31;
-        EXPECT_FALSE(dict.normalize_posting_lists(dummy, filter, entry_ref_offset_bits));
-        EXPECT_TRUE(dict.normalize_posting_lists(save_refs_and_clear, filter, entry_ref_offset_bits));
-        EXPECT_FALSE(dict.normalize_posting_lists(save_refs_and_clear, filter, entry_ref_offset_bits));
-        EXPECT_EQ((std::vector<EntryRef>{ this->fake_pidx() }), saved_refs);
-    } else {
-        auto dummy = [](EntryRef posting_idx) noexcept { return posting_idx; };
-        auto save_refs_and_clear = [&saved_refs](EntryRef posting_idx) { saved_refs.push_back(posting_idx); return EntryRef(); };
-        EXPECT_FALSE(dict.normalize_posting_lists(dummy));
-        EXPECT_TRUE(dict.normalize_posting_lists(save_refs_and_clear));
-        EXPECT_FALSE(dict.normalize_posting_lists(save_refs_and_clear));
-        EXPECT_EQ((std::vector<EntryRef>{ this->fake_pidx(), EntryRef() }), saved_refs);
+namespace {
+/*
+ * large_population should trigger multiple callbacks from normalize_values
+ * and foreach_value
+ */
+constexpr uint32_t large_population = 1200;
+
+uint32_t select_buffer(uint32_t i) {
+    if ((i % 2) == 0) {
+        return 0;
     }
-    this->store.freeze_dictionary();
-    root = dict.get_frozen_root();
-    find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
-    EXPECT_EQ(value_0_idx, find_result.first);
-    EXPECT_EQ(EntryRef(), find_result.second);
+    if ((i % 3) == 0) {
+        return 1;
+    }
+    if ((i % 5) == 0) {
+        return 2;
+    }
+    return 3;
 }
 
+EntryRef make_fake_pidx(uint32_t i) { return RefT(i + 200, select_buffer(i)); }
+EntryRef make_fake_adjusted_pidx(uint32_t i) { return RefT(i + 500, select_buffer(i)); }
+EntryRef adjust_fake_pidx(EntryRef ref) { RefT iref(ref); return RefT(iref.offset() + 300, iref.bufferId()); }
+
+}
+
+
+template <typename EnumStoreTypeAndDictionaryType>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::populate_sample_data(uint32_t cnt)
+{
+    auto& dict = store.get_dictionary();
+    for (uint32_t i = 0; i < cnt; ++i) {
+        auto enum_idx = store.insert(i);
+        EXPECT_TRUE(enum_idx.valid());
+        EntryRef posting_idx(make_fake_pidx(i));
+        dict.update_posting_list(enum_idx, store.get_comparator(), [posting_idx](EntryRef) noexcept -> EntryRef { return posting_idx; });
+    }
+}
+
+template <typename EnumStoreTypeAndDictionaryType>
+std::vector<EntryRef>
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::get_sample_values(uint32_t cnt)
+{
+    std::vector<EntryRef> result;
+    result.reserve(cnt);
+    store.freeze_dictionary();
+    auto& dict = store.get_dictionary();
+    for (uint32_t i = 0; i < cnt; ++i) {
+        auto compare = store.make_comparator(i);
+        auto enum_idx = dict.find(compare);
+        EXPECT_TRUE(enum_idx.valid());
+        EntryRef posting_idx;
+        dict.update_posting_list(enum_idx, compare, [&posting_idx](EntryRef ref) noexcept { posting_idx = ref; return ref; });;
+        auto find_result = dict.find_posting_list(compare, dict.get_frozen_root());
+        EXPECT_EQ(enum_idx, find_result.first);
+        EXPECT_EQ(posting_idx, find_result.second);
+        result.emplace_back(find_result.second);
+    }
+    return result;
+}
+
+template <typename EnumStoreTypeAndDictionaryType>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::clear_sample_values(uint32_t cnt)
+{
+    auto& dict = store.get_dictionary();
+    for (uint32_t i = 0; i < cnt; ++i) {
+        auto comparator = store.make_comparator(i);
+        auto enum_idx = dict.find(comparator);
+        EXPECT_TRUE(enum_idx.valid());
+        dict.update_posting_list(enum_idx, comparator, [](EntryRef) noexcept -> EntryRef { return EntryRef(); });
+    }
+}
+
+template <typename EnumStoreTypeAndDictionaryType>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_normalize_posting_lists(bool use_filter, bool one_filter)
+{
+    populate_sample_data(large_population);
+    auto& dict = store.get_dictionary();
+    std::vector<EntryRef> exp_refs;
+    std::vector<EntryRef> exp_adjusted_refs;
+    exp_refs.reserve(large_population);
+    exp_adjusted_refs.reserve(large_population);
+    for (uint32_t i = 0; i < large_population; ++i) {
+        exp_refs.emplace_back(make_fake_pidx(i));
+        if (!use_filter || !one_filter || select_buffer(i) == 3) {
+            exp_adjusted_refs.emplace_back(make_fake_adjusted_pidx(i));
+        } else {
+            exp_adjusted_refs.emplace_back(make_fake_pidx(i));
+        }
+    }
+    EXPECT_EQ(exp_refs, get_sample_values(large_population));
+    if (use_filter) {
+        std::vector<bool> filter;
+        if (one_filter) {
+            filter = std::vector<bool>(RefT::numBuffers());
+            filter[3] = true;
+        } else {
+            filter = std::vector<bool>(RefT::numBuffers(), true);
+        }
+        auto dummy = [](std::vector<EntryRef>&) noexcept { };
+        auto adjust_refs = [](std::vector<EntryRef> &refs) noexcept { for (auto &ref : refs) { ref = adjust_fake_pidx(ref); } };
+        EXPECT_FALSE(dict.normalize_posting_lists(dummy, filter, RefT::offset_bits));
+        EXPECT_EQ(exp_refs, get_sample_values(large_population));
+        EXPECT_TRUE(dict.normalize_posting_lists(adjust_refs, filter, RefT::offset_bits));
+    } else {
+        auto dummy = [](EntryRef posting_idx) noexcept { return posting_idx; };
+        auto adjust_refs = [](EntryRef ref) noexcept { return adjust_fake_pidx(ref); };
+        EXPECT_FALSE(dict.normalize_posting_lists(dummy));
+        EXPECT_EQ(exp_refs, get_sample_values(large_population));
+        EXPECT_TRUE(dict.normalize_posting_lists(adjust_refs));
+    }
+    EXPECT_EQ(exp_adjusted_refs, get_sample_values(large_population));
+    clear_sample_values(large_population);
+}
+
+template <typename EnumStoreTypeAndDictionaryType>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_foreach_posting_list(bool one_filter)
+{
+    std::vector<bool> filter;
+    if (one_filter) {
+        filter = std::vector<bool>(RefT::numBuffers());
+        filter[3] = true;
+    } else {
+        filter = std::vector<bool>(RefT::numBuffers(), true);
+    }
+    populate_sample_data(large_population);
+    auto& dict = store.get_dictionary();
+    std::vector<EntryRef> exp_refs;
+    auto save_exp_refs = [&exp_refs](std::vector<EntryRef>& refs) { exp_refs.insert(exp_refs.end(), refs.begin(), refs.end()); };
+    EXPECT_FALSE(dict.normalize_posting_lists(save_exp_refs, filter, RefT::offset_bits));
+    std::vector<EntryRef> act_refs;
+    auto save_act_refs = [&act_refs](const std::vector<EntryRef>& refs) { act_refs.insert(act_refs.end(), refs.begin(), refs.end()); };
+    dict.foreach_posting_list(save_act_refs, filter, RefT::offset_bits);
+    EXPECT_EQ(exp_refs, act_refs);
+    clear_sample_values(large_population);
+}
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push
@@ -717,26 +838,27 @@ TYPED_TEST(EnumStoreDictionaryTest, find_posting_list_works)
 
 TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_works)
 {
-    this->test_normalize_posting_lists(false);
+    this->test_normalize_posting_lists(false, false);
 }
 
-TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_with_filter_works)
+TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_with_all_filter_works)
 {
-    this->test_normalize_posting_lists(true);
+    this->test_normalize_posting_lists(true, false);
 }
 
-TYPED_TEST(EnumStoreDictionaryTest, foreach_posting_list_with_filter_works)
+TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_with_one_filter_works)
 {
-    std::vector<bool> filter(2, true);
-    uint32_t entry_ref_offset_bits = 31;
-    std::vector<EntryRef> saved_refs;
-    auto save_refs = [&saved_refs](const std::vector<EntryRef>& refs) { saved_refs.insert(saved_refs.end(), refs.begin(), refs.end()); };
-    auto value_0_idx = this->insert_value(0);
-    this->update_posting_idx(value_0_idx, EntryRef(), this->fake_pidx());
-    this->store.freeze_dictionary();
-    auto& dict = this->store.get_dictionary();
-    dict.foreach_posting_list(save_refs, filter, entry_ref_offset_bits);
-    EXPECT_EQ((std::vector<EntryRef>{ this->fake_pidx() }), saved_refs);
+    this->test_normalize_posting_lists(true, true);
+}
+
+TYPED_TEST(EnumStoreDictionaryTest, foreach_posting_list_with_all_filter_works)
+{
+    this->test_foreach_posting_list(false);
+}
+
+TYPED_TEST(EnumStoreDictionaryTest, foreach_posting_list_with_one_filter_works)
+{
+    this->test_foreach_posting_list(true);
 }
 
 namespace {
