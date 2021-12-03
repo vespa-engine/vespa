@@ -82,7 +82,7 @@ VESPA_THREAD_STACK_TAG(tls_executor);
 TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, const vespalib::string &baseDir,
                                const FileHeaderContext &fileHeaderContext)
     : TransLogServer(name, listenPort, baseDir, fileHeaderContext,
-                     DomainConfig().setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::none))
+                     DomainConfig().setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::zstd))
                                         .setPartSizeLimit(0x10000000).setChunkSizeLimit(0x40000))
 {}
 

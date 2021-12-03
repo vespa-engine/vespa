@@ -395,10 +395,7 @@ DomainPart::commit(SerialNum firstSerial, const Packet &packet)
         entry.deserialize(h);
         if (_range.to() < entry.serial()) {
             chunk->add(entry);
-            if (_encoding.getCompression() == Encoding::Compression::none) {
-                write(*_transLog, *chunk);
-                chunk = IChunk::create(_encoding, _compressionLevel);
-            }
+            assert(_encoding.getCompression() != Encoding::Compression::none);
             _sz++;
             _range.to(entry.serial());
         } else {

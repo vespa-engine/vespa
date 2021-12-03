@@ -5,7 +5,7 @@
 namespace search::transactionlog {
 
 DomainConfig::DomainConfig()
-    : _encoding(Encoding::Crc::xxh64, Encoding::Compression::none),
+    : _encoding(Encoding::Crc::xxh64, Encoding::Compression::zstd),
       _compressionLevel(9),
       _fSyncOnCommit(false),
       _partSizeLimit(0x10000000), // 256M
