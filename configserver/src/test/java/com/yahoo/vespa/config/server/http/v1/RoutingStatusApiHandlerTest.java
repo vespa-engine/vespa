@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.http.v1;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
+import com.yahoo.config.provision.HostFilter;
 import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -197,8 +198,19 @@ public class RoutingStatusApiHandlerTest {
             if (failNextDeployment) {
                 throw new RuntimeException("Deployment failed");
             }
-            lastDeployed.put(application, clock.instant());
-            return Optional.empty();
+            return Optional.of(new Deployment() {
+                @Override
+                public void prepare() {}
+
+                @Override
+                public long activate() {
+                    lastDeployed.put(application, clock.instant());
+                    return 1L;
+                }
+
+                @Override
+                public void restart(HostFilter filter) {}
+            });
         }
 
         @Override
