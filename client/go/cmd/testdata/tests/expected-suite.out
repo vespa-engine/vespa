@@ -309,7 +309,7 @@ Actual response:
   }
 }
 
-Failed 8 of 9 tests:
+Failure: 8 of 9 tests failed:
 wrong-bool-value.json: step 1: Unexpected value at /root/coverage/full: true
 wrong-element-count.json: step 1: Unexpected number of elements at /root/children: 1
 wrong-field-name.json: step 1: Missing expected field at /root/fields/totalCountDracula
