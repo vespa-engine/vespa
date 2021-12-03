@@ -10,7 +10,6 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.server.Request;
 
 import java.net.URI;
@@ -40,13 +39,13 @@ class FilterResolver {
         Optional<String> maybeFilterId = bindings.resolveRequestFilter(jdiscUri, getConnector(request).listenPort());
         if (maybeFilterId.isPresent()) {
             metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
-            request.setAttribute(ServletRequest.JDISC_REQUEST_CHAIN, maybeFilterId.get());
+            request.setAttribute(RequestUtils.JDISC_REQUEST_CHAIN, maybeFilterId.get());
         } else if (!strictFiltering) {
             metric.add(MetricDefinitions.FILTERING_REQUEST_UNHANDLED, 1L, createMetricContext(request, null));
         } else {
             String syntheticFilterId = RejectingRequestFilter.SYNTHETIC_FILTER_CHAIN_ID;
             metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(request, syntheticFilterId));
-            request.setAttribute(ServletRequest.JDISC_REQUEST_CHAIN, syntheticFilterId);
+            request.setAttribute(RequestUtils.JDISC_REQUEST_CHAIN, syntheticFilterId);
             return Optional.of(RejectingRequestFilter.INSTANCE);
         }
         return maybeFilterId.map(bindings::getRequestFilter);
@@ -56,7 +55,7 @@ class FilterResolver {
         Optional<String> maybeFilterId = bindings.resolveResponseFilter(jdiscUri, getConnector(request).listenPort());
         if (maybeFilterId.isPresent()) {
             metric.add(MetricDefinitions.FILTERING_RESPONSE_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
-            request.setAttribute(ServletRequest.JDISC_RESPONSE_CHAIN, maybeFilterId.get());
+            request.setAttribute(RequestUtils.JDISC_RESPONSE_CHAIN, maybeFilterId.get());
         } else {
             metric.add(MetricDefinitions.FILTERING_RESPONSE_UNHANDLED, 1L, createMetricContext(request, null));
         }

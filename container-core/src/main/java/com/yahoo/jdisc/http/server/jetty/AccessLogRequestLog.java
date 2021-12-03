@@ -8,7 +8,6 @@ import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.http2.HTTP2Stream;
 import org.eclipse.jetty.http2.server.HttpTransportOverHTTP2;
 import org.eclipse.jetty.server.HttpChannel;
@@ -86,10 +85,10 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                 addNonNullValue(builder, jdiscRequest.getUserPrincipal(), RequestLogEntry.Builder::userPrincipal);
             }
 
-            String requestFilterId = (String) request.getAttribute(ServletRequest.JDISC_REQUEST_CHAIN);
+            String requestFilterId = (String) request.getAttribute(RequestUtils.JDISC_REQUEST_CHAIN);
             addNonNullValue(builder, requestFilterId, (b, chain) -> b.addExtraAttribute("request-chain", chain));
 
-            String responseFilterId = (String) request.getAttribute(ServletRequest.JDISC_RESPONSE_CHAIN);
+            String responseFilterId = (String) request.getAttribute(RequestUtils.JDISC_RESPONSE_CHAIN);
             addNonNullValue(builder, responseFilterId, (b, chain) -> b.addExtraAttribute("response-chain", chain));
 
             UUID connectionId = (UUID) request.getAttribute(JettyConnectionLogger.CONNECTION_ID_REQUEST_ATTRIBUTE);
@@ -109,7 +108,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                     builder.addExtraAttribute(header, value);
                 }
             });
-            X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute(ServletRequest.SERVLET_REQUEST_X509CERT);
+            X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT);
             if (clientCert != null && clientCert.length > 0) {
                 builder.sslPrincipal(clientCert[0].getSubjectX500Principal());
             }

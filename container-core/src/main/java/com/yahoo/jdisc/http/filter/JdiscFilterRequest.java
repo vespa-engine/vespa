@@ -3,7 +3,7 @@ package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
+import com.yahoo.jdisc.http.server.jetty.RequestUtils;
 
 import java.net.URI;
 import java.security.Principal;
@@ -120,7 +120,7 @@ public class JdiscFilterRequest extends DiscFilterRequest {
 
     @Override
     public List<X509Certificate> getClientCertificateChain() {
-        return Optional.ofNullable(parent.context().get(ServletRequest.JDISC_REQUEST_X509CERT))
+        return Optional.ofNullable(parent.context().get(RequestUtils.JDISC_REQUEST_X509CERT))
                 .map(X509Certificate[].class::cast)
                 .map(Arrays::asList)
                 .orElse(Collections.emptyList());

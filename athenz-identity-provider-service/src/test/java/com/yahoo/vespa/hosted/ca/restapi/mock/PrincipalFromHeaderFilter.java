@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.ca.restapi.mock;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
+import com.yahoo.jdisc.http.server.jetty.RequestUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -28,7 +28,7 @@ public class PrincipalFromHeaderFilter implements SecurityRequestFilter {
         Optional<String> certificate = Optional.ofNullable(request.getHeader("CERTIFICATE"));
         certificate.ifPresent(cert -> {
             var x509cert = X509CertificateUtils.fromPem(StringUtilities.unescape(cert));
-            request.setAttribute(ServletRequest.JDISC_REQUEST_X509CERT, new X509Certificate[]{x509cert});
+            request.setAttribute(RequestUtils.JDISC_REQUEST_X509CERT, new X509Certificate[]{x509cert});
         });
     }
 }

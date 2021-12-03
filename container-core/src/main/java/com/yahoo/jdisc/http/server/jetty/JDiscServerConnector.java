@@ -73,7 +73,7 @@ class JDiscServerConnector extends ServerConnector {
     public Metric.Context createRequestMetricContext(HttpServletRequest request, Map<String, String> extraDimensions) {
         String method = request.getMethod();
         String scheme = request.getScheme();
-        boolean clientAuthenticated = request.getAttribute(com.yahoo.jdisc.http.servlet.ServletRequest.SERVLET_REQUEST_X509CERT) != null;
+        boolean clientAuthenticated = request.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT) != null;
         Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName);
         dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
         dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);

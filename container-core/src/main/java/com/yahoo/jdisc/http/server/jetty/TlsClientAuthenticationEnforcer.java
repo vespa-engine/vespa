@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.servlet.ServletRequest;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.HandlerWrapper;
 
@@ -78,6 +77,6 @@ class TlsClientAuthenticationEnforcer extends HandlerWrapper {
     }
 
     private boolean isClientAuthenticated(HttpServletRequest servletRequest) {
-        return servletRequest.getAttribute(ServletRequest.SERVLET_REQUEST_X509CERT) != null;
+        return servletRequest.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT) != null;
     }
 }
