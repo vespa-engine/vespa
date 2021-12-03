@@ -20,16 +20,16 @@ public class HtmlLogger {
     public static final Level HTML = new Level("html", 1) { };
 
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    private final PrintStream formatter = new PrintStream(new HtmlAnsiOutputStream(buffer));
 
     public LogRecord toLog(String line) {
         if (line.length() > 1 << 13)
             line = line.substring(0, 1 << 13) + " ... (this log entry was truncated due to size)";
 
         buffer.reset();
-        formatter.print(line);
-        formatter.flush();
-        return new LogRecord(HTML, buffer.toString(UTF_8)); //.replaceAll(" ", "&nbsp;"));
+        try (PrintStream formatter = new PrintStream(new HtmlAnsiOutputStream(buffer))) {
+            formatter.print(line);
+        }
+        return new LogRecord(HTML, buffer.toString(UTF_8));
     }
 
 }
