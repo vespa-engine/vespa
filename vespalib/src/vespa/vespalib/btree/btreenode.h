@@ -99,6 +99,8 @@ public:
     }
 
     const DataT &getData(uint32_t idx) const { return _data[idx]; }
+    // Only use during compaction when changing reference to moved value
+    DataT &getWData(uint32_t idx) { return _data[idx]; }
     void setData(uint32_t idx, const DataT &data) { _data[idx] = data; }
     static bool hasData() { return true; }
 };
@@ -119,6 +121,9 @@ public:
         (void) idx;
         return BTreeNoLeafData::_instance;
     }
+
+    // Only use during compaction when changing reference to moved value
+    BTreeNoLeafData &getWData(uint32_t) const { return BTreeNoLeafData::_instance; }
 
     void setData(uint32_t idx, const BTreeNoLeafData &data) {
         (void) idx;

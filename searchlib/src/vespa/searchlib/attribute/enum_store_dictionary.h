@@ -54,6 +54,8 @@ public:
     void clear_all_posting_lists(std::function<void(EntryRef)> clearer) override;
     void update_posting_list(Index idx, const EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) override;
     bool normalize_posting_lists(std::function<EntryRef(EntryRef)> normalize) override;
+    bool normalize_posting_lists(std::function<void(std::vector<EntryRef>&)> normalize, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits) override;
+    void foreach_posting_list(std::function<void(const std::vector<EntryRef>&)> callback, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits) override;
     const EnumPostingTree& get_posting_dictionary() const override;
 };
 
