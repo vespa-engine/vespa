@@ -30,7 +30,7 @@ public final class SecurityRequestFilterChain extends AbstractResource implement
 
     @Override
     public void filter(HttpRequest request, ResponseHandler responseHandler) {
-        DiscFilterRequest discFilterRequest = new JdiscFilterRequest(request);
+        DiscFilterRequest discFilterRequest = new DiscFilterRequest(request);
         filter(discFilterRequest, responseHandler);
     }
 

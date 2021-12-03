@@ -42,8 +42,7 @@ public class DiscFilterRequestTest {
 		cookies.add(new Cookie("XYZ", "value"));
 		cookies.add(new Cookie("ABC", "value"));
 		httpReq.encodeCookieHeader(cookies);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
-		Assert.assertSame(request.getParentRequest(), httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		Assert.assertEquals(request.getHeader("X-Custom-Header"),"custom_header");
 		Assert.assertEquals(request.getHeader(HttpHeaders.Names.CONTENT_TYPE),"text/html;charset=UTF-8");
 
@@ -63,7 +62,7 @@ public class DiscFilterRequestTest {
 		URI uri = URI.create("http://localhost:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
 		httpReq.headers().add("some-header", "some-value");
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
 		request.addHeader("some-header", "some-value");
 		String value = request.getUntreatedHeaders().get("some-header").get(0);
@@ -74,7 +73,7 @@ public class DiscFilterRequestTest {
 	public void testRequestAttributes() {
 		URI uri = URI.create("http://localhost:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		request.setAttribute("some_attr", "some_value");
 
 		Assert.assertTrue(request.containsAttribute("some_attr"));
@@ -87,7 +86,7 @@ public class DiscFilterRequestTest {
 	public void testGetAttributeNames() {
 		URI uri = URI.create("http://localhost:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		request.setAttribute("some_attr_1", "some_value1");
 		request.setAttribute("some_attr_2", "some_value2");
 
@@ -103,7 +102,7 @@ public class DiscFilterRequestTest {
 	public void testRemoveAttribute() {
 		URI uri = URI.create("http://localhost:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
         request.setAttribute("some_attr", "some_value");
 
 		Assert.assertTrue(request.containsAttribute("some_attr"));
@@ -117,7 +116,7 @@ public class DiscFilterRequestTest {
 	public void testGetIntHeader() {
 		URI uri = URI.create("http://localhost:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
 		Assert.assertEquals(-1, request.getIntHeader("int_header"));
 
@@ -130,7 +129,7 @@ public class DiscFilterRequestTest {
 	public void testDateHeader() {
 		URI uri = URI.create("http://localhost:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
 
 		Assert.assertEquals(-1, request.getDateHeader(HttpHeaders.Names.IF_MODIFIED_SINCE));
@@ -144,7 +143,7 @@ public class DiscFilterRequestTest {
 	public void testParameterAPIsAsList() {
         URI uri = URI.create("http://example.yahoo.com:8080/test?param1=abc&param2=xyz&param2=pqr");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
         Assert.assertEquals(request.getParameter("param1"),"abc");
 
         List<String> values = request.getParameterValuesAsList("param2");
@@ -160,7 +159,7 @@ public class DiscFilterRequestTest {
 	public void testParameterAPI(){
 	    URI uri = URI.create("http://example.yahoo.com:8080/test?param1=abc&param2=xyz&param2=pqr");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-        DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+        DiscFilterRequest request = new DiscFilterRequest(httpReq);
         Assert.assertEquals(request.getParameter("param1"),"abc");
 
         Enumeration<String> values = request.getParameterValues("param2");
@@ -180,7 +179,7 @@ public class DiscFilterRequestTest {
         httpReq.headers().add(HttpHeaders.Names.CONTENT_TYPE, "multipart/form-data");
         httpReq.headers().add("header_1", "value1");
         httpReq.headers().add("header_2", "value2");
-        DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+        DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
         Assert.assertNotNull(request.getHeaderNamesAsList());
         Assert.assertEquals(request.getHeaderNamesAsList().size(), 3);
@@ -190,7 +189,7 @@ public class DiscFilterRequestTest {
     public void testGetHeadersAsList() {
         URI uri = URI.create("http://localhost:8080/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-        DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+        DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
         Assert.assertNotNull(request.getHeaderNamesAsList());
         Assert.assertEquals(request.getHeaderNamesAsList().size(), 0);
@@ -207,13 +206,13 @@ public class DiscFilterRequestTest {
 		URI uri = URI.create("http://localhost:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
 		httpReq.headers().add(HttpHeaders.Names.CONTENT_TYPE, "multipart/form-data");
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
 		Assert.assertTrue(DiscFilterRequest.isMultipart(request));
 
 		httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
 		httpReq.headers().add(HttpHeaders.Names.CONTENT_TYPE, "text/html;charset=UTF-8");
-		request = new JdiscFilterRequest(httpReq);
+		request = new DiscFilterRequest(httpReq);
 
 		Assert.assertFalse(DiscFilterRequest.isMultipart(request));
 
@@ -221,7 +220,7 @@ public class DiscFilterRequestTest {
 
 
 		httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		request = new JdiscFilterRequest(httpReq);
+		request = new DiscFilterRequest(httpReq);
 		Assert.assertFalse(DiscFilterRequest.isMultipart(request));
      }
 
@@ -230,7 +229,7 @@ public class DiscFilterRequestTest {
 
         URI uri = URI.create("http://example.yahoo.com:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
         Assert.assertEquals(69, request.getRemotePort());
         Assert.assertEquals(8080, request.getLocalPort());
@@ -247,13 +246,13 @@ public class DiscFilterRequestTest {
 	public void testCharacterEncoding() {
 		URI uri = URI.create("http://example.yahoo.com:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		request.setHeaders(HttpHeaders.Names.CONTENT_TYPE, "text/html;charset=UTF-8");
 
 		Assert.assertEquals(request.getCharacterEncoding(), "UTF-8");
 
 		httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		request = new JdiscFilterRequest(httpReq);
+		request = new DiscFilterRequest(httpReq);
 		request.setHeaders(HttpHeaders.Names.CONTENT_TYPE, "text/html");
 		request.setCharacterEncoding("UTF-8");
 
@@ -267,7 +266,7 @@ public class DiscFilterRequestTest {
 	public void testSetScheme() {
 		URI uri = URI.create("https://example.yahoo.com:8080/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 
 		request.setScheme("http", true);
 		System.out.println(request.getUri().toString());
@@ -279,7 +278,7 @@ public class DiscFilterRequestTest {
 	public void testGetServerPort() {
 		URI uri = URI.create("http://example.yahoo.com/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		Assert.assertEquals(request.getServerPort(), 80);
 
 		request.setUri(URI.create("https://example.yahoo.com/test"));
@@ -292,7 +291,7 @@ public class DiscFilterRequestTest {
 	public void testIsSecure() {
 		URI uri = URI.create("http://example.yahoo.com/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		Assert.assertFalse(request.isSecure());
 
 		request.setUri(URI.create("https://example.yahoo.com/test"));
@@ -304,7 +303,7 @@ public class DiscFilterRequestTest {
     public void requireThatUnresolvableRemoteAddressesAreSupported() {
         URI uri = URI.create("http://doesnotresolve.zzz:8080/test");
         HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-        DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+        DiscFilterRequest request = new DiscFilterRequest(httpReq);
         Assert.assertNull(request.getLocalAddr());
     }
 
@@ -315,7 +314,7 @@ public class DiscFilterRequestTest {
         httpReq.headers().add("key1", "value1");
         httpReq.headers().add("key2", Arrays.asList("value1","value2"));
 
-        DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+        DiscFilterRequest request = new DiscFilterRequest(httpReq);
         HeaderFields headers = request.getUntreatedHeaders();
         Assert.assertEquals(headers.keySet().size(), 2);
         Assert.assertEquals(headers.get("key1").get(0), "value1" );
@@ -328,7 +327,7 @@ public class DiscFilterRequestTest {
 		URI uri = URI.create("http://example.yahoo.com/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
 		httpReq.headers().put(HttpHeaders.Names.COOKIE, "XYZ=value");
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		request.clearCookies();
 		Assert.assertNull(request.getHeader(HttpHeaders.Names.COOKIE));
 	}
@@ -338,7 +337,7 @@ public class DiscFilterRequestTest {
 		URI uri = URI.create("http://example.yahoo.com/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
 		httpReq.headers().put(HttpHeaders.Names.COOKIE, "XYZ=value");
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		JDiscCookieWrapper[] wrappers = request.getWrappedCookies();
 		Assert.assertEquals(wrappers.length ,1);
 		Assert.assertEquals(wrappers[0].getName(), "XYZ");
@@ -349,7 +348,7 @@ public class DiscFilterRequestTest {
 	public void testAddCookie() {
 		URI uri = URI.create("http://example.yahoo.com/test");
 		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new JdiscFilterRequest(httpReq);
+		DiscFilterRequest request = new DiscFilterRequest(httpReq);
 		request.addCookie(JDiscCookieWrapper.wrap(new Cookie("name", "value")));
 
 		List<Cookie> cookies = request.getCookies();
