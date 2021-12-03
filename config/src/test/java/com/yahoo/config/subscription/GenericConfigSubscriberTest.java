@@ -12,7 +12,6 @@ import com.yahoo.vespa.config.protocol.CompressionType;
 import org.junit.Test;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,23 +57,6 @@ public class GenericConfigSubscriberTest {
 
     private String getConfig(GenericConfigHandle handle) {
         return handle.getRawConfig().getPayload().withCompression(CompressionType.UNCOMPRESSED).toString();
-    }
-
-    @Test
-    public void testGenericRequesterPooling() {
-        ConfigSourceSet source1 = new ConfigSourceSet("tcp/foo:78");
-        ConfigSourceSet source2 = new ConfigSourceSet("tcp/bar:79");
-        JRTConfigRequester req1 = JRTConfigRequester.create(source1, tv);
-        JRTConfigRequester req2 = JRTConfigRequester.create(source2, tv);
-        Map<ConfigSourceSet, JRTConfigRequester> requesters = new LinkedHashMap<>();
-        requesters.put(source1, req1);
-        requesters.put(source2, req2);
-        GenericConfigSubscriber sub = new GenericConfigSubscriber(requesters);
-        assertEquals(sub.requesters().get(source1).getConnectionPool().getCurrent().getAddress(), "tcp/foo:78");
-        assertEquals(sub.requesters().get(source2).getConnectionPool().getCurrent().getAddress(), "tcp/bar:79");
-        for (JRTConfigRequester requester : requesters.values()) {
-            requester.close();
-        }
     }
 
     @Test(expected=UnsupportedOperationException.class)
