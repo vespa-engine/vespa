@@ -300,7 +300,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .filter(re -> AthenzIdentities.USER_PRINCIPAL_DOMAIN.equals(AthenzIdentities.from(re.memberName()).getDomain()))
                 .collect(Collectors.toUnmodifiableMap(
                         m -> (AthenzUser) AthenzIdentities.from(m.memberName()),
-                        RoleEntity.Member::auditRef));
+                        m -> m.auditRef() != null ? m.auditRef() : "<no reason provided>"));
     }
 
     @Override
