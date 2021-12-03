@@ -2,10 +2,11 @@
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.config.subscription.impl.JRTConfigRequester;
 import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.foo.FunctionTestConfig;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import org.junit.Test;
@@ -42,11 +43,13 @@ public class JRTConfigRequestFactoryTest {
 
     @Test
     public void testCreateFromSub() {
-        ConfigSubscriber subscriber = new ConfigSubscriber();
         Class<FunctionTestConfig> clazz = FunctionTestConfig.class;
         final String configId = "foo";
-        JRTConfigSubscription<FunctionTestConfig> sub = new JRTConfigSubscription<>(
-                new ConfigKey<>(clazz, configId), subscriber, new ConfigSourceSet(), new TimingValues());
+        TimingValues timingValues = new TimingValues();
+        JRTConfigSubscription<FunctionTestConfig> sub =
+                new JRTConfigSubscription<>(new ConfigKey<>(clazz, configId),
+                                            new JRTConfigRequester(new JRTConnectionPool(new ConfigSourceSet("tcp/localhost:12345")), timingValues),
+                                            timingValues);
 
         JRTClientConfigRequest request = JRTConfigRequestFactory.createFromSub(sub);
         assertThat(request.getVespaVersion().get(), is(defaultVespaVersion));

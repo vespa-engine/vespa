@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
@@ -25,10 +23,9 @@ public class GenericJRTConfigSubscription extends JRTConfigSubscription<RawConfi
 
     public GenericJRTConfigSubscription(ConfigKey<RawConfig> key,
                                         List<String> defContent,
-                                        ConfigSubscriber subscriber,
-                                        ConfigSourceSet source,
+                                        JRTConfigRequester requester,
                                         TimingValues timingValues) {
-        super(key, subscriber, source, timingValues);
+        super(key, requester, timingValues);
         this.defContent = defContent;
     }
 

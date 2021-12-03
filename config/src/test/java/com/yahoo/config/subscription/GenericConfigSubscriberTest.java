@@ -6,14 +6,15 @@ import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
 import com.yahoo.config.subscription.impl.JRTConfigRequesterTest;
 import com.yahoo.config.subscription.impl.MockConnection;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,14 +31,11 @@ public class GenericConfigSubscriberTest {
 
     @Test
     public void testSubscribeGeneric() throws InterruptedException {
-        Map<ConfigSourceSet, JRTConfigRequester> requesters = new HashMap<>();
-        ConfigSourceSet sourceSet = new ConfigSourceSet("blabla");
-        requesters.put(sourceSet, new JRTConfigRequester(new MockConnection(), tv));
-        GenericConfigSubscriber sub = new GenericConfigSubscriber(requesters);
+        JRTConfigRequester requester = new JRTConfigRequester(new MockConnection(), tv);
+        GenericConfigSubscriber sub = new GenericConfigSubscriber(requester);
         final List<String> defContent = List.of("myVal int");
         GenericConfigHandle handle = sub.subscribe(new ConfigKey<>("simpletypes", "id", "config"),
                                                    defContent,
-                                                   sourceSet,
                                                    tv);
         assertTrue(sub.nextConfig(false));
         assertTrue(handle.isChanged());
@@ -75,9 +73,7 @@ public class GenericConfigSubscriberTest {
     }
 
     private GenericConfigSubscriber createSubscriber() {
-        return new GenericConfigSubscriber(Map.of(
-                new ConfigSourceSet("blabla"),
-                new JRTConfigRequester(new MockConnection(), JRTConfigRequesterTest.getTestTimingValues())));
+        return new GenericConfigSubscriber(new JRTConfigRequester(new JRTConnectionPool(new ConfigSourceSet("foo"), new Supervisor(new Transport())), tv));
     }
 
 }

@@ -212,21 +212,18 @@
       "public boolean nextGeneration(long)",
       "protected void throwIfExceptionSet(com.yahoo.config.subscription.impl.ConfigSubscription)",
       "public void close()",
-      "protected void closeRequesters()",
       "public java.lang.String toString()",
       "public java.lang.Thread startConfigThread(java.lang.Runnable)",
       "protected com.yahoo.config.subscription.ConfigSubscriber$State state()",
       "public void reload(long)",
       "public com.yahoo.config.subscription.ConfigSource getSource()",
-      "public java.util.Map requesters()",
       "public boolean isClosed()",
       "public com.yahoo.config.subscription.ConfigHandle subscribe(com.yahoo.config.subscription.ConfigSubscriber$SingleSubscriber, java.lang.Class, java.lang.String)",
       "public long getGeneration()",
       "protected void finalize()"
     ],
     "fields": [
-      "protected final java.util.List subscriptionHandles",
-      "protected java.util.Map requesters"
+      "protected final java.util.List subscriptionHandles"
     ]
   },
   "com.yahoo.config.subscription.ConfigURI": {
