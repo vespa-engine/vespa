@@ -1661,7 +1661,9 @@
   },
   "com.yahoo.jdisc.http.HttpRequest": {
     "superClass": "com.yahoo.jdisc.Request",
-    "interfaces": [],
+    "interfaces": [
+      "com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest"
+    ],
     "attributes": [
       "public"
     ],
@@ -1721,7 +1723,9 @@
   },
   "com.yahoo.jdisc.http.HttpResponse": {
     "superClass": "com.yahoo.jdisc.Response",
-    "interfaces": [],
+    "interfaces": [
+      "com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse"
+    ],
     "attributes": [
       "public"
     ],
@@ -2168,7 +2172,7 @@
       "abstract"
     ],
     "methods": [
-      "public void <init>(com.yahoo.jdisc.http.HttpRequest)",
+      "public void <init>(com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpRequest)",
       "public abstract java.lang.String getMethod()",
       "public com.yahoo.jdisc.http.HttpRequest$Version getVersion()",
       "public java.net.URI getUri()",
@@ -2251,7 +2255,7 @@
       "abstract"
     ],
     "methods": [
-      "public void <init>(com.yahoo.jdisc.http.HttpResponse)",
+      "public void <init>(com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse)",
       "public java.util.Enumeration getAttributeNames()",
       "public java.lang.Object getAttribute(java.lang.String)",
       "public void setAttribute(java.lang.String, java.lang.Object)",
@@ -2414,6 +2418,21 @@
       "abstract"
     ],
     "methods": [],
+    "fields": []
+  },
+  "com.yahoo.jdisc.http.filter.SecurityFilterInvoker": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.http.server.jetty.FilterInvoker"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public javax.servlet.http.HttpServletRequest invokeRequestFilterChain(com.yahoo.jdisc.http.filter.RequestFilter, java.net.URI, javax.servlet.http.HttpServletRequest, com.yahoo.jdisc.handler.ResponseHandler)",
+      "public void invokeResponseFilterChain(com.yahoo.jdisc.http.filter.ResponseFilter, java.net.URI, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)"
+    ],
     "fields": []
   },
   "com.yahoo.jdisc.http.filter.SecurityRequestFilter": {
