@@ -56,8 +56,8 @@ SummaryCompactTarget::getApproxMemoryGain() const
 IFlushTarget::DiskGain
 SummaryCompactTarget::getApproxDiskGain() const
 {
-    uint64_t total(_docStore.getDiskFootprint());
-    return DiskGain(total, total - std::min(total, static_cast<uint64_t>(_docStore.getMaxCompactGain())));
+    size_t total(_docStore.getDiskFootprint());
+    return DiskGain(total, total - std::min(total, _docStore.getMaxCompactGain()));
 }
 
 IFlushTarget::Time
