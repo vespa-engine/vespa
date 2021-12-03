@@ -59,6 +59,8 @@ public:
     void foreach_key(std::function<void(EntryRef)> callback) const;
     void move_keys(ICompactable& compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits);
     bool normalize_values(std::function<EntryRef(EntryRef)> normalize);
+    bool normalize_values(std::function<void(std::vector<EntryRef>&)> normalize, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits);
+    void foreach_value(std::function<void(const std::vector<EntryRef>&)> callback, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits);
     bool has_held_buffers() const;
     void compact_worst_shard();
 };

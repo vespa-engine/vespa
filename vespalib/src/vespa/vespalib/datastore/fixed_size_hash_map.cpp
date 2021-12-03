@@ -220,4 +220,106 @@ FixedSizeHashMap::normalize_values(const std::function<EntryRef(EntryRef)>& norm
     return changed;
 }
 
+namespace {
+
+class ChangeWriter {
+    std::vector<AtomicEntryRef*> _atomic_refs;
+public:
+    ChangeWriter(uint32_t capacity);
+    ~ChangeWriter();
+    bool write(const std::vector<EntryRef> &refs);
+    void emplace_back(AtomicEntryRef &atomic_ref) { _atomic_refs.emplace_back(&atomic_ref); }
+};
+
+ChangeWriter::ChangeWriter(uint32_t capacity)
+    : _atomic_refs()
+{
+    _atomic_refs.reserve(capacity);
+}
+
+ChangeWriter::~ChangeWriter() = default;
+
+bool
+ChangeWriter::write(const std::vector<EntryRef> &refs)
+{
+    bool changed = false;
+    assert(refs.size() == _atomic_refs.size());
+    auto atomic_ref = _atomic_refs.begin();
+    for (auto ref : refs) {
+        EntryRef old_ref = (*atomic_ref)->load_relaxed();
+        if (ref != old_ref) {
+            (*atomic_ref)->store_release(ref);
+            changed = true;
+        }
+        ++atomic_ref;
+    }
+    assert(atomic_ref == _atomic_refs.end());
+    _atomic_refs.clear();
+    return changed;
+}
+
+}
+
+bool
+FixedSizeHashMap::normalize_values(const std::function<void(std::vector<EntryRef>&)>& normalize, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits)
+{
+    std::vector<EntryRef> refs;
+    refs.reserve(1024);
+    bool changed = false;
+    ChangeWriter change_writer(refs.capacity());
+    for (auto& chain_head : _chain_heads) {
+        uint32_t node_idx = chain_head.load_relaxed();
+        while (node_idx != no_node_idx) {
+            auto& node = _nodes[node_idx];
+            EntryRef ref = node.get_kv().second.load_relaxed();
+            if (ref.valid()) {
+                uint32_t buffer_id = ref.buffer_id(entry_ref_offset_bits);
+                if (filter[buffer_id]) {
+                    refs.emplace_back(ref);
+                    change_writer.emplace_back(node.get_kv().second);
+                    if (refs.size() >= refs.capacity()) {
+                        normalize(refs);
+                        changed |= change_writer.write(refs);
+                        refs.clear();
+                    }
+                }
+            }
+            node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
+        }
+    }
+    if (!refs.empty()) {
+        normalize(refs);
+        changed |= change_writer.write(refs);
+    }
+    return changed;
+}
+
+void
+FixedSizeHashMap::foreach_value(const std::function<void(const std::vector<EntryRef>&)>& callback, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits)
+{
+    std::vector<EntryRef> refs;
+    refs.reserve(1024);
+    for (auto& chain_head : _chain_heads) {
+        uint32_t node_idx = chain_head.load_relaxed();
+        while (node_idx != no_node_idx) {
+            auto& node = _nodes[node_idx];
+            EntryRef ref = node.get_kv().second.load_relaxed();
+            if (ref.valid()) {
+                uint32_t buffer_id = ref.buffer_id(entry_ref_offset_bits);
+                if (filter[buffer_id]) {
+                    refs.emplace_back(ref);
+                    if (refs.size() >= refs.capacity()) {
+                        callback(refs);
+                        refs.clear();
+                    }
+                }
+            }
+            node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
+        }
+    }
+    if (!refs.empty()) {
+        callback(refs);
+    }
+}
+
 }

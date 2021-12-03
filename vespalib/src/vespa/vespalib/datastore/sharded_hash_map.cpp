@@ -195,6 +195,31 @@ ShardedHashMap::normalize_values(std::function<EntryRef(EntryRef)> normalize)
 }
 
 bool
+ShardedHashMap::normalize_values(std::function<void(std::vector<EntryRef>&)> normalize, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits)
+{
+    bool changed = false;
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            changed |= map->normalize_values(normalize, filter, entry_ref_offset_bits);
+        }
+    }
+    return changed;
+}
+
+void
+ShardedHashMap::foreach_value(std::function<void(const std::vector<EntryRef>&)> callback, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits)
+{
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            map->foreach_value(callback, filter, entry_ref_offset_bits);
+        }
+    }
+}
+
+
+bool
 ShardedHashMap::has_held_buffers() const
 {
     return _gen_holder.getHeldBytes() != 0;
