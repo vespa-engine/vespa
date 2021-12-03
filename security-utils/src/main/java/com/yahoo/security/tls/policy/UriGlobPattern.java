@@ -8,26 +8,22 @@ import java.util.Objects;
  *
  * @author bjorncs
  */
-class UriPattern implements RequiredPeerCredential.Pattern {
+class UriGlobPattern implements RequiredPeerCredential.Pattern {
 
-    private final String pattern;
+    private final GlobPattern globPattern;
 
-    UriPattern(String pattern) {
-        this.pattern = pattern;
+    UriGlobPattern(String globPattern) {
+        this.globPattern = new GlobPattern(globPattern, new char[] {'/'});
     }
 
-    @Override public String asString() { return pattern; }
+    @Override public String asString() { return globPattern.asString(); }
 
-    @Override
-    public boolean matches(String fieldValue) {
-        // Only exact match is supported (unlike for host names)
-        return fieldValue.equals(pattern);
-    }
+    @Override public boolean matches(String fieldValue) { return globPattern.matches(fieldValue); }
 
     @Override
     public String toString() {
         return "UriPattern{" +
-                "pattern='" + pattern + '\'' +
+                "pattern='" + globPattern + '\'' +
                 '}';
     }
 
@@ -35,12 +31,12 @@ class UriPattern implements RequiredPeerCredential.Pattern {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        UriPattern that = (UriPattern) o;
-        return Objects.equals(pattern, that.pattern);
+        UriGlobPattern that = (UriGlobPattern) o;
+        return Objects.equals(globPattern, that.globPattern);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(pattern);
+        return Objects.hash(globPattern);
     }
 }

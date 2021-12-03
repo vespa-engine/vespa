@@ -28,7 +28,7 @@ public class RequiredPeerCredential {
             case SAN_DNS:
                 return new HostGlobPattern(pattern);
             case SAN_URI:
-                return new UriPattern(pattern);
+                return new UriGlobPattern(pattern);
             default:
                 throw new IllegalArgumentException("Unknown field: " + field);
         }
