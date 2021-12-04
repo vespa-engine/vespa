@@ -298,6 +298,9 @@ public:
     bool
     isSmallArray(const EntryRef ref) const;
 
+    static bool isBTree(uint32_t typeId) { return typeId == BUFFERTYPE_BTREE; }
+    bool isBTree(RefType ref) const { return isBTree(getTypeId(ref)); }
+
     /**
      * Returns the cluster size for the type id.
      * Cluster size == 0 means we have a tree for the given reference.
@@ -391,10 +394,10 @@ public:
 
     std::vector<uint32_t> start_compact_worst_btree_nodes();
     void finish_compact_worst_btree_nodes(const std::vector<uint32_t>& to_hold);
-    void move_btree_nodes(EntryRef ref);
+    void move_btree_nodes(const std::vector<EntryRef>& refs);
 
     std::vector<uint32_t> start_compact_worst_buffers();
-    EntryRef move(EntryRef ref);
+    void move(std::vector<EntryRef>& refs);
 
 private:
     static constexpr size_t MIN_BUFFER_ARRAYS = 128u;

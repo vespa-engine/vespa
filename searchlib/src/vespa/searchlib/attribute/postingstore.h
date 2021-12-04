@@ -89,6 +89,7 @@ public:
     using Parent::getWTreeEntry;
     using Parent::getTreeEntry;
     using Parent::getKeyDataEntry;
+    using Parent::isBTree;
     using Parent::clusterLimit;
     using Parent::allocBTree;
     using Parent::allocBTreeCopy;
@@ -107,8 +108,6 @@ public:
     bool removeSparseBitVectors() override;
     void consider_remove_sparse_bitvector(std::vector<EntryRef> &refs);
     static bool isBitVector(uint32_t typeId) { return typeId == BUFFERTYPE_BITVECTOR; }
-    static bool isBTree(uint32_t typeId) { return typeId == BUFFERTYPE_BTREE; }
-    bool isBTree(RefType ref) const { return isBTree(getTypeId(ref)); }
 
     void applyNew(EntryRef &ref, AddIter a, AddIter ae);
 
