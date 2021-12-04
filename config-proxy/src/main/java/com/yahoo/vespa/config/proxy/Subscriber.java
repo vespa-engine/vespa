@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
+import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.impl.GenericConfigHandle;
 import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
@@ -9,6 +10,7 @@ import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,20 +23,22 @@ public class Subscriber {
     private final static Logger log = Logger.getLogger(Subscriber.class.getName());
 
     private final RawConfig config;
+    private final ConfigSourceSet configSourceSet;
     private final TimingValues timingValues;
     private final GenericConfigSubscriber subscriber;
     private GenericConfigHandle handle;
 
-    Subscriber(RawConfig config, TimingValues timingValues, JRTConfigRequester requester) {
+    Subscriber(RawConfig config, ConfigSourceSet configSourceSet, TimingValues timingValues, JRTConfigRequester requester) {
         this.config = config;
+        this.configSourceSet = configSourceSet;
         this.timingValues = timingValues;
-        this.subscriber = new GenericConfigSubscriber(requester);
+        this.subscriber = new GenericConfigSubscriber(Map.of(configSourceSet, requester));
     }
 
     void subscribe() {
         ConfigKey<?> key = config.getKey();
         handle = subscriber.subscribe(new ConfigKey<>(key.getName(), key.getConfigId(), key.getNamespace()),
-                                      config.getDefContent(), timingValues);
+                                      config.getDefContent(), configSourceSet, timingValues);
     }
 
     public Optional<RawConfig> nextGeneration() {
@@ -54,8 +58,14 @@ public class Subscriber {
         return Optional.empty();
     }
 
-    public void cancel() { subscriber.close(); }
+    public void cancel() {
+        if (subscriber != null) {
+            subscriber.close();
+        }
+    }
 
-    boolean isClosed() { return subscriber.isClosed(); }
+    boolean isClosed() {
+        return subscriber.isClosed();
+    }
 
 }

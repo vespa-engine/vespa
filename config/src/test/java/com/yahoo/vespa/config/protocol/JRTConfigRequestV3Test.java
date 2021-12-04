@@ -2,6 +2,8 @@
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
+import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.config.subscription.impl.GenericConfigSubscriber;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
 import com.yahoo.config.subscription.impl.JRTConfigSubscription;
 import com.yahoo.config.subscription.impl.MockConnection;
@@ -14,7 +16,6 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -188,11 +190,12 @@ public class JRTConfigRequestV3Test {
 
     @Test
     public void created_from_subscription() {
-        TimingValues timingValues = new TimingValues();
+        ConfigSubscriber subscriber = new ConfigSubscriber();
         JRTConfigSubscription<SimpletypesConfig> sub =
                 new JRTConfigSubscription<>(new ConfigKey<>(SimpletypesConfig.class, configId),
-                                            new JRTConfigRequester(new JRTConnectionPool(new ConfigSourceSet("tcp/localhost:985")), timingValues),
-                                            timingValues);
+                                            subscriber,
+                                            new ConfigSourceSet(),
+                                            new TimingValues());
         JRTClientConfigRequest request = createReq(sub, Trace.createNew(9));
         assertThat(request.getConfigKey().getName(), is(SimpletypesConfig.CONFIG_DEF_NAME));
         JRTServerConfigRequest serverRequest = createReq(request.getRequest());
@@ -209,10 +212,9 @@ public class JRTConfigRequestV3Test {
             }
         });
 
-        TimingValues timingValues = new TimingValues();
-        JRTConfigSubscription<SimpletypesConfig> sub = new JRTConfigSubscription<>(new ConfigKey<>(SimpletypesConfig.class, configId),
-                                                                                   new JRTConfigRequester(connection, timingValues),
-                                                                                   timingValues);
+        ConfigSourceSet src = new ConfigSourceSet();
+        ConfigSubscriber subscriber = new GenericConfigSubscriber(Collections.singletonMap(src, new JRTConfigRequester(connection, new TimingValues())));
+        JRTConfigSubscription<SimpletypesConfig> sub = new JRTConfigSubscription<>(new ConfigKey<>(SimpletypesConfig.class, configId), subscriber, src, new TimingValues());
         sub.subscribe(120_0000);
         assertTrue(sub.nextConfig(120_0000));
         sub.close();
