@@ -105,7 +105,7 @@ public:
     ~PostingStore();
 
     bool removeSparseBitVectors() override;
-    EntryRef consider_remove_sparse_bitvector(EntryRef ref);
+    void consider_remove_sparse_bitvector(std::vector<EntryRef> &refs);
     static bool isBitVector(uint32_t typeId) { return typeId == BUFFERTYPE_BITVECTOR; }
     static bool isBTree(uint32_t typeId) { return typeId == BUFFERTYPE_BTREE; }
     bool isBTree(RefType ref) const { return isBTree(getTypeId(ref)); }
@@ -188,8 +188,8 @@ public:
     vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage update_stat();
 
-    void move_btree_nodes(EntryRef ref);
-    EntryRef move(EntryRef ref);
+    void move_btree_nodes(const std::vector<EntryRef> &refs);
+    void move(std::vector<EntryRef>& refs);
 
     void compact_worst_btree_nodes();
     void compact_worst_buffers();
