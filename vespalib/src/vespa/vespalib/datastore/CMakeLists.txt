@@ -8,6 +8,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     datastore.cpp
     datastorebase.cpp
     entryref.cpp
+    entry_ref_filter.cpp
     fixed_size_hash_map.cpp
     sharded_hash_map.cpp
     unique_store.cpp

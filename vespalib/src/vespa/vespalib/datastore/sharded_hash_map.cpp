@@ -171,12 +171,12 @@ ShardedHashMap::foreach_key(std::function<void(EntryRef)> callback) const
 }
 
 void
-ShardedHashMap::move_keys(ICompactable& compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits)
+ShardedHashMap::move_keys(ICompactable& compactable, const EntryRefFilter& compacting_buffers)
 {
     for (size_t i = 0; i < num_shards; ++i) {
         auto map = _maps[i].load(std::memory_order_relaxed);
         if (map != nullptr) {
-            map->move_keys(compactable, compacting_buffers, entry_ref_offset_bits);
+            map->move_keys(compactable, compacting_buffers);
         }
     }
 }
@@ -193,6 +193,31 @@ ShardedHashMap::normalize_values(std::function<EntryRef(EntryRef)> normalize)
     }
     return changed;
 }
+
+bool
+ShardedHashMap::normalize_values(std::function<void(std::vector<EntryRef>&)> normalize, const EntryRefFilter& filter)
+{
+    bool changed = false;
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            changed |= map->normalize_values(normalize, filter);
+        }
+    }
+    return changed;
+}
+
+void
+ShardedHashMap::foreach_value(std::function<void(const std::vector<EntryRef>&)> callback, const EntryRefFilter& filter)
+{
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            map->foreach_value(callback, filter);
+        }
+    }
+}
+
 
 bool
 ShardedHashMap::has_held_buffers() const

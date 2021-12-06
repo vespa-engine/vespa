@@ -4,6 +4,7 @@
 
 #include "datastore.hpp"
 #include "entry_comparator_wrapper.h"
+#include "entry_ref_filter.h"
 #include "i_compactable.h"
 #include "unique_store_add_result.h"
 #include "unique_store_dictionary.h"
@@ -139,15 +140,14 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::remove(const 
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_keys(ICompactable &compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_keys(ICompactable &compactable, const EntryRefFilter& compacting_buffers)
 {
     if constexpr (has_btree_dictionary) {
         auto itr = this->_btree_dict.begin();
         while (itr.valid()) {
             EntryRef oldRef(itr.getKey());
             assert(oldRef.valid());
-            uint32_t buffer_id = oldRef.buffer_id(entry_ref_offset_bits);
-            if (compacting_buffers[buffer_id]) {
+            if (compacting_buffers.has(oldRef)) {
                 EntryRef newRef(compactable.move(oldRef));
                 this->_btree_dict.thaw(itr);
                 itr.writeKey(newRef);
@@ -160,7 +160,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_keys(ICo
             ++itr;
         }
     } else {
-        this->_hash_dict.move_keys(compactable, compacting_buffers, entry_ref_offset_bits);
+        this->_hash_dict.move_keys(compactable, compacting_buffers);
     }
 }
 

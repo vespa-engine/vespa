@@ -16,6 +16,7 @@ template <typename BTreeDictionaryT, typename HashDictionaryT = vespalib::datast
 class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<BTreeDictionaryT, IEnumStoreDictionary, HashDictionaryT> {
 protected:
     using EntryRef = IEnumStoreDictionary::EntryRef;
+    using EntryRefFilter = IEnumStoreDictionary::EntryRefFilter;
     using Index = IEnumStoreDictionary::Index;
     using BTreeDictionaryType = BTreeDictionaryT;
     using EntryComparator = IEnumStoreDictionary::EntryComparator;
@@ -54,6 +55,8 @@ public:
     void clear_all_posting_lists(std::function<void(EntryRef)> clearer) override;
     void update_posting_list(Index idx, const EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) override;
     bool normalize_posting_lists(std::function<EntryRef(EntryRef)> normalize) override;
+    bool normalize_posting_lists(std::function<void(std::vector<EntryRef>&)> normalize, const EntryRefFilter& filter) override;
+    void foreach_posting_list(std::function<void(const std::vector<EntryRef>&)> callback, const EntryRefFilter& filter) override;
     const EnumPostingTree& get_posting_dictionary() const override;
 };
 

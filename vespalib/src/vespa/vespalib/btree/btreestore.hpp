@@ -991,15 +991,15 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
 void
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-move_btree_nodes(EntryRef ref)
+move_btree_nodes(const std::vector<EntryRef>& refs)
 {
-    if (ref.valid()) {
+    for (auto& ref : refs) {
         RefType iRef(ref);
-        uint32_t clusterSize = getClusterSize(iRef);
-        if (clusterSize == 0) {
-            BTreeType *tree = getWTreeEntry(iRef);
-            tree->move_nodes(_allocator);
-        }
+        assert(iRef.valid());
+        uint32_t typeId = getTypeId(iRef);
+        assert(isBTree(typeId));
+        BTreeType *tree = getWTreeEntry(iRef);
+        tree->move_nodes(_allocator);
     }
 }
 
@@ -1015,23 +1015,25 @@ start_compact_worst_buffers()
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::EntryRef
+void
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-move(EntryRef ref)
+move(std::vector<EntryRef> &refs)
 {
-    if (!ref.valid() || !_store.getCompacting(ref)) {
-        return ref;
+    for (auto& ref : refs) {
+        RefType iRef(ref);
+        assert(iRef.valid());
+        assert(_store.getCompacting(iRef));
+        uint32_t clusterSize = getClusterSize(iRef);
+        if (clusterSize == 0) {
+            BTreeType *tree = getWTreeEntry(iRef);
+            auto ref_and_ptr = allocBTreeCopy(*tree);
+            tree->prepare_hold();
+            ref = ref_and_ptr.ref;
+        } else {
+            const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+            ref = allocKeyDataCopy(shortArray, clusterSize).ref;
+        }
     }
-    RefType iRef(ref);
-    uint32_t clusterSize = getClusterSize(iRef);
-    if (clusterSize == 0) {
-        BTreeType *tree = getWTreeEntry(iRef);
-        auto ref_and_ptr = allocBTreeCopy(*tree);
-        tree->prepare_hold();
-        return ref_and_ptr.ref;
-    }
-    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
-    return allocKeyDataCopy(shortArray, clusterSize).ref;
 }
 
 }

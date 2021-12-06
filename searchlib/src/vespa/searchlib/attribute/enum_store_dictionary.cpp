@@ -311,6 +311,165 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(
 }
 
 template <>
+bool
+EnumStoreDictionary<EnumTree>::normalize_posting_lists(std::function<void(std::vector<EntryRef>&)>, const EntryRefFilter&)
+{
+    LOG_ABORT("should not be reached");
+}
+
+namespace {
+
+template <typename HashDictionaryT>
+class ChangeWriterBase
+{
+protected:
+    HashDictionaryT* _hash_dict;
+    static constexpr bool has_hash_dictionary = true;
+    ChangeWriterBase()
+        : _hash_dict(nullptr)
+    {
+    }
+public:
+    void set_hash_dict(HashDictionaryT &hash_dict) { _hash_dict = &hash_dict; }
+};
+
+template <>
+class ChangeWriterBase<vespalib::datastore::NoHashDictionary>
+{
+protected:
+    static constexpr bool has_hash_dictionary = false;
+    ChangeWriterBase() = default;
+};
+
+template <typename HashDictionaryT>
+class ChangeWriter : public ChangeWriterBase<HashDictionaryT> {
+    using Parent = ChangeWriterBase<HashDictionaryT>;
+    using Parent::has_hash_dictionary;
+    std::vector<std::pair<EntryRef,uint32_t*>> _tree_refs;
+public:
+    ChangeWriter(uint32_t capacity);
+    ~ChangeWriter();
+    bool write(const std::vector<EntryRef>& refs);
+    void emplace_back(EntryRef key, uint32_t& tree_ref) { _tree_refs.emplace_back(std::make_pair(key, &tree_ref)); }
+};
+
+template <typename HashDictionaryT>
+ChangeWriter<HashDictionaryT>::ChangeWriter(uint32_t capacity)
+    : ChangeWriterBase<HashDictionaryT>(),
+      _tree_refs()
+{
+    _tree_refs.reserve(capacity);
+}
+
+template <typename HashDictionaryT>
+ChangeWriter<HashDictionaryT>::~ChangeWriter() = default;
+
+template <typename HashDictionaryT>
+bool
+ChangeWriter<HashDictionaryT>::write(const std::vector<EntryRef> &refs)
+{
+    bool changed = false;
+    assert(refs.size() == _tree_refs.size());
+    auto tree_ref = _tree_refs.begin();
+    for (auto ref : refs) {
+        EntryRef old_ref(*tree_ref->second);
+        if (ref != old_ref) {
+            if (!changed) {
+                // Note: Needs review when porting to other platforms
+                // Assumes that other CPUs observes stores from this CPU in order
+                std::atomic_thread_fence(std::memory_order_release);
+                changed = true;
+            }
+            *tree_ref->second = ref.ref();
+            if constexpr (has_hash_dictionary) {
+                auto find_result = this->_hash_dict->find(this->_hash_dict->get_default_comparator(), tree_ref->first);
+                assert(find_result != nullptr && find_result->first.load_relaxed() == tree_ref->first);
+                assert(find_result->second.load_relaxed() == old_ref);
+                find_result->second.store_release(ref);
+            }
+        }
+        ++tree_ref;
+    }
+    assert(tree_ref == _tree_refs.end());
+    _tree_refs.clear();
+    return changed;
+}
+
+}
+
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+bool
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(std::function<void(std::vector<EntryRef>&)> normalize, const EntryRefFilter& filter)
+{
+    if constexpr (has_btree_dictionary) {
+        std::vector<EntryRef> refs;
+        refs.reserve(1024);
+        bool changed = false;
+        ChangeWriter<HashDictionaryT> change_writer(refs.capacity());
+        if constexpr (has_hash_dictionary) {
+            change_writer.set_hash_dict(this->_hash_dict);
+        }
+        auto& dict = this->_btree_dict;
+        for (auto itr = dict.begin(); itr.valid(); ++itr) {
+            EntryRef ref(itr.getData());
+            if (ref.valid()) {
+                if (filter.has(ref)) {
+                    refs.emplace_back(ref);
+                    change_writer.emplace_back(itr.getKey(), itr.getWData());
+                    if (refs.size() >= refs.capacity()) {
+                        normalize(refs);
+                        changed |= change_writer.write(refs);
+                        refs.clear();
+                    }
+                }
+            }
+        }
+        if (!refs.empty()) {
+            normalize(refs);
+            changed |= change_writer.write(refs);
+        }
+        return changed;
+    } else {
+        return this->_hash_dict.normalize_values(normalize, filter);
+    }
+}
+
+template <>
+void
+EnumStoreDictionary<EnumTree>::foreach_posting_list(std::function<void(const std::vector<EntryRef>&)>, const EntryRefFilter&)
+{
+    LOG_ABORT("should not be reached");
+}
+
+template <typename BTreeDictionaryT, typename HashDictionaryT>
+void
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::foreach_posting_list(std::function<void(const std::vector<EntryRef>&)> callback, const EntryRefFilter& filter)
+{
+    if constexpr (has_btree_dictionary) {
+        std::vector<EntryRef> refs;
+        refs.reserve(1024);
+        auto& dict = this->_btree_dict;
+        for (auto itr = dict.begin(); itr.valid(); ++itr) {
+            EntryRef ref(itr.getData());
+            if (ref.valid()) {
+                if (filter.has(ref)) {
+                    refs.emplace_back(ref);
+                    if (refs.size() >= refs.capacity()) {
+                        callback(refs);
+                        refs.clear();
+                    }
+                }
+            }
+        }
+        if (!refs.empty()) {
+            callback(refs);
+        }
+    } else {
+        this->_hash_dict.foreach_value(callback, filter);
+    }
+}
+
+template <>
 const EnumPostingTree &
 EnumStoreDictionary<EnumTree>::get_posting_dictionary() const
 {
