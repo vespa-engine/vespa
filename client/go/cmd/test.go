@@ -134,7 +134,7 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 	for i, step := range test.Steps {
 		stepName := fmt.Sprintf("Step %d", i+1)
 		if step.Name != "" {
-			stepName = fmt.Sprintf("Step: %s", step.Name)
+			stepName += ": " + step.Name
 		}
 		failure, longFailure, err := verify(step, filepath.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
 		if err != nil {
