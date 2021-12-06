@@ -2321,8 +2321,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.jdisc.http.HttpRequest)",
-      "public com.yahoo.jdisc.http.HttpRequest getParentRequest()"
+      "public void <init>(com.yahoo.jdisc.http.HttpRequest)"
     ],
     "fields": []
   },

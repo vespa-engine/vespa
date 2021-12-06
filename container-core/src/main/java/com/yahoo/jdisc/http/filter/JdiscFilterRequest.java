@@ -10,15 +10,8 @@ import com.yahoo.jdisc.http.HttpRequest;
 @Deprecated(forRemoval = true, since = "7.511")
 public class JdiscFilterRequest extends DiscFilterRequest {
 
-    private final HttpRequest parent;
-
     public JdiscFilterRequest(HttpRequest parent) {
         super(parent);
-        this.parent = parent;
     }
-
-    @SuppressWarnings("removal")
-    @Override
-    public HttpRequest getParentRequest() { return parent; }
 
 }
