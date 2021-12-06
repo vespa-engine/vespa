@@ -107,3 +107,160 @@ annotationtype[].id int
 annotationtype[].name string
 annotationtype[].datatype int default=-1
 annotationtype[].inherits[].id int
+
+
+# Here starts a new model for how datatypes are configured, where
+# everything is per document-type, and each documenttype contains the
+# datatypes it defines.  Will be used (only?) if the arrays above
+# (datatype[] and annotationtype[]) are empty.
+
+
+# Note: we will include the built-in "document" document
+# type that all other doctypes inherit from also, in order
+# to get all the primitive and built-in types declared
+# with an idx we can refer to.
+
+## Name of the document type. Must be unique.
+doctype[].name string
+
+# Note: indexes are only meaningful as internal references in this
+# config; they will typically be sequential (1,2,3,...)  in the order
+# that they are generated (but nothing should depend on that).
+
+## Index of this type (as a datatype which can be referred to).
+doctype[].idx int
+
+# Could also use name here?
+## Specify document types to inherit
+doctype[].inherits[].idx int
+
+## Index of struct defining document fields
+doctype[].contentstruct int
+
+## Field sets available for this document type
+doctype[].fieldsets{}.fields[] string
+
+## Imported fields (specified outside the document block in the schema)
+doctype[].importedfield[].name string
+
+# Everything below here is configuration of data types defined by
+# this document type.
+
+# Primitive types must be present as built-in static members.
+
+## Index of primitive type
+doctype[].primitivetype[].idx int
+
+## An internal ID for this primitive type
+doctype[].primitivetype[].internalid int
+
+
+# Arrays are the simplest collection type:
+
+## Index of this array type
+doctype[].arraytype[].idx int
+
+## Index of the element type this array type contains
+doctype[].arraytype[].elementtype int
+
+
+# Maps are another collection type:
+
+## Index of this map type
+doctype[].maptype[].idx int
+
+## Index of the key type used by this map type
+doctype[].maptype[].keytype int
+
+## Index of the key type used by this map type
+doctype[].maptype[].valuetype int
+
+
+# Weighted sets are more complicated;
+# they can be considered as an collection
+# of unique elements where each element has
+# an associated weight:
+
+## Index of this weighted set type
+doctype[].wsettype[].idx int
+
+## Index of the element types contained in this weighted set type
+doctype[].wsettype[].elementtype int
+
+## Should an update to a nonexistent element cause it to be created 
+doctype[].wsettype[].createifnonexistent bool default=false
+
+## Should an element in a weighted set be removed if an update changes the weight to 0
+doctype[].wsettype[].removeifzero bool default=false
+
+
+# Tensors have their own type system
+
+## Index of this tensor type
+doctype[].tensortype[].idx int
+
+## Description of the type of the actual tensors contained
+doctype[].tensortype[].detailedtype string
+
+
+# Document references refer to parent documents that a document can
+# import fields from:
+
+## Index of this reference data type:
+doctype[].documentref[].idx int
+
+# Could also use name?
+## Index of the document type this reference type refers to:
+doctype[].documentref[].targettype int
+
+
+# Annotation types are another world, but are modeled here
+# as if they were also datatypes contained inside document types:
+
+## Index of an annotation type.
+doctype[].annotationtype[].idx int
+
+## Name of the annotation type.
+doctype[].annotationtype[].name string
+
+# Could we somehow avoid this?
+## Internal id of this annotation type
+doctype[].annotationtype[].internalid int
+
+## Index of contained datatype of the annotation type, if any
+doctype[].annotationtype[].datatype int default=-1
+
+## Index of annotation type that this type inherits.
+doctype[].annotationtype[].inherits[].idx int
+
+
+# Annotation references are field values referring to
+# an annotation of a certain annotation type.
+
+## Index of this annotation reference type
+doctype[].annotationref[].idx int
+
+## Index of the annotation type this annotation reference type refers to
+doctype[].annotationref[].annotationtype int
+
+
+# A struct is just a named collections of fields:
+
+## Index of this struct type
+doctype[].structtype[].idx int
+
+## Name of the struct type. Must be unique within documenttype.
+doctype[].structtype[].name string
+
+## Index of another struct type to inherit
+doctype[].structtype[].inherits[].type int
+
+## Name of a struct field. Must be unique within the struct type.
+doctype[].structtype[].field[].name string
+
+## The "field id" - used in serialized format!
+doctype[].structtype[].field[].internalid int
+
+## Index of the type of this field
+doctype[].structtype[].field[].type int
+
