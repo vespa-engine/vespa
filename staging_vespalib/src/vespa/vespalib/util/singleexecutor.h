@@ -47,6 +47,7 @@ private:
     uint64_t numTasks() const {
         return _wp.load(std::memory_order_relaxed) - _rp.load(std::memory_order_acquire);
     }
+    const double                _watermarkRatio;
     std::atomic<uint32_t>       _taskLimit;
     std::atomic<uint32_t>       _wantedTaskLimit;
     std::atomic<uint64_t>       _rp;

@@ -11,7 +11,8 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit)
 { } 
 
 SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t watermark, duration reactionTime)
-    : _taskLimit(vespalib::roundUp2inN(taskLimit)),
+    : _watermarkRatio(watermark < taskLimit ? double(watermark) / taskLimit : 1.0),
+      _taskLimit(vespalib::roundUp2inN(taskLimit)),
       _wantedTaskLimit(_taskLimit.load()),
       _rp(0),
       _tasks(std::make_unique<Task::UP[]>(_taskLimit)),
@@ -27,7 +28,7 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t wat
       _wakeupConsumerAt(0),
       _producerNeedWakeupAt(0),
       _wp(0),
-      _watermark(std::min(_taskLimit.load(), (watermark*_taskLimit)/taskLimit)),
+      _watermark(_taskLimit.load()*_watermarkRatio),
       _reactionTime(reactionTime),
       _closed(false)
 {
@@ -158,9 +159,8 @@ SingleExecutor::wait_for_room(Lock & lock) {
     if (taskLimit != _wantedTaskLimit.load(std::memory_order_relaxed)) {
         drain(lock);
         _tasks = std::make_unique<Task::UP[]>(_wantedTaskLimit);
-        double waterMarkRatio = double(get_watermark()) / _taskLimit.load(std::memory_order_relaxed);
         _taskLimit = _wantedTaskLimit.load();
-        _watermark = _taskLimit * waterMarkRatio;
+        _watermark = _taskLimit * _watermarkRatio;
     }
     _queueSize.add(numTasks());
     while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
