@@ -71,8 +71,9 @@ public class AutoscalingMaintainerTester {
         return provisioningTester.deploy(application, cluster, capacity);
     }
 
-    public void addMeasurements(float cpu, float mem, float disk, long generation, int count, ApplicationId applicationId) {
+    public Duration addMeasurements(float cpu, float mem, float disk, long generation, int count, ApplicationId applicationId) {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
+        Instant startTime = clock().instant();
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 nodeRepository().metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
@@ -82,7 +83,9 @@ public class AutoscalingMaintainerTester {
                                                                                                       true,
                                                                                                       true,
                                                                                                       0.0))));
+            clock().advance(Duration.ofSeconds(150));
         }
+        return Duration.between(startTime, clock().instant());
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */

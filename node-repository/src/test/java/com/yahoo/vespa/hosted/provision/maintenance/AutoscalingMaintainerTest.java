@@ -89,11 +89,9 @@ public class AutoscalingMaintainerTest {
         tester.deploy(app1, cluster1, app1Capacity);
 
         // Measure overload
-        tester.clock().advance(Duration.ofSeconds(1));
         tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
 
         // Causes autoscaling
-        tester.clock().advance(Duration.ofSeconds(1));
         tester.clock().advance(Duration.ofMinutes(10));
         Instant firstMaintenanceTime = tester.clock().instant();
         tester.maintainer().maintain();
@@ -108,16 +106,12 @@ public class AutoscalingMaintainerTest {
         assertEquals(firstMaintenanceTime.toEpochMilli(), events.get(1).at().toEpochMilli());
 
         // Measure overload still, since change is not applied, but metrics are discarded
-        tester.clock().advance(Duration.ofSeconds(1));
         tester.addMeasurements(0.9f, 0.9f, 0.9f, 0, 500, app1);
-        tester.clock().advance(Duration.ofSeconds(1));
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
         // Measure underload, but no autoscaling since we still haven't measured we're on the new config generation
-        tester.clock().advance(Duration.ofSeconds(1));
         tester.addMeasurements(0.1f, 0.1f, 0.1f, 0, 500, app1);
-        tester.clock().advance(Duration.ofSeconds(1));
         tester.maintainer().maintain();
         assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
 
@@ -126,8 +120,9 @@ public class AutoscalingMaintainerTest {
         tester.clock().advance(Duration.ofMinutes(5));
         tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 1, app1);
         tester.maintainer().maintain();
+        assertEquals(firstMaintenanceTime.toEpochMilli(), tester.deployer().lastDeployTime(app1).get().toEpochMilli());
         // - measure underload
-        tester.clock().advance(Duration.ofHours(1));
+        tester.clock().advance(Duration.ofDays(4)); // Exit cooling period
         tester.addMeasurements(0.1f, 0.1f, 0.1f, 1, 500, app1);
         Instant lastMaintenanceTime = tester.clock().instant();
         tester.maintainer().maintain();
@@ -204,6 +199,34 @@ public class AutoscalingMaintainerTest {
     }
 
     @Test
+    public void test_autoscaling_ignores_high_cpu_right_after_generation_change() {
+        ApplicationId app1 = AutoscalingMaintainerTester.makeApplicationId("app1");
+        ClusterSpec cluster1 = AutoscalingMaintainerTester.containerClusterSpec();
+        NodeResources resources = new NodeResources(4, 4, 10, 1);
+        ClusterResources min = new ClusterResources(2, 1, resources);
+        ClusterResources max = new ClusterResources(20, 1, resources);
+        var capacity = Capacity.from(min, max);
+        var tester = new AutoscalingMaintainerTester(new MockDeployer.ApplicationContext(app1, cluster1, capacity));
+
+        tester.deploy(app1, cluster1, capacity);
+        // fast completion
+        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
+        tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
+        tester.maintainer().maintain();
+        assertEquals("Scale up: " + tester.cluster(app1, cluster1).autoscalingStatus(),
+                     1,
+                     tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
+
+        // fast completion, with initially overloaded cpu
+        tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 1, app1);
+        tester.addMeasurements(0.2f, 0.3f, 0.3f, 1, 1, app1);
+        tester.maintainer().maintain();
+        assertEquals("No autoscaling since we ignore the (first) data point in the warup period",
+                     1,
+                     tester.cluster(app1, cluster1).lastScalingEvent().get().generation());
+    }
+
+    @Test
     public void test_cd_autoscaling_test() {
         ApplicationId app1 = AutoscalingMaintainerTester.makeApplicationId("app1");
         ClusterSpec cluster1 = AutoscalingMaintainerTester.containerClusterSpec();
@@ -240,7 +263,7 @@ public class AutoscalingMaintainerTest {
 
         clock.advance(completionTime);
         float load = down ? 0.1f : 1.0f;
-        tester.addMeasurements(load, load, load, generation, 200, application);
+        tester.addMeasurements(load, load, load, generation, 1, application);
         tester.maintainer().maintain();
         assertEvent("Measured completion of the last scaling event, but no new autoscaling yet",
                     generation, Optional.of(clock.instant()),
