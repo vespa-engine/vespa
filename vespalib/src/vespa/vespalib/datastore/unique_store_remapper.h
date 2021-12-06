@@ -3,6 +3,7 @@
 #pragma once
 
 #include "entryref.h"
+#include "entry_ref_filter.h"
 #include <vector>
 #include <vespa/vespalib/stllike/allocator.h>
 
@@ -18,11 +19,11 @@ public:
     using RefType = RefT;
 
 protected:
-    std::vector<bool> _compacting_buffer;
+    EntryRefFilter _compacting_buffer;
     std::vector<std::vector<EntryRef, allocator_large<EntryRef>>> _mapping;
 public:
     UniqueStoreRemapper()
-        : _compacting_buffer(),
+        : _compacting_buffer(RefT::numBuffers(), RefT::offset_bits),
           _mapping()
     {
     }
@@ -30,11 +31,11 @@ public:
 
     EntryRef remap(EntryRef ref) const {
         if (ref.valid()) {
-            RefType internal_ref(ref);
-            if (!_compacting_buffer[internal_ref.bufferId()]) {
+            if (!_compacting_buffer.has(ref)) {
                 // No remapping for references to buffers not being compacted
                 return ref;
             } else {
+                RefType internal_ref(ref);
                 auto &inner_mapping = _mapping[internal_ref.bufferId()];
                 assert(internal_ref.unscaled_offset() < inner_mapping.size());
                 EntryRef mapped_ref = inner_mapping[internal_ref.unscaled_offset()];

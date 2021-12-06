@@ -18,6 +18,7 @@ class MemoryUsage;
 }
 namespace vespalib::datastore {
 
+class EntryRefFilter;
 struct ICompactable;
 
 class ShardedHashComparator {
@@ -158,10 +159,26 @@ public:
     size_t size() const noexcept { return _count; }
     MemoryUsage get_memory_usage() const;
     void foreach_key(const std::function<void(EntryRef)>& callback) const;
-    void move_keys(ICompactable& compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits);
+    void move_keys(ICompactable& compactable, const EntryRefFilter &compacting_buffers);
+    /*
+     * Scan dictionary and call normalize function for each value. If
+     * returned value is different then write back the modified value to
+     * the dictionary. Used when clearing all posting lists.
+     */
     bool normalize_values(const std::function<EntryRef(EntryRef)>& normalize);
-    bool normalize_values(const std::function<void(std::vector<EntryRef>&)>& normalize, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits);
-    void foreach_value(const std::function<void(const std::vector<EntryRef>&)>& callback, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits);
+    /*
+     * Scan dictionary and call normalize function for batches of values
+     * that pass the filter. Write back modified values to the dictionary.
+     * Used by compaction of posting lists when moving short arrays,
+     * bitvectors or btree roots.
+     */
+    bool normalize_values(const std::function<void(std::vector<EntryRef>&)>& normalize, const EntryRefFilter& filter);
+    /*
+     * Scan dictionary and call callback function for batches of values
+     * that pass the filter. Used by compaction of posting lists when
+     * moving btree nodes.
+     */
+    void foreach_value(const std::function<void(const std::vector<EntryRef>&)>& callback, const EntryRefFilter& filter);
 };
 
 }

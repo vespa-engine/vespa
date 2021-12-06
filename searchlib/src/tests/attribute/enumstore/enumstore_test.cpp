@@ -8,6 +8,7 @@ LOG_SETUP("enumstore_test");
 
 using Type = search::DictionaryConfig::Type;
 using vespalib::datastore::EntryRef;
+using vespalib::datastore::EntryRefFilter;
 using RefT = vespalib::datastore::EntryRefT<22>;
 
 namespace vespalib::datastore {
@@ -714,6 +715,20 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::clear_sample_values(uin
     }
 }
 
+namespace {
+
+EntryRefFilter make_entry_ref_filter(bool one_filter)
+{
+    if (one_filter) {
+        EntryRefFilter filter(RefT::numBuffers(), RefT::offset_bits);
+        filter.add_buffer(3);
+        return filter;
+    }
+    return EntryRefFilter::create_all_filter(RefT::numBuffers(), RefT::offset_bits);
+}
+
+}
+
 template <typename EnumStoreTypeAndDictionaryType>
 void
 EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_normalize_posting_lists(bool use_filter, bool one_filter)
@@ -734,18 +749,12 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_normalize_posting_
     }
     EXPECT_EQ(exp_refs, get_sample_values(large_population));
     if (use_filter) {
-        std::vector<bool> filter;
-        if (one_filter) {
-            filter = std::vector<bool>(RefT::numBuffers());
-            filter[3] = true;
-        } else {
-            filter = std::vector<bool>(RefT::numBuffers(), true);
-        }
+        auto filter = make_entry_ref_filter(one_filter);
         auto dummy = [](std::vector<EntryRef>&) noexcept { };
         auto adjust_refs = [](std::vector<EntryRef> &refs) noexcept { for (auto &ref : refs) { ref = adjust_fake_pidx(ref); } };
-        EXPECT_FALSE(dict.normalize_posting_lists(dummy, filter, RefT::offset_bits));
+        EXPECT_FALSE(dict.normalize_posting_lists(dummy, filter));
         EXPECT_EQ(exp_refs, get_sample_values(large_population));
-        EXPECT_TRUE(dict.normalize_posting_lists(adjust_refs, filter, RefT::offset_bits));
+        EXPECT_TRUE(dict.normalize_posting_lists(adjust_refs, filter));
     } else {
         auto dummy = [](EntryRef posting_idx) noexcept { return posting_idx; };
         auto adjust_refs = [](EntryRef ref) noexcept { return adjust_fake_pidx(ref); };
@@ -761,21 +770,15 @@ template <typename EnumStoreTypeAndDictionaryType>
 void
 EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_foreach_posting_list(bool one_filter)
 {
-    std::vector<bool> filter;
-    if (one_filter) {
-        filter = std::vector<bool>(RefT::numBuffers());
-        filter[3] = true;
-    } else {
-        filter = std::vector<bool>(RefT::numBuffers(), true);
-    }
+    auto filter = make_entry_ref_filter(one_filter);
     populate_sample_data(large_population);
     auto& dict = store.get_dictionary();
     std::vector<EntryRef> exp_refs;
     auto save_exp_refs = [&exp_refs](std::vector<EntryRef>& refs) { exp_refs.insert(exp_refs.end(), refs.begin(), refs.end()); };
-    EXPECT_FALSE(dict.normalize_posting_lists(save_exp_refs, filter, RefT::offset_bits));
+    EXPECT_FALSE(dict.normalize_posting_lists(save_exp_refs, filter));
     std::vector<EntryRef> act_refs;
     auto save_act_refs = [&act_refs](const std::vector<EntryRef>& refs) { act_refs.insert(act_refs.end(), refs.begin(), refs.end()); };
-    dict.foreach_posting_list(save_act_refs, filter, RefT::offset_bits);
+    dict.foreach_posting_list(save_act_refs, filter);
     EXPECT_EQ(exp_refs, act_refs);
     clear_sample_values(large_population);
 }

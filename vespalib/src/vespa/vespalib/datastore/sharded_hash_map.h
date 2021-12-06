@@ -11,6 +11,7 @@ namespace vespalib { class MemoryUsage; }
 namespace vespalib::datastore {
 
 class EntryComparator;
+class EntryRefFilter;
 class FixedSizeHashMap;
 struct ICompactable;
 
@@ -57,10 +58,10 @@ public:
     const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
     MemoryUsage get_memory_usage() const;
     void foreach_key(std::function<void(EntryRef)> callback) const;
-    void move_keys(ICompactable& compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits);
+    void move_keys(ICompactable& compactable, const EntryRefFilter& compacting_buffers);
     bool normalize_values(std::function<EntryRef(EntryRef)> normalize);
-    bool normalize_values(std::function<void(std::vector<EntryRef>&)> normalize, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits);
-    void foreach_value(std::function<void(const std::vector<EntryRef>&)> callback, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits);
+    bool normalize_values(std::function<void(std::vector<EntryRef>&)> normalize, const EntryRefFilter& filter);
+    void foreach_value(std::function<void(const std::vector<EntryRef>&)> callback, const EntryRefFilter& filter);
     bool has_held_buffers() const;
     void compact_worst_shard();
 };

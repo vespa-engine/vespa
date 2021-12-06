@@ -79,7 +79,7 @@ public:
     UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry) override;
     EntryRef find(const EntryComparator& comp) override;
     void remove(const EntryComparator& comp, EntryRef ref) override;
-    void move_keys(ICompactable& compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits) override;
+    void move_keys(ICompactable& compactable, const EntryRefFilter& compacting_buffers) override;
     uint32_t get_num_uniques() const override;
     vespalib::MemoryUsage get_memory_usage() const override;
     void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) override;

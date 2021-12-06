@@ -312,7 +312,7 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(
 
 template <>
 bool
-EnumStoreDictionary<EnumTree>::normalize_posting_lists(std::function<void(std::vector<EntryRef>&)>, const std::vector<bool> &, uint32_t)
+EnumStoreDictionary<EnumTree>::normalize_posting_lists(std::function<void(std::vector<EntryRef>&)>, const EntryRefFilter&)
 {
     LOG_ABORT("should not be reached");
 }
@@ -399,7 +399,7 @@ ChangeWriter<HashDictionaryT>::write(const std::vector<EntryRef> &refs)
 
 template <typename BTreeDictionaryT, typename HashDictionaryT>
 bool
-EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(std::function<void(std::vector<EntryRef>&)> normalize, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits)
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(std::function<void(std::vector<EntryRef>&)> normalize, const EntryRefFilter& filter)
 {
     if constexpr (has_btree_dictionary) {
         std::vector<EntryRef> refs;
@@ -413,8 +413,7 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(
         for (auto itr = dict.begin(); itr.valid(); ++itr) {
             EntryRef ref(itr.getData());
             if (ref.valid()) {
-                uint32_t buffer_id = ref.buffer_id(entry_ref_offset_bits);
-                if (filter[buffer_id]) {
+                if (filter.has(ref)) {
                     refs.emplace_back(ref);
                     change_writer.emplace_back(itr.getKey(), itr.getWData());
                     if (refs.size() >= refs.capacity()) {
@@ -431,20 +430,20 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(
         }
         return changed;
     } else {
-        return this->_hash_dict.normalize_values(normalize, filter, entry_ref_offset_bits);
+        return this->_hash_dict.normalize_values(normalize, filter);
     }
 }
 
 template <>
 void
-EnumStoreDictionary<EnumTree>::foreach_posting_list(std::function<void(const std::vector<EntryRef>&)>, const std::vector<bool>&, uint32_t)
+EnumStoreDictionary<EnumTree>::foreach_posting_list(std::function<void(const std::vector<EntryRef>&)>, const EntryRefFilter&)
 {
     LOG_ABORT("should not be reached");
 }
 
 template <typename BTreeDictionaryT, typename HashDictionaryT>
 void
-EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::foreach_posting_list(std::function<void(const std::vector<EntryRef>&)> callback, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits)
+EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::foreach_posting_list(std::function<void(const std::vector<EntryRef>&)> callback, const EntryRefFilter& filter)
 {
     if constexpr (has_btree_dictionary) {
         std::vector<EntryRef> refs;
@@ -453,8 +452,7 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::foreach_posting_list(std
         for (auto itr = dict.begin(); itr.valid(); ++itr) {
             EntryRef ref(itr.getData());
             if (ref.valid()) {
-                uint32_t buffer_id = ref.buffer_id(entry_ref_offset_bits);
-                if (filter[buffer_id]) {
+                if (filter.has(ref)) {
                     refs.emplace_back(ref);
                     if (refs.size() >= refs.capacity()) {
                         callback(refs);
@@ -467,7 +465,7 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::foreach_posting_list(std
             callback(refs);
         }
     } else {
-        this->_hash_dict.foreach_value(callback, filter, entry_ref_offset_bits);
+        this->_hash_dict.foreach_value(callback, filter);
     }
 }
 

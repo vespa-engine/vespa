@@ -2,6 +2,7 @@
 
 #include "fixed_size_hash_map.h"
 #include "entry_comparator.h"
+#include "entry_ref_filter.h"
 #include "i_compactable.h"
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/memoryusage.h>
@@ -182,7 +183,7 @@ FixedSizeHashMap::foreach_key(const std::function<void(EntryRef)>& callback) con
 }
 
 void
-FixedSizeHashMap::move_keys(ICompactable& compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits)
+FixedSizeHashMap::move_keys(ICompactable& compactable, const EntryRefFilter &compacting_buffers)
 {
     for (auto& chain_head : _chain_heads) {
         uint32_t node_idx = chain_head.load_relaxed();
@@ -190,8 +191,7 @@ FixedSizeHashMap::move_keys(ICompactable& compactable, const std::vector<bool>& 
             auto& node = _nodes[node_idx];
             EntryRef old_ref = node.get_kv().first.load_relaxed();
             assert(old_ref.valid());
-            uint32_t buffer_id = old_ref.buffer_id(entry_ref_offset_bits);
-            if (compacting_buffers[buffer_id]) {
+            if (compacting_buffers.has(old_ref)) {
                 EntryRef new_ref = compactable.move(old_ref);
                 node.get_kv().first.store_release(new_ref);
             }
@@ -261,7 +261,7 @@ ChangeWriter::write(const std::vector<EntryRef> &refs)
 }
 
 bool
-FixedSizeHashMap::normalize_values(const std::function<void(std::vector<EntryRef>&)>& normalize, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits)
+FixedSizeHashMap::normalize_values(const std::function<void(std::vector<EntryRef>&)>& normalize, const EntryRefFilter& filter)
 {
     std::vector<EntryRef> refs;
     refs.reserve(1024);
@@ -273,8 +273,7 @@ FixedSizeHashMap::normalize_values(const std::function<void(std::vector<EntryRef
             auto& node = _nodes[node_idx];
             EntryRef ref = node.get_kv().second.load_relaxed();
             if (ref.valid()) {
-                uint32_t buffer_id = ref.buffer_id(entry_ref_offset_bits);
-                if (filter[buffer_id]) {
+                if (filter.has(ref)) {
                     refs.emplace_back(ref);
                     change_writer.emplace_back(node.get_kv().second);
                     if (refs.size() >= refs.capacity()) {
@@ -295,7 +294,7 @@ FixedSizeHashMap::normalize_values(const std::function<void(std::vector<EntryRef
 }
 
 void
-FixedSizeHashMap::foreach_value(const std::function<void(const std::vector<EntryRef>&)>& callback, const std::vector<bool>& filter, uint32_t entry_ref_offset_bits)
+FixedSizeHashMap::foreach_value(const std::function<void(const std::vector<EntryRef>&)>& callback, const EntryRefFilter& filter)
 {
     std::vector<EntryRef> refs;
     refs.reserve(1024);
@@ -305,8 +304,7 @@ FixedSizeHashMap::foreach_value(const std::function<void(const std::vector<Entry
             auto& node = _nodes[node_idx];
             EntryRef ref = node.get_kv().second.load_relaxed();
             if (ref.valid()) {
-                uint32_t buffer_id = ref.buffer_id(entry_ref_offset_bits);
-                if (filter[buffer_id]) {
+                if (filter.has(ref)) {
                     refs.emplace_back(ref);
                     if (refs.size() >= refs.capacity()) {
                         callback(refs);

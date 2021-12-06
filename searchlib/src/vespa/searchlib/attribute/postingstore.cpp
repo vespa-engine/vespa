@@ -7,11 +7,13 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreerootbase.cpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/entry_ref_filter.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 
 namespace search::attribute {
 
 using vespalib::btree::BTreeNoLeafData;
+using vespalib::datastore::EntryRefFilter;
 
 // #define FORCE_BITVECTORS
 
@@ -127,13 +129,11 @@ PostingStore<DataT>::removeSparseBitVectors()
         }
     }
     if (needscan) {
-        std::vector<bool> filter(RefType::numBuffers());
-        for (uint32_t buffer_id : _bvType.get_active_buffers()) {
-            filter[buffer_id] = true;
-        }
+        EntryRefFilter filter(RefType::numBuffers(), RefType::offset_bits);
+        filter.add_buffers(_bvType.get_active_buffers());
         res = _dictionary.normalize_posting_lists([this](std::vector<EntryRef>& refs)
                                                   { consider_remove_sparse_bitvector(refs); },
-                                                  filter, RefType::offset_bits);
+                                                  filter);
     }
     return res;
 }
@@ -727,16 +727,12 @@ void
 PostingStore<DataT>::compact_worst_btree_nodes()
 {
     auto to_hold = this->start_compact_worst_btree_nodes();
-    std::vector<bool> filter(RefType::numBuffers());
+    EntryRefFilter filter(RefType::numBuffers(), RefType::offset_bits);
     // Only look at buffers containing bitvectors and btree roots
-    for (uint32_t buffer_id : this->_treeType.get_active_buffers()) {
-        filter[buffer_id] = true;
-    }
-    for (uint32_t buffer_id : _bvType.get_active_buffers()) {
-        filter[buffer_id] = true;
-    }
+    filter.add_buffers(this->_treeType.get_active_buffers());
+    filter.add_buffers(_bvType.get_active_buffers());
     _dictionary.foreach_posting_list([this](const std::vector<EntryRef>& refs)
-                                     { move_btree_nodes(refs); }, filter, RefType::offset_bits);
+                                     { move_btree_nodes(refs); }, filter);
     this->finish_compact_worst_btree_nodes(to_hold);
 }
 
@@ -746,24 +742,22 @@ PostingStore<DataT>::compact_worst_buffers()
 {
     auto to_hold = this->start_compact_worst_buffers();
     bool compact_btree_roots = false;
-    std::vector<bool> filter(RefType::numBuffers());
+    EntryRefFilter filter(RefType::numBuffers(), RefType::offset_bits);
+    filter.add_buffers(to_hold);
     // Start with looking at buffers being compacted
     for (uint32_t buffer_id : to_hold) {
         if (isBTree(_store.getBufferState(buffer_id).getTypeId())) {
             compact_btree_roots = true;
         }
-        filter[buffer_id] = true;
     }
     if (compact_btree_roots) {
         // If we are compacting btree roots then we also have to look at bitvector
         // buffers
-        for (uint32_t buffer_id : _bvType.get_active_buffers()) {
-            filter[buffer_id] = true;
-        }
+        filter.add_buffers(_bvType.get_active_buffers());
     }
     _dictionary.normalize_posting_lists([this](std::vector<EntryRef>& refs)
                                         { return move(refs); },
-                                        filter, RefType::offset_bits);
+                                        filter);
     this->finishCompact(to_hold);
 }
 

@@ -102,11 +102,9 @@ private:
     std::vector<uint32_t> _bufferIdsToCompact;
 
     void allocMapping() {
-        _compacting_buffer.resize(RefT::numBuffers());
         _mapping.resize(RefT::numBuffers());
         for (const auto bufferId : _bufferIdsToCompact) {
             BufferState &state = _dataStore.getBufferState(bufferId);
-            _compacting_buffer[bufferId] = true;
             _mapping[bufferId].resize(state.get_used_arrays());
         }
     }
@@ -124,7 +122,7 @@ private:
     }
     
     void fillMapping() {
-        _dict.move_keys(*this, _compacting_buffer, RefT::offset_bits);
+        _dict.move_keys(*this, _compacting_buffer);
     }
 
 public:
@@ -140,6 +138,7 @@ public:
           _bufferIdsToCompact(std::move(bufferIdsToCompact))
     {
         if (!_bufferIdsToCompact.empty()) {
+            _compacting_buffer.add_buffers(_bufferIdsToCompact);
             allocMapping();
             fillMapping();
         }
