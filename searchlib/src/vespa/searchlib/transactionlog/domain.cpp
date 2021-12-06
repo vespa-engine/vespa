@@ -403,13 +403,10 @@ void
 Domain::doCommit(std::unique_ptr<CommitChunk> chunk) {
     const Packet & packet = chunk->getPacket();
     if (packet.empty()) return;
-    
-    vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
-    Packet::Entry entry;
-    entry.deserialize(is);
-    assert(entry.serial() == packet.range().from());
-    DomainPart::SP dp = optionallyRotateFile(entry.serial());
-    dp->commit(entry.serial(), packet);
+
+    SerialNum firstSerial = packet.range().from();
+    DomainPart::SP dp = optionallyRotateFile(firstSerial);
+    dp->commit(firstSerial, packet);
     if (_config.getFSyncOnCommit()) {
         dp->sync();
     }
