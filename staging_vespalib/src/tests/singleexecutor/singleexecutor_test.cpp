@@ -37,7 +37,10 @@ void verifyResizeTaskLimit(bool up) {
     std::atomic<uint64_t> allowed(0);
     constexpr uint32_t INITIAL = 20;
     const uint32_t INITIAL_2inN = roundUp2inN(INITIAL);
-    SingleExecutor executor(sequenced_executor, INITIAL, INITIAL/2, 10ms);
+    double waterMarkRatio = 0.5;
+    SingleExecutor executor(sequenced_executor, INITIAL, INITIAL*waterMarkRatio, 10ms);
+    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
+    EXPECT_EQUAL(uint32_t(INITIAL_2inN*waterMarkRatio), executor.get_watermark());
 
     uint32_t targetTaskLimit = up ? 40 : 5;
     uint32_t roundedTaskLimit = roundUp2inN(targetTaskLimit);
@@ -56,6 +59,7 @@ void verifyResizeTaskLimit(bool up) {
     EXPECT_EQUAL(1u, started);
     executor.setTaskLimit(targetTaskLimit);
     EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
+    EXPECT_EQUAL(INITIAL_2inN*waterMarkRatio, executor.get_watermark());
     allowed = 5;
     while (started < 6);
     EXPECT_EQUAL(6u, started);
@@ -74,8 +78,10 @@ void verifyResizeTaskLimit(bool up) {
     while (started < INITIAL + 1);
     EXPECT_EQUAL(INITIAL + 1, started);
     EXPECT_EQUAL(roundedTaskLimit, executor.getTaskLimit());
+    EXPECT_EQUAL(roundedTaskLimit*waterMarkRatio, executor.get_watermark());
     allowed = INITIAL + 1;
 }
+
 TEST("test that resizing up and down works") {
     TEST_DO(verifyResizeTaskLimit(true));
     TEST_DO(verifyResizeTaskLimit(false));
