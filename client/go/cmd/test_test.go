@@ -45,6 +45,15 @@ func TestSuite(t *testing.T) {
 	assert.Equal(t, "", errBytes)
 }
 
+func TestIllegalFileReference(t *testing.T) {
+	client := &mockHttpClient{}
+	client.NextStatus(200)
+	client.NextStatus(200)
+	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-reference.json"}}, t, client)
+	assertRequests([]*http.Request{createRequest("GET", "http://127.0.0.1:8080/search/", "{}")}, client, t)
+	assert.Equal(t, "\nError: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: Error in Step 2\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
+}
+
 func TestProductionTest(t *testing.T) {
 	client := &mockHttpClient{}
 	client.NextStatus(200)

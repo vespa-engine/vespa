@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -77,7 +76,7 @@ func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string)
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
-				testPath := path.Join(rootPath, test.Name())
+				testPath := filepath.Join(rootPath, test.Name())
 				if previousFailed {
 					fmt.Fprintln(stdout, "")
 					previousFailed = false
@@ -122,7 +121,7 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 		fmt.Fprintf(stdout, "%s:", testName)
 	}
 
-	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, path.Dir(testPath))
+	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, filepath.Dir(testPath))
 	if err != nil {
 		fmt.Fprintln(stderr)
 		fatalErrHint(err, fmt.Sprintf("Invalid default parameters for %s", testName), "See https://cloud.vespa.ai/en/reference/testing")
@@ -137,7 +136,7 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 		if step.Name != "" {
 			stepName = fmt.Sprintf("Step: %s", step.Name)
 		}
-		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
+		failure, longFailure, err := verify(step, filepath.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
 		if err != nil {
 			fmt.Fprintln(stderr)
 			fatalErrHint(err, fmt.Sprintf("Error in %s", stepName), "See https://cloud.vespa.ai/en/reference/testing")
@@ -383,7 +382,10 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 	if parametersRaw != nil {
 		var parametersPath string
 		if err := json.Unmarshal(parametersRaw, &parametersPath); err == nil {
-			resolvedParametersPath := path.Join(testsPath, parametersPath)
+			if err = validateRelativePath(parametersPath); err != nil {
+				return nil, err
+			}
+			resolvedParametersPath := filepath.Join(testsPath, parametersPath)
 			parametersRaw, err = ioutil.ReadFile(resolvedParametersPath)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read request parameters at %s: %w", resolvedParametersPath, err)
@@ -401,13 +403,28 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 	var bodyPath string
 	if err := json.Unmarshal(bodyRaw, &bodyPath); err == nil {
-		resolvedBodyPath := path.Join(testsPath, bodyPath)
+		if err = validateRelativePath(bodyPath); err != nil {
+			return nil, err
+		}
+		resolvedBodyPath := filepath.Join(testsPath, bodyPath)
 		bodyRaw, err = ioutil.ReadFile(resolvedBodyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read body file at %s: %w", resolvedBodyPath, err)
 		}
 	}
 	return bodyRaw, nil
+}
+
+func validateRelativePath(relPath string) error {
+	if filepath.IsAbs(relPath) {
+		return fmt.Errorf("path must be relative, but was '%s'", relPath)
+	}
+	cleanPath := filepath.Clean(relPath)
+	fmt.Println(cleanPath)
+	if strings.HasPrefix(cleanPath, "../../../") {
+		return fmt.Errorf("path may not point outside src/test/application, but '%s' does", relPath)
+	}
+	return nil
 }
 
 type test struct {
