@@ -131,6 +131,7 @@ public class FileServer {
         } catch (IOException e) {
             errorDescription = "For" + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'";
             log.warning(errorDescription + " for sending to '" + target.toString() + "'. " + e.toString());
+            fileData.close();
         }
 
         try {
