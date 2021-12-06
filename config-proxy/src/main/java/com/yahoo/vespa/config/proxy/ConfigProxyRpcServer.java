@@ -79,10 +79,6 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
                 this::ping)
                 .methodDesc("ping")
                 .returnDesc(0, "ret code", "return code, 0 is OK"));
-        supervisor.addMethod(new Method("printStatistics", "", "s",
-                this::printStatistics)
-                .methodDesc("printStatistics")
-                .returnDesc(0, "statistics", "Statistics for server"));
         supervisor.addMethod(new Method("listCachedConfig", "", "S",
                 this::listCachedConfig)
                 .methodDesc("list cached configs)")
@@ -141,26 +137,6 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     private void ping(Request req) {
         dispatchRpcRequest(req, () -> {
             req.returnValues().add(new Int32Value(0));
-            req.returnRequest();
-        });
-    }
-
-    /**
-     * Returns a String with statistics data for the server.
-     *
-     * @param req a Request
-     */
-    private void printStatistics(Request req) {
-        dispatchRpcRequest(req, () -> {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\nDelayed responses queue size: ");
-            sb.append(proxyServer.delayedResponses().size());
-            sb.append("\nContents: ");
-            for (DelayedResponse delayed : proxyServer.delayedResponses().responses()) {
-                sb.append(delayed.getRequest().toString()).append("\n");
-            }
-
-            req.returnValues().add(new StringValue(sb.toString()));
             req.returnRequest();
         });
     }

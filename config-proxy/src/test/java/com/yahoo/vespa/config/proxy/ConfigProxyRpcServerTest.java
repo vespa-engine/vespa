@@ -133,7 +133,7 @@ public class ConfigProxyRpcServerTest {
     }
 
     /**
-     * Tests printStatistics RPC command
+     * Tests listSourceConnections RPC command
      */
     @Test
     public void testRpcMethodListSourceConnections() throws ListenFailedException {
@@ -148,20 +148,6 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(2));
         assertThat(ret[0], is("Current source: " + configSourceAddress));
         assertThat(ret[1], is("All sources:\n" + configSourceAddress + "\n"));
-    }
-
-    /**
-     * Tests printStatistics RPC command
-     */
-    @Test
-    public void testRpcMethodPrintStatistics() {
-        Request req = new Request("printStatistics");
-        client.invoke(req);
-        assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
-        assertThat(req.returnValues().get(0).asString(), is("\n" +
-                "Delayed responses queue size: 0\n" +
-                "Contents: "));
     }
 
     /**
