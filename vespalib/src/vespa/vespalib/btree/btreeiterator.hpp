@@ -983,6 +983,7 @@ moveFirstLeafNode(BTreeNode::Ref rootRef)
             InternalNodeTypeRefPair iPair = allocator.moveInternalNode(node);
             nodeRef = iPair.ref;
             node = iPair.data;
+            std::atomic_thread_fence(std::memory_order_release);
             pnode->setChild(0, nodeRef);
             moved = true;
         }
@@ -994,6 +995,7 @@ moveFirstLeafNode(BTreeNode::Ref rootRef)
         LeafNodeTypeRefPair
             lPair(allocator.moveLeafNode(_leaf.getNode()));
         _leaf.setNode(lPair.data);
+        std::atomic_thread_fence(std::memory_order_release);
         node->setChild(0, lPair.ref);
         moved = true;
     }

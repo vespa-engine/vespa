@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io.reader;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 
 import java.io.IOException;
 import java.io.Reader;

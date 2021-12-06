@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastos/file.h>
 #include <thread>
 
@@ -33,8 +35,8 @@ void fillDomainTest(Session * s1, size_t numPackets, size_t numEntries, size_t e
 uint32_t countFiles(const vespalib::string &dir);
 void checkFilledDomainTest(Session &s1, size_t numEntries);
 bool visitDomainTest(TransLogClient & tls, Session * s1, const vespalib::string & name);
-void createAndFillDomain(const vespalib::string & name, Encoding encoding, size_t preExistingDomains);
-void verifyDomain(const vespalib::string & name);
+void createAndFillDomain(const vespalib::string & dir, const vespalib::string & name, Encoding encoding, size_t preExistingDomains);
+void verifyDomain(const vespalib::string & dir, const vespalib::string & name);
 
 vespalib::string
 myhex(const void * b, size_t sz)
@@ -48,6 +50,12 @@ myhex(const void * b, size_t sz)
         s += hextab[c[i] & 0x0f];
     }
     return s;
+}
+
+DomainConfig
+createDomainConfig(uint32_t partSizeLimit) {
+    return DomainConfig().setPartSizeLimit(partSizeLimit)
+                         .setEncoding(Encoding(Encoding::xxh64, Encoding::none_multi));
 }
 
 class CallBackTest : public Callback
@@ -350,7 +358,7 @@ void
 fillDomainTest(Session * s1, size_t numPackets, size_t numEntries, size_t entrySize)
 {
     size_t value(0);
-    std::vector<char> entryBuffer(entrySize); 
+    std::vector<char> entryBuffer(entrySize);
     for(size_t i=0; i < numPackets; i++) {
         std::unique_ptr<Packet> p(new Packet(DEFAULT_PACKET_SIZE));
         for(size_t j=0; j < numEntries; j++, value++) {
@@ -457,11 +465,12 @@ getMaxSessionRunTime(TransLogServer &tls, const vespalib::string &domain)
     return tls.getDomainStats()[domain].maxSessionRunTime.count();
 }
 
-void createAndFillDomain(const vespalib::string & name, Encoding encoding, size_t preExistingDomains)
+void
+createAndFillDomain(const vespalib::string & dir, const vespalib::string & name, Encoding encoding, size_t preExistingDomains)
 {
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tlss("test13", 18377, ".", fileHeaderContext,
-                        DomainConfig().setPartSizeLimit(0x1000000).setEncoding(encoding), 4);
+    TransLogServer tlss(dir, 18377, ".", fileHeaderContext,
+                        createDomainConfig(0x1000000).setEncoding(encoding), 4);
     TransLogClient tls("tcp/localhost:18377");
 
     createDomainTest(tls, name, preExistingDomains);
@@ -469,19 +478,21 @@ void createAndFillDomain(const vespalib::string & name, Encoding encoding, size_
     fillDomainTest(s1.get(), name);
 }
 
-void verifyDomain(const vespalib::string & name) {
+void
+verifyDomain(const vespalib::string & dir, const vespalib::string & name) {
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tlss("test13", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
+    TransLogServer tlss(dir, 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
     TransLogClient tls("tcp/localhost:18377");
     auto s1 = openDomainTest(tls, name);
     visitDomainTest(tls, s1.get(), name);
 }
 
-}
 
-TEST("testVisitOverGeneratedDomain") {
+
+void
+testVisitOverGeneratedDomain(const vespalib::string & testDir) {
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tlss("test7", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
+    TransLogServer tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
     TransLogClient tls("tcp/localhost:18377");
 
     vespalib::string name("test1");
@@ -495,10 +506,11 @@ TEST("testVisitOverGeneratedDomain") {
     EXPECT_GREATER(maxSessionRunTime, 0);
 }
 
-TEST("testVisitOverPreExistingDomain") {
+void
+testVisitOverPreExistingDomain(const vespalib::string & testDir) {
     // Depends on Test::testVisitOverGeneratedDomain()
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tlss("test7", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
+    TransLogServer tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
     TransLogClient tls("tcp/localhost:18377");
 
     vespalib::string name("test1");
@@ -506,9 +518,10 @@ TEST("testVisitOverPreExistingDomain") {
     visitDomainTest(tls, s1.get(), name);
 }
 
-TEST("partialUpdateTest") {
+void
+partialUpdateTest(const vespalib::string & testDir) {
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tlss("test7", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
+    TransLogServer tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
     TransLogClient tls("tcp/localhost:18377");
 
     auto s1 = openDomainTest(tls, "test1");
@@ -561,17 +574,33 @@ TEST("partialUpdateTest") {
     ASSERT_TRUE( ca3.hasSerial(7) );
 }
 
-TEST("testCrcVersions") {
-    createAndFillDomain("ccitt_crc32", Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none), 0);
-    createAndFillDomain("xxh64", Encoding(Encoding::Crc::xxh64, Encoding::Compression::none), 1);
+}
 
-    verifyDomain("ccitt_crc32");
-    verifyDomain("xxh64");
+TEST("testVisitAndUpdates") {
+    test::DirectoryHandler testDir("test7");
+    testVisitOverGeneratedDomain(testDir.getDir());
+    testVisitOverPreExistingDomain(testDir.getDir());
+    partialUpdateTest(testDir.getDir());
+}
+
+
+TEST("testCrcVersions") {
+    test::DirectoryHandler testDir("test13");
+    try {
+        createAndFillDomain(testDir.getDir(),"ccitt_crc32", Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none), 0);
+        ASSERT_TRUE(false);
+    } catch (vespalib::IllegalArgumentException & e) {
+        EXPECT_TRUE(e.getMessage().find("Compression:none is not allowed for the tls") != vespalib::string::npos);
+    }
+    createAndFillDomain(testDir.getDir(), "xxh64", Encoding(Encoding::Crc::xxh64, Encoding::Compression::zstd), 0);
+
+    verifyDomain(testDir.getDir(), "xxh64");
 }
 
 TEST("testRemove") {
+    test::DirectoryHandler testDir("testremove");
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tlss("testremove", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
+    TransLogServer tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
     TransLogClient tls("tcp/localhost:18377");
 
     vespalib::string name("test-delete");
@@ -618,14 +647,15 @@ assertStatus(Session &s, SerialNum expFirstSerial, SerialNum expLastSerial, uint
 }
 
 
-TEST("test sending a lot of data") {
+void
+        testSendingAlotOfDataSync(const vespalib::string & testDir) {
     const unsigned int NUM_PACKETS = 1000;
     const unsigned int NUM_ENTRIES = 100;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
     const vespalib::string MANY("many");
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000));
+        TransLogServer tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x80000));
         TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, MANY, 0);
@@ -648,7 +678,7 @@ TEST("test sending a lot of data") {
     }
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
+        TransLogServer tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
         auto s1 = openDomainTest(tls, "many");
@@ -669,7 +699,7 @@ TEST("test sending a lot of data") {
     }
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
+        TransLogServer tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
         auto s1 = openDomainTest(tls, MANY);
@@ -690,14 +720,14 @@ TEST("test sending a lot of data") {
     }
 }
 
-TEST("test sending a lot of data async") {
+void testSendingAlotOfDataAsync(const vespalib::string & testDir) {
     const unsigned int NUM_PACKETS = 1000;
     const unsigned int NUM_ENTRIES = 100;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
     const vespalib::string MANY("many-async");
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000));
+        TransLogServer tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x80000));
         TransLogClient tls("tcp/localhost:18377");
         createDomainTest(tls, MANY, 1);
         auto s1 = openDomainTest(tls, MANY);
@@ -719,7 +749,7 @@ TEST("test sending a lot of data async") {
     }
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test8", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
+        TransLogServer tlss(testDir, 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
         auto s1 = openDomainTest(tls, MANY);
@@ -740,16 +770,21 @@ TEST("test sending a lot of data async") {
     }
 }
 
-
+TEST("test sending a lot of data both sync and async") {
+    test::DirectoryHandler testDir("test8");
+    testSendingAlotOfDataSync(testDir.getDir());
+    testSendingAlotOfDataAsync(testDir.getDir());
+}
 
 
 TEST("testErase") {
     const unsigned int NUM_PACKETS = 1000;
     const unsigned int NUM_ENTRIES = 100;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
+    test::DirectoryHandler testDir("test12");
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test12", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x80000));
+        TransLogServer tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x80000));
         TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, "erase", 0);
@@ -758,7 +793,7 @@ TEST("testErase") {
     }
     {
         DummyFileHeaderContext fileHeaderContext;
-        TransLogServer tlss("test12", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
+        TransLogServer tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
         auto s1 = openDomainTest(tls, "erase");
@@ -845,7 +880,8 @@ TEST("testSync") {
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
 
     DummyFileHeaderContext fileHeaderContext;
-    TransLogServer tlss("test9", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
+    test::DirectoryHandler testDir("test9");
+    TransLogServer tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
     TransLogClient tls("tcp/localhost:18377");
 
     createDomainTest(tls, "sync", 0);
@@ -866,8 +902,9 @@ TEST("test truncate on version mismatch") {
     uint64_t fromOld(0), toOld(0);
     size_t countOld(0);
     DummyFileHeaderContext fileHeaderContext;
+    test::DirectoryHandler testDir("test11");
     {
-        TransLogServer tlss("test11", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x1000000));
+        TransLogServer tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x1000000));
         TransLogClient tls("tcp/localhost:18377");
 
         createDomainTest(tls, "sync", 0);
@@ -879,7 +916,7 @@ TEST("test truncate on version mismatch") {
         EXPECT_TRUE(s1->sync(2, syncedTo));
         EXPECT_EQUAL(syncedTo, TOTAL_NUM_ENTRIES);
     }
-    FastOS_File f("test11/sync/sync-0000000000000000");
+    FastOS_File f((testDir.getDir() + "/sync/sync-0000000000000000").c_str());
     EXPECT_TRUE(f.OpenWriteOnlyExisting());
     EXPECT_TRUE(f.SetPosition(f.GetSize()));
    
@@ -888,7 +925,7 @@ TEST("test truncate on version mismatch") {
     EXPECT_EQUAL(static_cast<ssize_t>(sizeof(tmp)), f.Write2(tmp, sizeof(tmp)));
     EXPECT_TRUE(f.Close());
     {
-        TransLogServer tlss("test11", 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
+        TransLogServer tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
         TransLogClient tls("tcp/localhost:18377");
         auto s1 = openDomainTest(tls, "sync");
         uint64_t from(0), to(0);
@@ -905,14 +942,16 @@ TEST("test truncation after short read") {
     const unsigned int NUM_ENTRIES = 1;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
     const unsigned int ENTRYSIZE = 4080;
-    vespalib::string topdir("test10");
+    test::DirectoryHandler topdir("test10");
     vespalib::string domain("truncate");
-    vespalib::string dir(topdir + "/" + domain);
+    vespalib::string dir(topdir.getDir() + "/" + domain);
     vespalib::string tlsspec("tcp/localhost:18377");
 
+
+    DomainConfig domainConfig = createDomainConfig(0x10000);
     DummyFileHeaderContext fileHeaderContext;
     {
-        TransLogServer tlss(topdir, 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
+        TransLogServer tlss(topdir.getDir(), 18377, ".", fileHeaderContext, domainConfig);
         TransLogClient tls(tlsspec);
         
         createDomainTest(tls, domain, 0);
@@ -924,18 +963,14 @@ TEST("test truncation after short read") {
         EXPECT_TRUE(s1->sync(TOTAL_NUM_ENTRIES, syncedTo));
         EXPECT_EQUAL(syncedTo, TOTAL_NUM_ENTRIES);
     }
+    EXPECT_EQUAL(2u, countFiles(dir));
     {
-        EXPECT_EQUAL(2u, countFiles(dir));
-    }
-    {
-        TransLogServer tlss(topdir, 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
+        TransLogServer tlss(topdir.getDir(), 18377, ".", fileHeaderContext, domainConfig);
         TransLogClient tls(tlsspec);
         auto s1 = openDomainTest(tls, domain);
         checkFilledDomainTest(*s1, TOTAL_NUM_ENTRIES);
     }
-    {
-        EXPECT_EQUAL(2u, countFiles(dir));
-    }
+    EXPECT_EQUAL(2u, countFiles(dir));
     {
         vespalib::string filename(dir + "/truncate-0000000000000017");
         FastOS_File trfile(filename.c_str());
@@ -944,14 +979,12 @@ TEST("test truncation after short read") {
         trfile.Close();
     }
     {
-        TransLogServer tlss(topdir, 18377, ".", fileHeaderContext, DomainConfig().setPartSizeLimit(0x10000));
+        TransLogServer tlss(topdir.getDir(), 18377, ".", fileHeaderContext, domainConfig);
         TransLogClient tls(tlsspec);
         auto s1 = openDomainTest(tls, domain);
         checkFilledDomainTest(*s1, TOTAL_NUM_ENTRIES - 1);
     }
-    {
-        EXPECT_EQUAL(2u, countFiles(dir));
-    }
+    EXPECT_EQUAL(2u, countFiles(dir));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

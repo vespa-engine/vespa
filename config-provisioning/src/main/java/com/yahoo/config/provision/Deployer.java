@@ -16,9 +16,7 @@ public interface Deployer {
      * Creates a new deployment from the active application, if available. Will use the default timeout for deployment.
      *
      * @param application the active application to be redeployed
-     * @return a new deployment from the local active, or empty if a local active application
-     *         was not present for this id (meaning it either is not active or deployed at another
-     *         node in the config server cluster)
+     * @return a new deployment from the active application, or empty if application does not exist
      */
     default Optional<Deployment> deployFromLocalActive(ApplicationId application) {
         return deployFromLocalActive(application, false);
@@ -29,9 +27,7 @@ public interface Deployer {
      *
      * @param application the active application to be redeployed
      * @param bootstrap the deployment is done when bootstrapping
-     * @return a new deployment from the local active, or empty if a local active application
-     *         was not present for this id (meaning it either is not active or deployed at another
-     *         node in the config server cluster)
+     * @return a new deployment from the active application, or empty if application does not exist
      */
     Optional<Deployment> deployFromLocalActive(ApplicationId application, boolean bootstrap);
 
@@ -41,9 +37,7 @@ public interface Deployer {
      *
      * @param application the active application to be redeployed
      * @param timeout the timeout to use for each individual deployment operation
-     * @return a new deployment from the local active, or empty if a local active application
-     *         was not present for this id (meaning it either is not active or active on another
-     *         node in the config server cluster)
+     * @return a new deployment from the active application, or empty if application does not exist
      */
     default Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout) {
         return deployFromLocalActive(application, timeout, false);
@@ -56,9 +50,7 @@ public interface Deployer {
      * @param application the active application to be redeployed
      * @param timeout the timeout to use for each individual deployment operation
      * @param bootstrap the deployment is done when bootstrapping
-     * @return a new deployment from the local active, or empty if a local active application
-     *         was not present for this id (meaning it either is not active or active on another
-     *         node in the config server cluster)
+     * @return a new deployment from the active application, or empty if application does not exist
      */
     Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout, boolean bootstrap);
 

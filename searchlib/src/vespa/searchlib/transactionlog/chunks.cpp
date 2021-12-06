@@ -43,9 +43,8 @@ toCompression(CompressionConfig::Type type) {
         case CompressionConfig::LZ4:
             return Encoding::Compression::lz4;
         case CompressionConfig::NONE_MULTI:
-            return Encoding::Compression::none_multi;
         case CompressionConfig::NONE:
-            return Encoding::Compression::none;
+            return Encoding::Compression::none_multi;
         default:
             abort();
     }
@@ -114,9 +113,6 @@ XXH64CompressedChunk::compress(nbostream & os, Encoding::Crc crc) const {
     CompressionConfig cfg(_type, _level, 80, 200);
     ConstBufferRef uncompressed(org.data(), org.size());
     Encoding::Compression actual = toCompression(::compress(cfg, uncompressed, compressed, false));
-    if (actual == Encoding::Compression::none) {
-        actual = Encoding::Compression::none_multi;
-    }
     os << uint32_t(uncompressed.size());
     size_t start = os.wp();
     os.write(compressed.getData(), compressed.getDataLen());

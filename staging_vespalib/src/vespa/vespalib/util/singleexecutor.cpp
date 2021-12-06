@@ -89,7 +89,9 @@ SingleExecutor::drain(Lock & lock) {
 
 void
 SingleExecutor::wakeup() {
-    _consumerCondition.notify_one();
+    if (numTasks() > 0) {
+        _consumerCondition.notify_one();
+    }
 }
 
 SingleExecutor &

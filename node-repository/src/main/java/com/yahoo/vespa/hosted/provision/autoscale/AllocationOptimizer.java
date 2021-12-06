@@ -66,6 +66,7 @@ public class AllocationOptimizer {
                                                                                groupsAdjustedForRedundancy,
                                                                                limits, target, current, clusterModel));
                 var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits,
+                                                                            clusterModel.cluster().required(),
                                                                             hosts, nodeRepository);
 
                 if (allocatableResources.isEmpty()) continue;

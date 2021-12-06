@@ -1,0 +1,14 @@
+{
+    "steps": [
+        {
+            "request": {
+                "body": "foo/../../../empty.json"
+            }
+        },
+        {
+            "request": {
+                "body": "foo/../../../../this-is-not-ok.json"
+            }
+        }
+    ]
+}

@@ -115,7 +115,8 @@ public:
             return _queue->size();
         }
         void release(const document::Bucket & bucket, api::LockingRequirements reqOfReleasedLock,
-                     api::StorageMessage::Id lockMsgId);
+                     api::StorageMessage::Id lockMsgId, bool was_active_merge);
+        void decrease_active_sync_merges_counter() noexcept;
 
         // Subsumes isLocked
         bool operationIsInhibited(const monitor_guard &, const document::Bucket&,
@@ -124,7 +125,8 @@ public:
                       api::LockingRequirements lockReq) const noexcept;
 
         void lock(const monitor_guard &, const document::Bucket & bucket,
-                  api::LockingRequirements lockReq, const LockEntry & lockEntry);
+                  api::LockingRequirements lockReq, bool count_as_active_merge,
+                  const LockEntry & lockEntry);
 
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
         void failOperations(const document::Bucket & bucket, const api::ReturnCode & code);
@@ -168,12 +170,17 @@ public:
 
         const document::Bucket &getBucket() const override { return _bucket; }
         api::LockingRequirements lockingRequirements() const noexcept override { return _lockReq; }
+        void signal_operation_sync_phase_done() noexcept override;
+        bool wants_sync_phase_done_notification() const noexcept override {
+            return _counts_towards_merge_limit;
+        }
 
     private:
         Stripe                 & _stripe;
-        document::Bucket         _bucket;
+        const document::Bucket   _bucket;
         api::StorageMessage::Id  _uniqueMsgId;
         api::LockingRequirements _lockReq;
+        bool                     _counts_towards_merge_limit;
     };
 
 

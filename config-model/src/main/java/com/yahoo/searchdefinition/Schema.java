@@ -344,11 +344,12 @@ public class Schema implements ImmutableSchema {
     }
 
     /**
-     * Returns a field defined in one of the documents of this search definition. This does <b>not</b> include the extra
-     * fields defined outside of a document (those accessible through the getExtraField() method).
+     * Returns a field defined in one of the documents of this search definition.
+     * This does not include the extra fields defined outside the document
+     * (those accessible through the getExtraField() method).
      *
-     * @param name The name of the field to return.
-     * @return The named field, or null if not found.
+     * @param name the name of the field to return
+     * @return the named field, or null if not found
      */
     public SDField getDocumentField(String name) {
         return (SDField) documentType.getField(name);
@@ -458,7 +459,7 @@ public class Schema implements ImmutableSchema {
     /**
      * Consolidates a set of index settings for the same index into one
      *
-     * @param indices The list of indexes to consolidate
+     * @param indices the list of indexes to consolidate
      * @return the consolidated index
      */
     private Index consolidateIndices(List<Index> indices) {
@@ -477,13 +478,10 @@ public class Schema implements ImmutableSchema {
             if (consolidated.getRankType() == null) {
                 consolidated.setRankType(current.getRankType());
             } else {
-                if (current.getRankType() != null &&
-                    !consolidated.getRankType().equals(current.getRankType()))
-                {
+                if (current.getRankType() != null && consolidated.getRankType() != current.getRankType())
                     deployLogger.logApplicationPackage(Level.WARNING, "Conflicting rank type settings for " +
                                                                       first.getName() + " in " + this + ", using " +
                                                                       consolidated.getRankType());
-                }
             }
 
             for (Iterator<String> j = current.aliasIterator(); j.hasNext();) {
@@ -505,11 +503,8 @@ public class Schema implements ImmutableSchema {
             }
         }
 
-        for (ImmutableSDField field : allConcreteFields()) {
-            for (Index index : field.getIndices().values()) {
-                allIndices.add(index);
-            }
-        }
+        for (ImmutableSDField field : allConcreteFields())
+            allIndices.addAll(field.getIndices().values());
 
         return Collections.unmodifiableList(allIndices);
     }
@@ -618,17 +613,7 @@ public class Schema implements ImmutableSchema {
         return summaryFields;
     }
 
-    @Override
-    public int hashCode() {
-        return name.hashCode();
-    }
-
-    /**
-     * Returns the first occurrence of an attribute having this name, or null if none
-     *
-     * @param name Name of attribute
-     * @return The Attribute with given name.
-     */
+    /** Returns the first occurrence of an attribute having this name, or null if none */
     public Attribute getAttribute(String name) {
         for (ImmutableSDField field : allConcreteFields()) {
             Attribute attribute = field.getAttributes().get(name);
@@ -650,33 +635,29 @@ public class Schema implements ImmutableSchema {
     }
 
     @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "schema '" + getName() + "'";
     }
 
     public boolean isAccessingDiskSummary(SummaryField field) {
-        if (!field.getTransform().isInMemory()) {
-            return true;
-        }
-        if (field.getSources().size() == 0) {
-            return isAccessingDiskSummary(getName());
-        }
+        if (!field.getTransform().isInMemory()) return true;
+        if (field.getSources().size() == 0) return isAccessingDiskSummary(getName());
         for (SummaryField.Source source : field.getSources()) {
-            if (isAccessingDiskSummary(source.getName())) {
+            if (isAccessingDiskSummary(source.getName()))
                 return true;
-            }
         }
         return false;
     }
 
     private boolean isAccessingDiskSummary(String source) {
         SDField field = getConcreteField(source);
-        if (field == null) {
-            return false;
-        }
-        if (field.doesSummarying() && !field.doesAttributing()) {
-            return true;
-        }
+        if (field == null) return false;
+        if (field.doesSummarying() && !field.doesAttributing()) return true;
         return false;
     }
 

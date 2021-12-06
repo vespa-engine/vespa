@@ -2,7 +2,7 @@
 package com.yahoo.container.handler;
 
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 
 /**
  * The coverage report for a result set.

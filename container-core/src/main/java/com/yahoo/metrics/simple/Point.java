@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.annotations.Beta;
+import com.yahoo.api.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.jdisc.Metric.Context;

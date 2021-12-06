@@ -359,7 +359,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_FILE_DISTRIBUTION_CONNECTION_POOL = defineFeatureFlag(
-            "use-file-distribution-connection-pool", false,
+            "use-file-distribution-connection-pool", true,
             List.of("hmusum"), "2021-11-16", "2021-12-16",
             "Whether to use FileDistributionConnectionPool instead of JRTConnectionPool for file downloads",
             "Takes effect on config server restart",

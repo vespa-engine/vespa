@@ -22,7 +22,7 @@ public class DiversitySettingsValidator extends Processor {
         if ( ! validate) return;
         if (documentsOnly) return;
 
-        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(schema.getName())) {
+        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(schema)) {
             if (rankProfile.getMatchPhaseSettings() != null && rankProfile.getMatchPhaseSettings().getDiversity() != null) {
                 validate(rankProfile, rankProfile.getMatchPhaseSettings().getDiversity());
             }

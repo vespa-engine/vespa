@@ -19,7 +19,7 @@ public class LazyTemporaryStorageFileReferenceData extends LazyFileReferenceData
     public void close() {
         try {
             super.close();
-            Files.delete(file.toPath());
+            Files.deleteIfExists(file.toPath());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

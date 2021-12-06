@@ -49,14 +49,29 @@ public:
         {}
     };
 
-    class BucketLockInterface {
+    // Interface that is used for "early ACKing" a potentially longer-running async
+    // operation when the persistence thread processing the operation has completed
+    // the synchronous aspects of the operation (such as dispatching one or more
+    // async operations over the SPI).
+    class OperationSyncPhaseDoneNotifier {
+    public:
+        virtual ~OperationSyncPhaseDoneNotifier() = default;
+
+        // Informs the caller if the operation wants to know when the persistence thread is
+        // done with the synchronous aspects of the operation. Returning false allows the caller
+        // to optimize for the case where this does _not_ need to happen.
+        [[nodiscard]] virtual bool wants_sync_phase_done_notification() const noexcept = 0;
+        // Invoked at most once at the point where the persistence thread is done handling the synchronous
+        // aspects of the operation iff wants_sync_phase_done_notification() was initially true.
+        virtual void signal_operation_sync_phase_done() noexcept = 0;
+    };
+
+    class BucketLockInterface : public OperationSyncPhaseDoneNotifier {
     public:
         using SP = std::shared_ptr<BucketLockInterface>;
 
-        virtual const document::Bucket &getBucket() const = 0;
-        virtual api::LockingRequirements lockingRequirements() const noexcept = 0;
-
-        virtual ~BucketLockInterface() = default;
+        [[nodiscard]] virtual const document::Bucket &getBucket() const = 0;
+        [[nodiscard]] virtual api::LockingRequirements lockingRequirements() const noexcept = 0;
     };
 
     using LockedMessage = std::pair<BucketLockInterface::SP, api::StorageMessage::SP>;

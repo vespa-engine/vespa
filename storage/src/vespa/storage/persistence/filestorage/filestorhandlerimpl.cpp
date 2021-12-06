@@ -1054,7 +1054,8 @@ message_type_is_merge_related(api::MessageType::Id msg_type_id) {
 void
 FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
                                      api::LockingRequirements reqOfReleasedLock,
-                                     api::StorageMessage::Id lockMsgId)
+                                     api::StorageMessage::Id lockMsgId,
+                                     bool was_active_merge)
 {
     std::unique_lock guard(*_lock);
     auto iter = _lockedBuckets.find(bucket);
@@ -1065,7 +1066,7 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (reqOfReleasedLock == api::LockingRequirements::Exclusive) {
         assert(entry._exclusiveLock);
         assert(entry._exclusiveLock->msgId == lockMsgId);
-        if (message_type_is_merge_related(entry._exclusiveLock->msgType)) {
+        if (was_active_merge) {
             assert(_active_merges > 0);
             --_active_merges;
         }
@@ -1089,13 +1090,27 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
 }
 
 void
+FileStorHandlerImpl::Stripe::decrease_active_sync_merges_counter() noexcept
+{
+    std::unique_lock guard(*_lock);
+    assert(_active_merges > 0);
+    const bool may_have_blocked_merge = (_active_merges == _owner._max_active_merges_per_stripe);
+    --_active_merges;
+    if (may_have_blocked_merge) {
+        guard.unlock();
+        _cond->notify_all();
+    }
+}
+
+void
 FileStorHandlerImpl::Stripe::lock(const monitor_guard &, const document::Bucket & bucket,
-                                  api::LockingRequirements lockReq, const LockEntry & lockEntry) {
+                                  api::LockingRequirements lockReq, bool count_as_active_merge,
+                                  const LockEntry & lockEntry) {
     auto& entry = _lockedBuckets[bucket];
     assert(!entry._exclusiveLock);
     if (lockReq == api::LockingRequirements::Exclusive) {
         assert(entry._sharedLocks.empty());
-        if (message_type_is_merge_related(lockEntry.msgType)) {
+        if (count_as_active_merge) {
             ++_active_merges;
         }
         entry._exclusiveLock = lockEntry;
@@ -1151,28 +1166,43 @@ FileStorHandlerImpl::Stripe::get_active_operations_stats(bool reset_min_max) con
     return result;
 }
 
-FileStorHandlerImpl::BucketLock::BucketLock(const monitor_guard & guard, Stripe& stripe,
-                                            const document::Bucket &bucket, uint8_t priority,
+FileStorHandlerImpl::BucketLock::BucketLock(const monitor_guard& guard, Stripe& stripe,
+                                            const document::Bucket& bucket, uint8_t priority,
                                             api::MessageType::Id msgType, api::StorageMessage::Id msgId,
                                             api::LockingRequirements lockReq)
     : _stripe(stripe),
       _bucket(bucket),
       _uniqueMsgId(msgId),
-      _lockReq(lockReq)
+      _lockReq(lockReq),
+      _counts_towards_merge_limit(false)
 {
     if (_bucket.getBucketId().getRawId() != 0) {
-        _stripe.lock(guard, _bucket, lockReq, Stripe::LockEntry(priority, msgType, msgId));
+        _counts_towards_merge_limit = message_type_is_merge_related(msgType);
+        _stripe.lock(guard, _bucket, lockReq, _counts_towards_merge_limit, Stripe::LockEntry(priority, msgType, msgId));
         LOG(spam, "Locked bucket %s for message %" PRIu64 " with priority %u in mode %s",
-            bucket.getBucketId().toString().c_str(), msgId, priority, api::to_string(lockReq));
+            bucket.toString().c_str(), msgId, priority, api::to_string(lockReq));
     }
 }
 
 
 FileStorHandlerImpl::BucketLock::~BucketLock() {
     if (_bucket.getBucketId().getRawId() != 0) {
-        _stripe.release(_bucket, _lockReq, _uniqueMsgId);
+        _stripe.release(_bucket, _lockReq, _uniqueMsgId, _counts_towards_merge_limit);
         LOG(spam, "Unlocked bucket %s for message %" PRIu64 " in mode %s",
-            _bucket.getBucketId().toString().c_str(), _uniqueMsgId, api::to_string(_lockReq));
+            _bucket.toString().c_str(), _uniqueMsgId, api::to_string(_lockReq));
+    }
+}
+
+void
+FileStorHandlerImpl::BucketLock::signal_operation_sync_phase_done() noexcept
+{
+    // Not atomic, only destructor can read/write this other than this function, and since
+    // a strong ref must already be held to this object by the caller, we cannot race with it.
+    if (_counts_towards_merge_limit){
+        LOG(spam, "Synchronous phase for bucket %s is done; reducing active count proactively",
+            _bucket.toString().c_str());
+        _stripe.decrease_active_sync_merges_counter();
+        _counts_towards_merge_limit = false;
     }
 }
 
@@ -1278,10 +1308,10 @@ FileStorHandlerImpl::getStatus(std::ostream& out, const framework::HttpUrlPath& 
     }
 
     std::lock_guard mergeGuard(_mergeStatesLock);
-    out << "<tr><td>Active merge operations</td><td>" << _mergeStates.size() << "</td></tr>\n";
+    out << "<p>Active merge operations: " << _mergeStates.size() << "</p>\n";
     if (verbose) {
         out << "<h4>Active merges</h4>\n";
-        if (_mergeStates.size() == 0) {
+        if (_mergeStates.empty()) {
             out << "None\n";
         }
         for (auto & entry : _mergeStates) {
