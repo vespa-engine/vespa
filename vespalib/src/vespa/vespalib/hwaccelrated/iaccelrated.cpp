@@ -17,28 +17,18 @@ namespace vespalib::hwaccelrated {
 
 namespace {
 
-class Factory {
-public:
-    virtual ~Factory() = default;
-    virtual IAccelrated::UP create() const = 0;
-};
-
-class GenericFactory :public Factory{
-public:
-    IAccelrated::UP create() const override { return std::make_unique<GenericAccelrator>(); }
-};
-
+IAccelrated::UP create_accelerator() {
 #ifdef __x86_64__
-class Avx2Factory :public Factory{
-public:
-    IAccelrated::UP create() const override { return std::make_unique<Avx2Accelrator>(); }
-};
-
-class Avx512Factory :public Factory{
-public:
-    IAccelrated::UP create() const override { return std::make_unique<Avx512Accelrator>(); }
-};
+    __builtin_cpu_init();
+    if (__builtin_cpu_supports("avx512f")) {
+        return std::make_unique<Avx512Accelrator>();
+    }
+    if (__builtin_cpu_supports("avx2")) {
+        return std::make_unique<Avx2Accelrator>();
+    }
 #endif
+    return std::make_unique<GenericAccelrator>();
+}
 
 template<typename T>
 std::vector<T> createAndFill(size_t sz) {
@@ -247,42 +237,14 @@ RuntimeVerificator::RuntimeVerificator()
     verify(thisCpu);
 }
 
-class Selector
-{
-public:
-    Selector() __attribute__((noinline));
-    IAccelrated::UP create() { return _factory->create(); }
-private:
-    std::unique_ptr<Factory> _factory;
-};
-
-Selector::Selector() :
-    _factory()
-{
-#ifdef __x86_64__
-    __builtin_cpu_init ();
-    if (__builtin_cpu_supports("avx512f")) {
-        _factory = std::make_unique<Avx512Factory>();
-    } else if (__builtin_cpu_supports("avx2")) {
-        _factory = std::make_unique<Avx2Factory>();
-    } else {
-        _factory = std::make_unique<GenericFactory>();
-    }
-#else
-    _factory = std::make_unique<GenericFactory>();
-#endif
 }
-
-}
-
-static Selector _G_selector;
 
 RuntimeVerificator _G_verifyAccelrator;
 
 const IAccelrated &
 IAccelrated::getAccelerator()
 {
-    static IAccelrated::UP accelrator = _G_selector.create();
+    static IAccelrated::UP accelrator = create_accelerator();
     return *accelrator;
 }
 
