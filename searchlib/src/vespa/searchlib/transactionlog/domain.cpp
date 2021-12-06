@@ -407,6 +407,7 @@ Domain::doCommit(std::unique_ptr<CommitChunk> chunk) {
     vespalib::nbostream_longlivedbuf is(packet.getHandle().data(), packet.getHandle().size());
     Packet::Entry entry;
     entry.deserialize(is);
+    assert(entry.serial() == packet.range().from());
     DomainPart::SP dp = optionallyRotateFile(entry.serial());
     dp->commit(entry.serial(), packet);
     if (_config.getFSyncOnCommit()) {
