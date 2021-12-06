@@ -7,6 +7,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/fastos/file.h>
 #include <thread>
 
@@ -332,24 +333,24 @@ fillDomainTest(TransLogServer & s1, const vespalib::string & domain, size_t numP
     size_t value(0);
     Counter inFlight(0);
     auto domainWriter = s1.getWriter(domain);
-    for(size_t i=0; i < numPackets; i++) {
-        std::unique_ptr<Packet> p(new Packet(DEFAULT_PACKET_SIZE));
-        for(size_t j=0; j < numEntries; j++, value++) {
-            Packet::Entry e(value+1, j+1, vespalib::ConstBufferRef((const char *)&value, sizeof(value)));
-            p->add(e);
-            if ( p->sizeBytes() > DEFAULT_PACKET_SIZE ) {
-                domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
-                p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
+    vespalib::Gate gate;
+    {
+        auto onDone = std::make_shared<vespalib::GateCallback>(gate);
+        for (size_t i = 0; i < numPackets; i++) {
+            auto p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
+            for (size_t j = 0; j < numEntries; j++, value++) {
+                Packet::Entry e(value + 1, j + 1, vespalib::ConstBufferRef((const char *) &value, sizeof(value)));
+                p->add(e);
+                if (p->sizeBytes() > DEFAULT_PACKET_SIZE) {
+                    domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
+                    p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
+                }
             }
+            domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
+            auto keep = domainWriter->startCommit(onDone);
         }
-        domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
-        auto keep = domainWriter->startCommit(Writer::DoneCallback());
-        LOG(info, "Inflight %ld", inFlight.load());
     }
-    while (inFlight.load() != 0) {
-        std::this_thread::sleep_for(10ms);
-        LOG(info, "Waiting for inflight %ld to reach zero", inFlight.load());
-    }
+    gate.await();
 
 }
 
@@ -545,7 +546,7 @@ partialUpdateTest(const vespalib::string & testDir) {
     ASSERT_TRUE( visitor->visit(5, 7) );
     for (size_t i(0); ! ca._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca._eof );
-    ASSERT_TRUE( ca.map().size() == 1);
+    ASSERT_EQUAL(1u, ca.map().size());
     ASSERT_TRUE( ca.hasSerial(7) );
 
     CallBackUpdate ca1;

@@ -38,11 +38,17 @@ std::ostream & operator << (std::ostream & os, Encoding e);
  */
 class SerializedChunk {
 public:
-    SerializedChunk(const Packet & packet, Encoding encoding, uint8_t compressionLevel);
+    SerializedChunk(std::unique_ptr<CommitChunk> chunk, Encoding encoding, uint8_t compressionLevel);
+    SerializedChunk(SerializedChunk &&) = default;
+    SerializedChunk & operator=(SerializedChunk &&) = default;
+    SerializedChunk(const SerializedChunk &) = delete;
+    SerializedChunk & operator=(const SerializedChunk &) = delete;
     vespalib::ConstBufferRef getData() const;
     SerialNumRange range() const { return _range; }
     size_t getNumEntries() const { return _numEntries; }
+    const CommitChunk & commitChunk() const { return *_commitChunk; }
 private:
+    std::unique_ptr<CommitChunk> _commitChunk;
     vespalib::nbostream _os;
     SerialNumRange      _range;
     size_t              _numEntries;

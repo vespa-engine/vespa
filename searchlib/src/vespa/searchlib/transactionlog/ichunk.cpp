@@ -135,11 +135,13 @@ encode(vespalib::nbostream & os, const IChunk & chunk, Encoding encoding) {
         chunk.getEntries().size(), os.size(), range.from(), range.to(), encoding.getRaw(), realEncoding.getRaw());
 }
 
-SerializedChunk::SerializedChunk(const Packet & packet, Encoding encoding, uint8_t compressionLevel)
-   : _os(),
-     _range(packet.range()),
-     _numEntries(packet.size())
+SerializedChunk::SerializedChunk(std::unique_ptr<CommitChunk> commitChunk, Encoding encoding, uint8_t compressionLevel)
+   : _commitChunk(std::move(commitChunk)),
+     _os(),
+     _range(_commitChunk->getPacket().range()),
+     _numEntries(_commitChunk->getPacket().size())
 {
+    const Packet & packet = _commitChunk->getPacket();
     nbostream_longlivedbuf h(packet.getHandle().data(), packet.getHandle().size());
 
     IChunk::UP chunk = IChunk::create(encoding, compressionLevel);

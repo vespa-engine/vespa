@@ -64,7 +64,7 @@ private:
 
     std::unique_ptr<CommitChunk> grabCurrentChunk(const UniqueLock & guard);
     void commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock & chunkOrderGuard);
-    void doCommit(std::unique_ptr<CommitChunk> chunk);
+    void doCommit(const SerializedChunk & serialized);
     SerialNum begin(const UniqueLock & guard) const;
     SerialNum end(const UniqueLock & guard) const;
     size_t byteSize(const UniqueLock & guard) const;
