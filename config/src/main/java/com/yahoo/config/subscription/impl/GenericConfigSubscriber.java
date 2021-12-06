@@ -3,14 +3,12 @@ package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.subscription.ConfigHandle;
-import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.TimingValues;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * A subscriber that can subscribe without the class. Used by config proxy.
@@ -19,16 +17,18 @@ import java.util.Map;
  */
 public class GenericConfigSubscriber extends ConfigSubscriber {
 
+    private final JRTConfigRequester requester;
+
     /**
      * Constructs a new subscriber using the given pool of requesters (JRTConfigRequester holds 1 connection which in
      * turn is subject to failover across the elements in the source set.)
      * The behaviour is undefined if the map key is different from the source set the requester was built with.
      * See also {@link JRTConfigRequester#JRTConfigRequester(com.yahoo.vespa.config.ConnectionPool, com.yahoo.vespa.config.TimingValues)}
      *
-     * @param requesters a map from config source set to config requester
+     * @param requester a config requester
      */
-    public GenericConfigSubscriber(Map<ConfigSourceSet, JRTConfigRequester> requesters) {
-        this.requesters = requesters;
+    public GenericConfigSubscriber(JRTConfigRequester requester) {
+        this.requester = requester;
     }
 
     /**
@@ -36,13 +36,12 @@ public class GenericConfigSubscriber extends ConfigSubscriber {
      *
      * @param key the {@link ConfigKey to subscribe to}
      * @param defContent the config definition content for the config to subscribe to
-     * @param source the config source to use
      * @param timingValues {@link TimingValues}
      * @return generic handle
      */
-    public GenericConfigHandle subscribe(ConfigKey<RawConfig> key, List<String> defContent, ConfigSourceSet source, TimingValues timingValues) {
+    public GenericConfigHandle subscribe(ConfigKey<RawConfig> key, List<String> defContent, TimingValues timingValues) {
         checkStateBeforeSubscribe();
-        GenericJRTConfigSubscription sub = new GenericJRTConfigSubscription(key, defContent, this, source, timingValues);
+        GenericJRTConfigSubscription sub = new GenericJRTConfigSubscription(key, defContent, requester, timingValues);
         GenericConfigHandle handle = new GenericConfigHandle(sub);
         subscribeAndHandleErrors(sub, key, handle, timingValues);
         return handle;

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.config.subscription.DirSource;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.TestReferenceConfig;
@@ -98,8 +97,10 @@ public class FileConfigSubscriptionTest {
         final String cfgDir = "src/test/resources/configs/foo";
         final String cfgId = "dir:" + cfgDir;
         final ConfigKey<TestReferenceConfig> key = new ConfigKey<>(TestReferenceConfig.class, cfgId);
-        ConfigSubscriber subscriber = new ConfigSubscriber();
-        ConfigSubscription<TestReferenceConfig> sub = ConfigSubscription.get(key, subscriber, new DirSource(new File(cfgDir)), new TimingValues());
+        ConfigSubscription<TestReferenceConfig> sub = ConfigSubscription.get(key,
+                                                                             new JrtConfigRequesters(),
+                                                                             new DirSource(new File(cfgDir)),
+                                                                             new TimingValues());
         assertTrue(sub.nextConfig(1000));
         assertThat(sub.getConfigState().getConfig().configId(), is(cfgId));
     }
