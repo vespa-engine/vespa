@@ -29,24 +29,20 @@ func init() {
 }
 
 var testCmd = &cobra.Command{
-	Use:   "test [tests directory or test file]",
+	Use:   "test <tests directory or test file>",
 	Short: "Run a test suite, or a single test",
 	Long: `Run a test suite, or a single test
 
-Runs all JSON test files in the specified directory (the working
-directory by default), or the single JSON test file specified.
+Runs all JSON test files in the specified directory, or the single JSON test file specified.
 
 See https://cloud.vespa.ai/en/reference/testing.html for details.`,
 	Example: `$ vespa test src/test/application/tests/system-test
 $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
-	Args:              cobra.MaximumNArgs(1),
+	Args:              cobra.ExactArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		target := getTarget()
-		testPath := "."
-		if len(args) > 0 {
-			testPath = args[0]
-		}
+		testPath := args[0]
 		if count, failed := runTests(testPath, target, false); len(failed) != 0 {
 			plural := "s"
 			if count == 1 {
@@ -77,6 +73,7 @@ func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string)
 		if err != nil {
 			fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 		}
+
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
