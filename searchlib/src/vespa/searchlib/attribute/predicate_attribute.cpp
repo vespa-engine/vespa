@@ -194,7 +194,7 @@ PredicateAttribute::onLoad(vespalib::Executor *)
     buffer.moveFreeToData(size);
 
     const GenericHeader &header = loaded_buffer->getHeader();
-    auto attributeHeader = attribute::AttributeHeader::extractTags(header);
+    auto attributeHeader = attribute::AttributeHeader::extractTags(header, getBaseFileName());
     uint32_t version = attributeHeader.getVersion();
 
     setCreateSerialNum(attributeHeader.getCreateSerialNum());
