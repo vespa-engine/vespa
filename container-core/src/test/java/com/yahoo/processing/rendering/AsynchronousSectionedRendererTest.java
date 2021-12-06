@@ -15,7 +15,6 @@ import com.yahoo.processing.response.DataList;
 import com.yahoo.processing.response.IncomingData;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,10 +22,15 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -222,7 +226,7 @@ public class AsynchronousSectionedRendererTest {
         return render(renderer, data);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     public String render(Renderer renderer, DataList data) throws InterruptedException, IOException {
         TestContentChannel contentChannel = new TestContentChannel();
 

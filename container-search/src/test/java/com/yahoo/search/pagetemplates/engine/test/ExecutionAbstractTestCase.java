@@ -53,7 +53,7 @@ public class ExecutionAbstractTestCase {
         assertRendered(result,resultFileName,false);
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     protected void assertRendered(Result result, String resultFileName, boolean print) {
         try {
             PageTemplatesXmlRenderer renderer = new PageTemplatesXmlRenderer();

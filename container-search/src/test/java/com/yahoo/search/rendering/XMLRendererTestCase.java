@@ -1,39 +1,36 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import static org.junit.Assert.*;
-
-import java.io.ByteArrayOutputStream;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.prelude.searcher.JuniperSearcher;
-import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.Relevance;
-import com.yahoo.search.searchchain.Execution;
-import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
-import org.junit.Test;
-
-import com.google.common.util.concurrent.ListenableFuture;
-import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.fastsearch.FastHit;
+import com.yahoo.prelude.searcher.JuniperSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
+import com.yahoo.search.result.Relevance;
+import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import com.yahoo.search.statistics.ElapsedTimeTestCase;
-import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.search.statistics.ElapsedTimeTestCase.CreativeTimeSource;
+import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.text.Utf8;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test the XML renderer
@@ -158,6 +155,7 @@ public class XMLRendererTestCase {
         assertTrue(summary.contains("<meta type=\"context\">"));
     }
 
+    @SuppressWarnings("removal")
     private String render(Result result) throws Exception {
         XmlRenderer renderer = new XmlRenderer();
         renderer.init();

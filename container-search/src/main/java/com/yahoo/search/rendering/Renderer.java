@@ -1,19 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.yahoo.search.Query;
-import com.yahoo.search.Result;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.io.ByteWriter;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.execution.Execution;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Renders a search result to a writer synchronously
@@ -37,7 +36,7 @@ abstract public class Renderer extends com.yahoo.processing.rendering.Renderer<R
      * @return a future which is always completed to true
      */
     @Override
-    public final ListenableFuture<Boolean> render(OutputStream stream, Result response, Execution execution, Request request) {
+    public final CompletableFuture<Boolean> renderResponse(OutputStream stream, Result response, Execution execution, Request request) {
         Writer writer = null;
         try {
             writer = createWriter(stream, response);
@@ -50,8 +49,8 @@ abstract public class Renderer extends com.yahoo.processing.rendering.Renderer<R
             if (writer != null)
                 try { writer.close(); } catch (IOException e2) {};
         }
-        SettableFuture<Boolean> completed = SettableFuture.create();
-        completed.set(true);
+        CompletableFuture<Boolean> completed = new CompletableFuture<>();
+        completed.complete(true);
         return completed;
     }
 

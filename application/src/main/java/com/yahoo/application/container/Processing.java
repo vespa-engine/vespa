@@ -2,7 +2,6 @@
 package com.yahoo.application.container;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.processing.Processor;
@@ -15,6 +14,7 @@ import com.yahoo.processing.rendering.Renderer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Einar M R Rosenvinge
@@ -41,14 +41,14 @@ public final class Processing extends ProcessingBase<Request, Response, Processo
     }
 
     @Override
-    protected ListenableFuture<Boolean> doProcessAndRender(ComponentSpecification chainSpec,
-                                                           Request request,
-                                                           Renderer<Response> renderer,
-                                                           ByteArrayOutputStream stream) throws IOException {
+    protected CompletableFuture<Boolean> doProcessAndRender(ComponentSpecification chainSpec,
+                                                            Request request,
+                                                            Renderer<Response> renderer,
+                                                            ByteArrayOutputStream stream) throws IOException {
         Execution execution = handler.createExecution(getChain(chainSpec), request);
         Response response = execution.process(request);
 
-        return renderer.render(stream, response, execution, request);
+        return renderer.renderResponse(stream, response, execution, request);
     }
 
     @Override
