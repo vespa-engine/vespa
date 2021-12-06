@@ -27,7 +27,7 @@ public class RpcConfigSourceClientTest {
     @Before
     public void setup() {
         rpcServer = new MockRpcServer();
-        rpcConfigSourceClient = new RpcConfigSourceClient(rpcServer, new MockConfigSource(), new MemoryCache());
+        rpcConfigSourceClient = new RpcConfigSourceClient(rpcServer, new MockConfigSource());
     }
 
     @Test

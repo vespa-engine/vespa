@@ -92,7 +92,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        server.proxyServer().getMemoryCache().update(config);
+        server.proxyServer().memoryCache().update(config);
         req = new Request("listCachedConfig");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
@@ -119,7 +119,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        server.proxyServer().getMemoryCache().update(config);
+        server.proxyServer().memoryCache().update(config);
         req = new Request("listCachedConfigFull");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
@@ -261,7 +261,7 @@ public class ConfigProxyRpcServerTest {
     }
 
     private static ProxyServer createTestServer(ConfigSourceSet source) {
-        return new ProxyServer(null, source, new MemoryCache(), null);
+        return new ProxyServer(null, source, null);
     }
 
     private static class TestServer implements AutoCloseable {

@@ -177,7 +177,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     private void invalidateCache(Request req) {
         dispatchRpcRequest(req, () -> {
-            proxyServer.getMemoryCache().clear();
+            proxyServer.memoryCache().clear();
             String[] s = new String[2];
             s[0] = "0";
             s[1] = "success";
@@ -213,7 +213,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     private void dumpCache(Request req) {
         dispatchRpcRequest(req, () -> {
-            final MemoryCache memoryCache = proxyServer.getMemoryCache();
+            final MemoryCache memoryCache = proxyServer.memoryCache();
             req.returnValues().add(new StringValue(memoryCache.dumpCacheToDisk(req.parameters().get(0).asString(), memoryCache)));
             req.returnRequest();
         });
@@ -278,7 +278,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
 
     private void listCachedConfig(Request req, boolean full) {
         String[] ret;
-        MemoryCache cache = proxyServer.getMemoryCache();
+        MemoryCache cache = proxyServer.memoryCache();
         ret = new String[cache.size()];
         int i = 0;
         for (RawConfig config : cache.values()) {

@@ -26,4 +26,6 @@ interface ConfigSourceClient {
 
     DelayedResponses delayedResponses();
 
+    MemoryCache memoryCache();
+
 }

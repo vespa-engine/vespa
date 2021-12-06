@@ -57,10 +57,10 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("delayed responses"));
     private final ScheduledFuture<?> delayedResponsesFuture;
 
-    RpcConfigSourceClient(RpcServer rpcServer, ConfigSourceSet configSourceSet, MemoryCache memoryCache) {
+    RpcConfigSourceClient(RpcServer rpcServer, ConfigSourceSet configSourceSet) {
         this.rpcServer = rpcServer;
         this.configSourceSet = configSourceSet;
-        this.memoryCache = memoryCache;
+        this.memoryCache = new MemoryCache();
         this.delayedResponses = new DelayedResponses();
         checkConfigSources();
         nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, 10, MILLISECONDS);
@@ -243,9 +243,10 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     }
 
     @Override
-    public DelayedResponses delayedResponses() {
-        return delayedResponses;
-    }
+    public DelayedResponses delayedResponses() { return delayedResponses; }
+
+    @Override
+    public MemoryCache memoryCache() { return memoryCache; }
 
     private void updateWithNewConfig(RawConfig newConfig) {
         log.log(Level.FINE, () -> "config to be returned for '" + newConfig.getKey() +
