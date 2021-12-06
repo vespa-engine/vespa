@@ -75,7 +75,7 @@ SingleExecutor::execute(Task::UP task) {
 
 void
 SingleExecutor::setTaskLimit(uint32_t taskLimit) {
-    _wantedTaskLimit = std::max(vespalib::roundUp2inN(taskLimit), size_t(_watermark));
+    _wantedTaskLimit = vespalib::roundUp2inN(std::max(taskLimit, _watermark));
 }
 
 void
