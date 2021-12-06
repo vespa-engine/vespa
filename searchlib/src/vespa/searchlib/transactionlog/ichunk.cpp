@@ -8,6 +8,9 @@
 #include <cassert>
 #include <ostream>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.transactionlog.ichunk");
+
 using std::make_unique;
 using vespalib::make_string_short::fmt;
 using vespalib::nbostream_longlivedbuf;
@@ -114,5 +117,47 @@ Encoding::calcCrc(Crc version, const void * buf, size_t sz)
 std::ostream &
 operator << (std::ostream & os, Encoding e) {
     return os << "crc=" << e.getCrc() << " compression=" << e.getCompression();
+}
+
+void
+encode(vespalib::nbostream & os, const IChunk & chunk, Encoding encoding) {
+    size_t begin = os.wp();
+    os << encoding.getRaw();  // Placeholder for encoding
+    os << uint32_t(0);         // Placeholder for size
+    Encoding realEncoding = chunk.encode(os);
+    size_t end = os.wp();
+    os.wp(0);
+    os << realEncoding.getRaw();  //Patching real encoding
+    os << uint32_t(end - (begin + sizeof(uint32_t) + sizeof(uint8_t))); // Patching actual size.
+    os.wp(end);
+    SerialNumRange range = chunk.range();
+    LOG(spam, "Encoded chunk with %zu entries and %zu bytes, range[%" PRIu64 ", %" PRIu64 "] encoding(wanted=%x, real=%x)",
+        chunk.getEntries().size(), os.size(), range.from(), range.to(), encoding.getRaw(), realEncoding.getRaw());
+}
+
+SerializedChunk::SerializedChunk(const Packet & packet, Encoding encoding, uint8_t compressionLevel)
+   : _os(),
+     _range(packet.range()),
+     _numEntries(packet.size())
+{
+    nbostream_longlivedbuf h(packet.getHandle().data(), packet.getHandle().size());
+
+    IChunk::UP chunk = IChunk::create(encoding, compressionLevel);
+    SerialNum prev = 0;
+    for (size_t i(0); h.size() > 0; i++) {
+        //LOG(spam,
+        //"Pos(%d) Len(%d), Lim(%d), Remaining(%d)",
+        //h.getPos(), h.getLength(), h.getLimit(), h.getRemaining());
+        Packet::Entry entry;
+        entry.deserialize(h);
+        assert (prev < entry.serial());
+        chunk->add(entry);
+        prev = entry.serial();
+    }
+    assert(! chunk->getEntries().empty());
+    encode(_os, *chunk, encoding);
+}
+vespalib::ConstBufferRef SerializedChunk::getData() const {
+    return vespalib::ConstBufferRef(_os.data(), _os.size());
 }
 }
