@@ -2,7 +2,6 @@
 package com.yahoo.application.container;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.processing.execution.chain.ChainRegistry;
@@ -12,10 +11,10 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.handler.HttpSearchResponse;
 import com.yahoo.search.handler.SearchHandler;
-import com.yahoo.search.searchchain.SearchChainRegistry;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Einar M R Rosenvinge
@@ -41,12 +40,12 @@ public final class Search extends ProcessingBase<Query, Result, Searcher> {
     }
 
     @Override
-    protected ListenableFuture<Boolean> doProcessAndRender(ComponentSpecification chainSpec,
-                                                           Query request,
-                                                           Renderer<Result> renderer,
-                                                           ByteArrayOutputStream stream) throws IOException {
+    protected CompletableFuture<Boolean> doProcessAndRender(ComponentSpecification chainSpec,
+                                                            Query request,
+                                                            Renderer<Result> renderer,
+                                                            ByteArrayOutputStream stream) throws IOException {
         Result result = process(chainSpec, request);
-        return HttpSearchResponse.waitableRender(result, result.getQuery(), renderer, stream);
+        return HttpSearchResponse.asyncRender(result, result.getQuery(), renderer, stream);
     }
 
     @Override

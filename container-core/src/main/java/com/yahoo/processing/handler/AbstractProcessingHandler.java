@@ -244,7 +244,8 @@ public abstract class AbstractProcessingHandler<COMPONENT extends Processor> ext
 
             // Render if we have a renderer capable of it
             if (getRenderer() instanceof AsynchronousSectionedRenderer) {
-                ((AsynchronousSectionedRenderer) getRenderer()).renderBeforeHandover(new ContentChannelOutputStream(channel), response, execution, request);
+                ((AsynchronousSectionedRenderer) getRenderer()).renderResponseBeforeHandover(
+                        new ContentChannelOutputStream(channel), response, execution, request);
             }
         }
 

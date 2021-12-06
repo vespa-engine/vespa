@@ -3,6 +3,7 @@ package com.yahoo.search.handler;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.ListMap;
+import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.container.handler.Coverage;
 import com.yahoo.container.handler.Timing;
 import com.yahoo.container.jdisc.ExtendedResponse;
@@ -25,6 +26,7 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Wrap the result of a query as an HTTP response.
@@ -75,19 +77,35 @@ public class HttpSearchResponse extends ExtendedResponse {
         }
     }
 
+    /** @deprecated Use {@link #asyncRender(OutputStream)} instead */
+    @Deprecated(forRemoval = true, since = "7")
     public ListenableFuture<Boolean> waitableRender(OutputStream stream) throws IOException {
         return waitableRender(result, query, rendererCopy, stream);
     }
 
+    /** @deprecated Use {@link #asyncRender(Result, Query, Renderer, OutputStream)} instead */
+    @Deprecated(forRemoval = true, since = "7")
+    @SuppressWarnings("removal")
     public static ListenableFuture<Boolean> waitableRender(Result result,
                                                            Query query,
                                                            Renderer<Result> renderer,
                                                            OutputStream stream) throws IOException {
+        return CompletableFutures.toGuavaListenableFuture(asyncRender(result, query, renderer, stream));
+    }
+
+    public CompletableFuture<Boolean> asyncRender(OutputStream stream) {
+        return asyncRender(result, query, rendererCopy, stream);
+    }
+
+    public static CompletableFuture<Boolean> asyncRender(Result result,
+                                                         Query query,
+                                                         Renderer<Result> renderer,
+                                                         OutputStream stream) {
         SearchResponse.trimHits(result);
         SearchResponse.removeEmptySummaryFeatureFields(result);
-        return renderer.render(stream, result, query.getModel().getExecution(), query);
-
+        return renderer.renderResponse(stream, result, query.getModel().getExecution(), query);
     }
+
 
     @Override
     public void render(OutputStream output, ContentChannel networkChannel, CompletionHandler handler) throws IOException {
@@ -98,9 +116,9 @@ public class HttpSearchResponse extends ExtendedResponse {
         try {
             try {
                 long nanoStart = System.nanoTime();
-                ListenableFuture<Boolean> promise = waitableRender(output);
+                CompletableFuture<Boolean> promise = asyncRender(output);
                 if (metric != null) {
-                    promise.addListener(new RendererLatencyReporter(nanoStart), Runnable::run);
+                    promise.whenComplete((__, ___) -> new RendererLatencyReporter(nanoStart).run());
                 }
             } finally {
                 if (!(rendererCopy instanceof AsynchronousSectionedRenderer)) {
