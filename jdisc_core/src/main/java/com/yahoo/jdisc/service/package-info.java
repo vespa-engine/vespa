@@ -73,5 +73,4 @@ MyApplication(ContainerActivator activator, CurrentContainer container) {
  * @see com.yahoo.jdisc.application
  * @see com.yahoo.jdisc.handler
  */
-@com.yahoo.api.annotations.PublicApi
 package com.yahoo.jdisc.service;
