@@ -1,5 +1,5 @@
 {
-    "name": "my test",
+    "name": "My test",
     "defaults": {
         "cluster": "container",
         "parameters": {

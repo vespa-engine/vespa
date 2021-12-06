@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 	"io/ioutil"
@@ -23,29 +24,41 @@ func TestSuite(t *testing.T) {
 	searchResponse, _ := ioutil.ReadFile("testdata/tests/response.json")
 	client.NextStatus(200)
 	client.NextStatus(200)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 11; i++ {
 		client.NextResponse(200, string(searchResponse))
 	}
 
 	expectedBytes, _ := ioutil.ReadFile("testdata/tests/expected-suite.out")
 	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/system-test"}}, t, client)
-	assert.Equal(t, string(expectedBytes), outBytes)
-	assert.Equal(t, "", errBytes)
 
 	baseUrl := "http://127.0.0.1:8080"
 	urlWithQuery := baseUrl + "/search/?presentation.timing=true&query=artist%3A+foo&timeout=3.4s"
 	requests := []*http.Request{createFeedRequest(baseUrl), createFeedRequest(baseUrl), createSearchRequest(urlWithQuery), createSearchRequest(urlWithQuery)}
-	for i := 0; i < 8; i++ {
+	requests = append(requests, createSearchRequest(baseUrl+"/search/"))
+	requests = append(requests, createSearchRequest(baseUrl+"/search/?foo=%2F"))
+	for i := 0; i < 7; i++ {
 		requests = append(requests, createSearchRequest(baseUrl+"/search/"))
 	}
 	assertRequests(requests, client, t)
+	fmt.Println(outBytes)
+	assert.Equal(t, string(expectedBytes), outBytes)
+	assert.Equal(t, "", errBytes)
+}
+
+func TestIllegalFileReference(t *testing.T) {
+	client := &mockHttpClient{}
+	client.NextStatus(200)
+	client.NextStatus(200)
+	_, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/illegal-reference.json"}}, t, client)
+	assertRequests([]*http.Request{createRequest("GET", "http://127.0.0.1:8080/search/", "{}")}, client, t)
+	assert.Equal(t, "\nError: path may not point outside src/test/application, but 'foo/../../../../this-is-not-ok.json' does\nHint: Error in Step 2\nHint: See https://cloud.vespa.ai/en/reference/testing\n", errBytes)
 }
 
 func TestProductionTest(t *testing.T) {
 	client := &mockHttpClient{}
 	client.NextStatus(200)
 	outBytes, errBytes := execute(command{args: []string{"test", "testdata/tests/production-test/external.json"}}, t, client)
-	assert.Equal(t, "Running external.json: . OK\n\nSuccess: 1 test OK\n", outBytes)
+	assert.Equal(t, "external.json: . OK\n\nSuccess: 1 test OK\n", outBytes)
 	assert.Equal(t, "", errBytes)
 	assertRequests([]*http.Request{createRequest("GET", "https://my.service:123/path?query=wohoo", "")}, client, t)
 }

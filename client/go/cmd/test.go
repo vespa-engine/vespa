@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -29,24 +28,20 @@ func init() {
 }
 
 var testCmd = &cobra.Command{
-	Use:   "test [tests directory or test file]",
+	Use:   "test <tests directory or test file>",
 	Short: "Run a test suite, or a single test",
 	Long: `Run a test suite, or a single test
 
-Runs all JSON test files in the specified directory (the working
-directory by default), or the single JSON test file specified.
+Runs all JSON test files in the specified directory, or the single JSON test file specified.
 
 See https://cloud.vespa.ai/en/reference/testing.html for details.`,
 	Example: `$ vespa test src/test/application/tests/system-test
 $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
-	Args:              cobra.MaximumNArgs(1),
+	Args:              cobra.ExactArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		target := getTarget()
-		testPath := "."
-		if len(args) > 0 {
-			testPath = args[0]
-		}
+		testPath := args[0]
 		if count, failed := runTests(testPath, target, false); len(failed) != 0 {
 			plural := "s"
 			if count == 1 {
@@ -77,10 +72,11 @@ func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string)
 		if err != nil {
 			fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 		}
+
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
-				testPath := path.Join(rootPath, test.Name())
+				testPath := filepath.Join(rootPath, test.Name())
 				if previousFailed {
 					fmt.Fprintln(stdout, "")
 					previousFailed = false
@@ -122,10 +118,10 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 		testName = filepath.Base(testPath)
 	}
 	if !dryRun {
-		fmt.Fprintf(stdout, "Running %s:", color.Cyan(testName))
+		fmt.Fprintf(stdout, "%s:", testName)
 	}
 
-	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, path.Dir(testPath))
+	defaultParameters, err := getParameters(test.Defaults.ParametersRaw, filepath.Dir(testPath))
 	if err != nil {
 		fmt.Fprintln(stderr)
 		fatalErrHint(err, fmt.Sprintf("Invalid default parameters for %s", testName), "See https://cloud.vespa.ai/en/reference/testing")
@@ -136,24 +132,24 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 		fatalErrHint(fmt.Errorf("a test must have at least one step, but none were found in %s", testPath), "See https://cloud.vespa.ai/en/reference/testing")
 	}
 	for i, step := range test.Steps {
-		stepName := step.Name
-		if stepName == "" {
-			stepName = fmt.Sprintf("step %d", i+1)
+		stepName := fmt.Sprintf("Step %d", i+1)
+		if step.Name != "" {
+			stepName = fmt.Sprintf("Step: %s", step.Name)
 		}
-		failure, longFailure, err := verify(step, path.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
+		failure, longFailure, err := verify(step, filepath.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
 		if err != nil {
 			fmt.Fprintln(stderr)
 			fatalErrHint(err, fmt.Sprintf("Error in %s", stepName), "See https://cloud.vespa.ai/en/reference/testing")
 		}
 		if !dryRun {
 			if failure != "" {
-				fmt.Fprintf(stdout, " %s %s:\n%s\n", color.Red("Failed"), color.Cyan(stepName), longFailure)
+				fmt.Fprintf(stdout, " %s\n%s:\n%s\n", color.Red("failed"), stepName, longFailure)
 				return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
 			}
 			if i == 0 {
 				fmt.Fprintf(stdout, " ")
 			}
-			fmt.Fprint(stdout, color.Green("."))
+			fmt.Fprint(stdout, ".")
 		}
 	}
 	if !dryRun {
@@ -207,7 +203,7 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	}
 	externalEndpoint := requestUrl.IsAbs()
 	if !externalEndpoint {
-		baseURL := "http://dummy/"
+		baseURL := ""
 		if service != nil {
 			baseURL = service.BaseURL
 		}
@@ -267,8 +263,13 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 	defer response.Body.Close()
 
 	if statusCode != response.StatusCode {
-		failure := fmt.Sprintf("Unexpected %s: %s", "status code", color.Red(response.StatusCode))
-		return failure, fmt.Sprintf("%s\nExpected: %s\nActual response:\n%s", failure, color.Cyan(statusCode), util.ReaderToJSON(response.Body)), nil
+		return fmt.Sprintf("Unexpected status code: %d", color.Red(response.StatusCode)),
+			fmt.Sprintf("Unexpected status code\nExpected: %d\nActual:   %d\nRequested: %s at %s\nResponse:\n%s",
+				color.Cyan(statusCode),
+				color.Red(response.StatusCode),
+				color.Cyan(method),
+				color.Cyan(requestUrl),
+				util.ReaderToJSON(response.Body)), nil
 	}
 
 	if responseBodySpec == nil {
@@ -285,20 +286,24 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 		return "", "", fmt.Errorf("got non-JSON response; %w:\n%s", err, string(responseBodyBytes))
 	}
 
-	failure, expected, err := compare(responseBodySpec, responseBody, "")
+	failure, expected, actual, err := compare(responseBodySpec, responseBody, "")
 	if failure != "" {
 		responsePretty, _ := json.MarshalIndent(responseBody, "", "  ")
 		longFailure := failure
 		if expected != "" {
-			longFailure += "\n" + expected
+			longFailure += "\nExpected: " + expected
 		}
-		longFailure += "\nActual response:\n" + string(responsePretty)
+		if actual != "" {
+			failure += ": " + actual
+			longFailure += "\nActual:   " + actual
+		}
+		longFailure += fmt.Sprintf("\nRequested: %s at %s\nResponse:\n%s", color.Cyan(method), color.Cyan(requestUrl), string(responsePretty))
 		return failure, longFailure, err
 	}
 	return "", "", err
 }
 
-func compare(expected interface{}, actual interface{}, path string) (string, string, error) {
+func compare(expected interface{}, actual interface{}, path string) (string, string, string, error) {
 	typeMatch := false
 	valueMatch := false
 	switch u := expected.(type) {
@@ -323,18 +328,15 @@ func compare(expected interface{}, actual interface{}, path string) (string, str
 		if ok {
 			if len(u) == len(v) {
 				for i, e := range u {
-					failure, expected, err := compare(e, v[i], fmt.Sprintf("%s/%d", path, i))
-					if failure != "" || err != nil {
-						return failure, expected, err
+					if failure, expected, actual, err := compare(e, v[i], fmt.Sprintf("%s/%d", path, i)); failure != "" || err != nil {
+						return failure, expected, actual, err
 					}
 				}
 				valueMatch = true
 			} else {
-				return fmt.Sprintf("Unexpected %s at %s: %d",
-						"number of elements",
-						color.Cyan(path),
-						color.Red(len(v))),
-					fmt.Sprintf("Expected: %d", color.Cyan(len(u))),
+				return fmt.Sprintf("Unexpected number of elements at %s", color.Cyan(path)),
+					fmt.Sprintf("%d", color.Cyan(len(u))),
+					fmt.Sprintf("%d", color.Red(len(v))),
 					nil
 			}
 		}
@@ -346,17 +348,16 @@ func compare(expected interface{}, actual interface{}, path string) (string, str
 				childPath := fmt.Sprintf("%s/%s", path, strings.ReplaceAll(strings.ReplaceAll(n, "~", "~0"), "/", "~1"))
 				f, ok := v[n]
 				if !ok {
-					return fmt.Sprintf("Missing expected field at %s", color.Red(childPath)), "", nil
+					return fmt.Sprintf("Missing expected field at %s", color.Red(childPath)), "", "", nil
 				}
-				failure, expected, err := compare(e, f, childPath)
-				if failure != "" || err != nil {
-					return failure, expected, err
+				if failure, expected, actual, err := compare(e, f, childPath); failure != "" || err != nil {
+					return failure, expected, actual, err
 				}
 			}
 			valueMatch = true
 		}
 	default:
-		return "", "", fmt.Errorf("unexpected JSON type for value '%v'", expected)
+		return "", "", "", fmt.Errorf("unexpected JSON type for value '%v'", expected)
 	}
 
 	if !valueMatch {
@@ -369,21 +370,22 @@ func compare(expected interface{}, actual interface{}, path string) (string, str
 		}
 		expectedJson, _ := json.Marshal(expected)
 		actualJson, _ := json.Marshal(actual)
-		return fmt.Sprintf("Unexpected %s at %s: %s",
-				mismatched,
-				color.Cyan(path),
-				color.Red(actualJson)),
-			fmt.Sprintf("Expected: %s", color.Cyan(expectedJson)),
+		return fmt.Sprintf("Unexpected %s at %s", mismatched, color.Cyan(path)),
+			fmt.Sprintf("%s", color.Cyan(expectedJson)),
+			fmt.Sprintf("%s", color.Red(actualJson)),
 			nil
 	}
-	return "", "", nil
+	return "", "", "", nil
 }
 
 func getParameters(parametersRaw []byte, testsPath string) (map[string]string, error) {
 	if parametersRaw != nil {
 		var parametersPath string
 		if err := json.Unmarshal(parametersRaw, &parametersPath); err == nil {
-			resolvedParametersPath := path.Join(testsPath, parametersPath)
+			if err = validateRelativePath(parametersPath); err != nil {
+				return nil, err
+			}
+			resolvedParametersPath := filepath.Join(testsPath, parametersPath)
 			parametersRaw, err = ioutil.ReadFile(resolvedParametersPath)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read request parameters at %s: %w", resolvedParametersPath, err)
@@ -401,13 +403,28 @@ func getParameters(parametersRaw []byte, testsPath string) (map[string]string, e
 func getBody(bodyRaw []byte, testsPath string) ([]byte, error) {
 	var bodyPath string
 	if err := json.Unmarshal(bodyRaw, &bodyPath); err == nil {
-		resolvedBodyPath := path.Join(testsPath, bodyPath)
+		if err = validateRelativePath(bodyPath); err != nil {
+			return nil, err
+		}
+		resolvedBodyPath := filepath.Join(testsPath, bodyPath)
 		bodyRaw, err = ioutil.ReadFile(resolvedBodyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read body file at %s: %w", resolvedBodyPath, err)
 		}
 	}
 	return bodyRaw, nil
+}
+
+func validateRelativePath(relPath string) error {
+	if filepath.IsAbs(relPath) {
+		return fmt.Errorf("path must be relative, but was '%s'", relPath)
+	}
+	cleanPath := filepath.Clean(relPath)
+	fmt.Println(cleanPath)
+	if strings.HasPrefix(cleanPath, "../../../") {
+		return fmt.Errorf("path may not point outside src/test/application, but '%s' does", relPath)
+	}
+	return nil
 }
 
 type test struct {

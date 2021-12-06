@@ -1,0 +1,14 @@
+{
+    "steps": [
+        {
+            "request": {
+                "parameters": {
+                    "foo": "/"
+                }
+            },
+            "response": {
+                "code": 123
+            }
+        }
+    ]
+}
