@@ -113,13 +113,18 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         RestApi.RequestContext.RequestContent requestContent = context.requestContentOrThrow();
         Slime requestBody = Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(requestContent.content().readAllBytes()));
         DeploymentRoutingStatus wantedStatus = deploymentRoutingStatusFromSlime(requestBody, clock.instant());
-        DeploymentRoutingStatus currentStatus = deploymentStatus(upstreamNames.iterator().next());
-
+        List<DeploymentRoutingStatus> currentStatuses = upstreamNames.stream()
+                                                                     .map(this::deploymentStatus)
+                                                                     .collect(Collectors.toList());
+        DeploymentRoutingStatus currentStatus = currentStatuses.get(0);
         // Redeploy application so that a new LbServicesConfig containing the updated status is generated and consumed
-        // by routing layer. This is required to update weights for application endpoints when routing status for a
-        // deployment is changed
+        // by routing layer. This is required to update status of upstreams in application endpoints
         log.log(Level.INFO, "Changing routing status of " + instance + " from " +
                             currentStatus.status() + " to " + wantedStatus.status());
+        boolean needsChange = currentStatuses.stream().anyMatch(status -> status.status() != wantedStatus.status());
+        if (!needsChange) {
+            return new SlimeJsonResponse(toSlime(wantedStatus));
+        }
         changeStatus(upstreamNames, wantedStatus);
         try {
             Optional<Deployment> deployment = deployer.deployFromLocalActive(instance, Duration.ofMinutes(1));
