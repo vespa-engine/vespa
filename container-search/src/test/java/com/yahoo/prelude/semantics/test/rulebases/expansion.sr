@@ -4,3 +4,7 @@ or1 +> ?or2 ?or3;
 equiv1 +> =equiv2 =equiv3;
 
 testfield:[test] -> =testfield:e1 =testfield:e2 =testfield:e3;
+
+synonymfield:[test] -> =[test];
+
+[test] :- foo, bar, baz;
