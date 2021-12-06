@@ -247,11 +247,9 @@ DomainPart::buildPacketMapping(bool allowTruncate)
     return currPos;
 }
 
-DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s, Encoding encoding,
-                       uint8_t compressionLevel, const FileHeaderContext &fileHeaderContext, bool allowTruncate)
-    : _encoding(encoding),
-      _compressionLevel(compressionLevel),
-      _lock(),
+DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
+                       const FileHeaderContext &fileHeaderContext, bool allowTruncate)
+    : _lock(),
       _fileLock(),
       _range(s),
       _sz(0),
@@ -379,35 +377,21 @@ DomainPart::erase(SerialNum to)
 }
 
 void
-DomainPart::commit(SerialNum firstSerial, const Packet &packet)
+DomainPart::commit(const SerializedChunk & serialized)
 {
+    SerialNumRange range = serialized.range();
+
     int64_t firstPos(byteSize());
-    nbostream_longlivedbuf h(packet.getHandle().data(), packet.getHandle().size());
+    assert(_range.to() < range.to());
+    _sz += serialized.getNumEntries();
+    _range.to(range.to());
     if (_range.from() == 0) {
-        _range.from(firstSerial);
+        _range.from(range.from());
     }
-    IChunk::UP chunk = IChunk::create(_encoding, _compressionLevel);
-    for (size_t i(0); h.size() > 0; i++) {
-        //LOG(spam,
-        //"Pos(%d) Len(%d), Lim(%d), Remaining(%d)",
-        //h.getPos(), h.getLength(), h.getLimit(), h.getRemaining());
-        Packet::Entry entry;
-        entry.deserialize(h);
-        if (_range.to() < entry.serial()) {
-            chunk->add(entry);
-            assert(_encoding.getCompression() != Encoding::Compression::none);
-            _sz++;
-            _range.to(entry.serial());
-        } else {
-            throw runtime_error(fmt("Incoming serial number(%" PRIu64 ") must be bigger than the last one (%" PRIu64 ").",
-                                    entry.serial(), _range.to()));
-        }
-    }
-    if ( ! chunk->getEntries().empty()) {
-        write(*_transLog, *chunk);
-    }
+
+    write(*_transLog, range, serialized.getData());
     std::lock_guard guard(_lock);
-    _skipList.emplace_back(firstSerial, firstPos);
+    _skipList.emplace_back(range.from(), firstPos);
 }
 
 void
@@ -442,26 +426,15 @@ DomainPart::visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet)
 }
 
 void
-DomainPart::write(FastOS_FileInterface &file, const IChunk & chunk)
+DomainPart::write(FastOS_FileInterface &file, SerialNumRange range, vespalib::ConstBufferRef buf)
 {
-    nbostream os;
-    size_t begin = os.wp();
-    os << _encoding.getRaw();  // Placeholder for encoding
-    os << uint32_t(0);         // Placeholder for size
-    Encoding realEncoding = chunk.encode(os);
-    size_t end = os.wp();
-    os.wp(0);
-    os << realEncoding.getRaw();  //Patching real encoding
-    os << uint32_t(end - (begin + sizeof(uint32_t) + sizeof(uint8_t))); // Patching actual size.
-    os.wp(end);
     std::lock_guard guard(_writeLock);
-    if ( ! file.CheckedWrite(os.data(), os.size()) ) {
-        throw runtime_error(handleWriteError("Failed writing the entry.", file, byteSize(), chunk.range(), os.size()));
+    if ( ! file.CheckedWrite(buf.data(), buf.size()) ) {
+        throw runtime_error(handleWriteError("Failed writing the entry.", file, byteSize(), range, buf.size()));
     }
-    LOG(debug, "Wrote chunk with %zu entries and %zu bytes, range[%" PRIu64 ", %" PRIu64 "] encoding(wanted=%x, real=%x)",
-        chunk.getEntries().size(), os.size(), chunk.range().from(), chunk.range().to(), _encoding.getRaw(), realEncoding.getRaw());
-    _writtenSerial = chunk.range().to();
-    _byteSize.fetch_add(os.size(), std::memory_order_release);
+    LOG(debug, "Wrote chunk with and %zu bytes, range[%" PRIu64 ", %" PRIu64 "]", buf.size(), range.from(), range.to());
+    _writtenSerial = range.to();
+    _byteSize.fetch_add(buf.size(), std::memory_order_release);
 }
 
 bool
