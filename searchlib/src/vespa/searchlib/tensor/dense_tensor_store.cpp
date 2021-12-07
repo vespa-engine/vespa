@@ -79,12 +79,6 @@ DenseTensorStore::~DenseTensorStore()
     _store.dropBuffers();
 }
 
-const void *
-DenseTensorStore::getRawBuffer(RefType ref) const
-{
-    return _store.getEntryArray<char>(ref, _bufferType.getArraySize());
-}
-
 namespace {
 
 void clearPadAreaAfterBuffer(char *buffer, size_t bufSize, size_t alignedBufSize) {
@@ -134,15 +128,6 @@ DenseTensorStore::getTensor(EntryRef ref) const
     }
     vespalib::eval::TypedCells cells_ref(getRawBuffer(ref), _type.cell_type(), getNumCells());
     return std::make_unique<vespalib::eval::DenseValueView>(_type, cells_ref);
-}
-
-vespalib::eval::TypedCells
-DenseTensorStore::get_typed_cells(EntryRef ref) const
-{
-    if (!ref.valid()) {
-        return vespalib::eval::TypedCells(&_emptySpace[0], _type.cell_type(), getNumCells());
-    }
-    return vespalib::eval::TypedCells(getRawBuffer(ref), _type.cell_type(), getNumCells());
 }
 
 template <class TensorType>
