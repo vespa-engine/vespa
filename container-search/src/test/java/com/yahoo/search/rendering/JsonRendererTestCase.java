@@ -364,6 +364,7 @@ public class JsonRendererTestCase {
     }
 
     @Test
+    @SuppressWarnings("removal")
     public void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
@@ -391,7 +392,7 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     @Test
     public void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
         String expected =  "{"
@@ -1372,6 +1373,7 @@ public class JsonRendererTestCase {
         return render(execution, r);
     }
 
+    @SuppressWarnings("removal")
     private String render(Execution execution, Result r) throws InterruptedException, ExecutionException {
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
         ListenableFuture<Boolean> f = renderer.render(bs, r, execution, null);
