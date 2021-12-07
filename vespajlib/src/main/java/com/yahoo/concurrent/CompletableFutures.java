@@ -71,7 +71,7 @@ public class CompletableFutures {
     }
 
     /**
-     * Helper for migrating from {@link ListenableFuture} to {@link CompletableFuture> in Vespa public apis
+     * Helper for migrating from {@link ListenableFuture} to {@link CompletableFuture} in Vespa public apis
      * @deprecated to be removed in Vespa 8
      */
     @Deprecated(forRemoval = true, since = "7")
