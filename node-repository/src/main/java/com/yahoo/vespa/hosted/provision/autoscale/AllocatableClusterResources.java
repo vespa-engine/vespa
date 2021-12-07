@@ -145,17 +145,15 @@ public class AllocatableClusterResources {
         var capacityPolicies = new CapacityPolicies(nodeRepository);
         var systemLimits = new NodeResourceLimits(nodeRepository);
         boolean exclusive = clusterSpec.isExclusive();
-        int actualNodes = capacityPolicies.decideSize(wantedResources.nodes(), required, true, false, clusterSpec);
         if ( !clusterSpec.isExclusive() && !nodeRepository.zone().getCloud().dynamicProvisioning()) {
             // We decide resources: Add overhead to what we'll request (advertised) to make sure real becomes (at least) cappedNodeResources
             var advertisedResources = nodeRepository.resourcesCalculator().realToRequest(wantedResources.nodeResources(), exclusive);
             advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec.type(), exclusive); // Ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
-            advertisedResources = capacityPolicies.decideNodeResources(advertisedResources, required, clusterSpec); // Adjust to what we can request
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
             if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) return Optional.empty();
             if (matchesAny(hosts, advertisedResources))
-                    return Optional.of(new AllocatableClusterResources(wantedResources.withNodes(actualNodes).with(realResources),
+                    return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
                                                                        advertisedResources,
                                                                        wantedResources,
                                                                        clusterSpec));
@@ -168,7 +166,6 @@ public class AllocatableClusterResources {
             for (Flavor flavor : nodeRepository.flavors().getFlavors()) {
                 // Flavor decide resources: Real resources are the worst case real resources we'll get if we ask for these advertised resources
                 NodeResources advertisedResources = nodeRepository.resourcesCalculator().advertisedResourcesOf(flavor);
-                advertisedResources = capacityPolicies.decideNodeResources(advertisedResources, required, clusterSpec); // Adjust to what we can get
                 NodeResources realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive);
 
                 // Adjust where we don't need exact match to the flavor
@@ -184,7 +181,7 @@ public class AllocatableClusterResources {
 
                 if ( ! between(applicationLimits.min().nodeResources(), applicationLimits.max().nodeResources(), advertisedResources)) continue;
                 if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) continue;
-                var candidate = new AllocatableClusterResources(wantedResources.withNodes(actualNodes).with(realResources),
+                var candidate = new AllocatableClusterResources(wantedResources.with(realResources),
                                                                 advertisedResources,
                                                                 wantedResources,
                                                                 clusterSpec);
