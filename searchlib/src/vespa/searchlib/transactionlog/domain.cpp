@@ -419,8 +419,8 @@ Domain::doCommit(const SerializedChunk & serialized) {
         dp->sync();
     }
     cleanSessions();
-    LOG(debug, "Releasing unknown acks and %zu entries and %zu bytes.",
-        /*chunk->getNumCallBacks(),*/ serialized.getNumEntries(), serialized.getData().size());
+    LOG(debug, "Releasing %zu acks and %zu entries and %zu bytes.",
+        serialized.commitChunk().getNumCallBacks(), serialized.getNumEntries(), serialized.getData().size());
 }
 
 bool

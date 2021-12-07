@@ -317,43 +317,33 @@ fillDomainTest(Session * s1, size_t numPackets, size_t numEntries)
     }
 }
 
-using Counter = std::atomic<size_t>;
-
-class CountDone : public IDestructorCallback {
-public:
-    explicit CountDone(Counter & inFlight) noexcept : _inFlight(inFlight) { ++_inFlight; }
-    ~CountDone() override { --_inFlight; }
-private:
-    Counter & _inFlight;
-};
-
 void
-fillDomainTest(TransLogServer & s1, const vespalib::string & domain, size_t numPackets, size_t numEntries)
+fillDomainTest(IDestructorCallback::SP onDone, TransLogServer & tls, const vespalib::string & domain, size_t numPackets, size_t numEntries)
 {
     size_t value(0);
-    Counter inFlight(0);
-    auto domainWriter = s1.getWriter(domain);
-    vespalib::Gate gate;
-    {
-        auto onDone = std::make_shared<vespalib::GateCallback>(gate);
-        for (size_t i = 0; i < numPackets; i++) {
-            auto p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
-            for (size_t j = 0; j < numEntries; j++, value++) {
-                Packet::Entry e(value + 1, j + 1, vespalib::ConstBufferRef((const char *) &value, sizeof(value)));
-                p->add(e);
-                if (p->sizeBytes() > DEFAULT_PACKET_SIZE) {
-                    domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
-                    p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
-                }
-            }
-            domainWriter->append(*p, std::make_shared<CountDone>(inFlight));
-            auto keep = domainWriter->startCommit(onDone);
-        }
-    }
-    gate.await();
+    auto domainWriter = tls.getWriter(domain);
 
+    for (size_t i = 0; i < numPackets; i++) {
+        auto p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
+        for (size_t j = 0; j < numEntries; j++, value++) {
+            Packet::Entry e(value + 1, j + 1, vespalib::ConstBufferRef((const char *) &value, sizeof(value)));
+            p->add(e);
+            if (p->sizeBytes() > DEFAULT_PACKET_SIZE) {
+                domainWriter->append(*p, onDone);
+                p = std::make_unique<Packet>(DEFAULT_PACKET_SIZE);
+            }
+        }
+        domainWriter->append(*p, onDone);
+        auto keep = domainWriter->startCommit(onDone);
+    }
 }
 
+void
+fillDomainTest(TransLogServer & tls, const vespalib::string & domain, size_t numPackets, size_t numEntries) {
+    vespalib::Gate gate;
+    fillDomainTest(std::make_shared<vespalib::GateCallback>(gate), tls, domain, numPackets, numEntries);
+    gate.await();
+}
 
 void
 fillDomainTest(Session * s1, size_t numPackets, size_t numEntries, size_t entrySize)
