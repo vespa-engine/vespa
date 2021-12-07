@@ -63,6 +63,7 @@ RcuVectorBase<T>::expand(size_t newCapacity) {
 template <typename T>
 void
 RcuVectorBase<T>::replaceVector(ArrayType replacement) {
+    std::atomic_thread_fence(std::memory_order_release);
     replacement.swap(_data); // atomic switch of underlying data
     size_t holdSize = replacement.capacity() * sizeof(T);
     auto hold = std::make_unique<RcuVectorHeld<ArrayType>>(holdSize, std::move(replacement));
@@ -96,6 +97,7 @@ RcuVectorBase<T>::shrink(size_t newSize)
         for (uint32_t i = 0; i < newSize; ++i) {
             tmpData[i] = _data[i];
         }
+        std::atomic_thread_fence(std::memory_order_release);
         // Users of RCU vector must ensure that no readers use old size
         // after swap.  Attribute vectors uses _committedDocIdLimit for this.
         tmpData.swap(_data); // atomic switch of underlying data
