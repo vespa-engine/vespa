@@ -48,6 +48,7 @@ public:
     size_t getNumEntries() const { return _numEntries; }
     const CommitChunk & commitChunk() const { return *_commitChunk; }
 private:
+    // CommitChunk is required to ensure we do not reply until committed to the TLS.
     std::unique_ptr<CommitChunk> _commitChunk;
     vespalib::nbostream _os;
     SerialNumRange      _range;
