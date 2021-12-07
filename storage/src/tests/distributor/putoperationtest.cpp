@@ -51,9 +51,8 @@ public:
     document::BucketId createAndSendSampleDocument(vespalib::duration timeout);
 
     void sendReply(int idx = -1,
-                      api::ReturnCode::Result result
-                      = api::ReturnCode::OK,
-                      api::BucketInfo info = api::BucketInfo(1,2,3,4,5))
+                   api::ReturnCode::Result result = api::ReturnCode::OK,
+                   api::BucketInfo info = api::BucketInfo(1,2,3,4,5))
     {
         ASSERT_FALSE(_sender.commands().empty());
         if (idx == -1) {
@@ -150,6 +149,33 @@ TEST_F(PutOperationTest, bucket_database_gets_special_entry_when_CreateBucket_se
               dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
 
     ASSERT_EQ("Create bucket => 0,Put => 0", _sender.getCommands(true));
+}
+
+TEST_F(PutOperationTest, failed_CreateBucket_removes_replica_from_db_and_sends_RequestBucketInfo) {
+    setup_stripe(2, 2, "distributor:1 storage:2");
+
+    auto doc = createDummyDocument("test", "test");
+    sendPut(createPut(doc));
+
+    ASSERT_EQ("Create bucket => 1,Create bucket => 0,Put => 1,Put => 0", _sender.getCommands(true));
+
+    // Simulate timeouts on node 1. Replica existence is in a Schrödinger's cat state until we send
+    // a RequestBucketInfo to the node and open the box to find out for sure.
+    sendReply(0, api::ReturnCode::TIMEOUT, api::BucketInfo()); // CreateBucket
+    sendReply(2, api::ReturnCode::TIMEOUT, api::BucketInfo()); // Put
+    // Pretend everything went fine on node 0
+    sendReply(1); // CreateBucket
+    sendReply(3); // Put
+
+    ASSERT_EQ("BucketId(0x4000000000008f09) : "
+              "node(idx=0,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
+              dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
+
+    // TODO remove revert concept; does not make sense with Proton (since it's not a multi-version store and
+    //  therefore does not have anything to revert back to) and is config-disabled by default for this provider.
+    ASSERT_EQ("RequestBucketInfoCommand(1 buckets, super bucket BucketId(0x4000000000008f09). ) => 1,"
+              "Revert(BucketId(0x4000000000008f09)) => 0",
+              _sender.getCommands(true, true, 4));
 }
 
 TEST_F(PutOperationTest, send_inline_split_before_put_if_bucket_too_large) {
