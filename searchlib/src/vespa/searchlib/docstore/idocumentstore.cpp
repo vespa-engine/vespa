@@ -5,10 +5,6 @@
 
 namespace search {
 
-IDocumentStore::IDocumentStore() = default;
-
-IDocumentStore::~IDocumentStore() = default;
-
 void IDocumentStore::visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const {
     for (uint32_t lid : lids) {
         visitor.visit(lid, read(lid, repo));

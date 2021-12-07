@@ -111,9 +111,6 @@ public:
     size_t getDiskBloat() const override;
     size_t getMaxCompactGain() const override;
 
-    /**
-     * Will compact the docsummary up to a lower limit of 5% bloat.
-     */
     void compact(uint64_t syncToken);
 
     const Config & getConfig() const { return _config; }
