@@ -1,20 +1,4 @@
 {
-  "ai.vespa.feed.client.BenchmarkingCluster": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "ai.vespa.feed.client.Cluster"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(ai.vespa.feed.client.Cluster)",
-      "public void dispatch(ai.vespa.feed.client.HttpRequest, java.util.concurrent.CompletableFuture)",
-      "public ai.vespa.feed.client.OperationStats stats()",
-      "public void close()"
-    ],
-    "fields": []
-  },
   "ai.vespa.feed.client.DocumentId": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -34,21 +18,6 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
-  "ai.vespa.feed.client.DynamicThrottler": {
-    "superClass": "ai.vespa.feed.client.StaticThrottler",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(ai.vespa.feed.client.FeedClientBuilder)",
-      "public void sent(long, java.util.concurrent.CompletableFuture)",
-      "public void success()",
-      "public void throttled(long)",
-      "public long targetInflight()"
     ],
     "fields": []
   },
@@ -145,27 +114,30 @@
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
-      "public"
+      "public",
+      "interface",
+      "abstract"
     ],
     "methods": [
       "public static ai.vespa.feed.client.FeedClientBuilder create(java.net.URI)",
       "public static ai.vespa.feed.client.FeedClientBuilder create(java.util.List)",
-      "public ai.vespa.feed.client.FeedClientBuilder setConnectionsPerEndpoint(int)",
-      "public ai.vespa.feed.client.FeedClientBuilder setMaxStreamPerConnection(int)",
-      "public ai.vespa.feed.client.FeedClientBuilder setSslContext(javax.net.ssl.SSLContext)",
-      "public ai.vespa.feed.client.FeedClientBuilder setHostnameVerifier(javax.net.ssl.HostnameVerifier)",
-      "public ai.vespa.feed.client.FeedClientBuilder noBenchmarking()",
-      "public ai.vespa.feed.client.FeedClientBuilder addRequestHeader(java.lang.String, java.lang.String)",
-      "public ai.vespa.feed.client.FeedClientBuilder addRequestHeader(java.lang.String, java.util.function.Supplier)",
-      "public ai.vespa.feed.client.FeedClientBuilder setRetryStrategy(ai.vespa.feed.client.FeedClient$RetryStrategy)",
-      "public ai.vespa.feed.client.FeedClientBuilder setCircuitBreaker(ai.vespa.feed.client.FeedClient$CircuitBreaker)",
-      "public ai.vespa.feed.client.FeedClientBuilder setCertificate(java.nio.file.Path, java.nio.file.Path)",
-      "public ai.vespa.feed.client.FeedClientBuilder setCertificate(java.util.Collection, java.security.PrivateKey)",
-      "public ai.vespa.feed.client.FeedClientBuilder setCertificate(java.security.cert.X509Certificate, java.security.PrivateKey)",
-      "public ai.vespa.feed.client.FeedClientBuilder setDryrun(boolean)",
-      "public ai.vespa.feed.client.FeedClientBuilder setCaCertificatesFile(java.nio.file.Path)",
-      "public ai.vespa.feed.client.FeedClientBuilder setCaCertificates(java.util.Collection)",
-      "public ai.vespa.feed.client.FeedClient build()"
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setConnectionsPerEndpoint(int)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setMaxStreamPerConnection(int)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setSslContext(javax.net.ssl.SSLContext)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setHostnameVerifier(javax.net.ssl.HostnameVerifier)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder noBenchmarking()",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder addRequestHeader(java.lang.String, java.lang.String)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder addRequestHeader(java.lang.String, java.util.function.Supplier)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setRetryStrategy(ai.vespa.feed.client.FeedClient$RetryStrategy)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setCircuitBreaker(ai.vespa.feed.client.FeedClient$CircuitBreaker)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setCertificate(java.nio.file.Path, java.nio.file.Path)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setCertificate(java.util.Collection, java.security.PrivateKey)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setCertificate(java.security.cert.X509Certificate, java.security.PrivateKey)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setDryrun(boolean)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setCaCertificatesFile(java.nio.file.Path)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setCaCertificates(java.util.Collection)",
+      "public abstract ai.vespa.feed.client.FeedClientBuilder setEndpointUris(java.util.List)",
+      "public abstract ai.vespa.feed.client.FeedClient build()"
     ],
     "fields": []
   },
@@ -186,21 +158,18 @@
     ],
     "fields": []
   },
-  "ai.vespa.feed.client.GracePeriodCircuitBreaker": {
+  "ai.vespa.feed.client.HttpResponse": {
     "superClass": "java.lang.Object",
-    "interfaces": [
-      "ai.vespa.feed.client.FeedClient$CircuitBreaker"
-    ],
+    "interfaces": [],
     "attributes": [
-      "public"
+      "public",
+      "interface",
+      "abstract"
     ],
     "methods": [
-      "public void <init>(java.time.Duration)",
-      "public void <init>(java.time.Duration, java.time.Duration)",
-      "public void success()",
-      "public void failure(ai.vespa.feed.client.HttpResponse)",
-      "public void failure(java.lang.Throwable)",
-      "public ai.vespa.feed.client.FeedClient$CircuitBreaker$State state()"
+      "public abstract int code()",
+      "public abstract byte[] body()",
+      "public static ai.vespa.feed.client.HttpResponse of(int, byte[])"
     ],
     "fields": []
   },
@@ -333,14 +302,15 @@
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
-      "public"
+      "public",
+      "interface",
+      "abstract"
     ],
     "methods": [
-      "public ai.vespa.feed.client.Result$Type type()",
-      "public ai.vespa.feed.client.DocumentId documentId()",
-      "public java.util.Optional resultMessage()",
-      "public java.util.Optional traceMessage()",
-      "public java.lang.String toString()"
+      "public abstract ai.vespa.feed.client.Result$Type type()",
+      "public abstract ai.vespa.feed.client.DocumentId documentId()",
+      "public abstract java.util.Optional resultMessage()",
+      "public abstract java.util.Optional traceMessage()"
     ],
     "fields": []
   },
@@ -367,25 +337,5 @@
       "public void <init>(ai.vespa.feed.client.DocumentId, java.lang.Throwable)"
     ],
     "fields": []
-  },
-  "ai.vespa.feed.client.StaticThrottler": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "ai.vespa.feed.client.Throttler"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(ai.vespa.feed.client.FeedClientBuilder)",
-      "public void sent(long, java.util.concurrent.CompletableFuture)",
-      "public void success()",
-      "public void throttled(long)",
-      "public long targetInflight()"
-    ],
-    "fields": [
-      "protected final long maxInflight",
-      "protected final long minInflight"
-    ]
   }
 }
