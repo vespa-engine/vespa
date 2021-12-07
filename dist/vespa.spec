@@ -62,10 +62,18 @@ BuildRequires: vespa-pybind11-devel
 BuildRequires: python3-devel
 %endif
 %if 0%{?el8}
+%global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
+%if 0%{?_centos_stream}
+BuildRequires: gcc-toolset-11-gcc-c++
+BuildRequires: gcc-toolset-11-binutils
+BuildRequires: gcc-toolset-11-libatomic-devel
+%define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
+%else
 BuildRequires: gcc-toolset-10-gcc-c++
 BuildRequires: gcc-toolset-10-binutils
 BuildRequires: gcc-toolset-10-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-10/enable
+%endif
 BuildRequires: maven
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
@@ -102,9 +110,8 @@ BuildRequires: cmake >= 3.11.4-3
 BuildRequires: libarchive
 %endif
 %define _command_cmake cmake
-%global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 %if 0%{?_centos_stream}
-BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
+BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
 %else
 BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
 %endif
@@ -255,7 +262,7 @@ Requires: vespa-gtest = 1.11.0
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
 %if 0%{?_centos_stream}
-%define _vespa_llvm_version 12
+%define _vespa_llvm_version 13
 %else
 %define _vespa_llvm_version 12
 %endif
@@ -379,7 +386,7 @@ Requires: openssl-libs
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
 %if 0%{?_centos_stream}
-Requires: (llvm-libs >= 12.0.0 and llvm-libs < 13)
+Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
 %else
 Requires: (llvm-libs >= 12.0.0 and llvm-libs < 13)
 %endif
