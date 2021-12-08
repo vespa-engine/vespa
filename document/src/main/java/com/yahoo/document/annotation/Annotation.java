@@ -223,6 +223,7 @@ public class Annotation implements Comparable<Annotation> {
     public String toString() {
         String retval = "annotation of type " + type;
         retval += ((value == null) ? " (no value)" : " (with value)");
+        retval += ((spanNode == null) ? " (no span)" : (" with span "+spanNode));
         return retval;
     }
 
