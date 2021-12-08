@@ -58,8 +58,8 @@ public final class Capacity {
      */
     public NodeType type() { return type; }
 
-    public Capacity withGroups(int groups) {
-        return new Capacity(min.withGroups(groups), max.withGroups(groups), required, canFail, type);
+    public Capacity withLimits(ClusterResources min, ClusterResources max) {
+        return new Capacity(min, max, required, canFail, type);
     }
 
     @Override

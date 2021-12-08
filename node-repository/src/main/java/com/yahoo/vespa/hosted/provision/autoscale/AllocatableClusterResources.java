@@ -139,7 +139,6 @@ public class AllocatableClusterResources {
     public static Optional<AllocatableClusterResources> from(ClusterResources wantedResources,
                                                              ClusterSpec clusterSpec,
                                                              Limits applicationLimits,
-                                                             boolean required,
                                                              NodeList hosts,
                                                              NodeRepository nodeRepository) {
         var capacityPolicies = new CapacityPolicies(nodeRepository);
