@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.response;
 
-import com.google.common.util.concurrent.ForwardingFuture;
-import com.google.common.util.concurrent.ListenableFutureTask;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution;
@@ -10,6 +8,8 @@ import com.yahoo.processing.request.ErrorMessage;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -20,9 +20,10 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-public class FutureResponse extends ForwardingFuture<Response> {
+public class FutureResponse implements Future<Response> {
 
     private final Request request;
+    private final FutureTask<Response> task;
 
     /**
      * Only used for generating messages
@@ -31,24 +32,23 @@ public class FutureResponse extends ForwardingFuture<Response> {
 
     private final static Logger log = Logger.getLogger(FutureResponse.class.getName());
 
-    private final ListenableFutureTask<Response> futureTask;
-
     public FutureResponse(final Callable<Response> callable, Execution execution, final Request request) {
-        this.futureTask = ListenableFutureTask.create(callable);
+        this.task = new FutureTask<>(callable);
         this.request = request;
         this.execution = execution;
     }
 
-    @Override
-    public ListenableFutureTask<Response> delegate() {
-        return futureTask;
-    }
+    public FutureTask<Response> delegate() { return task; }
+
+    @Override public boolean cancel(boolean mayInterruptIfRunning) { return task.cancel(mayInterruptIfRunning); }
+    @Override public boolean isCancelled() { return task.isCancelled(); }
+    @Override public boolean isDone() { return task.isDone(); }
 
     public
     @Override
     Response get() {
         try {
-            return super.get();
+            return task.get();
         } catch (InterruptedException e) {
             return new Response(request, new ErrorMessage("'" + execution + "' was interrupted", e));
         } catch (ExecutionException e) {
@@ -61,7 +61,7 @@ public class FutureResponse extends ForwardingFuture<Response> {
     @Override
     Response get(long timeout, TimeUnit timeunit) {
         try {
-            return super.get(timeout, timeunit);
+            return task.get(timeout, timeunit);
         } catch (InterruptedException e) {
             return new Response(request, new ErrorMessage("'" + execution + "' was interrupted", e));
         } catch (ExecutionException e) {

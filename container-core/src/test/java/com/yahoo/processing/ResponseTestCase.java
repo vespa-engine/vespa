@@ -22,7 +22,7 @@ public class ResponseTestCase {
      * Check the recursive toString printing along the way.
      * List variable names ends by numbers specifying the index of the list at each level.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     @Test
     public void testRecursiveCompletionAndToString() throws InterruptedException, ExecutionException {
         // create lists
