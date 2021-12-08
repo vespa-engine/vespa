@@ -37,9 +37,9 @@ public interface IncomingData<DATATYPE extends Data> {
      * <p>
      * This return the list owning this for convenience.
      */
-    CompletableFuture<DataList<DATATYPE>> future();
+    CompletableFuture<DataList<DATATYPE>> completedFuture();
 
-    /** @deprecated Use {@link #future()} instead */
+    /** @deprecated Use {@link #completedFuture()} instead */
     @Deprecated(forRemoval = true, since = "7")
     ListenableFuture<DataList<DATATYPE>> completed();
 
@@ -121,7 +121,7 @@ public interface IncomingData<DATATYPE extends Data> {
             return CompletableFutures.toGuavaListenableFuture(completionFuture);
         }
 
-        @Override public CompletableFuture<DataList<DATATYPE>> future() { return completionFuture; }
+        @Override public CompletableFuture<DataList<DATATYPE>> completedFuture() { return completionFuture; }
 
         @Override
         public DataList<DATATYPE> getOwner() {

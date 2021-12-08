@@ -57,7 +57,7 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
         return CompletableFutures.toGuavaListenableFuture(completionFuture);
     }
 
-    @Override public CompletableFuture<DataList<DATATYPE>> future() { return completionFuture; }
+    @Override public CompletableFuture<DataList<DATATYPE>> completedFuture() { return completionFuture; }
 
     /** Returns whether the data in this is complete */
     @Override

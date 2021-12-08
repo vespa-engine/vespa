@@ -445,7 +445,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
 
             subList.addFreezeListener(listListener, getExecutor());
             subList.completeFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
-            subList.incoming().future().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
+            subList.incoming().completedFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
         }
 
         private boolean isOrdered(DataList dataList) {

@@ -140,7 +140,7 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
          */
         @Override
         public DataList<DATATYPE> get() throws InterruptedException, ExecutionException {
-            return drain(owner.incoming().future().get());
+            return drain(owner.incoming().completedFuture().get());
         }
 
         /**
@@ -149,7 +149,7 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
          */
         @Override
         public DataList<DATATYPE> get(long timeout, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-            return drain(owner.incoming().future().get(timeout, timeUnit));
+            return drain(owner.incoming().completedFuture().get(timeout, timeUnit));
         }
 
         private DataList<DATATYPE> drain(DataList<DATATYPE> dataList) {

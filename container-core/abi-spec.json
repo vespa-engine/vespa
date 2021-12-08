@@ -3506,7 +3506,7 @@
       "public final void assignOwner(com.yahoo.processing.response.DataList)",
       "public com.yahoo.processing.response.DataList getOwner()",
       "public com.google.common.util.concurrent.ListenableFuture completed()",
-      "public java.util.concurrent.CompletableFuture future()",
+      "public java.util.concurrent.CompletableFuture completedFuture()",
       "public synchronized boolean isComplete()",
       "public synchronized void addLast(com.yahoo.processing.response.Data)",
       "public synchronized void add(com.yahoo.processing.response.Data)",
@@ -3571,7 +3571,7 @@
     "methods": [
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public com.google.common.util.concurrent.ListenableFuture completed()",
-      "public java.util.concurrent.CompletableFuture future()",
+      "public java.util.concurrent.CompletableFuture completedFuture()",
       "public com.yahoo.processing.response.DataList getOwner()",
       "public boolean isComplete()",
       "public void addLast(com.yahoo.processing.response.Data)",
@@ -3595,7 +3595,7 @@
     ],
     "methods": [
       "public abstract com.yahoo.processing.response.DataList getOwner()",
-      "public abstract java.util.concurrent.CompletableFuture future()",
+      "public abstract java.util.concurrent.CompletableFuture completedFuture()",
       "public abstract com.google.common.util.concurrent.ListenableFuture completed()",
       "public abstract boolean isComplete()",
       "public abstract void addLast(com.yahoo.processing.response.Data)",

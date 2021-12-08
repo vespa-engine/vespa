@@ -77,10 +77,10 @@ public class AsyncGroupPopulationTestCase {
         private final Object lock = new Object();
 
         @Override
-        public CompletableFuture<DataList<DATATYPE>> future() {
+        public CompletableFuture<DataList<DATATYPE>> completedFuture() {
             synchronized (lock) {
                 if (waitForIt == null) {
-                    waitForIt = new WrappedFuture<>(super.future());
+                    waitForIt = new WrappedFuture<>(super.completedFuture());
                 }
             }
             return waitForIt;
@@ -128,7 +128,7 @@ public class AsyncGroupPopulationTestCase {
         CompletableFuture<Boolean> f = renderer.renderResponse(out, result,
                 new Execution(Execution.Context.createContextStub()),
                 result.getQuery());
-        WrappedFuture<DataList<Hit>> x = (WrappedFuture<DataList<Hit>>) h.incoming().future();
+        WrappedFuture<DataList<Hit>> x = (WrappedFuture<DataList<Hit>>) h.incoming().completedFuture();
         x.isListening.get(86_400_000);
         h.incoming().add(new Hit("yahoo2"));
         h.incoming().markComplete();
