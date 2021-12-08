@@ -583,6 +583,15 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.docs_matched.count"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.limited_queries.rate"));
 
+        // feeding
+        metrics.add(new Metric("content.proton.documentdb.feeding.commit.operations.max"));
+        metrics.add(new Metric("content.proton.documentdb.feeding.commit.operations.sum"));
+        metrics.add(new Metric("content.proton.documentdb.feeding.commit.operations.count"));
+        metrics.add(new Metric("content.proton.documentdb.feeding.commit.operations.rate"));
+        metrics.add(new Metric("content.proton.documentdb.feeding.commit.latency.max"));
+        metrics.add(new Metric("content.proton.documentdb.feeding.commit.latency.sum"));
+        metrics.add(new Metric("content.proton.documentdb.feeding.commit.latency.count"));
+
         return metrics;
     }
 
