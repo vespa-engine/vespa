@@ -267,6 +267,11 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
                 _responses[GroupId(e.getBucketId(), copy.getChecksum(), copy.getNode())].emplace_back(copy);
             } else if (!copy.empty()) {
                 _responses[GroupId(e.getBucketId(), copy.getChecksum(), -1)].emplace_back(copy);
+            } else { // empty replica
+                // We must treat a bucket with empty replicas as inherently inconsistent.
+                // See GetOperationTest::get_not_sent_to_empty_replicas_but_bucket_tagged_as_inconsistent for
+                // rationale as to why this is the case.
+                _has_replica_inconsistency = true;
             }
         }
     }
