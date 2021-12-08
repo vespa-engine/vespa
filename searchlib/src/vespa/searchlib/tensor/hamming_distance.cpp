@@ -43,4 +43,13 @@ HammingDistance::calc(const vespalib::eval::TypedCells& lhs,
     }
 }
 
+double
+HammingDistance::calc_with_limit(const vespalib::eval::TypedCells& lhs,
+                                 const vespalib::eval::TypedCells& rhs,
+                                 double) const
+{
+    // consider optimizing:
+    return calc(lhs, rhs);
+}
+
 }

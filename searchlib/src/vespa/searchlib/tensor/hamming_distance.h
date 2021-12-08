@@ -15,7 +15,7 @@ namespace search::tensor {
  * or (for int8 cells, aka binary data only)
  * "number of bits that are different"
  */
-class HammingDistance : public DistanceFunction {
+class HammingDistance final : public DistanceFunction {
 public:
     HammingDistance(vespalib::eval::CellType expected) : DistanceFunction(expected) {}
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override;
@@ -26,13 +26,7 @@ public:
         double score = 1.0 / (1.0 + distance);
         return score;
     }
-    double calc_with_limit(const vespalib::eval::TypedCells& lhs,
-                           const vespalib::eval::TypedCells& rhs,
-                           double) const override
-    {
-        // consider optimizing:
-        return calc(lhs, rhs);
-    }
+    double calc_with_limit(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs, double) const override;
 };
 
 }
