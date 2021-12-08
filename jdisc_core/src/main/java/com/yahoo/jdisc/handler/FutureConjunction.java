@@ -17,7 +17,7 @@ import java.util.concurrent.*;
  *
  * @author Simon Thoresen Hult
  */
-public final class FutureConjunction implements ListenableFuture<Boolean> {
+final class FutureConjunction implements ListenableFuture<Boolean> {
 
     private final List<ListenableFuture<Boolean>> operands = new LinkedList<>();
 
