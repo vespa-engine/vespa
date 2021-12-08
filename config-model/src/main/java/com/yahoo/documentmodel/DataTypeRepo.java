@@ -48,9 +48,14 @@ public class DataTypeRepo implements DataTypeCollection {
         {
             throw new IllegalStateException("Data type '" + type.getName() + "' is not registered.");
         }
-        typeByName.remove(type.getName());
+        var oldByName = typeByName.remove(type.getName());
+        var oldById = typeById.remove(type.getId());
+        if (oldByName != oldById) {
+            throw new IllegalStateException("Data type '" + type.getName() +
+                                            "' inconsistent replace, by name: " + oldByName
+                                            + " but by id: " + oldById);
+        }
         typeByName.put(type.getName(), type);
-        typeById.remove(type.getId());
         typeById.put(type.getId(), type);
         return this;
     }
