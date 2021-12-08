@@ -26,6 +26,7 @@ import com.yahoo.vespa.documentmodel.FieldView;
 import com.yahoo.vespa.documentmodel.SearchDef;
 import com.yahoo.vespa.documentmodel.SearchField;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -184,25 +185,51 @@ public class DocumentModelBuilder {
             }
         }
     }
+
+    // This is how you make a "Pair" class in java....
+    private static class TypeReplacement extends AbstractMap.SimpleEntry<DataType,DataType> {
+        DataType oldType() { return getKey(); }
+        DataType newType() { return getValue(); }
+        public TypeReplacement(DataType oldType, DataType newType) {
+            super(oldType, newType);
+        }
+    }
+    
     private void addDocumentTypes(List<SDDocumentType> docList) {
         LinkedList<NewDocumentType> lst = new LinkedList<>();
         for (SDDocumentType doc : docList) {
             lst.add(convert(doc));
             model.getDocumentManager().add(lst.getLast());
         }
+        Set<TypeReplacement> replacements = new HashSet<>();
         for(NewDocumentType doc : lst) {
-            resolveTemporaries(doc.getAllTypes(), lst);
+            resolveTemporaries(doc.getAllTypes(), lst, replacements);
+        }
+        for(NewDocumentType doc : lst) {
+            for (var entry : replacements) {
+                var old = entry.oldType();
+                if (doc.getDataType(old.getId()) == old) {
+                    doc.replace(entry.newType());
+                }
+            }
         }
     }
-    private static void resolveTemporaries(DataTypeCollection dtc, Collection<NewDocumentType> docs) {
+
+    private static void resolveTemporaries(DataTypeCollection dtc,
+                                           Collection<NewDocumentType> docs,
+                                           Set<TypeReplacement> replacements)
+    {
         for (DataType type : dtc.getTypes()) {
-            resolveTemporariesRecurse(type, dtc, docs);
+            resolveTemporariesRecurse(type, dtc, docs, replacements);
         }
     }
 
     @SuppressWarnings("deprecation")
     private static DataType resolveTemporariesRecurse(DataType type, DataTypeCollection repo,
-                                                      Collection<NewDocumentType> docs) {
+                                                      Collection<NewDocumentType> docs,
+                                                      Set<TypeReplacement> replacements)
+    {
+        DataType original = type;
         if (type instanceof TemporaryStructuredDataType) {
             DataType other = repo.getDataType(type.getId());
             if (other == null || other == type) {
@@ -223,25 +250,28 @@ public class DocumentModelBuilder {
             for (com.yahoo.document.Field field : dt.getFields()) {
                 if (field.getDataType() != type) {
                     // XXX deprecated:
-                    field.setDataType(resolveTemporariesRecurse(field.getDataType(), repo, docs));
+                    field.setDataType(resolveTemporariesRecurse(field.getDataType(), repo, docs, replacements));
                 }
             }
         }
         else if (type instanceof MapDataType) {
             MapDataType t = (MapDataType) type;
-            t.setKeyType(resolveTemporariesRecurse(t.getKeyType(), repo, docs));
-            t.setValueType(resolveTemporariesRecurse(t.getValueType(), repo, docs));
+            t.setKeyType(resolveTemporariesRecurse(t.getKeyType(), repo, docs, replacements));
+            t.setValueType(resolveTemporariesRecurse(t.getValueType(), repo, docs, replacements));
         }
         else if (type instanceof CollectionDataType) {
             CollectionDataType t = (CollectionDataType) type;
-            t.setNestedType(resolveTemporariesRecurse(t.getNestedType(), repo, docs));
+            t.setNestedType(resolveTemporariesRecurse(t.getNestedType(), repo, docs, replacements));
         }
         else if (type instanceof ReferenceDataType) {
             ReferenceDataType t = (ReferenceDataType) type;
             if (t.getTargetType() instanceof TemporaryStructuredDataType) {
-                DataType targetType = resolveTemporariesRecurse(t.getTargetType(), repo, docs);
+                DataType targetType = resolveTemporariesRecurse(t.getTargetType(), repo, docs, replacements);
                 t.setTargetType((StructuredDataType) targetType);
             }
+        }
+        if (type != original) {
+            replacements.add(new TypeReplacement(original, type));
         }
         return type;
     }
