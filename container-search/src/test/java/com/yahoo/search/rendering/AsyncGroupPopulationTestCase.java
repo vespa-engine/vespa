@@ -1,10 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.concurrent.Receiver;
 import com.yahoo.processing.response.Data;
 import com.yahoo.processing.response.DataList;
@@ -21,10 +18,12 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -35,18 +34,20 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class AsyncGroupPopulationTestCase {
-    private static class WrappedFuture<F> implements ListenableFuture<F> {
+    private static class WrappedFuture<F> extends CompletableFuture<F> {
         Receiver<Boolean> isListening = new Receiver<>();
 
-        private ListenableFuture<F> wrapped;
+        private final CompletableFuture<F> wrapped;
 
-        WrappedFuture(ListenableFuture<F> wrapped) {
+        WrappedFuture(CompletableFuture<F> wrapped) {
             this.wrapped = wrapped;
         }
 
-        public void addListener(Runnable listener, Executor executor) {
-            wrapped.addListener(listener, executor);
+        @Override
+        public CompletableFuture<F> whenCompleteAsync(BiConsumer<? super F, ? super Throwable> action, Executor executor) {
+            wrapped.whenCompleteAsync(action);
             isListening.put(Boolean.TRUE);
+            return this;
         }
 
         public boolean cancel(boolean mayInterruptIfRunning) {
@@ -72,14 +73,14 @@ public class AsyncGroupPopulationTestCase {
     }
 
     private static class ObservableIncoming<DATATYPE extends Data> extends DefaultIncomingData<DATATYPE> {
-        WrappedFuture<DataList<DATATYPE>> waitForIt = null;
+        volatile WrappedFuture<DataList<DATATYPE>> waitForIt = null;
         private final Object lock = new Object();
 
         @Override
-        public ListenableFuture<DataList<DATATYPE>> completed() {
+        public CompletableFuture<DataList<DATATYPE>> completedFuture() {
             synchronized (lock) {
                 if (waitForIt == null) {
-                    waitForIt = new WrappedFuture<>(super.completed());
+                    waitForIt = new WrappedFuture<>(super.completedFuture());
                 }
             }
             return waitForIt;
@@ -97,9 +98,8 @@ public class AsyncGroupPopulationTestCase {
     }
 
     @Test
-    @SuppressWarnings("removal")
     public final void test() throws InterruptedException, ExecutionException,
-            JsonParseException, JsonMappingException, IOException {
+            IOException {
         String rawExpected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -125,10 +125,10 @@ public class AsyncGroupPopulationTestCase {
         JsonRenderer renderer = new JsonRenderer();
         Result result = new Result(new Query(), h);
         renderer.init();
-        ListenableFuture<Boolean> f = renderer.render(out, result,
+        CompletableFuture<Boolean> f = renderer.renderResponse(out, result,
                 new Execution(Execution.Context.createContextStub()),
                 result.getQuery());
-        WrappedFuture<DataList<Hit>> x = (WrappedFuture<DataList<Hit>>) h.incoming().completed();
+        WrappedFuture<DataList<Hit>> x = (WrappedFuture<DataList<Hit>>) h.incoming().completedFuture();
         x.isListening.get(86_400_000);
         h.incoming().add(new Hit("yahoo2"));
         h.incoming().markComplete();

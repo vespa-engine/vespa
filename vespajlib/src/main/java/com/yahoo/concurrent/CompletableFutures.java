@@ -74,8 +74,12 @@ public class CompletableFutures {
      * Helper for migrating from {@link ListenableFuture} to {@link CompletableFuture} in Vespa public apis
      * @deprecated to be removed in Vespa 8
      */
+    @SuppressWarnings("unchecked")
     @Deprecated(forRemoval = true, since = "7")
     public static <V> ListenableFuture<V> toGuavaListenableFuture(CompletableFuture<V> future) {
+        if (future instanceof ListenableFuture) {
+            return ((ListenableFuture<V>) future);
+        }
         SettableFuture<V> guavaFuture = SettableFuture.create();
         future.whenComplete((result, error) -> {
             if (result != null) guavaFuture.set(result);

@@ -2,7 +2,6 @@
 package com.yahoo.processing.rendering;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -257,7 +256,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      * inadvertently work ends up in async data producing threads in some cases.
      */
     Executor getExecutor() {
-        return beforeHandoverMode ? MoreExecutors.directExecutor() : renderingExecutor;
+        return beforeHandoverMode ? Runnable::run : renderingExecutor;
     }
     /** For inspection only; use getExecutor() for execution */
     Executor getRenderingExecutor() { return renderingExecutor; }    
@@ -360,10 +359,10 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                 return; // Called on completion of a list which is not frozen yet - hold off until frozen
 
             if ( ! beforeHandoverMode)
-                list.complete().get(); // trigger completion if not done already to invoke any listeners on that event
+                list.completeFuture().get(); // trigger completion if not done already to invoke any listeners on that event
             boolean startedRendering = renderData();
             if ( ! startedRendering || uncompletedChildren > 0) return; // children must render to completion first
-            if (list.complete().isDone()) // might not be when in before handover mode
+            if (list.completeFuture().isDone()) // might not be when in before handover mode
                 endListLevel();
             else
                 stream.flush();
@@ -445,8 +444,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
             flushIfLikelyToSuspend(subList);
 
             subList.addFreezeListener(listListener, getExecutor());
-            subList.complete().addListener(listListener, getExecutor());
-            subList.incoming().completed().addListener(listListener, getExecutor());
+            subList.completeFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
+            subList.incoming().completedFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
         }
 
         private boolean isOrdered(DataList dataList) {

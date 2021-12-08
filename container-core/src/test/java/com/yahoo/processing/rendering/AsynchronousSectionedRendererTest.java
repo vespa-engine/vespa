@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -407,6 +408,7 @@ public class AsynchronousSectionedRendererTest {
         }
 
         @Override
+        @SuppressWarnings("removal")
         public ListenableFuture<DataList<StringData>> complete() {
             return new ListenableFuture<DataList<StringData>>() {
                 @Override
@@ -439,6 +441,11 @@ public class AsynchronousSectionedRendererTest {
                     return StringDataList.this;
                 }
             };
+        }
+
+        @Override
+        public CompletableFuture<DataList<StringData>> completeFuture() {
+            return CompletableFuture.completedFuture(this);
         }
 
         @Override

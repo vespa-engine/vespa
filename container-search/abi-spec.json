@@ -7705,6 +7705,7 @@
       "public java.util.Set getFilled()",
       "public com.yahoo.processing.response.IncomingData incoming()",
       "public com.google.common.util.concurrent.ListenableFuture complete()",
+      "public java.util.concurrent.CompletableFuture completeFuture()",
       "public void addDataListener(java.lang.Runnable)",
       "public void close()",
       "public bridge synthetic com.yahoo.search.result.Hit clone()",

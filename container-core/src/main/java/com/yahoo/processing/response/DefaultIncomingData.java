@@ -2,12 +2,13 @@
 package com.yahoo.processing.response;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.collections.Tuple2;
+import com.yahoo.concurrent.CompletableFutures;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
@@ -19,7 +20,7 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
 
     private DataList<DATATYPE> owner = null;
 
-    private final SettableFuture<DataList<DATATYPE>> completionFuture;
+    private final CompletableFuture<DataList<DATATYPE>> completionFuture;
 
     private final List<DATATYPE> dataList = new ArrayList<>();
 
@@ -35,7 +36,7 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
 
     public DefaultIncomingData(DataList<DATATYPE> owner) {
         assignOwner(owner);
-        completionFuture = SettableFuture.create();
+        completionFuture = new CompletableFuture<>();
     }
 
     /** Assigns the owner of this. Throws an exception if the owner is already set. */
@@ -50,9 +51,13 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
     }
 
     @Override
+    @Deprecated(forRemoval = true, since = "7")
+    @SuppressWarnings("removal")
     public ListenableFuture<DataList<DATATYPE>> completed() {
-        return completionFuture;
+        return CompletableFutures.toGuavaListenableFuture(completionFuture);
     }
+
+    @Override public CompletableFuture<DataList<DATATYPE>> completedFuture() { return completionFuture; }
 
     /** Returns whether the data in this is complete */
     @Override
@@ -92,7 +97,7 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
     @Override
     public synchronized void markComplete() {
         complete = true;
-        completionFuture.set(owner);
+        completionFuture.complete(owner);
     }
 
     /**

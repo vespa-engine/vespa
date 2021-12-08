@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.response;
 
-import com.google.common.util.concurrent.ExecutionList;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A list of data items created due to a processing request.
@@ -73,6 +72,10 @@ public interface DataList<DATATYPE extends Data> extends Data {
      * Making this call on a list which does not support future data always returns immediately and
      * causes no memory synchronization cost.
      */
+    CompletableFuture<DataList<DATATYPE>> completeFuture();
+
+    /** @deprecated Use {@link #completeFuture()} instead */
+    @Deprecated(forRemoval = true, since = "7")
     ListenableFuture<DataList<DATATYPE>> complete();
 
     /**

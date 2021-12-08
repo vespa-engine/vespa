@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class FutureDataTestCase {
 
     /** Run a chain which ends in a processor which returns a response containing future data. */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     @Test
     public void testFutureDataPassThrough() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
@@ -52,7 +52,7 @@ public class FutureDataTestCase {
     }
 
     /** Federate to one source which returns data immediately and one who return future data */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     @Test
     public void testFederateSyncAndAsyncData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
@@ -88,7 +88,7 @@ public class FutureDataTestCase {
     }
 
     /** Register a chain which will be called when some async data is available */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     @Test
     public void testAsyncDataProcessing() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
@@ -120,7 +120,7 @@ public class FutureDataTestCase {
      * When the first of the futures are done one additional chain is to be run.
      * When both are done another chain is to be run.
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     @Test
     public void testAsyncDataProcessingOfFederatedResult() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up

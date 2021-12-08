@@ -1,15 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.response;
 
-import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.ExecutionList;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.provider.ListenableFreezableClass;
+import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.processing.Request;
+import com.yahoo.processing.impl.ProcessingFuture;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -34,7 +32,7 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
      */
     private final IncomingData<DATATYPE> incomingData;
 
-    private final ListenableFuture<DataList<DATATYPE>> completedFuture;
+    private final CompletableFuture<DataList<DATATYPE>> completedFuture;
 
     /**
      * Creates a simple data list which does not allow late incoming data
@@ -94,9 +92,14 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
         return incomingData;
     }
 
+    @Override
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "7")
     public ListenableFuture<DataList<DATATYPE>> complete() {
-        return completedFuture;
+        return CompletableFutures.toGuavaListenableFuture(completedFuture);
     }
+
+    @Override public CompletableFuture<DataList<DATATYPE>> completeFuture() { return completedFuture; }
 
     @Override
     public boolean isOrdered() { return ordered; }
@@ -108,7 +111,7 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
         return super.toString() + (complete().isDone() ? " [completed]" : " [incomplete, " + incoming() + "]");
     }
 
-    public static final class DrainOnGetFuture<DATATYPE extends Data> extends AbstractFuture<DataList<DATATYPE>> {
+    public static final class DrainOnGetFuture<DATATYPE extends Data> extends ProcessingFuture<DataList<DATATYPE>> {
 
         private final DataList<DATATYPE> owner;
 
@@ -137,7 +140,7 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
          */
         @Override
         public DataList<DATATYPE> get() throws InterruptedException, ExecutionException {
-            return drain(owner.incoming().completed().get());
+            return drain(owner.incoming().completedFuture().get());
         }
 
         /**
@@ -146,13 +149,13 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
          */
         @Override
         public DataList<DATATYPE> get(long timeout, TimeUnit timeUnit) throws InterruptedException, ExecutionException, TimeoutException {
-            return drain(owner.incoming().completed().get(timeout, timeUnit));
+            return drain(owner.incoming().completedFuture().get(timeout, timeUnit));
         }
 
         private DataList<DATATYPE> drain(DataList<DATATYPE> dataList) {
             for (DATATYPE item : dataList.incoming().drain())
                 dataList.add(item);
-            set(dataList); // Signal completion to listeners
+            complete(dataList); // Signal completion to listeners
             return dataList;
         }
 
