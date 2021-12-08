@@ -542,11 +542,11 @@ DataStoreBase::startCompactWorstBuffers(CompactionSpec compaction_spec, const Co
             uint32_t arraySize = typeHandler->getArraySize();
             uint32_t reservedElements = typeHandler->getReservedElements(bufferId);
             size_t deadElems = state.getDeadElems() - reservedElements;
-            if (compaction_spec.get_compact_memory() && deadElems > worstDeadElems) {
+            if (compaction_spec.compact_memory() && deadElems > worstDeadElems) {
                 worstMemoryBufferId = bufferId;
                 worstDeadElems = deadElems;
             }
-            if (compaction_spec.get_compact_address_space()) {
+            if (compaction_spec.compact_address_space()) {
                 size_t deadArrays = deadElems / arraySize;
                 if (deadArrays > worstDeadArrays) {
                     worstAddressSpaceBufferId = bufferId;

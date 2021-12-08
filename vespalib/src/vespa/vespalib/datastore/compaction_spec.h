@@ -16,13 +16,13 @@ class CompactionSpec
     bool _compact_memory;
     bool _compact_address_space;
 public:
-    CompactionSpec(bool compact_memory, bool compact_address_space)
-        : _compact_memory(compact_memory),
-          _compact_address_space(compact_address_space)
+    CompactionSpec(bool compact_memory_, bool compact_address_space_)
+        : _compact_memory(compact_memory_),
+          _compact_address_space(compact_address_space_)
     {
     }
-    bool get_compact_memory() const noexcept { return _compact_memory; }
-    bool get_compact_address_space() const noexcept { return _compact_address_space; }
+    bool compact_memory() const noexcept { return _compact_memory; }
+    bool compact_address_space() const noexcept { return _compact_address_space; }
 };
 
 }
