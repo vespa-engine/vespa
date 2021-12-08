@@ -429,6 +429,7 @@ public class VespaMetricSet {
         addSearchNodeExecutorMetrics(metrics, "content.proton.executor.docsum");
         addSearchNodeExecutorMetrics(metrics, "content.proton.executor.shared");
         addSearchNodeExecutorMetrics(metrics, "content.proton.executor.warmup");
+        addSearchNodeExecutorMetrics(metrics, "content.proton.executor.field_writer");
 
         // jobs
         metrics.add(new Metric("content.proton.documentdb.job.total.average"));
