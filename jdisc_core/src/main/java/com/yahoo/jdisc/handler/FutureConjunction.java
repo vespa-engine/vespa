@@ -37,7 +37,7 @@ final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final boolean cancel(boolean mayInterruptIfRunning) {
+    public boolean cancel(boolean mayInterruptIfRunning) {
         boolean ret = true;
         for (Future<Boolean> op : operands) {
             if (!op.cancel(mayInterruptIfRunning)) {
@@ -48,7 +48,7 @@ final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final boolean isCancelled() {
+    public boolean isCancelled() {
         for (Future<Boolean> op : operands) {
             if (!op.isCancelled()) {
                 return false;
@@ -58,7 +58,7 @@ final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final boolean isDone() {
+    public boolean isDone() {
         for (Future<Boolean> op : operands) {
             if (!op.isDone()) {
                 return false;
@@ -68,8 +68,8 @@ final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final Boolean get() throws InterruptedException, ExecutionException {
-        Boolean ret = Boolean.TRUE;
+    public Boolean get() throws InterruptedException, ExecutionException {
+        boolean ret = Boolean.TRUE;
         for (Future<Boolean> op : operands) {
             if (!op.get()) {
                 ret = Boolean.FALSE;
@@ -79,9 +79,9 @@ final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
+    public Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
                                                                  TimeoutException {
-        Boolean ret = Boolean.TRUE;
+        boolean ret = Boolean.TRUE;
         long nanos = unit.toNanos(timeout);
         long lastTime = System.nanoTime();
         for (Future<Boolean> op : operands) {
