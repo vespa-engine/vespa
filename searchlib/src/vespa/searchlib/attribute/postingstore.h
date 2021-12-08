@@ -77,6 +77,7 @@ public:
     typedef typename Parent::AggregatedType AggregatedType;
     typedef typename Parent::BTreeTypeRefPair BTreeTypeRefPair;
     typedef typename Parent::Builder Builder;
+    using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     typedef vespalib::datastore::EntryRef EntryRef;
     typedef std::less<uint32_t> CompareT;
@@ -191,8 +192,8 @@ public:
     void move_btree_nodes(const std::vector<EntryRef> &refs);
     void move(std::vector<EntryRef>& refs);
 
-    void compact_worst_btree_nodes();
-    void compact_worst_buffers();
+    void compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
+    void compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
     bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy);
 private:

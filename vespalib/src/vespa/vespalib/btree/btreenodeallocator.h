@@ -29,6 +29,7 @@ public:
     using BTreeRootBaseType = BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
     using generation_t = vespalib::GenerationHandler::generation_t;
     using NodeStore = BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
+    using CompactionStrategy = datastore::CompactionStrategy;
     using EntryRef = datastore::EntryRef;
     using DataStoreBase = datastore::DataStoreBase;
 
@@ -165,7 +166,7 @@ public:
     bool getCompacting(EntryRef ref) const { return _nodeStore.getCompacting(ref); }
     std::vector<uint32_t> startCompact() { return _nodeStore.startCompact(); }
 
-    std::vector<uint32_t> start_compact_worst() { return _nodeStore.start_compact_worst(); }
+    std::vector<uint32_t> start_compact_worst(const CompactionStrategy& compaction_strategy) { return _nodeStore.start_compact_worst(compaction_strategy); }
 
     void finishCompact(const std::vector<uint32_t> &toHold) {
         return _nodeStore.finishCompact(toHold);

@@ -58,7 +58,7 @@ private:
     uint64_t getUniqueValueCount() const override;
 
     bool consider_compact_values(const CompactionStrategy &compactionStrategy);
-    void compact_worst_values();
+    void compact_worst_values(const CompactionStrategy& compaction_strategy);
     bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy);
     IndicesCopyVector getIndicesCopy(uint32_t size) const;
     void removeReverseMapping(EntryRef oldRef, uint32_t lid);

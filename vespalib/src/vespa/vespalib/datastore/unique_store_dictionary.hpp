@@ -339,11 +339,11 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::has_held_buff
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::compact_worst(bool compact_btree_dictionary, bool compact_hash_dictionary)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::compact_worst(bool compact_btree_dictionary, bool compact_hash_dictionary, const CompactionStrategy& compaction_strategy)
 {
     if constexpr (has_btree_dictionary) {
         if (compact_btree_dictionary) {
-            this->_btree_dict.compact_worst();
+            this->_btree_dict.compact_worst(compaction_strategy);
         }
     } else {
         (void) compact_btree_dictionary;

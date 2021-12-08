@@ -5,6 +5,7 @@
 #include "btreestore.h"
 #include "btreebuilder.h"
 #include "btreebuilder.hpp"
+#include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/optimized.h>
 
@@ -972,10 +973,10 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
 std::vector<uint32_t>
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-start_compact_worst_btree_nodes()
+start_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
 {
     _builder.clear();
-    return _allocator.start_compact_worst();
+    return _allocator.start_compact_worst(compaction_strategy);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
@@ -1007,10 +1008,10 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
 std::vector<uint32_t>
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-start_compact_worst_buffers()
+start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     freeze();
-    return _store.startCompactWorstBuffers(true, false);
+    return _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,

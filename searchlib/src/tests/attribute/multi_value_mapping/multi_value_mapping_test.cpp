@@ -14,6 +14,8 @@
 LOG_SETUP("multivaluemapping_test");
 
 using vespalib::datastore::ArrayStoreConfig;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
 
 template <typename EntryT>
 void
@@ -142,7 +144,9 @@ public:
     }
 
     void compactWorst() {
-        _mvMapping->compactWorst(true, false);
+        CompactionSpec compaction_spec(true, false);
+        CompactionStrategy compaction_strategy;
+        _mvMapping->compactWorst(compaction_spec, compaction_strategy);
         _attr->commit();
         _attr->incGeneration();
     }

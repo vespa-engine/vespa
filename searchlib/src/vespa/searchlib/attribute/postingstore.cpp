@@ -7,6 +7,7 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreerootbase.cpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
+#include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/entry_ref_filter.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 
@@ -724,9 +725,9 @@ PostingStore<DataT>::move(std::vector<EntryRef>& refs)
 
 template <typename DataT>
 void
-PostingStore<DataT>::compact_worst_btree_nodes()
+PostingStore<DataT>::compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
 {
-    auto to_hold = this->start_compact_worst_btree_nodes();
+    auto to_hold = this->start_compact_worst_btree_nodes(compaction_strategy);
     EntryRefFilter filter(RefType::numBuffers(), RefType::offset_bits);
     // Only look at buffers containing bitvectors and btree roots
     filter.add_buffers(this->_treeType.get_active_buffers());
@@ -738,9 +739,10 @@ PostingStore<DataT>::compact_worst_btree_nodes()
 
 template <typename DataT>
 void
-PostingStore<DataT>::compact_worst_buffers()
+PostingStore<DataT>::compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    auto to_hold = this->start_compact_worst_buffers();
+
+    auto to_hold = this->start_compact_worst_buffers(compaction_spec, compaction_strategy);
     bool compact_btree_roots = false;
     EntryRefFilter filter(RefType::numBuffers(), RefType::offset_bits);
     filter.add_buffers(to_hold);
@@ -769,7 +771,7 @@ PostingStore<DataT>::consider_compact_worst_btree_nodes(const CompactionStrategy
         return false;
     }
     if (compaction_strategy.should_compact_memory(_cached_allocator_memory_usage.usedBytes(), _cached_allocator_memory_usage.deadBytes())) {
-        compact_worst_btree_nodes();
+        compact_worst_btree_nodes(compaction_strategy);
         return true;
     }
     return false;
@@ -783,7 +785,8 @@ PostingStore<DataT>::consider_compact_worst_buffers(const CompactionStrategy& co
         return false;
     }
     if (compaction_strategy.should_compact_memory(_cached_store_memory_usage.usedBytes(), _cached_store_memory_usage.deadBytes())) {
-        compact_worst_buffers();
+        CompactionSpec compaction_spec(true, false);
+        compact_worst_buffers(compaction_spec, compaction_strategy);
         return true;
     }
     return false;

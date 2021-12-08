@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/unique_store.hpp>
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
@@ -137,8 +138,9 @@ TYPED_TEST(UniqueStoreDictionaryTest, compaction_works)
     this->inc_generation();
     auto btree_memory_usage_before = this->dict.get_btree_memory_usage();
     auto hash_memory_usage_before = this->dict.get_hash_memory_usage();
+    CompactionStrategy compaction_strategy;
     for (uint32_t i = 0; i < 15; ++i) {
-        this->dict.compact_worst(true, true);
+        this->dict.compact_worst(true, true, compaction_strategy);
     }
     this->inc_generation();
     auto btree_memory_usage_after = this->dict.get_btree_memory_usage();

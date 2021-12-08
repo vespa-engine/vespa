@@ -17,6 +17,7 @@
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/test/btree/btree_printer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -24,6 +25,7 @@
 LOG_SETUP("btree_test");
 
 using vespalib::GenerationHandler;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace vespalib::btree {
@@ -1599,8 +1601,9 @@ TEST_F(BTreeTest, require_that_compaction_works)
     auto memory_usage_before = t.getAllocator().getMemoryUsage();
     t.foreach_key([&before_list](int key) { before_list.emplace_back(key); });
     make_iterators(t, before_list, before_iterators);
+    CompactionStrategy compaction_strategy;
     for (int i = 0; i < 15; ++i) {
-        t.compact_worst();
+        t.compact_worst(compaction_strategy);
     }
     inc_generation(g, t);
     auto memory_usage_after = t.getAllocator().getMemoryUsage();
