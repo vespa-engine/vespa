@@ -25,8 +25,8 @@ public class NodeRepositoryNode {
     public Set<String> ipAddresses;
     @JsonProperty("additionalIpAddresses")
     public Set<String> additionalIpAddresses;
-    @JsonProperty("openStackId")
-    public String openStackId;
+    @JsonProperty("id")
+    public String id;
     @JsonProperty("flavor")
     public String flavor;
     @JsonProperty("resources")
@@ -99,7 +99,7 @@ public class NodeRepositoryNode {
                 ", hostname='" + hostname + '\'' +
                 ", ipAddresses=" + ipAddresses +
                 ", additionalIpAddresses=" + additionalIpAddresses +
-                ", openStackId='" + openStackId + '\'' +
+                ", id='" + id + '\'' +
                 ", modelName='" + modelName + '\'' +
                 ", flavor='" + flavor + '\'' +
                 ", resources=" + resources +
