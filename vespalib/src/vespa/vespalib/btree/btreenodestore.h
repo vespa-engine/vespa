@@ -56,6 +56,7 @@ public:
     typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
     typedef vespalib::GenerationHandler::generation_t generation_t;
     using EntryRef = datastore::EntryRef;
+    using CompactionStrategy = datastore::CompactionStrategy;
 
     enum NodeTypes
     {
@@ -159,7 +160,7 @@ public:
 
     std::vector<uint32_t> startCompact();
 
-    std::vector<uint32_t> start_compact_worst();
+    std::vector<uint32_t> start_compact_worst(const CompactionStrategy& compaction_strategy);
 
     void finishCompact(const std::vector<uint32_t> &toHold);
 

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "multi_value_mapping_base.h"
+#include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <cassert>
 
@@ -86,7 +87,8 @@ MultiValueMappingBase::considerCompact(const CompactionStrategy &compactionStrat
     bool compactMemory = compactionStrategy.should_compact_memory(usedBytes, deadBytes);
     bool compactAddressSpace = compactionStrategy.should_compact_address_space(usedArrays, deadArrays);
     if (compactMemory || compactAddressSpace) {
-        compactWorst(compactMemory, compactAddressSpace);
+        CompactionSpec compaction_spec(compactMemory, compactAddressSpace);
+        compactWorst(compaction_spec, compactionStrategy);
         return true;
     }
     return false;

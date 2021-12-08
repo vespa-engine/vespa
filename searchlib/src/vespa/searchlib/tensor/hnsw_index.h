@@ -171,8 +171,8 @@ public:
     void remove_document(uint32_t docid) override;
     void transfer_hold_lists(generation_t current_gen) override;
     void trim_hold_lists(generation_t first_used_gen) override;
-    void compact_level_arrays(bool compact_memory, bool compact_addreess_space);
-    void compact_link_arrays(bool compact_memory, bool compact_address_space);
+    void compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
+    void compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     bool consider_compact_level_arrays(const CompactionStrategy& compaction_strategy);
     bool consider_compact_link_arrays(const CompactionStrategy& compaction_strategy);
     bool consider_compact(const CompactionStrategy& compaction_strategy) override;

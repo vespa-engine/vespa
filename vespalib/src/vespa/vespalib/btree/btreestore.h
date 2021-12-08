@@ -49,6 +49,8 @@ public:
                          TraitsT::INTERNAL_SLOTS,
                          TraitsT::LEAF_SLOTS,
                          AggrCalcT> Builder;
+    using CompactionSpec = datastore::CompactionSpec;
+    using CompactionStrategy = datastore::CompactionStrategy;
     using EntryRef = datastore::EntryRef;
     template <typename EntryType>
     using BufferType = datastore::BufferType<EntryType>;
@@ -392,11 +394,11 @@ public:
     void
     foreach_frozen(EntryRef ref, FunctionType func) const;
 
-    std::vector<uint32_t> start_compact_worst_btree_nodes();
+    std::vector<uint32_t> start_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
     void finish_compact_worst_btree_nodes(const std::vector<uint32_t>& to_hold);
     void move_btree_nodes(const std::vector<EntryRef>& refs);
 
-    std::vector<uint32_t> start_compact_worst_buffers();
+    std::vector<uint32_t> start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     void move(std::vector<EntryRef>& refs);
 
 private:

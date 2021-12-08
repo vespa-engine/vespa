@@ -7,7 +7,10 @@
 #include <vespa/vespalib/util/rcuvector.h>
 #include <functional>
 
-namespace vespalib::datastore { class CompactionStrategy; }
+namespace vespalib::datastore {
+class CompactionSpec;
+class CompactionStrategy;
+}
 
 namespace search::attribute {
 
@@ -17,6 +20,7 @@ namespace search::attribute {
 class MultiValueMappingBase
 {
 public:
+    using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using EntryRef = vespalib::datastore::EntryRef;
     using RefVector = vespalib::RcuVectorBase<EntryRef>;
@@ -52,7 +56,7 @@ public:
 
     uint32_t getNumKeys() const { return _indices.size(); }
     uint32_t getCapacityKeys() const { return _indices.capacity(); }
-    virtual void compactWorst(bool compatMemory, bool compactAddressSpace) = 0;
+    virtual void compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) = 0;
     bool considerCompact(const CompactionStrategy &compactionStrategy);
 };
 

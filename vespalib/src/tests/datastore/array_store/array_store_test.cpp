@@ -3,6 +3,8 @@
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/datastore/memstats.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/datastore/compaction_spec.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -124,7 +126,9 @@ struct Fixture
     }
     template <typename TestedRefType>
     void compactWorst(bool compactMemory, bool compactAddressSpace) {
-        ICompactionContext::UP ctx = store.compactWorst(compactMemory, compactAddressSpace);
+        CompactionSpec compaction_spec(compactMemory, compactAddressSpace);
+        CompactionStrategy compaction_strategy;
+        ICompactionContext::UP ctx = store.compactWorst(compaction_spec, compaction_strategy);
         std::vector<TestedRefType> refs;
         for (auto itr = refStore.begin(); itr != refStore.end(); ++itr) {
             refs.emplace_back(itr->first);

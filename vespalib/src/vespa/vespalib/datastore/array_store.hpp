@@ -3,6 +3,7 @@
 #pragma once
 
 #include "array_store.h"
+#include "compaction_spec.h"
 #include "entry_ref_filter.h"
 #include "datastore.hpp"
 #include <atomic>
@@ -169,9 +170,9 @@ public:
 
 template <typename EntryT, typename RefT>
 ICompactionContext::UP
-ArrayStore<EntryT, RefT>::compactWorst(bool compactMemory, bool compactAddressSpace)
+ArrayStore<EntryT, RefT>::compactWorst(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy)
 {
-    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compactMemory, compactAddressSpace);
+    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
     return std::make_unique<arraystore::CompactionContext<EntryT, RefT>>
         (_store, *this, std::move(bufferIdsToCompact));
 }

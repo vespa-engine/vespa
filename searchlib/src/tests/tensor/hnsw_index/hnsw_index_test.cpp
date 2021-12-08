@@ -6,6 +6,7 @@
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
+#include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
@@ -21,6 +22,7 @@ using namespace search::tensor;
 using namespace vespalib::slime;
 using vespalib::Slime;
 using search::BitVector;
+using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
 
 template <typename FloatType>
@@ -628,8 +630,10 @@ TEST_F(HnswIndexTest, hnsw_graph_is_compacted)
     for (uint32_t i = 0; i < 10; ++i) {
         mem_1 = mem_2;
         // Forced compaction to move things around
-        index->compact_link_arrays(true, false);
-        index->compact_level_arrays(true, false);
+        CompactionSpec compaction_spec(true, false);
+        CompactionStrategy compaction_strategy;
+        index->compact_link_arrays(compaction_spec, compaction_strategy);
+        index->compact_level_arrays(compaction_spec, compaction_strategy);
         commit();
         index->update_stat();
         mem_2 = commit_and_update_stat();

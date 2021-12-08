@@ -44,7 +44,7 @@ public:
 
     void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
-    void compactWorst(bool compactMemory, bool compactAddressSpace) override;
+    void compactWorst(CompactionSpec compactionSpec, const CompactionStrategy& compaction_strategy) override;
 
     vespalib::AddressSpace getAddressSpaceUsage() const override;
     vespalib::MemoryUsage getArrayStoreMemoryUsage() const override;

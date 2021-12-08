@@ -209,7 +209,7 @@ DocumentMetaStore::onCommit()
     if (consider_compact_gid_to_lid_map()) {
         incGeneration();
         _changesSinceCommit = 0;
-        _gidToLidMap.compact_worst();
+        _gidToLidMap.compact_worst(getConfig().getCompactionStrategy());
         _gid_to_lid_map_write_itr_prepare_serial_num = 0u;
         _gid_to_lid_map_write_itr.begin(_gidToLidMap.getRoot());
         incGeneration();

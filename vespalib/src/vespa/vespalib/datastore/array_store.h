@@ -96,7 +96,7 @@ public:
     }
 
     void remove(EntryRef ref);
-    ICompactionContext::UP compactWorst(bool compactMemory, bool compactAddressSpace);
+    ICompactionContext::UP compactWorst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
 
     /**

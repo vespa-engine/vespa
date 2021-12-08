@@ -5,9 +5,12 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::GenerationHandler;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace vespalib::btree {
@@ -131,7 +134,9 @@ BTreeStoreTest::test_compact_sequence(uint32_t sequence_length)
     move_refs.reserve(refs.size());
     auto usage_before = store.getMemoryUsage();
     for (uint32_t pass = 0; pass < 15; ++pass) {
-        auto to_hold = store.start_compact_worst_buffers();
+        CompactionSpec compaction_spec(true, false);
+        CompactionStrategy compaction_strategy;
+        auto to_hold = store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
         std::vector<bool> filter(TreeStore::RefType::numBuffers());
         for (auto buffer_id : to_hold) {
             filter[buffer_id] = true;
@@ -168,7 +173,8 @@ TEST_F(BTreeStoreTest, require_that_nodes_for_multiple_btrees_are_compacted)
     inc_generation();
     auto usage_before = store.getMemoryUsage();
     for (uint32_t pass = 0; pass < 15; ++pass) {
-        auto to_hold = store.start_compact_worst_btree_nodes();
+        CompactionStrategy compaction_strategy;
+        auto to_hold = store.start_compact_worst_btree_nodes(compaction_strategy);
         store.move_btree_nodes(refs);
         store.finish_compact_worst_btree_nodes(to_hold);
         inc_generation();

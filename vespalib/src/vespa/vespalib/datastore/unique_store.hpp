@@ -157,9 +157,9 @@ public:
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 std::unique_ptr<typename UniqueStore<EntryT, RefT, Compare, Allocator>::Remapper>
-UniqueStore<EntryT, RefT, Compare, Allocator>::compact_worst(bool compact_memory, bool compact_address_space)
+UniqueStore<EntryT, RefT, Compare, Allocator>::compact_worst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compact_memory, compact_address_space);
+    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
     if (bufferIdsToCompact.empty()) {
         return std::unique_ptr<Remapper>();
     } else {
