@@ -3426,7 +3426,7 @@
       "public com.yahoo.processing.Request request()",
       "public com.yahoo.processing.response.IncomingData incoming()",
       "public com.google.common.util.concurrent.ListenableFuture complete()",
-      "public java.util.concurrent.CompletableFuture future()",
+      "public java.util.concurrent.CompletableFuture completeFuture()",
       "public boolean isOrdered()",
       "public boolean isStreamed()",
       "public java.lang.String toString()"
@@ -3485,7 +3485,7 @@
       "public abstract com.yahoo.processing.response.Data get(int)",
       "public abstract java.util.List asList()",
       "public abstract com.yahoo.processing.response.IncomingData incoming()",
-      "public abstract java.util.concurrent.CompletableFuture future()",
+      "public abstract java.util.concurrent.CompletableFuture completeFuture()",
       "public abstract com.google.common.util.concurrent.ListenableFuture complete()",
       "public abstract void addDataListener(java.lang.Runnable)",
       "public void close()"

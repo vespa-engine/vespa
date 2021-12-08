@@ -99,7 +99,7 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
         return CompletableFutures.toGuavaListenableFuture(completedFuture);
     }
 
-    @Override public CompletableFuture<DataList<DATATYPE>> future() { return completedFuture; }
+    @Override public CompletableFuture<DataList<DATATYPE>> completeFuture() { return completedFuture; }
 
     @Override
     public boolean isOrdered() { return ordered; }

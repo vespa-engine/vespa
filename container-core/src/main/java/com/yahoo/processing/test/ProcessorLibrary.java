@@ -353,7 +353,7 @@ public class ProcessorLibrary {
 
                 // wait for other executions and merge the responses
                 for (Response additionalResponse : AsyncExecution.waitForAll(futures, 1000)) {
-                    additionalResponse.data().future().get(); // block until we have all the data elements
+                    additionalResponse.data().completeFuture().get(); // block until we have all the data elements
                     for (Object item : additionalResponse.data().asList())
                         response.data().add((Data) item);
                     response.mergeWith(additionalResponse);
@@ -381,7 +381,7 @@ public class ProcessorLibrary {
         public Response process(Request request, Execution execution) {
             Response response = execution.process(request);
             // TODO: Consider for to best provide helpers for this
-            response.data().future().whenComplete(
+            response.data().completeFuture().whenComplete(
                     (__, ___) ->
                             new RunnableExecution(request, new ExecutionWithResponse(asyncChain, response, execution))
                                     .run());

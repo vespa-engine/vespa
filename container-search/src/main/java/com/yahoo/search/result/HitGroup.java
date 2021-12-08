@@ -973,7 +973,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         return CompletableFutures.toGuavaListenableFuture(completedFuture);
     }
 
-    @Override public CompletableFuture<DataList<Hit>> future() { return completedFuture; }
+    @Override public CompletableFuture<DataList<Hit>> completeFuture() { return completedFuture; }
 
     @Override
     public void addDataListener(Runnable runnable) {

@@ -72,9 +72,9 @@ public interface DataList<DATATYPE extends Data> extends Data {
      * Making this call on a list which does not support future data always returns immediately and
      * causes no memory synchronization cost.
      */
-    CompletableFuture<DataList<DATATYPE>> future();
+    CompletableFuture<DataList<DATATYPE>> completeFuture();
 
-    /** @deprecated Use {@link #future()} instead */
+    /** @deprecated Use {@link #completeFuture()} instead */
     @Deprecated(forRemoval = true, since = "7")
     ListenableFuture<DataList<DATATYPE>> complete();
 

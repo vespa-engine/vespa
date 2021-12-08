@@ -359,10 +359,10 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                 return; // Called on completion of a list which is not frozen yet - hold off until frozen
 
             if ( ! beforeHandoverMode)
-                list.future().get(); // trigger completion if not done already to invoke any listeners on that event
+                list.completeFuture().get(); // trigger completion if not done already to invoke any listeners on that event
             boolean startedRendering = renderData();
             if ( ! startedRendering || uncompletedChildren > 0) return; // children must render to completion first
-            if (list.future().isDone()) // might not be when in before handover mode
+            if (list.completeFuture().isDone()) // might not be when in before handover mode
                 endListLevel();
             else
                 stream.flush();
@@ -444,7 +444,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
             flushIfLikelyToSuspend(subList);
 
             subList.addFreezeListener(listListener, getExecutor());
-            subList.future().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
+            subList.completeFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
             subList.incoming().future().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
         }
 

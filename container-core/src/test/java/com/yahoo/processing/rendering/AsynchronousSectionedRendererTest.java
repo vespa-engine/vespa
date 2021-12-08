@@ -444,7 +444,7 @@ public class AsynchronousSectionedRendererTest {
         }
 
         @Override
-        public CompletableFuture<DataList<StringData>> future() {
+        public CompletableFuture<DataList<StringData>> completeFuture() {
             return CompletableFuture.completedFuture(this);
         }
 
