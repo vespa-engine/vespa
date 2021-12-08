@@ -163,11 +163,13 @@ public class NodeResources {
 
     /** Returns this with disk speed and storage type set to any */
     public NodeResources justNumbers() {
+        if (isUnspecified()) return unspecified();
         return with(NodeResources.DiskSpeed.any).with(StorageType.any);
     }
 
     /** Returns this with all numbers set to 0 */
     public NodeResources justNonNumbers() {
+        if (isUnspecified()) return unspecified();
         return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0);
     }
 
