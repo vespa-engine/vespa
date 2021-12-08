@@ -109,7 +109,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
         }
         else {
             groups = 1; // type request with multiple groups is not supported
-            resources = requested.minResources().nodeResources();
+            resources = requested.minResources().nodeResources().isUnspecified() ? capacityPolicies.defaultNodeResources(cluster.type())
+                                                                                 : requested.minResources().nodeResources();
             nodeSpec = NodeSpec.from(requested.type());
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
@@ -163,11 +164,19 @@ public class NodeRepositoryProvisioner implements Provisioner {
         boolean firstDeployment = nodes.isEmpty();
         AllocatableClusterResources currentResources =
                 firstDeployment // start at min, preserve current resources otherwise
-                ? new AllocatableClusterResources(requested.minResources(), clusterSpec, nodeRepository)
+                ? new AllocatableClusterResources(initialResourcesFrom(requested, clusterSpec), clusterSpec, nodeRepository)
                 : new AllocatableClusterResources(nodes.asList(), nodeRepository);
         var clusterModel = new ClusterModel(application, cluster, clusterSpec, nodes, nodeRepository.metricsDb(), nodeRepository.clock());
         return within(Limits.of(requested), currentResources, firstDeployment, clusterModel);
     }
+
+    private ClusterResources initialResourcesFrom(Capacity requested, ClusterSpec clusterSpec) {
+        var initial = requested.minResources();
+        if (initial.nodeResources().isUnspecified())
+            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec.type()));
+        return initial;
+    }
+
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
     private ClusterResources within(Limits limits,

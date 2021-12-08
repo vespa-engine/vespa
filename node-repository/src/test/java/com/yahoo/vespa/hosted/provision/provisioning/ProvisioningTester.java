@@ -493,6 +493,7 @@ public class ProvisioningTester {
     public List<Node> makeReadyNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = makeProvisionedNodes(n, flavor, reservedTo, type, ipAddressPoolSize, dualStack);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+        nodes.forEach(node -> { if (node.resources().isUnspecified()) throw new IllegalArgumentException(); });
         return nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 

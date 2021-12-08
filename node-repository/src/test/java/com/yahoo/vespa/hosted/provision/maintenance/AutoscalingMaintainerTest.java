@@ -230,6 +230,22 @@ public class AutoscalingMaintainerTest {
                            .size());
     }
 
+    @Test
+    public void test_cd_test_not_specifying_node_resources() {
+        ApplicationId app1 = AutoscalingMaintainerTester.makeApplicationId("app1");
+        ClusterSpec cluster1 = AutoscalingMaintainerTester.containerClusterSpec();
+        ClusterResources resources = new ClusterResources( 2, 1, NodeResources.unspecified());
+        var capacity = Capacity.from(resources);
+        var tester = new AutoscalingMaintainerTester(new Zone(SystemName.cd, Environment.prod, RegionName.from("us-east3")),
+                                                     new MockDeployer.ApplicationContext(app1, cluster1, capacity));
+        tester.deploy(app1, cluster1, capacity); // Deploy should succeed and allocate the nodes
+        assertEquals(2,
+                     tester.nodeRepository().nodes().list(Node.State.active)
+                           .owner(app1)
+                           .cluster(cluster1.id())
+                           .size());
+    }
+
     private void autoscale(boolean down, Duration completionTime, Duration expectedWindow,
                            ManualClock clock, ApplicationId application, ClusterSpec cluster,
                            AutoscalingMaintainerTester tester) {

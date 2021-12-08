@@ -779,6 +779,27 @@ public class AutoscalingTest {
                                tester.autoscale(application1, cluster1, capacity).target());
     }
 
+    @Test
+    public void test_autoscaling_in_dev_with_required_unspecified_resources() {
+        NodeResources resources = NodeResources.unspecified();
+        ClusterResources min = new ClusterResources( 1, 1, resources);
+        ClusterResources max = new ClusterResources(3, 1, resources);
+        Capacity capacity = Capacity.from(min, max, true, true);
+
+        AutoscalingTester tester = new AutoscalingTester(Environment.dev,
+                                                         new NodeResources(10, 16, 100, 2));
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        tester.deploy(application1, cluster1, capacity);
+        tester.addQueryRateMeasurements(application1, cluster1.id(),
+                                        500, t -> 100.0);
+        tester.addCpuMeasurements(1.0f, 1f, 10, application1);
+        tester.assertResources("We scale up even in dev because resources are required",
+                               3, 1, 1.5,  8, 50,
+                               tester.autoscale(application1, cluster1, capacity).target());
+    }
+
     /**
      * This calculator subtracts the memory tax when forecasting overhead, but not when actually
      * returning information about nodes. This is allowed because the forecast is a *worst case*.

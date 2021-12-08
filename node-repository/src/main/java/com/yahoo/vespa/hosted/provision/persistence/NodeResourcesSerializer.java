@@ -20,6 +20,7 @@ public class NodeResourcesSerializer {
     private static final String storageTypeKey = "storageType";
 
     static void toSlime(NodeResources resources, Cursor resourcesObject) {
+        if (resources.isUnspecified()) return;
         resourcesObject.setDouble(vcpuKey, resources.vcpu());
         resourcesObject.setDouble(memoryKey, resources.memoryGb());
         resourcesObject.setDouble(diskKey, resources.diskGb());
@@ -29,6 +30,7 @@ public class NodeResourcesSerializer {
     }
 
     static NodeResources resourcesFromSlime(Inspector resources) {
+        if ( ! resources.field(vcpuKey).valid()) return NodeResources.unspecified();
         return new NodeResources(resources.field(vcpuKey).asDouble(),
                                  resources.field(memoryKey).asDouble(),
                                  resources.field(diskKey).asDouble(),

@@ -57,6 +57,7 @@ public class CapacityPolicies {
 
     private NodeResources decideNodeResources(NodeResources target, boolean required) {
         if (required) return target;
+        if (target.isUnspecified()) return target; // Cannot be modified
 
         // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
         if (zone.environment() == Environment.dev && !zone.getCloud().dynamicProvisioning())

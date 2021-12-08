@@ -41,7 +41,7 @@ public class ClusterSizeReductionValidator implements ChangeValidator {
         int currentSize = current.minResources().nodes();
         int nextSize = next.minResources().nodes();
         // don't allow more than 50% reduction, but always allow to reduce size with 1
-        if ( nextSize < ((double)currentSize) * 0.5 && nextSize != currentSize - 1)
+        if ( nextSize < currentSize * 0.5 && nextSize != currentSize - 1)
             overrides.invalid(ValidationId.clusterSizeReduction,
                               "Size reduction in '" + clusterId.value() + "' is too large: " +
                               "New min size must be at least 50% of the current min size. " +

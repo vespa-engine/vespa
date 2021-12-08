@@ -39,7 +39,7 @@ public class QuotaValidator extends Validator {
         var maxSpend = model.allClusters().stream()
                 .filter(id -> !adminClusterIds(model).contains(id))
                 .map(id -> model.provisioned().all().getOrDefault(id, zeroCapacity))
-                .mapToDouble(c -> c.maxResources().cost())
+                .mapToDouble(c -> c.maxResources().cost()) // TODO: This may be unspecified -> 0
                 .sum();
 
         var actualSpend = model.allocatedHosts().getHosts().stream()

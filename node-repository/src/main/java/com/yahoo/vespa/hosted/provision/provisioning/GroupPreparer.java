@@ -71,7 +71,7 @@ public class GroupPreparer {
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
         // can return nodes previously allocated.
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                indices::probeNext, wantedGroups, allNodesAndHosts);
+                                                           indices::probeNext, wantedGroups, allNodesAndHosts);
         if (probeAllocation.fulfilledAndNoChanges()) {
             List<Node> acceptedNodes = probeAllocation.finalNodes();
             surplusActiveNodes.removeAll(acceptedNodes);
