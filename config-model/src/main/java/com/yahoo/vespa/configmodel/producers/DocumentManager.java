@@ -56,7 +56,11 @@ public class DocumentManager {
         for (DataType dataType : todo) {
             if (built.contains(dataType)) continue;
             built.add(dataType);
-            if (dataType instanceof TemporaryStructuredDataType) continue;
+            if (dataType instanceof TemporaryStructuredDataType) {
+                // this should never happen?
+                System.err.println("still temporary [1]: "+dataType);
+                continue;
+            }
             if ((dataType.getId() < 0) || (dataType.getId()> DataType.lastPredefinedDataTypeId())) {
                 Datatype.Builder dataTypeBuilder = new Datatype.Builder();
                 documentConfigBuilder.datatype(dataTypeBuilder);
@@ -105,6 +109,7 @@ public class DocumentManager {
                     keytype(mtype.getKeyType().getId()).
                     valtype(mtype.getValueType().getId()));
         } else if (type instanceof DocumentType) {
+            System.err.println("still a DocumentType: "+type);
             DocumentType dt = (DocumentType) type;
             Datatype.Documenttype.Builder doc = new Datatype.Documenttype.Builder();
             builder.documenttype(doc);
@@ -127,7 +132,8 @@ public class DocumentManager {
             buildConfig(dt.getFieldSets(), doc);
             buildImportedFieldsConfig(dt.getImportedFieldNames(), doc);
         } else if (type instanceof TemporaryStructuredDataType) {
-            //Ignored
+            // this should never happen?
+            System.err.println("still temporary [2]: "+type);
         } else if (type instanceof StructDataType) {
             StructDataType structType = (StructDataType) type;
             Datatype.Structtype.Builder structBuilder = new Datatype.Structtype.Builder();
