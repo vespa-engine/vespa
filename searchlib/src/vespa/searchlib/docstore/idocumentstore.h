@@ -100,7 +100,8 @@ public:
     /**
      * If possible compact the disk.
      **/
-    virtual void compact(uint64_t syncToken) = 0;
+    virtual void compactBloat(uint64_t syncToken) = 0;
+    virtual void compactSpread(uint64_t syncToken) = 0;
 
     /**
      * The sync token used for the last successful flush() operation,
@@ -153,12 +154,11 @@ public:
     virtual size_t getDiskBloat() const = 0;
 
     /**
-     * Calculates how much diskspace can be compacted during a flush.
-     * default is to return th ebloat limit, but as some targets have some internal limits
-     * to avoid misuse we let the report a more conservative number here if necessary.
-     * @return diskspace to be gained.
+     * Calculates the gain from keeping buckets close. It is converted to diskbloat
+     * so it can be prioritized accordingly.
+     * @return spread as disk bloat.
      */
-    virtual size_t getMaxCompactGain() const = 0;
+    virtual size_t getMaxSpreadAsBloat() const = 0;
 
     /**
      * Returns statistics about the cache.

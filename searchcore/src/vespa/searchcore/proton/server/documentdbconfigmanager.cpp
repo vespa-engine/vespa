@@ -198,7 +198,7 @@ getStoreConfig(const ProtonConfig::Summary::Cache & cache, const HwInfo & hwInfo
 }
 
 LogDocumentStore::Config
-deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::Memory & flush, const HwInfo & hwInfo) {
+deriveConfig(const ProtonConfig::Summary & summary, const HwInfo & hwInfo) {
     DocumentStore::Config config(getStoreConfig(summary.cache, hwInfo));
     const ProtonConfig::Summary::Log & log(summary.log);
     const ProtonConfig::Summary::Log::Chunk & chunk(log.chunk);
@@ -206,7 +206,6 @@ deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::M
     LogDataStore::Config logConfig;
     logConfig.setMaxFileSize(log.maxfilesize)
             .setMaxNumLids(log.maxnumlids)
-            .setMaxDiskBloatFactor(std::min(flush.diskbloatfactor, flush.each.diskbloatfactor))
             .setMaxBucketSpread(log.maxbucketspread).setMinFileSizeFactor(log.minfilesizefactor)
             .compactCompression(deriveCompression(log.compact.compression))
             .setFileConfig(fileConfig).disableCrcOnRead(chunk.skipcrconread);
@@ -214,7 +213,7 @@ deriveConfig(const ProtonConfig::Summary & summary, const ProtonConfig::Flush::M
 }
 
 search::LogDocumentStore::Config buildStoreConfig(const ProtonConfig & proton, const HwInfo & hwInfo) {
-    return deriveConfig(proton.summary, proton.flush.memory, hwInfo);
+    return deriveConfig(proton.summary, hwInfo);
 }
 
 using AttributesConfigSP = DocumentDBConfig::AttributesConfigSP;
