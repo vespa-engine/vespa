@@ -82,6 +82,7 @@ using std::string;
 using vespalib::ForegroundTaskExecutor;
 using vespalib::ForegroundThreadExecutor;
 using vespalib::SequencedTaskExecutorObserver;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -541,7 +542,7 @@ public:
     AttributeCollectionSpecFactory _factory;
     AttributeCollectionSpecTest(bool fastAccessOnly)
         : _builder(),
-          _factory(AllocStrategy(search::GrowStrategy(), search::CompactionStrategy(), 100), fastAccessOnly)
+          _factory(AllocStrategy(search::GrowStrategy(), CompactionStrategy(), 100), fastAccessOnly)
     {
         addAttribute("a1", false);
         addAttribute("a2", true);

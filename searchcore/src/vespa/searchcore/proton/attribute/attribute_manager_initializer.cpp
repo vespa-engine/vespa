@@ -7,10 +7,10 @@
 #include <future>
 
 using search::AttributeVector;
-using search::CompactionStrategy;
 using search::GrowStrategy;
 using search::SerialNum;
 using vespa::config::search::AttributesConfig;
+using vespalib::datastore::CompactionStrategy;
 
 namespace proton {
 

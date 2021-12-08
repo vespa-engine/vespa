@@ -48,6 +48,7 @@ using search::DocumentStore;
 using search::WriteableFileChunk;
 using std::make_shared;
 using std::make_unique;
+using vespalib::datastore::CompactionStrategy;
 
 using vespalib::make_string_short::fmt;
 
@@ -264,7 +265,7 @@ build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& do
     auto& alloc_config = document_db_config_entry.allocation;
     auto& distribution_config = proton_config.distribution;
     search::GrowStrategy grow_strategy(alloc_config.initialnumdocs, alloc_config.growfactor, alloc_config.growbias, alloc_config.multivaluegrowfactor);
-    search::CompactionStrategy compaction_strategy(alloc_config.maxDeadBytesRatio, alloc_config.maxDeadAddressSpaceRatio);
+    CompactionStrategy compaction_strategy(alloc_config.maxDeadBytesRatio, alloc_config.maxDeadAddressSpaceRatio);
     return std::make_shared<const AllocConfig>
         (AllocStrategy(grow_strategy, compaction_strategy, alloc_config.amortizecount),
          distribution_config.redundancy, distribution_config.searchablecopies);

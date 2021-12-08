@@ -8,7 +8,6 @@
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
 #include "reusable_set_visited_tracker.h"
-#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -16,6 +15,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/size_literals.h>
@@ -30,6 +30,7 @@ namespace search::tensor {
 
 using search::AddressSpaceComponents;
 using search::StateExplorerUtils;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace {

@@ -7,7 +7,7 @@
 #include <vespa/vespalib/util/rcuvector.h>
 #include <functional>
 
-namespace search { class CompactionStrategy; }
+namespace vespalib::datastore { class CompactionStrategy; }
 
 namespace search::attribute {
 
@@ -17,6 +17,7 @@ namespace search::attribute {
 class MultiValueMappingBase
 {
 public:
+    using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using EntryRef = vespalib::datastore::EntryRef;
     using RefVector = vespalib::RcuVectorBase<EntryRef>;
 

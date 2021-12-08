@@ -10,6 +10,7 @@
 
 namespace vespalib::datastore {
 
+class CompactionStrategy;
 class DataStoreBase;
 
 template <typename> class UniqueStoreRemapper;
@@ -19,7 +20,6 @@ template <typename> class UniqueStoreRemapper;
 namespace search {
 
 class BufferWriter;
-class CompactionStrategy;
 class IEnumStoreDictionary;
 
 /**
@@ -30,6 +30,7 @@ public:
     using Index = enumstore::Index;
     using InternalIndex = enumstore::InternalIndex;
     using IndexVector = enumstore::IndexVector;
+    using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using EnumHandle = enumstore::EnumHandle;
     using EnumVector = enumstore::EnumVector;
     using EnumIndexRemapper = vespalib::datastore::UniqueStoreRemapper<InternalIndex>;

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <iosfwd>
 
 namespace proton {
@@ -14,14 +14,16 @@ namespace proton {
  */
 class AllocStrategy
 {
+public:
+    using CompactionStrategy = vespalib::datastore::CompactionStrategy;
 protected:
     const search::GrowStrategy       _grow_strategy;
-    const search::CompactionStrategy _compaction_strategy;
+    const CompactionStrategy         _compaction_strategy;
     const uint32_t                   _amortize_count;
 
 public:
     AllocStrategy(const search::GrowStrategy& grow_strategy,
-                  const search::CompactionStrategy& compaction_strategy,
+                  const CompactionStrategy& compaction_strategy,
                   uint32_t amortize_count);
 
     AllocStrategy();
@@ -32,7 +34,7 @@ public:
         return !operator==(rhs);
     }
     const search::GrowStrategy& get_grow_strategy() const noexcept { return _grow_strategy; }
-    const search::CompactionStrategy& get_compaction_strategy() const noexcept { return _compaction_strategy; }
+    const CompactionStrategy& get_compaction_strategy() const noexcept { return _compaction_strategy; }
     uint32_t get_amortize_count() const noexcept { return _amortize_count; }
 };
 

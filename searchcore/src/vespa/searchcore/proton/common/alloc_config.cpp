@@ -4,8 +4,8 @@
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <algorithm>
 
-using search::CompactionStrategy;
 using search::GrowStrategy;
+using vespalib::datastore::CompactionStrategy;
 
 namespace proton {
 

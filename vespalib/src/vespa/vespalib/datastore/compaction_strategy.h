@@ -4,7 +4,7 @@
 
 #include <iosfwd>
 
-namespace search {
+namespace vespalib::datastore {
 
 /*
  * Class describing compaction strategy for a compactable data structure.
@@ -50,4 +50,4 @@ public:
 
 std::ostream& operator<<(std::ostream& os, const CompactionStrategy& compaction_strategy);
 
-} // namespace search
+}
