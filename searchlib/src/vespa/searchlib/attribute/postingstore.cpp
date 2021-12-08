@@ -770,7 +770,7 @@ PostingStore<DataT>::consider_compact_worst_btree_nodes(const CompactionStrategy
     if (_allocator.getNodeStore().has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_allocator_memory_usage.usedBytes(), _cached_allocator_memory_usage.deadBytes())) {
+    if (compaction_strategy.should_compact_memory(_cached_allocator_memory_usage)) {
         compact_worst_btree_nodes(compaction_strategy);
         return true;
     }
@@ -784,7 +784,7 @@ PostingStore<DataT>::consider_compact_worst_buffers(const CompactionStrategy& co
     if (_store.has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_store_memory_usage.usedBytes(), _cached_store_memory_usage.deadBytes())) {
+    if (compaction_strategy.should_compact_memory(_cached_store_memory_usage)) {
         CompactionSpec compaction_spec(true, false);
         compact_worst_buffers(compaction_spec, compaction_strategy);
         return true;

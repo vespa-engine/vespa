@@ -559,14 +559,8 @@ namespace {
 bool
 consider_compact_arrays(const CompactionStrategy& compaction_strategy, vespalib::MemoryUsage& memory_usage, vespalib::AddressSpace& address_space_usage, std::function<void(vespalib::datastore::CompactionSpec, const CompactionStrategy&)> compact_arrays)
 {
-    size_t used_bytes = memory_usage.usedBytes();
-    size_t dead_bytes = memory_usage.deadBytes();
-    bool compact_memory = compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
-    size_t used_address_space = address_space_usage.used();
-    size_t dead_address_space = address_space_usage.dead();
-    bool compact_address_space = compaction_strategy.should_compact_address_space(used_address_space, dead_address_space);
-    if (compact_memory || compact_address_space) {
-        vespalib::datastore::CompactionSpec compaction_spec(compact_memory, compact_address_space);
+    auto compaction_spec = compaction_strategy.should_compact(memory_usage, address_space_usage);
+    if (compaction_spec.compact()) {
         compact_arrays(compaction_spec, compaction_strategy);
         return true;
     }

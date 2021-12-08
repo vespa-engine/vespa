@@ -89,9 +89,7 @@ TensorAttribute::onCommit()
     incGeneration();
     if (getFirstUsedGeneration() > _compactGeneration) {
         // No data held from previous compact operation
-        size_t used = _cached_tensor_store_memory_usage.usedBytes();
-        size_t dead = _cached_tensor_store_memory_usage.deadBytes();
-        if (getConfig().getCompactionStrategy().should_compact_memory(used, dead)) {
+        if (getConfig().getCompactionStrategy().should_compact_memory(_cached_tensor_store_memory_usage)) {
             compactWorst();
         }
     }
