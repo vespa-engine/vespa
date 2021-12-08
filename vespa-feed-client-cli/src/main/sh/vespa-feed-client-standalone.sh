@@ -6,4 +6,4 @@ exec java \
 -Xms128m -Xmx2048m \
 --add-opens=java.base/sun.security.ssl=ALL-UNNAMED  \
 -Djava.util.logging.config.file=`dirname $0`/logging.properties \
--cp `dirname $0`/vespa-feed-client-cli-jar-with-dependencies.jar ai.vespa.feed.client.CliClient "$@"
+-cp `dirname $0`/vespa-feed-client-cli-jar-with-dependencies.jar ai.vespa.feed.client.impl.CliClient "$@"
