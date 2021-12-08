@@ -51,7 +51,8 @@ public:
     ~LogDocumentStore() override;
     void reconfigure(const Config & config);
 private:
-    void compact(uint64_t syncToken) override       { _backingStore.compact(syncToken); }
+    void compactBloat(uint64_t syncToken) override  { _backingStore.compactBloat(syncToken); }
+    void compactSpread(uint64_t syncToken) override { _backingStore.compactSpread(syncToken); }
     LogDataStore _backingStore;
 };
 

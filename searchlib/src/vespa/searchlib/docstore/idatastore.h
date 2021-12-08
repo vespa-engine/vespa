@@ -121,7 +121,7 @@ public:
      * to avoid misuse we let the report a more conservative number here if necessary.
      * @return diskspace to be gained.
      */
-    virtual size_t getMaxCompactGain() const = 0;
+    virtual size_t getMaxSpreadAsBloat() const = 0;
 
 
     /**
