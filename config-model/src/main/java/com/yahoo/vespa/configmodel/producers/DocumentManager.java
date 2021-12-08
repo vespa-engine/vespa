@@ -38,7 +38,8 @@ public class DocumentManager {
         for(NewDocumentType documentType : model.getDocumentManager().getTypes()) {
             buildConfig(documentType, documentConfigBuilder, handled);
             buildConfig(documentType.getAnnotations(), documentConfigBuilder);
-            if ( documentType != VespaDocumentType.INSTANCE) {
+            if (documentType != VespaDocumentType.INSTANCE && ! handled.contains(documentType)) {
+                handled.add(documentType);
                 DocumentmanagerConfig.Datatype.Builder dataTypeBuilder = new DocumentmanagerConfig.Datatype.Builder();
                 documentConfigBuilder.datatype(dataTypeBuilder);
                 buildConfig(documentType, dataTypeBuilder);
