@@ -11,8 +11,11 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -46,7 +49,11 @@ public class DocumentManager {
 
     @SuppressWarnings("deprecation")
     private void buildConfig(DataTypeCollection type, DocumentmanagerConfig.Builder documentConfigBuilder, Set<DataType> built) {
-        for (DataType dataType : type.getTypes()) {
+        List<DataType> todo = new ArrayList<>(type.getTypes());
+        Collections.sort(todo, (a, b) -> (a.getName().equals(b.getName())
+                                          ? a.getId() - b.getId()
+                                          : a.getName().compareTo(b.getName())));
+        for (DataType dataType : todo) {
             if (built.contains(dataType)) continue;
             built.add(dataType);
             if (dataType instanceof TemporaryStructuredDataType) continue;
