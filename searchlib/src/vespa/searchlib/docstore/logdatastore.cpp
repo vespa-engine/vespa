@@ -389,7 +389,7 @@ LogDataStore::compactWorst(uint64_t syncToken, bool compactDiskBloat) {
     LOG(debug, "%s", bloatMsg(bloat, usage).c_str());
     const bool doCompact = (_fileChunks.size() > 1);
     if (doCompact) {
-        LOG(info, "%s. Will compact due to %s", reason, bloatMsg(bloat, usage).c_str());
+        LOG(debug, "Will compact due to %s: %s", reason, bloatMsg(bloat, usage).c_str());
         auto worst = findNextToCompact(compactDiskBloat);
         if (worst.first) {
             compactFile(worst.second);
@@ -397,7 +397,7 @@ LogDataStore::compactWorst(uint64_t syncToken, bool compactDiskBloat) {
         flushActiveAndWait(syncToken);
         usage = getDiskFootprint();
         bloat = getDiskBloat();
-        LOG(info, "Done compacting due to %s. %s", reason, bloatMsg(bloat, usage).c_str());
+        LOG(info, "Done compacting due to %s: %s", reason, bloatMsg(bloat, usage).c_str());
     } else {
         flushActiveAndWait(syncToken);
     }
@@ -975,7 +975,7 @@ LogDataStore::computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketi
     while ((msb > 0) && (msbHistogram[msb - 1] == 0)) {
         msb--;
     }
-    LOG(info, "computeNumberOfSignificantBucketIdBits(file=%d) = %ld = %ld took %1.3f", fileId.getId(), msb, msbHistogram[msb-1], timer.min_time());
+    LOG(debug, "computeNumberOfSignificantBucketIdBits(file=%d) = %ld = %ld took %1.3f", fileId.getId(), msb, msbHistogram[msb-1], timer.min_time());
     return msb;
 }
 

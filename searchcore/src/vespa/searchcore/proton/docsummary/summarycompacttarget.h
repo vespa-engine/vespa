@@ -32,11 +32,14 @@ private:
     virtual size_t getBloat(const IDocumentStore & docStore) const = 0;
     virtual Task::UP create(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial) = 0;
 
-    vespalib::Executor      &_summaryService;
-    IDocumentStore & _docStore;
-    FlushStats               _lastStats;
+    vespalib::Executor  &_summaryService;
+    IDocumentStore      & _docStore;
+    FlushStats            _lastStats;
 };
 
+/**
+ * Implements target to compact away removed documents. Wasted disk space is cost factor used for prioritizing.
+ */
 class SummaryCompactBloatTarget : public SummaryGCTarget {
 private:
     size_t getBloat(const search::IDocumentStore & docStore) const override;
@@ -45,6 +48,10 @@ public:
     SummaryCompactBloatTarget(vespalib::Executor & summaryService, IDocumentStore & docStore);
 };
 
+/**
+ * Target to ensure bucket spread is kept low. The cost is reported as a potential gain in disk space as
+ * we do not have a concept for bucket spread.
+ */
 class SummaryCompactSpreadTarget : public SummaryGCTarget {
 private:
     size_t getBloat(const search::IDocumentStore & docStore) const override;
