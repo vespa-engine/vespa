@@ -6,10 +6,10 @@
 #include "collectiontype.h"
 #include "hnsw_index_params.h"
 #include "predicate_params.h"
-#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchcommon/common/dictionary_config.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <cassert>
 #include <optional>
 
@@ -23,6 +23,7 @@ namespace search::attribute {
 class Config {
 public:
     enum class Match { CASED, UNCASED };
+    using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     Config() noexcept;
     Config(BasicType bt) noexcept : Config(bt, CollectionType::SINGLE) { }
     Config(BasicType bt, CollectionType ct) noexcept : Config(bt, ct, false) { }

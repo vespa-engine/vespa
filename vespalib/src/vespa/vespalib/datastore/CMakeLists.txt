@@ -5,6 +5,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     array_store_config.cpp
     buffer_type.cpp
     bufferstate.cpp
+    compaction_strategy.cpp
     datastore.cpp
     datastorebase.cpp
     entryref.cpp

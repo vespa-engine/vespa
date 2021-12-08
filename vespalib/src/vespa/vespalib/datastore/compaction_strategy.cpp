@@ -2,7 +2,8 @@
 
 #include "compaction_strategy.h"
 #include <iostream>
-namespace search {
+
+namespace vespalib::datastore {
 
 std::ostream& operator<<(std::ostream& os, const CompactionStrategy& compaction_strategy)
 {

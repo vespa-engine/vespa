@@ -176,7 +176,7 @@ struct ReferenceAttributeTest : public ::testing::Test {
         search::attribute::Status newStatus = oldStatus;
         uint64_t iter = 0;
         AttributeGuard guard(_attr);
-        uint64_t dropCount = search::CompactionStrategy::DEAD_BYTES_SLACK / sizeof(Reference);
+        uint64_t dropCount = vespalib::datastore::CompactionStrategy::DEAD_BYTES_SLACK / sizeof(Reference);
         for (; iter < iterLimit; ++iter) {
             clear(2);
             set(2, toGid(doc2));

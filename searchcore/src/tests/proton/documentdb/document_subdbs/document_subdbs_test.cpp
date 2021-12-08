@@ -60,6 +60,7 @@ using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
 using vespalib::mkdir;
+using vespalib::datastore::CompactionStrategy;
 using proton::index::IndexConfig;
 
 typedef StoreOnlyDocSubDB::Config StoreOnlyConfig;
@@ -564,7 +565,7 @@ TEST_F("require that attribute manager can be reconfigured", SearchableFixture)
 
 TEST_F("require that subdb reflect retirement", FastAccessFixture)
 {
-    search::CompactionStrategy cfg(0.1, 0.3);
+    CompactionStrategy cfg(0.1, 0.3);
 
     EXPECT_FALSE(f._subDb.isNodeRetired());
     auto unretired_cfg = f._subDb.computeCompactionStrategy(cfg);
@@ -576,7 +577,7 @@ TEST_F("require that subdb reflect retirement", FastAccessFixture)
     EXPECT_TRUE(f._subDb.isNodeRetired());
     auto retired_cfg = f._subDb.computeCompactionStrategy(cfg);
     EXPECT_TRUE(cfg != retired_cfg);
-    EXPECT_TRUE(search::CompactionStrategy(0.5, 0.5) == retired_cfg);
+    EXPECT_TRUE(CompactionStrategy(0.5, 0.5) == retired_cfg);
 
     calc->setNodeRetired(false);
     f.setBucketStateCalculator(calc);
@@ -586,8 +587,8 @@ TEST_F("require that subdb reflect retirement", FastAccessFixture)
 }
 
 TEST_F("require that attribute compaction config reflect retirement", FastAccessFixture) {
-    search::CompactionStrategy default_cfg(0.05, 0.2);
-    search::CompactionStrategy retired_cfg(0.5, 0.5);
+    CompactionStrategy default_cfg(0.05, 0.2);
+    CompactionStrategy retired_cfg(0.5, 0.5);
 
     auto guard = f._subDb.getAttributeManager()->getAttribute("attr1");
     EXPECT_EQUAL(default_cfg, (*guard)->getConfig().getCompactionStrategy());

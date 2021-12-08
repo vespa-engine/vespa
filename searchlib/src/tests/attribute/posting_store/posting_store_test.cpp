@@ -13,6 +13,7 @@
 #include <ostream>
 
 using vespalib::GenerationHandler;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace search::attribute {
@@ -160,7 +161,7 @@ PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
     EntryRef old_ref2 = get_posting_ref(2);
     auto usage_before = store.getMemoryUsage();
     bool compaction_done = false;
-    search::CompactionStrategy compaction_strategy(0.05, 0.2);
+    CompactionStrategy compaction_strategy(0.05, 0.2);
     for (uint32_t pass = 0; pass < 45; ++pass) {
         store.update_stat();
         auto guard = _gen_handler.takeGuard();
@@ -193,7 +194,7 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
     EntryRef old_ref2 = get_posting_ref(2);
     auto usage_before = store.getMemoryUsage();
     bool compaction_done = false;
-    search::CompactionStrategy compaction_strategy(0.05, 0.2);
+    CompactionStrategy compaction_strategy(0.05, 0.2);
     for (uint32_t pass = 0; pass < 55; ++pass) {
         store.update_stat();
         auto guard = _gen_handler.takeGuard();

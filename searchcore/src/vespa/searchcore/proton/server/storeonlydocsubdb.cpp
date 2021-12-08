@@ -30,7 +30,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlydocsubdb");
 
-using search::CompactionStrategy;
 using search::GrowStrategy;
 using vespalib::makeLambdaTask;
 using search::index::Schema;
@@ -43,6 +42,7 @@ using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
+using vespalib::datastore::CompactionStrategy;
 
 namespace proton {
 
@@ -422,7 +422,7 @@ namespace {
 constexpr double RETIRED_DEAD_RATIO = 0.5;
 
 struct UpdateConfig : public search::attribute::IAttributeFunctor {
-    UpdateConfig(search::CompactionStrategy compactionStrategy) noexcept
+    UpdateConfig(CompactionStrategy compactionStrategy) noexcept
         : _compactionStrategy(compactionStrategy)
     {}
     void operator()(search::attribute::IAttributeVector &iAttributeVector) override {
@@ -433,15 +433,15 @@ struct UpdateConfig : public search::attribute::IAttributeFunctor {
             attributeVector->update_config(cfg);
         }
     }
-    search::CompactionStrategy _compactionStrategy;
+    CompactionStrategy _compactionStrategy;
 };
 
 }
 
-search::CompactionStrategy
-StoreOnlyDocSubDB::computeCompactionStrategy(search::CompactionStrategy strategy) const {
+CompactionStrategy
+StoreOnlyDocSubDB::computeCompactionStrategy(CompactionStrategy strategy) const {
     return isNodeRetired()
-           ? search::CompactionStrategy(RETIRED_DEAD_RATIO, RETIRED_DEAD_RATIO)
+           ? CompactionStrategy(RETIRED_DEAD_RATIO, RETIRED_DEAD_RATIO)
            : strategy;
 }
 
@@ -464,7 +464,7 @@ StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCa
     bool wasNodeRetired = isNodeRetired();
     _nodeRetired = calc->nodeRetired();
     if (wasNodeRetired != isNodeRetired()) {
-        search::CompactionStrategy compactionStrategy = computeCompactionStrategy(_lastConfiguredCompactionStrategy);
+        CompactionStrategy compactionStrategy = computeCompactionStrategy(_lastConfiguredCompactionStrategy);
         auto cfg = _dms->getConfig();
         cfg.setCompactionStrategy(compactionStrategy);
         _dms->update_config(cfg);
@@ -474,7 +474,7 @@ StoreOnlyDocSubDB::setBucketStateCalculator(const std::shared_ptr<IBucketStateCa
 
 void
 StoreOnlyDocSubDB::reconfigureAttributesConsideringNodeState(OnDone onDone) {
-    search::CompactionStrategy compactionStrategy = computeCompactionStrategy(_lastConfiguredCompactionStrategy);
+    CompactionStrategy compactionStrategy = computeCompactionStrategy(_lastConfiguredCompactionStrategy);
     auto attrMan = getAttributeManager();
     if (attrMan) {
         attrMan->asyncForEachAttribute(std::make_shared<UpdateConfig>(compactionStrategy), std::move(onDone));

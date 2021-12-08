@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "multi_value_mapping_base.h"
-#include <vespa/searchcommon/common/compaction_strategy.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <cassert>
 
 namespace search::attribute {
+
+using vespalib::datastore::CompactionStrategy;
 
 MultiValueMappingBase::MultiValueMappingBase(const vespalib::GrowStrategy &gs,
                                              vespalib::GenerationHolder &genHolder)
