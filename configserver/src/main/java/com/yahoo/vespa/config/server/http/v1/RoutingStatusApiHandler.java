@@ -117,10 +117,9 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         log.log(Level.INFO, "Changing routing status of " + instance + " from " +
                             currentStatus.status() + " to " + wantedStatus.status());
         boolean needsChange = currentStatuses.stream().anyMatch(status -> status.status() != wantedStatus.status());
-        if (!needsChange) {
-            return new SlimeJsonResponse(toSlime(wantedStatus));
+        if (needsChange) {
+            changeStatus(upstreamNames, wantedStatus);
         }
-        changeStatus(upstreamNames, wantedStatus);
         return new SlimeJsonResponse(toSlime(wantedStatus));
     }
 
