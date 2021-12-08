@@ -26,7 +26,7 @@ BucketCompacter::BucketCompacter(size_t maxSignificantBucketBits, const Compress
     _bucketizer(bucketizer),
     _writeCount(0),
     _maxBucketGuardDuration(vespalib::duration::zero()),
-    _lastSample(),
+    _lastSample(vespalib::steady_clock::now()),
     _lock(),
     _backingMemory(Alloc::alloc(0x40000000), &_lock),
     _tmpStore(),
