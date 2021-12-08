@@ -62,10 +62,10 @@ public class GarbageCollectionMetrics {
         for(Iterator<Map.Entry<String, LinkedList<GcStats>>> it = gcStatistics.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, LinkedList<GcStats>> entry = it.next();
             LinkedList<GcStats> history = entry.getValue();
-            while(history.isEmpty() == false && oldestToKeep.isAfter(history.getFirst().when)) {
+            while( ! history.isEmpty() && oldestToKeep.isAfter(history.getFirst().when)) {
                 history.removeFirst();
             }
-            if(history.isEmpty()) {
+            if (history.isEmpty()) {
                 it.remove();
             }
         }
