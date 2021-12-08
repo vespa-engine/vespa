@@ -11,7 +11,7 @@ namespace search::common {
  * Interface for a component that has a lid space that can be compacted and shrunk.
  */     
 struct ICompactableLidSpace {
-    virtual ~ICompactableLidSpace() {}
+    virtual ~ICompactableLidSpace() = default;
 
     /**
      * Compacts the lid space down to the wanted given doc id limit.
