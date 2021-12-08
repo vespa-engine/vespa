@@ -6,7 +6,13 @@
 #include "enum_store_types.h"
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/datastore/unique_store_enumerator.h>
-#include <vespa/vespalib/util/memoryusage.h>
+
+namespace vespalib {
+
+class AddressSpace;
+class MemoryUsage;
+
+}
 
 namespace vespalib::datastore {
 
@@ -52,6 +58,7 @@ public:
     virtual const IEnumStoreDictionary& get_dictionary() const = 0;
     virtual uint32_t get_num_uniques() const = 0;
     virtual vespalib::MemoryUsage get_values_memory_usage() const = 0;
+    virtual vespalib::AddressSpace get_values_address_space_usage() const = 0;
     virtual vespalib::MemoryUsage get_dictionary_memory_usage() const = 0;
     virtual vespalib::MemoryUsage update_stat() = 0;
     virtual std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) = 0;

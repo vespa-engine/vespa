@@ -92,9 +92,9 @@ EnumStoreT<EntryT>::~EnumStoreT() = default;
 
 template <typename EntryT>
 vespalib::AddressSpace
-EnumStoreT<EntryT>::get_address_space_usage() const
+EnumStoreT<EntryT>::get_values_address_space_usage() const
 {
-    return _store.get_address_space_usage();
+    return _store.get_values_address_space_usage();
 }
 
 template <typename EntryT>
