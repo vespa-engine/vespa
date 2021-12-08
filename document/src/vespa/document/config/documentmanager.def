@@ -151,9 +151,8 @@ doctype[].importedfield[].name string
 ## Index of primitive type
 doctype[].primitivetype[].idx int
 
-## An internal ID for this primitive type
-doctype[].primitivetype[].internalid int
-
+## The name of this primitive type
+doctype[].primitivetype[].name string
 
 # Arrays are the simplest collection type:
 
@@ -225,7 +224,7 @@ doctype[].annotationtype[].name string
 
 # Could we somehow avoid this?
 ## Internal id of this annotation type
-doctype[].annotationtype[].internalid int
+doctype[].annotationtype[].internalid int default=-1
 
 ## Index of contained datatype of the annotation type, if any
 doctype[].annotationtype[].datatype int default=-1
