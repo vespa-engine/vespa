@@ -99,12 +99,12 @@ class NodeAllocation {
      * Note that if unallocated nodes are offered before allocated nodes, this will unnecessarily
      * reject allocated nodes due to index duplicates.
      *
-     * @param nodesPrioritized the nodes which are potentially on offer. These may belong to a different application etc.
+     * @param candidates the nodes which are potentially on offer. These may belong to a different application etc.
      * @return the subset of offeredNodes which was accepted, with the correct allocation assigned
      */
-    List<Node> offer(List<NodeCandidate> nodesPrioritized) {
+    List<Node> offer(List<NodeCandidate> candidates) {
         List<Node> accepted = new ArrayList<>();
-        for (NodeCandidate candidate : nodesPrioritized) {
+        for (NodeCandidate candidate : candidates) {
             if (candidate.allocation().isPresent()) {
                 Allocation allocation = candidate.allocation().get();
                 ClusterMembership membership = allocation.membership();
@@ -121,7 +121,7 @@ class NodeAllocation {
                 if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
                     candidate = candidate.withNode();
                     if (candidate.isValid())
-                        accepted.add(acceptNode(candidate, shouldRetire(candidate, nodesPrioritized), resizeable));
+                        accepted.add(acceptNode(candidate, shouldRetire(candidate, candidates), resizeable));
                 }
             }
             else if (! saturated() && hasCompatibleFlavor(candidate)) {

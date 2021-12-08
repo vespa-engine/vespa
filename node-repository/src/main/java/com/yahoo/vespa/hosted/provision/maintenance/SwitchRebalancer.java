@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Ensure that nodes within a cluster a spread across hosts on exclusive network switches.
@@ -23,6 +24,8 @@ import java.util.Set;
  * @author mpolden
  */
 public class SwitchRebalancer extends NodeMover<Move> {
+
+    private static final Logger LOG = Logger.getLogger(SwitchRebalancer.class.getName());
 
     private final Metric metric;
     private final Deployer deployer;
@@ -40,7 +43,12 @@ public class SwitchRebalancer extends NodeMover<Move> {
         NodesAndHosts<NodeList> allNodes = NodesAndHosts.create(nodeRepository().nodes().list()); // Lockless as strong consistency is not needed
         if (!zoneIsStable(allNodes.nodes())) return 1.0;
 
-        findBestMove(allNodes).execute(false, Agent.SwitchRebalancer, deployer, metric, nodeRepository());
+        Move bestMove = findBestMove(allNodes);
+        if (!bestMove.isEmpty()) {
+            LOG.info("Trying " + bestMove + " (" + bestMove.fromHost().switchHostname().orElse("<none>") +
+                     " -> " + bestMove.toHost().switchHostname().orElse("<none>") + ")");
+        }
+        bestMove.execute(false, Agent.SwitchRebalancer, deployer, metric, nodeRepository());
         return 1.0;
     }
 
