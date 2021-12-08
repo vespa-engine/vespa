@@ -362,16 +362,16 @@ TEST(EnumStoreTest, address_space_usage_is_reported)
     NumericEnumStore store(false, DictionaryConfig::Type::BTREE);
 
     using vespalib::AddressSpace;
-    EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.get_values_address_space_usage());
     EnumIndex idx1 = store.insert(10);
-    EXPECT_EQ(AddressSpace(2, 1, ADDRESS_LIMIT), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(2, 1, ADDRESS_LIMIT), store.get_values_address_space_usage());
     EnumIndex idx2 = store.insert(20);
     // Address limit increases because buffer is re-sized.
-    EXPECT_EQ(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
     dec_ref_count(store, idx1);
-    EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
     dec_ref_count(store, idx2);
-    EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
 }
 
 class BatchUpdaterTest : public ::testing::Test {

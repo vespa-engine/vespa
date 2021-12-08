@@ -178,7 +178,7 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::getMemoryUsage() const
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 vespalib::AddressSpace
-UniqueStore<EntryT, RefT, Compare, Allocator>::get_address_space_usage() const
+UniqueStore<EntryT, RefT, Compare, Allocator>::get_values_address_space_usage() const
 {
     return _allocator.get_data_store().getAddressSpaceUsage();
 }

@@ -96,7 +96,7 @@ public:
     vespalib::MemoryUsage get_values_memory_usage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
     vespalib::MemoryUsage get_dictionary_memory_usage() const override { return _dict->get_memory_usage(); }
 
-    vespalib::AddressSpace get_address_space_usage() const;
+    vespalib::AddressSpace get_values_address_space_usage() const override;
 
     void transfer_hold_lists(generation_t generation);
     void trim_hold_lists(generation_t first_used);
