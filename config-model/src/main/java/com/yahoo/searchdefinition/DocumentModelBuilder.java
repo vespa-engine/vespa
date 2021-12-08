@@ -204,13 +204,21 @@ public class DocumentModelBuilder {
     private static DataType resolveTemporariesRecurse(DataType type, DataTypeCollection repo,
                                                       Collection<NewDocumentType> docs) {
         if (type instanceof TemporaryStructuredDataType) {
-            DataType struct = repo.getDataType(type.getId());
-            if (struct != null)
-                type = struct;
-            else
-                type = getDocumentType(docs, type.getId());
-        }
-        else if (type instanceof StructDataType) {
+            DataType other = repo.getDataType(type.getId());
+            if (other == null || other == type) {
+                other = getDocumentType(docs, type.getId());
+            }
+            // maybe warning if null here?
+            if (other != null) {
+                type = other;
+            }
+        } else if (type instanceof DocumentType || type instanceof NewDocumentType) {
+            DataType other = getDocumentType(docs, type.getId());
+            // maybe warning if null here?
+            if (other != null) {
+                type = other;
+            }
+        } else if (type instanceof StructDataType) {
             StructDataType dt = (StructDataType) type;
             for (com.yahoo.document.Field field : dt.getFields()) {
                 if (field.getDataType() != type) {
