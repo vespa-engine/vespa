@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <thread>
 #include <cassert>
+#include <future>
 
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -394,27 +395,32 @@ Domain::grabCurrentChunk(const UniqueLock & guard) {
 void
 Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock & chunkOrderGuard) {
     assert(chunkOrderGuard.mutex() == &_currentChunkMonitor && chunkOrderGuard.owns_lock());
-    _singleCommitter->execute( makeLambdaTask([this, chunk = std::move(chunk)]() mutable {
-        doCommit(std::move(chunk));
+    if (chunk->getPacket().empty()) return;
+    std::promise<SerializedChunk> promise;
+    std::future<SerializedChunk> future = promise.get_future();
+    _executor.execute(makeLambdaTask([promise=std::move(promise), chunk = std::move(chunk),
+                                      encoding=_config.getEncoding(), compressionLevel=_config.getCompressionlevel()]() mutable {
+        promise.set_value(SerializedChunk(std::move(chunk), encoding, compressionLevel));
+    }));
+    _singleCommitter->execute( makeLambdaTask([this, future = std::move(future)]() mutable {
+        doCommit(future.get());
     }));
 }
 
 
 
 void
-Domain::doCommit(std::unique_ptr<CommitChunk> chunk) {
-    const Packet & packet = chunk->getPacket();
-    if (packet.empty()) return;
+Domain::doCommit(const SerializedChunk & serialized) {
 
-    SerializedChunk serialized(packet, _config.getEncoding(), _config.getCompressionlevel());
-    DomainPart::SP dp = optionallyRotateFile(packet.range().from());
+    SerialNumRange range = serialized.range();
+    DomainPart::SP dp = optionallyRotateFile(range.from());
     dp->commit(serialized);
     if (_config.getFSyncOnCommit()) {
         dp->sync();
     }
     cleanSessions();
     LOG(debug, "Releasing %zu acks and %zu entries and %zu bytes.",
-        chunk->getNumCallBacks(), chunk->getPacket().size(), chunk->sizeBytes());
+        serialized.commitChunk().getNumCallBacks(), serialized.getNumEntries(), serialized.getData().size());
 }
 
 bool
