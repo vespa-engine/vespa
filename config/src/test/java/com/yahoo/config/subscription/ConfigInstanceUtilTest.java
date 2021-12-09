@@ -32,15 +32,12 @@ public class ConfigInstanceUtilTest {
                 .int_val(-1)
                 .intarr(0)
                 .doublearr(0.0)
-                .basicStruct(new FunctionTestConfig.BasicStruct.Builder()
-                        .bar(-1)
-                        .intArr(0))
-                .myarray(new FunctionTestConfig.Myarray.Builder()
+                .basicStruct(b -> b.bar(-1).intArr(0))
+                .myarray(b -> b
                         .intval(-1)
                         .refval("")
                         .fileVal("")
-                        .myStruct(new FunctionTestConfig.Myarray.MyStruct.Builder()
-                                .a(0)
+                        .myStruct(bb -> bb.a(0)
                         ));
 
         ConfigInstanceUtil.setValues(destination, source);
@@ -105,47 +102,34 @@ public class ConfigInstanceUtilTest {
                 refarr(Arrays.asList(":parent:", ":parent", "parent:")).  // test collection based setter
                 fileArr("bin").
 
-                basicStruct(new FunctionTestConfig.BasicStruct.Builder().
+                basicStruct(b -> b.
                         foo("basicFoo").
                         bar(3).
                         intArr(310).intArr(311)).
 
-                rootStruct(new FunctionTestConfig.RootStruct.Builder().
-                        inner0(new FunctionTestConfig.RootStruct.Inner0.Builder().
-                                index(11)).
-                        inner1(new FunctionTestConfig.RootStruct.Inner1.Builder().
-                                index(12)).
-                        innerArr(new FunctionTestConfig.RootStruct.InnerArr.Builder().
-                                boolVal(true).
-                                stringVal("deep")).
-                        innerArr(new FunctionTestConfig.RootStruct.InnerArr.Builder().
-                                boolVal(false).
-                                stringVal("blue a=\"escaped\""))).
+                rootStruct(b -> b.
+                        inner0(bb -> bb.index(11)).
+                        inner1(bb -> bb.index(12)).
+                        innerArr(bb -> bb.boolVal(true).stringVal("deep")).
+                        innerArr(bb -> bb.boolVal(false).stringVal("blue a=\"escaped\""))).
 
-                myarray(new FunctionTestConfig.Myarray.Builder().
+                myarray(b -> b.
                         intval(-5).
                         stringval("baah").
                         stringval("yikes").
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file0").
-                        anotherarray(new FunctionTestConfig.Myarray.Anotherarray.Builder().
-                                foo(7)).
-                        myStruct(new FunctionTestConfig.Myarray.MyStruct.Builder().
-                                a(1).
-                                b(2))).
+                        anotherarray(bb -> bb.foo(7)).
+                        myStruct(bb -> bb.a(1).b(2))).
 
-                myarray(new FunctionTestConfig.Myarray.Builder().
+                myarray(b -> b.
                         intval(5).
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file1").
-                        anotherarray(new FunctionTestConfig.Myarray.Anotherarray.Builder().
-                                foo(1).
-                                foo(2)).
-                        myStruct(new FunctionTestConfig.Myarray.MyStruct.Builder().
-                                a(-1).
-                                b(-2)));
+                        anotherarray(bb -> bb.foo(1).foo(2)).
+                        myStruct(bb -> bb.a(-1).b(-2)));
 
     }
 

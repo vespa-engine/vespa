@@ -71,13 +71,10 @@ public class ConfigInstancePayloadTest {
                         intArr(310).intArr(311)).
 
                 rootStruct(new RootStruct.Builder().
-                        inner0(new RootStruct.Inner0.Builder().
-                                index(11)).
+                        inner0(b -> b.index(11)).
                         inner1(new RootStruct.Inner1.Builder().
                                 index(12)).
-                        innerArr(new RootStruct.InnerArr.Builder().
-                                boolVal(true).
-                                stringVal("deep")).
+                        innerArr(b -> b.boolVal(true).stringVal("deep")).
                         innerArr(new RootStruct.InnerArr.Builder().
                                 boolVal(false).
                                 stringVal("blue a=\"escaped\""))).
@@ -89,32 +86,29 @@ public class ConfigInstancePayloadTest {
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file0").
-                        anotherarray(new Myarray.Anotherarray.Builder().
-                                foo(7)).
+                        anotherarray(b -> b.foo(7)).
                         myStruct(new Myarray.MyStruct.Builder().
                                 a(1).
                                 b(2))).
 
-                myarray(new Myarray.Builder().
+                myarray(b -> b.
                         intval(5).
                         enumval(Myarray.Enumval.INNER).
                         refval(":parent:").
                         fileVal("file1").
-                        anotherarray(new Myarray.Anotherarray.Builder().
-                                foo(1).
-                                foo(2)).
-                        myStruct(new Myarray.MyStruct.Builder().
-                                a(-1).
-                                b(-2))).
+                        anotherarray(bb -> bb.foo(1).foo(2)).
+                        myStruct(bb -> bb.
+                                 a(-1).
+                                 b(-2))).
 
                 myStructMap("one", new MyStructMap.Builder().
                         myInt(1).
                         myString("bull").
                         myIntDef(2).
                         myStringDef("bear").
-                        anotherMap("anotherOne", new MyStructMap.AnotherMap.Builder().
-                                anInt(3).
-                                anIntDef(4)));
+                        anotherMap("anotherOne", b -> b.
+                                   anInt(3).
+                                   anIntDef(4)));
     }
 
     @Test

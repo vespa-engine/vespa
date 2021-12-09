@@ -30,6 +30,7 @@
       "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder collapseUnknowns(boolean)",
       "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder scoring(com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum)",
       "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder model(com.yahoo.language.sentencepiece.SentencePieceConfig$Model$Builder)",
+      "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder model(java.util.function.Consumer)",
       "public com.yahoo.language.sentencepiece.SentencePieceConfig$Builder model(java.util.List)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
