@@ -149,7 +149,7 @@ class AutoscalingTester {
             for (Node node : nodes) {
                 Load load = new Load(value,
                                      ClusterModel.idealMemoryLoad * otherResourcesLoad,
-                                     ClusterModel.idealDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
+                                     ClusterModel.idealContentDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
                 nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                   new NodeMetricSnapshot(clock().instant(),
                                                                                          load,
@@ -179,7 +179,7 @@ class AutoscalingTester {
             clock().advance(Duration.ofMinutes(5));
             for (Node node : nodes) {
                 Load load = new Load(ClusterModel.idealQueryCpuLoad * otherResourcesLoad,
-                                     ClusterModel.idealDiskLoad * otherResourcesLoad,
+                                     ClusterModel.idealContentDiskLoad * otherResourcesLoad,
                                      value).multiply(oneExtraNodeFactor);
                 nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                   new NodeMetricSnapshot(clock().instant(),
@@ -211,10 +211,10 @@ class AutoscalingTester {
             for (Node node : nodes) {
                 float cpu  = (float) 0.2 * otherResourcesLoad * oneExtraNodeFactor;
                 float memory = value * oneExtraNodeFactor;
-                float disk = (float) ClusterModel.idealDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
+                float disk = (float) ClusterModel.idealContentDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
                 Load load = new Load(0.2 * otherResourcesLoad,
                                      value,
-                                     ClusterModel.idealDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
+                                     ClusterModel.idealContentDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
                 nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                   new NodeMetricSnapshot(clock().instant(),
                                                                                          load,

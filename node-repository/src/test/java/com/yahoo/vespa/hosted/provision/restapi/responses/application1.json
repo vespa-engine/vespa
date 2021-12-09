@@ -72,7 +72,7 @@
           "idealMemory": 0.65,
           "currentMemory": 0.0,
           "disk" : 0.0,
-          "idealDisk": 0.6,
+          "idealDisk": 0.95,
           "currentDisk": 0.0
       },
       "scalingEvents" : [

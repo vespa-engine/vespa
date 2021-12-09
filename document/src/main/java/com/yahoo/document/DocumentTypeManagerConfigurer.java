@@ -75,15 +75,16 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
     }
 
     private static class Apply {
+
         public Apply(DocumentmanagerConfig config, DocumentTypeManager manager) {
             this.manager = manager;
             this.usev8geopositions = config.usev8geopositions();
             apply(config);
         }
 
-        private Map<Integer, DataType> typesById = new HashMap<>();
-        private Map<String, DataType> typesByName = new HashMap<>();
-        private Map<Integer, DocumentmanagerConfig.Datatype> configMap = new HashMap<>();
+        private final Map<Integer, DataType> typesById = new HashMap<>();
+        private final Map<String, DataType> typesByName = new HashMap<>();
+        private final Map<Integer, DocumentmanagerConfig.Datatype> configMap = new HashMap<>();
 
         private void inProgress(DataType type) {
             var old = typesById.put(type.getId(), type);
@@ -355,7 +356,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         }
 
         void createComplexTypes() {
-            var toCreate = new ArrayList<Integer>(factoryByIdx.keySet());
+            var toCreate = new ArrayList<>(factoryByIdx.keySet());
             for (var dataTypeId : toCreate) {
                 var type = getOrCreateType(dataTypeId);
                 assert(type != null);
@@ -363,6 +364,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         }
 
         class PerDocTypeData {
+
             DocumentmanagerConfig.Doctype docTypeConfig;
 
             DocumentType docType = null;
@@ -518,8 +520,8 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        private Map<String, PerDocTypeData> inProgressByName = new HashMap<>();
-        private Map<Integer, PerDocTypeData> inProgressById = new HashMap<>();
+        private final Map<String, PerDocTypeData> inProgressByName = new HashMap<>();
+        private final Map<Integer, PerDocTypeData> inProgressById = new HashMap<>();
 
         private void apply(DocumentmanagerConfig config) {
             for (var docType : config.doctype()) {

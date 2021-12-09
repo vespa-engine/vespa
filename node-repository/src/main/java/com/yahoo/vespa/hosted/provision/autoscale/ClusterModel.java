@@ -29,9 +29,11 @@ public class ClusterModel {
     static final double idealQueryCpuLoad = 0.8;
     static final double idealWriteCpuLoad = 0.95;
     static final double idealMemoryLoad = 0.65;
-    static final double idealDiskLoad = 0.6;
+    static final double idealContainerDiskLoad = 0.95;
+    static final double idealContentDiskLoad = 0.6;
 
     private final Application application;
+    private final ClusterSpec clusterSpec;
     private final Cluster cluster;
     /** The current nodes of this cluster, or empty if this models a new cluster not yet deployed */
     private final NodeList nodes;
@@ -51,6 +53,7 @@ public class ClusterModel {
                         MetricsDb metricsDb,
                         Clock clock) {
         this.application = application;
+        this.clusterSpec = clusterSpec;
         this.cluster = cluster;
         this.nodes = clusterNodes;
         this.clock = clock;
@@ -61,12 +64,14 @@ public class ClusterModel {
 
     /** For testing */
     ClusterModel(Application application,
+                 ClusterSpec clusterSpec,
                  Cluster cluster,
                  Clock clock,
                  Duration scalingDuration,
                  ClusterTimeseries clusterTimeseries,
                  ClusterNodesTimeseries nodeTimeseries) {
         this.application = application;
+        this.clusterSpec = clusterSpec;
         this.cluster = cluster;
         this.nodes = null;
         this.clock = clock;
@@ -76,6 +81,8 @@ public class ClusterModel {
         this.nodeTimeseries = nodeTimeseries;
     }
 
+    public Application application() { return application; }
+    public ClusterSpec clusterSpec() { return clusterSpec; }
     public Cluster cluster() { return cluster; }
 
     /** Returns the predicted duration of a rescaling of this cluster */
@@ -107,7 +114,7 @@ public class ClusterModel {
     public Load averageLoad() { return nodeTimeseries().averageLoad(clock.instant().minus(scalingDuration())); }
 
     public Load idealLoad() {
-        return new Load(idealCpuLoad(), idealMemoryLoad, idealDiskLoad);
+        return new Load(idealCpuLoad(), idealMemoryLoad, idealDiskLoad());
     }
 
     /** Ideal cpu load must take the application traffic fraction into account */
@@ -188,6 +195,12 @@ public class ClusterModel {
         if ( ! duration.minus(largestAllowed).isNegative())
             return largestAllowed;
         return duration;
+    }
+
+    private double idealDiskLoad() {
+        // Stateless clusters are not expected to consume more disk over time -
+        // if they do it is due to logs which will be rotated away right before the disk is full
+        return clusterSpec.isStateful() ? idealContentDiskLoad : idealContainerDiskLoad;
     }
 
     /**
