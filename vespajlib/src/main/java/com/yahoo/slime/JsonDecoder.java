@@ -77,7 +77,7 @@ public class JsonDecoder {
     @SuppressWarnings("fallthrough")
     private void decodeNumber(Inserter inserter) {
         buf.reset();
-        boolean likelyFloatingPoint=false;
+        boolean likelyFloatingPoint = false;
         for (;;) {
             switch (c) {
                 case '.': case 'e': case 'E':

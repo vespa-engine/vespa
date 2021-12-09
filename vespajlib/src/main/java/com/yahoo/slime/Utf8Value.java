@@ -5,8 +5,11 @@ package com.yahoo.slime;
  * A value type encapsulating a String in its UTF-8 representation.
  * Useful for lazy decoding; if the data is just passed through in
  * UTF-8 it will never be converted at all.
- **/
+ *
+ * @author havardpe
+ */
 final class Utf8Value extends Value {
+
     private final byte[] value;
     private String string;
     private Utf8Value(byte[] value) { this.value = value; }
@@ -17,13 +20,14 @@ final class Utf8Value extends Value {
             return new Utf8Value(value);
         }
     }
-    public final Type type() { return Type.STRING; }
-    public final String asString() {
+    public Type type() { return Type.STRING; }
+    public String asString() {
         if (string == null) {
             string = Utf8Codec.decode(value, 0, value.length);
         }
         return string;
     }
-    public final byte[] asUtf8() { return value; }
-    public final void accept(Visitor v) { v.visitString(value); }
+    public byte[] asUtf8() { return value; }
+    public void accept(Visitor v) { v.visitString(value); }
+
 }
