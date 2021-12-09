@@ -17,8 +17,8 @@ struct Fetcher : public vespalib::Runnable {
     void run() override { handler.handle(provider.provide()); }
 };
 
-VESPA_THREAD_STACK_TAG(fetcher1_executor);
-VESPA_THREAD_STACK_TAG(fetcher2_executor);
+VESPA_THREAD_STACK_TAG(fetcher1_thread);
+VESPA_THREAD_STACK_TAG(fetcher2_thread);
 
 TEST("dispatcher") {
     MyHandler dropped;
@@ -27,8 +27,8 @@ TEST("dispatcher") {
     Dispatcher<int> dispatcher(dropped);
     Fetcher fetcher1(dispatcher, handler1);
     Fetcher fetcher2(dispatcher, handler2);
-    vespalib::Thread thread1(fetcher1, fetcher1_executor);
-    vespalib::Thread thread2(fetcher2, fetcher2_executor);
+    vespalib::Thread thread1(fetcher1, fetcher1_thread);
+    vespalib::Thread thread2(fetcher2, fetcher2_thread);
     thread1.start();
     EXPECT_TRUE(dispatcher.waitForThreads(1, 512));
     thread2.start();

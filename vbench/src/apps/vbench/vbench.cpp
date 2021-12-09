@@ -8,7 +8,7 @@
 
 using namespace vbench;
 
-VESPA_THREAD_STACK_TAG(vbench_executor);
+VESPA_THREAD_STACK_TAG(vbench_thread);
 
 typedef vespalib::SignalHandler SIG;
 
@@ -44,7 +44,7 @@ int run(const std::string &cfg_name) {
     VBench vbench(cfg);
     NotifyDone notify(done);
     vespalib::RunnablePair runBoth(vbench, notify);
-    vespalib::Thread thread(runBoth, vbench_executor);
+    vespalib::Thread thread(runBoth, vbench_thread);
     thread.start();
     while (!SIG::INT.check() && !SIG::TERM.check() && !done.await(1s)) {}
     if (!done.await(vespalib::duration::zero())) {
