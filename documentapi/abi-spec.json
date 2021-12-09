@@ -1912,6 +1912,7 @@
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Builder cluster(java.lang.String, com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Builder cluster(java.util.Map)",
+      "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Builder cluster(java.lang.String, java.util.function.Consumer)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
