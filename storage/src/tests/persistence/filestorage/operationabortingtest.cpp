@@ -22,6 +22,8 @@ namespace storage {
 
 namespace {
 
+VESPA_THREAD_STACK_TAG(test_thread);
+
 // Exploit the fact that PersistenceProviderWrapper already provides a forwarding
 // implementation of all SPI calls, so we can selectively override.
 class BlockingMockProvider : public PersistenceProviderWrapper
@@ -294,7 +296,7 @@ TEST_F(OperationAbortingTest, wait_for_current_operation_completion_for_aborted_
     auto abortCmd = makeAbortCmd(abortSet);
 
     SendTask sendTask(abortCmd, *_queueBarrier, c.top);
-    vespalib::Thread thread(sendTask);
+    vespalib::Thread thread(sendTask, test_thread);
     thread.start();
 
     LOG(debug, "waiting for threads to reach barriers");

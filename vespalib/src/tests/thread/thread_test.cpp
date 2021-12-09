@@ -6,6 +6,8 @@
 
 using namespace vespalib;
 
+VESPA_THREAD_STACK_TAG(test_agent_thread);
+
 struct Agent : public Runnable {
     bool started;
     int loopCnt;
@@ -22,7 +24,7 @@ struct Agent : public Runnable {
 TEST("thread never started") {
     Agent agent;
     {
-        Thread thread(agent);
+        Thread thread(agent, test_agent_thread);
     }
     EXPECT_TRUE(!agent.started);
     EXPECT_EQUAL(0, agent.loopCnt);
@@ -31,7 +33,7 @@ TEST("thread never started") {
 TEST("normal operation") {
     Agent agent;
     {
-        Thread thread(agent);
+        Thread thread(agent, test_agent_thread);
         thread.start();
         std::this_thread::sleep_for(20ms);
         thread.stop().join();
@@ -43,7 +45,7 @@ TEST("normal operation") {
 TEST("stop before start") {
     Agent agent;
     {
-        Thread thread(agent);
+        Thread thread(agent, test_agent_thread);
         thread.stop();
         thread.start();
         thread.join();

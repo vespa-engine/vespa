@@ -15,17 +15,19 @@ namespace vespalib {
 class Thread : public Active
 {
 private:
+    using init_fun_t = Runnable::init_fun_t;
     enum { STACK_SIZE = 256*1024 };
     static __thread Thread *_currentThread;
 
     struct Proxy : FastOS_Runnable {
         Thread         &thread;
         Runnable       &runnable;
+        init_fun_t      init_fun;
         vespalib::Gate  start;
         vespalib::Gate  started;
         bool            cancel;
 
-        Proxy(Thread &parent, Runnable &target);
+        Proxy(Thread &parent, Runnable &target, init_fun_t init_fun_in);
         ~Proxy() override;
 
         void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
@@ -39,7 +41,7 @@ private:
     bool                    _woken;
 
 public:
-    Thread(Runnable &runnable);
+    Thread(Runnable &runnable, init_fun_t init_fun_in);
     ~Thread() override;
     void start() override;
     Thread &stop() override;
