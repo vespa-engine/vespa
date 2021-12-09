@@ -100,7 +100,7 @@ class GlobPatternTest {
     }
 
     private static GlobPattern globPattern(String pattern, String boundaries) {
-        return new GlobPattern(pattern, boundaries.toCharArray());
+        return new GlobPattern(pattern, boundaries.toCharArray(), true);
     }
 
 }

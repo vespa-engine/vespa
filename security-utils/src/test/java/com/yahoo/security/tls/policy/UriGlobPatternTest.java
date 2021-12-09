@@ -20,6 +20,8 @@ class UriGlobPatternTest {
         assertMatches("scheme://*/segment1/segment2", "scheme://hostname/segment1/segment2");
         assertMatches("scheme://*.name/", "scheme://host.name/");
         assertNotMatches("scheme://*", "scheme://hostname/");
+        assertMatches("scheme://hostname/mypath?query=value", "scheme://hostname/mypath?query=value");
+        assertNotMatches("scheme://hostname/?", "scheme://hostname/p");
     }
 
     private void assertMatches(String pattern, String value) {
