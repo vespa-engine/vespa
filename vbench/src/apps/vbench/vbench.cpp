@@ -8,6 +8,8 @@
 
 using namespace vbench;
 
+VESPA_THREAD_STACK_TAG(vbench_thread);
+
 typedef vespalib::SignalHandler SIG;
 
 struct NotifyDone : public vespalib::Runnable {
@@ -31,8 +33,7 @@ int run(const std::string &cfg_name) {
         return 1;
     }
     vespalib::Slime cfg;
-    vespalib::Memory mapped_cfg(cfg_file.get().data,
-                                       cfg_file.get().size);
+    vespalib::Memory mapped_cfg(cfg_file.get().data, cfg_file.get().size);
     if (!vespalib::slime::JsonFormat::decode(mapped_cfg, cfg)) {
         fprintf(stderr, "unable to parse config file: %s\n",
                 cfg.toString().c_str());
@@ -43,7 +44,7 @@ int run(const std::string &cfg_name) {
     VBench vbench(cfg);
     NotifyDone notify(done);
     vespalib::RunnablePair runBoth(vbench, notify);
-    vespalib::Thread thread(runBoth);
+    vespalib::Thread thread(runBoth, vbench_thread);
     thread.start();
     while (!SIG::INT.check() && !SIG::TERM.check() && !done.await(1s)) {}
     if (!done.await(vespalib::duration::zero())) {

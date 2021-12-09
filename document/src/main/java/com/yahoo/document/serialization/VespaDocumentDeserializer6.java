@@ -714,6 +714,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
         byte features = buf.get();
         int length = buf.getInt1_2_4Bytes();
+        int skipToPos = buf.position() + length;
 
         if ((features & (byte) 1) == (byte) 1) {
             //we have a span node
@@ -728,15 +729,19 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         if ((features & (byte) 2) == (byte) 2) {
             //we have a value:
             int dataTypeId = buf.getInt();
-
-            //if this data type ID the same as the one in our config?
-            if (dataTypeId != type.getDataType().getId()) {
-                //not the same, but we will handle it gracefully, and just skip past the data:
-                buf.position(buf.position() + length - 4);
-            } else {
+            try {
                 FieldValue value = type.getDataType().createFieldValue();
                 value.deserialize(this);
                 annotation.setFieldValue(value);
+                // could get buffer underflow or DeserializationException
+            } catch (RuntimeException rte) {
+                if (dataTypeId == type.getDataType().getId()) {
+                    throw new DeserializationException("Could not deserialize annotation payload", rte);
+                }
+                // XXX: does this make sense? The annotation without its payload may be a problem.
+                // handle it gracefully, and just skip past the data
+            } finally {
+                buf.position(skipToPos);
             }
         }
     }

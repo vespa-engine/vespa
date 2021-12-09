@@ -1,12 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
 #include <vespa/searchlib/tensor/hnsw_index.h>
 #include <vespa/searchlib/tensor/random_level_generator.h>
 #include <vespa/searchlib/tensor/inv_log_level_generator.h>
+#include <vespa/vespalib/datastore/compaction_spec.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -21,7 +22,8 @@ using namespace search::tensor;
 using namespace vespalib::slime;
 using vespalib::Slime;
 using search::BitVector;
-using search::CompactionStrategy;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
 
 template <typename FloatType>
 class MyDocVectorAccess : public DocVectorAccess {
@@ -628,8 +630,10 @@ TEST_F(HnswIndexTest, hnsw_graph_is_compacted)
     for (uint32_t i = 0; i < 10; ++i) {
         mem_1 = mem_2;
         // Forced compaction to move things around
-        index->compact_link_arrays(true, false);
-        index->compact_level_arrays(true, false);
+        CompactionSpec compaction_spec(true, false);
+        CompactionStrategy compaction_strategy;
+        index->compact_link_arrays(compaction_spec, compaction_strategy);
+        index->compact_level_arrays(compaction_spec, compaction_strategy);
         commit();
         index->update_stat();
         mem_2 = commit_and_update_stat();

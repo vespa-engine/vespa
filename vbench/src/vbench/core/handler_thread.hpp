@@ -23,12 +23,12 @@ HandlerThread<T>::run()
 }
 
 template <typename T>
-HandlerThread<T>::HandlerThread(Handler<T> &next)
+HandlerThread<T>::HandlerThread(Handler<T> &next, init_fun_t init_fun)
     : _lock(),
       _cond(),
       _queue(),
       _next(next),
-      _thread(*this),
+      _thread(*this, init_fun),
       _done(false)
 {
     _thread.start();

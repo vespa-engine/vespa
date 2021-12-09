@@ -4,8 +4,6 @@ package com.yahoo.vespa.config.proxy.filedistribution;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
-import com.yahoo.vespa.config.ConnectionPool;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 
@@ -29,9 +27,7 @@ public class FileDistributionAndUrlDownload {
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("file references and downloads cleanup"));
 
     public FileDistributionAndUrlDownload(Supervisor supervisor, ConfigSourceSet source) {
-        fileDistributionRpcServer =
-                new FileDistributionRpcServer(supervisor,
-                                              new FileDownloader(createConnectionPool(supervisor, source), supervisor, Duration.ofMinutes(5)));
+        fileDistributionRpcServer = new FileDistributionRpcServer(supervisor, createDownloader(supervisor, source));
         urlDownloadRpcServer = new UrlDownloadRpcServer(supervisor);
         cleanupExecutor.scheduleAtFixedRate(new CachedFilesMaintainer(), delay.toSeconds(), delay.toSeconds(), TimeUnit.SECONDS);
     }
@@ -48,12 +44,10 @@ public class FileDistributionAndUrlDownload {
         }
     }
 
-    private static ConnectionPool createConnectionPool(Supervisor supervisor, ConfigSourceSet source) {
-        String useFileDistributionConnectionPool = System.getenv("VESPA_CONFIG_PROXY_USE_FILE_DISTRIBUTION_CONNECTION_POOL");
-        if (useFileDistributionConnectionPool != null && useFileDistributionConnectionPool.equalsIgnoreCase("true"))
-            return new FileDistributionConnectionPool(source, supervisor);
-        else
-            return new JRTConnectionPool(source, supervisor);
+    private FileDownloader createDownloader(Supervisor supervisor, ConfigSourceSet source) {
+        return new FileDownloader(new FileDistributionConnectionPool(source, supervisor),
+                                  supervisor,
+                                  Duration.ofMinutes(5));
     }
 
 }

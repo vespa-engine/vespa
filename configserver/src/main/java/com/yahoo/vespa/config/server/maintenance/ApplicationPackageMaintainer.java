@@ -8,18 +8,16 @@ import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
-import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.time.Duration;
@@ -54,11 +52,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         this.applicationRepository = applicationRepository;
         this.configserverConfig = applicationRepository.configserverConfig();
         this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
-        boolean useFileDistributionConnectionPool = Flags.USE_FILE_DISTRIBUTION_CONNECTION_POOL.bindTo(flagSource).value();
-        this.fileDownloader = createFileDownloader(configserverConfig,
-                                                   useFileDistributionConnectionPool,
-                                                   downloadDirectory,
-                                                   supervisor);
+        this.fileDownloader = createFileDownloader(configserverConfig, downloadDirectory, supervisor);
     }
 
     @Override
@@ -99,19 +93,14 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     private static FileDownloader createFileDownloader(ConfigserverConfig configserverConfig,
-                                                       boolean useFileDistributionConnectionPool,
                                                        File downloadDirectory,
                                                        Supervisor supervisor) {
         List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(configserverConfig);
         ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
 
-        ConnectionPool connectionPool;
-        if (otherConfigServersInCluster.isEmpty())
-            connectionPool = FileDownloader.emptyConnectionPool();
-        else
-            connectionPool = useFileDistributionConnectionPool
-                    ? new FileDistributionConnectionPool(configSourceSet, supervisor)
-                    : new JRTConnectionPool(configSourceSet, supervisor);
+        ConnectionPool connectionPool = (otherConfigServersInCluster.isEmpty())
+                ? FileDownloader.emptyConnectionPool()
+                : new FileDistributionConnectionPool(configSourceSet, supervisor);
         return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(30));
     }
 

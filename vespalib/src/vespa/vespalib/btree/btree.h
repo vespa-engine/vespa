@@ -6,6 +6,8 @@
 #include "noaggrcalc.h"
 #include <vespa/vespalib/util/generationhandler.h>
 
+namespace vespalib::datastore { class CompactionStrategy; }
+
 namespace vespalib::btree {
 
 /**
@@ -149,7 +151,7 @@ public:
         _tree.thaw(itr);
     }
 
-    void compact_worst();
+    void compact_worst(const datastore::CompactionStrategy& compaction_strategy);
 
     template <typename FunctionType>
     void

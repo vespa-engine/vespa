@@ -10,9 +10,10 @@ namespace vespalib::net::tls {
 
 struct CredentialMatchPattern {
     virtual ~CredentialMatchPattern() = default;
-    [[nodiscard]] virtual bool matches(vespalib::stringref str) const = 0;
+    [[nodiscard]] virtual bool matches(vespalib::stringref str) const noexcept = 0;
 
-    static std::shared_ptr<const CredentialMatchPattern> create_from_glob(vespalib::stringref pattern);
+    static std::shared_ptr<const CredentialMatchPattern> create_from_dns_glob(vespalib::stringref glob_pattern);
+    static std::shared_ptr<const CredentialMatchPattern> create_from_uri_glob(vespalib::stringref glob_pattern);
     static std::shared_ptr<const CredentialMatchPattern> create_exact_match(vespalib::stringref pattern);
 };
 
@@ -37,7 +38,7 @@ public:
                 && (_original_pattern == rhs._original_pattern));
     }
 
-    [[nodiscard]] bool matches(vespalib::stringref str) const {
+    [[nodiscard]] bool matches(vespalib::stringref str) const noexcept {
         return (_match_pattern && _match_pattern->matches(str));
     }
 

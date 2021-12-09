@@ -69,7 +69,7 @@ public:
     bool getPredicateParamsSet() const { return _predicateParamsSet; }
     bool getCollectionTypeParamsSet() const { return _collectionTypeParamsSet; }
     const std::optional<HnswIndexParams>& get_hnsw_index_params() const { return _hnsw_index_params; }
-    static AttributeHeader extractTags(const vespalib::GenericHeader &header);
+    static AttributeHeader extractTags(const vespalib::GenericHeader &header, const vespalib::string &file_name);
     void addTags(vespalib::GenericHeader &header) const;
 };
 

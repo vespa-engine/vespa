@@ -8,7 +8,6 @@
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
 #include "reusable_set_visited_tracker.h"
-#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -16,6 +15,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/size_literals.h>
@@ -30,6 +30,7 @@ namespace search::tensor {
 
 using search::AddressSpaceComponents;
 using search::StateExplorerUtils;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace {
@@ -531,18 +532,18 @@ HnswIndex::trim_hold_lists(generation_t first_used_gen)
 }
 
 void
-HnswIndex::compact_level_arrays(bool compact_memory, bool compact_address_space)
+HnswIndex::compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    auto context = _graph.nodes.compactWorst(compact_memory, compact_address_space);
+    auto context = _graph.nodes.compactWorst(compaction_spec, compaction_strategy);
     uint32_t doc_id_limit = _graph.node_refs.size();
     vespalib::ArrayRef<AtomicEntryRef> refs(&_graph.node_refs[0], doc_id_limit);
     context->compact(refs);
 }
 
 void
-HnswIndex::compact_link_arrays(bool compact_memory, bool compact_address_space)
+HnswIndex::compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    auto context = _graph.links.compactWorst(compact_memory, compact_address_space);
+    auto context = _graph.links.compactWorst(compaction_spec, compaction_strategy);
     uint32_t doc_id_limit = _graph.node_refs.size();
     for (uint32_t doc_id = 1; doc_id < doc_id_limit; ++doc_id) {
         EntryRef level_ref = _graph.node_refs[doc_id].load_relaxed();
@@ -556,16 +557,11 @@ HnswIndex::compact_link_arrays(bool compact_memory, bool compact_address_space)
 namespace {
 
 bool
-consider_compact_arrays(const CompactionStrategy& compaction_strategy, vespalib::MemoryUsage& memory_usage, vespalib::AddressSpace& address_space_usage, std::function<void(bool,bool)> compact_arrays)
+consider_compact_arrays(const CompactionStrategy& compaction_strategy, vespalib::MemoryUsage& memory_usage, vespalib::AddressSpace& address_space_usage, std::function<void(vespalib::datastore::CompactionSpec, const CompactionStrategy&)> compact_arrays)
 {
-    size_t used_bytes = memory_usage.usedBytes();
-    size_t dead_bytes = memory_usage.deadBytes();
-    bool compact_memory = compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
-    size_t used_address_space = address_space_usage.used();
-    size_t dead_address_space = address_space_usage.dead();
-    bool compact_address_space = compaction_strategy.should_compact_address_space(used_address_space, dead_address_space);
-    if (compact_memory || compact_address_space) {
-        compact_arrays(compact_memory, compact_address_space);
+    auto compaction_spec = compaction_strategy.should_compact(memory_usage, address_space_usage);
+    if (compaction_spec.compact()) {
+        compact_arrays(compaction_spec, compaction_strategy);
         return true;
     }
     return false;
@@ -577,16 +573,16 @@ bool
 HnswIndex::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
 {
     return consider_compact_arrays(compaction_strategy, _cached_level_arrays_memory_usage, _cached_level_arrays_address_space_usage,
-                                   [this](bool compact_memory, bool compact_address_space)
-                                   { compact_level_arrays(compact_memory, compact_address_space); });
+                                   [this](CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy_fwd)
+                                   { compact_level_arrays(compaction_spec, compaction_strategy_fwd); });
 }
 
 bool
 HnswIndex::consider_compact_link_arrays(const CompactionStrategy& compaction_strategy)
 {
     return consider_compact_arrays(compaction_strategy, _cached_link_arrays_memory_usage, _cached_link_arrays_address_space_usage,
-                                   [this](bool compact_memory, bool compact_address_space)
-                                   { compact_link_arrays(compact_memory, compact_address_space); });
+                                   [this](CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy_fwd)
+                                   { compact_link_arrays(compaction_spec, compaction_strategy_fwd); });
 }
 
 bool

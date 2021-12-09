@@ -79,7 +79,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
                                  allocatedNodes(lb.id()).isEmpty(), lb -> {
             try {
                 attempts.add(1);
-                log.log(Level.INFO, () -> "Removing expired inactive load balancer " + lb.id());
+                log.log(Level.INFO, () -> "Removing expired inactive " + lb.id());
                 service.remove(lb.id().application(), lb.id().cluster());
                 db.removeLoadBalancer(lb.id());
             } catch (Exception e){

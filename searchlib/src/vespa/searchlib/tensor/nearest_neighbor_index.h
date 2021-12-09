@@ -12,6 +12,10 @@
 
 class FastOS_FileInterface;
 
+namespace vespalib::datastore {
+class CompactionSpec;
+class CompactionStrategy;
+}
 namespace vespalib::slime { struct Inserter; }
 
 namespace search::fileutil { class LoadedBuffer; }
@@ -19,7 +23,6 @@ namespace search::fileutil { class LoadedBuffer; }
 namespace search {
 class AddressSpaceUsage;
 class BitVector;
-class CompactionStrategy;
 }
 
 namespace search::tensor {
@@ -32,6 +35,8 @@ class NearestNeighborIndexSaver;
  */
 class NearestNeighborIndex {
 public:
+    using CompactionSpec = vespalib::datastore::CompactionSpec;
+    using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using generation_t = vespalib::GenerationHandler::generation_t;
     struct Neighbor {
         uint32_t docid;

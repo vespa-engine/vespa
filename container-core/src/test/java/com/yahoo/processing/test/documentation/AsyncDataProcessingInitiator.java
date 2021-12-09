@@ -3,8 +3,12 @@ package com.yahoo.processing.test.documentation;
 
 import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
-import com.yahoo.processing.*;
-import com.yahoo.processing.execution.*;
+import com.yahoo.processing.Processor;
+import com.yahoo.processing.Request;
+import com.yahoo.processing.Response;
+import com.yahoo.processing.execution.Execution;
+import com.yahoo.processing.execution.ExecutionWithResponse;
+import com.yahoo.processing.execution.RunnableExecution;
 
 /**
  * A processor which registers a listener on the future completion of
@@ -18,6 +22,7 @@ public class AsyncDataProcessingInitiator extends Processor {
         this.asyncChain=asyncChain;
     }
 
+    @SuppressWarnings({"removal"})
     @Override
     public Response process(Request request, Execution execution) {
         Response response=execution.process(request);

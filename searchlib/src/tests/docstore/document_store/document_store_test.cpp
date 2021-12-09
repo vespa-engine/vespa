@@ -25,6 +25,7 @@ struct NullDataStore : IDataStore {
     size_t memoryMeta() const override { return 0; }
     size_t getDiskFootprint() const override { return 0; }
     size_t getDiskBloat() const override { return 0; }
+    size_t getMaxSpreadAsBloat() const override { return 0; }
     uint64_t lastSyncToken() const override { return 0; }
     uint64_t tentativeLastSyncToken() const override { return 0; }
     vespalib::system_time getLastFlushTime() const override { return vespalib::system_time(); }

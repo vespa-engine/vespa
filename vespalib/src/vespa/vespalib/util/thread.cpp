@@ -9,9 +9,9 @@ namespace vespalib {
 
 __thread Thread *Thread::_currentThread = nullptr;
 
-Thread::Proxy::Proxy(Thread &parent, Runnable &target)
-    : thread(parent), runnable(target),
-    start(), started(), cancel(false)
+Thread::Proxy::Proxy(Thread &parent, Runnable &target, init_fun_t init_fun_in)
+    : thread(parent), runnable(target), init_fun(std::move(init_fun_in)),
+      start(), started(), cancel(false)
 { }
 
 void
@@ -22,7 +22,7 @@ Thread::Proxy::Run(FastOS_ThreadInterface *, void *)
     start.await();
     if (!cancel) {
         started.countDown();
-        runnable.run();
+        init_fun(runnable);
     }
     assert(_currentThread == &thread);
     _currentThread = nullptr;
@@ -30,8 +30,8 @@ Thread::Proxy::Run(FastOS_ThreadInterface *, void *)
 
 Thread::Proxy::~Proxy() = default;
 
-Thread::Thread(Runnable &runnable)
-    : _proxy(*this, runnable),
+Thread::Thread(Runnable &runnable, init_fun_t init_fun_in)
+    : _proxy(*this, runnable, std::move(init_fun_in)),
       _pool(STACK_SIZE, 1),
       _lock(),
       _cond(),

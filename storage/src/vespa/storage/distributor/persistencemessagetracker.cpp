@@ -259,7 +259,14 @@ PersistenceMessageTrackerImpl::handleCreateBucketReply(
         && reply.getResult().getResult() != api::ReturnCode::EXISTS)
     {
         LOG(spam, "Create bucket reply failed, so deleting it from bucket db");
+        // We don't know if the bucket exists at this point, so we remove it from the DB.
+        // If we get subsequent write load the bucket will be implicitly created again
+        // (which is an idempotent operation) and all is well. But since we don't know _if_
+        // we'll get any further write load we send a RequestBucketInfo to bring the bucket
+        // back into the DB if it _was_ successfully created. We have to do the latter to
+        // avoid the risk of introducing an orphaned bucket replica on the content node.
         _op_ctx.remove_node_from_bucket_database(reply.getBucket(), node);
+        _op_ctx.recheck_bucket_info(node, reply.getBucket());
     }
 }
 

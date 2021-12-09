@@ -4,5 +4,4 @@
  *
  * @see com.yahoo.jdisc.test.TestDriver
  */
-@com.yahoo.api.annotations.PublicApi
 package com.yahoo.jdisc.test;

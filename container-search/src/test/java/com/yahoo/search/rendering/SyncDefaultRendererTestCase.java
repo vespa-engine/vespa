@@ -1,17 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -26,6 +15,15 @@ import com.yahoo.search.statistics.ElapsedTimeTestCase.CreativeTimeSource;
 import com.yahoo.search.statistics.ElapsedTimeTestCase.UselessSearcher;
 import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.text.Utf8;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.util.concurrent.ExecutionException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Check the legacy sync default renderer doesn't spontaneously combust.
@@ -56,7 +54,7 @@ public class SyncDefaultRendererTestCase {
         assertEquals("text/xml", d.getMimeType());
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     @Test
     public void testRenderWriterResult() throws InterruptedException, ExecutionException {
         Query q = new Query("/?query=a&tracelevel=5");

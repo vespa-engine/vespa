@@ -18,10 +18,11 @@
 #include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/searchlib/util/bufferwriter.h>
-#include <vespa/searchcommon/common/compaction_strategy.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 
 namespace search {
 
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryComparator;
 
 std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
@@ -91,9 +92,9 @@ EnumStoreT<EntryT>::~EnumStoreT() = default;
 
 template <typename EntryT>
 vespalib::AddressSpace
-EnumStoreT<EntryT>::get_address_space_usage() const
+EnumStoreT<EntryT>::get_values_address_space_usage() const
 {
-    return _store.get_address_space_usage();
+    return _store.get_values_address_space_usage();
 }
 
 template <typename EntryT>
@@ -228,23 +229,18 @@ template <typename EntryT>
 std::unique_ptr<IEnumStore::EnumIndexRemapper>
 EnumStoreT<EntryT>::consider_compact_values(const CompactionStrategy& compaction_strategy)
 {
-    size_t used_bytes = _cached_values_memory_usage.usedBytes();
-    size_t dead_bytes = _cached_values_memory_usage.deadBytes();
-    size_t used_address_space = _cached_values_address_space_usage.used();
-    size_t dead_address_space = _cached_values_address_space_usage.dead();
-    bool compact_memory = compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
-    bool compact_address_space = compaction_strategy.should_compact_address_space(used_address_space, dead_address_space);
-    if (compact_memory || compact_address_space) {
-        return compact_worst_values(compact_memory, compact_address_space);
+    auto compaction_spec = compaction_strategy.should_compact(_cached_values_memory_usage, _cached_values_address_space_usage);
+    if (compaction_spec.compact()) {
+        return compact_worst_values(compaction_spec, compaction_strategy);
     }
     return std::unique_ptr<IEnumStore::EnumIndexRemapper>();
 }
 
 template <typename EntryT>
 std::unique_ptr<IEnumStore::EnumIndexRemapper>
-EnumStoreT<EntryT>::compact_worst_values(bool compact_memory, bool compact_address_space)
+EnumStoreT<EntryT>::compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    return _store.compact_worst(compact_memory, compact_address_space);
+    return _store.compact_worst(compaction_spec, compaction_strategy);
 }
 
 template <typename EntryT>
@@ -254,16 +250,14 @@ EnumStoreT<EntryT>::consider_compact_dictionary(const CompactionStrategy& compac
     if (_dict->has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_dictionary_btree_usage.usedBytes(),
-                                                  _cached_dictionary_btree_usage.deadBytes()))
+    if (compaction_strategy.should_compact_memory(_cached_dictionary_btree_usage))
     {
-        _dict->compact_worst(true, false);
+        _dict->compact_worst(true, false, compaction_strategy);
         return true;
     }
-    if (compaction_strategy.should_compact_memory(_cached_dictionary_hash_usage.usedBytes(),
-                                                  _cached_dictionary_hash_usage.deadBytes()))
+    if (compaction_strategy.should_compact_memory(_cached_dictionary_hash_usage))
     {
-        _dict->compact_worst(false, true);
+        _dict->compact_worst(false, true, compaction_strategy);
         return true;
     }
     return false;

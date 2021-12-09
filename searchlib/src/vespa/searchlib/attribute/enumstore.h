@@ -96,7 +96,7 @@ public:
     vespalib::MemoryUsage get_values_memory_usage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
     vespalib::MemoryUsage get_dictionary_memory_usage() const override { return _dict->get_memory_usage(); }
 
-    vespalib::AddressSpace get_address_space_usage() const;
+    vespalib::AddressSpace get_values_address_space_usage() const override;
 
     void transfer_hold_lists(generation_t generation);
     void trim_hold_lists(generation_t first_used);
@@ -201,7 +201,7 @@ public:
     void free_unused_values(IndexList to_remove);
     vespalib::MemoryUsage update_stat() override;
     std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) override;
-    std::unique_ptr<EnumIndexRemapper> compact_worst_values(bool compact_memory, bool compact_address_space) override;
+    std::unique_ptr<EnumIndexRemapper> compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) override;
     bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy) override;
     uint64_t get_compaction_count() const override {
         return _store.get_data_store().get_compaction_count();

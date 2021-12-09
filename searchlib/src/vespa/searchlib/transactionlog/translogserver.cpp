@@ -578,9 +578,10 @@ TransLogServer::domainCommit(FRT_RPCRequest *req)
         try {
             vespalib::Gate gate;
             {
+                auto onDone = make_shared<vespalib::GateCallback>(gate);
                 // Need to scope in order to drain out all the callbacks.
-                domain->append(packet, make_shared<vespalib::GateCallback>(gate));
-                auto keep = domain->startCommit(make_shared<vespalib::IgnoreCallback>());
+                domain->append(packet, onDone);
+                auto keep = domain->startCommit(onDone);
             }
             gate.await();
             ret.AddInt32(0);

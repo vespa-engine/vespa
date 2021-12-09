@@ -41,7 +41,6 @@ public:
 
         Config & setMaxFileSize(size_t v) { _maxFileSize = v; return *this; }
         Config & setMaxNumLids(size_t v) { _maxNumLids = v; return *this; }
-        Config & setMaxDiskBloatFactor(double v) { _maxDiskBloatFactor = v; return *this; }
         Config & setMaxBucketSpread(double v) { _maxBucketSpread = v; return *this; }
         Config & setMinFileSizeFactor(double v) { _minFileSizeFactor = v; return *this; }
 
@@ -49,7 +48,6 @@ public:
         Config & setFileConfig(WriteableFileChunk::Config v) { _fileConfig = v; return *this; }
 
         size_t getMaxFileSize() const { return _maxFileSize; }
-        double getMaxDiskBloatFactor() const { return _maxDiskBloatFactor; }
         double getMaxBucketSpread() const { return _maxBucketSpread; }
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
         uint32_t getMaxNumLids() const { return _maxNumLids; }
@@ -63,7 +61,6 @@ public:
         bool operator == (const Config &) const;
     private:
         size_t                      _maxFileSize;
-        double                      _maxDiskBloatFactor;
         double                      _maxBucketSpread;
         double                      _minFileSizeFactor;
         uint32_t                    _maxNumLids;
@@ -109,12 +106,10 @@ public:
     size_t getDiskFootprint() const override;
     size_t getDiskHeaderFootprint() const override;
     size_t getDiskBloat() const override;
-    size_t getMaxCompactGain() const override;
+    size_t getMaxSpreadAsBloat() const override;
 
-    /**
-     * Will compact the docsummary up to a lower limit of 5% bloat.
-     */
-    void compact(uint64_t syncToken);
+    void compactBloat(uint64_t syncToken) { compactWorst(syncToken, true); }
+    void compactSpread(uint64_t syncToken) { compactWorst(syncToken, false);}
 
     const Config & getConfig() const { return _config; }
     Config & getConfig() { return _config; }
@@ -183,10 +178,9 @@ private:
     class WrapVisitorProgress;
     class FileChunkHolder;
 
-    // Implements ISetLid API
     void setLid(const ISetLid::unique_lock & guard, uint32_t lid, const LidInfo & lm) override;
 
-    void compactWorst(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat);
+    void compactWorst(uint64_t syncToken, bool compactDiskBloat);
     void compactFile(FileId chunkId);
 
     typedef vespalib::RcuVector<uint64_t> LidInfoVector;
@@ -201,8 +195,6 @@ private:
     NameIdSet eraseEmptyIdxFiles(NameIdSet partList);
     NameIdSet eraseIncompleteCompactedFiles(NameIdSet partList);
     void internalFlushAll();
-
-    bool isTotalDiskBloatExceeded(size_t diskFootPrint, size_t bloat) const;
 
     NameIdSet scanDir(const vespalib::string &dir, const vespalib::string &suffix);
     FileId allocateFileId(const MonitorGuard & guard);
@@ -248,7 +240,7 @@ private:
         return (_fileChunks.empty() ? 0 : _fileChunks.back()->getLastPersistedSerialNum());
     }
     bool shouldCompactToActiveFile(size_t compactedSize) const;
-    std::pair<bool, FileId> findNextToCompact(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat);
+    std::pair<bool, FileId> findNextToCompact(bool compactDiskBloat);
     void incGeneration();
     bool canShrinkLidSpace(const MonitorGuard &guard) const;
 

@@ -191,9 +191,9 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
 }
 
 AttributeHeader
-AttributeHeader::extractTags(const vespalib::GenericHeader &header)
+AttributeHeader::extractTags(const vespalib::GenericHeader &header, const vespalib::string &file_name)
 {
-    AttributeHeader result;
+    AttributeHeader result(file_name);
     result.internalExtractTags(header);
     return result;
 }

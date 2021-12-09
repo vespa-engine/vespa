@@ -28,7 +28,7 @@ public:
     void wakeup() override;
     size_t getNumThreads() const override;
     uint32_t getTaskLimit() const override { return _taskLimit.load(std::memory_order_relaxed); }
-    uint32_t get_watermark() const { return _watermark; }
+    uint32_t get_watermark() const { return _watermark.load(std::memory_order_relaxed); }
     duration get_reaction_time() const { return _reactionTime; }
     ExecutorStats getStats() override;
     SingleExecutor & shutdown() override;
@@ -47,6 +47,7 @@ private:
     uint64_t numTasks() const {
         return _wp.load(std::memory_order_relaxed) - _rp.load(std::memory_order_acquire);
     }
+    const double                _watermarkRatio;
     std::atomic<uint32_t>       _taskLimit;
     std::atomic<uint32_t>       _wantedTaskLimit;
     std::atomic<uint64_t>       _rp;
@@ -63,7 +64,7 @@ private:
     std::atomic<uint64_t>       _wakeupConsumerAt;
     std::atomic<uint64_t>       _producerNeedWakeupAt;
     std::atomic<uint64_t>       _wp;
-    const uint32_t              _watermark;
+    std::atomic<uint32_t>       _watermark;
     const duration              _reactionTime;
     bool                        _closed;
 };

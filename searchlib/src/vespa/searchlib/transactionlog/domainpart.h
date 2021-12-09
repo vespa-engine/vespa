@@ -19,13 +19,13 @@ public:
     using SP = std::shared_ptr<DomainPart>;
     DomainPart(const DomainPart &) = delete;
     DomainPart& operator=(const DomainPart &) = delete;
-    DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s, Encoding defaultEncoding,
-               uint8_t compressionLevel, const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
+    DomainPart(const vespalib::string &name, const vespalib::string &baseDir, SerialNum s,
+               const common::FileHeaderContext &FileHeaderContext, bool allowTruncate);
 
     ~DomainPart();
 
     const vespalib::string &fileName() const { return _fileName; }
-    void commit(SerialNum firstSerial, const Packet &packet);
+    void commit(const SerializedChunk & serialized);
     bool erase(SerialNum to);
     bool visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet);
     bool close();
@@ -49,7 +49,7 @@ private:
     static Packet readPacket(FastOS_FileInterface & file, SerialNumRange wanted, size_t targetSize, bool allowTruncate);
     static bool read(FastOS_FileInterface &file, IChunk::UP & chunk, Alloc &buf, bool allowTruncate);
 
-    void write(FastOS_FileInterface &file, const IChunk & entry);
+    void write(FastOS_FileInterface &file, SerialNumRange range, vespalib::ConstBufferRef buf);
     void writeHeader(const common::FileHeaderContext &fileHeaderContext);
 
     class SkipInfo
@@ -69,8 +69,6 @@ private:
         SerialNum _id;
         uint64_t  _pos;
     };
-    const Encoding        _encoding;
-    const uint8_t         _compressionLevel;
     std::mutex            _lock;
     std::mutex            _fileLock;
     SerialNumRange        _range;

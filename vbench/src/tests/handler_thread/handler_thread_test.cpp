@@ -15,9 +15,11 @@ struct MyHandler : Handler<int> {
 
 MyHandler::~MyHandler() = default;
 
+VESPA_THREAD_STACK_TAG(test_thread);
+
 TEST("handler thread") {
     MyHandler handler;
-    HandlerThread<int> th(handler);
+    HandlerThread<int> th(handler, test_thread);
     th.handle(std::unique_ptr<int>(new int(1)));
     th.handle(std::unique_ptr<int>(new int(2)));
     th.handle(std::unique_ptr<int>(new int(3)));

@@ -45,7 +45,7 @@ using search::TuneFileDocumentDB;
 using std::map;
 using vespalib::VarHolder;
 using search::GrowStrategy;
-using search::CompactionStrategy;
+using vespalib::datastore::CompactionStrategy;
 
 struct DoctypeFixture {
     using UP = std::unique_ptr<DoctypeFixture>;

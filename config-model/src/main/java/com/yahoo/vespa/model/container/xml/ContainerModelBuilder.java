@@ -313,7 +313,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (deploymentSpec.isEmpty()) return;
 
         for (var deprecatedElement : deploymentSpec.get().deprecatedElements()) {
-            deployLogger.log(WARNING, deprecatedElement.humanReadableString());
+            deployLogger.logApplicationPackage(WARNING, deprecatedElement.humanReadableString());
         }
 
         addIdentityProvider(cluster,

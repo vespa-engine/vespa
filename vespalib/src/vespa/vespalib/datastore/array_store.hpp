@@ -3,6 +3,8 @@
 #pragma once
 
 #include "array_store.h"
+#include "compaction_spec.h"
+#include "entry_ref_filter.h"
 #include "datastore.hpp"
 #include <atomic>
 #include <algorithm>
@@ -127,47 +129,38 @@ private:
     DataStoreBase &_dataStore;
     ArrayStoreType &_store;
     std::vector<uint32_t> _bufferIdsToCompact;
+    EntryRefFilter _filter;
 
-    bool compactingBuffer(uint32_t bufferId) {
-        return std::find(_bufferIdsToCompact.begin(), _bufferIdsToCompact.end(),
-                         bufferId) != _bufferIdsToCompact.end();
-    }
 public:
     CompactionContext(DataStoreBase &dataStore,
                       ArrayStoreType &store,
                       std::vector<uint32_t> bufferIdsToCompact)
         : _dataStore(dataStore),
           _store(store),
-          _bufferIdsToCompact(std::move(bufferIdsToCompact))
-    {}
+          _bufferIdsToCompact(std::move(bufferIdsToCompact)),
+          _filter(RefT::numBuffers(), RefT::offset_bits)
+    {
+        _filter.add_buffers(_bufferIdsToCompact);
+    }
     ~CompactionContext() override {
         _dataStore.finishCompact(_bufferIdsToCompact);
     }
     void compact(vespalib::ArrayRef<EntryRef> refs) override {
-        if (!_bufferIdsToCompact.empty()) {
-            for (auto &ref : refs) {
-                if (ref.valid()) {
-                    RefT internalRef(ref);
-                    if (compactingBuffer(internalRef.bufferId())) {
-                        EntryRef newRef = _store.add(_store.get(ref));
-                        std::atomic_thread_fence(std::memory_order_release);
-                        ref = newRef;
-                    }
-                }
+        for (auto &ref : refs) {
+            if (ref.valid() && _filter.has(ref)) {
+                EntryRef newRef = _store.add(_store.get(ref));
+                std::atomic_thread_fence(std::memory_order_release);
+                ref = newRef;
             }
         }
     }
     void compact(vespalib::ArrayRef<AtomicEntryRef> refs) override {
-        if (!_bufferIdsToCompact.empty()) {
-            for (auto &ref : refs) {
-                if (ref.load_relaxed().valid()) {
-                    RefT internalRef(ref.load_relaxed());
-                    if (compactingBuffer(internalRef.bufferId())) {
-                        EntryRef newRef = _store.add(_store.get(ref.load_relaxed()));
-                        std::atomic_thread_fence(std::memory_order_release);
-                        ref.store_release(newRef);
-                    }
-                }
+        for (auto &atomic_entry_ref : refs) {
+            auto ref = atomic_entry_ref.load_relaxed();
+            if (ref.valid() && _filter.has(ref)) {
+                EntryRef newRef = _store.add(_store.get(ref));
+                std::atomic_thread_fence(std::memory_order_release);
+                atomic_entry_ref.store_release(newRef);
             }
         }
     }
@@ -177,9 +170,9 @@ public:
 
 template <typename EntryT, typename RefT>
 ICompactionContext::UP
-ArrayStore<EntryT, RefT>::compactWorst(bool compactMemory, bool compactAddressSpace)
+ArrayStore<EntryT, RefT>::compactWorst(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy)
 {
-    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compactMemory, compactAddressSpace);
+    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
     return std::make_unique<arraystore::CompactionContext<EntryT, RefT>>
         (_store, *this, std::move(bufferIdsToCompact));
 }

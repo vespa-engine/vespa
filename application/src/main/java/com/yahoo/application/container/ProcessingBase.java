@@ -2,20 +2,18 @@
 package com.yahoo.application.container;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.chain.ChainRegistry;
-import com.yahoo.processing.rendering.AsynchronousRenderer;
 import com.yahoo.processing.rendering.Renderer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 
 /**
  * @author gjoranv
@@ -45,13 +43,13 @@ public abstract class ProcessingBase<REQUEST extends Request, RESPONSE extends R
                                          REQUEST request) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         Renderer<RESPONSE> renderer = getRenderer(rendererSpec);
-        ListenableFuture<Boolean> renderTask = doProcessAndRender(chainSpec, request, renderer, stream);
+        CompletableFuture<Boolean> renderTask = doProcessAndRender(chainSpec, request, renderer, stream);
 
         awaitFuture(renderTask);
         return stream.toByteArray();
     }
 
-    private void awaitFuture(ListenableFuture<Boolean> renderTask) {
+    private void awaitFuture(CompletableFuture<Boolean> renderTask) {
         try {
             renderTask.get();
         } catch (InterruptedException | ExecutionException e) {
@@ -59,10 +57,10 @@ public abstract class ProcessingBase<REQUEST extends Request, RESPONSE extends R
         }
     }
 
-    protected abstract ListenableFuture<Boolean> doProcessAndRender(ComponentSpecification chainSpec,
-                                                                    REQUEST request,
-                                                                    Renderer<RESPONSE> renderer,
-                                                                    ByteArrayOutputStream stream) throws IOException ;
+    protected abstract CompletableFuture<Boolean> doProcessAndRender(ComponentSpecification chainSpec,
+                                                                     REQUEST request,
+                                                                     Renderer<RESPONSE> renderer,
+                                                                     ByteArrayOutputStream stream) throws IOException ;
 
     protected Chain<PROCESSOR> getChain(ComponentSpecification chainSpec) {
         Chain<PROCESSOR> chain = getChains().getComponent(chainSpec);

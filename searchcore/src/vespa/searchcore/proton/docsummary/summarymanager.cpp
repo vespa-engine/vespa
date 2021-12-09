@@ -200,7 +200,8 @@ SummaryManager::getFlushTargets(vespalib::Executor & summaryService)
     IFlushTarget::List ret;
     ret.push_back(std::make_shared<SummaryFlushTarget>(getBackingStore(), summaryService));
     if (dynamic_cast<LogDocumentStore *>(_docStore.get()) != nullptr) {
-        ret.push_back(std::make_shared<SummaryCompactTarget>(summaryService, getBackingStore()));
+        ret.push_back(std::make_shared<SummaryCompactBloatTarget>(summaryService, getBackingStore()));
+        ret.push_back(std::make_shared<SummaryCompactSpreadTarget>(summaryService, getBackingStore()));
     }
     ret.push_back(createShrinkLidSpaceFlushTarget(summaryService, _docStore));
     return ret;

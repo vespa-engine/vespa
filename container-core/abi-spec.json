@@ -2321,8 +2321,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.jdisc.http.HttpRequest)",
-      "public com.yahoo.jdisc.http.HttpRequest getParentRequest()"
+      "public void <init>(com.yahoo.jdisc.http.HttpRequest)"
     ],
     "fields": []
   },
@@ -2840,6 +2839,7 @@
       "public void <init>(com.yahoo.processing.Request, com.yahoo.processing.request.ErrorMessage)",
       "public void mergeWith(com.yahoo.processing.Response)",
       "public com.yahoo.processing.response.DataList data()",
+      "public static java.util.concurrent.CompletableFuture recursiveFuture(com.yahoo.processing.response.DataList)",
       "public static com.google.common.util.concurrent.ListenableFuture recursiveComplete(com.yahoo.processing.response.DataList)"
     ],
     "fields": []
@@ -3138,8 +3138,9 @@
       "public abstract void endResponse()",
       "public void <init>()",
       "public void <init>(java.util.concurrent.Executor)",
-      "public final com.google.common.util.concurrent.ListenableFuture render(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
+      "public final java.util.concurrent.CompletableFuture renderResponse(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public void deconstruct()",
+      "public final java.util.concurrent.CompletableFuture renderResponseBeforeHandover(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public final com.google.common.util.concurrent.ListenableFuture renderBeforeHandover(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public com.yahoo.processing.execution.Execution getExecution()",
       "public com.yahoo.processing.Response getResponse()",
@@ -3185,7 +3186,8 @@
       "public void <init>()",
       "public com.yahoo.processing.rendering.Renderer clone()",
       "public void init()",
-      "public abstract com.google.common.util.concurrent.ListenableFuture render(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
+      "public com.google.common.util.concurrent.ListenableFuture render(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
+      "public java.util.concurrent.CompletableFuture renderResponse(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public abstract java.lang.String getEncoding()",
       "public abstract java.lang.String getMimeType()",
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
@@ -3389,7 +3391,7 @@
     "fields": []
   },
   "com.yahoo.processing.response.AbstractDataList$DrainOnGetFuture": {
-    "superClass": "com.google.common.util.concurrent.AbstractFuture",
+    "superClass": "com.yahoo.processing.impl.ProcessingFuture",
     "interfaces": [],
     "attributes": [
       "public",
@@ -3401,8 +3403,8 @@
       "public boolean isCancelled()",
       "public com.yahoo.processing.response.DataList get()",
       "public com.yahoo.processing.response.DataList get(long, java.util.concurrent.TimeUnit)",
-      "public bridge synthetic java.lang.Object get()",
-      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)"
+      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get()"
     ],
     "fields": []
   },
@@ -3424,6 +3426,7 @@
       "public com.yahoo.processing.Request request()",
       "public com.yahoo.processing.response.IncomingData incoming()",
       "public com.google.common.util.concurrent.ListenableFuture complete()",
+      "public java.util.concurrent.CompletableFuture completeFuture()",
       "public boolean isOrdered()",
       "public boolean isStreamed()",
       "public java.lang.String toString()"
@@ -3482,6 +3485,7 @@
       "public abstract com.yahoo.processing.response.Data get(int)",
       "public abstract java.util.List asList()",
       "public abstract com.yahoo.processing.response.IncomingData incoming()",
+      "public abstract java.util.concurrent.CompletableFuture completeFuture()",
       "public abstract com.google.common.util.concurrent.ListenableFuture complete()",
       "public abstract void addDataListener(java.lang.Runnable)",
       "public void close()"
@@ -3502,6 +3506,7 @@
       "public final void assignOwner(com.yahoo.processing.response.DataList)",
       "public com.yahoo.processing.response.DataList getOwner()",
       "public com.google.common.util.concurrent.ListenableFuture completed()",
+      "public java.util.concurrent.CompletableFuture completedFuture()",
       "public synchronized boolean isComplete()",
       "public synchronized void addLast(com.yahoo.processing.response.Data)",
       "public synchronized void add(com.yahoo.processing.response.Data)",
@@ -3515,26 +3520,29 @@
     "fields": []
   },
   "com.yahoo.processing.response.FutureResponse": {
-    "superClass": "com.google.common.util.concurrent.ForwardingFuture",
-    "interfaces": [],
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.concurrent.Future"
+    ],
     "attributes": [
       "public"
     ],
     "methods": [
       "public void <init>(java.util.concurrent.Callable, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
-      "public com.google.common.util.concurrent.ListenableFutureTask delegate()",
+      "public java.util.concurrent.FutureTask delegate()",
+      "public boolean cancel(boolean)",
+      "public boolean isCancelled()",
+      "public boolean isDone()",
       "public com.yahoo.processing.Response get()",
       "public com.yahoo.processing.Response get(long, java.util.concurrent.TimeUnit)",
       "public com.yahoo.processing.Request getRequest()",
       "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
-      "public bridge synthetic java.lang.Object get()",
-      "public bridge synthetic java.util.concurrent.Future delegate()",
-      "public bridge synthetic java.lang.Object delegate()"
+      "public bridge synthetic java.lang.Object get()"
     ],
     "fields": []
   },
   "com.yahoo.processing.response.IncomingData$NullIncomingData$ImmediateFuture": {
-    "superClass": "com.google.common.util.concurrent.AbstractFuture",
+    "superClass": "com.yahoo.processing.impl.ProcessingFuture",
     "interfaces": [],
     "attributes": [
       "public"
@@ -3546,8 +3554,8 @@
       "public boolean isDone()",
       "public com.yahoo.processing.response.DataList get()",
       "public com.yahoo.processing.response.DataList get(long, java.util.concurrent.TimeUnit)",
-      "public bridge synthetic java.lang.Object get()",
-      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)"
+      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get()"
     ],
     "fields": []
   },
@@ -3563,6 +3571,7 @@
     "methods": [
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public com.google.common.util.concurrent.ListenableFuture completed()",
+      "public java.util.concurrent.CompletableFuture completedFuture()",
       "public com.yahoo.processing.response.DataList getOwner()",
       "public boolean isComplete()",
       "public void addLast(com.yahoo.processing.response.Data)",
@@ -3586,6 +3595,7 @@
     ],
     "methods": [
       "public abstract com.yahoo.processing.response.DataList getOwner()",
+      "public abstract java.util.concurrent.CompletableFuture completedFuture()",
       "public abstract com.google.common.util.concurrent.ListenableFuture completed()",
       "public abstract boolean isComplete()",
       "public abstract void addLast(com.yahoo.processing.response.Data)",

@@ -26,7 +26,7 @@ public class Cluster {
     private final ClusterSpec.Id id;
     private final boolean exclusive;
     private final ClusterResources min, max;
-    private boolean required;
+    private final boolean required;
     private final Optional<Suggestion> suggested;
     private final Optional<ClusterResources> target;
 

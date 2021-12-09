@@ -3,8 +3,6 @@ package com.yahoo.vespa.config.server.http.v1;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.path.Path;
 import com.yahoo.restapi.RestApi;
@@ -20,7 +18,6 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -50,18 +47,16 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
 
     private final Curator curator;
     private final Clock clock;
-    private final Deployer deployer;
 
     @Inject
-    public RoutingStatusApiHandler(Context context, Curator curator, Deployer deployer) {
-        this(context, curator, Clock.systemUTC(), deployer);
+    public RoutingStatusApiHandler(Context context, Curator curator) {
+        this(context, curator, Clock.systemUTC());
     }
 
-    RoutingStatusApiHandler(Context context, Curator curator, Clock clock, Deployer deployer) {
+    RoutingStatusApiHandler(Context context, Curator curator, Clock clock) {
         super(context, RoutingStatusApiHandler::createRestApiDefinition);
         this.curator = Objects.requireNonNull(curator);
         this.clock = Objects.requireNonNull(clock);
-        this.deployer = Objects.requireNonNull(deployer);
 
         curator.create(DEPLOYMENT_STATUS_ROOT);
     }
@@ -122,24 +117,8 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         log.log(Level.INFO, "Changing routing status of " + instance + " from " +
                             currentStatus.status() + " to " + wantedStatus.status());
         boolean needsChange = currentStatuses.stream().anyMatch(status -> status.status() != wantedStatus.status());
-        if (!needsChange) {
-            return new SlimeJsonResponse(toSlime(wantedStatus));
-        }
-        changeStatus(upstreamNames, wantedStatus);
-        try {
-            Optional<Deployment> deployment = deployer.deployFromLocalActive(instance, Duration.ofMinutes(1));
-            if (deployment.isEmpty()) throw new IllegalArgumentException("No deployment of " + instance + " found");
-            deployment.get().activate();
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to redeploy " + instance + ". Reverting routing status to " +
-                                  currentStatus.status(), e);
-            changeStatus(upstreamNames, currentStatus);
-            throw new RestApiException.InternalServerError("Failed to change status to " +
-                                                           wantedStatus.status() + ", reverting to "
-                                                           + currentStatus.status() +
-                                                           " because redeployment of " +
-                                                           instance + " failed: " +
-                                                           Exceptions.toMessageString(e));
+        if (needsChange) {
+            changeStatus(upstreamNames, wantedStatus);
         }
         return new SlimeJsonResponse(toSlime(wantedStatus));
     }

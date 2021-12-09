@@ -153,7 +153,7 @@ private:
     std::shared_ptr<ShrinkLidSpaceFlushTarget> _dmsShrinkTarget;
     std::shared_ptr<PendingLidTrackerBase>     _pendingLidsForCommit;
     bool                                       _nodeRetired;
-    search::CompactionStrategy                 _lastConfiguredCompactionStrategy;
+    vespalib::datastore::CompactionStrategy    _lastConfiguredCompactionStrategy;
 
     IFlushTargetList getFlushTargets() override;
 protected:
@@ -234,7 +234,7 @@ public:
     std::shared_ptr<IDocumentDBReference> getDocumentDBReference() override;
     void tearDownReferences(IDocumentDBReferenceResolver &resolver) override;
     PendingLidTrackerBase & getUncommittedLidsTracker() override { return *_pendingLidsForCommit; }
-    search::CompactionStrategy computeCompactionStrategy(search::CompactionStrategy strategy) const;
+    vespalib::datastore::CompactionStrategy computeCompactionStrategy(vespalib::datastore::CompactionStrategy strategy) const;
     bool isNodeRetired() const { return _nodeRetired; }
 
 };

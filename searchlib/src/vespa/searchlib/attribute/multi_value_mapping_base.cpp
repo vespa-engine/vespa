@@ -1,10 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "multi_value_mapping_base.h"
-#include <vespa/searchcommon/common/compaction_strategy.h>
+#include <vespa/vespalib/datastore/compaction_spec.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <cassert>
 
 namespace search::attribute {
+
+using vespalib::datastore::CompactionStrategy;
 
 MultiValueMappingBase::MultiValueMappingBase(const vespalib::GrowStrategy &gs,
                                              vespalib::GenerationHolder &genHolder)
@@ -77,14 +80,9 @@ MultiValueMappingBase::updateStat()
 bool
 MultiValueMappingBase::considerCompact(const CompactionStrategy &compactionStrategy)
 {
-    size_t usedBytes = _cachedArrayStoreMemoryUsage.usedBytes();
-    size_t deadBytes = _cachedArrayStoreMemoryUsage.deadBytes();
-    size_t usedArrays = _cachedArrayStoreAddressSpaceUsage.used();
-    size_t deadArrays = _cachedArrayStoreAddressSpaceUsage.dead();
-    bool compactMemory = compactionStrategy.should_compact_memory(usedBytes, deadBytes);
-    bool compactAddressSpace = compactionStrategy.should_compact_address_space(usedArrays, deadArrays);
-    if (compactMemory || compactAddressSpace) {
-        compactWorst(compactMemory, compactAddressSpace);
+    auto compaction_spec = compactionStrategy.should_compact(_cachedArrayStoreMemoryUsage, _cachedArrayStoreAddressSpaceUsage);
+    if (compaction_spec.compact()) {
+        compactWorst(compaction_spec, compactionStrategy);
         return true;
     }
     return false;

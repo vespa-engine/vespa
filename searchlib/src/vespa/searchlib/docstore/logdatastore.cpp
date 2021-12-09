@@ -36,7 +36,6 @@ using namespace std::literals;
 
 LogDataStore::Config::Config()
     : _maxFileSize(DEFAULT_MAX_FILESIZE),
-      _maxDiskBloatFactor(0.2),
       _maxBucketSpread(2.5),
       _minFileSizeFactor(0.2),
       _maxNumLids(DEFAULT_MAX_LIDS_PER_FILE),
@@ -48,7 +47,6 @@ LogDataStore::Config::Config()
 bool
 LogDataStore::Config::operator == (const Config & rhs) const {
     return (_maxBucketSpread == rhs._maxBucketSpread) &&
-            (_maxDiskBloatFactor == rhs._maxDiskBloatFactor) &&
             (_maxFileSize == rhs._maxFileSize) &&
             (_minFileSizeFactor == rhs._minFileSizeFactor) &&
             (_skipCrcOnRead == rhs._skipCrcOnRead) &&
@@ -294,46 +292,14 @@ vespalib::string bloatMsg(size_t bloat, size_t usage) {
 
 }
 
-void
-LogDataStore::compact(uint64_t syncToken)
-{
-    uint64_t usage = getDiskFootprint();
-    uint64_t bloat = getDiskBloat();
-    LOG(debug, "%s", bloatMsg(bloat, usage).c_str());
-    const bool doCompact = (_fileChunks.size() > 1);
-    if (doCompact) {
-        LOG(info, "%s. Will compact", bloatMsg(bloat, usage).c_str());
-        compactWorst(_config.getMaxDiskBloatFactor(), _config.getMaxBucketSpread(), isTotalDiskBloatExceeded(usage, bloat));
-    }
-    flushActiveAndWait(syncToken);
-    if (doCompact) {
-        usage = getDiskFootprint();
-        bloat = getDiskBloat();
-        LOG(info, "Done compacting. %s", bloatMsg(bloat, usage).c_str());
-    }
-}
-
-bool
-LogDataStore::isTotalDiskBloatExceeded(size_t diskFootPrint, size_t bloat) const {
-    const size_t maxConfiguredDiskBloat = diskFootPrint * _config.getMaxDiskBloatFactor();
-    return bloat > maxConfiguredDiskBloat;
-}
-
 size_t
-LogDataStore::getMaxCompactGain() const
+LogDataStore::getMaxSpreadAsBloat() const
 {
-    size_t bloat = getDiskBloat();
     const size_t diskFootPrint = getDiskFootprint();
-    if ( ! isTotalDiskBloatExceeded(diskFootPrint, bloat) ) {
-        bloat = 0;
-    }
-
     const double maxSpread = getMaxBucketSpread();
-    size_t spreadAsBloat = diskFootPrint * (1.0 - 1.0/maxSpread);
-    if ( maxSpread < _config.getMaxBucketSpread()) {
-        spreadAsBloat = 0;
-    }
-    return (bloat + spreadAsBloat);
+    return (maxSpread > _config.getMaxBucketSpread())
+        ? diskFootPrint * (1.0 - 1.0/maxSpread)
+        : 0;
 }
 
 void
@@ -380,40 +346,34 @@ LogDataStore::getMaxBucketSpread() const
 }
 
 std::pair<bool, LogDataStore::FileId>
-LogDataStore::findNextToCompact(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat)
+LogDataStore::findNextToCompact(bool dueToBloat)
 {
     typedef std::multimap<double, FileId, std::greater<double>> CostMap;
-    CostMap worstBloat;
-    CostMap worstSpread;
+    CostMap worst;
     MonitorGuard guard(_updateLock);
     for (size_t i(0); i < _fileChunks.size(); i++) {
         const auto & fc(_fileChunks[i]);
         if (fc && fc->frozen() && (_currentlyCompacting.find(fc->getNameId()) == _currentlyCompacting.end())) {
             uint64_t usage = fc->getDiskFootprint();
-            uint64_t bloat = fc->getDiskBloat();
-            if (_bucketizer) {
-                worstSpread.emplace(fc->getBucketSpread(), FileId(i));
-            }
-            if (usage > 0) {
-                double tmp(double(bloat)/usage);
-                worstBloat.emplace(tmp, FileId(i));
+            if ( ! dueToBloat && _bucketizer) {
+                worst.emplace(fc->getBucketSpread(), FileId(i));
+            } else if (dueToBloat && usage > 0) {
+                double tmp(double(fc->getDiskBloat())/usage);
+                worst.emplace(tmp, FileId(i));
             }
         }
     }
     if (LOG_WOULD_LOG(debug)) {
-        for (const auto & it : worstBloat) {
+        for (const auto & it : worst) {
             const FileChunk & fc = *_fileChunks[it.second.getId()];
             LOG(debug, "File '%s' has bloat '%2.2f' and bucket-spread '%1.4f numChunks=%d , numBuckets=%ld, numUniqueBuckets=%ld",
                        fc.getName().c_str(), it.first * 100, fc.getBucketSpread(), fc.getNumChunks(), fc.getNumBuckets(), fc.getNumUniqueBuckets());
         }
     }
     std::pair<bool, FileId> retval(false, FileId(-1));
-    if ( ! worstBloat.empty() && (worstBloat.begin()->first > bloatLimit) && prioritizeDiskBloat) {
+    if ( ! worst.empty()) {
         retval.first = true;
-        retval.second = worstBloat.begin()->second;
-    } else if ( ! worstSpread.empty() && (worstSpread.begin()->first > spreadLimit)) {
-        retval.first = true;
-        retval.second = worstSpread.begin()->second;
+        retval.second = worst.begin()->second;
     }
     if (retval.first) {
         _currentlyCompacting.insert(_fileChunks[retval.second.getId()]->getNameId());
@@ -422,10 +382,24 @@ LogDataStore::findNextToCompact(double bloatLimit, double spreadLimit, bool prio
 }
 
 void
-LogDataStore::compactWorst(double bloatLimit, double spreadLimit, bool prioritizeDiskBloat) {
-    auto worst = findNextToCompact(bloatLimit, spreadLimit, prioritizeDiskBloat);
-    if (worst.first) {
-        compactFile(worst.second);
+LogDataStore::compactWorst(uint64_t syncToken, bool compactDiskBloat) {
+    uint64_t usage = getDiskFootprint();
+    uint64_t bloat = getDiskBloat();
+    const char * reason = compactDiskBloat ? "bloat" : "spread";
+    LOG(debug, "%s", bloatMsg(bloat, usage).c_str());
+    const bool doCompact = (_fileChunks.size() > 1);
+    if (doCompact) {
+        LOG(debug, "Will compact due to %s: %s", reason, bloatMsg(bloat, usage).c_str());
+        auto worst = findNextToCompact(compactDiskBloat);
+        if (worst.first) {
+            compactFile(worst.second);
+        }
+        flushActiveAndWait(syncToken);
+        usage = getDiskFootprint();
+        bloat = getDiskBloat();
+        LOG(info, "Done compacting due to %s: %s", reason, bloatMsg(bloat, usage).c_str());
+    } else {
+        flushActiveAndWait(syncToken);
     }
 }
 
@@ -1001,7 +975,7 @@ LogDataStore::computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketi
     while ((msb > 0) && (msbHistogram[msb - 1] == 0)) {
         msb--;
     }
-    LOG(info, "computeNumberOfSignificantBucketIdBits(file=%d) = %ld = %ld took %1.3f", fileId.getId(), msb, msbHistogram[msb-1], timer.min_time());
+    LOG(debug, "computeNumberOfSignificantBucketIdBits(file=%d) = %ld = %ld took %1.3f", fileId.getId(), msb, msbHistogram[msb-1], timer.min_time());
     return msb;
 }
 

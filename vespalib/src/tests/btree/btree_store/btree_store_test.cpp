@@ -5,9 +5,12 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::GenerationHandler;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace vespalib::btree {
@@ -73,61 +76,115 @@ BTreeStoreTest::~BTreeStoreTest()
     inc_generation();
 }
 
+namespace {
+
+class ChangeWriter {
+    std::vector<EntryRef*> _old_refs;
+public:
+    ChangeWriter(uint32_t capacity);
+    ~ChangeWriter();
+    void write(const std::vector<EntryRef>& refs);
+    void emplace_back(EntryRef& ref) { _old_refs.emplace_back(&ref); }
+};
+
+ChangeWriter::ChangeWriter(uint32_t capacity)
+    : _old_refs()
+{
+    _old_refs.reserve(capacity);
+}
+
+ChangeWriter::~ChangeWriter() = default;
+
+void
+ChangeWriter::write(const std::vector<EntryRef> &refs)
+{
+    assert(refs.size() == _old_refs.size());
+    auto old_ref_itr = _old_refs.begin();
+    for (auto ref : refs) {
+        **old_ref_itr = ref;
+        ++old_ref_itr;
+    }
+    assert(old_ref_itr == _old_refs.end());
+    _old_refs.clear();
+}
+
+}
+
 void
 BTreeStoreTest::test_compact_sequence(uint32_t sequence_length)
 {
     auto &store = _store;
+    uint32_t entry_ref_offset_bits = TreeStore::RefType::offset_bits;
     EntryRef ref1 = add_sequence(4, 4 + sequence_length);
     EntryRef ref2 = add_sequence(5, 5 + sequence_length);
-    EntryRef old_ref1 = ref1;
-    EntryRef old_ref2 = ref2;
     std::vector<EntryRef> refs;
+    refs.reserve(2);
+    refs.emplace_back(ref1);
+    refs.emplace_back(ref2);
+    std::vector<EntryRef> temp_refs;
     for (int i = 0; i < 1000; ++i) {
-        refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
+        temp_refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
     }
-    for (auto& ref : refs) {
+    for (auto& ref : temp_refs) {
         store.clear(ref);
     }
     inc_generation();
+    ChangeWriter change_writer(refs.size());
+    std::vector<EntryRef> move_refs;
+    move_refs.reserve(refs.size());
     auto usage_before = store.getMemoryUsage();
     for (uint32_t pass = 0; pass < 15; ++pass) {
-        auto to_hold = store.start_compact_worst_buffers();
-        ref1 = store.move(ref1);
-        ref2 = store.move(ref2);
+        CompactionSpec compaction_spec(true, false);
+        CompactionStrategy compaction_strategy;
+        auto to_hold = store.start_compact_worst_buffers(compaction_spec, compaction_strategy);
+        std::vector<bool> filter(TreeStore::RefType::numBuffers());
+        for (auto buffer_id : to_hold) {
+            filter[buffer_id] = true;
+        }
+        for (auto& ref : refs) {
+            if (ref.valid() && filter[ref.buffer_id(entry_ref_offset_bits)]) {
+                move_refs.emplace_back(ref);
+                change_writer.emplace_back(ref);
+            }
+        }
+        store.move(move_refs);
+        change_writer.write(move_refs);
+        move_refs.clear();
         store.finishCompact(to_hold);
         inc_generation();
     }
-    EXPECT_NE(old_ref1, ref1);
-    EXPECT_NE(old_ref2, ref2);
-    EXPECT_EQ(make_exp_sequence(4, 4 + sequence_length), get_sequence(ref1));
-    EXPECT_EQ(make_exp_sequence(5, 5 + sequence_length), get_sequence(ref2));
+    EXPECT_NE(ref1, refs[0]);
+    EXPECT_NE(ref2, refs[1]);
+    EXPECT_EQ(make_exp_sequence(4, 4 + sequence_length), get_sequence(refs[0]));
+    EXPECT_EQ(make_exp_sequence(5, 5 + sequence_length), get_sequence(refs[1]));
     auto usage_after = store.getMemoryUsage();
     EXPECT_GT(usage_before.deadBytes(), usage_after.deadBytes());
-    store.clear(ref1);
-    store.clear(ref2);
+    store.clear(refs[0]);
+    store.clear(refs[1]);
 }
 
 TEST_F(BTreeStoreTest, require_that_nodes_for_multiple_btrees_are_compacted)
 {
     auto &store = this->_store;
-    EntryRef ref1 = add_sequence(4, 40);
-    EntryRef ref2 = add_sequence(100, 130);
+    std::vector<EntryRef> refs;
+    refs.emplace_back(add_sequence(4, 40));
+    refs.emplace_back(add_sequence(100, 130));
     store.clear(add_sequence(1000, 20000));
     inc_generation();
     auto usage_before = store.getMemoryUsage();
     for (uint32_t pass = 0; pass < 15; ++pass) {
-        auto to_hold = store.start_compact_worst_btree_nodes();
-        store.move_btree_nodes(ref1);
-        store.move_btree_nodes(ref2);
+        CompactionStrategy compaction_strategy;
+        auto to_hold = store.start_compact_worst_btree_nodes(compaction_strategy);
+        store.move_btree_nodes(refs);
         store.finish_compact_worst_btree_nodes(to_hold);
         inc_generation();
     }
-    EXPECT_EQ(make_exp_sequence(4, 40), get_sequence(ref1));
-    EXPECT_EQ(make_exp_sequence(100, 130), get_sequence(ref2));
+    EXPECT_EQ(make_exp_sequence(4, 40), get_sequence(refs[0]));
+    EXPECT_EQ(make_exp_sequence(100, 130), get_sequence(refs[1]));
     auto usage_after = store.getMemoryUsage();
     EXPECT_GT(usage_before.deadBytes(), usage_after.deadBytes());
-    store.clear(ref1);
-    store.clear(ref2);
+    store.clear(refs[0]);
+    store.clear(refs[1]);
 }
 
 TEST_F(BTreeStoreTest, require_that_short_arrays_are_compacted)

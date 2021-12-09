@@ -30,6 +30,7 @@
 #include <vespa/eval/instruction/dense_tensor_create_function.h>
 #include <vespa/eval/instruction/dense_tensor_peek_function.h>
 #include <vespa/eval/instruction/dense_hamming_distance.h>
+#include <vespa/eval/instruction/l2_distance.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.eval.optimize_tensor_function");
@@ -56,11 +57,16 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
     Child root(expr);
     run_optimize_pass(root, [&stash](const Child &child)
                       {
+                          child.set(PowAsMapOptimizer::optimize(child.get(), stash));
+                      });
+    run_optimize_pass(root, [&stash](const Child &child)
+                      {
                           child.set(SumMaxDotProductFunction::optimize(child.get(), stash));
                       });
     run_optimize_pass(root, [&stash](const Child &child)
                       {
                           child.set(BestSimilarityFunction::optimize(child.get(), stash));
+                          child.set(L2Distance::optimize(child.get(), stash));                          
                       });
     run_optimize_pass(root, [&stash](const Child &child)
                       {
@@ -83,7 +89,6 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
                           child.set(DenseLambdaPeekOptimizer::optimize(child.get(), stash));
                           child.set(UnpackBitsFunction::optimize(child.get(), stash));
                           child.set(FastRenameOptimizer::optimize(child.get(), stash));
-                          child.set(PowAsMapOptimizer::optimize(child.get(), stash));
                           child.set(InplaceMapFunction::optimize(child.get(), stash));
                           child.set(MixedSimpleJoinFunction::optimize(child.get(), stash));
                           child.set(JoinWithNumberFunction::optimize(child.get(), stash));

@@ -16,7 +16,7 @@ mkdir -p $destinationDir
 versionNumber=$(cat $source | grep V_TAG_COMPONENT | awk '{print $2}' )
 
 cat > $destination <<- END
-package ai.vespa.feed.client;
+package ai.vespa.feed.client.impl;
 
 class Vespa {
     static final String VERSION = "$versionNumber";

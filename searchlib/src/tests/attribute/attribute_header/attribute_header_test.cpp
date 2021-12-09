@@ -49,7 +49,7 @@ void
 verify_roundtrip_serialization(const HnswIPO& hnsw_params_in)
 {
     auto gen_header = populate_header(hnsw_params_in);
-    auto attr_header = AttributeHeader::extractTags(gen_header);
+    auto attr_header = AttributeHeader::extractTags(gen_header, file_name);
 
     EXPECT_EQ(tensor_cfg.basicType(), attr_header.getBasicType());
     EXPECT_EQ(tensor_cfg.collectionType(), attr_header.getCollectionType());

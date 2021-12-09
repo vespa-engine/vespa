@@ -24,6 +24,7 @@ namespace search::attribute {
 using document::DocumentId;
 using document::GlobalId;
 using document::IdParseException;
+using vespalib::datastore::CompactionSpec;
 
 namespace {
 
@@ -291,20 +292,19 @@ ReferenceAttribute::getReference(DocId doc) const
 bool
 ReferenceAttribute::consider_compact_values(const CompactionStrategy &compactionStrategy)
 {
-    size_t used_bytes = _cached_unique_store_values_memory_usage.usedBytes();
-    size_t dead_bytes = _cached_unique_store_values_memory_usage.deadBytes();
-    bool compact_memory = compactionStrategy.should_compact_memory(used_bytes, dead_bytes);
+    bool compact_memory = compactionStrategy.should_compact_memory(_cached_unique_store_values_memory_usage);
     if (compact_memory) {
-        compact_worst_values();
+        compact_worst_values(compactionStrategy);
         return true;
     }
     return false;
 }
 
 void
-ReferenceAttribute::compact_worst_values()
+ReferenceAttribute::compact_worst_values(const CompactionStrategy& compaction_strategy)
 {
-    auto remapper(_store.compact_worst(true, true));
+    CompactionSpec compaction_spec(true, true);
+    auto remapper(_store.compact_worst(compaction_spec, compaction_strategy));
     if (remapper) {
         remapper->remap(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
         remapper->done();
@@ -318,10 +318,9 @@ ReferenceAttribute::consider_compact_dictionary(const CompactionStrategy &compac
     if (dictionary.has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage.usedBytes(),
-                                                  _cached_unique_store_dictionary_memory_usage.deadBytes()))
+    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage))
     {
-        dictionary.compact_worst(true, true);
+        dictionary.compact_worst(true, true, compaction_strategy);
         return true;
     }
     return false;

@@ -17,7 +17,7 @@ import java.util.Map;
 public class FunctionReferenceContext {
 
     /** Expression functions indexed by name */
-    private final ImmutableMap<String, ExpressionFunction> functions;
+    private final Map<String, ExpressionFunction> functions;
 
     /** Mapping from argument names to the expressions they resolve to */
     private final Map<String, String> bindings = new HashMap<>();
@@ -43,26 +43,32 @@ public class FunctionReferenceContext {
 
     /** Create a context for a single serialization task */
     public FunctionReferenceContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings) {
-        this(ImmutableMap.copyOf(functions), bindings);
-    }
-
-    protected FunctionReferenceContext(ImmutableMap<String, ExpressionFunction> functions, Map<String, String> bindings) {
-        this.functions = functions;
+        this.functions = Map.copyOf(functions);
         if (bindings != null)
             this.bindings.putAll(bindings);
     }
 
-    private static ImmutableMap<String, ExpressionFunction> toMap(Collection<ExpressionFunction> list) {
-        ImmutableMap.Builder<String,ExpressionFunction> mapBuilder = new ImmutableMap.Builder<>();
+    /** @deprecated Use {@link #FunctionReferenceContext(Map, Map)} instead */
+    @Deprecated(forRemoval = true, since = "7")
+    protected FunctionReferenceContext(ImmutableMap<String, ExpressionFunction> functions, Map<String, String> bindings) {
+        this((Map<String, ExpressionFunction>)functions, bindings);
+    }
+
+    private static Map<String, ExpressionFunction> toMap(Collection<ExpressionFunction> list) {
+        Map<String, ExpressionFunction> mapBuilder = new HashMap<>();
         for (ExpressionFunction function : list)
             mapBuilder.put(function.getName(), function);
-        return mapBuilder.build();
+        return Map.copyOf(mapBuilder);
     }
 
     /** Returns a function or null if it isn't defined in this context */
     public ExpressionFunction getFunction(String name) { return functions.get(name); }
 
-    protected ImmutableMap<String, ExpressionFunction> functions() { return functions; }
+    /** @deprecated Use {@link #getFunctions()} instead */
+    @Deprecated(forRemoval = true, since = "7")
+    protected ImmutableMap<String, ExpressionFunction> functions() { return ImmutableMap.copyOf(functions); }
+
+    protected Map<String, ExpressionFunction> getFunctions() { return functions; }
 
     /** Returns the resolution of an identifier, or null if it isn't defined in this context */
     public String getBinding(String name) { return bindings.get(name); }

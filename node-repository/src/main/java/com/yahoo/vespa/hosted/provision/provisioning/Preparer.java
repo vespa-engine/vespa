@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodesAndHosts;
-import com.yahoo.vespa.hosted.provision.node.Nodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,13 +24,11 @@ import java.util.stream.Collectors;
  */
 class Preparer {
 
-    private final NodeRepository nodeRepository;
     private final GroupPreparer groupPreparer;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
 
     public Preparer(NodeRepository nodeRepository, Optional<HostProvisioner> hostProvisioner,
                     Optional<LoadBalancerProvisioner> loadBalancerProvisioner) {
-        this.nodeRepository = nodeRepository;
         this.loadBalancerProvisioner = loadBalancerProvisioner;
         this.groupPreparer = new GroupPreparer(nodeRepository, hostProvisioner);
     }
@@ -69,9 +66,10 @@ class Preparer {
 
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));
-            GroupPreparer.PrepareResult result = groupPreparer.prepare(
-                    application, clusterGroup, requestedNodes.fraction(wantedGroups),
-                    surplusNodes, indices, wantedGroups, allNodesAndHosts);
+            GroupPreparer.PrepareResult result = groupPreparer.prepare(application, clusterGroup,
+                                                                       requestedNodes.fraction(wantedGroups),
+                                                                       surplusNodes, indices, wantedGroups,
+                                                                       allNodesAndHosts);
             allNodesAndHosts = result.allNodesAndHosts; // Might have changed
             List<Node> accepted = result.prepared;
             if (requestedNodes.rejectNonActiveParent()) {

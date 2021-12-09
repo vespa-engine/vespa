@@ -17,14 +17,14 @@ class IBufferVisitor;
 class IDataStoreVisitor
 {
 public:
-    virtual ~IDataStoreVisitor() { }
+    virtual ~IDataStoreVisitor() = default;
     virtual void visit(uint32_t lid, const void *buffer, size_t sz) = 0;
 };
 
 class IDataStoreVisitorProgress
 {
 public:
-    virtual ~IDataStoreVisitorProgress() { }
+    virtual ~IDataStoreVisitorProgress() = default;
     virtual void updateProgress(double progress) = 0;
 };
 
@@ -46,11 +46,7 @@ public:
      * @param dirName  The directory that will contain the data file.
      **/
     IDataStore(const vespalib::string & dirName);
-
-    /**
-     * Allow inhertitance.
-     **/
-    virtual ~IDataStore();
+     ~IDataStore() override;
 
     /**
      * Read data from the data store into a buffer.
@@ -125,7 +121,7 @@ public:
      * to avoid misuse we let the report a more conservative number here if necessary.
      * @return diskspace to be gained.
      */
-    virtual size_t getMaxCompactGain() const { return getDiskBloat(); }
+    virtual size_t getMaxSpreadAsBloat() const = 0;
 
 
     /**

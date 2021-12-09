@@ -13,7 +13,6 @@ import com.yahoo.processing.test.ProcessorLibrary;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -27,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class StreamingTestCase {
 
     /** Tests adding a chain which is called every time new data is added to a data list */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     @Test
     public void testStreamingData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up

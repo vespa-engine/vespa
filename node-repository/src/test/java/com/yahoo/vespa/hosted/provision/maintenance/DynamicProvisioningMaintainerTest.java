@@ -458,7 +458,7 @@ public class DynamicProvisioningMaintainerTest {
 
         // Provision config servers
         for (int i = 0; i < provisionedHosts.size(); i++) {
-            tester.makeReadyChildren(1, i + 1, NodeResources.unspecified(), hostType.childNodeType(),
+            tester.makeReadyChildren(1, i + 1, new NodeResources(1.5, 8, 50, 0.3), hostType.childNodeType(),
                     provisionedHosts.get(i).hostname(), (nodeIndex) -> "cfg" + nodeIndex);
         }
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());

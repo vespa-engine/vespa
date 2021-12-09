@@ -9,7 +9,7 @@
 namespace vespalib {
 
 template <typename T>
-RcuVectorHeld<T>::RcuVectorHeld(size_t size, std::unique_ptr<T> data)
+RcuVectorHeld<T>::RcuVectorHeld(size_t size, T&& data)
     : GenerationHeldBase(size),
       _data(std::move(data))
 { }
@@ -52,20 +52,21 @@ RcuVectorBase<T>::~RcuVectorBase() = default;
 template <typename T>
 void
 RcuVectorBase<T>::expand(size_t newCapacity) {
-    std::unique_ptr<ArrayType> tmpData(new ArrayType());
-    tmpData->reserve(newCapacity);
+    ArrayType tmpData;
+    tmpData.reserve(newCapacity);
     for (const T & v : _data) {
-        tmpData->push_back_fast(v);
+        tmpData.push_back_fast(v);
     }
     replaceVector(std::move(tmpData));
 }
 
 template <typename T>
 void
-RcuVectorBase<T>::replaceVector(std::unique_ptr<ArrayType> replacement) {
-    replacement->swap(_data); // atomic switch of underlying data
-    size_t holdSize = replacement->capacity() * sizeof(T);
-    GenerationHeldBase::UP hold(new RcuVectorHeld<ArrayType>(holdSize, std::move(replacement)));
+RcuVectorBase<T>::replaceVector(ArrayType replacement) {
+    std::atomic_thread_fence(std::memory_order_release);
+    replacement.swap(_data); // atomic switch of underlying data
+    size_t holdSize = replacement.capacity() * sizeof(T);
+    auto hold = std::make_unique<RcuVectorHeld<ArrayType>>(holdSize, std::move(replacement));
     _genHolder.hold(std::move(hold));
     onReallocation();
 }
@@ -90,17 +91,18 @@ RcuVectorBase<T>::shrink(size_t newSize)
         return;
     }
     if (!_data.try_unreserve(wantedCapacity)) {
-        std::unique_ptr<ArrayType> tmpData(new ArrayType());
-        tmpData->reserve(wantedCapacity);
-        tmpData->resize(newSize);
+        ArrayType tmpData;
+        tmpData.reserve(wantedCapacity);
+        tmpData.resize(newSize);
         for (uint32_t i = 0; i < newSize; ++i) {
-            (*tmpData)[i] = _data[i];
+            tmpData[i] = _data[i];
         }
+        std::atomic_thread_fence(std::memory_order_release);
         // Users of RCU vector must ensure that no readers use old size
         // after swap.  Attribute vectors uses _committedDocIdLimit for this.
-        tmpData->swap(_data); // atomic switch of underlying data
-        size_t holdSize = tmpData->capacity() * sizeof(T);
-        GenerationHeldBase::UP hold(new RcuVectorHeld<ArrayType>(holdSize, std::move(tmpData)));
+        tmpData.swap(_data); // atomic switch of underlying data
+        size_t holdSize = tmpData.capacity() * sizeof(T);
+        auto hold = std::make_unique<RcuVectorHeld<ArrayType>>(holdSize, std::move(tmpData));
         _genHolder.hold(std::move(hold));
         onReallocation();
     }

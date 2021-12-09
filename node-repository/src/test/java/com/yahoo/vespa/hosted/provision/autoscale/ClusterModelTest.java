@@ -30,19 +30,20 @@ public class ClusterModelTest {
     public void test_traffic_headroom() {
         ManualClock clock = new ManualClock();
         Application application = Application.empty(ApplicationId.from("t1", "a1", "i1"));
+        ClusterSpec clusterSpec = clusterSpec();
         Cluster cluster = cluster(new NodeResources(1, 10, 100, 1));
         application = application.with(cluster);
 
         // No current traffic share: Ideal load is low but capped
         var model1 = new ClusterModel(application.with(new Status(0.0, 1.0)),
-                                      cluster, clock, Duration.ofMinutes(10),
+                                      clusterSpec, cluster, clock, Duration.ofMinutes(10),
                                       timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
                                       ClusterNodesTimeseries.empty());
         assertEquals(0.131, model1.idealLoad().cpu(), delta);
 
         // Almost no current traffic share: Ideal load is low but capped
         var model2 = new ClusterModel(application.with(new Status(0.0001, 1.0)),
-                                      cluster, clock, Duration.ofMinutes(10),
+                                      clusterSpec, cluster, clock, Duration.ofMinutes(10),
                                       timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
                                       ClusterNodesTimeseries.empty());
         assertEquals(0.131, model2.idealLoad().cpu(), delta);
@@ -53,22 +54,30 @@ public class ClusterModelTest {
         ManualClock clock = new ManualClock();
 
         Application application = Application.empty(ApplicationId.from("t1", "a1", "i1"));
+        ClusterSpec clusterSpec = clusterSpec();
         Cluster cluster = cluster(new NodeResources(1, 10, 100, 1));
         application = application.with(cluster);
 
         // No current traffic: Ideal load is low but capped
         var model1 = new ClusterModel(application,
-                                      cluster, clock, Duration.ofMinutes(10),
+                                      clusterSpec, cluster, clock, Duration.ofMinutes(10),
                                       timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
                                       ClusterNodesTimeseries.empty());
         assertEquals(0.275, model1.idealLoad().cpu(), delta);
 
         // Almost no current traffic: Ideal load is low but capped
         var model2 = new ClusterModel(application.with(new Status(0.0001, 1.0)),
-                                      cluster, clock, Duration.ofMinutes(10),
+                                      clusterSpec, cluster, clock, Duration.ofMinutes(10),
                                       timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0001, t -> 0.0, clock),
                                       ClusterNodesTimeseries.empty());
         assertEquals(0.040, model2.idealLoad().cpu(), delta);
+    }
+
+    private ClusterSpec clusterSpec() {
+        return ClusterSpec.specification(ClusterSpec.Type.content, ClusterSpec.Id.from("test"))
+                          .group(ClusterSpec.Group.from(0))
+                          .vespaVersion("7.1.1")
+                          .build();
     }
 
     private Cluster cluster(NodeResources resources) {

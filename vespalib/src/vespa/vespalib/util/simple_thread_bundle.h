@@ -112,14 +112,8 @@ private:
         Thread thread;
         Signal &signal;
         Runnable::UP hook;
-        Worker(Signal &s, Runnable::UP h) : thread(*this), signal(s), hook(std::move(h)) {
-            thread.start();
-        }
-        void run() override {
-            for (size_t gen = 0; signal.wait(gen) > 0; ) {
-                hook->run();
-            }
-        }
+        Worker(Signal &s, Runnable::UP h);
+        void run() override;
     };
 
     Work                    _work;

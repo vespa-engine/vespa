@@ -420,7 +420,6 @@ func validateRelativePath(relPath string) error {
 		return fmt.Errorf("path must be relative, but was '%s'", relPath)
 	}
 	cleanPath := filepath.Clean(relPath)
-	fmt.Println(cleanPath)
 	if strings.HasPrefix(cleanPath, "../../../") {
 		return fmt.Errorf("path may not point outside src/test/application, but '%s' does", relPath)
 	}

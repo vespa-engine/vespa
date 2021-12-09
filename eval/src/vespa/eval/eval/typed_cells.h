@@ -20,8 +20,8 @@ struct TypedCells {
     explicit TypedCells(ConstArrayRef<BFloat16> cells) : data(cells.begin()), type(CellType::BFLOAT16), size(cells.size()) {}
     explicit TypedCells(ConstArrayRef<Int8Float> cells) : data(cells.begin()), type(CellType::INT8), size(cells.size()) {}
 
-    TypedCells() : data(nullptr), type(CellType::DOUBLE), size(0) {}
-    TypedCells(const void *dp, CellType ct, size_t sz) : data(dp), type(ct), size(sz) {}
+    TypedCells() noexcept : data(nullptr), type(CellType::DOUBLE), size(0) {}
+    TypedCells(const void *dp, CellType ct, size_t sz) noexcept : data(dp), type(ct), size(sz) {}
 
     template <typename T> bool check_type() const { return vespalib::eval::check_cell_type<T>(type); }
 

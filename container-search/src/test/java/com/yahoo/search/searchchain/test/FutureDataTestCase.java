@@ -2,7 +2,8 @@
 package com.yahoo.search.searchchain.test;
 
 import com.yahoo.component.ComponentId;
-import com.yahoo.processing.response.*;
+import com.yahoo.component.chain.Chain;
+import com.yahoo.processing.response.IncomingData;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -11,18 +12,18 @@ import com.yahoo.search.federation.sourceref.SearchChainResolver;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
-
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.yahoo.component.chain.Chain;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests using the async capabilities of the Processing parent framework of searchers.
@@ -31,6 +32,7 @@ import com.yahoo.component.chain.Chain;
  */
 public class FutureDataTestCase {
 
+    @SuppressWarnings("removal")
     @Test
     public void testAsyncFederation() throws InterruptedException, ExecutionException {
         // Setup environment
@@ -77,6 +79,7 @@ public class FutureDataTestCase {
         assertEquals("async:1", asyncGroup.get(1).getId().toString());
     }
 
+    @SuppressWarnings("removal")
     @Test
     public void testFutureData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
