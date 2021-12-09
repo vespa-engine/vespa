@@ -222,7 +222,8 @@ public:
     bool consider_compact(const CompactionStrategy&) override {
         return false;
     }
-    vespalib::MemoryUsage update_stat() override {
+    vespalib::MemoryUsage update_stat(const CompactionStrategy&) override {
+        ++_memory_usage_cnt;
         return vespalib::MemoryUsage();
     }
     vespalib::MemoryUsage memory_usage() const override {

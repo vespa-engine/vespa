@@ -60,7 +60,7 @@ public:
     virtual vespalib::MemoryUsage get_values_memory_usage() const = 0;
     virtual vespalib::AddressSpace get_values_address_space_usage() const = 0;
     virtual vespalib::MemoryUsage get_dictionary_memory_usage() const = 0;
-    virtual vespalib::MemoryUsage update_stat() = 0;
+    virtual vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) = 0;
     virtual std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) = 0;
     virtual std::unique_ptr<EnumIndexRemapper> compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) = 0;
     virtual bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy) = 0;

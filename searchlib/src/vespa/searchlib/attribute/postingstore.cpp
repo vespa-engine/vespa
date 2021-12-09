@@ -36,8 +36,7 @@ PostingStoreBase2::PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &s
       _dictionary(dictionary),
       _status(status),
       _bvExtraBytes(0),
-      _cached_allocator_memory_usage(), 
-      _cached_store_memory_usage()
+      _compaction_spec()
 {
 }
 
@@ -637,13 +636,14 @@ PostingStore<DataT>::getMemoryUsage() const
 
 template <typename DataT>
 vespalib::MemoryUsage
-PostingStore<DataT>::update_stat()
+PostingStore<DataT>::update_stat(const CompactionStrategy& compaction_strategy)
 {
     vespalib::MemoryUsage usage;
-    _cached_allocator_memory_usage = _allocator.getMemoryUsage();
-    _cached_store_memory_usage = _store.getMemoryUsage();
-    usage.merge(_cached_allocator_memory_usage);
-    usage.merge(_cached_store_memory_usage);
+    auto btree_nodes_memory_usage = _allocator.getMemoryUsage();
+    auto store_memory_usage = _store.getMemoryUsage();
+    _compaction_spec = PostingStoreCompactionSpec(compaction_strategy.should_compact_memory(btree_nodes_memory_usage), compaction_strategy.should_compact_memory(store_memory_usage));
+    usage.merge(btree_nodes_memory_usage);
+    usage.merge(store_memory_usage);
     uint64_t bvExtraBytes = _bvExtraBytes;
     usage.incUsedBytes(bvExtraBytes);
     usage.incAllocatedBytes(bvExtraBytes);
@@ -770,7 +770,7 @@ PostingStore<DataT>::consider_compact_worst_btree_nodes(const CompactionStrategy
     if (_allocator.getNodeStore().has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_allocator_memory_usage)) {
+    if (_compaction_spec.btree_nodes()) {
         compact_worst_btree_nodes(compaction_strategy);
         return true;
     }
@@ -784,7 +784,7 @@ PostingStore<DataT>::consider_compact_worst_buffers(const CompactionStrategy& co
     if (_store.has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_store_memory_usage)) {
+    if (_compaction_spec.store()) {
         CompactionSpec compaction_spec(true, false);
         compact_worst_buffers(compaction_spec, compaction_strategy);
         return true;

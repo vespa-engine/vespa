@@ -18,7 +18,8 @@ template <typename B, typename M>
 void
 MultiValueNumericPostingAttribute<B, M>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
-    total.merge(this->getPostingList().update_stat());
+    auto& compaction_strategy = this->getConfig().getCompactionStrategy();
+    total.merge(this->getPostingList().update_stat(compaction_strategy));
 }
 
 template <typename B, typename M>

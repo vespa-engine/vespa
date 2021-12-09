@@ -4,6 +4,7 @@
 
 #include "not_implemented_attribute.h"
 #include "reference.h"
+#include "reference_attribute_compaction_spec.h"
 #include "reference_mappings.h"
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/util/rcuvector.h>
@@ -43,8 +44,7 @@ public:
 private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
-    vespalib::MemoryUsage _cached_unique_store_values_memory_usage;
-    vespalib::MemoryUsage _cached_unique_store_dictionary_memory_usage;
+    ReferenceAttributeCompactionSpec _compaction_spec;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
     ReferenceMappings _referenceMappings;
 

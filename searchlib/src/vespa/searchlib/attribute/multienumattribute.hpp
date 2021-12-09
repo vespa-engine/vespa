@@ -207,8 +207,9 @@ MultiValueEnumAttribute<B, M>::onUpdateStat()
 {
     // update statistics
     vespalib::MemoryUsage total;
-    total.merge(this->_enumStore.update_stat());
-    total.merge(this->_mvMapping.updateStat());
+    auto& compaction_strategy = this->getConfig().getCompactionStrategy();
+    total.merge(this->_enumStore.update_stat(compaction_strategy));
+    total.merge(this->_mvMapping.updateStat(compaction_strategy));
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
     this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.get_num_uniques(), total.allocatedBytes(),
