@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.jdisc.Response;
 import org.junit.Test;
 
@@ -14,13 +13,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -179,7 +178,7 @@ public class ResponseDispatchTestCase {
         ReadableContentChannel responseContent = new ReadableContentChannel();
         ResponseDispatch.newInstance(6, ByteBuffer.allocate(9))
                         .dispatch(new MyResponseHandler(responseContent))
-                        .addListener(listener, MoreExecutors.directExecutor());
+                        .whenComplete((__, ___) -> listener.run());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         assertNotNull(responseContent.read());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));

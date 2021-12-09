@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.yolean.UncheckedInterruptedException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -68,6 +69,23 @@ public class CompletableFutures {
         Combiner combiner = new Combiner(size);
         futures.forEach(future -> future.whenComplete(combiner::onCompletion));
         return combiner.combined;
+    }
+
+    /** Similar to {@link CompletableFuture#allOf(CompletableFuture[])} but returns a list of the results */
+    public static <T> CompletableFuture<List<T>> allOf(List<CompletableFuture<T>> futures) {
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                .thenApply(__ -> {
+                    List<T> results = new ArrayList<>();
+                    for (CompletableFuture<T> f : futures) {
+                        try {
+                            results.add(f.get());
+                        } catch (InterruptedException | ExecutionException e) {
+                            // Should not happen since all futures are completed without exception
+                            throw new IllegalStateException(e);
+                        }
+                    }
+                    return results;
+                });
     }
 
     /**

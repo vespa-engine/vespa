@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.test;
 
-import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
@@ -20,6 +19,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -571,7 +571,7 @@ public class ServerProviderConformanceTestTest extends ServerProviderConformance
             try {
                 request = new Request(server.container, URI.create("http://localhost/"));
             } catch (Throwable t) {
-                responseHandler.response.set(new Response(Response.Status.INTERNAL_SERVER_ERROR, t));
+                responseHandler.response.complete(new Response(Response.Status.INTERNAL_SERVER_ERROR, t));
                 return responseHandler;
             }
             try {
@@ -581,7 +581,7 @@ public class ServerProviderConformanceTestTest extends ServerProviderConformance
                 }
                 tryClose(out);
             } catch (Throwable t) {
-                responseHandler.response.set(new Response(Response.Status.INTERNAL_SERVER_ERROR, t));
+                responseHandler.response.complete(new Response(Response.Status.INTERNAL_SERVER_ERROR, t));
                 // Simulate handling the failure.
                 t.getMessage();
                 return responseHandler;
@@ -594,13 +594,13 @@ public class ServerProviderConformanceTestTest extends ServerProviderConformance
 
     private static class MyResponseHandler implements ResponseHandler {
 
-        final SettableFuture<Response> response = SettableFuture.create();
-        final SettableFuture<String> content = SettableFuture.create();
+        final CompletableFuture<Response> response = new CompletableFuture<>();
+        final CompletableFuture<String> content = new CompletableFuture<>();
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         @Override
         public ContentChannel handleResponse(final Response response) {
-            this.response.set(response);
+            this.response.complete(response);
             return new ContentChannel() {
 
                 @Override
@@ -613,7 +613,7 @@ public class ServerProviderConformanceTestTest extends ServerProviderConformance
 
                 @Override
                 public void close(final CompletionHandler handler) {
-                    content.set(new String(out.toByteArray(), StandardCharsets.UTF_8));
+                    content.complete(new String(out.toByteArray(), StandardCharsets.UTF_8));
                     tryComplete(handler);
                 }
             };

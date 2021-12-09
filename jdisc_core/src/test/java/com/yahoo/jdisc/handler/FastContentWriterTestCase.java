@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -188,7 +187,7 @@ public class FastContentWriterTestCase {
         ReadableContentChannel buf = new ReadableContentChannel();
         FastContentWriter out = new FastContentWriter(buf);
         RunnableLatch listener = new RunnableLatch();
-        out.addListener(listener, MoreExecutors.directExecutor());
+        out.addListener(listener, Runnable::run);
 
         out.write(new byte[] { 6, 9 });
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));

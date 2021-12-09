@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.test.NonWorkingContentChannel;
 import org.junit.Test;
@@ -73,7 +72,7 @@ public class FutureResponseTestCase {
     public void requireThatResponseCanBeListenedTo() throws InterruptedException {
         FutureResponse response = new FutureResponse();
         RunnableLatch listener = new RunnableLatch();
-        response.addListener(listener, MoreExecutors.directExecutor());
+        response.addListener(listener, Runnable::run);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         response.handleResponse(new Response(Response.Status.OK));
         assertTrue(listener.await(600, TimeUnit.SECONDS));

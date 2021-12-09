@@ -531,7 +531,7 @@
   "com.yahoo.jdisc.handler.FastContentOutputStream": {
     "superClass": "com.yahoo.jdisc.handler.AbstractContentOutputStream",
     "interfaces": [
-      "com.google.common.util.concurrent.ListenableFuture"
+      "java.util.concurrent.Future"
     ],
     "attributes": [
       "public"
@@ -553,9 +553,8 @@
     "fields": []
   },
   "com.yahoo.jdisc.handler.FastContentWriter": {
-    "superClass": "java.lang.Object",
+    "superClass": "java.util.concurrent.CompletableFuture",
     "interfaces": [
-      "com.google.common.util.concurrent.ListenableFuture",
       "java.lang.AutoCloseable"
     ],
     "attributes": [
@@ -570,17 +569,12 @@
       "public void close()",
       "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
       "public boolean cancel(boolean)",
-      "public boolean isCancelled()",
-      "public boolean isDone()",
-      "public java.lang.Boolean get()",
-      "public java.lang.Boolean get(long, java.util.concurrent.TimeUnit)",
-      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
-      "public bridge synthetic java.lang.Object get()"
+      "public boolean isCancelled()"
     ],
     "fields": []
   },
   "com.yahoo.jdisc.handler.FutureCompletion": {
-    "superClass": "com.google.common.util.concurrent.AbstractFuture",
+    "superClass": "java.util.concurrent.CompletableFuture",
     "interfaces": [
       "com.yahoo.jdisc.handler.CompletionHandler"
     ],
@@ -593,12 +587,13 @@
       "public void completed()",
       "public void failed(java.lang.Throwable)",
       "public final boolean cancel(boolean)",
-      "public final boolean isCancelled()"
+      "public final boolean isCancelled()",
+      "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)"
     ],
     "fields": []
   },
   "com.yahoo.jdisc.handler.FutureResponse": {
-    "superClass": "com.google.common.util.concurrent.AbstractFuture",
+    "superClass": "java.util.concurrent.CompletableFuture",
     "interfaces": [
       "com.yahoo.jdisc.handler.ResponseHandler"
     ],
@@ -609,6 +604,7 @@
     "methods": [
       "public void <init>()",
       "public void <init>(com.yahoo.jdisc.handler.ContentChannel)",
+      "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.jdisc.handler.ResponseHandler)",
       "public com.yahoo.jdisc.handler.ContentChannel handleResponse(com.yahoo.jdisc.Response)",
       "public final boolean cancel(boolean)",
@@ -682,7 +678,7 @@
   "com.yahoo.jdisc.handler.RequestDispatch": {
     "superClass": "java.lang.Object",
     "interfaces": [
-      "com.google.common.util.concurrent.ListenableFuture",
+      "java.util.concurrent.Future",
       "com.yahoo.jdisc.handler.ResponseHandler"
     ],
     "attributes": [
@@ -695,7 +691,7 @@
       "protected java.lang.Iterable requestContent()",
       "public final com.yahoo.jdisc.handler.ContentChannel connect()",
       "public final com.yahoo.jdisc.handler.FastContentWriter connectFastWriter()",
-      "public final com.google.common.util.concurrent.ListenableFuture dispatch()",
+      "public final java.util.concurrent.CompletableFuture dispatch()",
       "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
       "public final boolean cancel(boolean)",
       "public final boolean isCancelled()",
@@ -725,8 +721,10 @@
     "fields": []
   },
   "com.yahoo.jdisc.handler.ResponseDispatch": {
-    "superClass": "com.google.common.util.concurrent.ForwardingListenableFuture",
-    "interfaces": [],
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.concurrent.Future"
+    ],
     "attributes": [
       "public",
       "abstract"
@@ -737,16 +735,18 @@
       "protected java.lang.Iterable responseContent()",
       "public final com.yahoo.jdisc.handler.ContentChannel connect(com.yahoo.jdisc.handler.ResponseHandler)",
       "public final com.yahoo.jdisc.handler.FastContentWriter connectFastWriter(com.yahoo.jdisc.handler.ResponseHandler)",
-      "public final com.google.common.util.concurrent.ListenableFuture dispatch(com.yahoo.jdisc.handler.ResponseHandler)",
-      "protected final com.google.common.util.concurrent.ListenableFuture delegate()",
+      "public final java.util.concurrent.CompletableFuture dispatch(com.yahoo.jdisc.handler.ResponseHandler)",
       "public final boolean cancel(boolean)",
       "public final boolean isCancelled()",
+      "public boolean isDone()",
+      "public java.lang.Boolean get()",
+      "public java.lang.Boolean get(long, java.util.concurrent.TimeUnit)",
       "public static varargs com.yahoo.jdisc.handler.ResponseDispatch newInstance(int, java.nio.ByteBuffer[])",
       "public static com.yahoo.jdisc.handler.ResponseDispatch newInstance(int, java.lang.Iterable)",
       "public static varargs com.yahoo.jdisc.handler.ResponseDispatch newInstance(com.yahoo.jdisc.Response, java.nio.ByteBuffer[])",
       "public static com.yahoo.jdisc.handler.ResponseDispatch newInstance(com.yahoo.jdisc.Response, java.lang.Iterable)",
-      "protected bridge synthetic java.util.concurrent.Future delegate()",
-      "protected bridge synthetic java.lang.Object delegate()"
+      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
+      "public bridge synthetic java.lang.Object get()"
     ],
     "fields": []
   },

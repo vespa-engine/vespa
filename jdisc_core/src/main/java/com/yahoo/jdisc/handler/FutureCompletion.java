@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.AbstractFuture;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * <p>This class provides an implementation of {@link CompletionHandler} that allows you to wait for either {@link
@@ -13,16 +14,16 @@ import com.google.common.util.concurrent.AbstractFuture;
  *
  * @author Simon Thoresen Hult
  */
-public final class FutureCompletion extends AbstractFuture<Boolean> implements CompletionHandler {
+public final class FutureCompletion extends CompletableFuture<Boolean> implements CompletionHandler {
 
     @Override
     public void completed() {
-        set(true);
+        complete(true);
     }
 
     @Override
     public void failed(Throwable t) {
-        setException(t);
+        completeExceptionally(t);
     }
 
     @Override
@@ -34,4 +35,6 @@ public final class FutureCompletion extends AbstractFuture<Boolean> implements C
     public final boolean isCancelled() {
         return false;
     }
+
+    public void addListener(Runnable r, Executor e) { whenCompleteAsync((__, ___) -> r.run(), e); }
 }

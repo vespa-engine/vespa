@@ -1,16 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,13 +20,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Simon Thoresen Hult
  */
-public class FastContentWriter implements ListenableFuture<Boolean>, AutoCloseable {
+public class FastContentWriter extends CompletableFuture<Boolean> implements AutoCloseable {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicInteger numPendingCompletions = new AtomicInteger();
     private final CompletionHandler completionHandler = new SimpleCompletionHandler();
     private final ContentChannel out;
-    private final SettableFuture<Boolean> future = SettableFuture.create();
 
     /**
      * <p>Creates a new FastContentWriter that encapsulates a given {@link ContentChannel}.</p>
@@ -87,7 +81,7 @@ public class FastContentWriter implements ListenableFuture<Boolean>, AutoCloseab
         try {
             out.write(buf, completionHandler);
         } catch (Throwable t) {
-            future.setException(t);
+            completeExceptionally(t);
             throw t;
         }
     }
@@ -103,14 +97,13 @@ public class FastContentWriter implements ListenableFuture<Boolean>, AutoCloseab
         try {
             out.close(completionHandler);
         } catch (Throwable t) {
-            future.setException(t);
+            completeExceptionally(t);
             throw t;
         }
     }
 
-    @Override
     public void addListener(Runnable listener, Executor executor) {
-        future.addListener(listener, executor);
+        whenCompleteAsync((__, ___) -> listener.run(), executor);
     }
 
     @Override
@@ -123,34 +116,19 @@ public class FastContentWriter implements ListenableFuture<Boolean>, AutoCloseab
         return false;
     }
 
-    @Override
-    public boolean isDone() {
-        return future.isDone();
-    }
-
-    @Override
-    public Boolean get() throws InterruptedException, ExecutionException {
-        return future.get();
-    }
-
-    @Override
-    public Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return future.get(timeout, unit);
-    }
-
     private class SimpleCompletionHandler implements CompletionHandler {
 
         @Override
         public void completed() {
             numPendingCompletions.decrementAndGet();
             if (closed.get() && numPendingCompletions.get() == 0) {
-                future.set(true);
+                complete(true);
             }
         }
 
         @Override
         public void failed(Throwable t) {
-            future.setException(t);
+            completeExceptionally(t);
         }
     }
 }
