@@ -1,13 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
+import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
 
 import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class AttributeChangeValidatorTest {
 
@@ -22,7 +27,9 @@ public class AttributeChangeValidatorTest {
                                                      currentDocType(),
                                                      nextDb().getDerivedConfiguration().getAttributeFields(),
                                                      nextDb().getDerivedConfiguration().getIndexSchema(),
-                                                     nextDocType());
+                                                     nextDocType(),
+                                                     new ValidationOverrides(List.of()),
+                                                     new ManualClock().instant());
         }
 
         @Override
@@ -202,4 +209,19 @@ public class AttributeChangeValidatorTest {
                                                   "Field 'f1' changed: change hnsw index property " +
                                                   "'neighbors-to-explore-at-insert' from '200' to '100'"));
     }
+
+    @Test
+    public void removing_paged_requires_override() throws Exception {
+        try {
+            new Fixture("field f1 type tensor(x[10]) { indexing: attribute \n attribute: paged }",
+                        "field f1 type tensor(x[10]) { indexing: attribute  }").
+                    assertValidation();
+            fail("Expected exception on removal of 'paged'");
+        }
+        catch (ValidationOverrides.ValidationException e) {
+            assertTrue(e.getMessage().contains(ValidationId.pagedSettingRemoval.toString()));
+        }
+    }
+
+
 }

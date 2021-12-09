@@ -2,7 +2,9 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import org.junit.Test;
 
@@ -25,7 +27,9 @@ public class DocumentDatabaseChangeValidatorTest {
                                                             currentDb(),
                                                             currentDocType(),
                                                             nextDb(),
-                                                            nextDocType());
+                                                            nextDocType(),
+                                                            new ValidationOverrides(List.of()),
+                                                            new ManualClock().instant());
         }
 
         @Override
