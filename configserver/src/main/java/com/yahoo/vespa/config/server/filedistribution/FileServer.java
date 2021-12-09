@@ -12,7 +12,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
-import com.yahoo.vespa.config.JRTConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.filedistribution.CompressedFileReference;
 import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
@@ -22,8 +21,6 @@ import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -40,6 +37,7 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 
 public class FileServer {
+
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
 
     private final FileDirectory root;
@@ -77,15 +75,14 @@ public class FileServer {
 
     @SuppressWarnings("WeakerAccess") // Created by dependency injection
     @Inject
-    public FileServer(ConfigserverConfig configserverConfig, FlagSource flagSource) {
+    public FileServer(ConfigserverConfig configserverConfig) {
         this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())),
-             createFileDownloader(getOtherConfigServersInCluster(configserverConfig),
-             Flags.USE_FILE_DISTRIBUTION_CONNECTION_POOL.bindTo(flagSource).value()));
+             createFileDownloader(getOtherConfigServersInCluster(configserverConfig)));
     }
 
     // For testing only
     public FileServer(File rootDir) {
-        this(rootDir, createFileDownloader(List.of(), true));
+        this(rootDir, createFileDownloader(List.of()));
     }
 
     public FileServer(File rootDir, FileDownloader fileDownloader) {
@@ -212,22 +209,19 @@ public class FileServer {
         executor.shutdown();
     }
 
-    private static FileDownloader createFileDownloader(List<String> configServers, boolean useFileDistributionConnectionPool) {
+    private static FileDownloader createFileDownloader(List<String> configServers) {
         Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
         return new FileDownloader(configServers.isEmpty()
                                           ? FileDownloader.emptyConnectionPool()
-                                          : createConnectionPool(configServers, supervisor, useFileDistributionConnectionPool),
+                                          : createConnectionPool(configServers, supervisor),
                                   supervisor);
     }
 
-    private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor, boolean useFileDistributionConnectionPool) {
+    private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {
         ConfigSourceSet configSourceSet = new ConfigSourceSet(configServers);
-
         if (configServers.size() == 0) return FileDownloader.emptyConnectionPool();
 
-        return useFileDistributionConnectionPool
-                ? new FileDistributionConnectionPool(configSourceSet, supervisor)
-                : new JRTConnectionPool(configSourceSet, supervisor);
+        return new FileDistributionConnectionPool(configSourceSet, supervisor);
     }
 
 }
