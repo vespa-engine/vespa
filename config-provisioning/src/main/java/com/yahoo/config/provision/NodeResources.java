@@ -282,8 +282,6 @@ public class NodeResources {
 
     /** Returns true if all the resources of this are the same as or compatible with the given resources */
     public boolean compatibleWith(NodeResources other) {
-        ensureSpecified();
-        other.ensureSpecified();
         if ( ! equal(this.vcpu, other.vcpu)) return false;
         if ( ! equal(this.memoryGb, other.memoryGb)) return false;
         if ( ! equal(this.diskGb, other.diskGb)) return false;
