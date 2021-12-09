@@ -9,7 +9,7 @@ import java.util.Arrays;
  * All default behavior is here, so specific types only
  * need override their actually useful parts
  *
- * @author havardpoe
+ * @author havardpe
  */
 abstract class Value implements Cursor {
 
