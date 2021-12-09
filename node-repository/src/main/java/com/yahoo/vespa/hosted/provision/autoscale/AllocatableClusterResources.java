@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceLimits;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -139,10 +140,8 @@ public class AllocatableClusterResources {
     public static Optional<AllocatableClusterResources> from(ClusterResources wantedResources,
                                                              ClusterSpec clusterSpec,
                                                              Limits applicationLimits,
-                                                             boolean required,
                                                              NodeList hosts,
                                                              NodeRepository nodeRepository) {
-        var capacityPolicies = new CapacityPolicies(nodeRepository);
         var systemLimits = new NodeResourceLimits(nodeRepository);
         boolean exclusive = clusterSpec.isExclusive();
         if ( !clusterSpec.isExclusive() && !nodeRepository.zone().getCloud().dynamicProvisioning()) {
@@ -151,7 +150,9 @@ public class AllocatableClusterResources {
             advertisedResources = systemLimits.enlargeToLegal(advertisedResources, clusterSpec.type(), exclusive); // Ask for something legal
             advertisedResources = applicationLimits.cap(advertisedResources); // Overrides other conditions, even if it will then fail
             var realResources = nodeRepository.resourcesCalculator().requestToReal(advertisedResources, exclusive); // What we'll really get
-            if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type())) return Optional.empty();
+            if ( ! systemLimits.isWithinRealLimits(realResources, clusterSpec.type()))
+                return Optional.empty();
+
             if (matchesAny(hosts, advertisedResources))
                     return Optional.of(new AllocatableClusterResources(wantedResources.with(realResources),
                                                                        advertisedResources,
