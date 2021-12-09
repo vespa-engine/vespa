@@ -17,6 +17,8 @@ namespace {
 
 constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 constexpr size_t DENSE_TENSOR_ALIGNMENT = 32;
+constexpr size_t DENSE_TENSOR_ALIGNMENT_SMALL = 16;
+constexpr size_t DENSE_TENSOR_ALIGNMENT_MIN = 8;
 
 size_t my_align(size_t size, size_t alignment) {
     size += alignment - 1;
@@ -27,17 +29,20 @@ size_t my_align(size_t size, size_t alignment) {
 
 DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
     : _numCells(1u),
-      _cell_type(type.cell_type())
+      _cell_type(type.cell_type()),
+      _aligned_size(0u)
 {
     for (const auto &dim: type.dimensions()) {
         _numCells *= dim.size;
     }
-}
-
-size_t
-DenseTensorStore::TensorSizeCalc::alignedSize() const
-{
-    return my_align(bufSize(), DENSE_TENSOR_ALIGNMENT);
+    auto buf_size = bufSize();
+    size_t alignment = DENSE_TENSOR_ALIGNMENT;
+    if (buf_size <= DENSE_TENSOR_ALIGNMENT_MIN) {
+        alignment = DENSE_TENSOR_ALIGNMENT_MIN;
+    } else if (buf_size <= DENSE_TENSOR_ALIGNMENT_SMALL) {
+        alignment = DENSE_TENSOR_ALIGNMENT_SMALL;
+    }
+    _aligned_size = my_align(buf_size, alignment);
 }
 
 DenseTensorStore::BufferType::BufferType(const TensorSizeCalc &tensorSizeCalc, std::unique_ptr<vespalib::alloc::MemoryAllocator> allocator)

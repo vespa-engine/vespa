@@ -25,12 +25,13 @@ public:
     {
         size_t   _numCells; // product of dimension sizes
         vespalib::eval::CellType _cell_type;
+        size_t   _aligned_size;
 
         TensorSizeCalc(const ValueType &type);
         size_t bufSize() const {
             return vespalib::eval::CellTypeUtils::mem_size(_cell_type, _numCells);
         }
-        size_t alignedSize() const;
+        size_t alignedSize() const noexcept { return _aligned_size; }
     };
 
     class BufferType : public vespalib::datastore::BufferType<char>
