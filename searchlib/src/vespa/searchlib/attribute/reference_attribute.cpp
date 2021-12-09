@@ -292,9 +292,7 @@ ReferenceAttribute::getReference(DocId doc) const
 bool
 ReferenceAttribute::consider_compact_values(const CompactionStrategy &compactionStrategy)
 {
-    size_t used_bytes = _cached_unique_store_values_memory_usage.usedBytes();
-    size_t dead_bytes = _cached_unique_store_values_memory_usage.deadBytes();
-    bool compact_memory = compactionStrategy.should_compact_memory(used_bytes, dead_bytes);
+    bool compact_memory = compactionStrategy.should_compact_memory(_cached_unique_store_values_memory_usage);
     if (compact_memory) {
         compact_worst_values(compactionStrategy);
         return true;
@@ -320,8 +318,7 @@ ReferenceAttribute::consider_compact_dictionary(const CompactionStrategy &compac
     if (dictionary.has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage.usedBytes(),
-                                                  _cached_unique_store_dictionary_memory_usage.deadBytes()))
+    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage))
     {
         dictionary.compact_worst(true, true, compaction_strategy);
         return true;

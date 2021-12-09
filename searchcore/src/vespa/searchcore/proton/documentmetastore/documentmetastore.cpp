@@ -198,9 +198,7 @@ DocumentMetaStore::consider_compact_gid_to_lid_map()
         return false;
     }
     auto &compaction_strategy = getConfig().getCompactionStrategy();
-    size_t used_bytes = _cached_gid_to_lid_map_memory_usage.usedBytes();
-    size_t dead_bytes = _cached_gid_to_lid_map_memory_usage.deadBytes();
-    return compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
+    return compaction_strategy.should_compact_memory(_cached_gid_to_lid_map_memory_usage);
 }
 
 void

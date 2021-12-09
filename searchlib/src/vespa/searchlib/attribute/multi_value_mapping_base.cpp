@@ -80,14 +80,8 @@ MultiValueMappingBase::updateStat()
 bool
 MultiValueMappingBase::considerCompact(const CompactionStrategy &compactionStrategy)
 {
-    size_t usedBytes = _cachedArrayStoreMemoryUsage.usedBytes();
-    size_t deadBytes = _cachedArrayStoreMemoryUsage.deadBytes();
-    size_t usedArrays = _cachedArrayStoreAddressSpaceUsage.used();
-    size_t deadArrays = _cachedArrayStoreAddressSpaceUsage.dead();
-    bool compactMemory = compactionStrategy.should_compact_memory(usedBytes, deadBytes);
-    bool compactAddressSpace = compactionStrategy.should_compact_address_space(usedArrays, deadArrays);
-    if (compactMemory || compactAddressSpace) {
-        CompactionSpec compaction_spec(compactMemory, compactAddressSpace);
+    auto compaction_spec = compactionStrategy.should_compact(_cachedArrayStoreMemoryUsage, _cachedArrayStoreAddressSpaceUsage);
+    if (compaction_spec.compact()) {
         compactWorst(compaction_spec, compactionStrategy);
         return true;
     }

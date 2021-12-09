@@ -21,6 +21,7 @@ public:
           _compact_address_space(compact_address_space_)
     {
     }
+    bool compact() const noexcept { return _compact_memory || _compact_address_space; }
     bool compact_memory() const noexcept { return _compact_memory; }
     bool compact_address_space() const noexcept { return _compact_address_space; }
 };
