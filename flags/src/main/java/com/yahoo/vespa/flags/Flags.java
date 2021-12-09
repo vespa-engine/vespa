@@ -386,6 +386,13 @@ public class Flags {
             "Takes effect on container reboot",
             ZONE_ID, HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_V8_DOC_MANAGER_CFG = defineFeatureFlag(
+            "use-v8-doc-manager-cfg", false,
+            List.of("arnej", "baldersheim"), "2021-12-09", "2022-12-31",
+            "Use new (preparing for Vespa 8) section in documentmanager.def",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
