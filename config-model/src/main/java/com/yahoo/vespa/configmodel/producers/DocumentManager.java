@@ -22,12 +22,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author    baldersheim
+ * @author baldersheim
+ * @author arnej
  */
 public class DocumentManager {
 
     private boolean useV8GeoPositions = false;
-    private boolean generateDocTypeConfig = true;
+    private boolean generateDocTypeConfig = false;
 
     public DocumentManager useV8GeoPositions(boolean value) {
         this.useV8GeoPositions = value;
