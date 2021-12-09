@@ -215,8 +215,7 @@ public class AttributeChangeValidatorTest {
         try {
             new Fixture("field f1 type tensor(x[10]) { indexing: attribute \n attribute: paged }",
                         "field f1 type tensor(x[10]) { indexing: attribute  }").
-                    assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
-                                                      "Field 'f1' changed: add attribute 'huge'"));
+                    assertValidation();
             fail("Expected exception on removal of 'paged'");
         }
         catch (ValidationOverrides.ValidationException e) {
