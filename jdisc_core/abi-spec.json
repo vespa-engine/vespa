@@ -597,29 +597,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.jdisc.handler.FutureConjunction": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.google.common.util.concurrent.ListenableFuture"
-    ],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void addOperand(com.google.common.util.concurrent.ListenableFuture)",
-      "public void addListener(java.lang.Runnable, java.util.concurrent.Executor)",
-      "public final boolean cancel(boolean)",
-      "public final boolean isCancelled()",
-      "public final boolean isDone()",
-      "public final java.lang.Boolean get()",
-      "public final java.lang.Boolean get(long, java.util.concurrent.TimeUnit)",
-      "public bridge synthetic java.lang.Object get(long, java.util.concurrent.TimeUnit)",
-      "public bridge synthetic java.lang.Object get()"
-    ],
-    "fields": []
-  },
   "com.yahoo.jdisc.handler.FutureResponse": {
     "superClass": "com.google.common.util.concurrent.AbstractFuture",
     "interfaces": [
