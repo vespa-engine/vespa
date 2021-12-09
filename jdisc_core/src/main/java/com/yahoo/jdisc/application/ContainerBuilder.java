@@ -8,8 +8,11 @@ import com.google.inject.Module;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.handler.RequestHandler;
 
-import java.util.*;
-import java.util.concurrent.ThreadFactory;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>This is the inactive, mutable {@link Container}. Because it requires references to the application internals, it
@@ -38,8 +41,8 @@ public class ContainerBuilder {
                 bind(ContainerBuilder.class).toInstance(ContainerBuilder.this);
             }
         });
-        this.serverBindings.put(BindingSet.DEFAULT, new BindingRepository<RequestHandler>());
-        this.clientBindings.put(BindingSet.DEFAULT, new BindingRepository<RequestHandler>());
+        this.serverBindings.put(BindingSet.DEFAULT, new BindingRepository<>());
+        this.clientBindings.put(BindingSet.DEFAULT, new BindingRepository<>());
     }
 
     public void setAppContext(Object ctx) {
@@ -130,4 +133,5 @@ public class ContainerBuilder {
         }
         return lst;
     }
+
 }

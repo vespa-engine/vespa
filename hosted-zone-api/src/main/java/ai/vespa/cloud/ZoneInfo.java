@@ -4,9 +4,9 @@ package ai.vespa.cloud;
 import java.util.Objects;
 
 /**
- * Provides information about the zone in which this container is running.
+ * Provides information about the zone context in which this container is running.
  * This is available and can be injected when running in a cloud environment.
- * If you don't need any other information than the zone this should be preferred
+ * If you don't need any other information than what's present here this should be preferred
  * to SystemInfo as it will never change at runtime and therefore does not
  * cause unnecessary reconstruction.
  *
@@ -14,14 +14,30 @@ import java.util.Objects;
  */
 public class ZoneInfo {
 
+    private static final ZoneInfo defaultInfo = new ZoneInfo(new ApplicationId("default", "default", "default"),
+                                                             new Zone(Environment.prod, "default"));
+
+    private final ApplicationId application;
     private final Zone zone;
 
-    public ZoneInfo(Zone zone) {
-        Objects.requireNonNull(zone, "Zone cannot be null!");
-        this.zone = zone;
+    public ZoneInfo(ApplicationId application, Zone zone) {
+        this.application = Objects.requireNonNull(application, "Application cannot be null!");
+        this.zone = Objects.requireNonNull(zone, "Zone cannot be null!");
     }
+
+    /** @deprecated pass an application id */
+    @Deprecated // Remove on Vespa 8
+    public ZoneInfo(Zone zone) {
+        this(new ApplicationId("default", "default", "default"), zone);
+    }
+
+    /** Returns the application this is running as part of */
+    public ApplicationId application() { return application; }
 
     /** Returns the zone this is running in */
     public Zone zone() { return zone; }
+
+    /** Returns the info instance used when no zone info is available because we're not running in a cloud context */
+    public static ZoneInfo defaultInfo() { return defaultInfo; }
 
 }

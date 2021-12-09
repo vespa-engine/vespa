@@ -1,6 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.test;
 
+import ai.vespa.cloud.ApplicationId;
+import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.Zone;
+import ai.vespa.cloud.ZoneInfo;
+import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.processing.request.CompoundName;
@@ -1329,6 +1334,53 @@ public class QueryProfileVariantsTestCase {
 
         CompiledQueryProfile cAlert = alert.compile(null);
         assertEquals("yahoo/alerts", cAlert.get("vertical.custid", toMap("entry=alert", "intl=us", "lang=en-US")));
+    }
+
+    @Test
+    public void testZoneInfoInContext() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] { "environment", "region", "instance" });
+        profile.set("value", "default", registry);
+        profile.set("value", "prod-region1-instance1",
+                    toMap("environment=prod", "region=region1", "instance=instance1"),
+                    registry);
+        profile.set("value", "prod-instance2",
+                    toMap("environment=prod", "instance=instance2"),
+                    registry);
+        profile.set("value", "prod-region3",
+                    toMap("environment=prod", "region=region3"),
+                    registry);
+        profile.set("value", "dev",
+                    toMap("environment=dev"),
+                    registry);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
+
+        assertValueForZone("default", ZoneInfo.defaultInfo(), cTest);
+        assertValueForZone("prod-region1-instance1",
+                           new ZoneInfo(new ApplicationId("tenant1", "application1", "instance1"),
+                                        new Zone(Environment.prod, "region1")),
+                           cTest);
+        assertValueForZone("prod-instance2",
+                           new ZoneInfo(new ApplicationId("tenant2", "application2", "instance2"),
+                                        new Zone(Environment.prod, "region1")),
+                           cTest);
+        assertValueForZone("prod-region3",
+                           new ZoneInfo(new ApplicationId("tenant3", "application3", "instance3"),
+                                        new Zone(Environment.prod, "region3")),
+                           cTest);
+        assertValueForZone("dev",
+                           new ZoneInfo(new ApplicationId("tenant4", "application4", "instance4"),
+                                        new Zone(Environment.dev, "region4")),
+                           cTest);
+    }
+
+    private void assertValueForZone(String expected, ZoneInfo zoneInfo, CompiledQueryProfile cTest) {
+        assertEquals(expected,
+                     new Query.Builder().setQueryProfile(cTest).setZoneInfo(zoneInfo).build().properties().get("value"));
     }
 
     private void assertGet(String expectedValue, String parameter, String[] dimensionValues, QueryProfile profile, CompiledQueryProfile cprofile) {
