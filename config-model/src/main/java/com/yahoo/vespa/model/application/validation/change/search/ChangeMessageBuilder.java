@@ -5,10 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Class used to build a message describing the changes in a given field.
+ * Builder of a message describing the changes in a given field.
  *
  * @author geirst
- * @since 2014-12-09
  */
 public class ChangeMessageBuilder {
 
@@ -20,10 +19,7 @@ public class ChangeMessageBuilder {
     }
 
     public String build() {
-        StringBuilder retval = new StringBuilder();
-        retval.append("Field '" + fieldName + "' changed: ");
-        retval.append(String.join(", ", changes));
-        return retval.toString();
+        return "Field '" + fieldName + "' changed: " + String.join(", ", changes);
     }
 
     public ChangeMessageBuilder addChange(String component, String from, String to) {

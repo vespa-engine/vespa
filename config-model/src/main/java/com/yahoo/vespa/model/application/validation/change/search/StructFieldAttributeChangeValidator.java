@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
@@ -15,7 +14,6 @@ import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -24,7 +22,7 @@ import java.util.stream.Collectors;
 
 /**
  * Validates the changes between the current and next set of struct field attributes in a document database.
-
+ *
  * Complex fields of the following types are considered (as they might have struct field attributes):
  *   - array of simple struct
  *   - map of simple struct
@@ -53,7 +51,7 @@ public class StructFieldAttributeChangeValidator {
     }
 
     public List<VespaConfigChangeAction> validate() {
-        List<VespaConfigChangeAction> result = new ArrayList();
+        List<VespaConfigChangeAction> result = new ArrayList<>();
         for (Field currentField : currentDocType.getAllFields()) {
             Field nextField = nextDocType.getField(currentField.getName());
             if (nextField != null) {

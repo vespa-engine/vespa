@@ -64,8 +64,7 @@ public class IndexingScriptChangeValidator {
         return Optional.empty();
     }
 
-    static boolean equalScripts(ScriptExpression currentScript,
-                                ScriptExpression nextScript) {
+    static boolean equalScripts(ScriptExpression currentScript, ScriptExpression nextScript) {
         // Output expressions are specifying in which context a field value is used (attribute, index, summary),
         // and do not affect how the field value is generated in the indexing doc proc.
         // The output expressions are therefore removed before doing the comparison.

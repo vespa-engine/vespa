@@ -27,24 +27,29 @@ import java.util.stream.Collectors;
 public class IndexedSearchClusterChangeValidator implements ChangeValidator {
 
     @Override
-    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next, ValidationOverrides overrides, Instant now) {
+    public List<ConfigChangeAction> validate(VespaModel current, VespaModel next,
+                                             ValidationOverrides overrides, Instant now) {
         List<ConfigChangeAction> result = new ArrayList<>();
         for (Map.Entry<String, ContentCluster> currentEntry : current.getContentClusters().entrySet()) {
             ContentCluster nextCluster = next.getContentClusters().get(currentEntry.getKey());
             if (nextCluster != null && nextCluster.getSearch().hasIndexedCluster()) {
-                result.addAll(validateContentCluster(currentEntry.getValue(), nextCluster));
+                result.addAll(validateContentCluster(currentEntry.getValue(), nextCluster, overrides, now));
             }
         }
         return result;
     }
 
     private static List<ConfigChangeAction> validateContentCluster(ContentCluster currentCluster,
-                                                                   ContentCluster nextCluster) {
-        return validateDocumentDatabases(currentCluster, nextCluster);
+                                                                   ContentCluster nextCluster,
+                                                                   ValidationOverrides overrides,
+                                                                   Instant now) {
+        return validateDocumentDatabases(currentCluster, nextCluster, overrides, now);
     }
 
     private static List<ConfigChangeAction> validateDocumentDatabases(ContentCluster currentCluster,
-                                                                      ContentCluster nextCluster) {
+                                                                      ContentCluster nextCluster,
+                                                                      ValidationOverrides overrides,
+                                                                      Instant now) {
         List<ConfigChangeAction> result = new ArrayList<>();
         for (DocumentDatabase currentDb : getDocumentDbs(currentCluster.getSearch())) {
             String docTypeName = currentDb.getName();
@@ -52,7 +57,7 @@ public class IndexedSearchClusterChangeValidator implements ChangeValidator {
                                                             filter(db -> db.getName().equals(docTypeName)).findFirst();
             if (nextDb.isPresent()) {
                 result.addAll(validateDocumentDatabase(currentCluster, nextCluster, docTypeName,
-                                                       currentDb, nextDb.get()));
+                                                       currentDb, nextDb.get(), overrides, now));
             }
         }
         return result;
@@ -62,11 +67,19 @@ public class IndexedSearchClusterChangeValidator implements ChangeValidator {
                                                                      ContentCluster nextCluster,
                                                                      String docTypeName,
                                                                      DocumentDatabase currentDb,
-                                                                     DocumentDatabase nextDb) {
+                                                                     DocumentDatabase nextDb,
+                                                                     ValidationOverrides overrides,
+                                                                     Instant now) {
         NewDocumentType currentDocType = currentCluster.getDocumentDefinitions().get(docTypeName);
         NewDocumentType nextDocType = nextCluster.getDocumentDefinitions().get(docTypeName);
         List<VespaConfigChangeAction> result =
-                new DocumentDatabaseChangeValidator(currentCluster.id(), currentDb, currentDocType, nextDb, nextDocType).validate();
+                new DocumentDatabaseChangeValidator(currentCluster.id(),
+                                                    currentDb,
+                                                    currentDocType,
+                                                    nextDb,
+                                                    nextDocType,
+                                                    overrides,
+                                                    now).validate();
 
         return modifyActions(result, getSearchNodeServices(nextCluster.getSearch().getIndexed()), docTypeName);
     }

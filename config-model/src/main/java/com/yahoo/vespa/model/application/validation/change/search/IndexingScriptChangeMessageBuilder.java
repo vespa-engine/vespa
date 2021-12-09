@@ -14,7 +14,6 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
  * This message should be more descriptive for the end-user than just seeing the changed indexing script.
  *
  * @author geirst
- * @since 2014-12-09
  */
 public class IndexingScriptChangeMessageBuilder {
 
@@ -57,7 +56,7 @@ public class IndexingScriptChangeMessageBuilder {
     private void checkStemming(ChangeMessageBuilder builder) {
         Stemming currentStemming = currentField.getStemming(currentSchema);
         Stemming nextStemming = nextField.getStemming(nextSchema);
-        if (!currentStemming.equals(nextStemming)) {
+        if (currentStemming != nextStemming) {
             builder.addChange("stemming", currentStemming.getName(), nextStemming.getName());
         }
     }
@@ -65,7 +64,7 @@ public class IndexingScriptChangeMessageBuilder {
     private void checkNormalizing(ChangeMessageBuilder builder) {
         NormalizeLevel.Level currentLevel = currentField.getNormalizing().getLevel();
         NormalizeLevel.Level nextLevel = nextField.getNormalizing().getLevel();
-        if (!currentLevel.equals(nextLevel)) {
+        if (currentLevel != nextLevel) {
             builder.addChange("normalizing", currentLevel.toString(), nextLevel.toString());
         }
     }
@@ -77,7 +76,7 @@ public class IndexingScriptChangeMessageBuilder {
             if (currentSummaryField != null) {
                 SummaryTransform currentTransform = currentSummaryField.getTransform();
                 SummaryTransform nextTransform = nextSummaryField.getTransform();
-                if (!currentSummaryField.getTransform().equals(nextSummaryField.getTransform())) {
+                if (currentSummaryField.getTransform() != nextSummaryField.getTransform()) {
                     builder.addChange("summary field '" + fieldName + "' transform",
                             currentTransform.getName(), nextTransform.getName());
                 }
@@ -88,7 +87,7 @@ public class IndexingScriptChangeMessageBuilder {
     private static String toString(Matching matching) {
         Matching.Type type = matching.getType();
         String retval = type.getName();
-        if (type.equals(Matching.Type.GRAM)) {
+        if (type == Matching.Type.GRAM) {
             retval += " (size " + matching.getGramSize() + ")";
         }
         return retval;
