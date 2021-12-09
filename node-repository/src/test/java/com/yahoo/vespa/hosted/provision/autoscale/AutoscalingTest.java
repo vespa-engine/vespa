@@ -109,7 +109,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
         ClusterResources scaledResources = tester.assertResources("Scaling up since cpu usage is too high",
-                                                                  7, 1, 2.5,  80.0, 80.0,
+                                                                  7, 1, 2.5,  80.0, 50.5,
                                                                   tester.autoscale(application1, cluster1.id(), capacity).target());
 
         tester.deploy(application1, cluster1, scaledResources);
@@ -119,7 +119,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
         tester.assertResources("Scaling down since cpu usage has gone down",
-                               4, 1, 2.5, 68.6, 68.6,
+                               4, 1, 2.5, 68.6, 27.4,
                                tester.autoscale(application1, cluster1.id(), capacity).target());
     }
 
@@ -204,7 +204,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
         tester.assertResources("Scaling up to limit since resource usage is too high",
-                               6, 1, 2.4,  78.0, 79.0,
+                               6, 1, 2.4,  78.0, 70.0,
                                tester.autoscale(application1, cluster1.id(), capacity).target());
     }
 
@@ -341,7 +341,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
         tester.assertResources("Scaling up since resource usage is too high",
-                               7, 1, 2.5,  80.0, 80.0,
+                               7, 1, 2.5,  80.0, 50.5,
                                tester.suggest(application1, cluster1.id(), min, max).target());
     }
 
@@ -398,7 +398,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
         tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
         tester.assertResources("Scaling up since resource usage is too high",
-                               7, 7, 2.5,  80.0, 80.0,
+                               7, 7, 2.5,  80.0, 50.5,
                                tester.autoscale(application1, cluster1.id(), capacity).target());
     }
 
@@ -421,7 +421,7 @@ public class AutoscalingTest {
                                    t -> t == 0 ? 20.0 : 10.0,
                                    t -> 1.0);
         tester.assertResources("Scaling up since resource usage is too high, changing to 1 group is cheaper",
-                               8, 1, 2.6,  83.3, 83.3,
+                               8, 1, 2.6,  83.3, 52.6,
                                tester.autoscale(application1, cluster1.id(), capacity).target());
     }
 
@@ -445,7 +445,7 @@ public class AutoscalingTest {
                                    t -> t == 0 ? 20.0 : 10.0,
                                    t -> 100.0);
         tester.assertResources("Scaling down since resource usage is too high, changing to 1 group is cheaper",
-                               4, 1, 2.1,  83.3, 83.3,
+                               4, 1, 2.1,  83.3, 52.6,
                                tester.autoscale(application1, cluster1.id(), capacity).target());
     }
 
