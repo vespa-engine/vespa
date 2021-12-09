@@ -157,6 +157,18 @@ public class BuilderGenerator {
                     "}\n" + //
                     "\n" + //
                     "/**\n" + //
+                    " * Make a new builder and run the supplied function on it before adding it to the list\n" + //
+                    " * @param __func lambda that modifies the given builder\n" + //
+                    " * @return this builder\n" + //
+                    " */\n" + //
+                    "public Builder " + n.getName() + "(java.util.function.Consumer<" + builderType(n) + "> __func) {\n" + //
+                    "  " + builderType(n) + " __inner = new " + builderType(n) +"();\n" + //
+                    "  __func.accept(__inner);\n" + //
+                    "  " + n.getName() + ".add(__inner);\n" + //
+                    "  return this;\n" + //
+                    "}\n" + //
+                    "\n" + //
+                    "/**\n" + //
                     " * Set the given list as this builder's list of " + nodeClass(n) + " builders\n" + //
                     " * @param __builders a list of builders\n" + //
                     " * @return this builder\n" + //

@@ -582,6 +582,18 @@ public final class AllfeaturesConfig extends ConfigInstance {
     }
 
     /**
+     * Make a new builder and run the supplied function on it before adding it to the list
+     * @param __func lambda that modifies the given builder
+     * @return this builder
+     */
+    public Builder myArray(java.util.function.Consumer<MyArray.Builder> __func) {
+      MyArray.Builder __inner = new MyArray.Builder();
+      __func.accept(__inner);
+      myArray.add(__inner);
+      return this;
+    }
+
+    /**
      * Set the given list as this builder's list of MyArray builders
      * @param __builders a list of builders
      * @return this builder
@@ -1616,6 +1628,18 @@ public final class AllfeaturesConfig extends ConfigInstance {
       }
 
       /**
+       * Make a new builder and run the supplied function on it before adding it to the list
+       * @param __func lambda that modifies the given builder
+       * @return this builder
+       */
+      public Builder anotherArray(java.util.function.Consumer<AnotherArray.Builder> __func) {
+        AnotherArray.Builder __inner = new AnotherArray.Builder();
+        __func.accept(__inner);
+        anotherArray.add(__inner);
+        return this;
+      }
+
+      /**
        * Set the given list as this builder's list of AnotherArray builders
        * @param __builders a list of builders
        * @return this builder
@@ -1910,6 +1934,18 @@ public final class AllfeaturesConfig extends ConfigInstance {
        */
       public Builder anotherArray(AnotherArray.Builder __builder) {
         anotherArray.add(__builder);
+        return this;
+      }
+
+      /**
+       * Make a new builder and run the supplied function on it before adding it to the list
+       * @param __func lambda that modifies the given builder
+       * @return this builder
+       */
+      public Builder anotherArray(java.util.function.Consumer<AnotherArray.Builder> __func) {
+        AnotherArray.Builder __inner = new AnotherArray.Builder();
+        __func.accept(__inner);
+        anotherArray.add(__inner);
         return this;
       }
 
