@@ -8,10 +8,12 @@ LOG_SETUP(".config.retriever.simpleconfigurer");
 
 namespace config {
 
+VESPA_THREAD_STACK_TAG(simple_configurer_executor);
+
 SimpleConfigurer::SimpleConfigurer(SimpleConfigRetriever::UP retriever, SimpleConfigurable * const configurable)
     : _retriever(std::move(retriever)),
       _configurable(configurable),
-      _thread(*this),
+      _thread(*this, simple_configurer_executor),
       _started(false)
 {
     assert(_retriever);

@@ -7,16 +7,18 @@ LOG_SETUP(".slobrok.server");
 
 namespace slobrok {
 
+VESPA_THREAD_STACK_TAG(slobrok_server_executor);
+
 SlobrokServer::SlobrokServer(ConfigShim &shim)
     : _env(shim),
-      _thread(*this)
+      _thread(*this, slobrok_server_executor)
 {
     _thread.start();
 }
 
 SlobrokServer::SlobrokServer(uint32_t port)
     : _env(ConfigShim(port)),
-      _thread(*this)
+      _thread(*this, slobrok_server_executor)
 {
     _thread.start();
 }

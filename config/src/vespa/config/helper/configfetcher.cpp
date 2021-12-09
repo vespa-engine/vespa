@@ -9,9 +9,12 @@ LOG_SETUP(".config.helper.configfetcher");
 
 namespace config {
 
-ConfigFetcher::ConfigFetcher(const IConfigContext::SP & context)
+VESPA_THREAD_STACK_TAG(config_fetcher_executor);
+
+
+    ConfigFetcher::ConfigFetcher(const IConfigContext::SP & context)
     : _poller(context),
-      _thread(std::make_unique<vespalib::Thread>(_poller)),
+      _thread(std::make_unique<vespalib::Thread>(_poller, config_fetcher_executor)),
       _closed(false),
       _started(false)
 {
@@ -19,7 +22,7 @@ ConfigFetcher::ConfigFetcher(const IConfigContext::SP & context)
 
 ConfigFetcher::ConfigFetcher(const SourceSpec & spec)
     : _poller(std::make_shared<ConfigContext>(spec)),
-      _thread(std::make_unique<vespalib::Thread>(_poller)),
+      _thread(std::make_unique<vespalib::Thread>(_poller, config_fetcher_executor)),
       _closed(false),
       _started(false)
 {

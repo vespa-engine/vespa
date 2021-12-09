@@ -19,7 +19,7 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t wat
       _mutex(),
       _consumerCondition(),
       _producerCondition(),
-      _thread(*this),
+      _thread(*this, func),
       _idleTracker(steady_clock::now()),
       _threadIdleTracker(),
       _wakeupCount(0),
@@ -32,7 +32,6 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t wat
       _reactionTime(reactionTime),
       _closed(false)
 {
-    (void) func; //TODO implement similar to ThreadStackExecutor
     assert(taskLimit >= watermark);
     _thread.start();
 }
