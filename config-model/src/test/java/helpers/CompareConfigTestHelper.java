@@ -19,6 +19,10 @@ import static org.junit.Assert.assertEquals;
 public class CompareConfigTestHelper {
 
     public static void assertSerializedConfigFileEquals(String filename, String actual) throws IOException {
+        IOUtils.writeFile(filename + ".actual", actual, false);
+        if (! actual.endsWith("\n")) {
+            IOUtils.writeFile(filename + ".actual", "\n", true);
+        }
         assertSerializedConfigEquals(IOUtils.readFile(new File(filename)), actual, false);
     }
 
