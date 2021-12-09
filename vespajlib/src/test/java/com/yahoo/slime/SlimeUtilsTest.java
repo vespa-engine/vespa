@@ -8,9 +8,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -37,7 +35,8 @@ public class SlimeUtilsTest {
 
         SlimeUtils.copyObject(slime2.get(), subobj);
 
-        assertThat(root.toString(), is("{\"foo\":\"foobie\",\"bar\":{\"a\":\"a\",\"b\":2,\"c\":true,\"d\":3.14,\"e\":\"0x64\",\"f\":null}}"));
+        assertEquals("{\"foo\":\"foobie\",\"bar\":{\"a\":\"a\",\"b\":2,\"c\":true,\"d\":3.14,\"e\":\"0x64\",\"f\":null}}",
+                     root.toString());
     }
 
     @Test
@@ -61,7 +60,8 @@ public class SlimeUtilsTest {
 
         SlimeUtils.copyObject(slime2.get(), subobj);
 
-        assertThat(root.toString(), is("{\"foo\":\"foobie\",\"bar\":{\"a\":[\"foo\",4,true,3.14,null,\"0x64\",{\"inner\":\"binner\"}]}}"));
+        assertEquals("{\"foo\":\"foobie\",\"bar\":{\"a\":[\"foo\",4,true,3.14,null,\"0x64\",{\"inner\":\"binner\"}]}}",
+                     root.toString());
     }
 
     @Test
@@ -71,21 +71,21 @@ public class SlimeUtilsTest {
         root.setString("foo", "foobie");
         root.setObject("bar");
         String json = Utf8.toString(SlimeUtils.toJsonBytes(slime));
-        assertThat(json, is("{\"foo\":\"foobie\",\"bar\":{}}"));
+        assertEquals("{\"foo\":\"foobie\",\"bar\":{}}", json);
     }
 
     @Test
     public void test_json_to_slime() {
         byte[] json = Utf8.toBytes("{\"foo\":\"foobie\",\"bar\":{}}");
         Slime slime = SlimeUtils.jsonToSlime(json);
-        assertThat(slime.get().field("foo").asString(), is("foobie"));
+        assertEquals("foobie", slime.get().field("foo").asString());
         assertTrue(slime.get().field("bar").valid());
     }
 
     @Test
     public void test_json_to_slime_or_throw() {
         Slime slime = SlimeUtils.jsonToSlimeOrThrow("{\"foo\":\"foobie\",\"bar\":{}}");
-        assertThat(slime.get().field("foo").asString(), is("foobie"));
+        assertEquals("foobie", slime.get().field("foo").asString());
         assertTrue(slime.get().field("bar").valid());
     }
 
@@ -107,7 +107,7 @@ public class SlimeUtilsTest {
         assertEquals(0, SlimeUtils.entriesStream(inspector.field("object")).count());
 
         assertEquals(List.of(1L, 2L, 4L, 3L, 0L),
-                SlimeUtils.entriesStream(inspector.field("list")).map(Inspector::asLong).collect(Collectors.toList()));
+                     SlimeUtils.entriesStream(inspector.field("list")).map(Inspector::asLong).collect(Collectors.toList()));
     }
 
 }

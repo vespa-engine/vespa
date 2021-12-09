@@ -13,6 +13,7 @@ import java.util.Locale;
  * @author Unknown
  */
 public class MetricsFormatter {
+
     private final boolean includeServiceName;
     private final boolean isSystemMetric;
     private final DecimalFormat df = new DecimalFormat("0.000", new DecimalFormatSymbols(Locale.ENGLISH));

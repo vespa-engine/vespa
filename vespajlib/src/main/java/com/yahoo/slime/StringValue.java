@@ -4,8 +4,11 @@ package com.yahoo.slime;
 /**
  * A value holding a String in Java native format.
  * See also @ref Utf8Value (for lazy decoding).
- **/
+ *
+ * @author havardpe
+ */
 final class StringValue extends Value {
+
     private final String value;
     private byte[] utf8;
     private StringValue(String value) { this.value = value; }
@@ -16,13 +19,14 @@ final class StringValue extends Value {
             return new StringValue(value);
         }
     }
-    public final Type type() { return Type.STRING; }
-    public final String asString() { return this.value; }
-    public final byte[] asUtf8() {
+    public Type type() { return Type.STRING; }
+    public String asString() { return this.value; }
+    public byte[] asUtf8() {
         if (utf8 == null) {
             utf8 = Utf8Codec.encode(value);
         }
         return utf8;
     }
-    public final void accept(Visitor v) { v.visitString(value); }
+    public void accept(Visitor v) { v.visitString(value); }
+
 }

@@ -46,7 +46,6 @@ import static org.junit.Assert.fail;
 /**
  * @author gjoranv
  */
-@SuppressWarnings("UnstableApiUsage")
 public class ApplicationMetricsHandlerTest {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
@@ -79,8 +78,8 @@ public class ApplicationMetricsHandlerTest {
     public void setup() {
         setupWireMock();
 
-        ApplicationMetricsRetriever applicationMetricsRetriever = new ApplicationMetricsRetriever(
-                nodesConfig(MOCK_METRICS_PATH));
+        ApplicationMetricsRetriever applicationMetricsRetriever =
+                new ApplicationMetricsRetriever(nodesConfig(MOCK_METRICS_PATH));
 
         ApplicationMetricsHandler handler = new ApplicationMetricsHandler(Executors.newSingleThreadExecutor(),
                                                                           applicationMetricsRetriever,
