@@ -9,6 +9,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -24,17 +25,26 @@ import java.util.function.Supplier;
  */
 public interface FeedClientBuilder {
 
+    String PREFERRED_IMPLEMENTATION_PROPERTY = "vespa.feed.client.builder.implementation";
+
     /** Creates a builder for a single container endpoint **/
     static FeedClientBuilder create(URI endpoint) { return create(Collections.singletonList(endpoint)); }
 
     /** Creates a builder for multiple container endpoints **/
     static FeedClientBuilder create(List<URI> endpoints) {
+        String defaultImplementation = "ai.vespa.feed.client.impl.FeedClientBuilderImpl";
+        String preferredImplementation = System.getProperty(PREFERRED_IMPLEMENTATION_PROPERTY, defaultImplementation);
         Iterator<FeedClientBuilder> iterator = ServiceLoader.load(FeedClientBuilder.class).iterator();
         if (iterator.hasNext()) {
-            return iterator.next().setEndpointUris(endpoints);
+            List<FeedClientBuilder> builders = new ArrayList<>();
+            iterator.forEachRemaining(builders::add);
+            return builders.stream()
+                    .filter(builder -> preferredImplementation.equals(builder.getClass().getName()))
+                    .findFirst()
+                    .orElse(builders.get(0));
         } else {
             try {
-                Class<?> aClass = Class.forName("ai.vespa.feed.client.impl.FeedClientBuilderImpl");
+                Class<?> aClass = Class.forName(preferredImplementation);
                 for (Constructor<?> constructor : aClass.getConstructors()) {
                     if (constructor.getParameterTypes().length==0) {
                         return ((FeedClientBuilder)constructor.newInstance()).setEndpointUris(endpoints);
