@@ -238,7 +238,6 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
     private double skewWith(NodeResources resources) {
         if (parent.isEmpty()) return 0;
-
         NodeResources free = freeParentCapacity.justNumbers().subtract(resources.justNumbers());
         return Node.skew(parent.get().flavor().resources(), free);
     }
