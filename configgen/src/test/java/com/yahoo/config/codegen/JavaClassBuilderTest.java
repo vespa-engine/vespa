@@ -116,6 +116,7 @@ public class JavaClassBuilderTest {
         JavaClassBuilder builder = new JavaClassBuilder(root, parser.getNormalizedDefinition(), null, null);
         String[] configClassLines = builder.getConfigClass("AllfeaturesConfig").split("\n");
 
+        for (var line : configClassLines) { System.out.println(line); }
         for (int i = 0; i < referenceClassLines.size(); i++) {
             if (configClassLines.length <= i)
                 fail("Missing lines i generated config class. First missing line:\n" + referenceClassLines.get(i));
