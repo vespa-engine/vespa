@@ -94,6 +94,7 @@
       "public void <init>(com.yahoo.application.MockApplicationConfig)",
       "public com.yahoo.application.MockApplicationConfig$Builder mystruct(com.yahoo.application.MockApplicationConfig$Mystruct$Builder)",
       "public com.yahoo.application.MockApplicationConfig$Builder mystructlist(com.yahoo.application.MockApplicationConfig$Mystructlist$Builder)",
+      "public com.yahoo.application.MockApplicationConfig$Builder mystructlist(java.util.function.Consumer)",
       "public com.yahoo.application.MockApplicationConfig$Builder mystructlist(java.util.List)",
       "public com.yahoo.application.MockApplicationConfig$Builder mylist(java.lang.String)",
       "public com.yahoo.application.MockApplicationConfig$Builder mylist(java.util.Collection)",

@@ -1937,6 +1937,7 @@
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder defaultRoute(java.lang.String)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder route(com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Route$Builder)",
+      "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder route(java.util.function.Consumer)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder route(java.util.List)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster$Builder selector(java.lang.String)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig$Cluster build()"
@@ -2133,6 +2134,7 @@
       "public void <init>()",
       "public void <init>(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Builder route(com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Route$Builder)",
+      "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Builder route(java.util.function.Consumer)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentrouteselectorpolicyConfig$Builder route(java.util.List)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
