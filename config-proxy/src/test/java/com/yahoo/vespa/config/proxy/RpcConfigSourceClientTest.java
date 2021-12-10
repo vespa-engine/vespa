@@ -17,7 +17,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class RpcConfigSourceClientTest {
 
-    private ResponseHandler responseHandler;
+    private MockRpcServer rpcServer;
     private RpcConfigSourceClient rpcConfigSourceClient;
 
     @Rule
@@ -26,8 +26,8 @@ public class RpcConfigSourceClientTest {
 
     @Before
     public void setup() {
-        responseHandler = new ResponseHandler(true);
-        rpcConfigSourceClient = new RpcConfigSourceClient(responseHandler, new MockConfigSource());
+        rpcServer = new MockRpcServer();
+        rpcConfigSourceClient = new RpcConfigSourceClient(rpcServer, new MockConfigSource(), new MemoryCache());
     }
 
     @Test
@@ -90,7 +90,7 @@ public class RpcConfigSourceClientTest {
     }
 
     private void assertSentResponses(int expected) {
-        assertEquals(expected, responseHandler.sentResponses());
+        assertEquals(expected, rpcServer.responses);
     }
 
     private void simulateClientRequestingConfig(RawConfig config) {

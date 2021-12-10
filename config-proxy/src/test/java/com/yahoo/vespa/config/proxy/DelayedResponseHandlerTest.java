@@ -6,7 +6,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum
@@ -28,15 +29,16 @@ public class DelayedResponseHandlerTest {
     public void basic() {
         ConfigTester tester = new ConfigTester();
         DelayedResponses delayedResponses = new DelayedResponses();
-        MemoryCache memoryCache = new MemoryCache();
+        final MockRpcServer mockRpcServer = new MockRpcServer();
+        final MemoryCache memoryCache = new MemoryCache();
         memoryCache.update(ConfigTester.fooConfig);
-        DelayedResponseHandler delayedResponseHandler = new DelayedResponseHandler(delayedResponses, memoryCache, new ResponseHandler());
+        final DelayedResponseHandler delayedResponseHandler = new DelayedResponseHandler(delayedResponses, memoryCache, mockRpcServer);
         delayedResponses.add(new DelayedResponse(tester.createRequest(ProxyServerTest.fooConfig, 0)));
         delayedResponses.add(new DelayedResponse(tester.createRequest(ProxyServerTest.fooConfig, 1200000))); // should not be returned yet
         delayedResponses.add(new DelayedResponse(tester.createRequest(ProxyServerTest.errorConfig, 0)));  // will not give a config when resolving
         delayedResponseHandler.checkDelayedResponses();
 
-        assertEquals(1, delayedResponseHandler.sentResponses());
+        assertThat(mockRpcServer.responses, is(1L));
     }
 
 }

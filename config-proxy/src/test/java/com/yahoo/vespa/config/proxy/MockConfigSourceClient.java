@@ -18,9 +18,9 @@ public class MockConfigSourceClient implements ConfigSourceClient{
     private final MemoryCache memoryCache;
     private final DelayedResponses delayedResponses = new DelayedResponses();
 
-    MockConfigSourceClient(MockConfigSource configSource) {
+    MockConfigSourceClient(MockConfigSource configSource, MemoryCache memoryCache) {
         this.configSource = configSource;
-        this.memoryCache = new MemoryCache();
+        this.memoryCache = memoryCache;
     }
 
     @Override
@@ -35,7 +35,7 @@ public class MockConfigSourceClient implements ConfigSourceClient{
     }
 
     @Override
-    public void shutdown() {
+    public void cancel() {
         configSource.clear();
     }
 
@@ -55,8 +55,5 @@ public class MockConfigSourceClient implements ConfigSourceClient{
 
     @Override
     public DelayedResponses delayedResponses() { return delayedResponses; }
-
-    @Override
-    public MemoryCache memoryCache() { return memoryCache; }
 
 }
