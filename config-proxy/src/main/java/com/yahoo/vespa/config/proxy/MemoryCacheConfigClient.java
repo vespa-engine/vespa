@@ -22,8 +22,8 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     private final MemoryCache cache;
     private final DelayedResponses delayedResponses = new DelayedResponses();
 
-    MemoryCacheConfigClient() {
-        this.cache = new MemoryCache();
+    MemoryCacheConfigClient(MemoryCache cache) {
+        this.cache = cache;
     }
 
     /**

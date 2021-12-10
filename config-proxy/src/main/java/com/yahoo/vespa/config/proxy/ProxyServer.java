@@ -94,7 +94,7 @@ public class ProxyServer implements Runnable {
         switch (newMode.getMode()) {
             case MEMORYCACHE:
                 configClient.shutdownSourceConnections();
-                configClient = new MemoryCacheConfigClient();
+                configClient = new MemoryCacheConfigClient(configClient.memoryCache());
                 this.mode = new Mode(modeName);
                 break;
             case DEFAULT:
