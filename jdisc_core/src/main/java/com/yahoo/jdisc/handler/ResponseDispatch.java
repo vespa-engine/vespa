@@ -1,15 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.ForwardingListenableFuture;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.SharedResource;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * <p>This class provides a convenient way of safely dispatching a {@link Response}. It is similar in use to {@link
@@ -34,7 +36,7 @@ import java.util.concurrent.Future;
  *
  * @author Simon Thoresen Hult
  */
-public abstract class ResponseDispatch extends ForwardingListenableFuture<Boolean> {
+public abstract class ResponseDispatch implements Future<Boolean> {
 
     private final FutureConjunction completions = new FutureConjunction();
 
@@ -90,19 +92,14 @@ public abstract class ResponseDispatch extends ForwardingListenableFuture<Boolea
      * @param responseHandler The ResponseHandler to dispatch to.
      * @return A Future that can be waited for.
      */
-    public final ListenableFuture<Boolean> dispatch(ResponseHandler responseHandler) {
+    public final CompletableFuture<Boolean> dispatch(ResponseHandler responseHandler) {
         try (FastContentWriter writer = new FastContentWriter(connect(responseHandler))) {
             for (ByteBuffer buf : responseContent()) {
                 writer.write(buf);
             }
             completions.addOperand(writer);
         }
-        return this;
-    }
-
-    @Override
-    protected final ListenableFuture<Boolean> delegate() {
-        return completions;
+        return completions.completableFuture();
     }
 
     @Override
@@ -113,6 +110,15 @@ public abstract class ResponseDispatch extends ForwardingListenableFuture<Boolea
     @Override
     public final boolean isCancelled() {
         return false;
+    }
+
+    @Override public boolean isDone() { return completions.isDone(); }
+
+    @Override public Boolean get() throws InterruptedException, ExecutionException { return completions.get(); }
+
+    @Override
+    public Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return completions.get(timeout, unit);
     }
 
     /**

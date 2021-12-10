@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -20,7 +19,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @author Simon Thoresen Hult
  */
-public class FastContentOutputStream extends AbstractContentOutputStream implements ListenableFuture<Boolean> {
+public class FastContentOutputStream extends AbstractContentOutputStream implements Future<Boolean> {
 
     private final FastContentWriter out;
 
@@ -78,7 +77,6 @@ public class FastContentOutputStream extends AbstractContentOutputStream impleme
         return out.get(timeout, unit);
     }
 
-    @Override
     public void addListener(Runnable listener, Executor executor) {
         out.addListener(listener, executor);
     }
