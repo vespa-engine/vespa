@@ -2,7 +2,10 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigCacheKey;
+import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.ErrorCode;
+import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.Payload;
 import org.junit.After;

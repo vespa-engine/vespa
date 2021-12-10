@@ -56,7 +56,7 @@ public class ProxyServer implements Runnable {
         supervisor = new Supervisor(new Transport("proxy-server", JRT_TRANSPORT_THREADS)).setDropEmptyBuffers(true);
         log.log(Level.FINE, () -> "Using config source '" + source);
         this.rpcServer = createRpcServer(spec);
-        this.configClient = (configClient == null) ? createRpcClient(rpcServer, source) : configClient;
+        this.configClient = (configClient == null) ? createRpcClient(source) : configClient;
         this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
     }
 
@@ -98,7 +98,7 @@ public class ProxyServer implements Runnable {
                 break;
             case DEFAULT:
                 flush();
-                configClient = createRpcClient(rpcServer, configSource);
+                configClient = createRpcClient(configSource);
                 this.mode = new Mode(modeName);
                 break;
             default:
@@ -111,8 +111,8 @@ public class ProxyServer implements Runnable {
         return  (spec == null) ? null : new ConfigProxyRpcServer(this, supervisor, spec); // TODO: Try to avoid first argument being 'this'
     }
 
-    private static RpcConfigSourceClient createRpcClient(RpcServer rpcServer, ConfigSourceSet source) {
-        return new RpcConfigSourceClient(rpcServer, source);
+    private static RpcConfigSourceClient createRpcClient(ConfigSourceSet source) {
+        return new RpcConfigSourceClient(new ResponseHandler(), source);
     }
 
     private void setupSignalHandler() {
@@ -211,7 +211,7 @@ public class ProxyServer implements Runnable {
     void updateSourceConnections(List<String> sources) {
         configSource = new ConfigSourceSet(sources);
         flush();
-        configClient = createRpcClient(rpcServer, configSource);
+        configClient = createRpcClient(configSource);
     }
 
     DelayedResponses delayedResponses() {
