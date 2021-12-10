@@ -66,7 +66,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        supervisor.transport().shutdown();
+        supervisor.transport().shutdown().join();
     }
 
     Spec getSpec() {
