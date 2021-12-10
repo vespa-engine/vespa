@@ -15,10 +15,10 @@ class GlobPattern {
     private final char[] boundaries;
     private final Pattern regexPattern;
 
-    GlobPattern(String pattern, char[] boundaries) {
+    GlobPattern(String pattern, char[] boundaries, boolean enableSingleCharWildcard) {
         this.pattern = pattern;
         this.boundaries = boundaries;
-        this.regexPattern = toRegexPattern(pattern, boundaries);
+        this.regexPattern = toRegexPattern(pattern, boundaries, enableSingleCharWildcard);
     }
 
     boolean matches(String value) { return regexPattern.matcher(value).matches(); }
@@ -27,12 +27,12 @@ class GlobPattern {
     Pattern regexPattern() { return regexPattern; }
     char[] boundaries() { return boundaries; }
 
-    private static Pattern toRegexPattern(String pattern, char[] boundaries) {
+    private static Pattern toRegexPattern(String pattern, char[] boundaries, boolean enableSingleCharWildcard) {
         StringBuilder builder = new StringBuilder("^");
         StringBuilder precedingCharactersToQuote = new StringBuilder();
         char[] chars = pattern.toCharArray();
         for (char c : chars) {
-            if (c == '?' || c == '*') {
+            if ((enableSingleCharWildcard && c == '?') || c == '*') {
                 builder.append(quotePrecedingLiteralsAndReset(precedingCharactersToQuote));
                 // Note: we explicitly stop matching at a separator boundary.
                 // This is to make matching less vulnerable to dirty tricks (e.g dot as boundary for hostnames).

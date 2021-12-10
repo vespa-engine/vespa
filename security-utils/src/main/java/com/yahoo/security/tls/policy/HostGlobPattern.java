@@ -11,7 +11,7 @@ class HostGlobPattern implements RequiredPeerCredential.Pattern {
     private final GlobPattern globPattern;
 
     HostGlobPattern(String pattern) {
-        this.globPattern = new GlobPattern(pattern, new char[] {'.'});
+        this.globPattern = new GlobPattern(pattern, new char[] {'.'}, true);
     }
 
     @Override
