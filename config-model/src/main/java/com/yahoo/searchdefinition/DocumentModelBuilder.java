@@ -201,6 +201,9 @@ public class DocumentModelBuilder {
             lst.add(convert(doc));
             model.getDocumentManager().add(lst.getLast());
         }
+        if (! lst.contains(VespaDocumentType.INSTANCE)) {
+            lst.add(VespaDocumentType.INSTANCE);
+        }
         Set<TypeReplacement> replacements = new HashSet<>();
         for(NewDocumentType doc : lst) {
             resolveTemporaries(doc.getAllTypes(), lst, replacements);

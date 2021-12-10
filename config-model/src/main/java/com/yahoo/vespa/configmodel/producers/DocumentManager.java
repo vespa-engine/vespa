@@ -14,24 +14,44 @@ import com.yahoo.vespa.documentmodel.DocumentModel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * @author    baldersheim
+ * @author baldersheim
+ * @author arnej
  */
 public class DocumentManager {
 
     private boolean useV8GeoPositions = false;
+    private boolean generateDocTypeConfig = false;
 
     public DocumentManager useV8GeoPositions(boolean value) {
         this.useV8GeoPositions = value;
         return this;
     }
+    public DocumentManager generateDocTypeConfig(boolean value) {
+        this.generateDocTypeConfig = value;
+        return this;
+    }
 
     public DocumentmanagerConfig.Builder produce(DocumentModel model,
-                                                 DocumentmanagerConfig.Builder documentConfigBuilder) {
+                                                 DocumentmanagerConfig.Builder documentConfigBuilder)
+    {
+        if (generateDocTypeConfig) {
+            return produceDocTypes(model, documentConfigBuilder);
+        } else {
+            return produceDataTypes(model, documentConfigBuilder);
+        }
+    }   
+
+    public DocumentmanagerConfig.Builder produceDataTypes(DocumentModel model,
+                                                          DocumentmanagerConfig.Builder documentConfigBuilder)
+    {
         documentConfigBuilder.enablecompression(false);
         documentConfigBuilder.usev8geopositions(this.useV8GeoPositions);
         Set<DataType> handled = new HashSet<>();
@@ -99,14 +119,14 @@ public class DocumentManager {
         } else if (type instanceof WeightedSetDataType) {
             WeightedSetDataType dt = (WeightedSetDataType) type;
             builder.weightedsettype(new Datatype.Weightedsettype.Builder().
-                    datatype(dt.getNestedType().getId()).
-                    createifnonexistant(dt.createIfNonExistent()).
-                    removeifzero(dt.removeIfZero()));
+                                    datatype(dt.getNestedType().getId()).
+                                    createifnonexistant(dt.createIfNonExistent()).
+                                    removeifzero(dt.removeIfZero()));
         } else if (type instanceof MapDataType) {
             MapDataType mtype = (MapDataType) type;
             builder.maptype(new Datatype.Maptype.Builder().
-                    keytype(mtype.getKeyType().getId()).
-                    valtype(mtype.getValueType().getId()));
+                            keytype(mtype.getKeyType().getId()).
+                            valtype(mtype.getValueType().getId()));
         } else if (type instanceof DocumentType) {
             throw new IllegalArgumentException("Can not create config for unadorned document type: " + type.getName());
         } else if (type instanceof NewDocumentType) {
@@ -154,7 +174,7 @@ public class DocumentManager {
             ReferenceDataType refType = (ReferenceDataType) type;
             builder.referencetype(new Datatype.Referencetype.Builder().target_type_id(refType.getTargetType().getId()));
         } else {
-            throw new IllegalArgumentException("Can not create config for data type '" + type.getName());
+            throw new IllegalArgumentException("Can not create config for data type " + type + " of class " + type.getClass());
         }
     }
 
@@ -174,6 +194,285 @@ public class DocumentManager {
             ib.name(fieldName);
             builder.importedfield(ib);
         }
+    }
+
+
+    // Alternate (new) way to build config:
+
+    public DocumentmanagerConfig.Builder produceDocTypes(DocumentModel model, DocumentmanagerConfig.Builder builder) {
+        builder.usev8geopositions(this.useV8GeoPositions);
+        Map<NewDocumentType.Name, NewDocumentType> produced = new HashMap<>();
+        var indexMap = new IdxMap();
+        for (NewDocumentType documentType : model.getDocumentManager().getTypes()) {
+            docTypeInheritOrder(documentType, builder, produced, indexMap);
+        }
+        indexMap.verifyAllDone();
+        return builder;
+    }
+
+    private void docTypeInheritOrder(NewDocumentType documentType,
+                                     DocumentmanagerConfig.Builder builder,
+                                     Map<NewDocumentType.Name, NewDocumentType> produced,
+                                     IdxMap indexMap)
+    {
+        if (! produced.containsKey(documentType.getFullName())) {
+            for (NewDocumentType inherited : documentType.getInherited()) {
+                docTypeInheritOrder(inherited, builder, produced, indexMap);
+            }
+            docTypeBuild(documentType, builder, indexMap);
+            produced.put(documentType.getFullName(), documentType);
+        }
+    }
+
+    static private class IdxMap {
+        private Map<Integer, Boolean> doneMap = new HashMap<>();
+        private Map<Object, Integer> map = new IdentityHashMap<>();
+        void add(Object someType) {
+            assert(someType != null);
+            // the adding of "10000" here is mostly to make it more
+            // unique to grep for when debugging
+            int nextIdx = 10000 + map.size();
+            map.computeIfAbsent(someType, k -> nextIdx);
+        }
+        int idxOf(Object someType) {
+            add(someType);
+            return map.get(someType);
+        }
+        boolean isDone(Object someType) {
+            return doneMap.computeIfAbsent(idxOf(someType), k -> false);
+        }
+        void setDone(Object someType) {
+            assert(! isDone(someType));
+            doneMap.put(idxOf(someType), true);
+        }
+        void verifyAllDone() {
+            for (var entry : map.entrySet()) {
+                Object needed = entry.getKey();
+                if (! isDone(needed)) {
+                    throw new IllegalArgumentException("Could not generate config for all needed types, missing: " +
+                                                       needed + " of class " + needed.getClass());
+                }
+            }
+        }
+    }
+
+    private void docTypeBuild(NewDocumentType documentType, DocumentmanagerConfig.Builder builder, IdxMap indexMap) {
+        DocumentmanagerConfig.Doctype.Builder db = new DocumentmanagerConfig.Doctype.Builder();
+        db.
+            idx(indexMap.idxOf(documentType)).
+            name(documentType.getName()).
+            contentstruct(indexMap.idxOf(documentType.getHeader()));
+
+        docTypeBuildFieldSets(documentType.getFieldSets(), db);
+        docTypeBuildImportedFields(documentType.getImportedFieldNames(), db);
+
+        for (NewDocumentType inherited : documentType.getInherited()) {
+            db.inherits(new DocumentmanagerConfig.Doctype.Inherits.Builder().idx(indexMap.idxOf(inherited)));
+            // should be able to do this:
+            // db.inherits(b -> b.idx(indexMap.idxOf(inherited)));
+        }
+        docTypeBuildAnyType(documentType.getHeader(), db, indexMap);
+        for (DataType dt : documentType.getAllTypes().getTypes()) {
+            docTypeBuildAnyType(dt, db, indexMap);
+        }
+        for (AnnotationType annotation : documentType.getAnnotations()) {
+            docTypeBuildAnnotationType(annotation, db, indexMap);
+        }
+        builder.doctype(db);
+        indexMap.setDone(documentType);
+    }
+
+    private void docTypeBuildFieldSets(Set<FieldSet> fieldSets, DocumentmanagerConfig.Doctype.Builder db) {
+        for (FieldSet fs : fieldSets) {
+            docTypeBuildOneFieldSet(fs, db);
+        }
+    }
+
+    private void docTypeBuildOneFieldSet(FieldSet fs, DocumentmanagerConfig.Doctype.Builder db) {
+        db.fieldsets(fs.getName(), new DocumentmanagerConfig.Doctype.Fieldsets.Builder().fields(fs.getFieldNames()));
+    }
+
+    private void docTypeBuildAnnotationType(AnnotationType annotation, DocumentmanagerConfig.Doctype.Builder builder, IdxMap indexMap) {
+        if (indexMap.isDone(annotation)) {
+            return;
+        }
+        indexMap.setDone(annotation);
+        var annBuilder = new DocumentmanagerConfig.Doctype.Annotationtype.Builder();
+        annBuilder
+            .idx(indexMap.idxOf(annotation))
+            .name(annotation.getName())
+            .internalid(annotation.getId());
+        DataType nested = annotation.getDataType();
+        if (nested != null) {
+            annBuilder.datatype(indexMap.idxOf(nested));
+            docTypeBuildAnyType(nested, builder, indexMap);
+        }
+        for (AnnotationType inherited : annotation.getInheritedTypes()) {
+            var inhBuilder = new DocumentmanagerConfig.Doctype.Annotationtype.Inherits.Builder();
+            inhBuilder.idx(indexMap.idxOf(inherited));
+            annBuilder.inherits(inhBuilder);
+        }
+        builder.annotationtype(annBuilder);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void docTypeBuildAnyType(DataType type, DocumentmanagerConfig.Doctype.Builder documentBuilder, IdxMap indexMap) {
+        if (indexMap.isDone(type)) {
+            return;
+        }
+        if (type instanceof NewDocumentType) {
+            // should be in the top-level list and handled there
+            return;
+        }
+        indexMap.setDone(type);
+        if (type instanceof TemporaryStructuredDataType) {
+            throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
+        } if (type instanceof StructDataType) {
+            docTypeBuildOneType((StructDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof ArrayDataType) {
+            docTypeBuildOneType((ArrayDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof WeightedSetDataType) {
+            docTypeBuildOneType((WeightedSetDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof MapDataType) {
+            docTypeBuildOneType((MapDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof AnnotationReferenceDataType) {
+            docTypeBuildOneType((AnnotationReferenceDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof TensorDataType) {
+            docTypeBuildOneType((TensorDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof ReferenceDataType) {
+            docTypeBuildOneType((ReferenceDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof PrimitiveDataType) {
+            docTypeBuildOneType((PrimitiveDataType) type, documentBuilder, indexMap);
+        } else if (type instanceof DocumentType) {
+            throw new IllegalArgumentException("Can not create config for unadorned document type: " + type.getName());
+        } else {
+            throw new IllegalArgumentException("Can not create config for data type " + type + " of class " + type.getClass());
+        }
+    }
+
+    private void docTypeBuildImportedFields(Collection<String> fieldNames, DocumentmanagerConfig.Doctype.Builder builder) {
+        for (String fieldName : fieldNames) {
+            var ib = new DocumentmanagerConfig.Doctype.Importedfield.Builder();
+            ib.name(fieldName);
+            builder.importedfield(ib);
+        }
+    }
+
+    private void docTypeBuildOneType(StructDataType type,
+                                     DocumentmanagerConfig.Doctype.Builder builder,
+                                     IdxMap indexMap)
+    {
+        var structBuilder = new DocumentmanagerConfig.Doctype.Structtype.Builder();
+        structBuilder
+            .idx(indexMap.idxOf(type))
+            .name(type.getName());
+        
+        for (DataType inherited : type.getInheritedTypes()) {
+            var inheritBuilder = new DocumentmanagerConfig.Doctype.Structtype.Inherits.Builder();
+            inheritBuilder.type(indexMap.idxOf(inherited));
+            structBuilder.inherits(inheritBuilder);
+            docTypeBuildAnyType(inherited, builder, indexMap);
+        }
+        for (com.yahoo.document.Field field : type.getFieldsThisTypeOnly()) {
+            DataType fieldType = field.getDataType();
+            var fieldBuilder = new DocumentmanagerConfig.Doctype.Structtype.Field.Builder();
+            fieldBuilder
+                .name(field.getName())
+                .internalid(field.getId())
+                .type(indexMap.idxOf(fieldType));
+            structBuilder.field(fieldBuilder);
+            docTypeBuildAnyType(fieldType, builder, indexMap);
+        }
+        builder.structtype(structBuilder);
+    }
+
+    private void docTypeBuildOneType(PrimitiveDataType type,
+                                     DocumentmanagerConfig.Doctype.Builder builder,
+                                     IdxMap indexMap)
+    {
+        var primBuilder = new DocumentmanagerConfig.Doctype.Primitivetype.Builder();
+        primBuilder
+            .idx(indexMap.idxOf(type))
+            .name(type.getName());
+        builder.primitivetype(primBuilder);
+    }
+
+    private void docTypeBuildOneType(TensorDataType type,
+                                     DocumentmanagerConfig.Doctype.Builder builder,
+                                     IdxMap indexMap)
+    {
+        var tensorBuilder = new DocumentmanagerConfig.Doctype.Tensortype.Builder();
+        var tt = type.getTensorType();
+        String detailed = (tt != null) ? tt.toString() : "tensor";
+        tensorBuilder
+            .idx(indexMap.idxOf(type))
+            .detailedtype(detailed);
+        builder.tensortype(tensorBuilder);
+    }
+
+    private void docTypeBuildOneType(ArrayDataType type,
+                                     DocumentmanagerConfig.Doctype.Builder builder,
+                                     IdxMap indexMap)
+    {
+        DataType nested = type.getNestedType();
+        var arrayBuilder = new DocumentmanagerConfig.Doctype.Arraytype.Builder();
+        arrayBuilder.idx(indexMap.idxOf(type));
+        arrayBuilder.elementtype(indexMap.idxOf(nested));
+        builder.arraytype(arrayBuilder);
+        docTypeBuildAnyType(nested, builder, indexMap);
+    }
+
+    private void docTypeBuildOneType(WeightedSetDataType type,
+                                     DocumentmanagerConfig.Doctype.Builder builder,
+                                     IdxMap indexMap)
+    {
+        DataType nested = type.getNestedType();
+        var wsetBuilder = new DocumentmanagerConfig.Doctype.Wsettype.Builder();
+        wsetBuilder
+            .idx(indexMap.idxOf(type))
+            .elementtype(indexMap.idxOf(nested))
+            .createifnonexistent(type.createIfNonExistent())
+            .removeifzero(type.removeIfZero());
+        builder.wsettype(wsetBuilder);
+        docTypeBuildAnyType(nested, builder, indexMap);
+    }
+
+    private void docTypeBuildOneType(MapDataType type,
+                                     DocumentmanagerConfig.Doctype.Builder builder,
+                                     IdxMap indexMap)
+    {
+        DataType keytype = type.getKeyType();
+        DataType valtype = type.getValueType();
+        var mapBuilder = new DocumentmanagerConfig.Doctype.Maptype.Builder();
+        mapBuilder
+            .idx(indexMap.idxOf(type))
+            .keytype(indexMap.idxOf(keytype))
+            .valuetype(indexMap.idxOf(valtype));
+        builder.maptype(mapBuilder);
+        docTypeBuildAnyType(keytype, builder, indexMap);
+        docTypeBuildAnyType(valtype, builder, indexMap);
+    }
+
+    private void docTypeBuildOneType(AnnotationReferenceDataType type,
+                                     DocumentmanagerConfig.Doctype.Builder builder,
+                                     IdxMap indexMap)
+    {
+        var arefBuilder = new DocumentmanagerConfig.Doctype.Annotationref.Builder();
+        arefBuilder
+            .idx(indexMap.idxOf(type))
+            .annotationtype(indexMap.idxOf(type.getAnnotationType()));
+        builder.annotationref(arefBuilder);
+    }
+
+    private void docTypeBuildOneType(ReferenceDataType type,
+                                     DocumentmanagerConfig.Doctype.Builder builder,
+                                     IdxMap indexMap)
+    {
+        var docrefBuilder = new DocumentmanagerConfig.Doctype.Documentref.Builder();
+        docrefBuilder
+            .idx(indexMap.idxOf(type))
+            .targettype(indexMap.idxOf(type.getTargetType()));
+        builder.documentref(docrefBuilder);
     }
 
 }
