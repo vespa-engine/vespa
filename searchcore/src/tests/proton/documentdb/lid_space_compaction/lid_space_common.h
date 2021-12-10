@@ -56,7 +56,7 @@ struct MyScanIterator : public IDocumentScanIterator {
     explicit MyScanIterator(const MyHandler & handler, const LidVector &lids);
     ~MyScanIterator() override;
     bool valid() const override;
-    search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) override;
+    search::DocumentMetaData next(uint32_t compactLidLimit) override;
 };
 
 struct MyHandler : public ILidSpaceCompactionHandler {

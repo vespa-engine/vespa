@@ -27,9 +27,8 @@ struct IDocumentScanIterator
      * Returns an invalid document if no documents satisfy the limit.
      *
      * @param compactLidLimit The returned document must have lid larger than this limit.
-     * @param retry Whether we should start the scan with the previous returned document.
      */
-    virtual search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) = 0;
+    virtual search::DocumentMetaData next(uint32_t compactLidLimit) = 0;
 };
 
 } // namespace proton

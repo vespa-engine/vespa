@@ -23,12 +23,9 @@ DocumentScanIterator::valid() const
 }
 
 DocumentMetaData
-DocumentScanIterator::next(uint32_t compactLidLimit, bool retry)
+DocumentScanIterator::next(uint32_t compactLidLimit)
 {
-    if (!retry) {
-        --_lastLid;
-    }
-    for (; _lastLid > compactLidLimit; --_lastLid) {
+    for (--_lastLid; _lastLid > compactLidLimit; --_lastLid) {
         if (_metaStore.validLid(_lastLid)) {
             const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(_lastLid);
             return DocumentMetaData(_lastLid, metaData.getTimestamp(),

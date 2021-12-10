@@ -19,8 +19,8 @@ MyScanIterator::valid() const {
     return _validItr;
 }
 
-search::DocumentMetaData MyScanIterator::next(uint32_t compactLidLimit, bool retry) {
-    if (!retry && _itr != _lids.begin()) {
+search::DocumentMetaData MyScanIterator::next(uint32_t compactLidLimit) {
+    if (_itr != _lids.begin()) {
         ++_itr;
     }
     for (; _itr != _lids.end() && (*_itr) <= compactLidLimit; ++_itr) {}
