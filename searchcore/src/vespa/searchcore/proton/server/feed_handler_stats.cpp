@@ -1,6 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "feed_handler_stats.h"
+#include <cassert>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".proton.server.feed_handler_stats");
 
 namespace proton {
 
@@ -64,6 +68,16 @@ FeedHandlerStats::reset_min_max() noexcept
     _max_operations.reset();
     _min_latency.reset();
     _max_latency.reset();
+}
+
+void
+FeedOperationCounter::commitCompleted(size_t numOperations) {
+    assert(_commitsStarted > _commitsCompleted);
+    assert(_operationsStarted >= _operationsCompleted + numOperations);
+    _operationsCompleted += numOperations;
+    _commitsCompleted++;
+    LOG(spam, "%zu: onCommitDone(%zu) total=%zu left=%zu",
+        _commitsCompleted, numOperations, _operationsCompleted, operationsInFlight());
 }
 
 }
