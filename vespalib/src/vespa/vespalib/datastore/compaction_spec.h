@@ -16,6 +16,11 @@ class CompactionSpec
     bool _compact_memory;
     bool _compact_address_space;
 public:
+    CompactionSpec()
+        : _compact_memory(false),
+          _compact_address_space(false)
+    {
+    }
     CompactionSpec(bool compact_memory_, bool compact_address_space_) noexcept
         : _compact_memory(compact_memory_),
           _compact_address_space(compact_address_space_)

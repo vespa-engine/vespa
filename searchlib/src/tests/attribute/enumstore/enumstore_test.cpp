@@ -900,7 +900,7 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
     int compact_count = 0;
     CompactionStrategy compaction_strategy;
     for (uint32_t i = 0; i < 15; ++i) {
-        this->store.update_stat();
+        this->store.update_stat(compaction_strategy);
         if (this->store.consider_compact_dictionary(compaction_strategy)) {
             ++compact_count;
         } else {

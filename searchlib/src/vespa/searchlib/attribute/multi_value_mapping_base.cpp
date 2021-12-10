@@ -13,8 +13,7 @@ MultiValueMappingBase::MultiValueMappingBase(const vespalib::GrowStrategy &gs,
                                              vespalib::GenerationHolder &genHolder)
     : _indices(gs, genHolder),
       _totalValues(0u),
-      _cachedArrayStoreMemoryUsage(),
-      _cachedArrayStoreAddressSpaceUsage(0, 0, (1ull << 32))
+      _compaction_spec()
 {
 }
 
@@ -68,11 +67,12 @@ MultiValueMappingBase::getMemoryUsage() const
 }
 
 vespalib::MemoryUsage
-MultiValueMappingBase::updateStat()
+MultiValueMappingBase::updateStat(const CompactionStrategy& compaction_strategy)
 {
-    _cachedArrayStoreAddressSpaceUsage = getAddressSpaceUsage();
-    vespalib::MemoryUsage retval = getArrayStoreMemoryUsage();
-    _cachedArrayStoreMemoryUsage = retval;
+    auto array_store_address_space_usage = getAddressSpaceUsage();
+    auto array_store_memory_usage = getArrayStoreMemoryUsage();
+    _compaction_spec = compaction_strategy.should_compact(array_store_memory_usage, array_store_address_space_usage);
+    auto retval = array_store_memory_usage;
     retval.merge(_indices.getMemoryUsage());
     return retval;
 }
@@ -80,9 +80,8 @@ MultiValueMappingBase::updateStat()
 bool
 MultiValueMappingBase::considerCompact(const CompactionStrategy &compactionStrategy)
 {
-    auto compaction_spec = compactionStrategy.should_compact(_cachedArrayStoreMemoryUsage, _cachedArrayStoreAddressSpaceUsage);
-    if (compaction_spec.compact()) {
-        compactWorst(compaction_spec, compactionStrategy);
+     if (_compaction_spec.compact()) {
+        compactWorst(_compaction_spec, compactionStrategy);
         return true;
     }
     return false;

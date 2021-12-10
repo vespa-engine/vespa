@@ -43,8 +43,7 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
     : NotImplementedAttribute(baseFileName, cfg),
       _store(),
       _indices(getGenerationHolder()),
-      _cached_unique_store_values_memory_usage(),
-      _cached_unique_store_dictionary_memory_usage(),
+      _compaction_spec(),
       _gidToLidMapperFactory(),
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
 {
@@ -192,11 +191,13 @@ ReferenceAttribute::onCommit()
 void
 ReferenceAttribute::onUpdateStat()
 {
+    auto& compaction_strategy = getConfig().getCompactionStrategy();
     vespalib::MemoryUsage total = _store.get_values_memory_usage();
-    _cached_unique_store_values_memory_usage = total;
     auto& dictionary = _store.get_dictionary();
-    _cached_unique_store_dictionary_memory_usage = dictionary.get_memory_usage();
-    total.merge(_cached_unique_store_dictionary_memory_usage);
+    auto dictionary_memory_usage = dictionary.get_memory_usage();
+    _compaction_spec = ReferenceAttributeCompactionSpec(compaction_strategy.should_compact_memory(total),
+                                                        compaction_strategy.should_compact_memory(dictionary_memory_usage));
+    total.merge(dictionary_memory_usage);
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(_indices.getMemoryUsage());
     total.merge(_referenceMappings.getMemoryUsage());
@@ -292,8 +293,7 @@ ReferenceAttribute::getReference(DocId doc) const
 bool
 ReferenceAttribute::consider_compact_values(const CompactionStrategy &compactionStrategy)
 {
-    bool compact_memory = compactionStrategy.should_compact_memory(_cached_unique_store_values_memory_usage);
-    if (compact_memory) {
+    if (_compaction_spec.values()) {
         compact_worst_values(compactionStrategy);
         return true;
     }
@@ -318,8 +318,7 @@ ReferenceAttribute::consider_compact_dictionary(const CompactionStrategy &compac
     if (dictionary.has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage))
-    {
+    if (_compaction_spec.dictionary()) {
         dictionary.compact_worst(true, true, compaction_strategy);
         return true;
     }

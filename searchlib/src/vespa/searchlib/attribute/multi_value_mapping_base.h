@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/rcuvector.h>
@@ -28,8 +29,7 @@ public:
 protected:
     RefVector _indices;
     size_t    _totalValues;
-    vespalib::MemoryUsage _cachedArrayStoreMemoryUsage;
-    vespalib::AddressSpace _cachedArrayStoreAddressSpaceUsage;
+    CompactionSpec _compaction_spec;
 
     MultiValueMappingBase(const vespalib::GrowStrategy &gs, vespalib::GenerationHolder &genHolder);
     virtual ~MultiValueMappingBase();
@@ -43,7 +43,7 @@ public:
     virtual vespalib::MemoryUsage getArrayStoreMemoryUsage() const = 0;
     virtual vespalib::AddressSpace getAddressSpaceUsage() const = 0;
     vespalib::MemoryUsage getMemoryUsage() const;
-    vespalib::MemoryUsage updateStat();
+    vespalib::MemoryUsage updateStat(const CompactionStrategy& compaction_strategy);
     size_t getTotalValueCnt() const { return _totalValues; }
     RefCopyVector getRefCopy(uint32_t size) const;
 

@@ -132,7 +132,7 @@ DenseTensorAttribute::update_stat()
 {
     vespalib::MemoryUsage result = TensorAttribute::update_stat();
     if (_index) {
-        result.merge(_index->memory_usage());
+        result.merge(_index->update_stat(getConfig().getCompactionStrategy()));
     }
     return result;
 }

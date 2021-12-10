@@ -118,7 +118,8 @@ public:
     }
     MemoryUsage commit_and_update_stat() {
         commit();
-        return index->update_stat();
+        CompactionStrategy compaction_strategy;
+        return index->update_stat(compaction_strategy);
     }
     void expect_entry_point(uint32_t exp_docid, uint32_t exp_level) {
         EXPECT_EQ(exp_docid, index->get_entry_docid());
@@ -635,7 +636,7 @@ TEST_F(HnswIndexTest, hnsw_graph_is_compacted)
         index->compact_link_arrays(compaction_spec, compaction_strategy);
         index->compact_level_arrays(compaction_spec, compaction_strategy);
         commit();
-        index->update_stat();
+        index->update_stat(compaction_strategy);
         mem_2 = commit_and_update_stat();
         EXPECT_LE(mem_2.usedBytes(), mem_1.usedBytes());
         if (mem_2.usedBytes() == mem_1.usedBytes()) {

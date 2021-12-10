@@ -4,6 +4,7 @@
 
 #include "enum_store_dictionary.h"
 #include "postinglisttraits.h"
+#include "posting_store_compaction_spec.h"
 #include <set>
 
 namespace search {
@@ -47,8 +48,7 @@ protected:
     IEnumStoreDictionary& _dictionary;
     Status            &_status;
     uint64_t           _bvExtraBytes;
-    vespalib::MemoryUsage _cached_allocator_memory_usage;
-    vespalib::MemoryUsage _cached_store_memory_usage;
+    PostingStoreCompactionSpec _compaction_spec;
 
     static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
 
@@ -187,7 +187,7 @@ public:
 
     static inline DataT bitVectorWeight();
     vespalib::MemoryUsage getMemoryUsage() const;
-    vespalib::MemoryUsage update_stat();
+    vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy);
 
     void move_btree_nodes(const std::vector<EntryRef> &refs);
     void move(std::vector<EntryRef>& refs);

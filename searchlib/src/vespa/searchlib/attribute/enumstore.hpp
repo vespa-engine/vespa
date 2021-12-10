@@ -78,8 +78,7 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const DictionaryConfig & dict_
       _is_folded(dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED),
       _comparator(_store.get_data_store()),
       _foldedComparator(make_optionally_folded_comparator(is_folded())),
-      _cached_values_memory_usage(),
-      _cached_values_address_space_usage(0, 0, (1ull << 32))
+      _compaction_spec()
 {
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg,
                                                      allocate_comparator(),
@@ -212,26 +211,17 @@ EnumStoreT<EntryT>::insert(EntryType value)
 
 template <typename EntryT>
 vespalib::MemoryUsage
-EnumStoreT<EntryT>::update_stat()
+EnumStoreT<EntryT>::update_stat(const CompactionStrategy& compaction_strategy)
 {
-    auto &store = _store.get_data_store();
-    _cached_values_memory_usage = store.getMemoryUsage();
-    _cached_values_address_space_usage = store.getAddressSpaceUsage();
-    _cached_dictionary_btree_usage = _dict->get_btree_memory_usage();
-    _cached_dictionary_hash_usage = _dict->get_hash_memory_usage();
-    auto retval = _cached_values_memory_usage;
-    retval.merge(_cached_dictionary_btree_usage);
-    retval.merge(_cached_dictionary_hash_usage);
-    return retval;
+    return _compaction_spec.update_stat(*this, compaction_strategy);
 }
 
 template <typename EntryT>
 std::unique_ptr<IEnumStore::EnumIndexRemapper>
 EnumStoreT<EntryT>::consider_compact_values(const CompactionStrategy& compaction_strategy)
 {
-    auto compaction_spec = compaction_strategy.should_compact(_cached_values_memory_usage, _cached_values_address_space_usage);
-    if (compaction_spec.compact()) {
-        return compact_worst_values(compaction_spec, compaction_strategy);
+    if (_compaction_spec.get_values().compact()) {
+        return compact_worst_values(_compaction_spec.get_values(), compaction_strategy);
     }
     return std::unique_ptr<IEnumStore::EnumIndexRemapper>();
 }
@@ -250,13 +240,11 @@ EnumStoreT<EntryT>::consider_compact_dictionary(const CompactionStrategy& compac
     if (_dict->has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_dictionary_btree_usage))
-    {
+    if (_compaction_spec.btree_dictionary()) {
         _dict->compact_worst(true, false, compaction_strategy);
         return true;
     }
-    if (compaction_strategy.should_compact_memory(_cached_dictionary_hash_usage))
-    {
+    if (_compaction_spec.hash_dictionary()) {
         _dict->compact_worst(false, true, compaction_strategy);
         return true;
     }
