@@ -17,7 +17,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/gate.h>
 #include <cassert>
-#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.lidspace.compactionjob");
@@ -73,7 +72,7 @@ bool
 CompactionJob::scanDocuments(const LidUsageStats &stats)
 {
     if (_scanItr->valid()) {
-        DocumentMetaData document = getNextDocument(stats, false);
+        DocumentMetaData document = getNextDocument(stats);
         if (document.valid()) {
             Bucket metaBucket(document::Bucket(_bucketSpace, document.bucketId));
             _bucketExecutor.execute(metaBucket, std::make_unique<MoveTask>(shared_from_this(), document, getLimiter().beginOperation()));
@@ -190,9 +189,9 @@ CompactionJob::create(const DocumentDBLidSpaceCompactionConfig &config,
 }
 
 DocumentMetaData
-CompactionJob::getNextDocument(const LidUsageStats &stats, bool retryLastDocument)
+CompactionJob::getNextDocument(const LidUsageStats &stats)
 {
-    return _scanItr->next(std::max(stats.getLowestFreeLid(), stats.getUsedLids()), retryLastDocument);
+    return _scanItr->next(std::max(stats.getLowestFreeLid(), stats.getUsedLids()));
 }
 
 bool
@@ -201,7 +200,6 @@ CompactionJob::run()
     if (isBlocked()) {
         return true; // indicate work is done since no work can be done
     }
-    LidUsageStats stats = _handler->getLidStatus();
     if (remove_batch_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
         LOG(info, "%s: Lid space compaction is disabled while remove batch (delete buckets) is ongoing",
@@ -223,7 +221,13 @@ CompactionJob::run()
     }
 
     if (_scanItr && !_scanItr->valid()) {
-        if (shouldRestartScanDocuments(_handler->getLidStatus())) {
+        bool numPending = getLimiter().numPending();
+        if (numPending > 0) {
+            // We must wait to decide if a rescan is necessary until all operations are completed
+            return false;
+        }
+        LidUsageStats stats = _handler->getLidStatus();
+        if (shouldRestartScanDocuments(stats)) {
             _scanItr = _handler->getIterator();
         } else {
             _scanItr = IDocumentScanIterator::UP();
@@ -232,6 +236,7 @@ CompactionJob::run()
         }
     }
 
+    LidUsageStats stats = _handler->getLidStatus();
     if (_scanItr) {
         return scanDocuments(stats);
     } else if (_shouldCompactLidSpace) {

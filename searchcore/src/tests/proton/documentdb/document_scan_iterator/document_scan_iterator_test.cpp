@@ -49,19 +49,19 @@ struct Fixture
         }
         LidSet retval;
         for (uint32_t i = 0; i < count; ++i) {
-            uint32_t lid = next(compactLidLimit, false);
+            uint32_t lid = next(compactLidLimit);
             retval.insert(lid);
             EXPECT_TRUE(_itr->valid() || lid <= compactLidLimit);
         }
-        EXPECT_EQUAL(0u, next(compactLidLimit, false));
+        EXPECT_EQUAL(0u, next(compactLidLimit));
         EXPECT_FALSE(_itr->valid());
         return retval;
     }
-    uint32_t next(uint32_t compactLidLimit, bool retry = false) {
+    uint32_t next(uint32_t compactLidLimit) {
         if (!_itr) {
             _itr = std::make_unique<DocumentScanIterator>(_metaStore);
         }
-        return _itr->next(compactLidLimit, retry).lid;
+        return _itr->next(compactLidLimit).lid;
     }
 };
 
@@ -80,14 +80,6 @@ TEST_F("require that only lids > lid limit are returned", Fixture)
 {
     f.add({1,2,3,4,5,6,7,8});
     assertLidSet({5,6,7,8}, f.scan(4, 4));
-}
-
-TEST_F("require that we start scan at previous doc if retry is set", Fixture)
-{
-    f.add({1,2,3,4,5,6,7,8});
-    uint32_t lid1 = f.next(4, false);
-    uint32_t lid2 = f.next(4, true);
-    EXPECT_EQUAL(lid1, lid2);
 }
 
 TEST_MAIN()
