@@ -159,7 +159,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             return type;
         }
 
-
+        @SuppressWarnings("deprecation")
         private DataType getOrCreateType(int id) {
             if (typesById.containsKey(id)) {
                 return typesById.get(id);
@@ -192,6 +192,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
+        @SuppressWarnings("deprecation")
         private void fillStructs(DocumentmanagerConfig config) {
             for (var thisDataType : config.datatype()) {
                 for (var struct : thisDataType.structtype()) {
@@ -292,6 +293,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
+        @SuppressWarnings("deprecation")
         private void addAnnotationTypePayloads(DocumentmanagerConfig config) {
             for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
                 AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annType.id());
