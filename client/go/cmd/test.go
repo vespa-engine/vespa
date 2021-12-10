@@ -40,9 +40,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 	Args:              cobra.ExactArgs(1),
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		target := getTarget()
-		testPath := args[0]
-		if count, failed := runTests(testPath, target, false); len(failed) != 0 {
+		if count, failed := runTests(args[0], false); len(failed) != 0 {
 			plural := "s"
 			if count == 1 {
 				plural = ""
@@ -62,7 +60,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 	},
 }
 
-func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string) {
+func runTests(rootPath string, dryRun bool) (int, []string) {
 	count := 0
 	failed := make([]string, 0)
 	if stat, err := os.Stat(rootPath); err != nil {
@@ -72,7 +70,7 @@ func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string)
 		if err != nil {
 			fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
 		}
-
+		context := testContext{testsPath: rootPath, dryRun: dryRun}
 		previousFailed := false
 		for _, test := range tests {
 			if !test.IsDir() && filepath.Ext(test.Name()) == ".json" {
@@ -81,7 +79,7 @@ func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string)
 					fmt.Fprintln(stdout, "")
 					previousFailed = false
 				}
-				failure := runTest(testPath, target, dryRun)
+				failure := runTest(testPath, context)
 				if failure != "" {
 					failed = append(failed, failure)
 					previousFailed = true
@@ -90,7 +88,7 @@ func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string)
 			}
 		}
 	} else if strings.HasSuffix(stat.Name(), ".json") {
-		failure := runTest(rootPath, target, dryRun)
+		failure := runTest(rootPath, testContext{testsPath: filepath.Dir(rootPath), dryRun: dryRun})
 		if failure != "" {
 			failed = append(failed, failure)
 		}
@@ -103,7 +101,7 @@ func runTests(rootPath string, target vespa.Target, dryRun bool) (int, []string)
 }
 
 // Runs the test at the given path, and returns the specified test name if the test fails
-func runTest(testPath string, target vespa.Target, dryRun bool) string {
+func runTest(testPath string, context testContext) string {
 	var test test
 	testBytes, err := ioutil.ReadFile(testPath)
 	if err != nil {
@@ -117,7 +115,7 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 	if test.Name == "" {
 		testName = filepath.Base(testPath)
 	}
-	if !dryRun {
+	if !context.dryRun {
 		fmt.Fprintf(stdout, "%s:", testName)
 	}
 
@@ -136,12 +134,12 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 		if step.Name != "" {
 			stepName += ": " + step.Name
 		}
-		failure, longFailure, err := verify(step, filepath.Dir(testPath), test.Defaults.Cluster, defaultParameters, target, dryRun)
+		failure, longFailure, err := verify(step, test.Defaults.Cluster, defaultParameters, context)
 		if err != nil {
 			fmt.Fprintln(stderr)
 			fatalErrHint(err, fmt.Sprintf("Error in %s", stepName), "See https://cloud.vespa.ai/en/reference/testing")
 		}
-		if !dryRun {
+		if !context.dryRun {
 			if failure != "" {
 				fmt.Fprintf(stdout, " %s\n%s:\n%s\n", color.Red("failed"), stepName, longFailure)
 				return fmt.Sprintf("%s: %s: %s", testName, stepName, failure)
@@ -152,20 +150,20 @@ func runTest(testPath string, target vespa.Target, dryRun bool) string {
 			fmt.Fprint(stdout, ".")
 		}
 	}
-	if !dryRun {
+	if !context.dryRun {
 		fmt.Fprintln(stdout, color.Green(" OK"))
 	}
 	return ""
 }
 
 // Asserts specified response is obtained for request, or returns a failure message, or an error if this fails
-func verify(step step, testsPath string, defaultCluster string, defaultParameters map[string]string, target vespa.Target, dryRun bool) (string, string, error) {
-	requestBody, err := getBody(step.Request.BodyRaw, testsPath)
+func verify(step step, defaultCluster string, defaultParameters map[string]string, context testContext) (string, string, error) {
+	requestBody, err := getBody(step.Request.BodyRaw, context.testsPath)
 	if err != nil {
 		return "", "", err
 	}
 
-	parameters, err := getParameters(step.Request.ParametersRaw, testsPath)
+	parameters, err := getParameters(step.Request.ParametersRaw, context.testsPath)
 	if err != nil {
 		return "", "", err
 	}
@@ -180,19 +178,12 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 		cluster = defaultCluster
 	}
 
-	var service *vespa.Service
-	if !dryRun {
-		service, err = target.Service("query", 0, 0, cluster)
-		if err != nil {
-			return "", "", err
-		}
-	}
-
 	method := step.Request.Method
 	if method == "" {
 		method = "GET"
 	}
 
+	var service *vespa.Service
 	requestUri := step.Request.URI
 	if requestUri == "" {
 		requestUri = "/search/"
@@ -202,12 +193,12 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 		return "", "", err
 	}
 	externalEndpoint := requestUrl.IsAbs()
-	if !externalEndpoint {
-		baseURL := ""
-		if service != nil {
-			baseURL = service.BaseURL
+	if !externalEndpoint && !context.dryRun {
+		service, err = context.target().Service("query", 0, 0, cluster)
+		if err != nil {
+			return "", "", err
 		}
-		requestUrl, err = url.ParseRequestURI(baseURL + requestUri)
+		requestUrl, err = url.ParseRequestURI(service.BaseURL + requestUri)
 		if err != nil {
 			return "", "", err
 		}
@@ -234,7 +225,7 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 		statusCode = 200
 	}
 
-	responseBodySpecBytes, err := getBody(step.Response.BodyRaw, testsPath)
+	responseBodySpecBytes, err := getBody(step.Response.BodyRaw, context.testsPath)
 	if err != nil {
 		return "", "", err
 	}
@@ -246,7 +237,7 @@ func verify(step step, testsPath string, defaultCluster string, defaultParameter
 		}
 	}
 
-	if dryRun {
+	if context.dryRun {
 		return "", "", nil
 	}
 
@@ -454,4 +445,17 @@ type request struct {
 type response struct {
 	Code    int             `json:"code"`
 	BodyRaw json.RawMessage `json:"body"`
+}
+
+type testContext struct {
+	lazyTarget vespa.Target
+	testsPath  string
+	dryRun     bool
+}
+
+func (t *testContext) target() vespa.Target {
+	if t.lazyTarget == nil {
+		t.lazyTarget = getTarget()
+	}
+	return t.lazyTarget
 }

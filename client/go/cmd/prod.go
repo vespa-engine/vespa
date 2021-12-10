@@ -372,5 +372,5 @@ func verifyTest(testsParent string, suite string, target vespa.Target, required 
 		return
 	}
 
-	runTests(testDirectory, target, true)
+	runTests(testDirectory, true)
 }
