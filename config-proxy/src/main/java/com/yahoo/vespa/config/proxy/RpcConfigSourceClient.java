@@ -43,7 +43,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
 
     private final Supervisor supervisor = new Supervisor(new Transport("config-source-client"));
 
-    private final RpcServer rpcServer;
+    private final ResponseHandler responseHandler;
     private final ConfigSourceSet configSourceSet;
     private final Map<ConfigCacheKey, Subscriber> activeSubscribers = new ConcurrentHashMap<>();
     private final MemoryCache memoryCache;
@@ -57,15 +57,15 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("delayed responses"));
     private final ScheduledFuture<?> delayedResponsesFuture;
 
-    RpcConfigSourceClient(RpcServer rpcServer, ConfigSourceSet configSourceSet, MemoryCache memoryCache) {
-        this.rpcServer = rpcServer;
+    RpcConfigSourceClient(ResponseHandler responseHandler, ConfigSourceSet configSourceSet) {
+        this.responseHandler = responseHandler;
         this.configSourceSet = configSourceSet;
-        this.memoryCache = memoryCache;
+        this.memoryCache = new MemoryCache();
         this.delayedResponses = new DelayedResponses();
         checkConfigSources();
         nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, 10, MILLISECONDS);
         this.requester = JRTConfigRequester.create(configSourceSet, timingValues);
-        DelayedResponseHandler command = new DelayedResponseHandler(delayedResponses, memoryCache, rpcServer);
+        DelayedResponseHandler command = new DelayedResponseHandler(delayedResponses, memoryCache, responseHandler);
         this.delayedResponsesFuture = delayedResponsesScheduler.scheduleAtFixedRate(command, 5, 1, SECONDS);
     }
 
@@ -163,7 +163,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     }
 
     @Override
-    public void cancel() {
+    public void shutdown() {
         log.log(Level.FINE, "shutdownSourceConnections");
         shutdownSourceConnections();
         log.log(Level.FINE, "delayedResponsesFuture.cancel");
@@ -230,7 +230,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
                     log.log(Level.FINE, () -> "Call returnOkResponse for " + key + "," + generation);
                     if (config.getPayload().getData().getByteLength() == 0)
                         log.log(Level.WARNING, () -> "Call returnOkResponse for " + key + "," + generation + " with empty config");
-                    rpcServer.returnOkResponse(request, config);
+                    responseHandler.returnOkResponse(request, config);
                 } else {
                     log.log(Level.INFO, "Could not remove " + key + " from delayedResponses queue, already removed");
                 }
@@ -243,9 +243,10 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     }
 
     @Override
-    public DelayedResponses delayedResponses() {
-        return delayedResponses;
-    }
+    public DelayedResponses delayedResponses() { return delayedResponses; }
+
+    @Override
+    public MemoryCache memoryCache() { return memoryCache; }
 
     private void updateWithNewConfig(RawConfig newConfig) {
         log.log(Level.FINE, () -> "config to be returned for '" + newConfig.getKey() +
