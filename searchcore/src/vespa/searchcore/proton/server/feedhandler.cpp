@@ -416,10 +416,12 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
-      _replay_end_serial_num(0u),
-      _prepare_serial_num(0u),
-      _numOperationsPendingCommit(0),
+      _replay_end_serial_num(0),
+      _prepare_serial_num(0),
+      _numOperationsStarted(0),
       _numOperationsCompleted(0),
+      _numOperationsStartedAtLastCommitStart(0),
+      _numCommitsStarted(0),
       _numCommitsCompleted(0),
       _delayedPrune(false),
       _feedLock(),
@@ -519,34 +521,39 @@ FeedHandler::getTransactionLogReplayDone() const {
 }
 
 void
-FeedHandler::onCommitDone(size_t numPendingAtStart, vespalib::steady_time start_time) {
-    assert(numPendingAtStart <= _numOperationsPendingCommit);
-    _numOperationsPendingCommit -= numPendingAtStart;
-    _numOperationsCompleted += numPendingAtStart;
+FeedHandler::onCommitDone(size_t numOperationsInCommit, vespalib::steady_time start_time) {
+    assert(_numCommitsStarted > _numCommitsCompleted);
+    assert(_numOperationsStarted >= _numOperationsCompleted + numOperationsInCommit);
+    _numOperationsCompleted += numOperationsInCommit;
     _numCommitsCompleted++;
-    if (_numOperationsPendingCommit > 0) {
+    if ((numOperationsInFlight() > 0) && numCommitsInFlight() == 0) {
         enqueCommitTask();
     }
     LOG(spam, "%zu: onCommitDone(%zu) total=%zu left=%zu",
-        _numCommitsCompleted, numPendingAtStart, _numOperationsCompleted, _numOperationsPendingCommit);
+        _numCommitsCompleted, numOperationsInCommit, _numOperationsCompleted, numOperationsInFlight());
     vespalib::steady_time now = vespalib::steady_clock::now();
     auto latency = vespalib::to_s(now - start_time);
     std::lock_guard guard(_stats_lock);
-    _stats.add_commit(numPendingAtStart, latency);
+    _stats.add_commit(numOperationsInCommit, latency);
 }
 
 void FeedHandler::enqueCommitTask() {
-    _writeService.master().execute(makeLambdaTask([this, start_time(vespalib::steady_clock::now())]() { initiateCommit(start_time); }));
+    _writeService.master().execute(makeLambdaTask([this, start_time(vespalib::steady_clock::now())]() {
+        initiateCommit(start_time);
+    }));
 }
 
 void
 FeedHandler::initiateCommit(vespalib::steady_time start_time) {
+    size_t numOperationsSinceLastInitiatedCommit = _numOperationsStarted - _numOperationsStartedAtLastCommitStart;
     auto onCommitDoneContext = std::make_shared<OnCommitDone>(
             _writeService.master(),
-            makeLambdaTask([this, numPendingAtStart=_numOperationsPendingCommit, start_time]() {
-                onCommitDone(numPendingAtStart, start_time);
+            makeLambdaTask([this, numOperationsSinceLastInitiatedCommit, start_time]() {
+                onCommitDone(numOperationsSinceLastInitiatedCommit, start_time);
             }));
     auto commitResult = _tlsWriter->startCommit(onCommitDoneContext);
+    _numCommitsStarted++;
+    _numOperationsStartedAtLastCommitStart = _numOperationsStarted;
     if (_activeFeedView) {
         using KeepAlivePair = vespalib::KeepAlive<std::pair<CommitResult, DoneCallback>>;
         auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
@@ -560,7 +567,8 @@ FeedHandler::appendOperation(const FeedOperation &op, TlsWriter::DoneCallback on
         const_cast<FeedOperation &>(op).setSerialNum(inc_serial_num());
     }
     _tlsWriter->appendOperation(op, std::move(onDone));
-    if (++_numOperationsPendingCommit == 1) {
+    ++_numOperationsStarted;
+    if (numOperationsInFlight() == 1) {
         enqueCommitTask();
     }
 }
