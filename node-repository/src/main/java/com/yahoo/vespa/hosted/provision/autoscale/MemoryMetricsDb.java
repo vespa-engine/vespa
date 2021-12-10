@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -15,7 +13,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -73,10 +70,10 @@ public class MemoryMetricsDb implements MetricsDb {
         Instant startTime = clock().instant().minus(period);
         synchronized (lock) {
             if (hostnames.isEmpty())
-                return nodeTimeseries.values().stream().map(ns -> ns.justAfter(startTime)).collect(Collectors.toList());
+                return nodeTimeseries.values().stream().map(ns -> ns.keepAfter(startTime)).collect(Collectors.toList());
             else
                 return hostnames.stream()
-                                .map(hostname -> nodeTimeseries.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).justAfter(startTime))
+                                .map(hostname -> nodeTimeseries.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).keepAfter(startTime))
                                 .collect(Collectors.toList());
         }
     }
@@ -94,7 +91,7 @@ public class MemoryMetricsDb implements MetricsDb {
             // 12 hours with 1k nodes and 3 resources and 1 measurement/sec is about 5Gb
             for (String hostname : nodeTimeseries.keySet()) {
                 var timeseries = nodeTimeseries.get(hostname);
-                timeseries = timeseries.justAfter(clock().instant().minus(Autoscaler.maxScalingWindow()));
+                timeseries = timeseries.keepAfter(clock().instant().minus(Autoscaler.maxScalingWindow()));
                 if (timeseries.isEmpty())
                     nodeTimeseries.remove(hostname);
                 else

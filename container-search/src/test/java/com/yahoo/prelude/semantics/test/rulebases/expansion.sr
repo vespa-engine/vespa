@@ -5,4 +5,6 @@ equiv1 +> =equiv2 =equiv3;
 
 testfield:[test] -> =testfield:e1 =testfield:e2 =testfield:e3;
 
+synonymfield:[test] -> =[test];
+
 [test] :- foo, bar, baz;

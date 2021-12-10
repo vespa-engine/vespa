@@ -47,16 +47,19 @@ public class ClusterTimeseries {
 
     /**
      * The max query growth rate we can predict from this time-series as a fraction of the average traffic in the window
+     *
+     * @return the predicted max growth of the query rate, per minute as a fraction of the current load
      */
     public double maxQueryGrowthRate(Duration window, Clock clock) {
         if (snapshots.isEmpty()) return 0.1;
         // Find the period having the highest growth rate, where total growth exceeds 30% increase
-        double maxGrowthRate = 0; // In query rate per minute
+        double maxGrowthRate = 0; // In query rate growth per second (to get good resolution)
+
         for (int start = 0; start < snapshots.size(); start++) {
             if (start > 0) { // Optimization: Skip this point when starting from the previous is better relative to the best rate so far
                 Duration duration = durationBetween(start - 1, start);
-                if (duration.toMinutes() != 0) {
-                    double growthRate = (queryRateAt(start - 1) - queryRateAt(start)) / duration.toMinutes();
+                if (duration.toSeconds() != 0) {
+                    double growthRate = (queryRateAt(start - 1) - queryRateAt(start)) / duration.toSeconds();
                     if (growthRate >= maxGrowthRate)
                         continue;
                 }
@@ -64,8 +67,8 @@ public class ClusterTimeseries {
             for (int end = start + 1; end < snapshots.size(); end++) {
                 if (queryRateAt(end) >= queryRateAt(start) * 1.3) {
                     Duration duration = durationBetween(start, end);
-                    if (duration.toMinutes() == 0) continue;
-                    double growthRate = (queryRateAt(end) - queryRateAt(start)) / duration.toMinutes();
+                    if (duration.toSeconds() == 0) continue;
+                    double growthRate = (queryRateAt(end) - queryRateAt(start)) / duration.toSeconds();
                     if (growthRate > maxGrowthRate)
                         maxGrowthRate = growthRate;
                 }
@@ -79,7 +82,7 @@ public class ClusterTimeseries {
         }
         OptionalDouble queryRate = queryRate(window, clock);
         if (queryRate.orElse(0) == 0) return 0.1; // Growth not expressible as a fraction of the current rate
-        return maxGrowthRate / queryRate.getAsDouble();
+        return maxGrowthRate * 60 / queryRate.getAsDouble();
     }
 
     /**

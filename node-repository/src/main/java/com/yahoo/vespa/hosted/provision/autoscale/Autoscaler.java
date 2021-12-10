@@ -212,7 +212,7 @@ public class Autoscaler {
         @Override
         public String toString() {
             return "autoscaling advice: " +
-                   (present ? (target.isPresent() ? "Scale to " + target.get() : "Don't scale") : " None");
+                   (present ? (target.isPresent() ? "Scale to " + target.get() : "Don't scale") : "None");
         }
 
     }
