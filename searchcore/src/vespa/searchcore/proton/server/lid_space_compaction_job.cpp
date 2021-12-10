@@ -17,7 +17,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/gate.h>
 #include <cassert>
-#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.lidspace.compactionjob");
@@ -221,8 +220,13 @@ CompactionJob::run()
         _is_disabled = false;
     }
 
-    LidUsageStats stats = _handler->getLidStatus();
     if (_scanItr && !_scanItr->valid()) {
+        bool numPending = getLimiter().numPending();
+        if (numPending > 0) {
+            // We must wait to decide if a rescan is necessary until all operations are completed
+            return false;
+        }
+        LidUsageStats stats = _handler->getLidStatus();
         if (shouldRestartScanDocuments(stats)) {
             _scanItr = _handler->getIterator();
         } else {
@@ -232,6 +236,7 @@ CompactionJob::run()
         }
     }
 
+    LidUsageStats stats = _handler->getLidStatus();
     if (_scanItr) {
         return scanDocuments(stats);
     } else if (_shouldCompactLidSpace) {
