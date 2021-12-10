@@ -92,7 +92,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        server.proxyServer().memoryCache().update(config);
+        server.proxyServer().getMemoryCache().update(config);
         req = new Request("listCachedConfig");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
@@ -119,7 +119,7 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(0));
 
         final RawConfig config = ProxyServerTest.fooConfig;
-        server.proxyServer().memoryCache().update(config);
+        server.proxyServer().getMemoryCache().update(config);
         req = new Request("listCachedConfigFull");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
@@ -133,7 +133,7 @@ public class ConfigProxyRpcServerTest {
     }
 
     /**
-     * Tests listSourceConnections RPC command
+     * Tests printStatistics RPC command
      */
     @Test
     public void testRpcMethodListSourceConnections() throws ListenFailedException {
@@ -148,6 +148,20 @@ public class ConfigProxyRpcServerTest {
         assertThat(ret.length, is(2));
         assertThat(ret[0], is("Current source: " + configSourceAddress));
         assertThat(ret[1], is("All sources:\n" + configSourceAddress + "\n"));
+    }
+
+    /**
+     * Tests printStatistics RPC command
+     */
+    @Test
+    public void testRpcMethodPrintStatistics() {
+        Request req = new Request("printStatistics");
+        client.invoke(req);
+        assertFalse(req.errorMessage(), req.isError());
+        assertThat(req.returnValues().size(), is(1));
+        assertThat(req.returnValues().get(0).asString(), is("\n" +
+                "Delayed responses queue size: 0\n" +
+                "Contents: "));
     }
 
     /**
@@ -261,7 +275,7 @@ public class ConfigProxyRpcServerTest {
     }
 
     private static ProxyServer createTestServer(ConfigSourceSet source) {
-        return new ProxyServer(null, source, new RpcConfigSourceClient(new ResponseHandler(), source));
+        return new ProxyServer(null, source, new MemoryCache(), null);
     }
 
     private static class TestServer implements AutoCloseable {

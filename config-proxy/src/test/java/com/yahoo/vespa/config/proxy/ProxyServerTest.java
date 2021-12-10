@@ -2,10 +2,7 @@
 package com.yahoo.vespa.config.proxy;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.vespa.config.ConfigCacheKey;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ErrorCode;
-import com.yahoo.vespa.config.RawConfig;
+import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.Payload;
 import org.junit.After;
@@ -28,8 +25,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class ProxyServerTest {
 
+    private final MemoryCache memoryCache = new MemoryCache();
     private final MockConfigSource source = new MockConfigSource();
-    private final ConfigSourceClient client = new MockConfigSourceClient(source);
+    private final MockConfigSourceClient client = new MockConfigSourceClient(source, memoryCache);
     private ProxyServer proxy;
 
     static final RawConfig fooConfig = ConfigTester.fooConfig;
@@ -48,7 +46,7 @@ public class ProxyServerTest {
         source.clear();
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, 0));
         source.put(errorConfigKey, createConfigWithNextConfigGeneration(fooConfig, ErrorCode.UNKNOWN_DEFINITION));
-        proxy = createTestServer(source, client);
+        proxy = createTestServer(source, client, memoryCache);
     }
 
     @After
@@ -59,10 +57,10 @@ public class ProxyServerTest {
     @Test
     public void basic() {
         assertTrue(proxy.getMode().isDefault());
-        assertThat(proxy.memoryCache().size(), is(0));
+        assertThat(proxy.getMemoryCache().size(), is(0));
 
         ConfigTester tester = new ConfigTester();
-        MemoryCache memoryCache = proxy.memoryCache();
+        final MemoryCache memoryCache = proxy.getMemoryCache();
         assertEquals(0, memoryCache.size());
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
@@ -76,7 +74,7 @@ public class ProxyServerTest {
      */
     @Test
     public void testModeSwitch() {
-        ProxyServer proxy = createTestServer(source, client);
+        ProxyServer proxy = createTestServer(source, client, new MemoryCache());
         assertTrue(proxy.getMode().isDefault());
 
         for (String mode : Mode.modes()) {
@@ -111,7 +109,7 @@ public class ProxyServerTest {
     @Test
     public void testGetConfigAndCaching() {
         ConfigTester tester = new ConfigTester();
-        MemoryCache memoryCache = proxy.memoryCache();
+        final MemoryCache memoryCache = proxy.getMemoryCache();
         assertEquals(0, memoryCache.size());
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
@@ -136,14 +134,14 @@ public class ProxyServerTest {
         // Simulate an error response
         source.put(fooConfig.getKey(), createConfigWithNextConfigGeneration(fooConfig, ErrorCode.INTERNAL_ERROR));
 
-        MemoryCache memoryCache = proxy.memoryCache();
-        assertEquals(0, memoryCache.size());
+        final MemoryCache cacheManager = proxy.getMemoryCache();
+        assertEquals(0, cacheManager.size());
 
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
         assertNotNull(res);
         assertNotNull(res.getPayload());
         assertTrue(res.isError());
-        assertEquals(0, memoryCache.size());
+        assertEquals(0, cacheManager.size());
 
         // Put a version of the same config into backend without error and see that it now works (i.e. we are
         // not getting a cached response (of the error in the previous request)
@@ -154,12 +152,12 @@ public class ProxyServerTest {
         assertNotNull(res);
         assertNotNull(res.getPayload().getData());
         assertThat(res.getPayload().toString(), is(ConfigTester.fooPayload.toString()));
-        assertEquals(1, memoryCache.size());
+        assertEquals(1, cacheManager.size());
 
         JRTServerConfigRequest newRequestBasedOnResponse = tester.createRequest(res);
         RawConfig res2 = proxy.resolveConfig(newRequestBasedOnResponse);
         assertFalse(ProxyServer.configOrGenerationHasChanged(res2, newRequestBasedOnResponse));
-        assertEquals(1, memoryCache.size());
+        assertEquals(1, cacheManager.size());
     }
 
     /**
@@ -171,7 +169,7 @@ public class ProxyServerTest {
     @Test
     public void testNoCachingOfEmptyConfig() {
         ConfigTester tester = new ConfigTester();
-        MemoryCache cache = proxy.memoryCache();
+        MemoryCache cache = proxy.getMemoryCache();
 
         assertEquals(0, cache.size());
         RawConfig res = proxy.resolveConfig(tester.createRequest(fooConfig));
@@ -224,8 +222,10 @@ public class ProxyServerTest {
         assertThat(properties.configSources[0], is(ProxyServer.DEFAULT_PROXY_CONFIG_SOURCES));
     }
 
-    private static ProxyServer createTestServer(ConfigSourceSet source, ConfigSourceClient configSourceClient) {
-        return new ProxyServer(null, source, configSourceClient);
+    private static ProxyServer createTestServer(ConfigSourceSet source,
+                                                ConfigSourceClient configSourceClient,
+                                                MemoryCache memoryCache) {
+        return new ProxyServer(null, source, memoryCache, configSourceClient);
     }
 
     static RawConfig createConfigWithNextConfigGeneration(RawConfig config, int errorCode) {

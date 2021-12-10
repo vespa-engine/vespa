@@ -1,14 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy;
 
-import com.yahoo.vespa.config.ConfigCacheKey;
-import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.RawConfig;
+import java.util.logging.Level;
+import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -22,8 +20,8 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     private final MemoryCache cache;
     private final DelayedResponses delayedResponses = new DelayedResponses();
 
-    MemoryCacheConfigClient() {
-        this.cache = new MemoryCache();
+    MemoryCacheConfigClient(MemoryCache cache) {
+        this.cache = cache;
     }
 
     /**
@@ -46,7 +44,7 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     }
 
     @Override
-    public void shutdown() {}
+    public void cancel() {}
 
     @Override
     public void shutdownSourceConnections() {}
@@ -65,8 +63,5 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     public DelayedResponses delayedResponses() {
         return delayedResponses;
     }
-
-    @Override
-    public MemoryCache memoryCache() { return cache; }
 
 }

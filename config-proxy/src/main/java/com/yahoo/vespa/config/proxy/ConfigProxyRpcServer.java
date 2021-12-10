@@ -30,10 +30,10 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
-public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
+public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer {
 
     private final static Logger log = Logger.getLogger(ConfigProxyRpcServer.class.getName());
-    static final int TRACELEVEL = 6;
+    private static final int TRACELEVEL = 6;
 
     private final Spec spec;
     private final Supervisor supervisor;
@@ -79,6 +79,10 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
                 this::ping)
                 .methodDesc("ping")
                 .returnDesc(0, "ret code", "return code, 0 is OK"));
+        supervisor.addMethod(new Method("printStatistics", "", "s",
+                this::printStatistics)
+                .methodDesc("printStatistics")
+                .returnDesc(0, "statistics", "Statistics for server"));
         supervisor.addMethod(new Method("listCachedConfig", "", "S",
                 this::listCachedConfig)
                 .methodDesc("list cached configs)")
@@ -141,6 +145,26 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
         });
     }
 
+    /**
+     * Returns a String with statistics data for the server.
+     *
+     * @param req a Request
+     */
+    private void printStatistics(Request req) {
+        dispatchRpcRequest(req, () -> {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\nDelayed responses queue size: ");
+            sb.append(proxyServer.delayedResponses().size());
+            sb.append("\nContents: ");
+            for (DelayedResponse delayed : proxyServer.delayedResponses().responses()) {
+                sb.append(delayed.getRequest().toString()).append("\n");
+            }
+
+            req.returnValues().add(new StringValue(sb.toString()));
+            req.returnRequest();
+        });
+    }
+
     private void listCachedConfig(Request req) {
         dispatchRpcRequest(req, () -> listCachedConfig(req, false));
     }
@@ -177,7 +201,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
 
     private void invalidateCache(Request req) {
         dispatchRpcRequest(req, () -> {
-            proxyServer.memoryCache().clear();
+            proxyServer.getMemoryCache().clear();
             String[] s = new String[2];
             s[0] = "0";
             s[1] = "success";
@@ -213,7 +237,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
 
     private void dumpCache(Request req) {
         dispatchRpcRequest(req, () -> {
-            final MemoryCache memoryCache = proxyServer.memoryCache();
+            final MemoryCache memoryCache = proxyServer.getMemoryCache();
             req.returnValues().add(new StringValue(memoryCache.dumpCacheToDisk(req.parameters().get(0).asString(), memoryCache)));
             req.returnRequest();
         });
@@ -245,13 +269,12 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
      * @param request a Request
      */
     private void getConfigImpl(JRTServerConfigRequest request) {
-        ResponseHandler responseHandler = new ResponseHandler();
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy getConfig()");
         log.log(Level.FINE, () ->"getConfig: " + request.getShortDescription() + ",config checksums=" + request.getRequestConfigChecksums());
         if (!request.validateParameters()) {
             // Error code is set in verifyParameters if parameters are not OK.
             log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
-            responseHandler.returnErrorResponse(request, request.errorCode(), "Parameters for request " + request.getShortDescription() + " did not validate: " + request.errorMessage());
+            returnErrorResponse(request, request.errorCode(), "Parameters for request " + request.getShortDescription() + " did not validate: " + request.errorMessage());
             return;
         }
         try {
@@ -259,13 +282,13 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
             if (config == null) {
                 log.log(Level.FINEST, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
             } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
-                responseHandler.returnOkResponse(request, config);
+                returnOkResponse(request, config);
             } else {
                 log.log(Level.FINEST, () -> "No new config for " + request.getShortDescription() + ", not sending response");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            responseHandler.returnErrorResponse(request, com.yahoo.vespa.config.ErrorCode.INTERNAL_ERROR, e.getMessage());
+            returnErrorResponse(request, com.yahoo.vespa.config.ErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 
@@ -279,7 +302,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
 
     private void listCachedConfig(Request req, boolean full) {
         String[] ret;
-        MemoryCache cache = proxyServer.memoryCache();
+        MemoryCache cache = proxyServer.getMemoryCache();
         ret = new String[cache.size()];
         int i = 0;
         for (RawConfig config : cache.values()) {
@@ -325,4 +348,29 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
         // requesting this config?
     }
 
+    public void returnOkResponse(JRTServerConfigRequest request, RawConfig config) {
+        request.getRequestTrace().trace(TRACELEVEL, "Config proxy returnOkResponse()");
+        request.addOkResponse(config.getPayload(),
+                              config.getGeneration(),
+                              config.applyOnRestart(),
+                              config.getPayloadChecksums());
+        log.log(Level.FINE, () -> "Return response: " + request.getShortDescription() + ",config checksums=" + config.getPayloadChecksums() +
+                ",generation=" + config.getGeneration());
+        log.log(Level.FINEST, () -> "Config payload in response for " + request.getShortDescription() + ":" + config.getPayload());
+
+
+        // TODO Catch exception for now, since the request might have been returned in CheckDelayedResponse
+        // TODO Move logic so that all requests are returned in CheckDelayedResponse
+        try {
+            request.getRequest().returnRequest();
+        } catch (IllegalStateException e) {
+            log.log(Level.FINE, () -> "Something bad happened when sending response for '" + request.getShortDescription() + "':" + e.getMessage());
+        }
+    }
+
+    public void returnErrorResponse(JRTServerConfigRequest request, int errorCode, String message) {
+        request.getRequestTrace().trace(TRACELEVEL, "Config proxy returnErrorResponse()");
+        request.addErrorResponse(errorCode, message);
+        request.getRequest().returnRequest();
+    }
 }
