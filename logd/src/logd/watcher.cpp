@@ -140,6 +140,7 @@ Watcher::watchfile()
     vespalib::SigCatch catcher;
     int sleepcount = 0;
     vespalib::system_time created = vespalib::system_time::min();
+    vespalib::system_time lastPrune = vespalib::system_time::min();
 
  again:
     // XXX should close and/or check _wfd first ?
@@ -215,6 +216,11 @@ Watcher::watchfile()
         bool wantrotate = (now > created + _confsubscriber.getRotateAge())
                           || (sb.st_size > _confsubscriber.getRotateSize());
 
+        if (now > lastPrune + 61s) {
+            removeOldLogs(filename);
+            lastPrune = now;
+        }
+
         if (rotate) {
             vespalib::duration rotTime = rotTimer.elapsed();
             off_t overflow_size = (1.1 * _confsubscriber.getRotateSize());
@@ -240,7 +246,6 @@ Watcher::watchfile()
                     LOG(warning, "logfile spamming %d times, aggressively removing %s", spamfill_counter, newfn);
                     unlink(newfn);
                 }
-                removeOldLogs(filename);
                 goto again;
             }
         } else if (stat(filename, &sb) != 0
