@@ -250,6 +250,7 @@ TEST_F(MaxOutstandingJobTest, job_is_blocked_if_it_has_too_many_outstanding_move
     unblockJob(1);
     assertRunToNotBlocked();
     assertJobContext(4, 7, 3, 0, 0);
+    unblockJob(1);
     endScan().compact();
     assertJobContext(4, 7, 3, 7, 1);
     sync();
