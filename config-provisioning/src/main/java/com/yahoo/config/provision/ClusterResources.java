@@ -48,11 +48,8 @@ public class ClusterResources {
     public boolean isWithin(ClusterResources min, ClusterResources max) {
         if (this.smallerThan(min)) return false;
         if (max.smallerThan(this)) return false;
-        if (min.nodeResources().isUnspecified())
-        if ( ! min.nodeResources().isUnspecified()
-             && ! this.nodeResources.justNonNumbers().compatibleWith(min.nodeResources.justNonNumbers())) return false;
-        if ( ! max.nodeResources().isUnspecified()
-             && ! this.nodeResources.justNonNumbers().compatibleWith(max.nodeResources.justNonNumbers())) return false;
+        if ( ! this.nodeResources.justNonNumbers().compatibleWith(min.nodeResources.justNonNumbers())) return false;
+        if ( ! this.nodeResources.justNonNumbers().compatibleWith(max.nodeResources.justNonNumbers())) return false;
         return true;
     }
 
