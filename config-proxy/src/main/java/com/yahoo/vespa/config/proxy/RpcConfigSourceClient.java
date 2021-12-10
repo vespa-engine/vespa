@@ -163,7 +163,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     }
 
     @Override
-    public void cancel() {
+    public void shutdown() {
         log.log(Level.FINE, "shutdownSourceConnections");
         shutdownSourceConnections();
         log.log(Level.FINE, "delayedResponsesFuture.cancel");

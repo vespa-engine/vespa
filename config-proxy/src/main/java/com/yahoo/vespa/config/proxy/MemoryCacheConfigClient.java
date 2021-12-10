@@ -46,7 +46,7 @@ class MemoryCacheConfigClient implements ConfigSourceClient {
     }
 
     @Override
-    public void cancel() {}
+    public void shutdown() {}
 
     @Override
     public void shutdownSourceConnections() {}

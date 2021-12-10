@@ -14,6 +14,7 @@ import com.yahoo.vespa.config.proxy.filedistribution.FileDistributionAndUrlDownl
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,11 +53,11 @@ public class ProxyServer implements Runnable {
     private volatile Mode mode = new Mode(DEFAULT);
 
     ProxyServer(Spec spec, ConfigSourceSet source, ConfigSourceClient configClient) {
-        this.configSource = source;
-        supervisor = new Supervisor(new Transport("proxy-server", JRT_TRANSPORT_THREADS)).setDropEmptyBuffers(true);
+        this.configSource = Objects.requireNonNull(source);
         log.log(Level.FINE, () -> "Using config source '" + source);
+        this.supervisor = new Supervisor(new Transport("proxy-server", JRT_TRANSPORT_THREADS)).setDropEmptyBuffers(true);
         this.rpcServer = createRpcServer(spec);
-        this.configClient = (configClient == null) ? createRpcClient(source) : configClient;
+        this.configClient = Objects.requireNonNull(configClient);
         this.fileDistributionAndUrlDownload = new FileDistributionAndUrlDownload(supervisor, source);
     }
 
@@ -155,7 +156,7 @@ public class ProxyServer implements Runnable {
         Event.started("configproxy");
 
         ConfigSourceSet configSources = new ConfigSourceSet(properties.configSources);
-        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources, null);
+        ProxyServer proxyServer = new ProxyServer(new Spec(null, port), configSources, createRpcClient(configSources));
         // catch termination and interrupt signal
         proxyServer.setupSignalHandler();
         Thread proxyserverThread = threadFactory.newThread(proxyServer);
@@ -165,7 +166,8 @@ public class ProxyServer implements Runnable {
     }
 
     static Properties getSystemProperties() {
-        final String[] inputConfigSources = System.getProperty("proxyconfigsources", DEFAULT_PROXY_CONFIG_SOURCES).split(",");
+        String[] inputConfigSources = System.getProperty("proxyconfigsources",
+                                                         DEFAULT_PROXY_CONFIG_SOURCES).split(",");
         return new Properties(inputConfigSources);
     }
 
@@ -181,14 +183,14 @@ public class ProxyServer implements Runnable {
     // the cache will not be updated again before someone calls getConfig().
     private synchronized void flush() {
         configClient.memoryCache().clear();
-        configClient.cancel();
+        configClient.shutdown();
     }
 
     void stop() {
         Event.stopping("configproxy", "shutdown rpcServer");
         if (rpcServer != null) rpcServer.shutdown();
         Event.stopping("configproxy", "cancel configClient");
-        if (configClient != null) configClient.cancel();
+        configClient.shutdown();
         Event.stopping("configproxy", "flush");
         flush();
         Event.stopping("configproxy", "close fileDistribution");

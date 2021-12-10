@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 public class ProxyServerTest {
 
     private final MockConfigSource source = new MockConfigSource();
-    private final MockConfigSourceClient client = new MockConfigSourceClient(source);
+    private final ConfigSourceClient client = new MockConfigSourceClient(source);
     private ProxyServer proxy;
 
     static final RawConfig fooConfig = ConfigTester.fooConfig;
