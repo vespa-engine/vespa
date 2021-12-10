@@ -83,8 +83,10 @@ private:
     // the serial num of the last feed operation in the transaction log at startup before replay
     SerialNum                              _replay_end_serial_num;
     uint64_t                               _prepare_serial_num;
-    size_t                                 _numOperationsPendingCommit;
+    size_t                                 _numOperationsStarted;
     size_t                                 _numOperationsCompleted;
+    size_t                                 _numOperationsStartedAtLastCommitStart;
+    size_t                                 _numCommitsStarted;
     size_t                                 _numCommitsCompleted;
     bool                                   _delayedPrune;
     mutable std::shared_mutex              _feedLock;
@@ -140,6 +142,8 @@ private:
     void onCommitDone(size_t numPendingAtStart, vespalib::steady_time start_time);
     void initiateCommit(vespalib::steady_time start_time);
     void enqueCommitTask();
+    size_t numOperationsInFlight() const { return _numOperationsStarted - _numOperationsCompleted; }
+    size_t numCommitsInFlight() const { return _numCommitsStarted - _numCommitsCompleted; }
 public:
     FeedHandler(const FeedHandler &) = delete;
     FeedHandler & operator = (const FeedHandler &) = delete;
