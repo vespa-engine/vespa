@@ -16,7 +16,7 @@ interface ConfigSourceClient {
 
     RawConfig getConfig(RawConfig input, JRTServerConfigRequest request);
 
-    void cancel();
+    void shutdown();
 
     void shutdownSourceConnections();
 
@@ -25,5 +25,7 @@ interface ConfigSourceClient {
     List<String> getSourceConnections();
 
     DelayedResponses delayedResponses();
+
+    MemoryCache memoryCache();
 
 }
