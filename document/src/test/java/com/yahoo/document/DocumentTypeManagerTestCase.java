@@ -59,6 +59,7 @@ public class DocumentTypeManagerTestCase {
         assertSame(DataType.DOUBLE, doubleType);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testRecursiveRegister() {
         StructDataType struct = new StructDataType("mystruct");
@@ -87,6 +88,7 @@ public class DocumentTypeManagerTestCase {
         assertEquals(docType2, manager.getDocumentType(new DataTypeName("myotherdoc")));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testMultipleDocuments() {
         DocumentType docType1 = new DocumentType("foo0");
@@ -120,6 +122,7 @@ public class DocumentTypeManagerTestCase {
         assertEquals(manager.getDocumentTypes().get(new DataTypeName("foo1")), docType2);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testReverseMapOrder() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.map.cfg");
@@ -501,6 +504,7 @@ search annotationsimplicitstruct {
         assertReferenceTypePresentInManager(manager, 12345678, "referenced_type");
     }
 
+    @SuppressWarnings("deprecation")
     private static void assertReferenceTypePresentInManager(DocumentTypeManager manager, int refTypeId,
                                                             String refTargetTypeName) {
         DataType type = manager.getDataType(refTypeId);

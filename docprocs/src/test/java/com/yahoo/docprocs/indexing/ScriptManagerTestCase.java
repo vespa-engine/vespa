@@ -20,8 +20,7 @@ public class ScriptManagerTestCase {
 
     @Test
     public void requireThatScriptsAreAppliedToSubType() throws ParseException {
-        DocumentTypeManager typeMgr = new DocumentTypeManager();
-        typeMgr.configure("file:src/test/cfg/documentmanager_inherit.cfg");
+        var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
         DocumentType docType = typeMgr.getDocumentType("newssummary");
         assertNotNull(docType);
 
@@ -36,8 +35,7 @@ public class ScriptManagerTestCase {
 
     @Test
     public void requireThatScriptsAreAppliedToSuperType() throws ParseException {
-        DocumentTypeManager typeMgr = new DocumentTypeManager();
-        typeMgr.configure("file:src/test/cfg/documentmanager_inherit.cfg");
+        var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
         DocumentType docType = typeMgr.getDocumentType("newsarticle");
         assertNotNull(docType);
 
@@ -51,16 +49,14 @@ public class ScriptManagerTestCase {
 
     @Test
     public void requireThatEmptyConfigurationDoesNotThrow() {
-        DocumentTypeManager typeMgr = new DocumentTypeManager();
-        typeMgr.configure("file:src/test/cfg/documentmanager_inherit.cfg");
+        var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null, Embedder.throwsOnUse);
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
 
     @Test
     public void requireThatUnknownDocumentTypeReturnsNull() {
-        DocumentTypeManager typeMgr = new DocumentTypeManager();
-        typeMgr.configure("file:src/test/cfg/documentmanager_inherit.cfg");
+        var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
         ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null, Embedder.throwsOnUse);
         for (Iterator<DocumentType> it = typeMgr.documentTypeIterator(); it.hasNext(); ) {
             assertNull(scriptMgr.getScript(it.next()));
