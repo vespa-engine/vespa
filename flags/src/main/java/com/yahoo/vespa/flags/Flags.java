@@ -380,7 +380,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_LB_SERVICES = defineFeatureFlag(
-            "use-legacy-lb-services", true,
+            "use-legacy-lb-services", false,
             List.of("tokle"), "2021-11-22", "2021-12-31",
             "Whether to generate routing table based on legacy lb-services config",
             "Takes effect on container reboot",
