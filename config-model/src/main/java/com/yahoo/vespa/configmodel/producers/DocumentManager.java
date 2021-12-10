@@ -373,7 +373,7 @@ public class DocumentManager {
             structBuilder.inherits(inheritBuilder);
             docTypeBuildAnyType(inherited, builder, indexMap);
         }
-        for (com.yahoo.document.Field field : type.getFields()) {
+        for (com.yahoo.document.Field field : type.getFieldsThisTypeOnly()) {
             DataType fieldType = field.getDataType();
             var fieldBuilder = new DocumentmanagerConfig.Doctype.Structtype.Field.Builder();
             fieldBuilder
