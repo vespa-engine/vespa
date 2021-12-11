@@ -42,6 +42,7 @@ public:
     SerializedChunk(SerializedChunk &&) = default;
     SerializedChunk & operator=(SerializedChunk &&) = default;
     SerializedChunk(const SerializedChunk &) = delete;
+    ~SerializedChunk();
     SerializedChunk & operator=(const SerializedChunk &) = delete;
     vespalib::ConstBufferRef getData() const;
     SerialNumRange range() const { return _range; }
