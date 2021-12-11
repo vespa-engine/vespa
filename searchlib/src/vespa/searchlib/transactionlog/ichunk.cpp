@@ -159,6 +159,9 @@ SerializedChunk::SerializedChunk(std::unique_ptr<CommitChunk> commitChunk, Encod
     assert(! chunk->getEntries().empty());
     encode(_os, *chunk, encoding);
 }
+
+SerializedChunk::~SerializedChunk() = default;
+
 vespalib::ConstBufferRef SerializedChunk::getData() const {
     return vespalib::ConstBufferRef(_os.data(), _os.size());
 }
