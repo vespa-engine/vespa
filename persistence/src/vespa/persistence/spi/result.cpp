@@ -8,7 +8,9 @@
 namespace storage::spi {
 
 Result::Result(const Result &) = default;
+Result::Result(Result&&) noexcept = default;
 Result & Result::operator = (const Result &) = default;
+Result& Result::operator=(Result&&) noexcept = default;
 Result::~Result() = default;
 
 vespalib::string
