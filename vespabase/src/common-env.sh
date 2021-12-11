@@ -295,6 +295,10 @@ log_warning_message () {
 
 get_numa_ctl_cmd () {
     if ! type numactl &> /dev/null; then
+        if test "$(uname -s)" = Darwin
+        then
+            return 0
+        fi
         echo "FATAL: Could not find required program numactl."
         exit 1
     fi
