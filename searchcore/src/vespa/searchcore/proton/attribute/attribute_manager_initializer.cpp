@@ -165,6 +165,8 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
     _attrMgr = std::make_shared<AttributeManager>(*baseAttrMgr, *attrSpec, tasksBuilder);
 }
 
+AttributeManagerInitializer::~AttributeManagerInitializer() = default;
+
 void
 AttributeManagerInitializer::run()
 {

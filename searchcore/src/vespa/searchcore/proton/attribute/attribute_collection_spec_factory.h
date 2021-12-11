@@ -25,6 +25,7 @@ private:
 public:
     AttributeCollectionSpecFactory(const AllocStrategy& alloc_strategy,
                                    bool fastAccessOnly);
+    ~AttributeCollectionSpecFactory();
 
     AttributeCollectionSpec::UP create(const AttributesConfig &attrCfg,
                                        uint32_t docIdLimit,

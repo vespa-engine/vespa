@@ -16,6 +16,8 @@ AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(
 {
 }
 
+AttributeCollectionSpecFactory::~AttributeCollectionSpecFactory() = default;
+
 AttributeCollectionSpec::UP
 AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
                                        uint32_t docIdLimit,
