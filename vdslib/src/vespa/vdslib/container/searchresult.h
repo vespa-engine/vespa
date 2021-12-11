@@ -82,7 +82,7 @@ public:
 private:
     class Hit {
     public:
-        Hit() : _lid(0), _rank(0), _docIdOffset(0), _index(0) { }
+        Hit() noexcept : _lid(0), _rank(0), _docIdOffset(0), _index(0) { }
         Hit(uint32_t lid, RankType rank, size_t docIdOffset, size_t index) : _lid(lid), _rank(rank), _docIdOffset(docIdOffset), _index(index) { }
         const char * getDocId(const char * base) const { return base + getDocIdOffset(); }
         uint32_t getLid()                        const { return _lid; }

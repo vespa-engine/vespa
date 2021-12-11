@@ -5,6 +5,6 @@
 struct Hit {
     uint32_t docid;
     double distance;
-    Hit() : docid(0u), distance(0.0) {}
+    Hit() noexcept : docid(0u), distance(0.0) {}
     Hit(int id, double dist) : docid(id), distance(dist) {}
 };

@@ -44,7 +44,7 @@ class JsonStream : public JsonStreamTypes {
         string object_key;
         size_t array_index;
 
-        StateEntry()
+        StateEntry() noexcept
             : state(State::ROOT), object_key(""), array_index(size_t(0)) {}
         StateEntry(State s)
             : state(s), object_key(""), array_index(size_t(0)) {}

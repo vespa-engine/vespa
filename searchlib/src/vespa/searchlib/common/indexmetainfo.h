@@ -15,7 +15,7 @@ public:
         bool        valid;
         uint64_t    syncToken;
         vespalib::string dirName;
-        Snapshot() : valid(false), syncToken(0), dirName() {}
+        Snapshot() noexcept : valid(false), syncToken(0), dirName() {}
         Snapshot(bool valid_, uint64_t syncToken_, const vespalib::string &dirName_)
             : valid(valid_), syncToken(syncToken_), dirName(dirName_) {}
         bool operator==(const Snapshot &rhs) const {

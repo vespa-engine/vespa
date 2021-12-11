@@ -67,7 +67,7 @@ public:
         Avg    _wait_time;
         friend MatchingStats;
     public:
-        Partition()
+        Partition() noexcept
             : _docsCovered(0),
               _docsMatched(0),
               _docsRanked(0),

@@ -130,7 +130,7 @@ struct LshHit {
     double distance;
     uint32_t docid;
     int hash_distance;
-    LshHit() : distance(0.0), docid(0u), hash_distance(0) {}
+    LshHit() noexcept : distance(0.0), docid(0u), hash_distance(0) {}
     LshHit(int id, double dist, int hd = 0)
         : distance(dist), docid(id), hash_distance(hd) {}
 };

@@ -19,7 +19,7 @@ struct Worker : Runnable {
     size_t iter;
     uint64_t input;
     uint64_t output;
-    Worker() : iter(1), input(0), output(0) {}
+    Worker() noexcept : iter(1), input(0), output(0) {}
     void init(size_t n, uint64_t i) {
         iter = n;
         input = i;

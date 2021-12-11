@@ -22,7 +22,7 @@ public:
         : _type(&type), _node(nullptr), _value(value.release()) {}
 
     Annotation(const AnnotationType &annotation) : _type(&annotation), _node(nullptr), _value(nullptr) { }
-    Annotation() : _type(nullptr), _node(nullptr), _value(nullptr) { }
+    Annotation() noexcept : _type(nullptr), _node(nullptr), _value(nullptr) { }
     ~Annotation();
 
     void setType(const AnnotationType * v) { _type = v; }

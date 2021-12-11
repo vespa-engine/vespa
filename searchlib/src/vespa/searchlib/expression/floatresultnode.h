@@ -13,7 +13,7 @@ public:
     DECLARE_EXPRESSIONNODE(FloatResultNode);
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    FloatResultNode(double v=0) : _value(v) { }
+    FloatResultNode(double v=0) noexcept : _value(v) { }
     size_t hash() const override { size_t tmpHash(0); memcpy(&tmpHash, &_value, sizeof(tmpHash)); return tmpHash; }
     int onCmp(const Identifiable & b) const override;
     void add(const ResultNode & b) override;
