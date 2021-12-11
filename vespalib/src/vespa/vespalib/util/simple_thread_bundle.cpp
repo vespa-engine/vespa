@@ -8,6 +8,8 @@ using namespace vespalib::fixed_thread_bundle;
 
 namespace vespalib {
 
+VESPA_THREAD_STACK_TAG(simple_thread_bundle_executor);
+
 namespace {
 
 struct SignalHook : Runnable {
@@ -43,7 +45,7 @@ Runnable::UP wrap(Runnable *runnable) {
 }
 
 Runnable::UP chain(Runnable::UP first, Runnable::UP second) {
-    return Runnable::UP(new HookPair(std::move(first), std::move(second)));
+    return std::make_unique<HookPair>(std::move(first), std::move(second));
 }
 
 } // namespace vespalib::<unnamed>
@@ -171,6 +173,21 @@ SimpleThreadBundle::run(const std::vector<Runnable*> &targets)
     _work.latch = &latch;
     _hook->run();
     latch.await();
+}
+
+SimpleThreadBundle::Worker::Worker(Signal &s, Runnable::UP h)
+    : thread(*this, simple_thread_bundle_executor),
+      signal(s),
+      hook(std::move(h))
+{
+    thread.start();
+}
+void
+SimpleThreadBundle::Worker::run() {
+    for (size_t gen = 0; signal.wait(gen) > 0; ) {
+    hook->run();
+}
+
 }
 
 } // namespace vespalib

@@ -1,19 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.SharedResource;
-import com.yahoo.jdisc.References;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
-import java.util.concurrent.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * <p>This class provides a convenient way of safely dispatching a {@link Request}. Using this class you do not have to
@@ -46,7 +47,7 @@ import java.util.List;
  *
  * @author Simon Thoresen Hult
  */
-public abstract class RequestDispatch implements ListenableFuture<Response>, ResponseHandler {
+public abstract class RequestDispatch implements Future<Response>, ResponseHandler {
 
     private final FutureConjunction completions = new FutureConjunction();
     private final FutureResponse futureResponse = new FutureResponse(this);
@@ -106,22 +107,26 @@ public abstract class RequestDispatch implements ListenableFuture<Response>, Res
      *
      * @return A Future that can be waited for.
      */
-    public final ListenableFuture<Response> dispatch() {
+    public final CompletableFuture<Response> dispatch() {
         try (FastContentWriter writer = new FastContentWriter(connect())) {
             for (ByteBuffer buf : requestContent()) {
                 writer.write(buf);
             }
             completions.addOperand(writer);
         }
-        return this;
+        return CompletableFuture.allOf(completions.completableFuture(), futureResponse)
+                .thenApply(__ -> {
+                    try {
+                        return futureResponse.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new IllegalStateException(e); // Should not happens since both futures are complete
+                    }
+                });
     }
 
-    @Override
     public void addListener(Runnable listener, Executor executor) {
-        List<ListenableFuture<?>> combined = new ArrayList<>(2);
-        combined.add(completions);
-        combined.add(futureResponse);
-        Futures.allAsList(combined).addListener(listener, executor);
+        CompletableFuture.allOf(completions.completableFuture(), futureResponse)
+                .whenCompleteAsync((__, ___) -> listener.run(), executor);
     }
 
     @Override

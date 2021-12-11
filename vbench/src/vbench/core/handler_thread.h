@@ -33,7 +33,7 @@ private:
     void run() override;
 
 public:
-    HandlerThread(Handler<T> &next);
+    HandlerThread(Handler<T> &next, init_fun_t init_fun);
     ~HandlerThread();
     void handle(std::unique_ptr<T> obj) override;
     void join() override;

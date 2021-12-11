@@ -10,7 +10,9 @@
 
 namespace vespalib::datastore {
 
+class CompactionStrategy;
 class EntryComparator;
+class EntryRefFilter;
 struct ICompactable;
 class IUniqueStoreDictionaryReadSnapshot;
 class UniqueStoreAddResult;
@@ -28,7 +30,7 @@ public:
     virtual UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry) = 0;
     virtual EntryRef find(const EntryComparator& comp) = 0;
     virtual void remove(const EntryComparator& comp, EntryRef ref) = 0;
-    virtual void move_keys(ICompactable& compactable, const std::vector<bool>& compacting_buffers, uint32_t entry_ref_offset_bits) = 0;
+    virtual void move_keys(ICompactable& compactable, const EntryRefFilter& compacting_buffers) = 0;
     virtual uint32_t get_num_uniques() const = 0;
     virtual vespalib::MemoryUsage get_memory_usage() const = 0;
     virtual void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) = 0;
@@ -40,7 +42,7 @@ public:
     virtual vespalib::MemoryUsage get_btree_memory_usage() const = 0;
     virtual vespalib::MemoryUsage get_hash_memory_usage() const = 0;
     virtual bool has_held_buffers() const = 0;
-    virtual void compact_worst(bool compact_btree_dictionary, bool compact_hash_dictionary) = 0;
+    virtual void compact_worst(bool compact_btree_dictionary, bool compact_hash_dictionary, const CompactionStrategy& compaction_strategy) = 0;
 };
 
 }

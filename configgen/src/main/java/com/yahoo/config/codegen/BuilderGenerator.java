@@ -142,7 +142,19 @@ public class BuilderGenerator {
             return "public Builder " + n.getName() + "(" + builderType(n) + " " + INTERNAL_PREFIX + "builder) {\n" + //
                     "  " + n.getName() + " = " + INTERNAL_PREFIX + "builder;\n" + //
                     "  return this;\n" + //
+                    "}\n" + //
+                    "/**\n" + //
+                    " * Make a new builder and run the supplied function on it before adding it to the list\n" + //
+                    " * @param __func lambda that modifies the given builder\n" + //
+                    " * @return this builder\n" + //
+                    " */\n" + //
+                    "public Builder " + n.getName() + "(java.util.function.Consumer<" + builderType(n) + "> __func) {\n" + //
+                    "  " + builderType(n) + " __inner = new " + builderType(n) +"();\n" + //
+                    "  __func.accept(__inner);\n" + //
+                    "  " + n.getName() + " = __inner;\n" + //
+                    "  return this;\n" + //
                     "}";
+
         }
 
         private static String innerArraySetters(InnerCNode n) {
@@ -153,6 +165,18 @@ public class BuilderGenerator {
                     " */\n" + //
                     "public Builder " + n.getName() + "(" + builderType(n) + " " + INTERNAL_PREFIX + "builder) {\n" + //
                     "  " + n.getName() + ".add(" + INTERNAL_PREFIX + "builder);\n" + //
+                    "  return this;\n" + //
+                    "}\n" + //
+                    "\n" + //
+                    "/**\n" + //
+                    " * Make a new builder and run the supplied function on it before adding it to the list\n" + //
+                    " * @param __func lambda that modifies the given builder\n" + //
+                    " * @return this builder\n" + //
+                    " */\n" + //
+                    "public Builder " + n.getName() + "(java.util.function.Consumer<" + builderType(n) + "> __func) {\n" + //
+                    "  " + builderType(n) + " __inner = new " + builderType(n) +"();\n" + //
+                    "  __func.accept(__inner);\n" + //
+                    "  " + n.getName() + ".add(__inner);\n" + //
                     "  return this;\n" + //
                     "}\n" + //
                     "\n" + //
@@ -195,8 +219,7 @@ public class BuilderGenerator {
         }
 
         private static String innerMapSetters(CNode n) {
-            return "public Builder " + n.getName() + "(String " + INTERNAL_PREFIX + "key, " + builderType(n) + " " + INTERNAL_PREFIX
-                    + "value) {\n" + //
+            String r = "public Builder " + n.getName() + "(String " + INTERNAL_PREFIX + "key, " + builderType(n) + " " + INTERNAL_PREFIX + "value) {\n" + //
                     "  " + n.getName() + ".put(" + INTERNAL_PREFIX + "key, " + INTERNAL_PREFIX + "value);\n" + //
                     "  return this;\n" + //
                     "}\n" + //
@@ -205,6 +228,22 @@ public class BuilderGenerator {
                     "  " + n.getName() + ".putAll(" + INTERNAL_PREFIX + "values);\n" + //
                     "  return this;\n" + //
                     "}";
+            if (n instanceof InnerCNode) {
+                r = r +
+                    "\n\n" + //
+                    "/**\n" + //
+                    " * Make a new builder and run the supplied function on it before using it as the value\n" + //
+                    " * @param __func lambda that modifies the given builder\n" + //
+                    " * @return this builder\n" + //
+                    " */\n" + //
+                    "public Builder " + n.getName() + "(String __key, java.util.function.Consumer<" + builderType(n) + "> __func) {\n" + //
+                    "  " + builderType(n) + " __inner = new " + builderType(n) +"();\n" + //
+                    "  __func.accept(__inner);\n" + //
+                    "  " + n.getName() + ".put(__key, __inner);\n" + //
+                    "  return this;\n" + //
+                    "}";
+            }
+            return r;
         }
 
         private static String privateLeafMapSetter(CNode n) {

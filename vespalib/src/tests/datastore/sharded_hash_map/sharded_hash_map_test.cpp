@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
+#include <vespa/vespalib/datastore/entry_ref_filter.h>
 #include <vespa/vespalib/datastore/i_compactable.h>
 #include <vespa/vespalib/datastore/unique_store_allocator.h>
 #include <vespa/vespalib/datastore/unique_store_comparator.h>
@@ -12,12 +13,14 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/vespalib/datastore/unique_store_allocator.hpp>
+#include <iostream>
 #include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespalib_datastore_shared_hash_test");
 
 using vespalib::datastore::EntryRef;
+using vespalib::datastore::EntryRefFilter;
 using vespalib::datastore::ICompactable;
 using RefT = vespalib::datastore::EntryRefT<22>;
 using MyAllocator = vespalib::datastore::UniqueStoreAllocator<uint32_t, RefT>;
@@ -26,6 +29,26 @@ using MyCompare = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
 using MyHashMap = vespalib::datastore::ShardedHashMap;
 using GenerationHandler = vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
+
+constexpr uint32_t small_population = 50;
+/*
+ * large_population should trigger multiple callbacks from normalize_values
+ * and foreach_value
+ */
+constexpr uint32_t large_population = 1200;
+
+namespace vespalib::datastore {
+
+/*
+ * Print EntryRef as RefT which is used by test_normalize_values and
+ * test_foreach_value to differentiate between buffers
+ */
+void PrintTo(const EntryRef &ref, std::ostream* os) {
+    RefT iref(ref);
+    *os << "RefT(" << iref.offset() << "," << iref.bufferId() << ")";
+}
+
+}
 
 namespace {
 
@@ -58,6 +81,19 @@ public:
     }
 };
 
+uint32_t select_buffer(uint32_t i) {
+    if ((i % 2) == 0) {
+        return 0;
+    }
+    if ((i % 3) == 0) {
+        return 1;
+    }
+    if ((i % 5) == 0) {
+        return 2;
+    }
+    return 3;
+}
+
 }
 
 struct DataStoreShardedHashTest : public ::testing::Test
@@ -86,7 +122,11 @@ struct DataStoreShardedHashTest : public ::testing::Test
     void read_work(uint32_t cnt);
     void read_work();
     void write_work(uint32_t cnt);
-    void populate_sample_data();
+    void populate_sample_data(uint32_t cnt);
+    void populate_sample_values(uint32_t cnt);
+    void clear_sample_values(uint32_t cnt);
+    void test_normalize_values(bool use_filter, bool one_filter);
+    void test_foreach_value(bool one_filter);
 };
 
 
@@ -213,11 +253,92 @@ DataStoreShardedHashTest::write_work(uint32_t cnt)
 }
 
 void
-DataStoreShardedHashTest::populate_sample_data()
+DataStoreShardedHashTest::populate_sample_data(uint32_t cnt)
 {
-    for (uint32_t i = 0; i < 50; ++i) {
+    for (uint32_t i = 0; i < cnt; ++i) {
         insert(i);
     }
+}
+
+void
+DataStoreShardedHashTest::populate_sample_values(uint32_t cnt)
+{
+    for (uint32_t i = 0; i < cnt; ++i) {
+        MyCompare comp(_store, i);
+        auto result = _hash_map.find(comp, EntryRef());
+        ASSERT_NE(result, nullptr);
+        EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
+        result->second.store_relaxed(RefT(i + 200, select_buffer(i)));
+    }
+}
+
+void
+DataStoreShardedHashTest::clear_sample_values(uint32_t cnt)
+{
+    for (uint32_t i = 0; i < cnt; ++i) {
+        MyCompare comp(_store, i);
+        auto result = _hash_map.find(comp, EntryRef());
+        ASSERT_NE(result, nullptr);
+        EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
+        result->second.store_relaxed(EntryRef());
+    }
+}
+
+namespace {
+
+template <typename RefT>
+EntryRefFilter
+make_entry_ref_filter(bool one_filter)
+{
+    if (one_filter) {
+        EntryRefFilter filter(RefT::numBuffers(), RefT::offset_bits);
+        filter.add_buffer(3);
+        return filter;
+    }
+    return EntryRefFilter::create_all_filter(RefT::numBuffers(), RefT::offset_bits);
+}
+
+}
+
+void
+DataStoreShardedHashTest::test_normalize_values(bool use_filter, bool one_filter)
+{
+    populate_sample_data(large_population);
+    populate_sample_values(large_population);
+    if (use_filter) {
+        auto filter = make_entry_ref_filter<RefT>(one_filter);
+        EXPECT_TRUE(_hash_map.normalize_values([](std::vector<EntryRef> &refs) noexcept { for (auto &ref : refs) { RefT iref(ref); ref = RefT(iref.offset() + 300, iref.bufferId()); } }, filter));
+    } else {
+        EXPECT_TRUE(_hash_map.normalize_values([](EntryRef ref) noexcept { RefT iref(ref); return RefT(iref.offset() + 300, iref.bufferId()); }));
+    }
+    for (uint32_t i = 0; i < large_population; ++i) {
+        MyCompare comp(_store, i);
+        auto result = _hash_map.find(comp, EntryRef());
+        ASSERT_NE(result, nullptr);
+        EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
+        ASSERT_EQ(select_buffer(i), RefT(result->second.load_relaxed()).bufferId());
+        if (use_filter && one_filter && select_buffer(i) != 3) {
+            ASSERT_EQ(i + 200, RefT(result->second.load_relaxed()).offset());
+        } else {
+            ASSERT_EQ(i + 500, RefT(result->second.load_relaxed()).offset());
+        }
+        result->second.store_relaxed(EntryRef());
+    }
+}
+
+void
+DataStoreShardedHashTest::test_foreach_value(bool one_filter)
+{
+    populate_sample_data(large_population);
+    populate_sample_values(large_population);
+
+    auto filter = make_entry_ref_filter<RefT>(one_filter);
+    std::vector<EntryRef> exp_refs;
+    EXPECT_FALSE(_hash_map.normalize_values([&exp_refs](std::vector<EntryRef>& refs) { exp_refs.insert(exp_refs.end(), refs.begin(), refs.end()); }, filter));
+    std::vector<EntryRef> act_refs;
+    _hash_map.foreach_value([&act_refs](const std::vector<EntryRef> &refs) { act_refs.insert(act_refs.end(), refs.begin(), refs.end()); }, filter);
+    EXPECT_EQ(exp_refs, act_refs);
+    clear_sample_values(large_population);
 }
 
 TEST_F(DataStoreShardedHashTest, single_threaded_reader_without_updates)
@@ -254,7 +375,7 @@ TEST_F(DataStoreShardedHashTest, memory_usage_is_reported)
     EXPECT_EQ(0, initial_usage.deadBytes());
     EXPECT_EQ(0, initial_usage.allocatedBytesOnHold());
     auto guard = _generationHandler.takeGuard();
-    for (uint32_t i = 0; i < 50; ++i) {
+    for (uint32_t i = 0; i < small_population; ++i) {
         insert(i);
     }
     auto usage = _hash_map.get_memory_usage();
@@ -264,30 +385,31 @@ TEST_F(DataStoreShardedHashTest, memory_usage_is_reported)
 
 TEST_F(DataStoreShardedHashTest, foreach_key_works)
 {
-    populate_sample_data();
+    populate_sample_data(small_population);
     std::vector<uint32_t> keys;
     _hash_map.foreach_key([this, &keys](EntryRef ref) { keys.emplace_back(_allocator.get_wrapped(ref).value()); });
     std::sort(keys.begin(), keys.end());
-    EXPECT_EQ(50, keys.size());
-    for (uint32_t i = 0; i < 50; ++i) {
+    EXPECT_EQ(small_population, keys.size());
+    for (uint32_t i = 0; i < small_population; ++i) {
         EXPECT_EQ(i, keys[i]);
     }
 }
 
 TEST_F(DataStoreShardedHashTest, move_keys_works)
 {
-    populate_sample_data();
+    populate_sample_data(small_population);
     std::vector<EntryRef> refs;
     _hash_map.foreach_key([&refs](EntryRef ref) { refs.emplace_back(ref); });
     std::vector<EntryRef> new_refs;
     MyCompactable my_compactable(_allocator, new_refs);
-    _hash_map.move_keys(my_compactable, std::vector<bool>(RefT::numBuffers(), true), RefT::offset_bits);
+    auto filter = make_entry_ref_filter<RefT>(false);
+    _hash_map.move_keys(my_compactable, filter);
     std::vector<EntryRef> verify_new_refs;
     _hash_map.foreach_key([&verify_new_refs](EntryRef ref) { verify_new_refs.emplace_back(ref); });
-    EXPECT_EQ(50u, refs.size());
+    EXPECT_EQ(small_population, refs.size());
     EXPECT_NE(refs, new_refs);
     EXPECT_EQ(new_refs, verify_new_refs);
-    for (uint32_t i = 0; i < 50; ++i) {
+    for (uint32_t i = 0; i < small_population; ++i) {
         EXPECT_NE(refs[i], new_refs[i]);
         auto value = _allocator.get_wrapped(refs[i]).value();
         auto new_value = _allocator.get_wrapped(refs[i]).value();
@@ -297,29 +419,33 @@ TEST_F(DataStoreShardedHashTest, move_keys_works)
 
 TEST_F(DataStoreShardedHashTest, normalize_values_works)
 {
-    populate_sample_data();
-    for (uint32_t i = 0; i < 50; ++i) {
-        MyCompare comp(_store, i);
-        auto result = _hash_map.find(comp, EntryRef());
-        ASSERT_NE(result, nullptr);
-        EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
-        result->second.store_relaxed(EntryRef(i + 200));
-    }
-    _hash_map.normalize_values([](EntryRef ref) noexcept { return EntryRef(ref.ref() + 300); });
-    for (uint32_t i = 0; i < 50; ++i) {
-        MyCompare comp(_store, i);
-        auto result = _hash_map.find(comp, EntryRef());
-        ASSERT_NE(result, nullptr);
-        EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
-        ASSERT_EQ(i + 500, result->second.load_relaxed().ref());
-        result->second.store_relaxed(EntryRef());
-    }
+    test_normalize_values(false, false);
+}
+
+TEST_F(DataStoreShardedHashTest, normalize_values_all_filter_works)
+{
+    test_normalize_values(true, false);
+}
+
+TEST_F(DataStoreShardedHashTest, normalize_values_one_filter_works)
+{
+    test_normalize_values(true, true);
+}
+
+TEST_F(DataStoreShardedHashTest, foreach_value_all_filter_works)
+{
+    test_foreach_value(false);
+}
+
+TEST_F(DataStoreShardedHashTest, foreach_value_one_filter_works)
+{
+    test_foreach_value(true);
 }
 
 TEST_F(DataStoreShardedHashTest, compact_worst_shard_works)
 {
-    populate_sample_data();
-    for (uint32_t i = 10; i < 50; ++i) {
+    populate_sample_data(small_population);
+    for (uint32_t i = 10; i < small_population; ++i) {
         remove(i);
     }
     commit();

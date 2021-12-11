@@ -11,8 +11,11 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -35,7 +38,8 @@ public class DocumentManager {
         for(NewDocumentType documentType : model.getDocumentManager().getTypes()) {
             buildConfig(documentType, documentConfigBuilder, handled);
             buildConfig(documentType.getAnnotations(), documentConfigBuilder);
-            if ( documentType != VespaDocumentType.INSTANCE) {
+            if (documentType != VespaDocumentType.INSTANCE && ! handled.contains(documentType)) {
+                handled.add(documentType);
                 DocumentmanagerConfig.Datatype.Builder dataTypeBuilder = new DocumentmanagerConfig.Datatype.Builder();
                 documentConfigBuilder.datatype(dataTypeBuilder);
                 buildConfig(documentType, dataTypeBuilder);
@@ -46,10 +50,16 @@ public class DocumentManager {
 
     @SuppressWarnings("deprecation")
     private void buildConfig(DataTypeCollection type, DocumentmanagerConfig.Builder documentConfigBuilder, Set<DataType> built) {
-        for (DataType dataType : type.getTypes()) {
+        List<DataType> todo = new ArrayList<>(type.getTypes());
+        Collections.sort(todo, (a, b) -> (a.getName().equals(b.getName())
+                                          ? a.getId() - b.getId()
+                                          : a.getName().compareTo(b.getName())));
+        for (DataType dataType : todo) {
             if (built.contains(dataType)) continue;
             built.add(dataType);
-            if (dataType instanceof TemporaryStructuredDataType) continue;
+            if (dataType instanceof TemporaryStructuredDataType) {
+                throw new IllegalArgumentException("Can not create config for temporary data type: " + dataType.getName());
+            }
             if ((dataType.getId() < 0) || (dataType.getId()> DataType.lastPredefinedDataTypeId())) {
                 Datatype.Builder dataTypeBuilder = new Datatype.Builder();
                 documentConfigBuilder.datatype(dataTypeBuilder);
@@ -98,15 +108,7 @@ public class DocumentManager {
                     keytype(mtype.getKeyType().getId()).
                     valtype(mtype.getValueType().getId()));
         } else if (type instanceof DocumentType) {
-            DocumentType dt = (DocumentType) type;
-            Datatype.Documenttype.Builder doc = new Datatype.Documenttype.Builder();
-            builder.documenttype(doc);
-            doc.
-                name(dt.getName()).
-                headerstruct(dt.contentStruct().getId());
-            for (DocumentType inherited : dt.getInheritedTypes()) {
-                doc.inherits(new Datatype.Documenttype.Inherits.Builder().name(inherited.getName()));
-            }
+            throw new IllegalArgumentException("Can not create config for unadorned document type: " + type.getName());
         } else if (type instanceof NewDocumentType) {
             NewDocumentType dt = (NewDocumentType) type;
             Datatype.Documenttype.Builder doc = new Datatype.Documenttype.Builder();
@@ -120,7 +122,7 @@ public class DocumentManager {
             buildConfig(dt.getFieldSets(), doc);
             buildImportedFieldsConfig(dt.getImportedFieldNames(), doc);
         } else if (type instanceof TemporaryStructuredDataType) {
-            //Ignored
+            throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
         } else if (type instanceof StructDataType) {
             StructDataType structType = (StructDataType) type;
             Datatype.Structtype.Builder structBuilder = new Datatype.Structtype.Builder();

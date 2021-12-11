@@ -7,8 +7,8 @@
 using proton::AllocConfig;
 using proton::AllocStrategy;
 using proton::SubDbType;
-using search::CompactionStrategy;
 using search::GrowStrategy;
+using vespalib::datastore::CompactionStrategy;
 
 namespace {
 

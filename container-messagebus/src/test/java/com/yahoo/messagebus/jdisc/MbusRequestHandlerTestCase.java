@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.jdisc;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
@@ -14,6 +13,7 @@ import com.yahoo.messagebus.test.SimpleMessage;
 import org.junit.Test;
 
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -81,7 +81,7 @@ public class MbusRequestHandlerTestCase {
         return driver;
     }
 
-    private static ListenableFuture<Response> dispatchMessage(final TestDriver driver, final Message msg) {
+    private static CompletableFuture<Response> dispatchMessage(final TestDriver driver, final Message msg) {
         return new RequestDispatch() {
 
             @Override

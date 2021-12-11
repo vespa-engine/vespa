@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <thread>
 #include <cassert>
+#include <future>
 
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -56,11 +57,13 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
       _fileHeaderContext(fileHeaderContext),
       _markedDeleted(false)
 {
-    int retval(0);
-    if ((retval = makeDirectory(_baseDir.c_str())) != 0) {
+    assert(_config.getEncoding().getCompression() != Encoding::Compression::none);
+    int retval = makeDirectory(_baseDir.c_str());
+    if (retval != 0) {
         throw runtime_error(fmt("Failed creating basedirectory %s r(%d), e(%d)", _baseDir.c_str(), retval, errno));
     }
-    if ((retval = makeDirectory(dir().c_str())) != 0) {
+    retval = makeDirectory(dir().c_str());
+    if (retval != 0) {
         throw runtime_error(fmt("Failed creating domaindir %s r(%d), e(%d)", dir().c_str(), retval, errno));
     }
     SerialNumList partIdVector = scanDir();
@@ -76,8 +79,7 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
     }
     pending.waitForZeroRefCount();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
-        _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _config.getEncoding(),
-                                                        _config.getCompressionlevel(), _fileHeaderContext, false);
+        _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _fileHeaderContext, false);
         vespalib::File::sync(dir());
     }
     _lastSerial = end();
@@ -86,13 +88,13 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
 Domain &
 Domain::setConfig(const DomainConfig & cfg) {
     _config = cfg;
+    assert(_config.getEncoding().getCompression() != Encoding::Compression::none);
     return *this;
 }
 
 void
 Domain::addPart(SerialNum partId, bool isLastPart) {
-    auto dp = std::make_shared<DomainPart>(_name, dir(), partId, _config.getEncoding(),
-                                           _config.getCompressionlevel(), _fileHeaderContext, isLastPart);
+    auto dp = std::make_shared<DomainPart>(_name, dir(), partId, _fileHeaderContext, isLastPart);
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
@@ -331,8 +333,7 @@ Domain::optionallyRotateFile(SerialNum serialNum) {
         triggerSyncNow({});
         waitPendingSync(_syncMonitor, _syncCond, _pendingSync);
         dp->close();
-        dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _config.getEncoding(),
-                                          _config.getCompressionlevel(), _fileHeaderContext, false);
+        dp = std::make_shared<DomainPart>(_name, dir(), serialNum, _fileHeaderContext, false);
         {
             std::lock_guard guard(_lock);
             _parts[serialNum] = dp;
@@ -394,25 +395,32 @@ Domain::grabCurrentChunk(const UniqueLock & guard) {
 void
 Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock & chunkOrderGuard) {
     assert(chunkOrderGuard.mutex() == &_currentChunkMonitor && chunkOrderGuard.owns_lock());
-    _singleCommitter->execute( makeLambdaTask([this, chunk = std::move(chunk)]() mutable {
-        doCommit(std::move(chunk));
+    if (chunk->getPacket().empty()) return;
+    std::promise<SerializedChunk> promise;
+    std::future<SerializedChunk> future = promise.get_future();
+    _executor.execute(makeLambdaTask([promise=std::move(promise), chunk = std::move(chunk),
+                                      encoding=_config.getEncoding(), compressionLevel=_config.getCompressionlevel()]() mutable {
+        promise.set_value(SerializedChunk(std::move(chunk), encoding, compressionLevel));
+    }));
+    _singleCommitter->execute( makeLambdaTask([this, future = std::move(future)]() mutable {
+        doCommit(future.get());
     }));
 }
 
-void
-Domain::doCommit(std::unique_ptr<CommitChunk> chunk) {
-    const Packet & packet = chunk->getPacket();
-    if (packet.empty()) return;
 
-    SerialNum firstSerial = packet.range().from();
-    DomainPart::SP dp = optionallyRotateFile(firstSerial);
-    dp->commit(firstSerial, packet);
+
+void
+Domain::doCommit(const SerializedChunk & serialized) {
+
+    SerialNumRange range = serialized.range();
+    DomainPart::SP dp = optionallyRotateFile(range.from());
+    dp->commit(serialized);
     if (_config.getFSyncOnCommit()) {
         dp->sync();
     }
     cleanSessions();
     LOG(debug, "Releasing %zu acks and %zu entries and %zu bytes.",
-        chunk->getNumCallBacks(), chunk->getPacket().size(), chunk->sizeBytes());
+        serialized.commitChunk().getNumCallBacks(), serialized.getNumEntries(), serialized.getData().size());
 }
 
 bool

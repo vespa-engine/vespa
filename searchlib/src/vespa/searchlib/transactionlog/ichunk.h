@@ -33,6 +33,29 @@ private:
 std::ostream & operator << (std::ostream & os, Encoding e);
 
 /**
+ * Represents a completely encoded chunk with a buffer ready to be persisted,
+ * and the range and number of entries it covers.
+ */
+class SerializedChunk {
+public:
+    SerializedChunk(std::unique_ptr<CommitChunk> chunk, Encoding encoding, uint8_t compressionLevel);
+    SerializedChunk(SerializedChunk &&) = default;
+    SerializedChunk & operator=(SerializedChunk &&) = default;
+    SerializedChunk(const SerializedChunk &) = delete;
+    SerializedChunk & operator=(const SerializedChunk &) = delete;
+    vespalib::ConstBufferRef getData() const;
+    SerialNumRange range() const { return _range; }
+    size_t getNumEntries() const { return _numEntries; }
+    const CommitChunk & commitChunk() const { return *_commitChunk; }
+private:
+    // CommitChunk is required to ensure we do not reply until committed to the TLS.
+    std::unique_ptr<CommitChunk> _commitChunk;
+    vespalib::nbostream _os;
+    SerialNumRange      _range;
+    size_t              _numEntries;
+};
+
+/**
  * Interface for different chunk formats.
  * Format specifies both crc type, and compression type.
  */

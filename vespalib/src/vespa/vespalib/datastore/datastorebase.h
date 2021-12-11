@@ -12,6 +12,9 @@
 
 namespace vespalib::datastore {
 
+class CompactionSpec;
+class CompactionStrategy;
+
 /**
  * Abstract class used to store data of potential different types in underlying memory buffers.
  *
@@ -368,7 +371,7 @@ public:
     }
 
     uint32_t startCompactWorstBuffer(uint32_t typeId);
-    std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
+    std::vector<uint32_t> startCompactWorstBuffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy);
     uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
     void inc_compaction_count() const { ++_compaction_count; }
     bool has_held_buffers() const noexcept { return _hold_buffer_count != 0u; }

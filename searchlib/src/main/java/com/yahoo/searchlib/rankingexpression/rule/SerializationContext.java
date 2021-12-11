@@ -8,6 +8,7 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -54,11 +55,11 @@ public class SerializationContext extends FunctionReferenceContext {
         this(toMap(functions), bindings, serializedFunctions);
     }
 
-    private static ImmutableMap<String, ExpressionFunction> toMap(Collection<ExpressionFunction> list) {
-        ImmutableMap.Builder<String,ExpressionFunction> mapBuilder = new ImmutableMap.Builder<>();
+    private static Map<String, ExpressionFunction> toMap(Collection<ExpressionFunction> list) {
+        Map<String,ExpressionFunction> mapBuilder = new HashMap<>();
         for (ExpressionFunction function : list)
             mapBuilder.put(function.getName(), function);
-        return mapBuilder.build();
+        return Map.copyOf(mapBuilder);
     }
 
     /**
@@ -69,10 +70,17 @@ public class SerializationContext extends FunctionReferenceContext {
      * @param serializedFunctions a cache of serializedFunctions - the ownership of this map
      *        is <b>transferred</b> to this and will be modified in it
      */
-    public SerializationContext(ImmutableMap<String,ExpressionFunction> functions, Map<String, String> bindings,
+    public SerializationContext(Map<String,ExpressionFunction> functions, Map<String, String> bindings,
                                 Map<String, String> serializedFunctions) {
         super(functions, bindings);
         this.serializedFunctions = serializedFunctions;
+    }
+
+    /** @deprecated Use {@link #SerializationContext(Map, Map, Map) instead}*/
+    @Deprecated(forRemoval = true, since = "7")
+    public SerializationContext(ImmutableMap<String,ExpressionFunction> functions, Map<String, String> bindings,
+                                Map<String, String> serializedFunctions) {
+        this((Map<String, ExpressionFunction>)functions, bindings, serializedFunctions);
     }
 
     /** Adds the serialization of a function */
@@ -93,13 +101,13 @@ public class SerializationContext extends FunctionReferenceContext {
 
     @Override
     public SerializationContext withBindings(Map<String, String> bindings) {
-        return new SerializationContext(functions(), bindings, this.serializedFunctions);
+        return new SerializationContext(getFunctions(), bindings, this.serializedFunctions);
     }
 
     /** Returns a fresh context without bindings */
     @Override
     public SerializationContext withoutBindings() {
-        return new SerializationContext(functions(), null, this.serializedFunctions);
+        return new SerializationContext(getFunctions(), null, this.serializedFunctions);
     }
 
     public Map<String, String> serializedFunctions() { return serializedFunctions; }

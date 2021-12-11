@@ -30,6 +30,10 @@ vespalib::string doc1("id:test:music::1");
 
 }
 
+TEST("control sizeof(PendingGidToLidChange)") {
+    EXPECT_EQUAL(48u, sizeof(PendingGidToLidChange));
+}
+
 class ListenerStats {
     using lock_guard = std::lock_guard<std::mutex>;
     std::mutex _lock;

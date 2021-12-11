@@ -5,6 +5,8 @@
 
 namespace vbench {
 
+VESPA_THREAD_STACK_TAG(vbench_worker_thread);
+
 void
 Worker::run()
 {
@@ -22,7 +24,7 @@ Worker::run()
 
 Worker::Worker(Provider<Request> &provider, Handler<Request> &next,
                HttpConnectionPool &pool, Timer &timer)
-    : _thread(*this),
+    : _thread(*this, vbench_worker_thread),
       _provider(provider),
       _next(next),
       _pool(pool),

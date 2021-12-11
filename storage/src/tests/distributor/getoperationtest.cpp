@@ -267,6 +267,26 @@ TEST_F(GetOperationTest, send_to_all_invalid_nodes_when_inconsistent) {
     EXPECT_EQ("newauthor", getLastReplyAuthor());
 }
 
+// GetOperation document-level consistency checks are used by the multi-phase update
+// logic to see if we can fall back to a fast path even though not all replicas are in sync.
+// Empty replicas are not considered part of the send-set, so only looking at replies from
+// replicas _sent_ to will not detect this case.
+// If we haphazardly treat an empty replicas as implicitly being in sync we risk triggering
+// undetectable inconsistencies at the document level. This can happen if we send create-if-missing
+// updates to an empty replica as well as a non-empty replica, and the document exists in the
+// latter replica. The document would then be implicitly created on the empty replica with the
+// same timestamp as that of the non-empty one, even though their contents would almost
+// certainly differ.
+TEST_F(GetOperationTest, get_not_sent_to_empty_replicas_but_bucket_tagged_as_inconsistent) {
+    setClusterState("distributor:1 storage:4");
+    addNodesToBucketDB(bucketId, "2=0/0/0,3=1/2/3");
+    sendGet();
+    ASSERT_EQ("Get => 3", _sender.getCommands(true));
+    ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 2));
+    EXPECT_FALSE(op->any_replicas_failed());
+    EXPECT_FALSE(last_reply_had_consistent_replicas());
+}
+
 TEST_F(GetOperationTest, inconsistent_split) {
     setClusterState("distributor:1 storage:4");
 

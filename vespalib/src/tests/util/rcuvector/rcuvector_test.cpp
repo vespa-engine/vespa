@@ -19,19 +19,14 @@ assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
 
 TEST("test generation holder")
 {
-    typedef std::unique_ptr<int32_t> IntPtr;
     GenerationHolder gh;
-    gh.hold(GenerationHeldBase::UP(new RcuVectorHeld<int32_t>(sizeof(int32_t),
-                                           IntPtr(new int32_t(0)))));
+    gh.hold(std::make_unique<RcuVectorHeld<int32_t>>(sizeof(int32_t), 0));
     gh.transferHoldLists(0);
-    gh.hold(GenerationHeldBase::UP(new RcuVectorHeld<int32_t>(sizeof(int32_t),
-                                           IntPtr(new int32_t(1)))));
+    gh.hold(std::make_unique<RcuVectorHeld<int32_t>>(sizeof(int32_t), 1));
     gh.transferHoldLists(1);
-    gh.hold(GenerationHeldBase::UP(new RcuVectorHeld<int32_t>(sizeof(int32_t),
-                                           IntPtr(new int32_t(2)))));
+    gh.hold(std::make_unique<RcuVectorHeld<int32_t>>(sizeof(int32_t), 2));
     gh.transferHoldLists(2);
-    gh.hold(GenerationHeldBase::UP(new RcuVectorHeld<int32_t>(sizeof(int32_t),
-                                           IntPtr(new int32_t(4)))));
+    gh.hold(std::make_unique<RcuVectorHeld<int32_t>>(sizeof(int32_t), 4));
     gh.transferHoldLists(4);
     EXPECT_EQUAL(4u * sizeof(int32_t), gh.getHeldBytes());
     gh.trimHoldLists(0);
@@ -40,8 +35,7 @@ TEST("test generation holder")
     EXPECT_EQUAL(3u * sizeof(int32_t), gh.getHeldBytes());
     gh.trimHoldLists(2);
     EXPECT_EQUAL(2u * sizeof(int32_t), gh.getHeldBytes());
-    gh.hold(GenerationHeldBase::UP(new RcuVectorHeld<int32_t>(sizeof(int32_t),
-                                       IntPtr(new int32_t(6)))));
+    gh.hold(std::make_unique<RcuVectorHeld<int32_t>>(sizeof(int32_t), 6));
     gh.transferHoldLists(6);
     EXPECT_EQUAL(3u * sizeof(int32_t), gh.getHeldBytes());
     gh.trimHoldLists(6);

@@ -30,13 +30,17 @@ remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v, att
     v.logEnumStoreEvent("compactfixup", "drain");
     {
         AttributeVector::EnumModifier enum_guard(v.getEnumModifier());
+        auto& filter = remapper.get_entry_ref_filter();
         v.logEnumStoreEvent("compactfixup", "start");
         for (uint32_t doc = 0; doc < v.getNumDocs(); ++doc) {
             vespalib::ConstArrayRef<WeightedIndex> indicesRef(multi_value_mapping.get(doc));
             WeightedIndexVector indices(indicesRef.cbegin(), indicesRef.cend());
             for (uint32_t i = 0; i < indices.size(); ++i) {
-                EnumIndex oldIndex = indices[i].value();
-                indices[i] = WeightedIndex(remapper.remap(oldIndex), indices[i].weight());
+                EnumIndex ref = indices[i].value();
+                if (ref.valid() && filter.has(ref)) {
+                    ref = remapper.remap(ref);
+                }
+                indices[i] = WeightedIndex(ref, indices[i].weight());
             }
             std::atomic_thread_fence(std::memory_order_release);
             multi_value_mapping.replace(doc, indices);

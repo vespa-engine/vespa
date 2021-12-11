@@ -236,7 +236,7 @@ void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint3
             datastore.remove(i + 20000, i);
         }
         datastore.flush(datastore.initFlush(lastSyncToken));
-        datastore.compact(30000);
+        datastore.compactBloat(30000);
         datastore.remove(31000, 0);
         checkStats(datastore, 31000, 30000);
         EXPECT_LESS_EQUAL(minFiles, datastore.getAllActiveFiles().size());
@@ -252,7 +252,7 @@ void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint3
 }
 TEST("testGrowingChunkedBySize") {
     LogDataStore::Config config;
-    config.setMaxFileSize(100000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
+    config.setMaxFileSize(100000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
             .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
     verifyGrowing(config, 40, 120);
@@ -260,7 +260,7 @@ TEST("testGrowingChunkedBySize") {
 
 TEST("testGrowingChunkedByNumLids") {
     LogDataStore::Config config;
-    config.setMaxNumLids(1000).setMaxDiskBloatFactor(0.1).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
+    config.setMaxNumLids(1000).setMaxBucketSpread(3.0).setMinFileSizeFactor(0.2)
             .compactCompression({CompressionConfig::LZ4})
             .setFileConfig({{CompressionConfig::LZ4, 9, 60}, 1000});
     verifyGrowing(config,10, 10);
@@ -679,7 +679,7 @@ TEST("testWriteRead") {
         EXPECT_LESS(0u, headerFootprint);
         EXPECT_EQUAL(datastore.getDiskFootprint(), headerFootprint);
         EXPECT_EQUAL(datastore.getDiskBloat(), 0ul);
-        EXPECT_EQUAL(datastore.getMaxCompactGain(), 0ul);
+        EXPECT_EQUAL(datastore.getMaxSpreadAsBloat(), 0ul);
         datastore.write(1, 0, a[0].c_str(), a[0].size());
         fetchAndTest(datastore, 0, a[0].c_str(), a[0].size());
         datastore.write(2, 0, a[1].c_str(), a[1].size());
@@ -701,7 +701,7 @@ TEST("testWriteRead") {
         EXPECT_EQUAL(datastore.getDiskFootprint(),
                      2711ul + headerFootprint);
         EXPECT_EQUAL(datastore.getDiskBloat(), 0ul);
-        EXPECT_EQUAL(datastore.getMaxCompactGain(), 0ul);
+        EXPECT_EQUAL(datastore.getMaxSpreadAsBloat(), 0ul);
         datastore.flush(datastore.initFlush(lastSyncToken));
     }
     {
@@ -715,7 +715,7 @@ TEST("testWriteRead") {
         EXPECT_LESS(0u, headerFootprint);
         EXPECT_EQUAL(4944ul + headerFootprint, datastore.getDiskFootprint());
         EXPECT_EQUAL(0ul, datastore.getDiskBloat());
-        EXPECT_EQUAL(0ul, datastore.getMaxCompactGain());
+        EXPECT_EQUAL(0ul, datastore.getMaxSpreadAsBloat());
 
         for(size_t i=0; i < 100; i++) {
             fetchAndTest(datastore, i, a[i%2].c_str(), a[i%2].size());
@@ -730,7 +730,7 @@ TEST("testWriteRead") {
 
         EXPECT_EQUAL(7594ul + headerFootprint, datastore.getDiskFootprint());
         EXPECT_EQUAL(0ul, datastore.getDiskBloat());
-        EXPECT_EQUAL(0ul, datastore.getMaxCompactGain());
+        EXPECT_EQUAL(0ul, datastore.getMaxSpreadAsBloat());
     }
     FastOS_File::EmptyAndRemoveDirectory("empty");
 }
@@ -1050,7 +1050,6 @@ TEST("require that config equality operator detects inequality") {
     using C = LogDataStore::Config;
     EXPECT_TRUE(C() == C());
     EXPECT_FALSE(C() == C().setMaxFileSize(1));
-    EXPECT_FALSE(C() == C().setMaxDiskBloatFactor(0.3));
     EXPECT_FALSE(C() == C().setMaxBucketSpread(0.3));
     EXPECT_FALSE(C() == C().setMinFileSizeFactor(0.3));
     EXPECT_FALSE(C() == C().setFileConfig(WriteableFileChunk::Config({}, 70)));

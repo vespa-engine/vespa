@@ -17,7 +17,6 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -65,7 +64,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         globallyResolvedTypes = new HashMap<>();
     }
 
-    private MapEvaluationTypeContext(ImmutableMap<String, ExpressionFunction> functions,
+    private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
                                      Map<String, String> bindings,
                                      Optional<MapEvaluationTypeContext> parent,
                                      Map<Reference, TensorType> featureTypes,
@@ -250,7 +249,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     private Optional<ExpressionFunction> functionInvocation(Reference reference) {
         if (reference.output() != null) return Optional.empty();
-        ExpressionFunction function = functions().get(reference.name());
+        ExpressionFunction function = getFunctions().get(reference.name());
         if (function == null) return Optional.empty();
         if (function.arguments().size() != reference.arguments().size()) return Optional.empty();
         return Optional.of(function);
@@ -348,7 +347,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     @Override
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {
-        return new MapEvaluationTypeContext(functions(),
+        return new MapEvaluationTypeContext(getFunctions(),
                                             bindings,
                                             Optional.of(this),
                                             featureTypes,

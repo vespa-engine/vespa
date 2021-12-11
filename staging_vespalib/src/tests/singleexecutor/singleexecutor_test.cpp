@@ -35,13 +35,18 @@ void verifyResizeTaskLimit(bool up) {
     std::condition_variable cond;
     std::atomic<uint64_t> started(0);
     std::atomic<uint64_t> allowed(0);
-    SingleExecutor executor(sequenced_executor, 10);
+    constexpr uint32_t INITIAL = 20;
+    const uint32_t INITIAL_2inN = roundUp2inN(INITIAL);
+    double waterMarkRatio = 0.5;
+    SingleExecutor executor(sequenced_executor, INITIAL, INITIAL*waterMarkRatio, 10ms);
+    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
+    EXPECT_EQUAL(uint32_t(INITIAL_2inN*waterMarkRatio), executor.get_watermark());
 
-    uint32_t targetTaskLimit = up ? 20 : 5;
+    uint32_t targetTaskLimit = up ? 40 : 5;
     uint32_t roundedTaskLimit = roundUp2inN(targetTaskLimit);
-    EXPECT_NOT_EQUAL(16u, roundedTaskLimit);
+    EXPECT_NOT_EQUAL(INITIAL_2inN, roundedTaskLimit);
 
-    for (uint64_t i(0); i < 10; i++) {
+    for (uint64_t i(0); i < INITIAL; i++) {
         executor.execute(makeLambdaTask([&lock, &cond, &started, &allowed] {
             started++;
             std::unique_lock guard(lock);
@@ -53,15 +58,16 @@ void verifyResizeTaskLimit(bool up) {
     while (started < 1);
     EXPECT_EQUAL(1u, started);
     executor.setTaskLimit(targetTaskLimit);
-    EXPECT_EQUAL(16u, executor.getTaskLimit());
+    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
+    EXPECT_EQUAL(INITIAL_2inN*waterMarkRatio, executor.get_watermark());
     allowed = 5;
     while (started < 6);
     EXPECT_EQUAL(6u, started);
-    EXPECT_EQUAL(16u, executor.getTaskLimit());
-    allowed = 10;
-    while (started < 10);
-    EXPECT_EQUAL(10u, started);
-    EXPECT_EQUAL(16u, executor.getTaskLimit());
+    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
+    allowed = INITIAL;
+    while (started < INITIAL);
+    EXPECT_EQUAL(INITIAL, started);
+    EXPECT_EQUAL(INITIAL_2inN, executor.getTaskLimit());
     executor.execute(makeLambdaTask([&lock, &cond, &started, &allowed] {
         started++;
         std::unique_lock guard(lock);
@@ -69,11 +75,13 @@ void verifyResizeTaskLimit(bool up) {
             cond.wait_for(guard, 1ms);
         }
     }));
-    while (started < 11);
-    EXPECT_EQUAL(11u, started);
+    while (started < INITIAL + 1);
+    EXPECT_EQUAL(INITIAL + 1, started);
     EXPECT_EQUAL(roundedTaskLimit, executor.getTaskLimit());
-    allowed = 11;
+    EXPECT_EQUAL(roundedTaskLimit*waterMarkRatio, executor.get_watermark());
+    allowed = INITIAL + 1;
 }
+
 TEST("test that resizing up and down works") {
     TEST_DO(verifyResizeTaskLimit(true));
     TEST_DO(verifyResizeTaskLimit(false));

@@ -73,7 +73,7 @@ public class DiscFilterRequest {
      */
     @Deprecated(forRemoval = true, since = "7.511")
     public HttpRequest getParentRequest() {
-        throw new UnsupportedOperationException("getParentRequest is not supported for " + parent.getClass().getName());
+        return parent;
     }
 
     /**

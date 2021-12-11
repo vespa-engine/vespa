@@ -36,4 +36,41 @@ public:
     const std::optional<double>& get_max_latency() noexcept { return _max_latency; }
 };
 
+/**
+ * Keeps track of feed operations started, completed and being committed.
+ * Also tracks started and completed commit operations.
+ */
+class FeedOperationCounter {
+public:
+    FeedOperationCounter()
+        : _operationsStarted(0),
+          _operationsCompleted(0),
+          _operationsStartedAtLastCommitStart(0),
+          _commitsStarted(0),
+          _commitsCompleted(0)
+    {}
+    void startOperation() { ++_operationsStarted; }
+    void startCommit() {
+        _commitsStarted++;
+        _operationsStartedAtLastCommitStart = _operationsStarted;
+    }
+
+    void commitCompleted(size_t numOperations);
+
+    size_t operationsSinceLastCommitStart() const {
+        return _operationsStarted - _operationsStartedAtLastCommitStart;
+    }
+    size_t operationsInFlight() const { return _operationsStarted - _operationsCompleted; }
+    size_t commitsInFlight() const { return _commitsStarted - _commitsCompleted; }
+    bool shouldScheduleCommit() const {
+        return (operationsInFlight() > 0) && (commitsInFlight() == 0);
+    }
+private:
+    size_t  _operationsStarted;
+    size_t  _operationsCompleted;
+    size_t  _operationsStartedAtLastCommitStart;
+    size_t  _commitsStarted;
+    size_t  _commitsCompleted;
+};
+
 }

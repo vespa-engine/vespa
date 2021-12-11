@@ -58,7 +58,7 @@ private:
     void compactLidSpace(const search::LidUsageStats &stats);
     bool remove_batch_is_ongoing() const;
     bool remove_is_ongoing() const;
-    search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats, bool retryLastDocument);
+    search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats);
 
     bool scanDocuments(const search::LidUsageStats &stats);
     static void moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & metaThen,
@@ -98,4 +98,3 @@ public:
 };
 
 } // namespace proton
-

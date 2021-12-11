@@ -131,9 +131,7 @@ public class FileReceiver {
                 throw new RuntimeException("Failed writing file: ", e);
             } finally {
                 try {
-                    if (inprogressFile.exists()) {
-                        Files.delete(inprogressFile.toPath());
-                    }
+                    Files.deleteIfExists(inprogressFile.toPath());
                 } catch (IOException e) {
                     log.log(Level.SEVERE, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
                 }
@@ -191,13 +189,14 @@ public class FileReceiver {
         } catch (FileAlreadyExistsException e) {
             // Don't fail if it already exists (we might get the file from several config servers when retrying, servers are down etc.
             // so it might be written already). Delete temp file/dir in that case, to avoid filling the disk.
-            log.log(Level.FINE, () -> "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() +
-                    "', '" + destination.getAbsolutePath() + "' already exists");
-            deleteFileOrDirectory(tempFile);
+            log.log(Level.FINE, () -> "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" +
+                    destination.getAbsolutePath() + "', it already exists");
         } catch (IOException e) {
             String message = "Failed moving file '" + tempFile.getAbsolutePath() + "' to '" + destination.getAbsolutePath() + "'";
             log.log(Level.SEVERE, message, e);
             throw new RuntimeException(message, e);
+        } finally {
+            deleteFileOrDirectory(tempFile);
         }
     }
 

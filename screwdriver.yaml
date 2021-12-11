@@ -60,7 +60,7 @@ jobs:
 
     environment:
       LOCAL_MVN_REPO: "/tmp/vespa/mvnrepo"
-      VESPA_MAVEN_EXTRA_OPTS: "-Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.javadoc.skip=true -Dmaven.source.skip=true"
+      VESPA_MAVEN_EXTRA_OPTS: "-Dmaven.repo.local=/tmp/vespa/mvnrepo -Dmaven.source.skip=true"
       CCACHE_TMP_DIR: "/tmp/ccache_tmp"
       CCACHE_DATA_DIR: "/tmp/vespa/ccache"
       MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"

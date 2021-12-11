@@ -77,7 +77,7 @@ private:
     bool                _trackDocumentSizes;
     size_t              _changesSinceCommit;
     OperationListenerSP _op_listener;
-    vespalib::MemoryUsage _cached_gid_to_lid_map_memory_usage;
+    bool                _should_compact_gid_to_lid_map;
 
     DocId getFreeLid();
     DocId peekFreeLid();

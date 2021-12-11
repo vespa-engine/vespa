@@ -1,19 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.handler;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executor;
-
 import com.google.common.collect.ImmutableList;
 import com.yahoo.container.jdisc.AsyncHttpResponse;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.VespaHeaders;
-import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.processing.Request;
@@ -25,6 +15,14 @@ import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.ErrorMessage;
 import com.yahoo.processing.response.Data;
 import com.yahoo.processing.response.DataList;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Executor;
 
 /**
  * A response from running a request through processing. This response is just a
@@ -62,7 +60,7 @@ public class ProcessingResponse extends AsyncHttpResponse {
             AsynchronousRenderer asyncRenderer = (AsynchronousRenderer)renderer;
             asyncRenderer.setNetworkWiring(channel, completionHandler);
         }
-        renderer.render(stream, processingResponse, execution, processingRequest);
+        renderer.renderResponse(stream, processingResponse, execution, processingRequest);
         // the stream is closed in AsynchronousSectionedRenderer, after all data
         // has arrived
     }

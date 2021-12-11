@@ -1,43 +1,50 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.JdkFutureAdapters;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.yahoo.concurrent.CompletableFutures;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * <p>This class implements a Future&lt;Boolean&gt; that is conjunction of zero or more other Future&lt;Boolean&gt;s,
  * i.e. it evaluates to <code>true</code> if, and only if, all its operands evaluate to <code>true</code>. To use this class,
- * simply create an instance of it and add operands to it using the {@link #addOperand(ListenableFuture)} method.</p>
- * TODO: consider rewriting usage of FutureConjunction to use CompletableFuture instead.
+ * simply create an instance of it and add operands to it using the {@link #addOperand(CompletableFuture)} method.</p>
  *
  * @author Simon Thoresen Hult
  */
-public final class FutureConjunction implements ListenableFuture<Boolean> {
+final class FutureConjunction implements Future<Boolean> {
 
-    private final List<ListenableFuture<Boolean>> operands = new LinkedList<>();
+    private final List<CompletableFuture<Boolean>> operands = new LinkedList<>();
 
     /**
-     * <p>Adds a ListenableFuture&lt;Boolean&gt; to this conjunction. This can be called at any time, even after having called
+     * <p>Adds a {@link CompletableFuture} to this conjunction. This can be called at any time, even after having called
      * {@link #get()} previously.</p>
      *
      * @param operand The operand to add to this conjunction.
      */
-    public void addOperand(ListenableFuture<Boolean> operand) {
+    public void addOperand(CompletableFuture<Boolean> operand) {
         operands.add(operand);
     }
 
-    @Override
     public void addListener(Runnable listener, Executor executor) {
-        Futures.allAsList(operands).addListener(listener, executor);
+        CompletableFutures.allOf(operands)
+                .whenCompleteAsync((__, ___) -> listener.run(), executor);
+    }
+
+    CompletableFuture<Boolean> completableFuture() {
+        return CompletableFutures.allOf(operands)
+                .thenApply(ops -> ops.stream().allMatch(bool -> bool));
     }
 
     @Override
-    public final boolean cancel(boolean mayInterruptIfRunning) {
+    public boolean cancel(boolean mayInterruptIfRunning) {
         boolean ret = true;
         for (Future<Boolean> op : operands) {
             if (!op.cancel(mayInterruptIfRunning)) {
@@ -48,7 +55,7 @@ public final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final boolean isCancelled() {
+    public boolean isCancelled() {
         for (Future<Boolean> op : operands) {
             if (!op.isCancelled()) {
                 return false;
@@ -58,7 +65,7 @@ public final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final boolean isDone() {
+    public boolean isDone() {
         for (Future<Boolean> op : operands) {
             if (!op.isDone()) {
                 return false;
@@ -68,8 +75,8 @@ public final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final Boolean get() throws InterruptedException, ExecutionException {
-        Boolean ret = Boolean.TRUE;
+    public Boolean get() throws InterruptedException, ExecutionException {
+        boolean ret = Boolean.TRUE;
         for (Future<Boolean> op : operands) {
             if (!op.get()) {
                 ret = Boolean.FALSE;
@@ -79,9 +86,9 @@ public final class FutureConjunction implements ListenableFuture<Boolean> {
     }
 
     @Override
-    public final Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
+    public Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException,
                                                                  TimeoutException {
-        Boolean ret = Boolean.TRUE;
+        boolean ret = Boolean.TRUE;
         long nanos = unit.toNanos(timeout);
         long lastTime = System.nanoTime();
         for (Future<Boolean> op : operands) {

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "datastore.h"
+#include "compaction_spec.h"
 #include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <limits>
@@ -526,8 +527,9 @@ DataStoreBase::markCompacting(uint32_t bufferId)
 }
 
 std::vector<uint32_t>
-DataStoreBase::startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace)
+DataStoreBase::startCompactWorstBuffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
+    (void) compaction_strategy;
     constexpr uint32_t noBufferId = std::numeric_limits<uint32_t>::max();
     uint32_t worstMemoryBufferId = noBufferId;
     uint32_t worstAddressSpaceBufferId = noBufferId;
@@ -540,11 +542,11 @@ DataStoreBase::startCompactWorstBuffers(bool compactMemory, bool compactAddressS
             uint32_t arraySize = typeHandler->getArraySize();
             uint32_t reservedElements = typeHandler->getReservedElements(bufferId);
             size_t deadElems = state.getDeadElems() - reservedElements;
-            if (compactMemory && deadElems > worstDeadElems) {
+            if (compaction_spec.compact_memory() && deadElems > worstDeadElems) {
                 worstMemoryBufferId = bufferId;
                 worstDeadElems = deadElems;
             }
-            if (compactAddressSpace) {
+            if (compaction_spec.compact_address_space()) {
                 size_t deadArrays = deadElems / arraySize;
                 if (deadArrays > worstDeadArrays) {
                     worstAddressSpaceBufferId = bufferId;

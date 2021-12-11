@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.provision.autoscale.ClusterModel.warmupDuration;
+
 /**
  * A series of metric snapshots for the nodes of a cluster used to compute load
  *
@@ -24,13 +26,18 @@ public class ClusterNodesTimeseries {
 
     public ClusterNodesTimeseries(Duration period, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
         this.clusterNodes = clusterNodes;
-        var timeseries = db.getNodeTimeseries(period, clusterNodes);
 
-        if (cluster.lastScalingEvent().isPresent())
-            timeseries = filter(timeseries, snapshot -> snapshot.generation() < 0 || // Content nodes do not yet send generation
-                                                        snapshot.generation() >= cluster.lastScalingEvent().get().generation());
-        timeseries = filter(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
-
+        // See warmupSeconds*4 into the past to see any generation change in it
+        // If none can be detected we assume the node is new/was down.
+        // If either this is the case, or there is a generation change, we ignore
+        // the first warmupWindow metrics
+        var timeseries = db.getNodeTimeseries(period.plus(warmupDuration.multipliedBy(4)), clusterNodes);
+        if (cluster.lastScalingEvent().isPresent()) {
+            long currentGeneration = cluster.lastScalingEvent().get().generation();
+            timeseries = keepCurrentGenerationAfterWarmup(timeseries, currentGeneration);
+        }
+        timeseries = keep(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
+        timeseries = keep(timeseries, snapshot -> ! snapshot.at().isBefore(db.clock().instant().minus(period)));
         this.timeseries = timeseries;
     }
 
@@ -62,8 +69,15 @@ public class ClusterNodesTimeseries {
         return total.divide(count);
     }
 
-    private List<NodeTimeseries> filter(List<NodeTimeseries> timeseries, Predicate<NodeMetricSnapshot> filter) {
-        return timeseries.stream().map(nodeTimeseries -> nodeTimeseries.filter(filter)).collect(Collectors.toList());
+    private static List<NodeTimeseries> keep(List<NodeTimeseries> timeseries, Predicate<NodeMetricSnapshot> filter) {
+        return timeseries.stream().map(nodeTimeseries -> nodeTimeseries.keep(filter)).collect(Collectors.toList());
+    }
+
+    private static List<NodeTimeseries> keepCurrentGenerationAfterWarmup(List<NodeTimeseries> timeseries,
+                                                                         long currentGeneration) {
+        return timeseries.stream()
+                         .map(nodeTimeseries -> nodeTimeseries.keepCurrentGenerationAfterWarmup(currentGeneration))
+                         .collect(Collectors.toList());
     }
 
     public static ClusterNodesTimeseries empty() {

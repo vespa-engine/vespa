@@ -565,9 +565,31 @@ public final class AllfeaturesConfig extends ConfigInstance {
       basic_struct = __builder;
       return this;
     }
+    /**
+     * Make a new builder and run the supplied function on it before adding it to the list
+     * @param __func lambda that modifies the given builder
+     * @return this builder
+     */
+    public Builder basic_struct(java.util.function.Consumer<Basic_struct.Builder> __func) {
+      Basic_struct.Builder __inner = new Basic_struct.Builder();
+      __func.accept(__inner);
+      basic_struct = __inner;
+      return this;
+    }
 
     public Builder struct_of_struct(Struct_of_struct.Builder __builder) {
       struct_of_struct = __builder;
+      return this;
+    }
+    /**
+     * Make a new builder and run the supplied function on it before adding it to the list
+     * @param __func lambda that modifies the given builder
+     * @return this builder
+     */
+    public Builder struct_of_struct(java.util.function.Consumer<Struct_of_struct.Builder> __func) {
+      Struct_of_struct.Builder __inner = new Struct_of_struct.Builder();
+      __func.accept(__inner);
+      struct_of_struct = __inner;
       return this;
     }
 
@@ -578,6 +600,18 @@ public final class AllfeaturesConfig extends ConfigInstance {
      */
     public Builder myArray(MyArray.Builder __builder) {
       myArray.add(__builder);
+      return this;
+    }
+
+    /**
+     * Make a new builder and run the supplied function on it before adding it to the list
+     * @param __func lambda that modifies the given builder
+     * @return this builder
+     */
+    public Builder myArray(java.util.function.Consumer<MyArray.Builder> __func) {
+      MyArray.Builder __inner = new MyArray.Builder();
+      __func.accept(__inner);
+      myArray.add(__inner);
       return this;
     }
 
@@ -598,6 +632,18 @@ public final class AllfeaturesConfig extends ConfigInstance {
 
     public Builder myMap(Map<String, MyMap.Builder> __values) {
       myMap.putAll(__values);
+      return this;
+    }
+
+    /**
+     * Make a new builder and run the supplied function on it before using it as the value
+     * @param __func lambda that modifies the given builder
+     * @return this builder
+     */
+    public Builder myMap(String __key, java.util.function.Consumer<MyMap.Builder> __func) {
+      MyMap.Builder __inner = new MyMap.Builder();
+      __func.accept(__inner);
+      myMap.put(__key, __inner);
       return this;
     }
 
@@ -1305,9 +1351,31 @@ public final class AllfeaturesConfig extends ConfigInstance {
         inner0 = __builder;
         return this;
       }
+      /**
+       * Make a new builder and run the supplied function on it before adding it to the list
+       * @param __func lambda that modifies the given builder
+       * @return this builder
+       */
+      public Builder inner0(java.util.function.Consumer<Inner0.Builder> __func) {
+        Inner0.Builder __inner = new Inner0.Builder();
+        __func.accept(__inner);
+        inner0 = __inner;
+        return this;
+      }
 
       public Builder inner1(Inner1.Builder __builder) {
         inner1 = __builder;
+        return this;
+      }
+      /**
+       * Make a new builder and run the supplied function on it before adding it to the list
+       * @param __func lambda that modifies the given builder
+       * @return this builder
+       */
+      public Builder inner1(java.util.function.Consumer<Inner1.Builder> __func) {
+        Inner1.Builder __inner = new Inner1.Builder();
+        __func.accept(__inner);
+        inner1 = __inner;
         return this;
       }
 
@@ -1616,6 +1684,18 @@ public final class AllfeaturesConfig extends ConfigInstance {
       }
 
       /**
+       * Make a new builder and run the supplied function on it before adding it to the list
+       * @param __func lambda that modifies the given builder
+       * @return this builder
+       */
+      public Builder anotherArray(java.util.function.Consumer<AnotherArray.Builder> __func) {
+        AnotherArray.Builder __inner = new AnotherArray.Builder();
+        __func.accept(__inner);
+        anotherArray.add(__inner);
+        return this;
+      }
+
+      /**
        * Set the given list as this builder's list of AnotherArray builders
        * @param __builders a list of builders
        * @return this builder
@@ -1910,6 +1990,18 @@ public final class AllfeaturesConfig extends ConfigInstance {
        */
       public Builder anotherArray(AnotherArray.Builder __builder) {
         anotherArray.add(__builder);
+        return this;
+      }
+
+      /**
+       * Make a new builder and run the supplied function on it before adding it to the list
+       * @param __func lambda that modifies the given builder
+       * @return this builder
+       */
+      public Builder anotherArray(java.util.function.Consumer<AnotherArray.Builder> __func) {
+        AnotherArray.Builder __inner = new AnotherArray.Builder();
+        __func.accept(__inner);
+        anotherArray.add(__inner);
         return this;
       }
 

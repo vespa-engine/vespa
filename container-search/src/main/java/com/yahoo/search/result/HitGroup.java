@@ -5,6 +5,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.ListenableArrayList;
+import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.net.URI;
 import com.yahoo.prelude.fastsearch.SortDataHitSorter;
 import com.yahoo.processing.response.ArrayDataList;
@@ -19,6 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -84,7 +86,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      */
     private DefaultErrorHit errorHit = null;
 
-    private final ListenableFuture<DataList<Hit>> completedFuture;
+    private final CompletableFuture<DataList<Hit>> completedFuture;
 
     private final IncomingData<Hit> incomingHits;
 
@@ -965,7 +967,13 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     public IncomingData<Hit> incoming() { return incomingHits; }
 
     @Override
-    public ListenableFuture<DataList<Hit>> complete() { return completedFuture; }
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "7")
+    public ListenableFuture<DataList<Hit>> complete() {
+        return CompletableFutures.toGuavaListenableFuture(completedFuture);
+    }
+
+    @Override public CompletableFuture<DataList<Hit>> completeFuture() { return completedFuture; }
 
     @Override
     public void addDataListener(Runnable runnable) {

@@ -40,6 +40,8 @@ CryptoEngine::SP setup_crypto(const vespalib::slime::Inspector &tls) {
 
 } // namespace vbench::<unnamed>
 
+VESPA_THREAD_STACK_TAG(vbench_inputchain_generator);
+
 VBench::VBench(const vespalib::Slime &cfg)
     : _factory(),
       _analyzers(),
@@ -76,7 +78,7 @@ VBench::VBench(const vespalib::Slime &cfg)
         }
         inputChain->generator = _factory.createGenerator(generator, *inputChain->taggers.back());
         if (inputChain->generator.get() != 0) {
-            inputChain->thread.reset(new vespalib::Thread(*inputChain->generator));
+            inputChain->thread.reset(new vespalib::Thread(*inputChain->generator, vbench_inputchain_generator));
             _inputs.push_back(std::move(inputChain));
         }
     }

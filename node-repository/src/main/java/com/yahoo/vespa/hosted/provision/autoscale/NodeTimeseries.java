@@ -9,6 +9,8 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.provision.autoscale.ClusterModel.warmupDuration;
+
 /**
  * A list of metric snapshots from a node, sorted by increasing time (newest last).
  *
@@ -48,15 +50,42 @@ public class NodeTimeseries {
         return new NodeTimeseries(hostname(), list);
     }
 
-    public NodeTimeseries filter(Predicate<NodeMetricSnapshot> filter) {
-        return new NodeTimeseries(hostname, snapshots.stream().filter(filter).collect(Collectors.toList()));
+    /** Returns the instant this changed to the given generation, or empty if no *change* to this generation is present */
+    private Optional<Instant> generationChange(long targetGeneration) {
+        if (snapshots.isEmpty()) return Optional.empty();
+        if (snapshots.get(0).generation() == targetGeneration) return Optional.of(snapshots.get(0).at());
+        for (NodeMetricSnapshot snapshot : snapshots) {
+            if (snapshot.generation() == targetGeneration)
+                return Optional.of(snapshot.at());
+        }
+        return Optional.empty();
     }
 
-    public NodeTimeseries justAfter(Instant oldestTime) {
+    public NodeTimeseries keep(Predicate<NodeMetricSnapshot> filter) {
+        return new NodeTimeseries(hostname, snapshots.stream()
+                                                     .filter(snapshot -> filter.test(snapshot))
+                                                     .collect(Collectors.toList()));
+    }
+
+    public NodeTimeseries keepAfter(Instant oldestTime) {
         return new NodeTimeseries(hostname,
                                   snapshots.stream()
                                            .filter(snapshot -> snapshot.at().equals(oldestTime) || snapshot.at().isAfter(oldestTime))
                                            .collect(Collectors.toList()));
+    }
+
+    public NodeTimeseries keepCurrentGenerationAfterWarmup(long currentGeneration) {
+        Optional<Instant> generationChange = generationChange(currentGeneration);
+        return keep(snapshot -> isOnCurrentGenerationAfterWarmup(snapshot, currentGeneration, generationChange));
+    }
+
+    private boolean isOnCurrentGenerationAfterWarmup(NodeMetricSnapshot snapshot,
+                                                     long currentGeneration,
+                                                     Optional<Instant> generationChange) {
+        if (snapshot.generation() < 0) return true; // Content nodes do not yet send generation
+        if (snapshot.generation() < currentGeneration) return false;
+        if (generationChange.isEmpty()) return true;
+        return ! snapshot.at().isBefore(generationChange.get().plus(warmupDuration));
     }
 
 }

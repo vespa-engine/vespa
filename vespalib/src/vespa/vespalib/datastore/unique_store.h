@@ -55,11 +55,11 @@ public:
     EntryRef find(EntryConstRefType value);
     EntryConstRefType get(EntryRef ref) const { return _allocator.get(ref); }
     void remove(EntryRef ref);
-    std::unique_ptr<Remapper> compact_worst(bool compact_memory, bool compact_address_space);
+    std::unique_ptr<Remapper> compact_worst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage get_values_memory_usage() const { return _store.getMemoryUsage(); }
     vespalib::MemoryUsage get_dictionary_memory_usage() const { return _dict->get_memory_usage(); }
-    vespalib::AddressSpace get_address_space_usage() const;
+    vespalib::AddressSpace get_values_address_space_usage() const;
 
     // TODO: Consider exposing only the needed functions from allocator
     Allocator& get_allocator() { return _allocator; }

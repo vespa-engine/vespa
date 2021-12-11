@@ -197,10 +197,7 @@ DocumentMetaStore::consider_compact_gid_to_lid_map()
     if (_gidToLidMap.getAllocator().getNodeStore().has_held_buffers()) {
         return false;
     }
-    auto &compaction_strategy = getConfig().getCompactionStrategy();
-    size_t used_bytes = _cached_gid_to_lid_map_memory_usage.usedBytes();
-    size_t dead_bytes = _cached_gid_to_lid_map_memory_usage.deadBytes();
-    return compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
+    return _should_compact_gid_to_lid_map;
 }
 
 void
@@ -209,7 +206,7 @@ DocumentMetaStore::onCommit()
     if (consider_compact_gid_to_lid_map()) {
         incGeneration();
         _changesSinceCommit = 0;
-        _gidToLidMap.compact_worst();
+        _gidToLidMap.compact_worst(getConfig().getCompactionStrategy());
         _gid_to_lid_map_write_itr_prepare_serial_num = 0u;
         _gid_to_lid_map_write_itr.begin(_gidToLidMap.getRoot());
         incGeneration();
@@ -223,13 +220,15 @@ DocumentMetaStore::onCommit()
 void
 DocumentMetaStore::onUpdateStat()
 {
+    auto &compaction_strategy = getConfig().getCompactionStrategy();
     vespalib::MemoryUsage usage = _metaDataStore.getMemoryUsage();
     usage.incAllocatedBytesOnHold(getGenerationHolder().getHeldBytes());
     size_t bvSize = _lidAlloc.getUsedLidsSize();
     usage.incAllocatedBytes(bvSize);
     usage.incUsedBytes(bvSize);
-    _cached_gid_to_lid_map_memory_usage = _gidToLidMap.getMemoryUsage();
-    usage.merge(_cached_gid_to_lid_map_memory_usage);
+    auto gid_to_lid_map_memory_usage = _gidToLidMap.getMemoryUsage();
+    _should_compact_gid_to_lid_map = compaction_strategy.should_compact_memory(gid_to_lid_map_memory_usage);
+    usage.merge(gid_to_lid_map_memory_usage);
     // the free lists are not taken into account here
     updateStatistics(_metaDataStore.size(),
                      _metaDataStore.size(),
@@ -424,7 +423,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
       _trackDocumentSizes(true),
       _changesSinceCommit(0),
       _op_listener(),
-      _cached_gid_to_lid_map_memory_usage()
+      _should_compact_gid_to_lid_map(false)
 {
     ensureSpace(0);         // lid 0 is reserved
     setCommittedDocIdLimit(1u);         // lid 0 is reserved

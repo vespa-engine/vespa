@@ -13,6 +13,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -24,6 +25,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,14 +43,13 @@ public class ScalingSuggestionsMaintainerTest {
 
     @Test
     public void testScalingSuggestionsMaintainer() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east3"))).flavorsConfig(flavorsConfig()).build();
-
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east3")))
+                                                                    .flavorsConfig(flavorsConfig())
+                                                                    .build();
         ApplicationId app1 = ProvisioningTester.applicationId("app1");
-        ClusterSpec cluster1 = ProvisioningTester.containerClusterSpec();
-
         ApplicationId app2 = ProvisioningTester.applicationId("app2");
+        ClusterSpec cluster1 = ProvisioningTester.containerClusterSpec();
         ClusterSpec cluster2 = ProvisioningTester.contentClusterSpec();
-
         tester.makeReadyNodes(20, "flt", NodeType.host, 8);
         tester.activateTenantHosts();
 
@@ -60,7 +61,8 @@ public class ScalingSuggestionsMaintainerTest {
                                                     false, true));
 
         tester.clock().advance(Duration.ofHours(13));
-        addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository());
+        Duration timeAdded = addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository());
+        tester.clock().advance(timeAdded.negated());
         addMeasurements(0.99f, 0.99f, 0.99f, 0, 500, app2, tester.nodeRepository());
 
         ScalingSuggestionsMaintainer maintainer = new ScalingSuggestionsMaintainer(tester.nodeRepository(),
@@ -68,7 +70,7 @@ public class ScalingSuggestionsMaintainerTest {
                                                                                    new TestMetric());
         maintainer.maintain();
 
-        assertEquals("11 nodes with [vcpu: 6.5, memory: 5.5 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps]",
+        assertEquals("12 nodes with [vcpu: 6.0, memory: 5.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
         assertEquals("8 nodes with [vcpu: 11.0, memory: 4.4 Gb, disk 11.8 Gb, bandwidth: 0.1 Gbps]",
                      suggestionOf(app2, cluster2, tester).get().resources().toString());
@@ -78,7 +80,7 @@ public class ScalingSuggestionsMaintainerTest {
         addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Suggestion stays at the peak value observed",
-                     "11 nodes with [vcpu: 6.5, memory: 5.5 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps]",
+                     "12 nodes with [vcpu: 6.0, memory: 5.5 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
         // Utilization is still way down and a week has passed
         tester.clock().advance(Duration.ofDays(7));
@@ -114,10 +116,11 @@ public class ScalingSuggestionsMaintainerTest {
                      .shouldSuggestResources(currentResources);
     }
 
-    public void addMeasurements(float cpu, float memory, float disk, int generation, int count,
-                                ApplicationId applicationId,
-                                NodeRepository nodeRepository) {
+    public Duration addMeasurements(float cpu, float memory, float disk, int generation, int count,
+                                    ApplicationId applicationId,
+                                    NodeRepository nodeRepository) {
         NodeList nodes = nodeRepository.nodes().list(Node.State.active).owner(applicationId);
+        Instant startTime = nodeRepository.clock().instant();
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 nodeRepository.metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
@@ -127,7 +130,9 @@ public class ScalingSuggestionsMaintainerTest {
                                                                                                     true,
                                                                                                     true,
                                                                                                     0.0))));
+            ((ManualClock)nodeRepository.clock()).advance(Duration.ofSeconds(150));
         }
+        return Duration.between(startTime, nodeRepository.clock().instant());
     }
 
     private FlavorsConfig flavorsConfig() {

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.ContainerBuilder;
@@ -17,12 +16,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -218,7 +217,7 @@ public class RequestDispatchTestCase {
             protected Request newRequest() {
                 return new Request(driver, URI.create("http://localhost/"));
             }
-        }.dispatch().addListener(listener, MoreExecutors.directExecutor());
+        }.dispatch().whenComplete((__, ___) -> listener.run());
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         ContentChannel responseContent = ResponseDispatch.newInstance(Response.Status.OK)
                                                          .connect(requestHandler.responseHandler);

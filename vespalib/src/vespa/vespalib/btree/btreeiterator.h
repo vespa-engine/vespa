@@ -113,6 +113,9 @@ public:
         return _node->getData(_idx);
     }
 
+    // Only use during compaction when changing reference to moved value
+    DataType &getWData() { return getWNode()->getWData(_idx); }
+
     bool
     valid() const
     {
@@ -880,6 +883,9 @@ public:
     {
         _leaf.getWNode()->writeData(_leaf.getIdx(), data);
     }
+
+    // Only use during compaction when changing reference to moved value
+    DataType &getWData() { return _leaf.getWData(); }
 
     /**
      * Set a new key for the current iterator position.

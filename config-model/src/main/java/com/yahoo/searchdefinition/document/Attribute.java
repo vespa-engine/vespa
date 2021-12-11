@@ -114,6 +114,7 @@ public final class Attribute implements Cloneable, Serializable {
         public String getName() { return myName; }
         public String getExportAttributeTypeName() { return exportAttributeTypeName; }
 
+        @Override
         public String toString() {
             return "type: " + myName;
         }
@@ -134,9 +135,11 @@ public final class Attribute implements Cloneable, Serializable {
 
         public String getName() { return name; }
 
+        @Override
         public String toString() {
             return "collectiontype: " + name;
         }
+
     }
 
     /** Creates an attribute with default settings */
@@ -406,6 +409,7 @@ public final class Attribute implements Cloneable, Serializable {
         }
     }
 
+    @Override
     public String toString() {
         return "attribute '" + name + "' (" + type + ")";
     }

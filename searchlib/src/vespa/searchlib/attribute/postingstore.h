@@ -4,6 +4,7 @@
 
 #include "enum_store_dictionary.h"
 #include "postinglisttraits.h"
+#include "posting_store_compaction_spec.h"
 #include <set>
 
 namespace search {
@@ -47,8 +48,7 @@ protected:
     IEnumStoreDictionary& _dictionary;
     Status            &_status;
     uint64_t           _bvExtraBytes;
-    vespalib::MemoryUsage _cached_allocator_memory_usage;
-    vespalib::MemoryUsage _cached_store_memory_usage;
+    PostingStoreCompactionSpec _compaction_spec;
 
     static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
 
@@ -77,6 +77,8 @@ public:
     typedef typename Parent::AggregatedType AggregatedType;
     typedef typename Parent::BTreeTypeRefPair BTreeTypeRefPair;
     typedef typename Parent::Builder Builder;
+    using CompactionSpec = vespalib::datastore::CompactionSpec;
+    using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     typedef vespalib::datastore::EntryRef EntryRef;
     typedef std::less<uint32_t> CompareT;
     using Parent::applyNewArray;
@@ -89,6 +91,7 @@ public:
     using Parent::getWTreeEntry;
     using Parent::getTreeEntry;
     using Parent::getKeyDataEntry;
+    using Parent::isBTree;
     using Parent::clusterLimit;
     using Parent::allocBTree;
     using Parent::allocBTreeCopy;
@@ -105,10 +108,8 @@ public:
     ~PostingStore();
 
     bool removeSparseBitVectors() override;
-    EntryRef consider_remove_sparse_bitvector(EntryRef ref);
+    void consider_remove_sparse_bitvector(std::vector<EntryRef> &refs);
     static bool isBitVector(uint32_t typeId) { return typeId == BUFFERTYPE_BITVECTOR; }
-    static bool isBTree(uint32_t typeId) { return typeId == BUFFERTYPE_BTREE; }
-    bool isBTree(RefType ref) const { return isBTree(getTypeId(ref)); }
 
     void applyNew(EntryRef &ref, AddIter a, AddIter ae);
 
@@ -186,13 +187,13 @@ public:
 
     static inline DataT bitVectorWeight();
     vespalib::MemoryUsage getMemoryUsage() const;
-    vespalib::MemoryUsage update_stat();
+    vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy);
 
-    void move_btree_nodes(EntryRef ref);
-    EntryRef move(EntryRef ref);
+    void move_btree_nodes(const std::vector<EntryRef> &refs);
+    void move(std::vector<EntryRef>& refs);
 
-    void compact_worst_btree_nodes();
-    void compact_worst_buffers();
+    void compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
+    void compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
     bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy);
 private:

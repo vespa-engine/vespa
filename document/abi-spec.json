@@ -501,6 +501,7 @@
       "public void <init>(com.yahoo.document.config.DocumentmanagerConfig)",
       "public void assign(com.yahoo.document.DocumentTypeManager)",
       "public com.yahoo.document.DocumentTypeManager configure(java.lang.String)",
+      "public static com.yahoo.document.DocumentTypeManager fromFile(java.lang.String)",
       "public boolean hasDataType(java.lang.String)",
       "public boolean hasDataType(int)",
       "public com.yahoo.document.DataType getDataType(java.lang.String)",

@@ -16,6 +16,7 @@ using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using vespalib::AddressSpace;
+using vespalib::datastore::CompactionStrategy;
 
 using AttributePtr = AttributeVector::SP;
 using AttributeStatus = search::attribute::Status;
@@ -237,7 +238,7 @@ TEST_F("Compaction limits address space usage (dead) when free lists are NOT use
 {
     populate_and_hammer(f, true);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
-    EXPECT_GREATER(search::CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, afterSpace.dead());
+    EXPECT_GREATER(CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, afterSpace.dead());
 }
 
 TEST_F("Compaction is not executed when free lists are used",
@@ -266,7 +267,7 @@ TEST_F("Compaction is peformed when compaction strategy is changed to enable com
         f._v->commit(); // new commit might trigger further compaction
         after2 = f.getMultiValueAddressSpaceUsage("after2");
     }
-    EXPECT_GREATER(search::CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, after2.dead());
+    EXPECT_GREATER(CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, after2.dead());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

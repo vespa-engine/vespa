@@ -16,7 +16,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  */
 public class PagedAttributeValidator extends Processor {
 
-
     public PagedAttributeValidator(Schema schema,
                                    DeployLogger deployLogger,
                                    RankProfileRegistry rankProfileRegistry,
@@ -40,8 +39,8 @@ public class PagedAttributeValidator extends Processor {
 
     private void validatePagedSetting(Field field, Attribute attribute) {
         var tensorType = attribute.tensorType();
-        if (!tensorType.isPresent() ||
-                !isDenseTensorType(tensorType.get())) {
+        if (tensorType.isEmpty()
+            || !isDenseTensorType(tensorType.get())) {
             fail(schema, field, "The 'paged' attribute setting is only supported for dense tensor types");
         }
     }
@@ -49,4 +48,5 @@ public class PagedAttributeValidator extends Processor {
     private boolean isDenseTensorType(TensorType type) {
         return type.dimensions().stream().allMatch(d -> d.isIndexed());
     }
+
 }

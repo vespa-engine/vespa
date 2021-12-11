@@ -13,6 +13,10 @@ import static helpers.CompareConfigTestHelper.assertSerializedConfigFileEquals;
 public abstract class AbstractSchemaTestCase {
 
     protected static void assertConfigFile(String filename, String cfg) throws IOException {
+        IOUtils.writeFile(filename + ".actual", cfg, false);
+        if (! cfg.endsWith("\n")) {
+            IOUtils.writeFile(filename + ".actual", "\n", true);
+        }
         assertSerializedConfigFileEquals(filename, cfg);
     }
 

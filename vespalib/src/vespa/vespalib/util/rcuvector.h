@@ -13,10 +13,10 @@ namespace vespalib {
 template <typename T>
 class RcuVectorHeld : public GenerationHeldBase
 {
-    std::unique_ptr<T> _data;
+    T _data;
 
 public:
-    RcuVectorHeld(size_t size, std::unique_ptr<T> data);
+    RcuVectorHeld(size_t size, T&& data);
 
     ~RcuVectorHeld();
 };
@@ -121,7 +121,7 @@ public:
 
     void reset();
     void shrink(size_t newSize) __attribute__((noinline));
-    void replaceVector(std::unique_ptr<ArrayType> replacement);
+    void replaceVector(ArrayType replacement);
 };
 
 template <typename T>

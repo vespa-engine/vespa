@@ -102,11 +102,9 @@ private:
     std::vector<uint32_t> _bufferIdsToCompact;
 
     void allocMapping() {
-        _compacting_buffer.resize(RefT::numBuffers());
         _mapping.resize(RefT::numBuffers());
         for (const auto bufferId : _bufferIdsToCompact) {
             BufferState &state = _dataStore.getBufferState(bufferId);
-            _compacting_buffer[bufferId] = true;
             _mapping[bufferId].resize(state.get_used_arrays());
         }
     }
@@ -124,7 +122,7 @@ private:
     }
     
     void fillMapping() {
-        _dict.move_keys(*this, _compacting_buffer, RefT::offset_bits);
+        _dict.move_keys(*this, _compacting_buffer);
     }
 
 public:
@@ -140,6 +138,7 @@ public:
           _bufferIdsToCompact(std::move(bufferIdsToCompact))
     {
         if (!_bufferIdsToCompact.empty()) {
+            _compacting_buffer.add_buffers(_bufferIdsToCompact);
             allocMapping();
             fillMapping();
         }
@@ -158,9 +157,9 @@ public:
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 std::unique_ptr<typename UniqueStore<EntryT, RefT, Compare, Allocator>::Remapper>
-UniqueStore<EntryT, RefT, Compare, Allocator>::compact_worst(bool compact_memory, bool compact_address_space)
+UniqueStore<EntryT, RefT, Compare, Allocator>::compact_worst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compact_memory, compact_address_space);
+    std::vector<uint32_t> bufferIdsToCompact = _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
     if (bufferIdsToCompact.empty()) {
         return std::unique_ptr<Remapper>();
     } else {
@@ -179,7 +178,7 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::getMemoryUsage() const
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 vespalib::AddressSpace
-UniqueStore<EntryT, RefT, Compare, Allocator>::get_address_space_usage() const
+UniqueStore<EntryT, RefT, Compare, Allocator>::get_values_address_space_usage() const
 {
     return _allocator.get_data_store().getAddressSpaceUsage();
 }

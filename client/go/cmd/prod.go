@@ -142,11 +142,10 @@ $ vespa prod submit`,
 		if pkg.TestPath == "" {
 			fatalErrHint(fmt.Errorf("No tests found"),
 				"The application must be a Java maven project, or include basic HTTP tests under src/test/application/",
-				"See https://cloud.vespa.ai/en/reference/getting-to-production")
+				"See https://cloud.vespa.ai/en/getting-to-production")
 			return
-		} else {
-			verifyTests(pkg.TestPath, target)
 		}
+		verifyTests(pkg.TestPath, target)
 		isCI := os.Getenv("CI") != ""
 		if !isCI {
 			fmt.Fprintln(stderr, color.Yellow("Warning:"), "We recommend doing this only from a CD job")
@@ -352,10 +351,26 @@ func prompt(r *bufio.Reader, question, defaultAnswer string, validator func(inpu
 }
 
 func verifyTests(testsParent string, target vespa.Target) {
-	runTests(filepath.Join(testsParent, "tests", "system-test"), target, true)
-	runTests(filepath.Join(testsParent, "tests", "staging-setup"), target, true)
-	runTests(filepath.Join(testsParent, "tests", "staging-test"), target, true)
-	if util.PathExists(filepath.Join(testsParent, "tests", "production-test")) {
-		runTests(filepath.Join(testsParent, "tests", "production-test"), target, true)
+	verifyTest(testsParent, "system-test", target, true)
+	verifyTest(testsParent, "staging-setup", target, true)
+	verifyTest(testsParent, "staging-test", target, true)
+	verifyTest(testsParent, "production-test", target, false)
+}
+
+func verifyTest(testsParent string, suite string, target vespa.Target, required bool) {
+	testDirectory := filepath.Join(testsParent, "tests", suite)
+	_, err := os.Stat(testDirectory)
+	if err != nil {
+		if required {
+			if errors.Is(err, os.ErrNotExist) {
+				fatalErrHint(fmt.Errorf("No %s tests found", suite),
+					fmt.Sprintf("No such directory: %s", testDirectory),
+					"See https://cloud.vespa.ai/en/reference/testing")
+			}
+			fatalErrHint(err, "See https://cloud.vespa.ai/en/reference/testing")
+		}
+		return
 	}
+
+	runTests(testDirectory, true)
 }

@@ -7,57 +7,93 @@
 using namespace vespalib;
 using namespace vespalib::net::tls;
 
-bool glob_matches(vespalib::stringref pattern, vespalib::stringref string_to_check) {
-    auto glob = CredentialMatchPattern::create_from_glob(pattern);
+bool dns_glob_matches(vespalib::stringref pattern, vespalib::stringref string_to_check) {
+    auto glob = CredentialMatchPattern::create_from_dns_glob(pattern);
     return glob->matches(string_to_check);
 }
 
+bool uri_glob_matches(vespalib::stringref pattern, vespalib::stringref string_to_check) {
+    auto glob = CredentialMatchPattern::create_from_uri_glob(pattern);
+    return glob->matches(string_to_check);
+}
+
+void verify_all_glob_types_match(vespalib::stringref pattern, vespalib::stringref string_to_check) {
+    EXPECT_TRUE(dns_glob_matches(pattern, string_to_check));
+    EXPECT_TRUE(uri_glob_matches(pattern, string_to_check));
+}
+
+void verify_all_glob_types_mismatch(vespalib::stringref pattern, vespalib::stringref string_to_check) {
+    EXPECT_FALSE(dns_glob_matches(pattern, string_to_check));
+    EXPECT_FALSE(uri_glob_matches(pattern, string_to_check));
+}
+
 TEST("glob without wildcards matches entire string") {
-    EXPECT_TRUE(glob_matches("foo", "foo"));
-    EXPECT_FALSE(glob_matches("foo", "fooo"));
-    EXPECT_FALSE(glob_matches("foo", "ffoo"));
+    verify_all_glob_types_match("foo", "foo");
+    verify_all_glob_types_mismatch("foo", "fooo");
+    verify_all_glob_types_mismatch("foo", "ffoo");
 }
 
 TEST("wildcard glob can match prefix") {
-    EXPECT_TRUE(glob_matches("foo*", "foo"));
-    EXPECT_TRUE(glob_matches("foo*", "foobar"));
-    EXPECT_FALSE(glob_matches("foo*", "ffoo"));
+    verify_all_glob_types_match("foo*", "foo");
+    verify_all_glob_types_match("foo*", "foobar");
+    verify_all_glob_types_mismatch("foo*", "ffoo");
 }
 
 TEST("wildcard glob can match suffix") {
-    EXPECT_TRUE(glob_matches("*foo", "foo"));
-    EXPECT_TRUE(glob_matches("*foo", "ffoo"));
-    EXPECT_FALSE(glob_matches("*foo", "fooo"));
+    verify_all_glob_types_match("*foo", "foo");
+    verify_all_glob_types_match("*foo", "ffoo");
+    verify_all_glob_types_mismatch("*foo", "fooo");
 }
 
 TEST("wildcard glob can match substring") {
-    EXPECT_TRUE(glob_matches("f*o", "fo"));
-    EXPECT_TRUE(glob_matches("f*o", "foo"));
-    EXPECT_TRUE(glob_matches("f*o", "ffoo"));
-    EXPECT_FALSE(glob_matches("f*o", "boo"));
+    verify_all_glob_types_match("f*o", "fo");
+    verify_all_glob_types_match("f*o", "foo");
+    verify_all_glob_types_match("f*o", "ffoo");
+    verify_all_glob_types_mismatch("f*o", "boo");
 }
 
-TEST("wildcard glob does not cross multiple dot delimiter boundaries") {
-    EXPECT_TRUE(glob_matches("*.bar.baz", "foo.bar.baz"));
-    EXPECT_TRUE(glob_matches("*.bar.baz", ".bar.baz"));
-    EXPECT_FALSE(glob_matches("*.bar.baz", "zoid.foo.bar.baz"));
-    EXPECT_TRUE(glob_matches("foo.*.baz", "foo.bar.baz"));
-    EXPECT_FALSE(glob_matches("foo.*.baz", "foo.bar.zoid.baz"));
+TEST("single char DNS glob matches single character") {
+    EXPECT_TRUE(dns_glob_matches("f?o", "foo"));
+    EXPECT_FALSE(dns_glob_matches("f?o", "fooo"));
+    EXPECT_FALSE(dns_glob_matches("f?o", "ffoo"));
 }
 
-TEST("single char glob matches non dot characters") {
-    EXPECT_TRUE(glob_matches("f?o", "foo"));
-    EXPECT_FALSE(glob_matches("f?o", "fooo"));
-    EXPECT_FALSE(glob_matches("f?o", "ffoo"));
-    EXPECT_FALSE(glob_matches("f?o", "f.o"));
+// Due to URIs being able to contain '?' characters as a query separator, don't use it for wildcarding.
+TEST("URI glob matching treats question mark character as literal match") {
+    EXPECT_TRUE(uri_glob_matches("f?o", "f?o"));
+    EXPECT_FALSE(uri_glob_matches("f?o", "foo"));
+    EXPECT_FALSE(uri_glob_matches("f?o", "f?oo"));
+}
+
+TEST("wildcard DNS glob does not cross multiple dot delimiter boundaries") {
+    EXPECT_TRUE(dns_glob_matches("*.bar.baz", "foo.bar.baz"));
+    EXPECT_TRUE(dns_glob_matches("*.bar.baz", ".bar.baz"));
+    EXPECT_FALSE(dns_glob_matches("*.bar.baz", "zoid.foo.bar.baz"));
+    EXPECT_TRUE(dns_glob_matches("foo.*.baz", "foo.bar.baz"));
+    EXPECT_FALSE(dns_glob_matches("foo.*.baz", "foo.bar.zoid.baz"));
+}
+
+TEST("wildcard URI glob does not cross multiple fwd slash delimiter boundaries") {
+    EXPECT_TRUE(uri_glob_matches("*/bar/baz", "foo/bar/baz"));
+    EXPECT_TRUE(uri_glob_matches("*/bar/baz", "/bar/baz"));
+    EXPECT_FALSE(uri_glob_matches("*/bar/baz", "bar/baz"));
+    EXPECT_FALSE(uri_glob_matches("*/bar/baz", "/bar/baz/"));
+    EXPECT_FALSE(uri_glob_matches("*/bar/baz", "zoid/foo/bar/baz"));
+    EXPECT_TRUE(uri_glob_matches("foo/*/baz", "foo/bar/baz"));
+    EXPECT_FALSE(uri_glob_matches("foo/*/baz", "foo/bar/zoid/baz"));
+    EXPECT_TRUE(uri_glob_matches("foo/*/baz", "foo/bar.zoid/baz")); // No special handling of dots
+}
+
+TEST("single char DNS glob matches non dot characters only") {
+    EXPECT_FALSE(dns_glob_matches("f?o", "f.o"));
 }
 
 TEST("special basic regex characters are escaped") {
-    EXPECT_TRUE(glob_matches("$[.\\^", "$[.\\^"));
+    verify_all_glob_types_match("$[.\\^", "$[.\\^");
 }
 
 TEST("special extended regex characters are ignored") {
-    EXPECT_TRUE(glob_matches("{)(+|]}", "{)(+|]}"));
+    verify_all_glob_types_match("{)(+|]}", "{)(+|]}");
 }
 
 // TODO CN + SANs
@@ -116,7 +152,7 @@ TEST("DNS SAN requirement without glob pattern is matched as exact string") {
     EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"hello.world.bar"}})));
 }
 
-TEST("DNS SAN requirement can include glob wildcards") {
+TEST("DNS SAN requirement can include glob wildcards, delimited by dot character") {
     auto authorized = authorized_peers({policy_with({required_san_dns("*.w?rld")})});
     EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"hello.world"}})));
     EXPECT_TRUE(verify(authorized,  creds_with_dns_sans({{"greetings.w0rld"}})));
@@ -124,8 +160,8 @@ TEST("DNS SAN requirement can include glob wildcards") {
     EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"world"}})));
 }
 
-// FIXME make this RFC 2459-compliant with subdomain matching, case insensitity for host etc
-TEST("URI SAN requirement is matched as exact string in cheeky, pragmatic violation of RFC 2459") {
+// TODO consider making this RFC 2459-compliant with case insensitivity for scheme and host
+TEST("URI SAN requirement without glob pattern is matched as exact string") {
     auto authorized = authorized_peers({policy_with({required_san_uri("foo://bar.baz/zoid")})});
     EXPECT_TRUE(verify(authorized,  creds_with_uri_sans({{"foo://bar.baz/zoid"}})));
     EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"foo://bar.baz/zoi"}})));
@@ -134,6 +170,25 @@ TEST("URI SAN requirement is matched as exact string in cheeky, pragmatic violat
     EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"foo://bar.baz"}})));
     EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"foo://.baz/zoid"}})));
     EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"foo://BAR.baz/zoid"}})));
+}
+
+// TODO consider making this RFC 2459-compliant with case insensitivity for scheme and host
+TEST("URI SAN requirement can include glob wildcards, delimited by fwd slash character") {
+    auto authorized = authorized_peers({policy_with({required_san_uri("myscheme://my/*/uri")})});
+    EXPECT_TRUE(verify(authorized,  creds_with_uri_sans({{"myscheme://my/cool/uri"}})));
+    EXPECT_TRUE(verify(authorized,  creds_with_uri_sans({{"myscheme://my/really.cool/uri"}}))); // Not delimited by dots
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"theirscheme://my/cool/uri"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"myscheme://their/cool/uri"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"myscheme://my/cool/uris"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"myscheme://my/swag/uri/"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"myscheme://my/uri"}})));
+}
+
+TEST("URI SAN requirement can include query part even though it's rather silly to do so") {
+    auto authorized = authorized_peers({policy_with({required_san_uri("myscheme://my/fancy/*?magic")})});
+    EXPECT_TRUE(verify(authorized,  creds_with_uri_sans({{"myscheme://my/fancy/uri?magic"}})));
+    EXPECT_TRUE(verify(authorized,  creds_with_uri_sans({{"myscheme://my/fancy/?magic"}})));
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"myscheme://my/fancy/urimagic"}})));
 }
 
 TEST("multi-SAN policy requires all SANs to be present in certificate") {
@@ -157,6 +212,13 @@ TEST("wildcard DNS SAN in certificate is not treated as a wildcard match by poli
     EXPECT_FALSE(verify(authorized, creds_with_dns_sans({{"*.world"}})));
 }
 
+TEST("wildcard URI SAN in certificate is not treated as a wildcard match by policy") {
+    auto authorized = authorized_peers({policy_with({required_san_uri("hello://world")})});
+    EXPECT_FALSE(verify(authorized, creds_with_uri_sans({{"hello://*"}})));
+}
+
+// TODO this is just by coincidence since we match '*' as any other character, not because we interpret
+//  the wildcard in the SAN as anything special during matching. Consider if we need/want to handle explicitly.
 TEST("wildcard DNS SAN in certificate is still matched by wildcard policy SAN") {
     auto authorized = authorized_peers({policy_with({required_san_dns("*.world")})});
     EXPECT_TRUE(verify(authorized, creds_with_dns_sans({{"*.world"}})));

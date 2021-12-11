@@ -13,7 +13,7 @@ class UriGlobPattern implements RequiredPeerCredential.Pattern {
     private final GlobPattern globPattern;
 
     UriGlobPattern(String globPattern) {
-        this.globPattern = new GlobPattern(globPattern, new char[] {'/'});
+        this.globPattern = new GlobPattern(globPattern, new char[] {'/'}, false);
     }
 
     @Override public String asString() { return globPattern.asString(); }

@@ -23,7 +23,6 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <cassert>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedhandler");
@@ -99,7 +98,7 @@ TlsMgrWriter::sync(SerialNum syncTo)
         bool res = _tls_mgr.getSession()->sync(syncTo, syncedTo);
         if (!res) {
             LOG(debug, "Tls sync failed, retrying");
-            sleep(1);
+            std::this_thread::sleep_for(100ms);
             continue;
         }
         if (syncedTo >= syncTo) {
@@ -284,7 +283,7 @@ FeedHandler::performDeleteBucket(FeedToken token, DeleteBucketOperation &op) {
     _activeFeedView->handleDeleteBucket(op, token);
     // Delete bucket itself, should no longer have documents.
     _bucketDBHandler->handleDeleteBucket(op.getBucketId());
-
+    initiateCommit(vespalib::steady_clock::now());
 }
 
 void
@@ -416,11 +415,9 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _tlsReplayProgress(),
       _serialNum(0),
       _prunedSerialNum(0),
-      _replay_end_serial_num(0u),
-      _prepare_serial_num(0u),
-      _numOperationsPendingCommit(0),
-      _numOperationsCompleted(0),
-      _numCommitsCompleted(0),
+      _replay_end_serial_num(0),
+      _prepare_serial_num(0),
+      _numOperations(),
       _delayedPrune(false),
       _feedLock(),
       _feedState(make_shared<InitState>(getDocTypeName())),
@@ -519,34 +516,32 @@ FeedHandler::getTransactionLogReplayDone() const {
 }
 
 void
-FeedHandler::onCommitDone(size_t numPendingAtStart, vespalib::steady_time start_time) {
-    assert(numPendingAtStart <= _numOperationsPendingCommit);
-    _numOperationsPendingCommit -= numPendingAtStart;
-    _numOperationsCompleted += numPendingAtStart;
-    _numCommitsCompleted++;
-    if (_numOperationsPendingCommit > 0) {
+FeedHandler::onCommitDone(size_t numOperations, vespalib::steady_time start_time) {
+    _numOperations.commitCompleted(numOperations);
+    if (_numOperations.shouldScheduleCommit()) {
         enqueCommitTask();
     }
-    LOG(spam, "%zu: onCommitDone(%zu) total=%zu left=%zu",
-        _numCommitsCompleted, numPendingAtStart, _numOperationsCompleted, _numOperationsPendingCommit);
     vespalib::steady_time now = vespalib::steady_clock::now();
     auto latency = vespalib::to_s(now - start_time);
     std::lock_guard guard(_stats_lock);
-    _stats.add_commit(numPendingAtStart, latency);
+    _stats.add_commit(numOperations, latency);
 }
 
 void FeedHandler::enqueCommitTask() {
-    _writeService.master().execute(makeLambdaTask([this, start_time(vespalib::steady_clock::now())]() { initiateCommit(start_time); }));
+    _writeService.master().execute(makeLambdaTask([this, start_time(vespalib::steady_clock::now())]() {
+        initiateCommit(start_time);
+    }));
 }
 
 void
 FeedHandler::initiateCommit(vespalib::steady_time start_time) {
     auto onCommitDoneContext = std::make_shared<OnCommitDone>(
             _writeService.master(),
-            makeLambdaTask([this, numPendingAtStart=_numOperationsPendingCommit, start_time]() {
-                onCommitDone(numPendingAtStart, start_time);
+            makeLambdaTask([this, operations=_numOperations.operationsSinceLastCommitStart(), start_time]() {
+                onCommitDone(operations, start_time);
             }));
     auto commitResult = _tlsWriter->startCommit(onCommitDoneContext);
+    _numOperations.startCommit();
     if (_activeFeedView) {
         using KeepAlivePair = vespalib::KeepAlive<std::pair<CommitResult, DoneCallback>>;
         auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
@@ -560,7 +555,8 @@ FeedHandler::appendOperation(const FeedOperation &op, TlsWriter::DoneCallback on
         const_cast<FeedOperation &>(op).setSerialNum(inc_serial_num());
     }
     _tlsWriter->appendOperation(op, std::move(onDone));
-    if (++_numOperationsPendingCommit == 1) {
+    _numOperations.startOperation();
+    if (_numOperations.operationsInFlight() == 1) {
         enqueCommitTask();
     }
 }

@@ -8,7 +8,6 @@
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
 #include "reusable_set_visited_tracker.h"
-#include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -16,6 +15,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/size_literals.h>
@@ -30,6 +30,7 @@ namespace search::tensor {
 
 using search::AddressSpaceComponents;
 using search::StateExplorerUtils;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
 namespace {
@@ -337,10 +338,7 @@ HnswIndex::HnswIndex(const DocVectorAccess& vectors, DistanceFunction::UP distan
       _level_generator(std::move(level_generator)),
       _cfg(cfg),
       _visited_set_pool(),
-      _cached_level_arrays_memory_usage(),
-      _cached_level_arrays_address_space_usage(0, 0, (1ull << 32)),
-      _cached_link_arrays_memory_usage(),
-      _cached_link_arrays_address_space_usage(0, 0, (1ull << 32))
+      _compaction_spec()
 {
     assert(_distance_func);
 }
@@ -531,18 +529,18 @@ HnswIndex::trim_hold_lists(generation_t first_used_gen)
 }
 
 void
-HnswIndex::compact_level_arrays(bool compact_memory, bool compact_address_space)
+HnswIndex::compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    auto context = _graph.nodes.compactWorst(compact_memory, compact_address_space);
+    auto context = _graph.nodes.compactWorst(compaction_spec, compaction_strategy);
     uint32_t doc_id_limit = _graph.node_refs.size();
     vespalib::ArrayRef<AtomicEntryRef> refs(&_graph.node_refs[0], doc_id_limit);
     context->compact(refs);
 }
 
 void
-HnswIndex::compact_link_arrays(bool compact_memory, bool compact_address_space)
+HnswIndex::compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
-    auto context = _graph.links.compactWorst(compact_memory, compact_address_space);
+    auto context = _graph.links.compactWorst(compaction_spec, compaction_strategy);
     uint32_t doc_id_limit = _graph.node_refs.size();
     for (uint32_t doc_id = 1; doc_id < doc_id_limit; ++doc_id) {
         EntryRef level_ref = _graph.node_refs[doc_id].load_relaxed();
@@ -553,40 +551,24 @@ HnswIndex::compact_link_arrays(bool compact_memory, bool compact_address_space)
     }
 }
 
-namespace {
-
 bool
-consider_compact_arrays(const CompactionStrategy& compaction_strategy, vespalib::MemoryUsage& memory_usage, vespalib::AddressSpace& address_space_usage, std::function<void(bool,bool)> compact_arrays)
+HnswIndex::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
 {
-    size_t used_bytes = memory_usage.usedBytes();
-    size_t dead_bytes = memory_usage.deadBytes();
-    bool compact_memory = compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
-    size_t used_address_space = address_space_usage.used();
-    size_t dead_address_space = address_space_usage.dead();
-    bool compact_address_space = compaction_strategy.should_compact_address_space(used_address_space, dead_address_space);
-    if (compact_memory || compact_address_space) {
-        compact_arrays(compact_memory, compact_address_space);
+    if (_compaction_spec.level_arrays().compact()) {
+        compact_level_arrays(_compaction_spec.level_arrays(), compaction_strategy);
         return true;
     }
     return false;
 }
 
-}
-
-bool
-HnswIndex::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
-{
-    return consider_compact_arrays(compaction_strategy, _cached_level_arrays_memory_usage, _cached_level_arrays_address_space_usage,
-                                   [this](bool compact_memory, bool compact_address_space)
-                                   { compact_level_arrays(compact_memory, compact_address_space); });
-}
-
 bool
 HnswIndex::consider_compact_link_arrays(const CompactionStrategy& compaction_strategy)
 {
-    return consider_compact_arrays(compaction_strategy, _cached_link_arrays_memory_usage, _cached_link_arrays_address_space_usage,
-                                   [this](bool compact_memory, bool compact_address_space)
-                                   { compact_link_arrays(compact_memory, compact_address_space); });
+    if (_compaction_spec.link_arrays().compact()) {
+        compact_link_arrays(_compaction_spec.link_arrays(), compaction_strategy);
+        return true;
+    }
+    return false;
 }
 
 bool
@@ -603,16 +585,18 @@ HnswIndex::consider_compact(const CompactionStrategy& compaction_strategy)
 }
 
 vespalib::MemoryUsage
-HnswIndex::update_stat()
+HnswIndex::update_stat(const CompactionStrategy& compaction_strategy)
 {
     vespalib::MemoryUsage result;
     result.merge(_graph.node_refs.getMemoryUsage());
-    _cached_level_arrays_memory_usage = _graph.nodes.getMemoryUsage();
-    _cached_level_arrays_address_space_usage = _graph.nodes.addressSpaceUsage();
-    result.merge(_cached_level_arrays_memory_usage);
-    _cached_link_arrays_memory_usage = _graph.links.getMemoryUsage();
-    _cached_link_arrays_address_space_usage = _graph.links.addressSpaceUsage();
-    result.merge(_cached_link_arrays_memory_usage);
+    auto level_arrays_memory_usage = _graph.nodes.getMemoryUsage();
+    auto level_arrays_address_space_usage = _graph.nodes.addressSpaceUsage();
+    result.merge(level_arrays_memory_usage);
+    auto link_arrays_memory_usage = _graph.links.getMemoryUsage();
+    auto link_arrays_address_space_usage = _graph.links.addressSpaceUsage();
+    _compaction_spec = HnswIndexCompactionSpec(compaction_strategy.should_compact(level_arrays_memory_usage, level_arrays_address_space_usage),
+                                               compaction_strategy.should_compact(link_arrays_memory_usage, link_arrays_address_space_usage));
+    result.merge(link_arrays_memory_usage);
     result.merge(_visited_set_pool.memory_usage());
     return result;
 }

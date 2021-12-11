@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.test;
 
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.SettableFuture;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
@@ -15,6 +13,7 @@ import com.yahoo.processing.request.ErrorMessage;
 import com.yahoo.processing.response.*;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -288,7 +287,7 @@ public class ProcessorLibrary {
         private final boolean ordered, streamed;
 
         /** The incoming data this has created */
-        public final SettableFuture<IncomingData> incomingData = SettableFuture.create();
+        public final CompletableFuture<IncomingData> incomingData = new CompletableFuture<>();
 
         /** Create an instance which returns ordered, streamable data */
         public ListenableFutureDataSource() { this(true, true); }
@@ -307,7 +306,7 @@ public class ProcessorLibrary {
                 dataList = ArrayDataList.createAsyncNonstreamed(request);
             else
                 dataList = ArrayDataList.createAsync(request);
-            incomingData.set(dataList.incoming());
+            incomingData.complete(dataList.incoming());
             return new Response(dataList);
         }
 
@@ -317,12 +316,12 @@ public class ProcessorLibrary {
     public static class RequestCounter extends Processor {
 
         /** The incoming data this has created */
-        public final SettableFuture<IncomingData> incomingData = SettableFuture.create();
+        public final CompletableFuture<IncomingData> incomingData = new CompletableFuture<>();
 
         @Override
         public Response process(Request request, Execution execution) {
             ArrayDataList dataList = ArrayDataList.createAsync(request);
-            incomingData.set(dataList.incoming());
+            incomingData.complete(dataList.incoming());
             return new Response(dataList);
         }
 
@@ -354,7 +353,7 @@ public class ProcessorLibrary {
 
                 // wait for other executions and merge the responses
                 for (Response additionalResponse : AsyncExecution.waitForAll(futures, 1000)) {
-                    additionalResponse.data().complete().get(); // block until we have all the data elements
+                    additionalResponse.data().completeFuture().get(); // block until we have all the data elements
                     for (Object item : additionalResponse.data().asList())
                         response.data().add((Data) item);
                     response.mergeWith(additionalResponse);
@@ -382,9 +381,10 @@ public class ProcessorLibrary {
         public Response process(Request request, Execution execution) {
             Response response = execution.process(request);
             // TODO: Consider for to best provide helpers for this
-            response.data().complete().addListener(new RunnableExecution(request,
-                    new ExecutionWithResponse(asyncChain, response, execution)),
-                    MoreExecutors.directExecutor());
+            response.data().completeFuture().whenComplete(
+                    (__, ___) ->
+                            new RunnableExecution(request, new ExecutionWithResponse(asyncChain, response, execution))
+                                    .run());
             return response;
         }
 

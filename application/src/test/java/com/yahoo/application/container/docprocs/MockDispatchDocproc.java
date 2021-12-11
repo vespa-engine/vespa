@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application.container.docprocs;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
@@ -40,7 +38,7 @@ public class MockDispatchDocproc extends DocumentProcessor {
     public Progress process(Processing processing) {
         for (DocumentOperation op : processing.getDocumentOperations()) {
             PutDocumentMessage message = new PutDocumentMessage((DocumentPut)op);
-            ListenableFuture<Response> future = createRequest(message).dispatch();
+            var future = createRequest(message).dispatch();
             try {
                 responses.add(future.get());
             } catch (ExecutionException | InterruptedException e) {

@@ -74,7 +74,7 @@
               <attach>false</attach>
               <archive>
                 <manifest>
-                  <mainClass>ai.vespa.feed.client.CliClient</mainClass>
+                  <mainClass>ai.vespa.feed.client.impl.CliClient</mainClass>
                 </manifest>
               </archive>
               <descriptorRefs>

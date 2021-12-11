@@ -5,6 +5,7 @@
 #include "btreestore.h"
 #include "btreebuilder.h"
 #include "btreebuilder.hpp"
+#include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/util/optimized.h>
 
@@ -972,10 +973,10 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
 std::vector<uint32_t>
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-start_compact_worst_btree_nodes()
+start_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
 {
     _builder.clear();
-    return _allocator.start_compact_worst();
+    return _allocator.start_compact_worst(compaction_strategy);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
@@ -991,15 +992,15 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
 void
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-move_btree_nodes(EntryRef ref)
+move_btree_nodes(const std::vector<EntryRef>& refs)
 {
-    if (ref.valid()) {
+    for (auto& ref : refs) {
         RefType iRef(ref);
-        uint32_t clusterSize = getClusterSize(iRef);
-        if (clusterSize == 0) {
-            BTreeType *tree = getWTreeEntry(iRef);
-            tree->move_nodes(_allocator);
-        }
+        assert(iRef.valid());
+        uint32_t typeId = getTypeId(iRef);
+        assert(isBTree(typeId));
+        BTreeType *tree = getWTreeEntry(iRef);
+        tree->move_nodes(_allocator);
     }
 }
 
@@ -1007,31 +1008,33 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
 std::vector<uint32_t>
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-start_compact_worst_buffers()
+start_compact_worst_buffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     freeze();
-    return _store.startCompactWorstBuffers(true, false);
+    return _store.startCompactWorstBuffers(compaction_spec, compaction_strategy);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
-typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::EntryRef
+void
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
-move(EntryRef ref)
+move(std::vector<EntryRef> &refs)
 {
-    if (!ref.valid() || !_store.getCompacting(ref)) {
-        return ref;
+    for (auto& ref : refs) {
+        RefType iRef(ref);
+        assert(iRef.valid());
+        assert(_store.getCompacting(iRef));
+        uint32_t clusterSize = getClusterSize(iRef);
+        if (clusterSize == 0) {
+            BTreeType *tree = getWTreeEntry(iRef);
+            auto ref_and_ptr = allocBTreeCopy(*tree);
+            tree->prepare_hold();
+            ref = ref_and_ptr.ref;
+        } else {
+            const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+            ref = allocKeyDataCopy(shortArray, clusterSize).ref;
+        }
     }
-    RefType iRef(ref);
-    uint32_t clusterSize = getClusterSize(iRef);
-    if (clusterSize == 0) {
-        BTreeType *tree = getWTreeEntry(iRef);
-        auto ref_and_ptr = allocBTreeCopy(*tree);
-        tree->prepare_hold();
-        return ref_and_ptr.ref;
-    }
-    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
-    return allocKeyDataCopy(shortArray, clusterSize).ref;
 }
 
 }

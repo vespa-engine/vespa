@@ -119,7 +119,7 @@ extractHeader(const vespalib::string &attrFileName)
     auto df = search::FileUtil::openFile(attrFileName + ".dat");
     vespalib::FileHeader datHeader;
     datHeader.readFile(*df);
-    return AttributeHeader::extractTags(datHeader);
+    return AttributeHeader::extractTags(datHeader, attrFileName);
 }
 
 void

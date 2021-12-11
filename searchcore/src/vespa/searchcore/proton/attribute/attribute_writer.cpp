@@ -549,7 +549,6 @@ public:
                 for (auto lidToRemove : _lidsToRemove) {
                     applyRemoveToAttribute(_serialNum, lidToRemove, attr, _onWriteDone);
                 }
-                attr.commit(false);
             }
         }
     }

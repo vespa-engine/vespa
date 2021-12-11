@@ -201,6 +201,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean ignoreThreadStackSizes;
         private final boolean unorderedMergeChaining;
         private final boolean useV8GeoPositions;
+        private final boolean useV8DocManagerCfg;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -240,7 +241,7 @@ public class ModelContextImpl implements ModelContext {
             this.ignoreThreadStackSizes = flagValue(source, appId, Flags.IGNORE_THREAD_STACK_SIZES);
             this.unorderedMergeChaining = flagValue(source, appId, Flags.UNORDERED_MERGE_CHAINING);
             this.useV8GeoPositions = flagValue(source, appId, Flags.USE_V8_GEO_POSITIONS);
-
+            this.useV8DocManagerCfg = flagValue(source, appId, Flags.USE_V8_DOC_MANAGER_CFG);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -282,6 +283,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean ignoreThreadStackSizes() { return ignoreThreadStackSizes; }
         @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
+        @Override public boolean useV8DocManagerCfg() { return useV8DocManagerCfg; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

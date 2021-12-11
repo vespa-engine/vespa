@@ -49,13 +49,16 @@ SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& rem
 {
     // update _enumIndices with new EnumIndex values after enum store has been compacted.
     v.logEnumStoreEvent("reenumerate", "reserved");
-    auto new_indexes = std::make_unique<vespalib::Array<EnumIndex>>();
-    new_indexes->reserve(_enumIndices.capacity());
+    vespalib::Array<EnumIndex> new_indexes;
+    new_indexes.reserve(_enumIndices.capacity());
     v.logEnumStoreEvent("reenumerate", "start");
+    auto& filter = remapper.get_entry_ref_filter();
     for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
-        EnumIndex old_index = _enumIndices[i];
-        EnumIndex new_index = remapper.remap(old_index);
-        new_indexes->push_back_fast(new_index);
+        EnumIndex ref = _enumIndices[i];
+        if (ref.valid() && filter.has(ref)) {
+            ref = remapper.remap(ref);
+        }
+        new_indexes.push_back_fast(ref);
     }
     v.logEnumStoreEvent("compactfixup", "drain");
     {

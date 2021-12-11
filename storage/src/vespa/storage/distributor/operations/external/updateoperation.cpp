@@ -90,6 +90,7 @@ UpdateOperation::onStart(DistributorStripeMessageSender& sender)
 
     // An UpdateOperation should only be started iff all replicas are consistent
     // with each other, so sampling a single replica should be equal to sampling them all.
+    // FIXME this no longer holds when replicas are consistent at the _document_ level but not at the _bucket_ level.
     assert(_entries[0].getBucketInfo().getNodeCount() > 0); // Empty buckets are not allowed
     _infoAtSendTime = _entries[0].getBucketInfo().getNodeRef(0).getBucketInfo();
 

@@ -70,6 +70,7 @@ vespa_define_module(
     src/tests/instruction/index_lookup_table
     src/tests/instruction/inplace_map_function
     src/tests/instruction/join_with_number
+    src/tests/instruction/l2_distance
     src/tests/instruction/mixed_inner_product_function
     src/tests/instruction/mixed_simple_join_function
     src/tests/instruction/pow_as_map_optimizer

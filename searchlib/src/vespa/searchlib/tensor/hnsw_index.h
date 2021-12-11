@@ -13,6 +13,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
+#include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/reusable_set_pool.h>
@@ -61,6 +62,25 @@ public:
         bool heuristic_select_neighbors() const { return _heuristic_select_neighbors; }
     };
 
+    class HnswIndexCompactionSpec {
+        CompactionSpec _level_arrays;
+        CompactionSpec _link_arrays;
+
+    public:
+        HnswIndexCompactionSpec()
+            : _level_arrays(),
+              _link_arrays()
+        {
+        }
+        HnswIndexCompactionSpec(CompactionSpec level_arrays_, CompactionSpec link_arrays_)
+            : _level_arrays(level_arrays_),
+              _link_arrays(link_arrays_)
+        {
+        }
+        CompactionSpec level_arrays() const noexcept { return _level_arrays; }
+        CompactionSpec link_arrays() const noexcept { return _link_arrays; }
+    };
+
 protected:
     using AtomicEntryRef = HnswGraph::AtomicEntryRef;
     using NodeStore = HnswGraph::NodeStore;
@@ -80,10 +100,7 @@ protected:
     RandomLevelGenerator::UP _level_generator;
     Config _cfg;
     mutable vespalib::ReusableSetPool _visited_set_pool;
-    vespalib::MemoryUsage  _cached_level_arrays_memory_usage;
-    vespalib::AddressSpace _cached_level_arrays_address_space_usage;
-    vespalib::MemoryUsage  _cached_link_arrays_memory_usage;
-    vespalib::AddressSpace _cached_link_arrays_address_space_usage;
+    HnswIndexCompactionSpec _compaction_spec;
 
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t docid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
@@ -171,12 +188,12 @@ public:
     void remove_document(uint32_t docid) override;
     void transfer_hold_lists(generation_t current_gen) override;
     void trim_hold_lists(generation_t first_used_gen) override;
-    void compact_level_arrays(bool compact_memory, bool compact_addreess_space);
-    void compact_link_arrays(bool compact_memory, bool compact_address_space);
+    void compact_level_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
+    void compact_link_arrays(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
     bool consider_compact_level_arrays(const CompactionStrategy& compaction_strategy);
     bool consider_compact_link_arrays(const CompactionStrategy& compaction_strategy);
     bool consider_compact(const CompactionStrategy& compaction_strategy) override;
-    vespalib::MemoryUsage update_stat() override;
+    vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) override;
     vespalib::MemoryUsage memory_usage() const override;
     void populate_address_space_usage(search::AddressSpaceUsage& usage) const override;
     void get_state(const vespalib::slime::Inserter& inserter) const override;

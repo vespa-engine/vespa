@@ -4,6 +4,7 @@
 
 #include "not_implemented_attribute.h"
 #include "reference.h"
+#include "reference_attribute_compaction_spec.h"
 #include "reference_mappings.h"
 #include <vespa/vespalib/datastore/unique_store.h>
 #include <vespa/vespalib/util/rcuvector.h>
@@ -25,6 +26,7 @@ namespace search::attribute {
 class ReferenceAttribute : public NotImplementedAttribute
 {
 public:
+    using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     using EntryRef = vespalib::datastore::EntryRef;
     using GlobalId = document::GlobalId;
     using ReferenceStore = vespalib::datastore::UniqueStore<Reference>;
@@ -42,8 +44,7 @@ public:
 private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
-    vespalib::MemoryUsage _cached_unique_store_values_memory_usage;
-    vespalib::MemoryUsage _cached_unique_store_dictionary_memory_usage;
+    ReferenceAttributeCompactionSpec _compaction_spec;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
     ReferenceMappings _referenceMappings;
 
@@ -57,7 +58,7 @@ private:
     uint64_t getUniqueValueCount() const override;
 
     bool consider_compact_values(const CompactionStrategy &compactionStrategy);
-    void compact_worst_values();
+    void compact_worst_values(const CompactionStrategy& compaction_strategy);
     bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy);
     IndicesCopyVector getIndicesCopy(uint32_t size) const;
     void removeReverseMapping(EntryRef oldRef, uint32_t lid);

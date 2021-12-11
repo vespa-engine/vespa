@@ -31,8 +31,7 @@ public class RedundancyOnFirstDeploymentValidator extends Validator {
         if ( ! deployState.zone().environment().isProduction()) return;
 
         for (ContentCluster cluster : model.getContentClusters().values()) {
-            if (cluster.redundancy().finalRedundancy() == 1
-                && cluster.redundancy().totalNodes() > cluster.redundancy().groups())
+            if (cluster.redundancy().finalRedundancy() == 1 && cluster.redundancy().groups() == 1)
                 deployState.validationOverrides().invalid(ValidationId.redundancyOne,
                                                           cluster + " has redundancy 1, which will cause it to lose data " +
                                                           "if a node fails. This requires an override on first deployment " +

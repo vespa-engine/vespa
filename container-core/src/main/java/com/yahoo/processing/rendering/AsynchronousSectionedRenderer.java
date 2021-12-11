@@ -2,12 +2,10 @@
 package com.yahoo.processing.rendering;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.SettableFuture;
+import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import java.util.logging.Level;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution;
@@ -23,12 +21,14 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -126,7 +126,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
         return executor;
     }
 
-    private SettableFuture<Boolean> success;
+    private CompletableFuture<Boolean> success;
 
     private ContentChannel channel;
     private CompletionHandler completionHandler;
@@ -173,8 +173,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      * @return a future indicating whether rendering was successful
      */
     @Override
-    public final ListenableFuture<Boolean> render(OutputStream stream, RESPONSE response,
-                                                  Execution execution, Request request) {
+    public final CompletableFuture<Boolean> renderResponse(OutputStream stream, RESPONSE response,
+                                                           Execution execution, Request request) {
         if (beforeHandoverMode) { // rendering has already started or is already complete
             beforeHandoverMode = false;
             if ( ! dataListListenerStack.isEmpty() &&
@@ -215,22 +215,31 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      * At this point the worker thread still owns the Response, so all this rendering must happen
      * on the caller thread invoking freeze (that is, on the thread calling this).
      */
-    public final ListenableFuture<Boolean> renderBeforeHandover(OutputStream stream, RESPONSE response,
-                                                                Execution execution, Request request) {
+    public final CompletableFuture<Boolean> renderResponseBeforeHandover(OutputStream stream, RESPONSE response,
+                                                                         Execution execution, Request request) {
         beforeHandoverMode = true;
         if ( ! isInitialized) throw new IllegalStateException("render() invoked before init().");
 
         return startRender(stream, response, execution, request);
     }
 
-    private ListenableFuture<Boolean> startRender(OutputStream stream, RESPONSE response,
+
+    /** @deprecated Use {@link #renderResponseBeforeHandover(OutputStream, Response, Execution, Request)} */
+    @Deprecated(forRemoval = true, since = "7")
+    @SuppressWarnings("removal")
+    public final ListenableFuture<Boolean> renderBeforeHandover(OutputStream stream, RESPONSE response,
+                                                                Execution execution, Request request) {
+        return CompletableFutures.toGuavaListenableFuture(renderResponseBeforeHandover(stream, response, execution, request));
+    }
+
+    private CompletableFuture<Boolean> startRender(OutputStream stream, RESPONSE response,
                                                   Execution execution, Request request) {
         this.response = response;
         this.stream = stream;
         this.execution = execution;
         DataListListener parentOfTopLevelListener = new DataListListener(new ParentOfTopLevel(request,response.data()), null);
         dataListListenerStack.addFirst(parentOfTopLevelListener);
-        success = SettableFuture.create();
+        success = new CompletableFuture<>();
         try {
             getExecutor().execute(parentOfTopLevelListener);
         } catch (RejectedExecutionException e) {
@@ -247,7 +256,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
      * inadvertently work ends up in async data producing threads in some cases.
      */
     Executor getExecutor() {
-        return beforeHandoverMode ? MoreExecutors.directExecutor() : renderingExecutor;
+        return beforeHandoverMode ? Runnable::run : renderingExecutor;
     }
     /** For inspection only; use getExecutor() for execution */
     Executor getRenderingExecutor() { return renderingExecutor; }    
@@ -350,10 +359,10 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                 return; // Called on completion of a list which is not frozen yet - hold off until frozen
 
             if ( ! beforeHandoverMode)
-                list.complete().get(); // trigger completion if not done already to invoke any listeners on that event
+                list.completeFuture().get(); // trigger completion if not done already to invoke any listeners on that event
             boolean startedRendering = renderData();
             if ( ! startedRendering || uncompletedChildren > 0) return; // children must render to completion first
-            if (list.complete().isDone()) // might not be when in before handover mode
+            if (list.completeFuture().isDone()) // might not be when in before handover mode
                 endListLevel();
             else
                 stream.flush();
@@ -435,8 +444,8 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
             flushIfLikelyToSuspend(subList);
 
             subList.addFreezeListener(listListener, getExecutor());
-            subList.complete().addListener(listListener, getExecutor());
-            subList.incoming().completed().addListener(listListener, getExecutor());
+            subList.completeFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
+            subList.incoming().completedFuture().whenCompleteAsync((__, ___) -> listListener.run(), getExecutor());
         }
 
         private boolean isOrdered(DataList dataList) {
@@ -471,11 +480,11 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                 logger.log(Level.WARNING, "Exception caught while closing stream to client.", e);
             } finally {
                 if (failed != null) {
-                    success.setException(failed);
+                    success.completeExceptionally(failed);
                 } else if (closeException != null) {
-                    success.setException(closeException);
+                    success.completeExceptionally(closeException);
                 } else {
-                    success.set(true);
+                    success.complete(true);
                 }
                 if (channel != null) {
                     channel.close(completionHandler);
@@ -541,7 +550,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
                             } catch (Exception ignored) {
                             }
                         }
-                        success.setException(e);
+                        success.completeExceptionally(e);
                     }
                 }
             } catch (Error e) {

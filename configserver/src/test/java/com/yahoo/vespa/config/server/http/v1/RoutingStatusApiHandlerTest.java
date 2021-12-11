@@ -2,9 +2,6 @@
 package com.yahoo.vespa.config.server.http.v1;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.HostFilter;
 import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.http.HttpRequest.Method;
@@ -19,17 +16,11 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -42,7 +33,6 @@ public class RoutingStatusApiHandlerTest {
 
     private final Curator curator = new MockCurator();
     private final ManualClock clock = new ManualClock();
-    private final MockDeployer deployer = new MockDeployer(clock);
 
     private RestApiTestDriver testDriver;
 
@@ -50,8 +40,7 @@ public class RoutingStatusApiHandlerTest {
     public void before() {
         RoutingStatusApiHandler requestHandler = new RoutingStatusApiHandler(RestApiTestDriver.createHandlerTestContext(),
                                                                              curator,
-                                                                             clock,
-                                                                             deployer);
+                                                                             clock);
         testDriver = RestApiTestDriver.newBuilder(requestHandler).build();
     }
 
@@ -77,14 +66,6 @@ public class RoutingStatusApiHandlerTest {
         String response = responseAsString(executeRequest(Method.PUT, "/routing/v1/status/" + upstreamName + "?application=" + instance.serializedForm(),
                                                           statusOut()));
         assertEquals(response("OUT", "issue-XXX", "operator", clock.instant()), response);
-        assertTrue("Re-deployed " + instance, deployer.lastDeployed.containsKey(instance));
-
-        // Status is reverted if redeployment fails
-        deployer.failNextDeployment(true);
-        response = responseAsString(executeRequest(Method.PUT, "/routing/v1/status/" + upstreamName + "?application=" + instance.serializedForm(),
-                                                   requestContent("IN", "all good")));
-        assertEquals("{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"Failed to change status to in, reverting to out because redeployment of t1.a1.i1 failed: Deployment failed\"}",
-                     response);
 
         // Read status stored in old format (path exists, but without content)
         curator.set(Path.fromString("/routing/v1/status/" + upstreamName), new byte[0]);
@@ -92,7 +73,6 @@ public class RoutingStatusApiHandlerTest {
         assertEquals(response("OUT", "", "", clock.instant()), response);
 
         // Change status of multiple upstreams
-        deployer.failNextDeployment(false);
         String upstreamName2 = "upstream2";
         String upstreams = upstreamName + "," + upstreamName2 + "," + upstreamName2;
         response = responseAsString(executeRequest(Method.PUT, "/routing/v1/status/" + upstreams + "?application=" + instance.serializedForm(),
@@ -170,59 +150,6 @@ public class RoutingStatusApiHandlerTest {
 
     private static String response(String status, String reason, String agent, Instant instant) {
         return "{\"status\":\"" + status + "\",\"cause\":\"" + reason + "\",\"agent\":\"" + agent + "\",\"lastUpdate\":" + instant.getEpochSecond() + "}";
-    }
-
-    private static class MockDeployer implements Deployer {
-
-        private final Map<ApplicationId, Instant> lastDeployed = new HashMap<>();
-        private final Clock clock;
-
-        private boolean failNextDeployment = false;
-
-        public MockDeployer(Clock clock) {
-            this.clock = clock;
-        }
-
-        public MockDeployer failNextDeployment(boolean fail) {
-            this.failNextDeployment = fail;
-            return this;
-        }
-
-        @Override
-        public Optional<Deployment> deployFromLocalActive(ApplicationId application, boolean bootstrap) {
-            return deployFromLocalActive(application, Duration.ZERO, false);
-        }
-
-        @Override
-        public Optional<Deployment> deployFromLocalActive(ApplicationId application, Duration timeout, boolean bootstrap) {
-            if (failNextDeployment) {
-                throw new RuntimeException("Deployment failed");
-            }
-            return Optional.of(new Deployment() {
-                @Override
-                public void prepare() {}
-
-                @Override
-                public long activate() {
-                    lastDeployed.put(application, clock.instant());
-                    return 1L;
-                }
-
-                @Override
-                public void restart(HostFilter filter) {}
-            });
-        }
-
-        @Override
-        public Optional<Instant> lastDeployTime(ApplicationId application) {
-            return Optional.ofNullable(lastDeployed.get(application));
-        }
-
-        @Override
-        public Duration serverDeployTimeout() {
-            return Duration.ZERO;
-        }
-
     }
 
 }

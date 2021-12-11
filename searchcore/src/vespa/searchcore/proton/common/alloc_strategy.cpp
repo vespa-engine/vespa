@@ -3,7 +3,6 @@
 #include "alloc_strategy.h"
 #include <iostream>
 
-using search::CompactionStrategy;
 using search::GrowStrategy;
 
 namespace proton {

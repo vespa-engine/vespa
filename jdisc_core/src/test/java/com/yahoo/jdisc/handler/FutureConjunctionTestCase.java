@@ -1,41 +1,37 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.AbstractFuture;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Test;
 
-import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class FutureConjunctionTestCase {
 
-    private final ListeningExecutorService executor = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool());
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Test
     public void requireThatAllFuturesAreWaitedFor() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         FutureConjunction future = new FutureConjunction();
-        future.addOperand(executor.submit(new Callable<Boolean>() {
-
-            @Override
-            public Boolean call() throws Exception {
-                return latch.await(600, TimeUnit.SECONDS);
-            }
-        }));
+        CompletableFuture<Boolean> cf = new CompletableFuture<>();
+        cf.completeAsync(() -> {
+            try { return latch.await(600, TimeUnit.SECONDS); }
+            catch (InterruptedException e) { return false; }
+        }, executor);
+        future.addOperand(cf);
         try {
             future.get(100, TimeUnit.MILLISECONDS);
             fail();
@@ -118,7 +114,7 @@ public class FutureConjunctionTestCase {
     public void requireThatConjunctionCanBeListenedTo() throws InterruptedException {
         FutureConjunction conjunction = new FutureConjunction();
         RunnableLatch listener = new RunnableLatch();
-        conjunction.addListener(listener, MoreExecutors.directExecutor());
+        conjunction.addListener(listener, Runnable::run);
         assertTrue(listener.await(600, TimeUnit.SECONDS));
 
         conjunction = new FutureConjunction();
@@ -127,7 +123,7 @@ public class FutureConjunctionTestCase {
         FutureBoolean bar = new FutureBoolean();
         conjunction.addOperand(bar);
         listener = new RunnableLatch();
-        conjunction.addListener(listener, MoreExecutors.directExecutor());
+        conjunction.addListener(listener, Runnable::run);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         foo.set(true);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
@@ -140,7 +136,7 @@ public class FutureConjunctionTestCase {
         bar = new FutureBoolean();
         conjunction.addOperand(bar);
         listener = new RunnableLatch();
-        conjunction.addListener(listener, MoreExecutors.directExecutor());
+        conjunction.addListener(listener, Runnable::run);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         bar.set(true);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
@@ -190,14 +186,14 @@ public class FutureConjunctionTestCase {
         return foo.isCancelled();
     }
 
-    private static class FutureBoolean extends AbstractFuture<Boolean> {
+    private static class FutureBoolean extends CompletableFuture<Boolean> {
 
         public boolean set(Boolean val) {
-            return super.set(val);
+            return super.complete(val);
         }
     }
 
-    private static class MyFuture extends AbstractFuture<Boolean> {
+    private static class MyFuture extends CompletableFuture<Boolean> {
 
         final boolean value;
         final boolean isDone;
@@ -236,19 +232,19 @@ public class FutureConjunctionTestCase {
             return value;
         }
 
-        static ListenableFuture<Boolean> newInstance(boolean value) {
+        static CompletableFuture<Boolean> newInstance(boolean value) {
             return new MyFuture(value, false, false, false);
         }
 
-        static ListenableFuture<Boolean> newIsDone(boolean isDone) {
+        static CompletableFuture<Boolean> newIsDone(boolean isDone) {
             return new MyFuture(false, isDone, false, false);
         }
 
-        static ListenableFuture<Boolean> newCanCancel(boolean canCancel) {
+        static CompletableFuture<Boolean> newCanCancel(boolean canCancel) {
             return new MyFuture(false, false, canCancel, false);
         }
 
-        static ListenableFuture<Boolean> newIsCancelled(boolean isCancelled) {
+        static CompletableFuture<Boolean> newIsCancelled(boolean isCancelled) {
             return new MyFuture(false, false, false, isCancelled);
         }
     }

@@ -15,6 +15,7 @@
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchcore/proton/test/dummy_document_store.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
 
@@ -55,7 +56,7 @@ struct MyScanIterator : public IDocumentScanIterator {
     explicit MyScanIterator(const MyHandler & handler, const LidVector &lids);
     ~MyScanIterator() override;
     bool valid() const override;
-    search::DocumentMetaData next(uint32_t compactLidLimit, bool retry) override;
+    search::DocumentMetaData next(uint32_t compactLidLimit) override;
 };
 
 struct MyHandler : public ILidSpaceCompactionHandler {

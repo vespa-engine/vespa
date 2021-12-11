@@ -112,7 +112,6 @@ public:
 
 }
 
-using VisitCache = docstore::VisitCache;
 using docstore::Value;
 
 bool
@@ -239,7 +238,14 @@ DocumentStore::remove(uint64_t syncToken, DocumentIdT lid)
 }
 
 void
-DocumentStore::compact(uint64_t syncToken)
+DocumentStore::compactBloat(uint64_t syncToken)
+{
+    (void) syncToken;
+    // Most implementations does not offer compact.
+}
+
+void
+DocumentStore::compactSpread(uint64_t syncToken)
 {
     (void) syncToken;
     // Most implementations does not offer compact.

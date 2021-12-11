@@ -3,8 +3,6 @@ package com.yahoo.vespa.config.server.http.v1;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.path.Path;
 import com.yahoo.restapi.RestApi;
@@ -20,7 +18,6 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -50,18 +47,16 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
 
     private final Curator curator;
     private final Clock clock;
-    private final Deployer deployer;
 
     @Inject
-    public RoutingStatusApiHandler(Context context, Curator curator, Deployer deployer) {
-        this(context, curator, Clock.systemUTC(), deployer);
+    public RoutingStatusApiHandler(Context context, Curator curator) {
+        this(context, curator, Clock.systemUTC());
     }
 
-    RoutingStatusApiHandler(Context context, Curator curator, Clock clock, Deployer deployer) {
+    RoutingStatusApiHandler(Context context, Curator curator, Clock clock) {
         super(context, RoutingStatusApiHandler::createRestApiDefinition);
         this.curator = Objects.requireNonNull(curator);
         this.clock = Objects.requireNonNull(clock);
-        this.deployer = Objects.requireNonNull(deployer);
 
         curator.create(DEPLOYMENT_STATUS_ROOT);
     }
@@ -113,28 +108,17 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
         RestApi.RequestContext.RequestContent requestContent = context.requestContentOrThrow();
         Slime requestBody = Exceptions.uncheck(() -> SlimeUtils.jsonToSlime(requestContent.content().readAllBytes()));
         DeploymentRoutingStatus wantedStatus = deploymentRoutingStatusFromSlime(requestBody, clock.instant());
-        DeploymentRoutingStatus currentStatus = deploymentStatus(upstreamNames.iterator().next());
-
+        List<DeploymentRoutingStatus> currentStatuses = upstreamNames.stream()
+                                                                     .map(this::deploymentStatus)
+                                                                     .collect(Collectors.toList());
+        DeploymentRoutingStatus currentStatus = currentStatuses.get(0);
         // Redeploy application so that a new LbServicesConfig containing the updated status is generated and consumed
-        // by routing layer. This is required to update weights for application endpoints when routing status for a
-        // deployment is changed
+        // by routing layer. This is required to update status of upstreams in application endpoints
         log.log(Level.INFO, "Changing routing status of " + instance + " from " +
                             currentStatus.status() + " to " + wantedStatus.status());
-        changeStatus(upstreamNames, wantedStatus);
-        try {
-            Optional<Deployment> deployment = deployer.deployFromLocalActive(instance, Duration.ofMinutes(1));
-            if (deployment.isEmpty()) throw new IllegalArgumentException("No deployment of " + instance + " found");
-            deployment.get().activate();
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to redeploy " + instance + ". Reverting routing status to " +
-                                  currentStatus.status(), e);
-            changeStatus(upstreamNames, currentStatus);
-            throw new RestApiException.InternalServerError("Failed to change status to " +
-                                                           wantedStatus.status() + ", reverting to "
-                                                           + currentStatus.status() +
-                                                           " because redeployment of " +
-                                                           instance + " failed: " +
-                                                           Exceptions.toMessageString(e));
+        boolean needsChange = currentStatuses.stream().anyMatch(status -> status.status() != wantedStatus.status());
+        if (needsChange) {
+            changeStatus(upstreamNames, wantedStatus);
         }
         return new SlimeJsonResponse(toSlime(wantedStatus));
     }

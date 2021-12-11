@@ -75,7 +75,7 @@ BlobSequenceReader::BlobSequenceReader(AttributeVector& attr, bool has_index)
     : ReaderBase(attr),
       _use_index_file(has_index && has_index_file(attr) &&
                       can_use_index_save_file(attr.getConfig(),
-                                              search::attribute::AttributeHeader::extractTags(getDatHeader()))),
+                                              search::attribute::AttributeHeader::extractTags(getDatHeader(), attr.getBaseFileName()))),
       _index_file(_use_index_file ?
                   attribute::LoadUtils::openFile(attr, DenseTensorAttributeSaver::index_file_suffix()) :
                   std::unique_ptr<Fast_BufferedFile>())
@@ -132,7 +132,7 @@ DenseTensorAttribute::update_stat()
 {
     vespalib::MemoryUsage result = TensorAttribute::update_stat();
     if (_index) {
-        result.merge(_index->memory_usage());
+        result.merge(_index->update_stat(getConfig().getCompactionStrategy()));
     }
     return result;
 }

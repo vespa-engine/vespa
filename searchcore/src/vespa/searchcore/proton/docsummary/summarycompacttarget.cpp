@@ -9,21 +9,26 @@ using search::SerialNum;
 using vespalib::makeLambdaTask;
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
+using searchcorespi::FlushTask;
 
 namespace proton {
 
 namespace {
 
-class Compacter : public searchcorespi::FlushTask {
+class Compacter : public FlushTask {
 private:
     IDocumentStore & _docStore;
     FlushStats     & _stats;
     SerialNum        _currSerial;
+    virtual void compact(IDocumentStore & docStore, SerialNum currSerial) const = 0;
 public:
-    Compacter(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial) :
-        _docStore(docStore), _stats(stats), _currSerial(currSerial) {}
+    Compacter(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial)
+        : _docStore(docStore),
+          _stats(stats),
+          _currSerial(currSerial)
+    {}
     void run() override {
-        _docStore.compact(_currSerial);
+        compact(_docStore, _currSerial);
         updateStats();
     }
     void updateStats() {
@@ -36,10 +41,32 @@ public:
     }
 };
 
+class CompactBloat : public Compacter {
+public:
+    CompactBloat(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial)
+        : Compacter(docStore, stats, currSerial)
+    {}
+private:
+    void compact(IDocumentStore & docStore, SerialNum currSerial) const override {
+        docStore.compactBloat(currSerial);
+    }
+};
+
+class CompactSpread : public Compacter {
+public:
+    CompactSpread(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial)
+        : Compacter(docStore, stats, currSerial)
+    {}
+private:
+    void compact(IDocumentStore & docStore, SerialNum currSerial) const override {
+        docStore.compactSpread(currSerial);
+    }
+};
+
 }
 
-SummaryCompactTarget::SummaryCompactTarget(vespalib::Executor & summaryService, IDocumentStore & docStore)
-    : IFlushTarget("summary.compact", Type::GC, Component::DOCUMENT_STORE),
+SummaryGCTarget::SummaryGCTarget(const vespalib::string & name, vespalib::Executor & summaryService, IDocumentStore & docStore)
+    : IFlushTarget(name, Type::GC, Component::DOCUMENT_STORE),
       _summaryService(summaryService),
       _docStore(docStore),
       _lastStats()
@@ -48,37 +75,69 @@ SummaryCompactTarget::SummaryCompactTarget(vespalib::Executor & summaryService, 
 }
 
 IFlushTarget::MemoryGain
-SummaryCompactTarget::getApproxMemoryGain() const
+SummaryGCTarget::getApproxMemoryGain() const
 {
     return MemoryGain::noGain(_docStore.memoryUsed());
 }
 
 IFlushTarget::DiskGain
-SummaryCompactTarget::getApproxDiskGain() const
+SummaryGCTarget::getApproxDiskGain() const
 {
     size_t total(_docStore.getDiskFootprint());
-    return DiskGain(total, total - std::min(total, _docStore.getMaxCompactGain()));
+    return DiskGain(total, total - std::min(total, getBloat(_docStore)));
 }
 
 IFlushTarget::Time
-SummaryCompactTarget::getLastFlushTime() const
+SummaryGCTarget::getLastFlushTime() const
 {
     return vespalib::system_clock::now();
 }
 
 SerialNum
-SummaryCompactTarget::getFlushedSerialNum() const
+SummaryGCTarget::getFlushedSerialNum() const
 {
     return _docStore.tentativeLastSyncToken();
 }
 
 IFlushTarget::Task::UP
-SummaryCompactTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
+SummaryGCTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
 {
     std::promise<Task::UP> promise;
     std::future<Task::UP> future = promise.get_future();
-    _summaryService.execute(makeLambdaTask([&]() { promise.set_value(std::make_unique<Compacter>(_docStore, _lastStats, currentSerial)); }));
+    _summaryService.execute(makeLambdaTask([this, &promise,currentSerial]() {
+        promise.set_value(create(_docStore, _lastStats, currentSerial));
+    }));
     return future.get();
+}
+
+SummaryCompactBloatTarget::SummaryCompactBloatTarget(vespalib::Executor & summaryService, IDocumentStore & docStore)
+    : SummaryGCTarget("summary.compact_bloat", summaryService, docStore)
+{
+}
+
+size_t
+SummaryCompactBloatTarget::getBloat(const search::IDocumentStore & docStore) const {
+    return docStore.getDiskBloat();
+}
+
+FlushTask::UP
+SummaryCompactBloatTarget::create(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial) {
+    return std::make_unique<CompactBloat>(docStore, stats, currSerial);
+}
+
+SummaryCompactSpreadTarget::SummaryCompactSpreadTarget(vespalib::Executor & summaryService, IDocumentStore & docStore)
+    : SummaryGCTarget("summary.compact_spread", summaryService, docStore)
+{
+}
+
+size_t
+SummaryCompactSpreadTarget::getBloat(const search::IDocumentStore & docStore) const {
+    return docStore.getMaxSpreadAsBloat();
+}
+
+FlushTask::UP
+SummaryCompactSpreadTarget::create(IDocumentStore & docStore, FlushStats & stats, SerialNum currSerial) {
+    return std::make_unique<CompactSpread>(docStore, stats, currSerial);
 }
 
 } // namespace proton

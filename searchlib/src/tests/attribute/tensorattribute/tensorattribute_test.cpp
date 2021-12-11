@@ -38,7 +38,6 @@ using document::WrongTensorTypeException;
 using search::AddressSpaceUsage;
 using search::AttributeGuard;
 using search::AttributeVector;
-using search::CompactionStrategy;
 using search::attribute::DistanceMetric;
 using search::attribute::HnswIndexParams;
 using search::queryeval::GlobalFilter;
@@ -56,6 +55,7 @@ using search::tensor::NearestNeighborIndexLoader;
 using search::tensor::NearestNeighborIndexSaver;
 using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::CellType;
 using vespalib::eval::ValueType;
@@ -222,7 +222,8 @@ public:
     bool consider_compact(const CompactionStrategy&) override {
         return false;
     }
-    vespalib::MemoryUsage update_stat() override {
+    vespalib::MemoryUsage update_stat(const CompactionStrategy&) override {
+        ++_memory_usage_cnt;
         return vespalib::MemoryUsage();
     }
     vespalib::MemoryUsage memory_usage() const override {

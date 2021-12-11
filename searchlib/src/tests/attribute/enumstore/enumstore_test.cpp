@@ -7,7 +7,23 @@
 LOG_SETUP("enumstore_test");
 
 using Type = search::DictionaryConfig::Type;
+using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
+using vespalib::datastore::EntryRefFilter;
+using RefT = vespalib::datastore::EntryRefT<22>;
+
+namespace vespalib::datastore {
+
+/*
+ * Print EntryRef as RefT which is used by test_normalize_posting_lists and
+ * test_foreach_posting_list to differentiate between buffers
+ */
+void PrintTo(const EntryRef &ref, std::ostream* os) {
+    RefT iref(ref);
+    *os << "RefT(" << iref.offset() << "," << iref.bufferId() << ")";
+}
+
+}
 
 namespace search {
 
@@ -346,16 +362,16 @@ TEST(EnumStoreTest, address_space_usage_is_reported)
     NumericEnumStore store(false, DictionaryConfig::Type::BTREE);
 
     using vespalib::AddressSpace;
-    EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.get_values_address_space_usage());
     EnumIndex idx1 = store.insert(10);
-    EXPECT_EQ(AddressSpace(2, 1, ADDRESS_LIMIT), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(2, 1, ADDRESS_LIMIT), store.get_values_address_space_usage());
     EnumIndex idx2 = store.insert(20);
     // Address limit increases because buffer is re-sized.
-    EXPECT_EQ(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(3, 1, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
     dec_ref_count(store, idx1);
-    EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(3, 2, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
     dec_ref_count(store, idx2);
-    EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.get_address_space_usage());
+    EXPECT_EQ(AddressSpace(3, 3, ADDRESS_LIMIT + 2), store.get_values_address_space_usage());
 }
 
 class BatchUpdaterTest : public ::testing::Test {
@@ -597,6 +613,11 @@ public:
 
     void update_posting_idx(EnumIndex enum_idx, EntryRef old_posting_idx, EntryRef new_posting_idx);
     EnumIndex insert_value(size_t value_idx);
+    void populate_sample_data(uint32_t cnt);
+    std::vector<EntryRef> get_sample_values(uint32_t cnt);
+    void clear_sample_values(uint32_t cnt);
+    void test_normalize_posting_lists(bool use_filter, bool one_filter);
+    void test_foreach_posting_list(bool one_filter);
     static EntryRef fake_pidx() { return EntryRef(42); }
 };
 
@@ -618,6 +639,149 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::insert_value(size_t val
     auto enum_idx = store.insert(values()[value_idx]);
     EXPECT_TRUE(enum_idx.valid());
     return enum_idx;
+}
+
+namespace {
+/*
+ * large_population should trigger multiple callbacks from normalize_values
+ * and foreach_value
+ */
+constexpr uint32_t large_population = 1200;
+
+uint32_t select_buffer(uint32_t i) {
+    if ((i % 2) == 0) {
+        return 0;
+    }
+    if ((i % 3) == 0) {
+        return 1;
+    }
+    if ((i % 5) == 0) {
+        return 2;
+    }
+    return 3;
+}
+
+EntryRef make_fake_pidx(uint32_t i) { return RefT(i + 200, select_buffer(i)); }
+EntryRef make_fake_adjusted_pidx(uint32_t i) { return RefT(i + 500, select_buffer(i)); }
+EntryRef adjust_fake_pidx(EntryRef ref) { RefT iref(ref); return RefT(iref.offset() + 300, iref.bufferId()); }
+
+}
+
+
+template <typename EnumStoreTypeAndDictionaryType>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::populate_sample_data(uint32_t cnt)
+{
+    auto& dict = store.get_dictionary();
+    for (uint32_t i = 0; i < cnt; ++i) {
+        auto enum_idx = store.insert(i);
+        EXPECT_TRUE(enum_idx.valid());
+        EntryRef posting_idx(make_fake_pidx(i));
+        dict.update_posting_list(enum_idx, store.get_comparator(), [posting_idx](EntryRef) noexcept -> EntryRef { return posting_idx; });
+    }
+}
+
+template <typename EnumStoreTypeAndDictionaryType>
+std::vector<EntryRef>
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::get_sample_values(uint32_t cnt)
+{
+    std::vector<EntryRef> result;
+    result.reserve(cnt);
+    store.freeze_dictionary();
+    auto& dict = store.get_dictionary();
+    for (uint32_t i = 0; i < cnt; ++i) {
+        auto compare = store.make_comparator(i);
+        auto enum_idx = dict.find(compare);
+        EXPECT_TRUE(enum_idx.valid());
+        EntryRef posting_idx;
+        dict.update_posting_list(enum_idx, compare, [&posting_idx](EntryRef ref) noexcept { posting_idx = ref; return ref; });;
+        auto find_result = dict.find_posting_list(compare, dict.get_frozen_root());
+        EXPECT_EQ(enum_idx, find_result.first);
+        EXPECT_EQ(posting_idx, find_result.second);
+        result.emplace_back(find_result.second);
+    }
+    return result;
+}
+
+template <typename EnumStoreTypeAndDictionaryType>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::clear_sample_values(uint32_t cnt)
+{
+    auto& dict = store.get_dictionary();
+    for (uint32_t i = 0; i < cnt; ++i) {
+        auto comparator = store.make_comparator(i);
+        auto enum_idx = dict.find(comparator);
+        EXPECT_TRUE(enum_idx.valid());
+        dict.update_posting_list(enum_idx, comparator, [](EntryRef) noexcept -> EntryRef { return EntryRef(); });
+    }
+}
+
+namespace {
+
+EntryRefFilter make_entry_ref_filter(bool one_filter)
+{
+    if (one_filter) {
+        EntryRefFilter filter(RefT::numBuffers(), RefT::offset_bits);
+        filter.add_buffer(3);
+        return filter;
+    }
+    return EntryRefFilter::create_all_filter(RefT::numBuffers(), RefT::offset_bits);
+}
+
+}
+
+template <typename EnumStoreTypeAndDictionaryType>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_normalize_posting_lists(bool use_filter, bool one_filter)
+{
+    populate_sample_data(large_population);
+    auto& dict = store.get_dictionary();
+    std::vector<EntryRef> exp_refs;
+    std::vector<EntryRef> exp_adjusted_refs;
+    exp_refs.reserve(large_population);
+    exp_adjusted_refs.reserve(large_population);
+    for (uint32_t i = 0; i < large_population; ++i) {
+        exp_refs.emplace_back(make_fake_pidx(i));
+        if (!use_filter || !one_filter || select_buffer(i) == 3) {
+            exp_adjusted_refs.emplace_back(make_fake_adjusted_pidx(i));
+        } else {
+            exp_adjusted_refs.emplace_back(make_fake_pidx(i));
+        }
+    }
+    EXPECT_EQ(exp_refs, get_sample_values(large_population));
+    if (use_filter) {
+        auto filter = make_entry_ref_filter(one_filter);
+        auto dummy = [](std::vector<EntryRef>&) noexcept { };
+        auto adjust_refs = [](std::vector<EntryRef> &refs) noexcept { for (auto &ref : refs) { ref = adjust_fake_pidx(ref); } };
+        EXPECT_FALSE(dict.normalize_posting_lists(dummy, filter));
+        EXPECT_EQ(exp_refs, get_sample_values(large_population));
+        EXPECT_TRUE(dict.normalize_posting_lists(adjust_refs, filter));
+    } else {
+        auto dummy = [](EntryRef posting_idx) noexcept { return posting_idx; };
+        auto adjust_refs = [](EntryRef ref) noexcept { return adjust_fake_pidx(ref); };
+        EXPECT_FALSE(dict.normalize_posting_lists(dummy));
+        EXPECT_EQ(exp_refs, get_sample_values(large_population));
+        EXPECT_TRUE(dict.normalize_posting_lists(adjust_refs));
+    }
+    EXPECT_EQ(exp_adjusted_refs, get_sample_values(large_population));
+    clear_sample_values(large_population);
+}
+
+template <typename EnumStoreTypeAndDictionaryType>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::test_foreach_posting_list(bool one_filter)
+{
+    auto filter = make_entry_ref_filter(one_filter);
+    populate_sample_data(large_population);
+    auto& dict = store.get_dictionary();
+    std::vector<EntryRef> exp_refs;
+    auto save_exp_refs = [&exp_refs](std::vector<EntryRef>& refs) { exp_refs.insert(exp_refs.end(), refs.begin(), refs.end()); };
+    EXPECT_FALSE(dict.normalize_posting_lists(save_exp_refs, filter));
+    std::vector<EntryRef> act_refs;
+    auto save_act_refs = [&act_refs](const std::vector<EntryRef>& refs) { act_refs.insert(act_refs.end(), refs.begin(), refs.end()); };
+    dict.foreach_posting_list(save_act_refs, filter);
+    EXPECT_EQ(exp_refs, act_refs);
+    clear_sample_values(large_population);
 }
 
 // Disable warnings emitted by gtest generated files when using typed tests
@@ -678,26 +842,27 @@ TYPED_TEST(EnumStoreDictionaryTest, find_posting_list_works)
 
 TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_works)
 {
-    auto value_0_idx = this->insert_value(0);
-    this->update_posting_idx(value_0_idx, EntryRef(), this->fake_pidx());
-    this->store.freeze_dictionary();
-    auto& dict = this->store.get_dictionary();
-    auto root = dict.get_frozen_root();
-    auto find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
-    EXPECT_EQ(value_0_idx, find_result.first);
-    EXPECT_EQ(this->fake_pidx(), find_result.second);
-    auto dummy = [](EntryRef posting_idx) noexcept { return posting_idx; };
-    std::vector<EntryRef> saved_refs;
-    auto save_refs_and_clear = [&saved_refs](EntryRef posting_idx) { saved_refs.push_back(posting_idx); return EntryRef(); };
-    EXPECT_FALSE(dict.normalize_posting_lists(dummy));
-    EXPECT_TRUE(dict.normalize_posting_lists(save_refs_and_clear));
-    EXPECT_FALSE(dict.normalize_posting_lists(save_refs_and_clear));
-    EXPECT_EQ((std::vector<EntryRef>{ this->fake_pidx(), EntryRef() }), saved_refs);
-    this->store.freeze_dictionary();
-    root = dict.get_frozen_root();
-    find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
-    EXPECT_EQ(value_0_idx, find_result.first);
-    EXPECT_EQ(EntryRef(), find_result.second);
+    this->test_normalize_posting_lists(false, false);
+}
+
+TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_with_all_filter_works)
+{
+    this->test_normalize_posting_lists(true, false);
+}
+
+TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_with_one_filter_works)
+{
+    this->test_normalize_posting_lists(true, true);
+}
+
+TYPED_TEST(EnumStoreDictionaryTest, foreach_posting_list_with_all_filter_works)
+{
+    this->test_foreach_posting_list(false);
+}
+
+TYPED_TEST(EnumStoreDictionaryTest, foreach_posting_list_with_one_filter_works)
+{
+    this->test_foreach_posting_list(true);
 }
 
 namespace {
@@ -714,7 +879,7 @@ void inc_generation(generation_t &gen, NumericEnumStore &store)
 
 TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
 {
-    size_t entry_count = (search::CompactionStrategy::DEAD_BYTES_SLACK / 8) + 40;
+    size_t entry_count = (CompactionStrategy::DEAD_BYTES_SLACK / 8) + 40;
     auto updater = this->store.make_batch_updater();
     for (int32_t i = 0; (size_t) i < entry_count; ++i) {
         auto idx = updater.insert(i);
@@ -727,15 +892,15 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
     inc_generation(gen, this->store);
     auto& dict = this->store.get_dictionary();
     if (dict.get_has_btree_dictionary()) {
-        EXPECT_LT(search::CompactionStrategy::DEAD_BYTES_SLACK, dict.get_btree_memory_usage().deadBytes());
+        EXPECT_LT(CompactionStrategy::DEAD_BYTES_SLACK, dict.get_btree_memory_usage().deadBytes());
     }
     if (dict.get_has_hash_dictionary()) {
-        EXPECT_LT(search::CompactionStrategy::DEAD_BYTES_SLACK, dict.get_hash_memory_usage().deadBytes());
+        EXPECT_LT(CompactionStrategy::DEAD_BYTES_SLACK, dict.get_hash_memory_usage().deadBytes());
     }
     int compact_count = 0;
-    search::CompactionStrategy compaction_strategy;
+    CompactionStrategy compaction_strategy;
     for (uint32_t i = 0; i < 15; ++i) {
-        this->store.update_stat();
+        this->store.update_stat(compaction_strategy);
         if (this->store.consider_compact_dictionary(compaction_strategy)) {
             ++compact_count;
         } else {
@@ -747,10 +912,10 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
     EXPECT_LT((TypeParam::type == Type::BTREE_AND_HASH) ? 1 : 0, compact_count);
     EXPECT_GT(15, compact_count);
     if (dict.get_has_btree_dictionary()) {
-        EXPECT_GT(search::CompactionStrategy::DEAD_BYTES_SLACK, dict.get_btree_memory_usage().deadBytes());
+        EXPECT_GT(CompactionStrategy::DEAD_BYTES_SLACK, dict.get_btree_memory_usage().deadBytes());
     }
     if (dict.get_has_hash_dictionary()) {
-        EXPECT_GT(search::CompactionStrategy::DEAD_BYTES_SLACK, dict.get_hash_memory_usage().deadBytes());
+        EXPECT_GT(CompactionStrategy::DEAD_BYTES_SLACK, dict.get_hash_memory_usage().deadBytes());
     }
     std::vector<int32_t> exp_values;
     std::vector<int32_t> values;

@@ -83,9 +83,7 @@ private:
     // the serial num of the last feed operation in the transaction log at startup before replay
     SerialNum                              _replay_end_serial_num;
     uint64_t                               _prepare_serial_num;
-    size_t                                 _numOperationsPendingCommit;
-    size_t                                 _numOperationsCompleted;
-    size_t                                 _numCommitsCompleted;
+    FeedOperationCounter                   _numOperations;
     bool                                   _delayedPrune;
     mutable std::shared_mutex              _feedLock;
     FeedStateSP                            _feedState;

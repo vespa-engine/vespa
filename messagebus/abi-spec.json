@@ -413,6 +413,7 @@
       "public void <init>()",
       "public void <init>(com.yahoo.messagebus.MessagebusConfig)",
       "public com.yahoo.messagebus.MessagebusConfig$Builder routingtable(com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder)",
+      "public com.yahoo.messagebus.MessagebusConfig$Builder routingtable(java.util.function.Consumer)",
       "public com.yahoo.messagebus.MessagebusConfig$Builder routingtable(java.util.List)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
@@ -454,8 +455,10 @@
       "public void <init>(com.yahoo.messagebus.MessagebusConfig$Routingtable)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder protocol(java.lang.String)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder hop(com.yahoo.messagebus.MessagebusConfig$Routingtable$Hop$Builder)",
+      "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder hop(java.util.function.Consumer)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder hop(java.util.List)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder route(com.yahoo.messagebus.MessagebusConfig$Routingtable$Route$Builder)",
+      "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder route(java.util.function.Consumer)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable$Builder route(java.util.List)",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable build()"
     ],

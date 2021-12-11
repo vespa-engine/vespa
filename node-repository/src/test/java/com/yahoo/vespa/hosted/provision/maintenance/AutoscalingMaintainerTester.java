@@ -42,9 +42,11 @@ public class AutoscalingMaintainerTester {
     private final MockDeployer deployer;
 
     public AutoscalingMaintainerTester(MockDeployer.ApplicationContext ... appContexts) {
-        provisioningTester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east3")))
-                                                                    .flavorsConfig(flavorsConfig())
-                                                                    .build();
+        this(new Zone(Environment.prod, RegionName.from("us-east3")), appContexts);
+    }
+
+    public AutoscalingMaintainerTester(Zone zone, MockDeployer.ApplicationContext ... appContexts) {
+        provisioningTester = new ProvisioningTester.Builder().zone(zone).flavorsConfig(flavorsConfig()).build();
         provisioningTester.clock().setInstant(Instant.ofEpochMilli(0));
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Arrays.stream(appContexts)
                                                                          .collect(Collectors.toMap(c -> c.id(), c -> c));
@@ -69,8 +71,9 @@ public class AutoscalingMaintainerTester {
         return provisioningTester.deploy(application, cluster, capacity);
     }
 
-    public void addMeasurements(float cpu, float mem, float disk, long generation, int count, ApplicationId applicationId) {
+    public Duration addMeasurements(float cpu, float mem, float disk, long generation, int count, ApplicationId applicationId) {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
+        Instant startTime = clock().instant();
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 nodeRepository().metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
@@ -80,7 +83,9 @@ public class AutoscalingMaintainerTester {
                                                                                                       true,
                                                                                                       true,
                                                                                                       0.0))));
+            clock().advance(Duration.ofSeconds(150));
         }
+        return Duration.between(startTime, clock().instant());
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
@@ -102,7 +107,7 @@ public class AutoscalingMaintainerTester {
 
     private FlavorsConfig flavorsConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("flt", 30, 30, 40, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("flt", 30, 30, 50, 3, Flavor.Type.BARE_METAL);
         b.addFlavor("cpu", 40, 20, 40, 3, Flavor.Type.BARE_METAL);
         b.addFlavor("mem", 20, 40, 40, 3, Flavor.Type.BARE_METAL);
         return b.build();

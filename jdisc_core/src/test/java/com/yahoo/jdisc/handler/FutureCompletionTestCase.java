@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
@@ -91,14 +90,14 @@ public class FutureCompletionTestCase {
     public void requireThatCompletionCanBeListenedTo() throws InterruptedException {
         FutureCompletion completion = new FutureCompletion();
         RunnableLatch listener = new RunnableLatch();
-        completion.addListener(listener, MoreExecutors.directExecutor());
+        completion.addListener(listener, Runnable::run);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         completion.completed();
         assertTrue(listener.await(600, TimeUnit.SECONDS));
 
         completion = new FutureCompletion();
         listener = new RunnableLatch();
-        completion.addListener(listener, MoreExecutors.directExecutor());
+        completion.addListener(listener, Runnable::run);
         assertFalse(listener.await(100, TimeUnit.MILLISECONDS));
         completion.failed(new Throwable());
         assertTrue(listener.await(600, TimeUnit.SECONDS));

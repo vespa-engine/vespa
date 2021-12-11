@@ -17,6 +17,7 @@ public class NodeResources {
     private static final double diskUnitCost =   0.0003;
 
     private static final NodeResources zero = new NodeResources(0, 0, 0, 0);
+    private static final NodeResources unspecified = new NodeResources(0, 0, 0, 0);
 
     public enum DiskSpeed {
 
@@ -125,46 +126,56 @@ public class NodeResources {
     }
 
     public NodeResources withVcpu(double vcpu) {
+        ensureSpecified();
         if (vcpu == this.vcpu) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withMemoryGb(double memoryGb) {
+        ensureSpecified();
         if (memoryGb == this.memoryGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withDiskGb(double diskGb) {
+        ensureSpecified();
         if (diskGb == this.diskGb) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withBandwidthGbps(double bandwidthGbps) {
+        ensureSpecified();
         if (bandwidthGbps == this.bandwidthGbps) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources with(DiskSpeed diskSpeed) {
+        ensureSpecified();
         if (diskSpeed == this.diskSpeed) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources with(StorageType storageType) {
+        ensureSpecified();
         if (storageType == this.storageType) return this;
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     /** Returns this with disk speed and storage type set to any */
     public NodeResources justNumbers() {
+        if (isUnspecified()) return unspecified();
         return with(NodeResources.DiskSpeed.any).with(StorageType.any);
     }
 
     /** Returns this with all numbers set to 0 */
     public NodeResources justNonNumbers() {
+        if (isUnspecified()) return unspecified();
         return withVcpu(0).withMemoryGb(0).withDiskGb(0).withBandwidthGbps(0);
     }
 
     public NodeResources subtract(NodeResources other) {
+        ensureSpecified();
+        other.ensureSpecified();
         if ( ! this.isInterchangeableWith(other))
             throw new IllegalArgumentException(this + " and " + other + " are not interchangeable");
         return new NodeResources(vcpu - other.vcpu,
@@ -176,6 +187,7 @@ public class NodeResources {
     }
 
     public NodeResources add(NodeResources other) {
+        ensureSpecified();
         if ( ! this.isInterchangeableWith(other))
             throw new IllegalArgumentException(this + " and " + other + " are not interchangeable");
         return new NodeResources(vcpu + other.vcpu,
@@ -187,6 +199,8 @@ public class NodeResources {
     }
 
     private boolean isInterchangeableWith(NodeResources other) {
+        ensureSpecified();
+        other.ensureSpecified();
         if (this.diskSpeed != DiskSpeed.any && other.diskSpeed != DiskSpeed.any && this.diskSpeed != other.diskSpeed)
             return false;
         if (this.storageType != StorageType.any && other.storageType != StorageType.any && this.storageType != other.storageType)
@@ -248,6 +262,8 @@ public class NodeResources {
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
     public boolean satisfies(NodeResources other) {
+        ensureSpecified();
+        other.ensureSpecified();
         if (this.vcpu < other.vcpu) return false;
         if (this.memoryGb < other.memoryGb) return false;
         if (this.diskGb < other.diskGb) return false;
@@ -276,9 +292,14 @@ public class NodeResources {
         return true;
     }
 
-    public static NodeResources unspecified() { return zero; }
+    public static NodeResources unspecified() { return unspecified; }
 
-    public boolean isUnspecified() { return this.equals(zero); }
+    public boolean isUnspecified() { return this == unspecified; }
+
+    private void ensureSpecified() {
+        if (isUnspecified())
+            throw new IllegalStateException("Cannot perform this on unspecified resources");
+    }
 
     // Returns squared euclidean distance of the relevant numerical values of two node resources
     public double distanceTo(NodeResources other) {

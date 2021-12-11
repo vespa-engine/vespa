@@ -523,7 +523,7 @@ public class ProvisioningTest {
 
         ApplicationId application = ProvisioningTester.applicationId();
         tester.makeReadyHosts(10, defaultResources).activateTenantHosts();
-        prepare(application, 1, 2, 3, 3, defaultResources, tester);
+        prepare(application, 1, 1, 1, 1, defaultResources, tester);
     }
 
     @Test
@@ -1015,10 +1015,10 @@ public class ProvisioningTest {
         allHosts.addAll(content1);
 
         Function<Integer, Capacity> capacity = count -> Capacity.from(new ClusterResources(count, 1, NodeResources.unspecified()), required, true);
-        int expectedContainer0Size = tester.decideSize(container0Size, capacity.apply(container0Size), containerCluster0, application);
-        int expectedContainer1Size = tester.decideSize(container1Size, capacity.apply(container1Size), containerCluster1, application);
-        int expectedContent0Size = tester.decideSize(content0Size, capacity.apply(content0Size), contentCluster0, application);
-        int expectedContent1Size = tester.decideSize(content1Size, capacity.apply(content1Size), contentCluster1, application);
+        int expectedContainer0Size = tester.decideSize(capacity.apply(container0Size), application);
+        int expectedContainer1Size = tester.decideSize(capacity.apply(container1Size), application);
+        int expectedContent0Size = tester.decideSize(capacity.apply(content0Size), application);
+        int expectedContent1Size = tester.decideSize(capacity.apply(content1Size), application);
 
         assertEquals("Hosts in each group cluster is disjunct and the total number of unretired nodes is correct",
                      expectedContainer0Size + expectedContainer1Size + expectedContent0Size + expectedContent1Size,

@@ -800,6 +800,7 @@ AttributeVector::update_config(const Config& cfg)
     }
     drain_hold(1_Mi); // Wait until 1MiB or less on hold
     _config.setCompactionStrategy(cfg.getCompactionStrategy());
+    updateStat(true);
     commit(); // might trigger compaction
     drain_hold(1_Mi); // Wait until 1MiB or less on hold
 }

@@ -72,21 +72,15 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
 
         private final Clock clock;
         private final ConfigServer configServer;
-        private final boolean changeAllUpstreams;
 
-        public SharedDeploymentRoutingContext(DeploymentId deployment, RoutingController controller, ConfigServer configServer, Clock clock, boolean changeAllUpstreams) {
+        public SharedDeploymentRoutingContext(DeploymentId deployment, RoutingController controller, ConfigServer configServer, Clock clock) {
             super(deployment, RoutingMethod.shared, controller);
             this.clock = Objects.requireNonNull(clock);
             this.configServer = Objects.requireNonNull(configServer);
-            this.changeAllUpstreams = changeAllUpstreams;
         }
 
         @Override
         public void setRoutingStatus(RoutingStatus.Value value, RoutingStatus.Agent agent) {
-            if (!changeAllUpstreams) {
-                setLegacyRoutingStatus(value, agent);
-                return;
-            }
             EndpointStatus newStatus = new EndpointStatus(value == RoutingStatus.Value.in
                                                                   ? EndpointStatus.Status.in
                                                                   : EndpointStatus.Status.out,
@@ -101,10 +95,6 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
 
         @Override
         public RoutingStatus routingStatus() {
-            if (!changeAllUpstreams) {
-                return legacyRoutingStatus();
-            }
-
             // In a given deployment, all upstreams (clusters) share the same status, so we can query using any
             // upstream name
             String upstreamName = upstreamNames().get(0);
@@ -134,40 +124,6 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
                 throw new IllegalArgumentException("No upstream names found for " + deployment);
             }
             return upstreamNames;
-        }
-
-        private void setLegacyRoutingStatus(RoutingStatus.Value value, RoutingStatus.Agent agent) {
-            EndpointStatus newStatus = new EndpointStatus(value == RoutingStatus.Value.in
-                                                                  ? EndpointStatus.Status.in
-                                                                  : EndpointStatus.Status.out,
-                                                          agent.name(),
-                                                          clock.instant());
-            primaryEndpoint().ifPresent(endpoint -> {
-                try {
-                    configServer.setGlobalRotationStatus(deployment, List.of(endpoint.upstreamName(deployment)), newStatus);
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to set rotation status of " + endpoint + " in " + deployment, e);
-                }
-            });
-        }
-
-        private RoutingStatus legacyRoutingStatus() {
-            Optional<EndpointStatus> status = primaryEndpoint().map(endpoint -> {
-                var upstreamName = endpoint.upstreamName(deployment);
-                return configServer.getGlobalRotationStatus(deployment, upstreamName);
-            });
-            if (status.isEmpty()) return RoutingStatus.DEFAULT;
-            RoutingStatus.Agent agent;
-            try {
-                agent = RoutingStatus.Agent.valueOf(status.get().agent().toLowerCase());
-            } catch (IllegalArgumentException e) {
-                agent = RoutingStatus.Agent.unknown;
-            }
-            return new RoutingStatus(status.get().status() == EndpointStatus.Status.in
-                                             ? RoutingStatus.Value.in
-                                             : RoutingStatus.Value.out,
-                                     agent,
-                                     status.get().changedAt());
         }
 
         private Optional<Endpoint> primaryEndpoint() {

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "enum_store_compaction_spec.h"
 #include "enum_store_dictionary.h"
 #include "enum_store_loaders.h"
 #include "enumcomparator.h"
@@ -55,10 +56,7 @@ private:
     bool                   _is_folded;
     ComparatorType         _comparator;
     ComparatorType         _foldedComparator;
-    vespalib::MemoryUsage  _cached_values_memory_usage;
-    vespalib::AddressSpace _cached_values_address_space_usage;
-    vespalib::MemoryUsage  _cached_dictionary_btree_usage;
-    vespalib::MemoryUsage  _cached_dictionary_hash_usage;
+    enumstore::EnumStoreCompactionSpec _compaction_spec;
 
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
@@ -96,7 +94,7 @@ public:
     vespalib::MemoryUsage get_values_memory_usage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
     vespalib::MemoryUsage get_dictionary_memory_usage() const override { return _dict->get_memory_usage(); }
 
-    vespalib::AddressSpace get_address_space_usage() const;
+    vespalib::AddressSpace get_values_address_space_usage() const override;
 
     void transfer_hold_lists(generation_t generation);
     void trim_hold_lists(generation_t first_used);
@@ -199,9 +197,9 @@ public:
     bool find_index(EntryType value, Index& idx) const;
     void free_unused_values() override;
     void free_unused_values(IndexList to_remove);
-    vespalib::MemoryUsage update_stat() override;
+    vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) override;
-    std::unique_ptr<EnumIndexRemapper> compact_worst_values(bool compact_memory, bool compact_address_space) override;
+    std::unique_ptr<EnumIndexRemapper> compact_worst_values(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy) override;
     bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy) override;
     uint64_t get_compaction_count() const override {
         return _store.get_data_store().get_compaction_count();

@@ -34,6 +34,11 @@
       <artifactId>jackson-core</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespa-feed-client-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- test scope -->
     <dependency>
@@ -72,16 +77,12 @@
               <executable>src/main/sh/vespa-version-generator.sh</executable>
               <arguments>
                 <argument>${project.basedir}/../dist/vtag.map</argument>
-                <argument>${project.build.directory}/generated-sources/vespa-version/ai/vespa/feed/client/Vespa.java</argument>
+                <argument>${project.build.directory}/generated-sources/vespa-version/ai/vespa/feed/client/impl/Vespa.java</argument>
               </arguments>
               <sourceRoot>${project.build.directory}/generated-sources/vespa-version</sourceRoot>
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>abi-check-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

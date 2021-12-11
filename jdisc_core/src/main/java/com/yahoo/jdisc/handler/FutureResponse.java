@@ -1,8 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.handler;
 
-import com.google.common.util.concurrent.AbstractFuture;
 import com.yahoo.jdisc.Response;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * This class provides an implementation of {@link ResponseHandler} that allows you to wait for a {@link Response} to
@@ -10,7 +12,7 @@ import com.yahoo.jdisc.Response;
  *
  * @author Simon Thoresen Hult
  */
-public final class FutureResponse extends AbstractFuture<Response> implements ResponseHandler {
+public final class FutureResponse extends CompletableFuture<Response> implements ResponseHandler {
 
     private final ResponseHandler handler;
 
@@ -38,6 +40,8 @@ public final class FutureResponse extends AbstractFuture<Response> implements Re
         });
     }
 
+    public void addListener(Runnable r, Executor e) { whenCompleteAsync((__, ___) -> r.run(), e); }
+
     /**
      * <p>Constructs a new FutureResponse that calls the given {@link ResponseHandler} when {@link
      * #handleResponse(Response)} is invoked.</p>
@@ -50,7 +54,7 @@ public final class FutureResponse extends AbstractFuture<Response> implements Re
 
     @Override
     public ContentChannel handleResponse(Response response) {
-        set(response);
+        complete(response);
         return handler.handleResponse(response);
     }
 

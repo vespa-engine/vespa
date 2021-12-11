@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing;
 
-import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.provider.ListenableFreezableClass;
+import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.processing.execution.ResponseReceiver;
+import com.yahoo.processing.impl.ProcessingFuture;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.ErrorMessage;
 import com.yahoo.processing.response.ArrayDataList;
@@ -15,8 +15,8 @@ import com.yahoo.processing.response.DataList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -57,7 +57,7 @@ public class Response extends ListenableFreezableClass {
         if (freezeListener != null) {
             if (freezeListener instanceof ResponseReceiver)
                 ((ResponseReceiver)freezeListener).setResponse(this);
-            data.addFreezeListener(freezeListener, MoreExecutors.directExecutor());
+            data.addFreezeListener(freezeListener, Runnable::run);
         }
     }
 
@@ -96,15 +96,22 @@ public class Response extends ListenableFreezableClass {
      * @param rootDataList the list to complete recursively
      * @return the future in which all data in and below this list is complete, as the given root dataList for convenience
      */
-    public static <D extends Data> ListenableFuture<DataList<D>> recursiveComplete(DataList<D> rootDataList) {
-        List<ListenableFuture<DataList<D>>> futures = new ArrayList<>();
+    public static <D extends Data> CompletableFuture<DataList<D>> recursiveFuture(DataList<D> rootDataList) {
+        List<CompletableFuture<DataList<D>>> futures = new ArrayList<>();
         collectCompletionFutures(rootDataList, futures);
         return new CompleteAllOnGetFuture<D>(futures);
     }
 
+    /** @deprecated Use {@link #recursiveFuture(DataList)} instead */
+    @Deprecated(forRemoval = true, since = "7")
+    @SuppressWarnings("removal")
+    public static <D extends Data> ListenableFuture<DataList<D>> recursiveComplete(DataList<D> rootDataList) {
+        return CompletableFutures.toGuavaListenableFuture(recursiveFuture(rootDataList));
+    }
+
     @SuppressWarnings("unchecked")
-    private static <D extends Data> void collectCompletionFutures(DataList<D> dataList, List<ListenableFuture<DataList<D>>> futures) {
-        futures.add(dataList.complete());
+    private static <D extends Data> void collectCompletionFutures(DataList<D> dataList, List<CompletableFuture<DataList<D>>> futures) {
+        futures.add(dataList.completeFuture());
         for (D data : dataList.asList()) {
             if (data instanceof DataList)
                 collectCompletionFutures((DataList<D>) data, futures);
@@ -115,24 +122,24 @@ public class Response extends ListenableFreezableClass {
      * A future which on get calls get on all its given futures and sets the value returned from the
      * first given future as its result.
      */
-    private static class CompleteAllOnGetFuture<D extends Data> extends AbstractFuture<DataList<D>> {
+    private static class CompleteAllOnGetFuture<D extends Data> extends ProcessingFuture<DataList<D>> {
 
-        private final List<ListenableFuture<DataList<D>>> futures;
+        private final List<CompletableFuture<DataList<D>>> futures;
 
-        public CompleteAllOnGetFuture(List<ListenableFuture<DataList<D>>> futures) {
+        public CompleteAllOnGetFuture(List<CompletableFuture<DataList<D>>> futures) {
             this.futures = new ArrayList<>(futures);
         }
 
         @Override
             public DataList<D> get() throws InterruptedException, ExecutionException {
             DataList<D> result = null;
-            for (ListenableFuture<DataList<D>> future : futures) {
+            for (CompletableFuture<DataList<D>> future : futures) {
                 if (result == null)
                     result = future.get();
                 else
                     future.get();
             }
-            set(result);
+            complete(result);
             return result;
         }
 
@@ -141,7 +148,7 @@ public class Response extends ListenableFreezableClass {
             DataList<D> result = null;
             long timeLeft = unit.toMillis(timeout);
             long currentCallStart = SystemTimer.INSTANCE.milliTime();
-            for (ListenableFuture<DataList<D>> future : futures) {
+            for (CompletableFuture<DataList<D>> future : futures) {
                 if (result == null)
                     result = future.get(timeLeft, TimeUnit.MILLISECONDS);
                 else
@@ -151,7 +158,7 @@ public class Response extends ListenableFreezableClass {
                 if (timeLeft <= 0) break;
                 currentCallStart = currentCallEnd;
             }
-            set(result);
+            complete(result);
             return result;
         }
 
