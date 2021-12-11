@@ -90,7 +90,7 @@ private:
     typedef vespalib::Array<ResultAccessor> ResultAccessorList;
     class SortInfo {
     public:
-        SortInfo() : _index(0), _sign(1) { }
+        SortInfo() noexcept : _index(0), _sign(1) { }
         SortInfo(uint8_t index, int8_t sign) : _index(index), _sign(sign) { }
         uint8_t getIndex() const { return _index; }
         int8_t   getSign() const { return _sign; }

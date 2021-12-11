@@ -12,7 +12,7 @@ public:
     DECLARE_EXPRESSIONNODE(StringResultNode);
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    StringResultNode(const char * v="") : _value(v) { }
+    StringResultNode(const char * v="") noexcept : _value(v) { }
     StringResultNode(vespalib::stringref v) : _value(v) { }
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;

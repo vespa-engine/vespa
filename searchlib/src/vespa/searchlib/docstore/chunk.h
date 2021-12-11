@@ -47,7 +47,7 @@ private:
 
 class LidMeta {
 public:
-    LidMeta() : _lid(0), _size(0) { }
+    LidMeta() noexcept : _lid(0), _size(0) { }
     LidMeta(uint32_t lid, uint32_t sz) : _lid(lid), _size(sz) { }
     uint32_t     getLid() const { return _lid; }
     uint32_t       size() const { return _size; }

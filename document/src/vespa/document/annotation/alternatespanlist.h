@@ -12,7 +12,7 @@ class AlternateSpanList : public SpanNode {
     struct Subtree {
         SpanList *span_list;
         double probability;
-        Subtree() : span_list(0), probability(0.0) {}
+        Subtree() noexcept : span_list(0), probability(0.0) {}
     };
     std::vector<Subtree> _subtrees;
 

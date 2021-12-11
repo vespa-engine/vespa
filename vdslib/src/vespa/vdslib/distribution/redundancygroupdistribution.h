@@ -17,7 +17,7 @@ class RedundancyGroupDistribution : public document::Printable {
     std::vector<uint16_t> _values;
 
 public:
-    RedundancyGroupDistribution() {}
+    RedundancyGroupDistribution() noexcept {}
     /**
      * Create a group distribution spec from the serialized version.
      * Asterisk entries are represented as zero.

@@ -33,7 +33,7 @@ public:
 
     DECLARE_EXPRESSIONNODE(FloatBucketResultNode);
     DECLARE_NBO_SERIALIZE;
-    FloatBucketResultNode() : _from(0.0), _to(0.0) {}
+    FloatBucketResultNode() noexcept : _from(0.0), _to(0.0) {}
     FloatBucketResultNode(double from, double to) : _from(from), _to(to) {}
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;

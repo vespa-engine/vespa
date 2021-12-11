@@ -9,7 +9,7 @@ namespace grouping {
 class GroupRef
 {
 public:
-    GroupRef() : _ref(-1) { }
+    GroupRef() noexcept : _ref(-1) { }
     GroupRef(uint32_t ref) : _ref(ref) { }
     uint32_t getRef() const { return _ref; }
     bool valid() const { return _ref != static_cast<uint32_t>(-1); }

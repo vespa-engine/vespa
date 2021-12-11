@@ -90,7 +90,7 @@ private:
     size_t _cnt;
 public:
     using value_type = T;
-    constexpr Avg() : _sum{0}, _cnt{0} {}
+    constexpr Avg() noexcept : _sum{0}, _cnt{0} {}
     constexpr Avg(T value) : _sum{value}, _cnt{1} {}
     constexpr void sample(T value) {
         _sum += value;
@@ -109,7 +109,7 @@ private:
     size_t _cnt;
 public:
     using value_type = T;
-    constexpr Count() : _cnt{0} {}
+    constexpr Count() noexcept : _cnt{0} {}
     constexpr Count(T) : _cnt{1} {}
     constexpr void sample(T) { ++_cnt; }
     constexpr void merge(const Count &rhs) { _cnt += rhs._cnt; }
@@ -122,7 +122,7 @@ private:
     T _prod;
 public:
     using value_type = T;
-    constexpr Prod() : _prod{null_value()} {}
+    constexpr Prod() noexcept : _prod{null_value()} {}
     constexpr Prod(T value) : _prod{value} {}
     constexpr void sample(T value) { _prod = combine(_prod, value); }
     constexpr void merge(const Prod &rhs) { _prod = combine(_prod, rhs._prod); }
@@ -137,7 +137,7 @@ private:
     T _sum;
 public:
     using value_type = T;
-    constexpr Sum() : _sum{null_value()} {}
+    constexpr Sum() noexcept : _sum{null_value()} {}
     constexpr Sum(T value) : _sum{value} {}
     constexpr void sample(T value) { _sum = combine(_sum, value); }
     constexpr void merge(const Sum &rhs) { _sum = combine(_sum, rhs._sum); }
@@ -152,7 +152,7 @@ private:
     T _max;
 public:
     using value_type = T;
-    constexpr Max() : _max{null_value()} {}
+    constexpr Max() noexcept : _max{null_value()} {}
     constexpr Max(T value) : _max{value} {}
     constexpr void sample(T value) { _max = combine(_max, value); }
     constexpr void merge(const Max &rhs) { _max = combine(_max, rhs._max); }
@@ -167,7 +167,7 @@ private:
     std::vector<T> _seen;
 public:
     using value_type = T;
-    constexpr Median() : _seen() {}
+    constexpr Median() noexcept : _seen() {}
     constexpr Median(T value) : _seen({value}) {}
     constexpr void sample(T value) { _seen.push_back(value); }
     constexpr void merge(const Median &rhs) {
@@ -205,7 +205,7 @@ private:
     T _min;
 public:
     using value_type = T;
-    constexpr Min() : _min{null_value()} {}
+    constexpr Min() noexcept : _min{null_value()} {}
     constexpr Min(T value) : _min{value} {}
     constexpr void sample(T value) { _min = combine(_min, value); }
     constexpr void merge(const Min &rhs) { _min = combine(_min, rhs._min); }

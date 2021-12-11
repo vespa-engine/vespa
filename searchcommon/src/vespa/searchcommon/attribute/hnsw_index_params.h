@@ -22,7 +22,7 @@ public:
     HnswIndexParams(uint32_t max_links_per_node_in,
                     uint32_t neighbors_to_explore_at_insert_in,
                     DistanceMetric distance_metric_in,
-                    bool multi_threaded_indexing_in = false)
+                    bool multi_threaded_indexing_in = false) noexcept
             : _max_links_per_node(max_links_per_node_in),
               _neighbors_to_explore_at_insert(neighbors_to_explore_at_insert_in),
               _distance_metric(distance_metric_in),

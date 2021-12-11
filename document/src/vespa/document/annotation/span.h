@@ -14,7 +14,7 @@ class Span : public SpanNode {
 public:
     typedef std::unique_ptr<Span> UP;
 
-    Span(int32_t from_pos=0, int32_t len=0) : _from(from_pos), _length(len) {}
+    Span(int32_t from_pos=0, int32_t len=0) noexcept : _from(from_pos), _length(len) {}
 
     int32_t from() const { return _from; }
     int32_t length() const { return _length; }

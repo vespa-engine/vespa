@@ -127,7 +127,7 @@ private:
 struct FtQueryTerm {
     FtQueryTerm(const vespalib::string t, uint32_t tw = 100, feature_t co = 0.1f, feature_t si = 0.1f) :
         term(t), termWeight(tw), connexity(co), significance(si) {}
-    FtQueryTerm() : term(), termWeight(100), connexity(0.1f), significance(0.1f) {}
+    FtQueryTerm() noexcept : term(), termWeight(100), connexity(0.1f), significance(0.1f) {}
     vespalib::string term;
     search::query::Weight termWeight;
     feature_t connexity;
