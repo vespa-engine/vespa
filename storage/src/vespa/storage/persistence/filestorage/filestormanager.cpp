@@ -886,11 +886,14 @@ namespace {
 bool
 FileStorManager::maintenance_in_all_spaces(const lib::Node& node) const noexcept
 {
-    return std::ranges::all_of(_component.getBucketSpaceRepo(), [&](const auto& elem) {
+    for (auto& elem :  _component.getBucketSpaceRepo()) {
         ContentBucketSpace& bucket_space = *elem.second;
         auto derived_cluster_state = bucket_space.getClusterState();
-        return derived_cluster_state->getNodeState(node).getState().oneOf("m");
-    });
+        if (!derived_cluster_state->getNodeState(node).getState().oneOf("m")) {
+            return false;
+        }
+    };
+    return true;
 }
 
 bool
