@@ -36,7 +36,9 @@ public:
     {}
 
     Result(const Result &);
+    Result(Result&&) noexcept;
     Result & operator = (const Result &);
+    Result& operator=(Result&&) noexcept;
 
     virtual ~Result();
 
