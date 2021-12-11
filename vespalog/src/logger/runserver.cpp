@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <cerrno>
 #include <unistd.h>
+#include <csignal>
 
 #include <sys/select.h>
 #include <sys/types.h>
