@@ -42,6 +42,7 @@ public:
                                 bool fastAccessAttributesOnly,
                                 searchcorespi::index::IThreadService &master,
                                 std::shared_ptr<AttributeManager::SP> attrMgrResult);
+    ~AttributeManagerInitializer() override;
 
     virtual void run() override;
 };
