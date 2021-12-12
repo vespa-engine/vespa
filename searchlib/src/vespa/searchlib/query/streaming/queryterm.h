@@ -39,7 +39,7 @@ public:
     };
     class FieldInfo {
     public:
-        FieldInfo() : _hitListOffset(0), _hitCount(0), _fieldLength(0) { }
+        FieldInfo() noexcept : _hitListOffset(0), _hitCount(0), _fieldLength(0) { }
         FieldInfo(uint32_t hitListOffset, uint32_t hitCount, uint32_t fieldLength) :
             _hitListOffset(hitListOffset), _hitCount(hitCount), _fieldLength(fieldLength) { }
         size_t getHitOffset()     const { return _hitListOffset; }

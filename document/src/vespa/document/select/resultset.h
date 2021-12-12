@@ -20,7 +20,7 @@ class ResultSet
     static std::vector<ResultSet> _ors;
     static std::vector<ResultSet> _nots;
 public:
-    ResultSet() : _val(0u) { }
+    ResultSet() noexcept : _val(0u) { }
 
     static uint32_t enumToMask(uint32_t rhs) {
         return 1u << rhs;

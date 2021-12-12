@@ -3,7 +3,8 @@
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
 #include <vespa/vespalib/hwaccelrated/generic.h>
 #include <vespa/vespalib/util/time.h>
-#
+#include <cinttypes>
+
 using namespace vespalib;
 
 template<typename T>
@@ -28,7 +29,7 @@ benchmarkEuclideanDistance(const hwaccelrated::IAccelrated & accel, size_t sz, s
         sumOfSums += sum;
     }
     duration elapsed = steady_clock::now() - start;
-    printf("sum=%f of N=%zu and vector length=%zu took %ld\n", sumOfSums, count, sz, count_ms(elapsed));
+    printf("sum=%f of N=%zu and vector length=%zu took %" PRId64 "\n", sumOfSums, count, sz, count_ms(elapsed));
 }
 
 void

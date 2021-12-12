@@ -83,7 +83,7 @@ public:
     ~SparseBenchmark();
 protected:
     struct P {
-        P(uint32_t key=0, int32_t value=0) :
+        P(uint32_t key=0, int32_t value=0) noexcept :
             _key(key),
             _value(value)
         { }

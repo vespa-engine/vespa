@@ -10,7 +10,7 @@ class LoadBalancer {
 public:
     class NodeInfo {
     public:
-        NodeInfo() : valid(false), sent(0), busy(0), weight(1.0) {};
+        NodeInfo() noexcept : valid(false), sent(0), busy(0), weight(1.0) {};
 
         bool valid;
         uint32_t sent;

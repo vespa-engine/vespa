@@ -6,6 +6,7 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/invokeservice.h>
+#include <atomic>
 
 namespace proton {
 

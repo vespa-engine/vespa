@@ -10,7 +10,7 @@ using namespace vespalib::fixed_thread_bundle;
 
 struct Cnt : Runnable {
     size_t x;
-    Cnt() : x(0) {}
+    Cnt() noexcept : x(0) {}
     void run() override { ++x; }
 };
 

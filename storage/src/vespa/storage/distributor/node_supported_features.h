@@ -13,7 +13,9 @@ namespace storage::distributor {
 struct NodeSupportedFeatures {
     bool unordered_merge_chaining = false;
 
-    bool operator==(const NodeSupportedFeatures&) const noexcept = default;
+    bool operator==(const NodeSupportedFeatures& rhs) const noexcept {
+        return unordered_merge_chaining == rhs.unordered_merge_chaining;
+    };
 };
 
 }

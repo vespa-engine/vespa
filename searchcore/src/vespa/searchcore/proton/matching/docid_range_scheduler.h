@@ -174,7 +174,7 @@ private:
         std::condition_variable condition;
         bool                    is_idle;
         DocidRange              next_range;
-        Worker() : condition(), is_idle(false), next_range() {}
+        Worker() noexcept : condition(), is_idle(false), next_range() {}
     };
     DocidRangeSplitter  _splitter;
     uint32_t            _min_task;

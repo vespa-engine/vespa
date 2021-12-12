@@ -31,7 +31,7 @@ private:
 public:
     DECLARE_EXPRESSIONNODE(IntegerBucketResultNode);
     DECLARE_NBO_SERIALIZE;
-    IntegerBucketResultNode() : _from(0), _to(0) {}
+    IntegerBucketResultNode() noexcept : _from(0), _to(0) {}
     IntegerBucketResultNode(int64_t from, int64_t to) : _from(from), _to(to) {}
     size_t hash() const override;
     int onCmp(const Identifiable & b) const override;

@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +46,8 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
 
     private final ResponseHandler responseHandler;
     private final ConfigSourceSet configSourceSet;
-    private final Map<ConfigCacheKey, Subscriber> activeSubscribers = new ConcurrentHashMap<>();
+    private final Object subscribersLock = new Object();
+    private final Map<ConfigCacheKey, Subscriber> subscribers = new ConcurrentHashMap<>();
     private final MemoryCache memoryCache;
     private final DelayedResponses delayedResponses;
     private final ScheduledExecutorService nextConfigScheduler =
@@ -139,22 +141,29 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     }
 
     private void subscribeToConfig(RawConfig input, ConfigCacheKey configCacheKey) {
-        if (activeSubscribers.containsKey(configCacheKey)) return;
+        synchronized (subscribersLock) {
+            if (subscribers.containsKey(configCacheKey)) return;
 
-        log.log(Level.FINE, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
-        var subscriber = new Subscriber(input, timingValues, requesters.getRequester(configSourceSet, timingValues));
-        try {
-            subscriber.subscribe();
-            activeSubscribers.put(configCacheKey, subscriber);
-        } catch (ConfigurationRuntimeException e) {
-            log.log(Level.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber");
-            subscriber.cancel();
+            log.log(Level.FINE, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
+            var subscriber = new Subscriber(input, timingValues, requesters
+                    .getRequester(configSourceSet, timingValues));
+            try {
+                subscriber.subscribe();
+                subscribers.put(configCacheKey, subscriber);
+            } catch (ConfigurationRuntimeException e) {
+                log.log(Level.INFO, "Subscribe for '" + configCacheKey + "' failed, closing subscriber");
+                subscriber.cancel();
+            }
         }
     }
 
     @Override
     public void run() {
-        activeSubscribers.values().forEach(subscriber -> {
+        Collection<Subscriber> s;
+        synchronized (subscribersLock) {
+            s = List.copyOf(subscribers.values());
+        }
+        s.forEach(subscriber -> {
             if (!subscriber.isClosed()) {
                 Optional<RawConfig> config = subscriber.nextGeneration();
                 config.ifPresent(this::updateWithNewConfig);
@@ -180,8 +189,10 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     @Override
     public void shutdownSourceConnections() {
         log.log(Level.FINE, "Subscriber::cancel");
-        activeSubscribers.values().forEach(Subscriber::cancel);
-        activeSubscribers.clear();
+        synchronized (subscribers) {
+            subscribers.values().forEach(Subscriber::cancel);
+            subscribers.clear();
+        }
         log.log(Level.FINE, "nextConfigFuture.cancel");
         nextConfigFuture.cancel(true);
         log.log(Level.FINE, "nextConfigScheduler.shutdownNow");

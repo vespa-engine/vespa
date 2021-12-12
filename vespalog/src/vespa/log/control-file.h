@@ -2,8 +2,8 @@
 #pragma once
 
 #include "log.h"
-#include "control-file.h"
 #include "lock.h"
+#include <string>
 
 namespace ns_log {
 

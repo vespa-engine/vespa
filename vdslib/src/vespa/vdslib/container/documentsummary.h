@@ -35,7 +35,7 @@ public:
 private:
     class Summary {
     public:
-        Summary() : _docIdOffset(0), _summaryOffset(0), _summaryLen(0) { }
+        Summary() noexcept : _docIdOffset(0), _summaryOffset(0), _summaryLen(0) { }
         Summary(uint32_t docIdOffset, uint32_t summaryOffset, uint32_t summaryLen) : _docIdOffset(docIdOffset), _summaryOffset(summaryOffset), _summaryLen(summaryLen) { }
         const char * getDocId(const char * base)                const { return base + _docIdOffset; }
         const void * getSummary(const char * base, size_t & sz) const { sz = _summaryLen; return base + _summaryOffset; }

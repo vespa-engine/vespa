@@ -184,8 +184,10 @@ template <typename T> auto create_list() {
     return list;
 }
 
-void destroy_list(auto &list) __attribute__((noinline));
-void destroy_list(auto &list) {
+template <typename T>
+void destroy_list(T &list) __attribute__((noinline));
+template <typename T>
+void destroy_list(T &list) {
     for (auto *item: list) {
         item->stop();
         item->thread.join();
@@ -193,8 +195,10 @@ void destroy_list(auto &list) {
     }
 }
 
-void wait_until_ready(const auto &list) __attribute__((noinline));
-void wait_until_ready(const auto &list) {
+template <typename T>
+void wait_until_ready(const T &list) __attribute__((noinline));
+template <typename T>
+void wait_until_ready(const T &list) {
     size_t num_ready = 0;
     do {
         num_ready = 0;
@@ -206,8 +210,10 @@ void wait_until_ready(const auto &list) {
     } while (num_ready < N);
 }
 
-auto perform_wakeups(auto &list, size_t target) __attribute__((noinline));
-auto perform_wakeups(auto &list, size_t target) {
+template <typename T>
+auto perform_wakeups(T &list, size_t target) __attribute__((noinline));
+template <typename T>
+auto perform_wakeups(T &list, size_t target) {
     size_t wake_cnt = 0;
     size_t skip_cnt = 0;
     while (wake_cnt < target) {
