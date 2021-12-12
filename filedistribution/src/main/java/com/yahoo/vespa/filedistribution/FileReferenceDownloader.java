@@ -78,7 +78,8 @@ public class FileReferenceDownloader {
     private void backoff(int retryCount) {
         if (retryCount > 0) {
             try {
-                Thread.sleep((long) (Math.pow(2, retryCount)) * sleepBetweenRetries.toMillis());
+                long sleepTime = Math.min(120_000, (long) (Math.pow(2, retryCount)) * sleepBetweenRetries.toMillis());
+                Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
                 /* ignored */
             }
