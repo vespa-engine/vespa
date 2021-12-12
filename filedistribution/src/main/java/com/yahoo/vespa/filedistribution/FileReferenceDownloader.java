@@ -57,14 +57,14 @@ public class FileReferenceDownloader {
         int retryCount = 0;
         Connection connection = connectionPool.getCurrent();
         do {
+            backoff(retryCount);
+
             if (FileDownloader.fileReferenceExists(fileReference, downloadDirectory))
                 return;
             if (startDownloadRpc(fileReferenceDownload, retryCount, connection))
                 return;
 
-            try { Thread.sleep(sleepBetweenRetries.toMillis()); } catch (InterruptedException e) { /* ignored */}
             retryCount++;
-
             // There is no one connection that will always work for each file reference (each file reference might
             // exist on just one config server, and which one could be different for each file reference), so we
             // should get a new connection for every retry
@@ -73,6 +73,16 @@ public class FileReferenceDownloader {
 
         fileReferenceDownload.future().completeExceptionally(new RuntimeException("Failed getting " + fileReference));
         downloads.remove(fileReference);
+    }
+
+    private void backoff(int retryCount) {
+        if (retryCount > 0) {
+            try {
+                Thread.sleep((long) (Math.pow(2, retryCount)) * sleepBetweenRetries.toMillis());
+            } catch (InterruptedException e) {
+                /* ignored */
+            }
+        }
     }
 
     Future<Optional<File>> startDownload(FileReferenceDownload fileReferenceDownload) {
