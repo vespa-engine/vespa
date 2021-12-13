@@ -192,14 +192,12 @@ class ServletResponseController {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static void setStatus(HttpServletResponse response, int statusCode, String reasonPhrase) {
+        org.eclipse.jetty.server.Response jettyResponse = (org.eclipse.jetty.server.Response) response;
         if (reasonPhrase != null) {
-            // Sets the status line: a status code along with a custom message.
-            // Using a custom status message is deprecated in the Servlet API. No alternative exist.
-            response.setStatus(statusCode, reasonPhrase); // DEPRECATED
+            jettyResponse.setStatusWithReason(statusCode, reasonPhrase);
         } else {
-            response.setStatus(statusCode);
+            jettyResponse.setStatus(statusCode);
         }
     }
 
