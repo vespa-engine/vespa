@@ -1488,7 +1488,7 @@ public class ModelProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("You have specified both jvm-options='xyz' and deprecated jvmargs='abc'. Merge jvmargs into jvm-options.", e.getMessage());
+            assertEquals("You have specified both jvm-options='xyz' and deprecated jvmargs='abc'. Merge jvmargs into 'options' in 'jvm' element.", e.getMessage());
         }
     }
 

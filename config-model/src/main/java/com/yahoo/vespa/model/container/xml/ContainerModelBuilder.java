@@ -683,12 +683,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (nodesElement.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) {
                 String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
                 throw new IllegalArgumentException("You have specified both jvm-options='" + jvmOptions + "'" +
-                        " and deprecated jvmargs='" + jvmArgs + "'. Merge jvmargs into jvm-options.");
+                        " and deprecated jvmargs='" + jvmArgs + "'. Merge jvmargs into 'options' in 'jvm' element.");
             }
         } else {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
             if (incompatibleGCOptions(jvmOptions)) {
-                deployLogger.logApplicationPackage(WARNING, "You need to move out your GC-related options from deprecated 'jvmargs' to 'jvm-gc-options'");
+                deployLogger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs' to 'gc-options' in 'jvm' element");
                 cluster.setJvmGCOptions(ContainerCluster.G1GC);
             }
         }
