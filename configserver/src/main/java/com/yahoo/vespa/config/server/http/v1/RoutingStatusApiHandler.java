@@ -112,8 +112,6 @@ public class RoutingStatusApiHandler extends RestApiRequestHandler<RoutingStatus
                                                                      .map(this::deploymentStatus)
                                                                      .collect(Collectors.toList());
         DeploymentRoutingStatus currentStatus = currentStatuses.get(0);
-        // Redeploy application so that a new LbServicesConfig containing the updated status is generated and consumed
-        // by routing layer. This is required to update status of upstreams in application endpoints
         log.log(Level.INFO, "Changing routing status of " + instance + " from " +
                             currentStatus.status() + " to " + wantedStatus.status());
         boolean needsChange = currentStatuses.stream().anyMatch(status -> status.status() != wantedStatus.status());
