@@ -36,7 +36,7 @@ compileJava {
 }
 
 group 'ai.vespa'
-version '1.0.1' // Also update pom.xml version if this is changed
+version '1.0.2' // Also update pom.xml version if this is changed
 
 sourceCompatibility = 11
 
@@ -61,10 +61,10 @@ buildSearchableOptions {
 patchPluginXml {
   version = project.version
   sinceBuild = '203'
-  untilBuild = '212.*'
+  untilBuild = '213.*'
   // in changeNotes you can add a description of the changes in this version (would appear in the plugin page in preferences\plugins)
     changeNotes = """
-      <em></em>"""
+      <em>Support IntelliJ 213</em>"""
 }
 
 test {
