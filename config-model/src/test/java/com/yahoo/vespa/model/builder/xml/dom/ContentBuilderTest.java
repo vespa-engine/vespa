@@ -802,7 +802,7 @@ public class ContentBuilderTest extends DomBuilderTest {
     public void ensureFeedSequencerIsControlledByFlag() {
         verifyFeedSequencer("LATENCY", "LATENCY");
         verifyFeedSequencer("ADAPTIVE", "ADAPTIVE");
-        verifyFeedSequencer("THROUGHPUT", "LATENCY", 0);
+        verifyFeedSequencer("THROUGHPUT", "THROUGHPUT", 0);
         verifyFeedSequencer("THROUGHPUT", "THROUGHPUT", 0.1);
 
         verifyFeedSequencer("THOUGHPUT", "LATENCY");

@@ -435,13 +435,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             redundancy.getConfig(builder);
         }
 
-        if ((feedSequencerType == ProtonConfig.Indexing.Optimize.Enum.THROUGHPUT) && (visibilityDelay == 0.0)) {
-            // THROUGHPUT and zero visibilityDelay is inconsistent and currently a suboptimal combination, defaulting to LATENCY.
-            // TODO: Once we have figured out optimal combination this limitation will be cleaned up.
-            builder.indexing.optimize(ProtonConfig.Indexing.Optimize.Enum.LATENCY);
-        } else {
-            builder.indexing.optimize(feedSequencerType);
-        }
+        builder.indexing.optimize(feedSequencerType);
         builder.indexing.tasklimit(feedTaskLimit);
         builder.feeding.master_task_limit(feedMasterTaskLimit);
         builder.feeding.shared_field_writer_executor(sharedFieldWriterExecutor);
