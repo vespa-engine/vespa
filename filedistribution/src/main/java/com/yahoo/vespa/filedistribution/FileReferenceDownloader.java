@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.ConnectionPool;
 
 import java.io.File;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,6 +54,7 @@ public class FileReferenceDownloader {
     }
 
     private void waitUntilDownloadStarted(FileReferenceDownload fileReferenceDownload) {
+        Instant end = Instant.now().plus(downloadTimeout);
         FileReference fileReference = fileReferenceDownload.fileReference();
         int retryCount = 0;
         Connection connection = connectionPool.getCurrent();
@@ -69,7 +71,7 @@ public class FileReferenceDownloader {
             // exist on just one config server, and which one could be different for each file reference), so we
             // should get a new connection for every retry
             connection = connectionPool.switchConnection(connection);
-        } while (retryCount < 5);
+        } while (retryCount < 5 || Instant.now().isAfter(end));
 
         fileReferenceDownload.future().completeExceptionally(new RuntimeException("Failed getting " + fileReference));
         downloads.remove(fileReference);

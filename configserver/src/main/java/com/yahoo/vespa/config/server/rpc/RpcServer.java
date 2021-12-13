@@ -583,8 +583,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                             .map(FileReference::new)
                             .forEach(fileReference -> downloader.downloadIfNeeded(
                                     new FileReferenceDownload(fileReference,
-                                                              false, /* downloadFromOtherSourceIfNotFound */
-                                                              req.target().toString())));
+                                                              req.target().toString(),
+                                                              false /* downloadFromOtherSourceIfNotFound */)));
                     req.returnValues().add(new Int32Value(0));
                 });
     }

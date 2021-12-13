@@ -18,15 +18,11 @@ public class FileReferenceDownload {
     private final boolean downloadFromOtherSourceIfNotFound;
     private final String client;
 
-    public FileReferenceDownload(FileReference fileReference) {
-        this(fileReference, true, "unknown");
-    }
-
     public FileReferenceDownload(FileReference fileReference,  String client) {
-        this(fileReference, true, client);
+        this(fileReference, client, true);
     }
 
-    public FileReferenceDownload(FileReference fileReference, boolean downloadFromOtherSourceIfNotFound, String client) {
+    public FileReferenceDownload(FileReference fileReference, String client, boolean downloadFromOtherSourceIfNotFound) {
         Objects.requireNonNull(fileReference, "file reference cannot be null");
         this.fileReference = fileReference;
         this.future = new CompletableFuture<>();

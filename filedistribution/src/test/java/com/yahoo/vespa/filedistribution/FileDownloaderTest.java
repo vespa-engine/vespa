@@ -207,7 +207,7 @@ public class FileDownloaderTest {
 
         FileReference fileReference = new FileReference("fileReference123");
         File fileReferenceFullPath = fileReferenceFullPath(downloadDir, fileReference);
-        FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(fileReference);
+        FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(fileReference, "test");
 
         Future<Future<Optional<File>>> future1 = executor.submit(() -> fileDownloader.getFutureFile(fileReferenceDownload));
         do {
@@ -242,13 +242,13 @@ public class FileDownloaderTest {
         FileDownloader fileDownloader = new FileDownloader(connectionPool, supervisor, downloadDir, timeout, sleepBetweenRetries);
         FileReference xyzzy = new FileReference("xyzzy");
         // Should download since we do not have the file on disk
-        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy));
+        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy, "test"));
         assertTrue(fileDownloader.isDownloading(xyzzy));
         assertFalse(getFile(xyzzy).isPresent());
         // Receive files to simulate download
         receiveFile(xyzzy, "xyzzy.jar", FileReferenceData.Type.file, "content");
         // Should not download, since file has already been downloaded
-        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy));
+        fileDownloader.downloadIfNeeded(new FileReferenceDownload(xyzzy, "test"));
         // and file should be available
         assertTrue(getFile(xyzzy).isPresent());
     }
