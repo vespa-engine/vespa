@@ -76,8 +76,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                     log.fine(() -> "Downloading application package for " + applicationId + " (session " + sessionId + ")");
 
                     FileReferenceDownload download = new FileReferenceDownload(appFileReference,
-                                                                               false,
-                                                                               this.getClass().getSimpleName());
+                                                                               this.getClass().getSimpleName(),
+                                                                               false);
                     if (fileDownloader.getFile(download).isEmpty()) {
                         failures++;
                         log.info("Failed downloading application package (" + appFileReference + ")" +

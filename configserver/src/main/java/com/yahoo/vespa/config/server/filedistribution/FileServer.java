@@ -166,8 +166,8 @@ public class FileServer {
         try {
             String client = request.target().toString();
             FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(new FileReference(fileReference),
-                                                                                    downloadFromOtherSourceIfNotFound,
-                                                                                    client);
+                                                                                    client,
+                                                                                    downloadFromOtherSourceIfNotFound);
             fileExists = hasFileDownloadIfNeeded(fileReferenceDownload);
             if (fileExists) startFileServing(fileReference, receiver);
         } catch (IllegalArgumentException e) {
@@ -190,8 +190,11 @@ public class FileServer {
         if (fileReferenceDownload.downloadFromOtherSourceIfNotFound()) {
             log.log(Level.FINE, "File not found, downloading from another source");
             // Create new FileReferenceDownload with downloadFromOtherSourceIfNotFound set to false
-            // to avoid config servers requesting a file reference perpetually, e.g. for a file that does not exist anymore
-            FileReferenceDownload newDownload = new FileReferenceDownload(fileReference, false, fileReferenceDownload.client());
+            // to avoid config servers requesting a file reference perpetually, e.g. for a file that
+            // does not exist anymore
+            FileReferenceDownload newDownload = new FileReferenceDownload(fileReference,
+                                                                          fileReferenceDownload.client(),
+                                                                          false);
             boolean fileExists = downloader.getFile(newDownload).isPresent();
             if ( ! fileExists)
                 log.log(Level.WARNING, "Failed downloading '" + fileReferenceDownload + "'");
