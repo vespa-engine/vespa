@@ -139,6 +139,10 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         if (this.isInNodeRepoAndReserved() && ! other.isInNodeRepoAndReserved()) return -1;
         if (other.isInNodeRepoAndReserved() && ! this.isInNodeRepoAndReserved()) return 1;
 
+        // Choose nodes that are not preferred to retire
+        if (!this.preferToRetire() && other.preferToRetire()) return -1;
+        if (!other.preferToRetire() && this.preferToRetire()) return 1;
+
         // Choose inactive nodes
         if (this.state() == Node.State.inactive && other.state() != Node.State.inactive) return -1;
         if (other.state() == Node.State.inactive && this.state() != Node.State.inactive) return 1;

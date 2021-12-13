@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author mpolden
@@ -92,11 +93,7 @@ public class SwitchRebalancerTest {
             rebalancedClusters.add(cluster);
 
             // Retired node becomes inactive and makes zone stable
-            try (var lock = tester.provisioner().lock(app)) {
-                NestedTransaction removeTransaction = new NestedTransaction();
-                tester.nodeRepository().nodes().deactivate(retired.asList(), new ApplicationTransaction(lock, removeTransaction));
-                removeTransaction.commit();
-            }
+            deactivate(tester, retired);
         }
         assertEquals("Rebalanced all clusters", clusters, rebalancedClusters);
 
@@ -134,21 +131,78 @@ public class SwitchRebalancerTest {
         // Rebalance
         tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
         rebalancer.maintain();
-        NodeList activeNodes = tester.nodeRepository().nodes().list().owner(app).cluster(spec.id()).state(Node.State.active);
+        NodeList activeNodes = nodesIn(spec.id(), tester).state(Node.State.active);
         NodeList retired = activeNodes.retired();
         assertEquals("Node is retired", 1, retired.size());
         assertFalse("Retired node was not on exclusive switch", nodesOnExclusiveSwitch.contains(retired.first().get()));
         tester.assertSwitches(Set.of(switch0, switch1, switch2), app, spec.id());
         // Retired node becomes inactive and makes zone stable
+        deactivate(tester, retired);
+
+        // Next iteration does nothing
+        tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
+        assertNoMoves(rebalancer, tester);
+    }
+
+    @Test
+    public void rebalancing_does_not_reuse_inactive_nodes() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        ClusterSpec spec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("c1")).vespaVersion("1").build();
+        Capacity capacity = Capacity.from(new ClusterResources(4, 1, new NodeResources(4, 8, 50, 1)));
+        MockDeployer deployer = deployer(tester, capacity, spec);
+        SwitchRebalancer rebalancer = new SwitchRebalancer(tester.nodeRepository(), Duration.ofDays(1), new TestMetric(), deployer);
+
+        // Provision initial hosts on two switches
+        NodeResources hostResources = new NodeResources(8, 16, 500, 10);
+        String switch0 = "switch0";
+        String switch1 = "switch1";
+        provisionHosts(2, switch0, hostResources, tester);
+        provisionHosts(2, switch1, hostResources, tester);
+
+        // Deploy application
+        deployer.deployFromLocalActive(app).get().activate();
+        assertEquals("Nodes on " + switch0, 2, tester.activeNodesOn(switch0, app, spec.id()).size());
+        assertEquals("Nodes on " + switch1, 2, tester.activeNodesOn(switch1, app, spec.id()).size());
+
+        // Two new hosts becomes available on a new switches
+        String switch2 = "switch2";
+        String switch3 = "switch3";
+        provisionHost(switch2, hostResources, tester);
+        provisionHost(switch3, hostResources, tester);
+
+        // Rebalance retires one node and allocates another
+        tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
+        rebalancer.maintain();
+        tester.assertSwitches(Set.of(switch0, switch1, switch2), app, spec.id());
+        NodeList retired = nodesIn(spec.id(), tester).state(Node.State.active).retired();
+        assertEquals("Node is retired", 1, retired.size());
+        deactivate(tester, retired);
+
+        // Next rebalance does not reuse inactive node
+        tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
+        rebalancer.maintain();
+        assertSame("Inactive node is not re-activated",
+                   Node.State.inactive,
+                   nodesIn(spec.id(), tester).node(retired.first().get().hostname()).get().state());
+        tester.assertSwitches(Set.of(switch0, switch1, switch2, switch3), app, spec.id());
+        retired = nodesIn(spec.id(), tester).state(Node.State.active).retired();
+        deactivate(tester, retired);
+
+        // Next iteration does nothing
+        tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
+        assertNoMoves(rebalancer, tester);
+    }
+
+    private NodeList nodesIn(ClusterSpec.Id cluster, ProvisioningTester tester) {
+        return tester.nodeRepository().nodes().list().owner(app).cluster(cluster);
+    }
+
+    private void deactivate(ProvisioningTester tester, NodeList retired) {
         try (var lock = tester.provisioner().lock(app)) {
             NestedTransaction removeTransaction = new NestedTransaction();
             tester.nodeRepository().nodes().deactivate(retired.asList(), new ApplicationTransaction(lock, removeTransaction));
             removeTransaction.commit();
         }
-
-        // Next iteration does nothing
-        tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
-        assertNoMoves(rebalancer, tester);
     }
 
     private void provisionHost(String switchHostname, NodeResources hostResources, ProvisioningTester tester) {

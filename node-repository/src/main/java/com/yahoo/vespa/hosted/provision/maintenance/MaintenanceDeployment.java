@@ -206,6 +206,9 @@ class MaintenanceDeployment implements Closeable {
 
                 if (nodeLock.node().status().preferToRetire() == preferToRetire) return false;
 
+                // Node is retiring, keep preferToRetire
+                if (nodeLock.node().allocation().get().membership().retired() && !preferToRetire) return false;
+
                 nodeRepository.nodes().write(nodeLock.node().withPreferToRetire(preferToRetire, agent, nodeRepository.clock().instant()), nodeLock);
                 return true;
             }
