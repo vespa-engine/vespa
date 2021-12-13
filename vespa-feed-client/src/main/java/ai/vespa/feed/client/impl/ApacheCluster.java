@@ -23,6 +23,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -40,8 +44,10 @@ class ApacheCluster implements Cluster {
     private final RequestConfig defaultConfig = RequestConfig.custom()
                                                              .setConnectTimeout(Timeout.ofSeconds(10))
                                                              .setConnectionRequestTimeout(Timeout.DISABLED)
-                                                             .setResponseTimeout(Timeout.ofMinutes(5))
+                                                             .setResponseTimeout(Timeout.ofSeconds(190))
                                                              .build();
+
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(t -> new Thread(t, "request-timeout-thread"));
 
     ApacheCluster(FeedClientBuilderImpl builder) throws IOException {
         for (URI endpoint : builder.endpoints)
@@ -59,6 +65,7 @@ class ApacheCluster implements Cluster {
                 min = endpoints.get(i).inflight.get();
             }
         Endpoint endpoint = endpoints.get(index);
+        endpoint.inflight.incrementAndGet();
 
         try {
             SimpleHttpRequest request = new SimpleHttpRequest(wrapped.method(), wrapped.path());
@@ -70,13 +77,14 @@ class ApacheCluster implements Cluster {
             if (wrapped.body() != null)
                 request.setBody(wrapped.body(), ContentType.APPLICATION_JSON);
 
-            endpoint.inflight.incrementAndGet();
-            endpoint.client.execute(request,
-                                    new FutureCallback<SimpleHttpResponse>() {
-                                        @Override public void completed(SimpleHttpResponse response) { vessel.complete(new ApacheHttpResponse(response)); }
-                                        @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
-                                        @Override public void cancelled() { vessel.cancel(false); }
-                                    });
+            Future<?> future = endpoint.client.execute(request,
+                                                       new FutureCallback<SimpleHttpResponse>() {
+                                                           @Override public void completed(SimpleHttpResponse response) { vessel.complete(new ApacheHttpResponse(response)); }
+                                                           @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
+                                                           @Override public void cancelled() { vessel.cancel(false); }
+                                                       });
+            Future<?> cancellation = executor.schedule(() -> { future.cancel(true); vessel.cancel(true); }, 200, TimeUnit.SECONDS);
+            vessel.whenComplete((__, ___) -> cancellation.cancel(true));
         }
         catch (Throwable thrown) {
             vessel.completeExceptionally(thrown);
@@ -87,7 +95,7 @@ class ApacheCluster implements Cluster {
     @Override
     public void close() {
         Throwable thrown = null;
-        for (Endpoint endpoint : endpoints)
+        for (Endpoint endpoint : endpoints) {
             try {
                 endpoint.client.close();
             }
@@ -95,6 +103,8 @@ class ApacheCluster implements Cluster {
                 if (thrown == null) thrown = t;
                 else thrown.addSuppressed(t);
             }
+        }
+        executor.shutdownNow().forEach(Runnable::run);
         if (thrown != null) throw new RuntimeException(thrown);
     }
 
@@ -167,6 +177,24 @@ class ApacheCluster implements Cluster {
         public String toString() {
             return "HTTP response with code " + code() +
                    (body() != null ? " and body '" + new String(body(), UTF_8) + "'" : "");
+        }
+
+    }
+
+    static class TimeoutTask implements Runnable {
+
+        private final Future<?> request;
+        private final CompletableFuture<HttpResponse> vessel;
+
+        TimeoutTask(Future<?> request, CompletableFuture<HttpResponse> vessel) {
+            this.request = request;
+            this.vessel = vessel;
+        }
+
+        @Override
+        public void run() {
+            request.cancel(true);
+            vessel.cancel(true);
         }
 
     }
