@@ -105,8 +105,11 @@
       "public"
     ],
     "methods": [
+      "public void <init>(ai.vespa.cloud.ApplicationId, ai.vespa.cloud.Zone)",
       "public void <init>(ai.vespa.cloud.Zone)",
-      "public ai.vespa.cloud.Zone zone()"
+      "public ai.vespa.cloud.ApplicationId application()",
+      "public ai.vespa.cloud.Zone zone()",
+      "public static ai.vespa.cloud.ZoneInfo defaultInfo()"
     ],
     "fields": []
   }

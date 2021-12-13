@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
+import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.Zone;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
@@ -53,6 +55,7 @@ import com.yahoo.statistics.Statistics;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
+import ai.vespa.cloud.ZoneInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -70,6 +73,7 @@ import java.util.logging.Logger;
  * Handles search request.
  *
  * @author Steinar Knutsen
+ * @author bratseth
  */
 public class SearchHandler extends LoggingRequestHandler {
 
@@ -103,8 +107,11 @@ public class SearchHandler extends LoggingRequestHandler {
     private final ExecutionFactory executionFactory;
     private final AtomicLong numRequestsLeftToTrace;
 
+    private final ZoneInfo zoneInfo;
+
     private final static RequestHandlerSpec REQUEST_HANDLER_SPEC = RequestHandlerSpec.builder()
             .withAclMapping(SearchHandler.aclRequestMapper()).build();
+
 
     @Inject
     public SearchHandler(Metric metric,
@@ -112,13 +119,34 @@ public class SearchHandler extends LoggingRequestHandler {
                          CompiledQueryProfileRegistry queryProfileRegistry,
                          ContainerHttpConfig config,
                          Embedder embedder,
-                         ExecutionFactory executionFactory) {
+                         ExecutionFactory executionFactory,
+                         ZoneInfo zoneInfo) {
         this(metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
-                config.numQueriesToTraceOnDebugAfterConstruction(),
-                config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()));
+             config.numQueriesToTraceOnDebugAfterConstruction(),
+             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
+             zoneInfo);
     }
 
-    @Deprecated
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
+    public SearchHandler(Metric metric,
+                         ContainerThreadPool threadpool,
+                         CompiledQueryProfileRegistry queryProfileRegistry,
+                         ContainerHttpConfig config,
+                         Embedder embedder,
+                         ExecutionFactory executionFactory) {
+        this(metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
+             config.numQueriesToTraceOnDebugAfterConstruction(),
+             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
+             ZoneInfo.defaultInfo());
+    }
+
+    /**
+     * @deprecated Use the @Inject annotated constructor instead.
+     */
+    @Deprecated // Vespa 8
     public SearchHandler(Statistics statistics,
                          Metric metric,
                          ContainerThreadPool threadpool,
@@ -128,7 +156,8 @@ public class SearchHandler extends LoggingRequestHandler {
                          ExecutionFactory executionFactory) {
         this(metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
              config.numQueriesToTraceOnDebugAfterConstruction(),
-             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()));
+             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
+             ZoneInfo.defaultInfo());
     }
 
     /**
@@ -158,8 +187,9 @@ public class SearchHandler extends LoggingRequestHandler {
                          ExecutionFactory executionFactory) {
         this(metric, executor, queryProfileRegistry, Embedder.throwsOnUse, executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
-             containerHttpConfig.hostResponseHeaderKey().equals("") ?
-                     Optional.empty() : Optional.of(containerHttpConfig.hostResponseHeaderKey()));
+             containerHttpConfig.hostResponseHeaderKey().equals("") ? Optional.empty()
+                                                                    : Optional.of(containerHttpConfig.hostResponseHeaderKey()),
+             ZoneInfo.defaultInfo());
     }
 
     /**
@@ -176,8 +206,9 @@ public class SearchHandler extends LoggingRequestHandler {
         this(metric, executor, QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
              Embedder.throwsOnUse, executionFactory,
              containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
-             containerHttpConfig.hostResponseHeaderKey().equals("") ?
-                     Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey()));
+             containerHttpConfig.hostResponseHeaderKey().equals("") ? Optional.empty()
+                                                                    : Optional.of( containerHttpConfig.hostResponseHeaderKey()),
+             ZoneInfo.defaultInfo());
     }
 
     /**
@@ -192,7 +223,8 @@ public class SearchHandler extends LoggingRequestHandler {
                          ExecutionFactory executionFactory,
                          Optional<String> hostResponseHeaderKey) {
         this(metric, executor, queryProfileRegistry, Embedder.throwsOnUse,
-             executionFactory, 0, hostResponseHeaderKey);
+             executionFactory, 0, hostResponseHeaderKey,
+             ZoneInfo.defaultInfo());
     }
 
     private SearchHandler(Metric metric,
@@ -201,7 +233,8 @@ public class SearchHandler extends LoggingRequestHandler {
                           Embedder embedder,
                           ExecutionFactory executionFactory,
                           long numQueriesToTraceOnDebugAfterStartup,
-                          Optional<String> hostResponseHeaderKey) {
+                          Optional<String> hostResponseHeaderKey,
+                          ZoneInfo zoneInfo) {
         super(executor, metric, true);
         log.log(Level.FINE, () -> "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
@@ -213,6 +246,7 @@ public class SearchHandler extends LoggingRequestHandler {
         this.hostResponseHeaderKey = hostResponseHeaderKey;
         this.numRequestsLeftToTrace = new AtomicLong(numQueriesToTraceOnDebugAfterStartup);
         metric.set(SEARCH_CONNECTIONS, 0.0d, null);
+        this.zoneInfo = zoneInfo;
     }
 
     /** @deprecated use the other constructor */
@@ -308,6 +342,7 @@ public class SearchHandler extends LoggingRequestHandler {
                                          .setRequestMap(requestMap)
                                          .setQueryProfile(queryProfile)
                                          .setEmbedder(embedder)
+                                         .setZoneInfo(zoneInfo)
                                          .build();
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);

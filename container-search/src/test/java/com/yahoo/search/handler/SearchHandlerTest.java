@@ -186,7 +186,7 @@ public class SearchHandlerTest {
             RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(
                     "http://localhost/search/?yql=select%20*%20from%20foo%20where%20bar%20%3E%201453501295%27%3B");
             responseHandler.readAll();
-            assertThat(responseHandler.getStatus(), is(400));
+            assertEquals(400, responseHandler.getStatus());
             assertEquals(Request.RequestType.READ, responseHandler.getResponse().getRequestType());
         }
     }
