@@ -145,6 +145,7 @@ public class MetricsParser {
         }
 
         JsonNode aggregates = metric.get("values");
+        String prefix = name + ".";
         for (Iterator<?> it = aggregates.fieldNames(); it.hasNext(); ) {
             String aggregator = (String) it.next();
             JsonNode aggregatorValue = aggregates.get(aggregator);
@@ -155,7 +156,7 @@ public class MetricsParser {
             if (value == null) {
                 throw new IllegalArgumentException("Value for aggregator '" + aggregator + "' is not a number");
             }
-            String metricName = new StringBuilder().append(name).append(".").append(aggregator).toString();
+            String metricName = prefix + aggregator;
             consumer.consume(new Metric(MetricId.toMetricId(metricName), value, timestamp, dim, description));
         }
     }
