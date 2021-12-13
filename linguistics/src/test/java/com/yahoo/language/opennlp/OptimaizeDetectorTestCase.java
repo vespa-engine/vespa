@@ -3,7 +3,6 @@ package com.yahoo.language.opennlp;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detector;
-import com.yahoo.language.simple.SimpleDetector;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
