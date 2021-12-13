@@ -56,8 +56,12 @@ public class DocumentSelectorTestCase {
 
     @Before
     public void setUp() {
+        DocumentType parent = new DocumentType("parent");
+        parent.addField("parentField", DataType.STRING);
+
         var importedFields = new HashSet<>(List.of("my_imported_field"));
         DocumentType type = new DocumentType("test", importedFields);
+        type.inherit(parent);
         type.addField("hint", DataType.INT);
         type.addField("hfloat", DataType.FLOAT);
         type.addField("hstring", DataType.STRING);
@@ -79,6 +83,7 @@ public class DocumentSelectorTestCase {
         ArrayDataType intarray = new ArrayDataType(DataType.INT);
         type.addField("intarray", intarray);
 
+        manager.registerDocumentType(parent);
         manager.registerDocumentType(type);
 
         // Create strange doctypes using identifiers within them, which we
@@ -740,6 +745,12 @@ public class DocumentSelectorTestCase {
     }
 
     @Test
+    public void testInheritance() throws ParseException {
+        List<DocumentPut> documents = createDocs();
+        assertEquals(Result.TRUE, evaluate("test.parentField = \"parentValue\"", documents.get(0)));
+    }
+
+    @Test
     public void using_non_commutative_comparison_operator_with_field_value_is_well_defined() throws ParseException {
         var documents = createDocs();
         // Doc 0 contains 24 in `hint` field.
@@ -871,6 +882,7 @@ public class DocumentSelectorTestCase {
         if (hString != null)
             doc.setFieldValue("hstring", new StringFieldValue(hString));
         doc.setFieldValue("content", new StringFieldValue(content));
+        doc.setFieldValue("parentField", new StringFieldValue("parentValue"));
         return new DocumentPut(doc);
     }
 
