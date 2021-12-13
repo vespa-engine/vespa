@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.dimensions.PublicDimensions.INTERNAL_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
@@ -69,15 +68,13 @@ public class VespaMetrics {
     public List<MetricsPacket.Builder> getMetrics(List<VespaService> services) {
         List<MetricsPacket.Builder> metricsPackets = new ArrayList<>();
 
-        Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric();
-
         for (VespaService service : services) {
             // One metrics packet for system metrics
             Optional<MetricsPacket.Builder> systemCheck = getSystemMetrics(service);
             systemCheck.ifPresent(metricsPackets::add);
 
             MetricAggregator aggregator = new MetricAggregator(service.getDimensions());
-            GetServiceMetricsConsumer metricsConsumer = new GetServiceMetricsConsumer(consumersByMetric, aggregator);
+            GetServiceMetricsConsumer metricsConsumer = new GetServiceMetricsConsumer(metricsConsumers, aggregator);
             service.consumeMetrics(metricsConsumer);
 
             if (! aggregator.getAggregated().isEmpty()) {
@@ -118,58 +115,50 @@ public class VespaMetrics {
      * In order to include a metric, it must exist in the given map of metric to consumers.
      * Each returned metric will contain a collection of consumers that it should be routed to.
      */
-    private class GetServiceMetricsConsumer implements MetricsParser.Consumer {
+    private static class GetServiceMetricsConsumer implements MetricsParser.Consumer {
         private final MetricAggregator aggregator;
-        private final Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric;
-        GetServiceMetricsConsumer(Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric, MetricAggregator aggregator) {
-            this.consumersByMetric = consumersByMetric;
+        private final MetricsConsumers metricsConsumers;
+        GetServiceMetricsConsumer(MetricsConsumers metricsConsumers, MetricAggregator aggregator) {
+            this.metricsConsumers = metricsConsumers;
             this.aggregator = aggregator;
         }
 
         @Override
         public void consume(Metric candidate) {
-            getConfiguredMetrics(candidate.getName(), consumersByMetric.keySet()).forEach(
-                    configuredMetric -> aggregator.aggregate(
-                            metricWithConfigProperties(candidate, configuredMetric, consumersByMetric)));
+            Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric(candidate.getName());
+            if (consumersByMetric != null) {
+                consumersByMetric.keySet().forEach(
+                        configuredMetric -> aggregator.aggregate(
+                                metricWithConfigProperties(candidate, configuredMetric, consumersByMetric.get(configuredMetric))));
+            }
         }
-    }
+        private static Metric metricWithConfigProperties(Metric candidate,
+                                                         ConfiguredMetric configuredMetric,
+                                                         Set<ConsumerId> consumers) {
+            Metric metric = candidate.clone();
+            metric.setDimensions(extractDimensions(candidate.getDimensions(), configuredMetric.dimension()));
+            metric.setConsumers(extractConsumers(consumers));
 
-    private Map<DimensionId, String> extractDimensions(Map<DimensionId, String> dimensions, List<Dimension> configuredDimensions) {
-        if ( ! configuredDimensions.isEmpty()) {
-            Map<DimensionId, String> dims = new HashMap<>(dimensions);
-            configuredDimensions.forEach(d -> dims.put(d.key(), d.value()));
-            dimensions = Collections.unmodifiableMap(dims);
+            if (configuredMetric.outputname() != null && !configuredMetric.outputname().id.isEmpty())
+                metric.setName(configuredMetric.outputname());
+            return metric;
         }
-        return dimensions;
-    }
-
-    private Set<ConsumerId> extractConsumers(Set<ConsumerId> configuredConsumers) {
-        Set<ConsumerId> consumers = Collections.emptySet();
-        if (configuredConsumers != null) {
-            consumers = configuredConsumers;
+        private static Map<DimensionId, String> extractDimensions(Map<DimensionId, String> dimensions, List<Dimension> configuredDimensions) {
+            if ( ! configuredDimensions.isEmpty()) {
+                Map<DimensionId, String> dims = new HashMap<>(dimensions);
+                configuredDimensions.forEach(d -> dims.put(d.key(), d.value()));
+                dimensions = Collections.unmodifiableMap(dims);
+            }
+            return dimensions;
         }
-        return consumers;
-    }
 
-    private Metric metricWithConfigProperties(Metric candidate,
-                                              ConfiguredMetric configuredMetric,
-                                              Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric) {
-        Metric metric = candidate.clone();
-        metric.setDimensions(extractDimensions(candidate.getDimensions(), configuredMetric.dimension()));
-        metric.setConsumers(extractConsumers(consumersByMetric.get(configuredMetric)));
-
-        if (configuredMetric.outputname() != null && !configuredMetric.outputname().id.isEmpty())
-            metric.setName(configuredMetric.outputname());
-        return metric;
-    }
-
-    /**
-     * Returns all configured metrics (for any consumer) that have the given id as 'name'.
-     */
-    private static Set<ConfiguredMetric> getConfiguredMetrics(MetricId id, Set<ConfiguredMetric> configuredMetrics) {
-        return configuredMetrics.stream()
-                .filter(m -> m.id().equals(id))
-                .collect(Collectors.toSet());
+        private static Set<ConsumerId> extractConsumers(Set<ConsumerId> configuredConsumers) {
+            Set<ConsumerId> consumers = Collections.emptySet();
+            if (configuredConsumers != null) {
+                consumers = configuredConsumers;
+            }
+            return consumers;
+        }
     }
 
     private Optional<MetricsPacket.Builder> getSystemMetrics(VespaService service) {
