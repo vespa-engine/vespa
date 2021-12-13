@@ -28,21 +28,21 @@ import java.util.Set;
 public class DocumentManager {
 
     private boolean useV8GeoPositions = false;
-    private boolean generateDocTypeConfig = false;
+    private boolean useV8DocManagerCfg = false;
 
     public DocumentManager useV8GeoPositions(boolean value) {
         this.useV8GeoPositions = value;
         return this;
     }
-    public DocumentManager generateDocTypeConfig(boolean value) {
-        this.generateDocTypeConfig = value;
+    public DocumentManager useV8DocManagerCfg(boolean value) {
+        this.useV8DocManagerCfg = value;
         return this;
     }
 
     public DocumentmanagerConfig.Builder produce(DocumentModel model,
                                                  DocumentmanagerConfig.Builder documentConfigBuilder)
     {
-        if (generateDocTypeConfig) {
+        if (useV8DocManagerCfg) {
             return produceDocTypes(model, documentConfigBuilder);
         } else {
             return produceDataTypes(model, documentConfigBuilder);
