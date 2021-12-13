@@ -11,6 +11,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.HashSet;
@@ -33,11 +34,21 @@ public class ValidateStructTypeInheritance extends Processor {
 
     void fail(Field field, String message) {
         throw newProcessException(schema, field, message);
-    }    
+    }
 
     void verifyNoRedeclarations(SDDocumentType docType) {
         for (SDDocumentType type : docType.allTypes().values()) {
             if (type.isStruct()) {
+                var inheritedTypes = new ArrayList<SDDocumentType>(type.getInheritedTypes());
+                for (int i = 0; i < inheritedTypes.size(); i++) {
+                    SDDocumentType inherit = inheritedTypes.get(i);
+                    for (var extra : inherit.getInheritedTypes()) {
+                        if (! inheritedTypes.contains(extra)) {
+                            inheritedTypes.add(extra);
+                        }
+                    }
+                }
+                if (inheritedTypes.isEmpty()) continue;
                 var seenFieldNames = new HashSet<>();
                 for (var field : type.getDocumentType().contentStruct().getFieldsThisTypeOnly()) {
                     if (seenFieldNames.contains(field.getName())) {
@@ -46,14 +57,13 @@ public class ValidateStructTypeInheritance extends Processor {
                     }
                     seenFieldNames.add(field.getName());
                 }
-                for (SDDocumentType inherit : type.getInheritedTypes()) {
+                for (SDDocumentType inherit : inheritedTypes) {
                     if (inherit.isStruct()) {
                         for (var field : inherit.getDocumentType().contentStruct().getFieldsThisTypeOnly()) {
                             if (seenFieldNames.contains(field.getName())) {
                                 fail(field, "struct "+type.getName()+" cannot inherit from "+inherit.getName()+" and redeclare field "+field.getName());
                             }
                             seenFieldNames.add(field.getName());
-
                         }
                     } else {
                         fail(new Field("no field"), "struct cannot inherit from non-struct "+inherit.getName()+" class "+inherit.getClass());

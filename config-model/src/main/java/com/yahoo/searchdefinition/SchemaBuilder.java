@@ -218,6 +218,8 @@ public class SchemaBuilder {
     public void build(boolean validate) {
         if (isBuilt) throw new IllegalStateException("Application already built");
 
+        new TemporarySDTypeResolver(application.schemas().values(), deployLogger).process();
+
         if (validate)
             application.validate(deployLogger);
 

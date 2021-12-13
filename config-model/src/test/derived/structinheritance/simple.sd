@@ -8,6 +8,10 @@ search simple {
     struct child inherits base {
       field age type int {}
     }
-    field f type child {}
+    struct grandchild inherits child {
+      field toy type string {}
+    }
+    field f1 type child {}
+    field f2 type grandchild {}
   }
 }

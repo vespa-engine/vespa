@@ -1,9 +1,22 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 search child {
     document child inherits parent {
+      struct other_struct inherits my_struct {
+        field my_int type int {}
+      }
+      struct wrapper {
+        field wrapped type my_struct {}
+      }
+
       field child_struct_field type my_struct {
         indexing: summary | index
         match: prefix
+      }
+      field other_field type other_struct {
+        indexing: summary
+      }
+      field wrapped_field type wrapper {
+        indexing: summary
       }
     }
 }

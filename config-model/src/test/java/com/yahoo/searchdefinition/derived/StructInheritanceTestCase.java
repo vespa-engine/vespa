@@ -51,7 +51,7 @@ public class StructInheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void requireThatRedeclareIsNotAllowed() throws IOException, ParseException {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("foo cannot inherit");
+        exceptionRule.expectMessage("cannot inherit from base and redeclare field name");
         String dir = "src/test/derived/structinheritance/";
         SchemaBuilder builder = new SchemaBuilder();
         builder.importFile(dir + "bad.sd");
