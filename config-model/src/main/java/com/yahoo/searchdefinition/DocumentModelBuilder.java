@@ -195,6 +195,11 @@ public class DocumentModelBuilder {
         }
     }
     
+    private static String descT(DataType type) {
+        if (type == null) { return "<null>"; }
+        return "'" + type.getName() + "' [" + type.getId() + "] {"+type.getClass() + "}";
+    }
+
     private void addDocumentTypes(List<SDDocumentType> docList) {
         LinkedList<NewDocumentType> lst = new LinkedList<>();
         for (SDDocumentType doc : docList) {
@@ -235,13 +240,11 @@ public class DocumentModelBuilder {
             if (other == null || other == type) {
                 other = getDocumentType(docs, type.getId());
             }
-            // maybe warning if null here?
             if (other != null) {
                 type = other;
             }
         } else if (type instanceof DocumentType || type instanceof NewDocumentType) {
             DataType other = getDocumentType(docs, type.getId());
-            // maybe warning if null here?
             if (other != null) {
                 type = other;
             }
