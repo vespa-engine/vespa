@@ -11,6 +11,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
+import java.net.SocketException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -169,7 +170,7 @@ class SslHandshakeMetricsTest {
             fail("SSLHandshakeException expected");
         } catch (SSLHandshakeException e) {
             assertThat(e.getMessage()).contains(expectedExceptionSubstring);
-        } catch (SSLException e) {
+        } catch (SocketException | SSLException e) {
             // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
             log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
             // Only ignore a subset of exceptions
