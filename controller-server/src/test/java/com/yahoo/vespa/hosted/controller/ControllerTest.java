@@ -334,12 +334,11 @@ public class ControllerTest {
             assertEquals("Rotation names are passed to config server in " + deployment.zone(),
                     Set.of("rotation-id-01",
                             "app1--tenant1.global.vespa.oath.cloud",
-                            "app1.tenant1.global.vespa.yahooapis.com",
                             "app1--tenant1.global.vespa.yahooapis.com"),
                     tester.configServer().containerEndpointNames(context.deploymentIdIn(deployment.zone())));
         }
         context.flushDnsUpdates();
-        assertEquals(3, tester.controllerTester().nameService().records().size());
+        assertEquals(2, tester.controllerTester().nameService().records().size());
 
         Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
         assertTrue(record.isPresent());
@@ -351,16 +350,10 @@ public class ControllerTest {
         assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
 
-        record = tester.controllerTester().findCname("app1.tenant1.global.vespa.yahooapis.com");
-        assertTrue(record.isPresent());
-        assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
-        assertEquals("rotation-fqdn-01.", record.get().data().asString());
-
         List<String> globalDnsNames = tester.controller().routing().readDeclaredEndpointsOf(context.instanceId())
                                             .scope(Endpoint.Scope.global)
                                             .mapToList(Endpoint::dnsName);
         assertEquals(List.of("app1--tenant1.global.vespa.oath.cloud",
-                             "app1.tenant1.global.vespa.yahooapis.com",
                              "app1--tenant1.global.vespa.yahooapis.com"),
                      globalDnsNames);
     }
@@ -1028,7 +1021,6 @@ public class ControllerTest {
                                           .scope(Endpoint.Scope.zone)
                                           .mapToList(Endpoint::dnsName);
         assertEquals(List.of("application--tenant.us-west-1.vespa.oath.cloud",
-                             "application.tenant.us-west-1.prod.vespa.yahooapis.com",
                              "application--tenant.us-west-1.prod.vespa.yahooapis.com",
                              "application.tenant.us-west-1.vespa.oath.cloud"),
                      zoneDnsNames);

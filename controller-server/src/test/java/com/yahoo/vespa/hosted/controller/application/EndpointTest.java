@@ -33,10 +33,6 @@ public class EndpointTest {
         EndpointId endpointId = EndpointId.defaultId();
 
         Map<String, Endpoint> tests = Map.of(
-                // Legacy endpoint
-                "http://a1.t1.global.vespa.yahooapis.com:4080/",
-                Endpoint.of(instance1).target(endpointId, cluster, List.of(deployment1)).on(Port.plain(4080)).legacy().in(SystemName.main),
-
                 // Legacy endpoint with TLS
                 "https://a1--t1.global.vespa.yahooapis.com:4443/",
                 Endpoint.of(instance1).target(endpointId, cluster, List.of(deployment1)).on(Port.tls(4443)).legacy().in(SystemName.main),
@@ -99,10 +95,6 @@ public class EndpointTest {
         EndpointId endpointId = EndpointId.defaultId();
 
         Map<String, Endpoint> tests = Map.of(
-                // Legacy endpoint
-                "http://a1.t1.global.vespa.yahooapis.com:4080/",
-                Endpoint.of(instance1).target(endpointId, cluster, List.of(deployment1)).on(Port.plain(4080)).legacy().in(SystemName.main),
-
                 // Legacy endpoint with TLS
                 "https://a1--t1.global.vespa.yahooapis.com:4443/",
                 Endpoint.of(instance1).target(endpointId, cluster, List.of(deployment1)).on(Port.tls(4443)).legacy().in(SystemName.main),
@@ -161,10 +153,6 @@ public class EndpointTest {
         var testZone = new DeploymentId(instance1, ZoneId.from("test", "us-north-2"));
 
         Map<String, Endpoint> tests = Map.of(
-                // Legacy endpoint (always contains environment)
-                "http://a1.t1.us-north-1.prod.vespa.yahooapis.com:4080/",
-                Endpoint.of(instance1).target(cluster, prodZone).on(Port.plain(4080)).legacy().in(SystemName.main),
-
                 // Secure legacy endpoint
                 "https://a1--t1.us-north-1.prod.vespa.yahooapis.com:4443/",
                 Endpoint.of(instance1).target(cluster, prodZone).on(Port.tls(4443)).legacy().in(SystemName.main),
