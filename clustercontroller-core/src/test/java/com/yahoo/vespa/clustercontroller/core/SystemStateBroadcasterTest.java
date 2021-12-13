@@ -26,7 +26,8 @@ public class SystemStateBroadcasterTest {
     private static class Fixture {
         FakeTimer timer = new FakeTimer();
         final Object monitor = new Object();
-        SystemStateBroadcaster broadcaster = new SystemStateBroadcaster(timer, monitor);
+        FleetControllerContext context = mock(FleetControllerContext.class);
+        SystemStateBroadcaster broadcaster = new SystemStateBroadcaster(context, timer, monitor);
         Communicator mockCommunicator = mock(Communicator.class);
         DatabaseHandler mockDatabaseHandler = mock(DatabaseHandler.class);
         FleetController mockFleetController = mock(FleetController.class);

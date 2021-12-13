@@ -174,18 +174,18 @@ public abstract class FleetControllerTest implements Waiter {
                 options.nodeStateRequestTimeoutEarliestPercentage,
                 options.nodeStateRequestTimeoutLatestPercentage,
                 options.nodeStateRequestRoundTripTimeMaxSeconds);
-        var lookUp = new SlobrokClient(timer);
+        var lookUp = new SlobrokClient(context, timer);
         lookUp.setSlobrokConnectionSpecs(new String[0]);
         var rpcServer = new RpcServer(timer, timer, options.clusterName, options.fleetControllerIndex, options.slobrokBackOffPolicy);
-        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, timer);
+        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress, timer);
 
         // Setting this <1000 ms causes ECONNREFUSED on socket trying to connect to ZK server, in ZooKeeper,
         // after creating a new ZooKeeper (session).  This causes ~10s extra time to connect after connection loss.
         // Reasons unknown.  Larger values like the default 10_000 causes that much additional running time for some tests.
         database.setMinimumWaitBetweenFailedConnectionAttempts(2_000);
 
-        var stateGenerator = new StateChangeHandler(timer, log);
-        var stateBroadcaster = new SystemStateBroadcaster(timer, timer);
+        var stateGenerator = new StateChangeHandler(context, timer, log);
+        var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
         var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator, status, rpcServer, lookUp, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
         if (startThread) {

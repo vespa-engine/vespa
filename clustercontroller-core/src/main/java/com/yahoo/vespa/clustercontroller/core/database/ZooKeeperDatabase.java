@@ -7,6 +7,7 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
+import com.yahoo.vespa.clustercontroller.core.FleetControllerContext;
 import com.yahoo.vespa.clustercontroller.core.rpc.EnvelopedClusterStateBundleCodec;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlimeClusterStateBundleCodec;
 import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
@@ -42,17 +43,13 @@ public class ZooKeeperDatabase extends Database {
     private final ZooKeeperWatcher watcher = new ZooKeeperWatcher();
     private final ZooKeeper session;
     private boolean sessionOpen = true;
+    private final FleetControllerContext context;
     private final int nodeIndex;
     private final MasterDataGatherer masterDataGatherer;
-    private boolean reportErrors = true;
     // Expected ZK znode versions. Note: these are _not_ -1 as that would match anything.
     // We expect the caller to invoke the load methods prior to calling any store methods.
     private int lastKnownStateBundleZNodeVersion = -2;
     private int lastKnownStateVersionZNodeVersion = -2;
-
-    public void stopErrorReporting() {
-        reportErrors = false;
-    }
 
     private class ZooKeeperWatcher implements Watcher {
         private Event.KeeperState state = null;
@@ -62,50 +59,51 @@ public class ZooKeeperDatabase extends Database {
         public void process(WatchedEvent watchedEvent) {
             // Shouldn't get events after we expire, but just be sure we stop them here.
             if (state != null && state.equals(Event.KeeperState.Expired)) {
-                log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got event from ZooKeeper session after it expired");
+                context.log(log, Level.WARNING, "Got event from ZooKeeper session after it expired");
                 return;
             }
             Event.KeeperState newState = watchedEvent.getState();
             if (state == null || !state.equals(newState)) switch (newState) {
                 case Expired:
-                    log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Zookeeper session expired");
+                    context.log(log, Level.INFO, "Zookeeper session expired");
                     sessionOpen = false;
                     listener.handleZooKeeperSessionDown();
                     break;
                 case Disconnected:
-                    log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Lost connection to zookeeper server");
+                    context.log(log, Level.INFO, "Lost connection to zookeeper server");
                     sessionOpen = false;
                     listener.handleZooKeeperSessionDown();
                     break;
                 case SyncConnected:
-                    log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Connection to zookeeper server established. Refetching master data");
+                    context.log(log, Level.INFO, "Connection to zookeeper server established. Refetching master data");
                     if (masterDataGatherer != null) {
                         masterDataGatherer.restart();
                     }
             }
             switch (watchedEvent.getType()) {
                 case NodeChildrenChanged: // Fleetcontrollers have either connected or disconnected to ZooKeeper
-                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeChildrenChanged");
+                    context.log(log, Level.WARNING, "Got unexpected ZooKeeper event NodeChildrenChanged");
                     break;
                 case NodeDataChanged: // A fleetcontroller have changed what node it is voting for
-                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeDataChanged");
+                    context.log(log, Level.WARNING, "Got unexpected ZooKeeper event NodeDataChanged");
                     break;
                 case NodeCreated: // How can this happen? Can one leave watches on non-existing nodes?
-                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeCreated");
+                    context.log(log, Level.WARNING, "Got unexpected ZooKeeper event NodeCreated");
                     break;
                 case NodeDeleted: // We're not watching any nodes for whether they are deleted or not.
-                    log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeDeleted");
+                    context.log(log, Level.WARNING, "Got unexpected ZooKeeper event NodeDeleted");
                     break;
                 case None:
                     if (state != null && state.equals(watchedEvent.getState())) {
-                        log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got None type event that didn't even alter session state. What does that indicate?");
+                        context.log(log, Level.WARNING, "Got None type event that didn't even alter session state. What does that indicate?");
                     }
             }
             state = watchedEvent.getState();
         }
     }
 
-    public ZooKeeperDatabase(ContentCluster cluster, int nodeIndex, String address, int timeout, Database.DatabaseListener zksl) throws IOException, KeeperException, InterruptedException {
+    public ZooKeeperDatabase(FleetControllerContext context, ContentCluster cluster, int nodeIndex, String address, int timeout, DatabaseListener zksl) throws IOException, KeeperException, InterruptedException {
+        this.context = context;
         this.nodeIndex = nodeIndex;
         zooKeeperRoot = "/vespa/fleetcontroller/" + cluster.getName() + "/";
         session = new ZooKeeper(address, timeout, watcher, new ZkClientConfigBuilder().toConfig());
@@ -113,7 +111,7 @@ public class ZooKeeperDatabase extends Database {
         try{
             this.listener = zksl;
             setupRoot();
-            log.log(Level.FINEST, () -> "Fleetcontroller " + nodeIndex + ": Asking for initial data on master election");
+            context.log(log, Level.FINEST, "Asking for initial data on master election");
             masterDataGatherer = new MasterDataGatherer(session, zooKeeperRoot, listener, nodeIndex);
             completedOk = true;
         } finally {
@@ -124,14 +122,14 @@ public class ZooKeeperDatabase extends Database {
     private void createNode(String prefix, String nodename, byte[] value) throws KeeperException, InterruptedException {
         try{
             if (session.exists(prefix + nodename, false) != null) {
-                log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Zookeeper node '" + prefix + nodename + "' already exists. Not creating it");
+                context.log(log, Level.FINE, () -> "Zookeeper node '" + prefix + nodename + "' already exists. Not creating it");
                 return;
             }
             session.create(prefix + nodename, value, acl, CreateMode.PERSISTENT);
-            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Created zookeeper node '" + prefix + nodename + "'");
+            context.log(log, Level.FINE, () -> "Created zookeeper node '" + prefix + nodename + "'");
         } catch (KeeperException.NodeExistsException e) {
-            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Node to create existed, "
-                                  + "but this is normal as other nodes may create them at the same time.");
+            context.log(log, Level.FINE, "Node to create existed, but this is normal as other nodes " +
+                                         "may create them at the same time.");
         }
     }
 
@@ -149,14 +147,13 @@ public class ZooKeeperDatabase extends Database {
         createNode(zooKeeperRoot, "published_state_bundle", new byte[0]); // TODO dedupe string constants
         byte[] val = String.valueOf(nodeIndex).getBytes(utf8);
         deleteNodeIfExists(getMyIndexPath());
-        log.log(Level.INFO, "Fleetcontroller " + nodeIndex +
-                ": Creating ephemeral master vote node with vote to self.");
+        context.log(log, Level.INFO, "Creating ephemeral master vote node with vote to self.");
         session.create(getMyIndexPath(), val, acl, CreateMode.EPHEMERAL);
     }
 
     private void deleteNodeIfExists(String path) throws KeeperException, InterruptedException {
         if (session.exists(path, false) != null) {
-            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Removing master vote node.");
+            context.log(log, Level.INFO, "Removing master vote node at " + path);
             session.delete(path, -1);
         }
     }
@@ -172,11 +169,11 @@ public class ZooKeeperDatabase extends Database {
     public void close() {
         sessionOpen = false;
         try{
-            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Trying to close ZooKeeper session 0x"
+            context.log(log, Level.FINE, () -> "Trying to close ZooKeeper session 0x"
                     + Long.toHexString(session.getSessionId()));
             session.close();
         } catch (InterruptedException e) {
-            log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got interrupt exception while closing session: " + e);
+            context.log(log, Level.WARNING, "Got interrupt exception while closing session: " + e);
         }
     }
 
@@ -185,11 +182,10 @@ public class ZooKeeperDatabase extends Database {
     }
 
     private void maybeLogExceptionWarning(Exception e, String message) {
-        if (sessionOpen && reportErrors) {
+        if (sessionOpen) {
             StringWriter sw = new StringWriter();
             e.printStackTrace(new PrintWriter(sw));
-            log.log(Level.WARNING, String.format("Fleetcontroller %s: %s. Exception: %s\n%s",
-                    nodeIndex, message, e.getMessage(), sw.toString()));
+            context.log(log, Level.WARNING, message + ". Exception: " + e.getMessage() + "\n" + sw);
         }
     }
 
@@ -197,7 +193,7 @@ public class ZooKeeperDatabase extends Database {
         byte[] val = String.valueOf(wantedMasterIndex).getBytes(utf8);
         try{
             session.setData(getMyIndexPath(), val, -1);
-            log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Stored new vote in ephemeral node. " + nodeIndex + " -> " + wantedMasterIndex);
+            context.log(log, Level.INFO, "Stored new vote in ephemeral node. " + nodeIndex + " -> " + wantedMasterIndex);
             return true;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -209,7 +205,7 @@ public class ZooKeeperDatabase extends Database {
     public boolean storeLatestSystemStateVersion(int version) {
         byte[] data = Integer.toString(version).getBytes(utf8);
         try{
-            log.log(Level.INFO, String.format("Fleetcontroller %d: Storing new cluster state version in ZooKeeper: %d", nodeIndex, version));
+            context.log(log, Level.INFO, "Storing new cluster state version in ZooKeeper: " + version);
             var stat = session.setData(zooKeeperRoot + "latestversion", data, lastKnownStateVersionZNodeVersion);
             lastKnownStateVersionZNodeVersion = stat.getVersion();
             return true;
@@ -227,13 +223,11 @@ public class ZooKeeperDatabase extends Database {
     public Integer retrieveLatestSystemStateVersion() {
         Stat stat = new Stat();
         try{
-            log.log(Level.FINE, () -> String.format("Fleetcontroller %d: Fetching latest cluster state at '%slatestversion'",
-                    nodeIndex, zooKeeperRoot));
+            context.log(log, Level.FINE, "Fetching latest cluster state at '%slatestversion'", zooKeeperRoot);
             byte[] data = session.getData(zooKeeperRoot + "latestversion", false, stat);
             lastKnownStateVersionZNodeVersion = stat.getVersion();
             final Integer versionNumber = Integer.valueOf(new String(data, utf8));
-            log.log(Level.INFO, String.format("Fleetcontroller %d: Read cluster state version %d from ZooKeeper " +
-                    "(znode version %d)", nodeIndex, versionNumber, stat.getVersion()));
+            context.log(log, Level.INFO, "Read cluster state version %d from ZooKeeper (znode version %d)", versionNumber, stat.getVersion());
             return versionNumber;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -262,7 +256,7 @@ public class ZooKeeperDatabase extends Database {
         }
         byte[] val = sb.toString().getBytes(utf8);
         try{
-            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Storing wanted states at '" + zooKeeperRoot + "wantedstates'");
+            context.log(log, Level.FINE, () -> "Storing wanted states at '" + zooKeeperRoot + "wantedstates'");
             session.setData(zooKeeperRoot + "wantedstates", val, -1);
             return true;
         } catch (InterruptedException e) {
@@ -275,7 +269,7 @@ public class ZooKeeperDatabase extends Database {
 
     public Map<Node, NodeState> retrieveWantedStates() {
         try{
-            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Fetching wanted states at '" + zooKeeperRoot + "wantedstates'");
+            context.log(log, Level.FINE, () -> "Fetching wanted states at '" + zooKeeperRoot + "wantedstates'");
             Stat stat = new Stat();
             byte[] data = session.getData(zooKeeperRoot + "wantedstates", false, stat);
             Map<Node, NodeState> wanted = new TreeMap<>();
@@ -290,7 +284,7 @@ public class ZooKeeperDatabase extends Database {
                         NodeState nodeState = NodeState.deserialize(node.getType(), token.substring(colon + 1));
                         wanted.put(node, nodeState);
                     } catch (Exception e) {
-                        log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Ignoring invalid wantedstate line in zookeeper '" + token + "'.");
+                        context.log(log, Level.WARNING, "Ignoring invalid wantedstate line in zookeeper '" + token + "'.");
                     }
                 }
             }
@@ -313,7 +307,7 @@ public class ZooKeeperDatabase extends Database {
         }
         byte val[] = sb.toString().getBytes(utf8);
         try{
-            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Storing start timestamps at '" + zooKeeperRoot + "starttimestamps");
+            context.log(log, Level.FINE, () -> "Storing start timestamps at '" + zooKeeperRoot + "starttimestamps");
             session.setData(zooKeeperRoot + "starttimestamps", val, -1);
             return true;
         } catch (InterruptedException e) {
@@ -327,7 +321,7 @@ public class ZooKeeperDatabase extends Database {
     @Override
     public Map<Node, Long> retrieveStartTimestamps() {
         try{
-            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Fetching start timestamps at '" + zooKeeperRoot + "starttimestamps'");
+            context.log(log, Level.FINE, () -> "Fetching start timestamps at '" + zooKeeperRoot + "starttimestamps'");
             Stat stat = new Stat();
             byte[] data = session.getData(zooKeeperRoot + "starttimestamps", false, stat);
             Map<Node, Long> wanted = new TreeMap<Node, Long>();
@@ -342,7 +336,7 @@ public class ZooKeeperDatabase extends Database {
                         Long timestamp =  Long.valueOf(token.substring(colon + 1));
                         wanted.put(n, timestamp);
                     } catch (Exception e) {
-                        log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Ignoring invalid starttimestamp line in zookeeper '" + token + "'.");
+                        context.log(log, Level.WARNING, "Ignoring invalid starttimestamp line in zookeeper '" + token + "'.");
                     }
                 }
             }
@@ -360,9 +354,11 @@ public class ZooKeeperDatabase extends Database {
         EnvelopedClusterStateBundleCodec envelopedBundleCodec = new SlimeClusterStateBundleCodec();
         byte[] encodedBundle = envelopedBundleCodec.encodeWithEnvelope(stateBundle);
         try{
-            log.log(Level.FINE, () -> String.format("Fleetcontroller %d: Storing published state bundle %s at " +
-                            "'%spublished_state_bundle' with expected znode version %d",
-                    nodeIndex, stateBundle, zooKeeperRoot, lastKnownStateBundleZNodeVersion));
+            context.log(log,
+                        Level.FINE,
+                        () -> String.format("Storing published state bundle %s at " +
+                                            "'%spublished_state_bundle' with expected znode version %d",
+                                            stateBundle, zooKeeperRoot, lastKnownStateBundleZNodeVersion));
             var stat = session.setData(zooKeeperRoot + "published_state_bundle", encodedBundle, lastKnownStateBundleZNodeVersion);
             lastKnownStateBundleZNodeVersion = stat.getVersion();
         } catch (InterruptedException e) {

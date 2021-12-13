@@ -35,8 +35,10 @@ public class ZooKeeperDatabaseTest {
 
         void createDatabase() throws Exception {
             closeDatabaseIfOpen();
-            zkDatabase = new ZooKeeperDatabase(clusterFixture.cluster(), nodeIndex, zkServer.getAddress(),
-                    (int)sessionTimeout.toMillis(), mockListener);
+            var id = new FleetControllerId(clusterFixture.cluster.getName(), nodeIndex);
+            var context = new TestFleetControllerContext(id);
+            zkDatabase = new ZooKeeperDatabase(context, clusterFixture.cluster(), nodeIndex, zkServer.getAddress(),
+                                               (int)sessionTimeout.toMillis(), mockListener);
         }
 
         ZooKeeperDatabase db() { return zkDatabase; }
