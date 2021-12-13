@@ -18,12 +18,15 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.hosted.provision.maintenance.SwitchRebalancer;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NodeSerializer;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.model.builder.xml.dom.DomConfigPayloadBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,8 +38,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -97,6 +103,16 @@ public class RealDataScenarioTest {
 
         deploy(tester, app, specs, capacities);
         tester.nodeRepository().nodes().list().owner(app).cluster(specs[1].id()).forEach(System.out::println);
+
+        // Perform a node move
+        tester.clock().advance(Duration.ofHours(1)); // Enough time for deployment to not be considered deployed recently
+        List<MockDeployer.ClusterContext> contexts = new ArrayList<>();
+        for (int i = 0; i < specs.length; i++) {
+            contexts.add(new MockDeployer.ClusterContext(app, specs[i], capacities[i]));
+        }
+        MockDeployer deployer = new MockDeployer(tester.provisioner(), tester.clock(), Map.of(app, new MockDeployer.ApplicationContext(app, contexts)));
+        SwitchRebalancer rebalancer = new SwitchRebalancer(tester.nodeRepository(), Duration.ofDays(1), new MockMetric(), deployer);
+        rebalancer.run();
     }
 
     private void deploy(ProvisioningTester tester, ApplicationId app, ClusterSpec[] specs, Capacity[] capacities) {

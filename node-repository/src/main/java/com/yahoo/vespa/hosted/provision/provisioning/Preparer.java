@@ -96,7 +96,7 @@ class Preparer {
      * in groups with index number above or equal the group count
      */
     private List<Node> findNodesInRemovableGroups(NodeList appNodes, ClusterSpec requestedCluster, int wantedGroups) {
-        List<Node> surplusNodes = new ArrayList<>(0);
+        List<Node> surplusNodes = new ArrayList<>();
         for (Node node : appNodes.state(Node.State.active)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(requestedCluster.id())) continue;
