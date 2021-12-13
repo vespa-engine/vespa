@@ -28,6 +28,8 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
     private static final String tempDir = "temp/";
     private static final String searchDefRoot = "src/test/derived/";
 
+    boolean useV8DocManagerCfg() { return false; }
+
     private DerivedConfiguration derive(String dirName,
                                         String searchDefinitionName,
                                         TestProperties properties,
@@ -64,7 +66,8 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
 
     private DerivedConfiguration export(String name, SchemaBuilder builder, DerivedConfiguration config) throws IOException {
         String path = exportConfig(name, config);
-        DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), new DocumentmanagerConfig.Builder()), path);
+        DerivedConfiguration.exportDocuments(new DocumentManager().useV8DocManagerCfg(useV8DocManagerCfg())
+                                             .produce(builder.getModel(), new DocumentmanagerConfig.Builder()), path);
         DerivedConfiguration.exportDocuments(new DocumentTypes().produce(builder.getModel(), new DocumenttypesConfig.Builder()), path);
         DerivedConfiguration.exportQueryProfiles(builder.getQueryProfileRegistry(), path);
         return config;

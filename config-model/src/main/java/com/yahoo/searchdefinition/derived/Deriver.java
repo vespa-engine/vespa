@@ -38,6 +38,12 @@ public class Deriver {
         return new DocumentManager().produce(getSearchBuilder(sds).getModel(), new DocumentmanagerConfig.Builder());
     }
 
+    public static DocumentmanagerConfig.Builder getDocumentManagerConfig(List<String> sds, boolean useV8DocManagerCfg) {
+        return new DocumentManager()
+            .useV8DocManagerCfg(useV8DocManagerCfg)
+            .produce(getSearchBuilder(sds).getModel(), new DocumentmanagerConfig.Builder());
+    }
+
     public static DocumenttypesConfig.Builder getDocumentTypesConfig(String sd) {
         return getDocumentTypesConfig(Collections.singletonList(sd));
     }

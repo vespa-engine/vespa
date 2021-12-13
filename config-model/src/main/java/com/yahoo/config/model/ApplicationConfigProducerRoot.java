@@ -78,9 +78,11 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     }
 
     private boolean useV8GeoPositions = false;
+    private boolean useV8DocManagerCfg = false;
 
     public void useFeatureFlags(ModelContext.FeatureFlags featureFlags) {
         this.useV8GeoPositions = featureFlags.useV8GeoPositions();
+        this.useV8DocManagerCfg = featureFlags.useV8DocManagerCfg();
     }
 
     /**
@@ -160,6 +162,7 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     public void getConfig(DocumentmanagerConfig.Builder builder) {
         new DocumentManager()
             .useV8GeoPositions(this.useV8GeoPositions)
+            .useV8DocManagerCfg(this.useV8DocManagerCfg)
             .produce(documentModel, builder);
     }
 
