@@ -4,7 +4,6 @@
   "state": "provisioned",
   "type": "host",
   "hostname": "parent2.yahoo.com",
-  "openStackId": "parent2.yahoo.com",
   "flavor": "large-variant",
   "reservedTo": "myTenant",
   "exclusiveTo": "tenant1:app1:instance1",

@@ -128,7 +128,6 @@ class NodesResponse extends SlimeJsonResponse {
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }
-        object.setString("openStackId", node.id()); // TODO(mpolden): Remove this when all clients use "id"
         object.setString("flavor", node.flavor().name());
         node.reservedTo().ifPresent(reservedTo -> object.setString("reservedTo", reservedTo.value()));
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString("exclusiveTo", applicationId.serializedForm()));
