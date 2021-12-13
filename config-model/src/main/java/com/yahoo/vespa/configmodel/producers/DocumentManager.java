@@ -235,6 +235,12 @@ public class DocumentManager {
             map.computeIfAbsent(someType, k -> nextIdx);
         }
         int idxOf(Object someType) {
+            if (someType instanceof DocumentType) {
+                var dt = (DocumentType) someType;
+                if (dt.getId() == 8) {
+                    return idxOf(VespaDocumentType.INSTANCE);
+                }
+            }
             add(someType);
             return map.get(someType);
         }
@@ -324,6 +330,10 @@ public class DocumentManager {
             // should be in the top-level list and handled there
             return;
         }
+        if ((type instanceof DocumentType) && (type.getId() == 8)) {
+            // special handling
+            return;
+        }
         indexMap.setDone(type);
         if (type instanceof TemporaryStructuredDataType) {
             throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
@@ -344,7 +354,7 @@ public class DocumentManager {
         } else if (type instanceof PrimitiveDataType) {
             docTypeBuildOneType((PrimitiveDataType) type, documentBuilder, indexMap);
         } else if (type instanceof DocumentType) {
-            throw new IllegalArgumentException("Can not create config for unadorned document type: " + type.getName());
+            throw new IllegalArgumentException("Can not create config for unadorned document type: " + type.getName() + " id "+type.getId());
         } else {
             throw new IllegalArgumentException("Can not create config for data type " + type + " of class " + type.getClass());
         }
