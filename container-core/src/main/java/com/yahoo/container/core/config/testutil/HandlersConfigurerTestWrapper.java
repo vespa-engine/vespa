@@ -142,6 +142,7 @@ public class HandlersConfigurerTestWrapper {
                 // Needed by e.g. SearchHandler
                 bind(Linguistics.class).to(SimpleLinguistics.class).in(Scopes.SINGLETON);
                 bind(Embedder.class).to(Embedder.FailingEmbedder.class).in(Scopes.SINGLETON);
+                bind(ai.vespa.cloud.ZoneInfo.class).to(MockZoneInfo.class);
                 bind(ContainerThreadPool.class).to(SimpleContainerThreadpool.class);
                 bind(Metric.class).to(MockMetric.class);
             }

@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search;
 
+import ai.vespa.cloud.Environment;
+import ai.vespa.cloud.Zone;
+import ai.vespa.cloud.ZoneInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Tuple2;
@@ -334,22 +337,30 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
-        init(requestMap, queryProfile, Embedder.throwsOnUse);
+        init(requestMap, queryProfile, Embedder.throwsOnUse, ZoneInfo.defaultInfo());
     }
 
     // TODO: Deprecate most constructors above here
 
     private Query(Builder builder) {
-        this(builder.getRequest(), builder.getRequestMap(), builder.getQueryProfile(), builder.getEmbedder());
+        this(builder.getRequest(),
+             builder.getRequestMap(),
+             builder.getQueryProfile(),
+             builder.getEmbedder(),
+             builder.getZoneInfo());
     }
 
-    private Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile, Embedder embedder) {
+    private Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile, Embedder embedder,
+                  ZoneInfo zoneInfo) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
-        init(requestMap, queryProfile, embedder);
+        init(requestMap, queryProfile, embedder, zoneInfo);
     }
 
-    private void init(Map<String, String> requestMap, CompiledQueryProfile queryProfile, Embedder embedder) {
+    private void init(Map<String, String> requestMap,
+                      CompiledQueryProfile queryProfile,
+                      Embedder embedder,
+                      ZoneInfo zoneInfo) {
         startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile just to validate that the parameter settings are legal
@@ -361,7 +372,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             // Create the full chain
             properties().chain(new QueryProperties(this, queryProfile.getRegistry(), embedder)).
                          chain(new ModelObjectMap()).
-                         chain(new RequestContextProperties(requestMap)).
+                         chain(new RequestContextProperties(requestMap, zoneInfo)).
                          chain(queryProfileProperties).
                          chain(new DefaultProperties());
 
@@ -1131,6 +1142,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         private Map<String, String> requestMap = null;
         private CompiledQueryProfile queryProfile = null;
         private Embedder embedder = Embedder.throwsOnUse;
+        private ZoneInfo zoneInfo = ZoneInfo.defaultInfo();
 
         public Builder setRequest(String query) {
             request = HttpRequest.createTestRequest(query, com.yahoo.jdisc.http.HttpRequest.Method.GET);
@@ -1174,6 +1186,13 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
 
         public Embedder getEmbedder() { return embedder; }
+
+        public Builder setZoneInfo(ZoneInfo zoneInfo) {
+            this.zoneInfo = zoneInfo;
+            return this;
+        }
+
+        public ZoneInfo getZoneInfo() { return zoneInfo; }
 
         /** Creates a new query from this builder. No properties are required to before calling this. */
         public Query build() { return new Query(this); }

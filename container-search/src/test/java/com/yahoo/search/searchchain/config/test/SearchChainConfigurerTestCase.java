@@ -5,6 +5,7 @@ import com.yahoo.config.search.IntConfig;
 import com.yahoo.config.search.StringConfig;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.core.config.testutil.HandlersConfigurerTestWrapper;
+import com.yahoo.lang.MutableInteger;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -38,6 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThat;
@@ -129,7 +131,7 @@ public class SearchChainConfigurerTestCase {
 
     @Test
     public  void testConfigurableSearcher() {
-        HandlersConfigurerTestWrapper configurer=new HandlersConfigurerTestWrapper("dir:" + testDir);
+        HandlersConfigurerTestWrapper configurer = new HandlersConfigurerTestWrapper("dir:" + testDir);
 
         SearchChain configurable = getSearchChainRegistryFrom(configurer).getComponent("configurable");
         assertNotNull(configurable);
@@ -137,9 +139,8 @@ public class SearchChainConfigurerTestCase {
         Searcher s = configurable.searchers().get(0);
         assertThat(s, instanceOf(ConfigurableSearcher.class));
         ConfigurableSearcher searcher = (ConfigurableSearcher)s;
-        assertThat("Value from int.cfg file", searcher.intConfig.intVal(), is(7));
-        assertThat("Value from string.cfg file", searcher.stringConfig.stringVal(),
-                is("com.yahoo.search.searchchain.config.test"));
+        assertEquals("Value from int.cfg file", 7, searcher.intConfig.intVal());
+        assertEquals("Value from string.cfg file", "com.yahoo.search.searchchain.config.test", searcher.stringConfig.stringVal());
         configurer.shutdown();
     }
 
@@ -342,7 +343,7 @@ public class SearchChainConfigurerTestCase {
         if (append) {
             Pattern p = Pattern.compile("^[a-z]+" + "\\[\\d+\\]\\.id (.+)");
             BufferedReader reader = new BufferedReader(new InputStreamReader(
-                                                       new FileInputStream(new File(componentsFile)), StandardCharsets.UTF_8));
+                                                       new FileInputStream(componentsFile), StandardCharsets.UTF_8));
             while ((line = reader.readLine()) != null) {
                 Matcher m = p.matcher(line);
                 if (m.matches() && !m.group(1).equals(HandlersConfigurerDi.RegistriesHack.class.getName())) {
@@ -353,7 +354,7 @@ public class SearchChainConfigurerTestCase {
             reader.close();
         }
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                new FileInputStream(new File(configFile)), StandardCharsets.UTF_8));
+                new FileInputStream(configFile), StandardCharsets.UTF_8));
         Pattern component = Pattern.compile("^" + componentType + "\\[\\d+\\]\\.id (.+)");
         while ((line = reader.readLine()) != null) {
             Matcher m = component.matcher(line);
@@ -366,13 +367,22 @@ public class SearchChainConfigurerTestCase {
 
         buf.append("components[").append(i++).append("].id ").append(HandlersConfigurerDi.RegistriesHack.class.getName()).append("\n");
         if (componentType.equals("components"))
-            buf.append("components[").append(i++).append("].id ").append(ExecutionFactory.class.getName()).append("\n");
+            i = addStandardComponents(i, buf);
         buf.insert(0, "components["+i+"]\n");
 
-        Writer writer = new OutputStreamWriter(new FileOutputStream(new File(componentsFile)), StandardCharsets.UTF_8);
+        Writer writer = new OutputStreamWriter(new FileOutputStream(componentsFile), StandardCharsets.UTF_8);
         writer.write(buf.toString());
         writer.flush();
         writer.close();
+    }
+
+    private static int addStandardComponents(int i, StringBuilder builder) {
+        addComponent(ExecutionFactory.class.getName(), i++, builder);
+        return i;
+    }
+
+    private static void addComponent(String component, int i, StringBuilder builder) {
+        builder.append("components[").append(i).append("].id ").append(component).append("\n");
     }
 
 }
