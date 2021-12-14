@@ -10,6 +10,7 @@ import ai.vespa.hosted.api.TestConfig;
 import ai.vespa.hosted.cd.Deployment;
 import ai.vespa.hosted.cd.TestRuntime;
 import ai.vespa.hosted.cd.commons.HttpDeployment;
+import ai.vespa.hosted.cd.commons.FeedClientBuilder;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -39,7 +40,10 @@ public class VespaTestRuntime implements TestRuntime {
     }
     private VespaTestRuntime(TestConfig config) {
         this.config = config;
-        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), new DefaultEndpointAuthenticator(config.system()));
+        DefaultEndpointAuthenticator authenticator = new DefaultEndpointAuthenticator(config.system());
+        this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), authenticator);
+        FeedClientBuilder.setEndpointAuthenticator(authenticator);
+        System.setProperty(ai.vespa.feed.client.FeedClientBuilder.PREFERRED_IMPLEMENTATION_PROPERTY, FeedClientBuilder.class.getName());
     }
 
     @Override

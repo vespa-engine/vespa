@@ -4,6 +4,7 @@ package ai.vespa.hosted.cd.commons;
 import javax.net.ssl.SSLContext;
 import java.net.http.HttpRequest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 
 /**
  * Adds environment dependent authentication to HTTP request against Vespa deployments.
@@ -20,8 +21,7 @@ public interface EndpointAuthenticator {
     default SSLContext sslContext() {
         try {
             return SSLContext.getDefault();
-        }
-        catch (NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     }
@@ -31,4 +31,7 @@ public interface EndpointAuthenticator {
         return request;
     }
 
+    default Map<String, String> authorizationHeaders() {
+        return Map.of();
+    }
 }
