@@ -181,22 +181,4 @@ class ApacheCluster implements Cluster {
 
     }
 
-    static class TimeoutTask implements Runnable {
-
-        private final Future<?> request;
-        private final CompletableFuture<HttpResponse> vessel;
-
-        TimeoutTask(Future<?> request, CompletableFuture<HttpResponse> vessel) {
-            this.request = request;
-            this.vessel = vessel;
-        }
-
-        @Override
-        public void run() {
-            request.cancel(true);
-            vessel.cancel(true);
-        }
-
-    }
-
 }
