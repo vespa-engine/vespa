@@ -9,19 +9,15 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.yahoo.search.yql.yqlplusParser.AnnotationContext;
 import com.yahoo.search.yql.yqlplusParser.AnnotateExpressionContext;
+import com.yahoo.search.yql.yqlplusParser.AnnotationContext;
 import com.yahoo.search.yql.yqlplusParser.ArgumentContext;
 import com.yahoo.search.yql.yqlplusParser.ArgumentsContext;
 import com.yahoo.search.yql.yqlplusParser.ArrayLiteralContext;
 import com.yahoo.search.yql.yqlplusParser.Call_sourceContext;
-import com.yahoo.search.yql.yqlplusParser.ConstantArrayContext;
 import com.yahoo.search.yql.yqlplusParser.ConstantExpressionContext;
-import com.yahoo.search.yql.yqlplusParser.ConstantMapExpressionContext;
-import com.yahoo.search.yql.yqlplusParser.ConstantPropertyNameAndValueContext;
 import com.yahoo.search.yql.yqlplusParser.DereferencedExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.EqualityExpressionContext;
-import com.yahoo.search.yql.yqlplusParser.ExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.Field_defContext;
 import com.yahoo.search.yql.yqlplusParser.IdentContext;
 import com.yahoo.search.yql.yqlplusParser.InNotInTargetContext;
@@ -38,8 +34,8 @@ import com.yahoo.search.yql.yqlplusParser.OrderbyContext;
 import com.yahoo.search.yql.yqlplusParser.Orderby_fieldContext;
 import com.yahoo.search.yql.yqlplusParser.Output_specContext;
 import com.yahoo.search.yql.yqlplusParser.Pipeline_stepContext;
-import com.yahoo.search.yql.yqlplusParser.Project_specContext;
 import com.yahoo.search.yql.yqlplusParser.ProgramContext;
+import com.yahoo.search.yql.yqlplusParser.Project_specContext;
 import com.yahoo.search.yql.yqlplusParser.PropertyNameAndValueContext;
 import com.yahoo.search.yql.yqlplusParser.Query_statementContext;
 import com.yahoo.search.yql.yqlplusParser.RelationalExpressionContext;
@@ -55,7 +51,6 @@ import com.yahoo.search.yql.yqlplusParser.StatementContext;
 import com.yahoo.search.yql.yqlplusParser.TimeoutContext;
 import com.yahoo.search.yql.yqlplusParser.UnaryExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.WhereContext;
-
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
@@ -612,8 +607,7 @@ final class ProgramParser {
                 ParseTree firstChild = parseTree.getChild(0);
                 if (getParseTreeIndex(firstChild) == yqlplusParser.RULE_annotation) {
                     ParseTree secondChild = parseTree.getChild(1);
-                    OperatorNode<ExpressionOperator> annotation = convertExpr(((AnnotationContext) firstChild)
-                                                                                      .constantMapExpression(), scope);
+                    OperatorNode<ExpressionOperator> annotation = convertExpr(((AnnotationContext) firstChild).mapExpression(), scope);
                     OperatorNode<ExpressionOperator> expr = OperatorNode.create(toLocation(scope, secondChild),
                                                                                 ExpressionOperator.VESPA_GROUPING, secondChild.getText());
                     List<String> names = annotation.getArgument(0);
@@ -639,18 +633,6 @@ final class ProgramParser {
                     return convertExpr(firstChild, scope);
                 }
             }
-            case yqlplusParser.RULE_constantMapExpression: {
-                List<ConstantPropertyNameAndValueContext> propertyList = ((ConstantMapExpressionContext) parseTree).constantPropertyNameAndValue();
-                List<String> names = Lists.newArrayListWithExpectedSize(propertyList.size());
-                List<OperatorNode<ExpressionOperator>> exprs = Lists.newArrayListWithExpectedSize(propertyList.size());
-                for (ConstantPropertyNameAndValueContext child : propertyList) {
-                    // : propertyName ':' expression[$expression::namespace] ->
-                    // ^(PROPERTY propertyName expression)
-                    names.add(StringUnescaper.unquote(child.getChild(0).getText()));
-                    exprs.add(convertExpr(child.getChild(2), scope));
-                }
-                return OperatorNode.create(toLocation(scope, parseTree),ExpressionOperator.MAP, names, exprs);
-            }
             case yqlplusParser.RULE_mapExpression: {
                 List<PropertyNameAndValueContext> propertyList = ((MapExpressionContext)parseTree).propertyNameAndValue();
                 List<String> names = Lists.newArrayListWithExpectedSize(propertyList.size());
@@ -663,18 +645,10 @@ final class ProgramParser {
                 }
                 return OperatorNode.create(toLocation(scope, parseTree),ExpressionOperator.MAP, names, exprs);
             }
-            case yqlplusParser.RULE_constantArray: {
-                List<ConstantExpressionContext> expressionList = ((ConstantArrayContext)parseTree).constantExpression();
+            case yqlplusParser.RULE_arrayLiteral: {
+                List<ConstantExpressionContext> expressionList = ((ArrayLiteralContext) parseTree).constantExpression();
                 List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(expressionList.size());
                 for (ConstantExpressionContext expr : expressionList) {
-                    values.add(convertExpr(expr, scope));
-                }
-                return OperatorNode.create(toLocation(scope, expressionList.isEmpty()? parseTree:expressionList.get(0)), ExpressionOperator.ARRAY, values);
-            }
-            case yqlplusParser.RULE_arrayLiteral: {
-                List<ExpressionContext> expressionList = ((ArrayLiteralContext) parseTree).expression();
-                List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(expressionList.size());
-                for (ExpressionContext expr : expressionList) {
                     values.add(convertExpr(expr, scope));
                 }
                 return OperatorNode.create(toLocation(scope, expressionList.isEmpty()? parseTree:expressionList.get(0)), ExpressionOperator.ARRAY, values);
@@ -703,7 +677,7 @@ final class ProgramParser {
                     case yqlplusParser.RULE_fieldref: {
                         return convertExpr(firstChild, scope);
                     }
-                    case yqlplusParser.RULE_callExpresion: {
+                    case yqlplusParser.RULE_callExpression: {
                         List<ArgumentContext> args = ((ArgumentsContext) firstChild.getChild(1)).argument();
                         List<OperatorNode<ExpressionOperator>> arguments = Lists.newArrayListWithExpectedSize(args.size());
                         for (ArgumentContext argContext : args) {
@@ -711,13 +685,9 @@ final class ProgramParser {
                         }
                         return OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.CALL, scope.resolvePath(readName((Namespaced_nameContext) firstChild.getChild(0))), arguments);
                     }
-                    case yqlplusParser.RULE_parameter:
-                        // external variable reference
-                        return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.VARREF, firstChild.getChild(1).getText());
-                    case yqlplusParser.RULE_scalar_literal:
-                    case yqlplusParser.RULE_arrayLiteral:
-                    case yqlplusParser.RULE_mapExpression:
+                    case yqlplusParser.RULE_constantExpression:
                         return convertExpr(firstChild, scope);
+
                     case yqlplusParser.LPAREN:
                         return convertExpr(parseTree.getChild(1), scope);
                 }
@@ -732,7 +702,7 @@ final class ProgramParser {
             case yqlplusParser.RULE_annotateExpression: {
                 //annotation logicalORExpression
                 AnnotationContext annotateExpressionContext = ((AnnotateExpressionContext)parseTree).annotation();
-                OperatorNode<ExpressionOperator> annotation = convertExpr(annotateExpressionContext.constantMapExpression(), scope);
+                OperatorNode<ExpressionOperator> annotation = convertExpr(annotateExpressionContext.mapExpression(), scope);
                 OperatorNode<ExpressionOperator> expr = convertExpr(parseTree.getChild(1), scope);
                 List<String> names = annotation.getArgument(0);
                 List<OperatorNode<ExpressionOperator>> annotates = annotation.getArgument(1);
