@@ -27,7 +27,6 @@ options {
   WHERE : 'where';
   ORDERBY : 'order by';
   DESC : 'desc';
-  ASC :;
   FROM : 'from';
   SOURCES : 'sources';
   AS : 'as';
@@ -55,7 +54,6 @@ options {
   OR : 'or';
   NOT_IN : 'not in';
   IN : 'in';
-  QUERY_ARRAY :;
 
   LT : '<';
   GT : '>';
