@@ -15,12 +15,15 @@ class CompactBufferCandidates {
     size_t                            _used;
     size_t                            _dead;
     uint32_t                          _max_buffers;
+    double                            _max_buffers_ratio;
     double                            _ratio;
     size_t                            _slack;
+    uint32_t                          _free_buffers;
 public:
-    CompactBufferCandidates(uint32_t num_buffers, uint32_t max_buffers, double ratio, size_t slack);
+    CompactBufferCandidates(uint32_t num_buffers, uint32_t max_buffers, double max_buffers_ratio, double ratio, size_t slack);
     ~CompactBufferCandidates();
     void add(uint32_t buffer_id, size_t used, size_t dead);
+    void set_free_buffers(uint32_t free_buffers);
     void select(std::vector<uint32_t>& buffers);
 };
 
