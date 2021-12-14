@@ -83,7 +83,8 @@ class ApacheCluster implements Cluster {
                                                            @Override public void failed(Exception ex) { vessel.completeExceptionally(ex); }
                                                            @Override public void cancelled() { vessel.cancel(false); }
                                                        });
-            Future<?> cancellation = executor.schedule(() -> { future.cancel(true); vessel.cancel(true); }, 200, TimeUnit.SECONDS);
+            long timeoutMillis = wrapped.timeout() == null ? 200_000 : wrapped.timeout().toMillis() * 11 / 10 + 1_000;
+            Future<?> cancellation = executor.schedule(() -> { future.cancel(true); vessel.cancel(true); }, timeoutMillis, TimeUnit.MILLISECONDS);
             vessel.whenComplete((__, ___) -> cancellation.cancel(true));
         }
         catch (Throwable thrown) {
