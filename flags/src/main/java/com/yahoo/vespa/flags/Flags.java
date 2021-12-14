@@ -287,6 +287,13 @@ public class Flags {
             "Takes effect on next run of EndpointCertificateMaintainer"
     );
 
+    public static final UnboundBooleanFlag USE_NEW_ENDPOINT_CERTIFICATE_PROVIDER_URL = defineFeatureFlag(
+            "use-new-endpoint-certificate-provider-url", false,
+            List.of("andreer"), "2021-12-14", "2022-01-14",
+            "Use the new URL for the endpoint certificate provider API",
+            "Takes effect immediately"
+    );
+
     public static final UnboundBooleanFlag ENABLE_TENANT_DEVELOPER_ROLE = defineFeatureFlag(
             "enable-tenant-developer-role", false,
             List.of("bjorncs"), "2021-09-23", "2021-12-31",
