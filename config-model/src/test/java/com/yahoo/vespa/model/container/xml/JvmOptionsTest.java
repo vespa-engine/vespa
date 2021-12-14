@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
@@ -17,6 +18,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -140,6 +142,44 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         verifyJvmGCOptions(false, null, "-XX:+UseG1GC", "-XX:+UseG1GC");
         verifyJvmGCOptions(false, "-XX:+UseParallelGC", "-XX:+UseG1GC", "-XX:+UseG1GC");
         verifyJvmGCOptions(false, null, "-XX:+UseParallelGC", "-XX:+UseParallelGC");
+    }
+
+    @Test
+    public void requireThatJvmGcOptionsAreLogged()  throws IOException, SAXException {
+        verifyLoggingOfJvmOptions(true, "gc-options", "-XX:+UseCMSInitiatingOccupancyOnly foo     bar");
+        verifyLoggingOfJvmOptions(true, "gc-options", "-XX:+UseConcMarkSweepGC");
+        verifyLoggingOfJvmOptions(false, "gc-options", "-XX:+UseConcMarkSweepGC");
+    }
+
+    private void verifyLoggingOfJvmOptions(boolean isHosted, String optionName, String override) throws IOException, SAXException  {
+        String servicesXml =
+                "<container version='1.0'>" +
+                "  <nodes>" +
+                "    <jvm " + optionName + "='" + override + "'/>" +
+                "    <node hostalias='mockhost'/>" +
+                "  </nodes>" +
+                "</container>";
+        ApplicationPackage app = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        TestLogger logger = new TestLogger();
+        new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(app)
+                .deployLogger(logger)
+                .properties(new TestProperties().setHostedVespa(isHosted))
+                .build());
+        if (isHosted) {
+            Pair<Level, String> firstOption = logger.msgs.get(0);
+            assertEquals(Level.INFO, firstOption.getFirst());
+            assertEquals("JVM " + (optionName.equals("gc-options") ? "GC " : "") +
+                                 "options from services.xml: " + override, firstOption.getSecond());
+        } else {
+            assertEquals(0, logger.msgs.size());
+        }
+    }
+
+    @Test
+    public void requireThatJvmOptionsAreLogged()  throws IOException, SAXException {
+        verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
+        verifyLoggingOfJvmOptions(false, "options", "-Xms2G");
     }
 
 }
