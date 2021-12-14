@@ -484,4 +484,9 @@ TEST("test that operator<() works with stringref versus string") {
     EXPECT_FALSE(sb < sb);
 }
 
+TEST("test that empty_string is shared and empty") {
+    EXPECT_TRUE(&empty_string() == &empty_string());
+    EXPECT_EQUAL(empty_string(), "");
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
