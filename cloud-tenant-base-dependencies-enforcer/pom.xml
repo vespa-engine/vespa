@@ -202,6 +202,8 @@
                                         <include>com.yahoo.vespa:tenant-cd-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:tenant-cd-commons:*:jar:test</include>
                                         <include>com.yahoo.vespa:vespa-athenz:*:jar:test</include>
+                                        <include>com.yahoo.vespa:vespa-feed-client:*:jar:test</include>
+                                        <include>com.yahoo.vespa:vespa-feed-client-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:vespa_jersey2:*:pom:test</include>
                                         <include>com.yahoo.vespa:vespaclient-core:*:jar:test</include>
                                         <include>com.yahoo.vespa:vsm:*:jar:test</include>
