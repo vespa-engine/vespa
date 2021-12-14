@@ -1078,12 +1078,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
                     throw new IllegalArgumentException("You have specified both jvm-options='" + jvmOptions + "'" +
                                                                " and deprecated jvmargs='" + jvmArgs +
-                                                               "'. Merge jvmargs into 'options' in 'jvm' element.");
+                                                               "'. Merge jvmargs into 'options' in 'jvm' element." +
+                                                               " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
                 }
             } else {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
                 if (incompatibleGCOptions(jvmOptions)) {
-                    deployLogger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs' to 'gc-options' in 'jvm' element");
+                    deployLogger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs' to 'gc-options' in 'jvm' element." +
+                            " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
                     cluster.setJvmGCOptions(ContainerCluster.G1GC);
                 }
             }
