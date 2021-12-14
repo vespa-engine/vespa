@@ -29,44 +29,6 @@ import java.util.logging.Level;
 // TODO Vespa 8: Remove deprecated constructors
 public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
-    public static class Context {
-
-        final Executor executor;
-        final Metric metric;
-
-        /** @deprecated Use {@link #Context(Executor, Metric)} instead */
-        @Deprecated(forRemoval = true, since = "7")
-        public Context(Executor executor, AccessLog ignored, Metric metric) {
-            this(executor, metric);
-        }
-
-        @Inject
-        public Context(Executor executor, Metric metric) {
-            this.executor = executor;
-            this.metric = metric;
-        }
-
-        public Context(Context other) {
-            this.executor = other.executor;
-            this.metric = other.metric;
-        }
-
-        public Executor getExecutor() { return executor; }
-        @Deprecated(forRemoval = true, since = "7") public AccessLog getAccessLog() { return null; }
-        public Metric getMetric() { return metric; }
-
-    }
-
-    public static Context testOnlyContext() {
-        return new Context(new Executor() {
-                @Override
-                public void execute(Runnable command) {
-                    command.run();
-                }
-            },
-            null);
-    }
-
     @Inject
     public LoggingRequestHandler(Context ctx) {
         this(ctx.executor, ctx.metric);
