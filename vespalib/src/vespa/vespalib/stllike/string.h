@@ -675,6 +675,9 @@ inline bool ends_with(stringref text, stringref key) {
     return false;
 }
 
+// returns a reference to a shared empty string
+const string &empty_string();
+
 /**
  * Utility function to format an unsigned integer into a new
  * string instance.

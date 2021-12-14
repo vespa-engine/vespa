@@ -100,4 +100,9 @@ template string operator + (stringref a, const string & b);
 template string operator + (const string & a, const char * b);
 template string operator + (const  char * a, const string & b);
 
+const string &empty_string() {
+    static string empty;
+    return empty;
+}
+
 }
