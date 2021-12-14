@@ -62,6 +62,7 @@ public class Processing {
                 MultifieldIndexHarmonizer::new,
                 FilterFieldNames::new,
                 MatchConsistency::new,
+                ValidateStructTypeInheritance::new,
                 ValidateFieldTypes::new,
                 SummaryDiskAccessValidator::new,
                 DisallowComplexMapAndWsetKeyTypes::new,
@@ -79,7 +80,6 @@ public class Processing {
                 OnnxModelConfigGenerator::new,
                 OnnxModelTypeResolver::new,
                 RankingExpressionTypeResolver::new,
-                ValidateStructTypeInheritance::new,
                 BoolAttributeValidator::new,
                 PagedAttributeValidator::new,
                 // These should be last:
