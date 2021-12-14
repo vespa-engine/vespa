@@ -163,9 +163,9 @@ public class SystemPoller {
                                         List<VespaService> services, Map<VespaService, Long> lastCpuJiffiesMetrics) {
         JiffiesAndCpus sysJiffies = getJiffies.getTotalSystemJiffies();
         JiffiesAndCpus sysJiffiesDiff = sysJiffies.diff(prevTotalJiffies);
+        log.log(Level.FINE, () -> "Total jiffies: " + sysJiffies.jiffies + " - " + prevTotalJiffies.jiffies + " = " + sysJiffiesDiff.jiffies);
         for (VespaService s : services) {
             Metrics metrics = new Metrics();
-            log.log(Level.FINE, () -> "Current size of system metrics for service  " + s + " is " + metrics.size());
 
             long[] size = getMemoryUsage(s);
             log.log(Level.FINE, () -> "Updating memory metric for service " + s);
@@ -177,12 +177,14 @@ public class SystemPoller {
             long last = lastCpuJiffiesMetrics.get(s);
             long diff = procJiffies - last;
 
+            log.log(Level.FINE, () -> "Service " + s + " jiffies: " + procJiffies + " - " + last + " = " + diff);
             if (diff >= 0) {
                 metrics.add(new Metric(CPU, 100 * sysJiffiesDiff.ratioSingleCoreJiffies(diff), timeStamp));
                 metrics.add(new Metric(CPU_UTIL, 100 * sysJiffiesDiff.ratioJiffies(diff), timeStamp));
             }
             lastCpuJiffiesMetrics.put(s, procJiffies);
             s.setSystemMetrics(metrics);
+            log.log(Level.FINE, () -> "Current size of system metrics for service  " + s + " is " + metrics.size());
         }
         return sysJiffies;
     }
