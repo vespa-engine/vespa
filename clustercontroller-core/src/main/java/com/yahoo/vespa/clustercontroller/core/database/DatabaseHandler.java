@@ -378,7 +378,7 @@ public class DatabaseHandler {
     public int getLatestSystemStateVersion() {
         fleetControllerContext.log(logger, Level.FINE, () -> "Retrieving latest system state version.");
         synchronized (databaseMonitor) {
-            if (database != null && !database.isClosed()) {
+            if (database != null) {
                 currentlyStored.lastSystemStateVersion = database.retrieveLatestSystemStateVersion();
             }
         }

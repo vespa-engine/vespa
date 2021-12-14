@@ -222,22 +222,23 @@ public class ZooKeeperDatabase extends Database {
 
     public Integer retrieveLatestSystemStateVersion() {
         Stat stat = new Stat();
-        try{
-            context.log(log, Level.FINE, "Fetching latest cluster state at '%slatestversion'", zooKeeperRoot);
-            byte[] data = session.getData(zooKeeperRoot + "latestversion", false, stat);
-            lastKnownStateVersionZNodeVersion = stat.getVersion();
-            final Integer versionNumber = Integer.valueOf(new String(data, utf8));
-            context.log(log, Level.INFO, "Read cluster state version %d from ZooKeeper (znode version %d)", versionNumber, stat.getVersion());
-            return versionNumber;
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            // If we return a default, empty version, writes dependent on this bundle should only
-            // succeed if the previous znode version is 0, i.e. not yet created.
+        context.log(log, Level.FINE, "Fetching latest cluster state at '%slatestversion'", zooKeeperRoot);
+        final byte[] data;
+        try {
+            data = session.getData(zooKeeperRoot + "latestversion", false, stat);
+        } catch (KeeperException.NoNodeException e) {
+            // Initial condition: No latest version has ever been written (or ZK state completely wiped!)
             lastKnownStateVersionZNodeVersion = 0;
-            maybeLogExceptionWarning(e, "Failed to retrieve latest system state version used. Returning null");
+            maybeLogExceptionWarning(e, "No latest system state found");
             return null;
+        } catch (InterruptedException | KeeperException e) {
+            throw new RuntimeException("Failed to get " + zooKeeperRoot + "latestversion", e);
         }
+
+        lastKnownStateVersionZNodeVersion = stat.getVersion();
+        final Integer versionNumber = Integer.valueOf(new String(data, utf8));
+        context.log(log, Level.INFO, "Read cluster state version %d from ZooKeeper (znode version %d)", versionNumber, stat.getVersion());
+        return versionNumber;
     }
 
     public boolean storeWantedStates(Map<Node, NodeState> states) {
