@@ -5,7 +5,9 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.TemporarySDDocumentType;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
