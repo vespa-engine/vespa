@@ -100,6 +100,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -667,32 +668,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return (gcAlgorithm.matcher(jvmargs).find() || cmsArgs.matcher(jvmargs).find());
     }
 
-    private static String buildJvmGCOptions(DeployState deployState, String jvmGCOptions) {
-        String options = (jvmGCOptions != null)
-                ? jvmGCOptions
-                : deployState.getProperties().jvmGCOptions();
-        return (options == null || options.isEmpty())
-                ? (deployState.isHosted() ? ContainerCluster.PARALLEL_GC : ContainerCluster.G1GC)
-                : options;
+    private static String buildJvmGCOptions(ConfigModelContext context, String jvmGCOptions) {
+        return new JvmGcOptions(context.getDeployState(), jvmGCOptions, context.getDeployLogger()).build();
     }
 
     private static String getJvmOptions(ApplicationContainerCluster cluster, Element nodesElement, DeployLogger deployLogger) {
-        String jvmOptions;
-        if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
-            jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
-            if (nodesElement.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) {
-                String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-                throw new IllegalArgumentException("You have specified both jvm-options='" + jvmOptions + "'" +
-                        " and deprecated jvmargs='" + jvmArgs + "'. Merge jvmargs into 'options' in 'jvm' element.");
-            }
-        } else {
-            jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-            if (incompatibleGCOptions(jvmOptions)) {
-                deployLogger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs' to 'gc-options' in 'jvm' element");
-                cluster.setJvmGCOptions(ContainerCluster.G1GC);
-            }
-        }
-        return jvmOptions;
+        return new JvmOptions(cluster, nodesElement, deployLogger).build();
     }
 
     private static String extractAttribute(Element element, String attrName) {
@@ -705,7 +686,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (cluster.getJvmGCOptions().isEmpty()) {
             String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
-            cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState(), jvmGCOptions));
+            cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
         }
 
         applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
@@ -716,7 +697,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         applyNodesTagJvmArgs(nodes, jvmElement.getAttribute(VespaDomBuilder.OPTIONS));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
         String jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
-        cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState(), jvmGCOptions));
+        cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
     }
 
     /**
@@ -1075,6 +1056,68 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     public static boolean isContainerTag(Element element) {
         return CONTAINER_TAG.equals(element.getTagName()) || DEPRECATED_CONTAINER_TAG.equals(element.getTagName());
+    }
+
+    private static class JvmOptions {
+
+        private final ContainerCluster<?> cluster;
+        private final Element nodesElement;
+        private final DeployLogger deployLogger;
+
+        public JvmOptions(ContainerCluster<?> cluster, Element nodesElement, DeployLogger deployLogger) {
+            this.cluster = cluster;
+            this.nodesElement = nodesElement;
+            this.deployLogger = deployLogger;
+        }
+
+        String build() {
+            String jvmOptions;
+            if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
+                jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
+                if (nodesElement.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) {
+                    String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
+                    throw new IllegalArgumentException("You have specified both jvm-options='" + jvmOptions + "'" +
+                                                               " and deprecated jvmargs='" + jvmArgs +
+                                                               "'. Merge jvmargs into 'options' in 'jvm' element.");
+                }
+            } else {
+                jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
+                if (incompatibleGCOptions(jvmOptions)) {
+                    deployLogger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs' to 'gc-options' in 'jvm' element");
+                    cluster.setJvmGCOptions(ContainerCluster.G1GC);
+                }
+            }
+            return jvmOptions;
+        }
+    }
+
+    private static class JvmGcOptions {
+
+        private final DeployState deployState;
+        private final String jvmGcOptions;
+        private final DeployLogger logger;
+
+        public JvmGcOptions(DeployState deployState, String jvmGcOptions, DeployLogger logger) {
+            this.deployState = deployState;
+            this.jvmGcOptions = jvmGcOptions;
+            this.logger = logger;
+        }
+
+        private String build() {
+            String options = deployState.getProperties().jvmGCOptions();
+            if (jvmGcOptions != null) {
+                options = jvmGcOptions;
+                if (deployState.isHosted())
+                    logger.logApplicationPackage(Level.INFO, "JVM GC options from services.xml: " + jvmGcOptions);
+                // TODO: Verify options against lists of allowed and/or disallowed options
+            }
+
+            if (options == null || options.isEmpty())
+                options = deployState.isHosted() ? ContainerCluster.PARALLEL_GC : ContainerCluster.G1GC;
+
+            return options;
+        }
+
     }
 
 }

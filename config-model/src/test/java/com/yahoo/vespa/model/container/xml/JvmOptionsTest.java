@@ -2,6 +2,7 @@
 
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
@@ -17,6 +18,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -141,5 +143,37 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         verifyJvmGCOptions(false, "-XX:+UseParallelGC", "-XX:+UseG1GC", "-XX:+UseG1GC");
         verifyJvmGCOptions(false, null, "-XX:+UseParallelGC", "-XX:+UseParallelGC");
     }
+
+    @Test
+    public void requireThatJvmGcOptionsAreLogged()  throws IOException, SAXException {
+        verifyLoggingOfJvmGCOptions(true, "-XX:+UseCMSInitiatingOccupancyOnly foo     bar");
+        verifyLoggingOfJvmGCOptions(true, "-XX:+UseConcMarkSweepGC");
+        verifyLoggingOfJvmGCOptions(false, "-XX:+UseConcMarkSweepGC");
+    }
+
+    private void verifyLoggingOfJvmGCOptions(boolean isHosted, String override) throws IOException, SAXException  {
+        String servicesXml =
+                "<container version='1.0'>" +
+                "  <nodes>" +
+                "    <jvm gc-options='" + override + "'/>" +
+                "    <node hostalias='mockhost'/>" +
+                "  </nodes>" +
+                "</container>";
+        ApplicationPackage app = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        TestLogger logger = new TestLogger();
+        new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(app)
+                .deployLogger(logger)
+                .properties(new TestProperties().setHostedVespa(isHosted))
+                .build());
+        if (isHosted) {
+            Pair<Level, String> firstOption = logger.msgs.get(0);
+            assertEquals(Level.INFO, firstOption.getFirst());
+            assertEquals("JVM GC options from services.xml: " + override, firstOption.getSecond());
+        } else {
+            assertEquals(0, logger.msgs.size());
+        }
+    }
+
 
 }
