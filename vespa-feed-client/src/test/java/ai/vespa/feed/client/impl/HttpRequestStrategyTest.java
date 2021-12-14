@@ -41,7 +41,7 @@ class HttpRequestStrategyTest {
     @Test
     void testConcurrency() {
         int documents = 1 << 16;
-        HttpRequest request = new HttpRequest("PUT", "/", null, null);
+        HttpRequest request = new HttpRequest("PUT", "/", null, null, null);
         HttpResponse response = HttpResponse.of(200, "{}".getBytes(UTF_8));
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         Cluster cluster = new BenchmarkingCluster((__, vessel) -> executor.schedule(() -> vessel.complete(response), (int) (Math.random() * 2 * 10), TimeUnit.MILLISECONDS));
@@ -99,7 +99,7 @@ class HttpRequestStrategyTest {
 
         DocumentId id1 = DocumentId.of("ns", "type", "1");
         DocumentId id2 = DocumentId.of("ns", "type", "2");
-        HttpRequest request = new HttpRequest("POST", "/", null, null);
+        HttpRequest request = new HttpRequest("POST", "/", null, null, null);
 
         // Runtime exception is not retried.
         cluster.expect((__, vessel) -> vessel.completeExceptionally(new RuntimeException("boom")));
@@ -140,8 +140,8 @@ class HttpRequestStrategyTest {
             else vessel.complete(success);
         });
         CompletableFuture<HttpResponse> delayed = strategy.enqueue(id1, request);
-        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null));
-        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", null, null)).get());
+        CompletableFuture<HttpResponse> serialised = strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, null));
+        assertEquals(success, strategy.enqueue(id2, new HttpRequest("DELETE", "/", null, null, null)).get());
         latch.await();
         assertEquals(8, strategy.stats().requests()); // 3 attempts at throttled and one at id2.
         now.set(4000);
@@ -159,7 +159,7 @@ class HttpRequestStrategyTest {
 
         // Error responses are not retried when not of appropriate type.
         cluster.expect((__, vessel) -> vessel.complete(serverError));
-        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null)).get());
+        assertEquals(serverError, strategy.enqueue(id1, new HttpRequest("PUT", "/", null, null, null)).get());
         assertEquals(12, strategy.stats().requests());
 
         // Some error responses are not retried.
@@ -205,9 +205,9 @@ class HttpRequestStrategyTest {
         DocumentId id2 = DocumentId.of("ns", "type", "2");
         DocumentId id3 = DocumentId.of("ns", "type", "3");
         DocumentId id4 = DocumentId.of("ns", "type", "4");
-        HttpRequest failing = new HttpRequest("POST", "/", null, null);
-        HttpRequest request = new HttpRequest("POST", "/", null, null);
-        HttpRequest blocking = new HttpRequest("POST", "/", null, null);
+        HttpRequest failing = new HttpRequest("POST", "/", null, null, null);
+        HttpRequest request = new HttpRequest("POST", "/", null, null, null);
+        HttpRequest blocking = new HttpRequest("POST", "/", null, null, null);
 
         // Enqueue some operations to the same id, which are serialised, and then shut down while operations are in flight.
         Phaser phaser = new Phaser(2);
