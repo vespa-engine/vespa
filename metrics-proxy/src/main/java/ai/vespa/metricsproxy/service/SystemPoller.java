@@ -5,6 +5,9 @@ import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.logging.Level;
 
 import java.io.BufferedReader;
@@ -35,7 +38,7 @@ public class SystemPoller {
     private static final MetricId MEMORY_VIRT = MetricId.toMetricId("memory_virt");
     private static final MetricId MEMORY_RSS = MetricId.toMetricId("memory_rss");
 
-    private final int pollingIntervalSecs;
+    private final Duration interval;
     private final List<VespaService> services;
     private final Map<VespaService, Long> lastCpuJiffiesMetrics = new ConcurrentHashMap<>();
     private final Timer systemPollTimer;
@@ -70,9 +73,9 @@ public class SystemPoller {
         long getJiffies(VespaService service);
     }
 
-    public SystemPoller(List<VespaService> services, int pollingIntervalSecs) {
+    public SystemPoller(List<VespaService> services, Duration interval) {
         this.services = services;
-        this.pollingIntervalSecs = pollingIntervalSecs;
+        this.interval = interval;
         systemPollTimer = new Timer("systemPollTimer", true);
         jiffiesInterface = new GetJiffies() {
             @Override
@@ -138,7 +141,7 @@ public class SystemPoller {
      * Poll services for system metrics
      */
     void poll() {
-        long startTime = System.currentTimeMillis();
+        Instant startTime = Instant.now();
 
         /* Don't do any work if there are no known services */
         if (services.isEmpty()) {
@@ -149,11 +152,11 @@ public class SystemPoller {
         log.log(Level.FINE, () -> "Monitoring system metrics for " + services.size() + " services");
 
         boolean someAlive = services.stream().anyMatch(VespaService::isAlive);
-        lastTotalCpuJiffies = updateMetrics(lastTotalCpuJiffies, startTime/1000, jiffiesInterface, services, lastCpuJiffiesMetrics);
+        lastTotalCpuJiffies = updateMetrics(lastTotalCpuJiffies, interval.getSeconds(), jiffiesInterface, services, lastCpuJiffiesMetrics);
 
         // If none of the services were alive, reschedule in a short time
         if (!someAlive) {
-            reschedule(System.currentTimeMillis() - startTime);
+            reschedule(Duration.between(startTime, Instant.now()));
         } else {
             schedule();
         }
@@ -161,6 +164,10 @@ public class SystemPoller {
 
     static JiffiesAndCpus updateMetrics(JiffiesAndCpus prevTotalJiffies, long timeStamp, GetJiffies getJiffies,
                                         List<VespaService> services, Map<VespaService, Long> lastCpuJiffiesMetrics) {
+        Map<VespaService, Long> currentServiceJiffies = new HashMap<>();
+        for (VespaService s : services) {
+            currentServiceJiffies.put(s, getJiffies.getJiffies(s));
+        }
         JiffiesAndCpus sysJiffies = getJiffies.getTotalSystemJiffies();
         JiffiesAndCpus sysJiffiesDiff = sysJiffies.diff(prevTotalJiffies);
         log.log(Level.FINE, () -> "Total jiffies: " + sysJiffies.jiffies + " - " + prevTotalJiffies.jiffies + " = " + sysJiffiesDiff.jiffies);
@@ -173,7 +180,7 @@ public class SystemPoller {
             metrics.add(new Metric(MEMORY_VIRT, size[memoryTypeVirtual], timeStamp));
             metrics.add(new Metric(MEMORY_RSS, size[memoryTypeResident], timeStamp));
 
-            long procJiffies = getJiffies.getJiffies(s);
+            long procJiffies = currentServiceJiffies.get(s);
             long last = lastCpuJiffiesMetrics.get(s);
             long diff = procJiffies - last;
 
@@ -253,24 +260,27 @@ public class SystemPoller {
                 : new JiffiesAndCpus();
     }
 
-    private void schedule(long time) {
+    void schedule(Duration time) {
         try {
-            systemPollTimer.schedule(new PollTask(this), time);
+            systemPollTimer.schedule(new PollTask(this), time.toMillis());
         } catch(IllegalStateException e){
             log.info("Tried to schedule task, but timer was already shut down.");
         }
     }
 
-    public void schedule() {
-        schedule(pollingIntervalSecs * 1000L);
+    void schedule() {
+        schedule(interval);
     }
 
-    private void reschedule(long skew) {
-        long sleep = (pollingIntervalSecs * 1000L) - skew;
+    private void reschedule(Duration skew) {
+        Duration sleep = interval.minus(skew);
 
         // Don't sleep less than 1 min
-        sleep = Math.max(60 * 1000, sleep);
-        schedule(sleep);
+        if ( sleep.compareTo(Duration.ofMinutes(1)) < 0) {
+            schedule(Duration.ofMinutes(1));
+        } else {
+            schedule(sleep);
+        }
     }
 
 
