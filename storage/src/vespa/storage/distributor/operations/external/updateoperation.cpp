@@ -33,6 +33,7 @@ UpdateOperation::UpdateOperation(const DistributorNodeContext& node_ctx,
       _new_timestamp(_msg->getTimestamp()),
       _is_auto_create_update(_msg->getUpdate()->getCreateIfNonExistent()),
       _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
       _bucketSpace(bucketSpace),
       _newestTimestampLocation(),
       _infoAtSendTime(),
@@ -155,24 +156,11 @@ UpdateOperation::onReceive(DistributorStripeMessageSender& sender,
 
                 for (uint32_t i = 0; i < _results.size(); i++) {
                     if (_results[i].oldTs < oldTs) {
-                        LOG(warning, "Update operation for '%s' in bucket %s updated documents with different timestamps. "
-                                     "This should not happen and may indicate undetected replica divergence. "
-                                     "Found ts=%" PRIu64 " on node %u, ts=%" PRIu64 " on node %u",
-                                     reply.getDocumentId().toString().c_str(),
-                                     reply.getBucket().toString().c_str(),
-                                     _results[i].oldTs, _results[i].nodeId,
-                                     _results[goodNode].oldTs, _results[goodNode].nodeId);
-                        _metrics.diverging_timestamp_updates.inc();
-
+                        log_inconsistency_warning(reply, _results[goodNode], _results[i]);
                         replyToSend.setNodeWithNewestTimestamp(_results[goodNode].nodeId);
                         _newestTimestampLocation.first  = _results[goodNode].bucketId;
                         _newestTimestampLocation.second = _results[goodNode].nodeId;
-
-                        LOG(warning, "Bucket info prior to update operation was: %s. After update, "
-                                     "info on node %u is %s, info on node %u is %s",
-                                     _infoAtSendTime.toString().c_str(),
-                                     _results[i].nodeId, _results[i].bucketInfo.toString().c_str(),
-                                     _results[goodNode].nodeId, _results[goodNode].bucketInfo.toString().c_str());
+                        _metrics.diverging_timestamp_updates.inc();
                         break;
                     }
                 }
@@ -183,6 +171,33 @@ UpdateOperation::onReceive(DistributorStripeMessageSender& sender,
     } else {
         _tracker.receiveReply(sender, static_cast<api::BucketInfoReply&>(*msg));
     }
+}
+
+void
+UpdateOperation::log_inconsistency_warning(const api::UpdateReply& reply,
+                                           const PreviousDocumentVersion& highest_timestamped_version,
+                                           const PreviousDocumentVersion& low_timestamped_version)
+{
+    bool low_ts_node_gc = _op_ctx.has_pending_message(low_timestamped_version.nodeId, reply.getBucket(),
+                                                      api::MessageType::REMOVELOCATION_ID);
+    bool high_ts_node_gc = _op_ctx.has_pending_message(highest_timestamped_version.nodeId, reply.getBucket(),
+                                                       api::MessageType::REMOVELOCATION_ID);
+
+    LOG(warning, "Update operation for '%s' in bucket %s updated documents with different timestamps. "
+                 "This should not happen and may indicate undetected replica divergence. "
+                 "Found low ts=%" PRIu64 " on node %u (pending GC: %s), "
+                 "highest ts=%" PRIu64 " on node %u (pending GC: %s)",
+        reply.getDocumentId().toString().c_str(),
+        reply.getBucket().toString().c_str(),
+        low_timestamped_version.oldTs, low_timestamped_version.nodeId, (low_ts_node_gc ? "yes" : "no"),
+        highest_timestamped_version.oldTs, highest_timestamped_version.nodeId, (high_ts_node_gc ? "yes" : "no"));
+
+    LOG(warning, "Bucket info prior to update operation was: %s. After update, "
+                 "info on node %u is %s, info on node %u is %s",
+        _infoAtSendTime.toString().c_str(),
+        low_timestamped_version.nodeId, low_timestamped_version.bucketInfo.toString().c_str(),
+        highest_timestamped_version.nodeId, highest_timestamped_version.bucketInfo.toString().c_str());
+
 }
 
 void

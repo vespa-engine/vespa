@@ -49,6 +49,7 @@ private:
     const bool _is_auto_create_update;
 
     const DistributorNodeContext& _node_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     DistributorBucketSpace &_bucketSpace;
     std::pair<document::BucketId, uint16_t> _newestTimestampLocation;
     api::BucketInfo _infoAtSendTime; // Should be same across all replicas
@@ -70,6 +71,9 @@ private:
     UpdateMetricSet& _metrics;
 
     api::Timestamp adjusted_received_old_timestamp(api::Timestamp old_ts_from_node) const;
+    void log_inconsistency_warning(const api::UpdateReply& reply,
+                                   const PreviousDocumentVersion& highest_timestamped_version,
+                                   const PreviousDocumentVersion& low_timestamped_version);
 };
 
 }
