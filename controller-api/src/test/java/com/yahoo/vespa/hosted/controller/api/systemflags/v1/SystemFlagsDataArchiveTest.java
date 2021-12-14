@@ -130,6 +130,15 @@ public class SystemFlagsDataArchiveTest {
     }
 
     @Test
+    public void throws_exception_on_unknown_region() {
+        Path directory = Paths.get("src/test/resources/system-flags-with-unknown-file-name/");
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(
+                "Environment or zone in filename 'main.prod.unknown-region.json' is does not exist");
+        SystemFlagsDataArchive.fromDirectoryAndSystem(directory, createZoneRegistryMock());
+    }
+
+    @Test
     public void throws_on_unknown_field() {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage(
