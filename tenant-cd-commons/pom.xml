@@ -42,6 +42,18 @@
             <artifactId>config-provisioning</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespa-feed-client</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.yahoo.vespa</groupId>
+                    <artifactId>vespa-feed-client-api</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -200,6 +200,8 @@
                                 org.junit.jupiter:junit-jupiter-api:provided,
                                 org.junit.jupiter:junit-jupiter-engine:test,
                                 org.junit.vintage:junit-vintage-engine:test,
+                                com.yahoo.vespa:vespa-feed-client:runtime, <!-- prevent effective compile scope of vespa-feed-client in test bundle -->
+                                com.yahoo.vespa:vespa-feed-client-api:provided,
                                 com.yahoo.vespa:tenant-cd-api:provided
                             </testBundleScopeOverrides>
                         </configuration>

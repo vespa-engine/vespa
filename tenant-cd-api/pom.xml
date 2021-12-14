@@ -58,6 +58,12 @@
             <version>${hosted-tenant-base-junit-version}</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespa-feed-client-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
