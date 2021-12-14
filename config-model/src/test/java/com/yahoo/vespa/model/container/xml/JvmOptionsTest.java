@@ -146,16 +146,16 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void requireThatJvmGcOptionsAreLogged()  throws IOException, SAXException {
-        verifyLoggingOfJvmGCOptions(true, "-XX:+UseCMSInitiatingOccupancyOnly foo     bar");
-        verifyLoggingOfJvmGCOptions(true, "-XX:+UseConcMarkSweepGC");
-        verifyLoggingOfJvmGCOptions(false, "-XX:+UseConcMarkSweepGC");
+        verifyLoggingOfJvmOptions(true, "gc-options", "-XX:+UseCMSInitiatingOccupancyOnly foo     bar");
+        verifyLoggingOfJvmOptions(true, "gc-options", "-XX:+UseConcMarkSweepGC");
+        verifyLoggingOfJvmOptions(false, "gc-options", "-XX:+UseConcMarkSweepGC");
     }
 
-    private void verifyLoggingOfJvmGCOptions(boolean isHosted, String override) throws IOException, SAXException  {
+    private void verifyLoggingOfJvmOptions(boolean isHosted, String optionName, String override) throws IOException, SAXException  {
         String servicesXml =
                 "<container version='1.0'>" +
                 "  <nodes>" +
-                "    <jvm gc-options='" + override + "'/>" +
+                "    <jvm " + optionName + "='" + override + "'/>" +
                 "    <node hostalias='mockhost'/>" +
                 "  </nodes>" +
                 "</container>";
@@ -169,11 +169,17 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         if (isHosted) {
             Pair<Level, String> firstOption = logger.msgs.get(0);
             assertEquals(Level.INFO, firstOption.getFirst());
-            assertEquals("JVM GC options from services.xml: " + override, firstOption.getSecond());
+            assertEquals("JVM " + (optionName.equals("gc-options") ? "GC " : "") +
+                                 "options from services.xml: " + override, firstOption.getSecond());
         } else {
             assertEquals(0, logger.msgs.size());
         }
     }
 
+    @Test
+    public void requireThatJvmOptionsAreLogged()  throws IOException, SAXException {
+        verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
+        verifyLoggingOfJvmOptions(false, "options", "-Xms2G");
+    }
 
 }

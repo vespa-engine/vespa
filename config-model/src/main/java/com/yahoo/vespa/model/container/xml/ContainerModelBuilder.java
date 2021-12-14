@@ -669,20 +669,35 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static String buildJvmGCOptions(ConfigModelContext context, String jvmGCOptions) {
-        return new JvmGcOptions(context.getDeployState(), jvmGCOptions, context.getDeployLogger()).build();
+        return new JvmGcOptions(context.getDeployState(), jvmGCOptions).build();
     }
 
-    private static String getJvmOptions(ApplicationContainerCluster cluster, Element nodesElement, DeployLogger deployLogger) {
-        return new JvmOptions(cluster, nodesElement, deployLogger).build();
+    private static String getJvmOptions(ApplicationContainerCluster cluster,
+                                        Element nodesElement,
+                                        DeployState deployState,
+                                        boolean legacyOptions) {
+        return new JvmOptions(cluster, nodesElement, deployState, legacyOptions).build();
     }
 
     private static String extractAttribute(Element element, String attrName) {
         return element.hasAttribute(attrName) ? element.getAttribute(attrName) : null;
     }
 
-    void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
-                                      Element nodesElement, ConfigModelContext context) {
-        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
+    private void extractJvmOptions(List<ApplicationContainer> nodes,
+                                   ApplicationContainerCluster cluster,
+                                   Element nodesElement,
+                                   ConfigModelContext context) {
+        Element jvmElement = XML.getChild(nodesElement, "jvm");
+        if (jvmElement == null) {
+            extractJvmFromLegacyNodesTag(nodes, cluster, nodesElement, context);
+        } else {
+            extractJvmTag(nodes, cluster, nodesElement, jvmElement, context);
+        }
+    }
+
+    private void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                                              Element nodesElement, ConfigModelContext context) {
+        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployState(), true));
 
         if (cluster.getJvmGCOptions().isEmpty()) {
             String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
@@ -692,9 +707,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
     }
 
-    void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
-                       Element jvmElement, ConfigModelContext context) {
-        applyNodesTagJvmArgs(nodes, jvmElement.getAttribute(VespaDomBuilder.OPTIONS));
+    private void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                               Element nodesElement, Element jvmElement, ConfigModelContext context) {
+        applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployState(), false));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
         String jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
         cluster.setJvmGCOptions(buildJvmGCOptions(context, jvmGCOptions));
@@ -714,12 +729,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
-            Element jvmElement = XML.getChild(nodesElement, "jvm");
-            if (jvmElement == null) {
-                extractJvmFromLegacyNodesTag(nodes, cluster, nodesElement, context);
-            } else {
-                extractJvmTag(nodes, cluster, jvmElement, context);
-            }
+            extractJvmOptions(nodes, cluster, nodesElement, context);
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
@@ -1062,18 +1072,35 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         private final ContainerCluster<?> cluster;
         private final Element nodesElement;
-        private final DeployLogger deployLogger;
+        private final DeployLogger logger;
+        private final boolean isHosted;
+        private final boolean legacyOptions;
 
-        public JvmOptions(ContainerCluster<?> cluster, Element nodesElement, DeployLogger deployLogger) {
+        public JvmOptions(ContainerCluster<?> cluster, Element nodesElement, DeployState deployState, boolean legacyOptions) {
             this.cluster = cluster;
             this.nodesElement = nodesElement;
-            this.deployLogger = deployLogger;
+            this.logger = deployState.getDeployLogger();
+            this.isHosted = deployState.isHosted();
+            this.legacyOptions = legacyOptions;
         }
 
         String build() {
+            if (legacyOptions)
+                return buildLegacyOptions();
+
+            Element jvmElement = XML.getChild(nodesElement, "jvm");
+            if (jvmElement == null) return "";
+            String jvmOptions = jvmElement.getAttribute(VespaDomBuilder.OPTIONS);
+            if (jvmOptions == null) return "";
+            log(jvmOptions);
+            return jvmOptions;
+        }
+
+        String buildLegacyOptions() {
             String jvmOptions;
             if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
+                log(jvmOptions);
                 if (nodesElement.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) {
                     String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
                     throw new IllegalArgumentException("You have specified both jvm-options='" + jvmOptions + "'" +
@@ -1083,13 +1110,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 }
             } else {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
+                log(jvmOptions);
                 if (incompatibleGCOptions(jvmOptions)) {
-                    deployLogger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs' to 'gc-options' in 'jvm' element." +
+                    logger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs' to 'gc-options' in 'jvm' element." +
                             " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
                     cluster.setJvmGCOptions(ContainerCluster.G1GC);
                 }
             }
             return jvmOptions;
+        }
+
+        private void log(String jvmOptions) {
+            if (isHosted && jvmOptions != null && !jvmOptions.isEmpty())
+                logger.logApplicationPackage(Level.INFO, "JVM options from services.xml: " + jvmOptions);
         }
     }
 
@@ -1098,19 +1131,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private final DeployState deployState;
         private final String jvmGcOptions;
         private final DeployLogger logger;
+        private final boolean isHosted;
 
-        public JvmGcOptions(DeployState deployState, String jvmGcOptions, DeployLogger logger) {
+        public JvmGcOptions(DeployState deployState, String jvmGcOptions) {
             this.deployState = deployState;
             this.jvmGcOptions = jvmGcOptions;
-            this.logger = logger;
+            this.logger = deployState.getDeployLogger();
+            this.isHosted = deployState.isHosted();
         }
 
         private String build() {
             String options = deployState.getProperties().jvmGCOptions();
             if (jvmGcOptions != null) {
+                log(jvmGcOptions);
                 options = jvmGcOptions;
-                if (deployState.isHosted())
-                    logger.logApplicationPackage(Level.INFO, "JVM GC options from services.xml: " + jvmGcOptions);
                 // TODO: Verify options against lists of allowed and/or disallowed options
             }
 
@@ -1118,6 +1152,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 options = deployState.isHosted() ? ContainerCluster.PARALLEL_GC : ContainerCluster.G1GC;
 
             return options;
+        }
+
+        private void log(String jvmGcOptions) {
+            if (isHosted)
+                logger.logApplicationPackage(Level.INFO, "JVM GC options from services.xml: " + jvmGcOptions);
         }
 
     }
