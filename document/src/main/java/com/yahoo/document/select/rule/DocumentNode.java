@@ -13,7 +13,12 @@ import com.yahoo.document.select.Context;
 import com.yahoo.document.select.Visitor;
 
 /**
+ * A document node which returns a document: For accessing document field data in AttributeNode,
+ * where it should be possible to access fields both by the concrete type ("concreteType.fieldName")
+ * and by parent type ("inheritedType.inheritedField").
+ *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class DocumentNode implements ExpressionNode {
 
@@ -42,8 +47,25 @@ public class DocumentNode implements ExpressionNode {
         return evaluate(context.getDocumentOperation());
     }
 
-    public Object evaluate(DocumentOperation op) {
-        return op.getId().getDocType().equals(type) ? op : false;
+    private Object evaluate(DocumentOperation op) {
+        if (hasData(op))
+            return evaluateForDataLookup(op);
+        else // Simplify to just false since we can't progress here?
+            return op.getId().getDocType().equals(type) ? op : false;
+    }
+
+    private Object evaluateForDataLookup(DocumentOperation op) {
+        if (op instanceof DocumentPut)
+            return ((DocumentPut)op).getDocument().getDataType().isA(this.type) ? op : false;
+        else if (op instanceof DocumentUpdate)
+            return ((DocumentUpdate)op).getDocumentType().isA(this.type) ? op : false;
+        else
+            throw new IllegalStateException("Programming error");
+    }
+
+    /** Returns whether this operation is of a type that may contain data */
+    private boolean hasData(DocumentOperation op) {
+        return op instanceof DocumentPut || op instanceof DocumentUpdate;
     }
 
     public void accept(Visitor visitor) {

@@ -25,7 +25,6 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
 
     public static final Logger log = Logger.getLogger(DistributorCluster.class.getPackage().toString());
 
-
     private static class GcOptions {
 
         public final int interval;
@@ -55,8 +54,8 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
             this.parent = parent;
         }
 
-        private String prepareGCSelection(ModelElement documentNode, String selStr) throws ParseException {
-            DocumentSelector s = new DocumentSelector(selStr);
+        private String prepareGCSelection(ModelElement documentNode, String selectionString) throws ParseException {
+            DocumentSelector s = new DocumentSelector(selectionString);
             boolean enableGC = false;
             if (documentNode != null) {
                 enableGC = documentNode.booleanAttribute("garbage-collection", false);

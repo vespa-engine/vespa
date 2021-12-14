@@ -14,6 +14,7 @@ import com.yahoo.document.select.rule.NowNode;
 import com.yahoo.document.select.rule.VariableNode;
 
 public abstract class DocumentTypeVisitor implements Visitor {
+
     @Override
     public void visit(ArithmeticNode arithmeticNode) {
         for (ArithmeticNode.NodeItem item : arithmeticNode.getItems()) {
@@ -64,4 +65,5 @@ public abstract class DocumentTypeVisitor implements Visitor {
     @Override
     public void visit(VariableNode variableNode) {
     }
+
 }

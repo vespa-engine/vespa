@@ -5,6 +5,7 @@ import com.yahoo.document.select.rule.ArithmeticNode;
 import com.yahoo.document.select.rule.AttributeNode;
 import com.yahoo.document.select.rule.ComparisonNode;
 import com.yahoo.document.select.rule.DocumentNode;
+import com.yahoo.document.select.rule.DocumentTypeNode;
 import com.yahoo.document.select.rule.EmbracedNode;
 import com.yahoo.document.select.rule.IdNode;
 import com.yahoo.document.select.rule.LiteralNode;
@@ -18,8 +19,8 @@ import com.yahoo.document.select.rule.VariableNode;
  *
  * @author Ulf Lilleengen
  */
-
 public class NowCheckVisitor implements Visitor {
+
     private int nowNodeCount = 0;
 
     public boolean requiresConversion() {
@@ -41,18 +42,17 @@ public class NowCheckVisitor implements Visitor {
         node.getRHS().accept(this);
     }
 
-    public void visit(DocumentNode node) {
-    }
+    public void visit(DocumentNode node) {}
+
+    public void visit(DocumentTypeNode node) {}
 
     public void visit(EmbracedNode node) {
         node.getNode().accept(this);
     }
 
-    public void visit(IdNode node) {
-    }
+    public void visit(IdNode node) {}
 
-    public void visit(LiteralNode node) {
-    }
+    public void visit(LiteralNode node) {}
 
     public void visit(LogicNode node) {
         for (LogicNode.NodeItem item : node.getItems()) {
