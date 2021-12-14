@@ -9,6 +9,10 @@ public class TestFleetControllerContext extends FleetControllerContextImpl {
         super(options);
     }
 
+    public TestFleetControllerContext(FleetControllerId id) {
+        super(id);
+    }
+
     @Override
     protected String withLogPrefix(String message) {
         // Include fleet controller index in prefix in tests, since many may be running

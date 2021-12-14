@@ -81,7 +81,8 @@ public class StateChangeHandlerTest {
         this.config = config;
         for (int i=0; i<config.nodeCount; ++i) configuredNodes.add(new ConfiguredNode(i, false));
         cluster = new ContentCluster("testcluster", configuredNodes, distribution);
-        nodeStateChangeHandler = new StateChangeHandler(clock, eventLog);
+        var context = new FleetControllerContextImpl(new FleetControllerId(cluster.getName(), 0));
+        nodeStateChangeHandler = new StateChangeHandler(context, clock, eventLog);
         params.minStorageNodesUp(1).minDistributorNodesUp(1)
                 .minRatioOfStorageNodesUp(0.0).minRatioOfDistributorNodesUp(0.0)
                 .maxPrematureCrashes(config.maxPrematureCrashes)

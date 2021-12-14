@@ -28,6 +28,7 @@ public class StateChangeHandler {
 
     private static final Logger log = Logger.getLogger(StateChangeHandler.class.getName());
 
+    private final FleetControllerContext context;
     private final Timer timer;
     private final EventLogInterface eventLog;
     private boolean stateMayHaveChanged = false;
@@ -40,7 +41,8 @@ public class StateChangeHandler {
     private int maxSlobrokDisconnectGracePeriod = 1000;
     private static final boolean disableUnstableNodes = true;
 
-    public StateChangeHandler(Timer timer, EventLogInterface eventLog) {
+    public StateChangeHandler(FleetControllerContext context, Timer timer, EventLogInterface eventLog) {
+        this.context = context;
         this.timer = timer;
         this.eventLog = eventLog;
         maxTransitionTime.put(NodeType.DISTRIBUTOR, 5000);
@@ -52,7 +54,7 @@ public class StateChangeHandler {
                                             final DatabaseHandler database,
                                             final DatabaseHandler.DatabaseContext dbContext) throws InterruptedException {
         int startTimestampsReset = 0;
-        log.log(Level.FINE, "handleAllDistributorsInSync invoked for state version %d", currentState.getVersion());
+        context.log(log, Level.FINE, "handleAllDistributorsInSync invoked for state version %d", currentState.getVersion());
         for (NodeType nodeType : NodeType.getTypes()) {
             for (ConfiguredNode configuredNode : nodes) {
                 final Node node = new Node(nodeType, configuredNode.index());

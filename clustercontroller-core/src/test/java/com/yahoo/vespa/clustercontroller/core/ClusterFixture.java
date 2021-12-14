@@ -33,12 +33,9 @@ public class ClusterFixture {
         this.distribution = distribution;
         this.timer = new FakeTimer();
         this.eventLog = mock(EventLogInterface.class);
-        this.nodeStateChangeHandler = createNodeStateChangeHandlerForCluster();
+        var context = new FleetControllerContextImpl(new FleetControllerId(cluster.getName(), 0));
+        this.nodeStateChangeHandler = new StateChangeHandler(context, timer, eventLog);
         this.params.cluster(this.cluster);
-    }
-
-    private StateChangeHandler createNodeStateChangeHandlerForCluster() {
-        return new StateChangeHandler(timer, eventLog);
     }
 
     public ClusterFixture bringEntireClusterUp() {

@@ -183,10 +183,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 options.nodeStateRequestTimeoutEarliestPercentage,
                 options.nodeStateRequestTimeoutLatestPercentage,
                 options.nodeStateRequestRoundTripTimeMaxSeconds);
-        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, timer);
-        var lookUp = new SlobrokClient(timer);
-        var stateGenerator = new StateChangeHandler(timer, log);
-        var stateBroadcaster = new SystemStateBroadcaster(timer, timer);
+        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress, timer);
+        var lookUp = new SlobrokClient(context, timer);
+        var stateGenerator = new StateChangeHandler(context, timer, log);
+        var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
         var controller = new FleetController(context, timer, log, cluster, stateGatherer, communicator,
                                              statusPageServer, null, lookUp, database, stateGenerator,

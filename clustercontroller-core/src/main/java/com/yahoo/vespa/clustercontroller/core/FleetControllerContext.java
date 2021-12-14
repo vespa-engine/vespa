@@ -16,4 +16,13 @@ public interface FleetControllerContext {
     default void log(Logger logger, Level level, String message) { log(logger, level, () -> message); }
     void log(Logger logger, Level level, String message, Throwable t);
     void log(Logger logger, Level level, Supplier<String> message);
+
+    default void log(Logger logger, Level level, String format, Object first, Object... rest) {
+        log(logger, level, () -> {
+            var args = new Object[1 + rest.length];
+            args[0] = first;
+            System.arraycopy(rest, 0, args, 1, rest.length);
+            return String.format(format, args);
+        });
+    }
 }

@@ -55,9 +55,9 @@ public class StateChangeTest extends FleetControllerTest {
         eventLog = new EventLog(timer, metricUpdater);
         var cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution);
         var stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
-        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, timer);
-        var stateGenerator = new StateChangeHandler(timer, eventLog);
-        var stateBroadcaster = new SystemStateBroadcaster(timer, timer);
+        var database = new DatabaseHandler(context, new ZooKeeperDatabaseFactory(context), timer, options.zooKeeperServerAddress, timer);
+        var stateGenerator = new StateChangeHandler(context, timer, eventLog);
+        var stateBroadcaster = new SystemStateBroadcaster(context, timer, timer);
         var masterElectionHandler = new MasterElectionHandler(context, options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
         ctrl = new FleetController(context, timer, eventLog, cluster, stateGatherer, communicator, null, null, communicator, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
 
