@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -73,7 +72,7 @@ public class SystemFlagsDataArchive {
                 if (!entry.isDirectory() && name.startsWith("flags/")) {
                     Path filePath = Paths.get(name);
                     String rawData = new String(zipIn.readAllBytes(), StandardCharsets.UTF_8);
-                    addFile(builder, rawData, filePath, Set.of());
+                    addFile(builder, rawData, filePath, Set.of(), null);
                 }
             }
             return builder.build();
@@ -102,7 +101,7 @@ public class SystemFlagsDataArchive {
                 if (!Files.isDirectory(absolutePath) &&
                         relativePath.startsWith("flags")) {
                     String rawData = uncheck(() -> Files.readString(absolutePath, StandardCharsets.UTF_8));
-                    addFile(builder, rawData, relativePath, filenamesForSystem);
+                    addFile(builder, rawData, relativePath, filenamesForSystem, systemDefinition);
                 }
             });
             return builder.build();
@@ -169,12 +168,17 @@ public class SystemFlagsDataArchive {
                 .collect(Collectors.toSet());
     }
 
-    private static void addFile(Builder builder, String rawData, Path filePath, Set<String> filenamesForSystem) {
+    private static void addFile(Builder builder, String rawData, Path filePath, Set<String> filenamesForSystem,
+                                ZoneRegistry systemDefinition) {
         String filename = filePath.getFileName().toString();
         if (filename.startsWith(".")) {
             return; // Ignore files starting with '.'
         }
         if (!filenamesForSystem.isEmpty() && !filenamesForSystem.contains(filename)) {
+            if (systemDefinition != null && filename.startsWith(systemDefinition.system().value() + '.')) {
+                throw new IllegalArgumentException(String.format(
+                        "Environment or zone in filename '%s' is does not exist", filename));
+            }
             return; // Ignore files irrelevant for system
         }
         if (!filename.endsWith(".json")) {
