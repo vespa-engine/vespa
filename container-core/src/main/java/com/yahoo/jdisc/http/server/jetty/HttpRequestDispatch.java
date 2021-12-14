@@ -5,7 +5,6 @@ import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric.Context;
 import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
-import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.BindingNotFoundException;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.OverloadException;
@@ -38,7 +37,6 @@ import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
-import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
  * @author Simon Thoresen Hult
@@ -102,22 +100,6 @@ class HttpRequestDispatch {
                 });
         // Start the reader after wiring of "finished futures" are complete
         servletRequestReader.start();
-    }
-
-    ContentChannel dispatchFilterRequest(Response response) {
-        try {
-            CompletableFuture<Void> requestCompletion = startServletAsyncExecution();
-            jettyRequest.getInputStream().close();
-            ContentChannel responseContentChannel = servletResponseController.responseHandler().handleResponse(response);
-            servletResponseController.finishedFuture()
-                    .whenComplete((r, t) -> {
-                        if (t != null) requestCompletion.completeExceptionally(t);
-                        else requestCompletion.complete(null);
-                    });
-            return responseContentChannel;
-        } catch (IOException e) {
-            throw throwUnchecked(e);
-        }
     }
 
     private CompletableFuture<Void> startServletAsyncExecution() {

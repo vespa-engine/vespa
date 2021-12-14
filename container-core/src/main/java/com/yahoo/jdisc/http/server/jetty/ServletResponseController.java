@@ -32,27 +32,32 @@ import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMP
  */
 class ServletResponseController {
 
+    private enum State {
+        WAITING_FOR_RESPONSE,
+        ACCEPTED_RESPONSE_FROM_HANDLER,
+        COMMITTED_RESPONSE_FROM_HANDLER,
+        COMPLETED_WITH_RESPONSE_FROM_HANDLER,
+        COMPLETED_WITH_ERROR_RESPONSE
+    }
+
     private static final Logger log = Logger.getLogger(ServletResponseController.class.getName());
 
     /**
-     * The servlet spec does not require (Http)ServletResponse nor ServletOutputStream to be thread-safe. Therefore,
-     * we must provide our own synchronization, since we may attempt to access these objects simultaneously from
-     * different threads. (The typical cause of this is when one thread is writing a response while another thread
-     * throws an exception, causing the request to fail with an error response).
+     * Only a single thread must modify {@link HttpServletRequest}/{@link HttpServletResponse} at a time,
+     * and it must only be performed when the response is committed.
+     * The response cannot be modified once response content is being written.
      */
     private final Object monitor = new Object();
 
-    //servletResponse must not be modified after the response has been committed.
     private final HttpServletRequest servletRequest;
     private final HttpServletResponse servletResponse;
     private final boolean developerMode;
     private final ErrorResponseContentCreator errorResponseContentCreator = new ErrorResponseContentCreator();
-
-    //all calls to the servletOutputStreamWriter must hold the monitor first to ensure visibility of servletResponse changes.
     private final ServletOutputStreamWriter out;
 
     // GuardedBy("monitor")
-    private boolean responseCommitted = false;
+    private State state = State.WAITING_FOR_RESPONSE;
+    private Response handlerResponse;
 
     ServletResponseController(
             HttpServletRequest servletRequest,
@@ -71,7 +76,24 @@ class ServletResponseController {
     void trySendErrorResponse(Throwable t) {
         synchronized (monitor) {
             try {
-                sendErrorResponseIfUncommitted(t);
+                switch (state) {
+                    case WAITING_FOR_RESPONSE:
+                    case ACCEPTED_RESPONSE_FROM_HANDLER:
+                        state = State.COMPLETED_WITH_ERROR_RESPONSE;
+                        break;
+                    case COMMITTED_RESPONSE_FROM_HANDLER:
+                    case COMPLETED_WITH_RESPONSE_FROM_HANDLER:
+                        if (log.isLoggable(Level.FINE)) {
+                            RuntimeException exceptionWithStackTrace = new RuntimeException(t);
+                            log.log(Level.FINE, "Response already committed, can't change response code", exceptionWithStackTrace);
+                        }
+                        return;
+                    case COMPLETED_WITH_ERROR_RESPONSE:
+                        return;
+                    default:
+                        throw new IllegalStateException();
+                }
+                writeErrorResponse(t);
             } catch (Throwable suppressed) {
                 t.addSuppressed(suppressed);
             } finally {
@@ -93,34 +115,28 @@ class ServletResponseController {
 
     ResponseHandler responseHandler() { return responseHandler; }
 
-    private void sendErrorResponseIfUncommitted(Throwable t) {
-        if (!responseCommitted) {
-            responseCommitted = true;
-            servletResponse.setHeader(HttpHeaders.Names.EXPIRES, null);
-            servletResponse.setHeader(HttpHeaders.Names.LAST_MODIFIED, null);
-            servletResponse.setHeader(HttpHeaders.Names.CACHE_CONTROL, null);
-            servletResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, null);
-            servletResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, null);
-            String reasonPhrase = getReasonPhrase(t, developerMode);
-            int statusCode = getStatusCode(t);
-            setStatus(servletResponse, statusCode, reasonPhrase);
-            // If we are allowed to have a body
-            if (statusCode != HttpServletResponse.SC_NO_CONTENT &&
-                    statusCode != HttpServletResponse.SC_NOT_MODIFIED &&
-                    statusCode != HttpServletResponse.SC_PARTIAL_CONTENT &&
-                    statusCode >= HttpServletResponse.SC_OK) {
-                servletResponse.setHeader(HttpHeaders.Names.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
-                servletResponse.setContentType(MimeTypes.Type.TEXT_HTML_8859_1.toString());
-                byte[] errorContent = errorResponseContentCreator
-                        .createErrorContent(servletRequest.getRequestURI(), statusCode, reasonPhrase);
-                servletResponse.setContentLength(errorContent.length);
-                out.writeBuffer(ByteBuffer.wrap(errorContent), NOOP_COMPLETION_HANDLER);
-            } else {
-                servletResponse.setContentLength(0);
-            }
+    private void writeErrorResponse(Throwable t) {
+        servletResponse.setHeader(HttpHeaders.Names.EXPIRES, null);
+        servletResponse.setHeader(HttpHeaders.Names.LAST_MODIFIED, null);
+        servletResponse.setHeader(HttpHeaders.Names.CACHE_CONTROL, null);
+        servletResponse.setHeader(HttpHeaders.Names.CONTENT_TYPE, null);
+        servletResponse.setHeader(HttpHeaders.Names.CONTENT_LENGTH, null);
+        String reasonPhrase = getReasonPhrase(t, developerMode);
+        int statusCode = getStatusCode(t);
+        setStatus(servletResponse, statusCode, reasonPhrase);
+        // If we are allowed to have a body
+        if (statusCode != HttpServletResponse.SC_NO_CONTENT &&
+                statusCode != HttpServletResponse.SC_NOT_MODIFIED &&
+                statusCode != HttpServletResponse.SC_PARTIAL_CONTENT &&
+                statusCode >= HttpServletResponse.SC_OK) {
+            servletResponse.setHeader(HttpHeaders.Names.CACHE_CONTROL, "must-revalidate,no-cache,no-store");
+            servletResponse.setContentType(MimeTypes.Type.TEXT_HTML_8859_1.toString());
+            byte[] errorContent = errorResponseContentCreator
+                    .createErrorContent(servletRequest.getRequestURI(), statusCode, reasonPhrase);
+            servletResponse.setContentLength(errorContent.length);
+            out.writeBuffer(ByteBuffer.wrap(errorContent), NOOP_COMPLETION_HANDLER);
         } else {
-            RuntimeException exceptionWithStackTrace = new RuntimeException(t);
-            log.log(Level.FINE, "Response already committed, can't change response code", exceptionWithStackTrace);
+            servletResponse.setContentLength(0);
         }
     }
 
@@ -151,30 +167,67 @@ class ServletResponseController {
         }
     }
 
-    private void setResponse(Response jdiscResponse) {
+    private void acceptResponseFromHandler(Response response) {
         synchronized (monitor) {
-            servletRequest.setAttribute(HttpResponseStatisticsCollector.requestTypeAttribute, jdiscResponse.getRequestType());
-            if (responseCommitted) {
-                log.log(Level.FINE,
-                        jdiscResponse.getError(),
-                        () -> "Response already committed, can't change response code. " +
-                                "From: " + servletResponse.getStatus() + ", To: " + jdiscResponse.getStatus());
-
-                //TODO: should throw an exception here, but this breaks unit tests.
-                //The failures will now instead happen when writing buffers.
-                out.close();
-                return;
+            switch (state) {
+                case WAITING_FOR_RESPONSE:
+                case ACCEPTED_RESPONSE_FROM_HANDLER: // Allow multiple invocations to ResponseHandler.handleResponse()
+                    handlerResponse = response;
+                    state = State.ACCEPTED_RESPONSE_FROM_HANDLER;
+                    servletRequest.setAttribute(
+                            HttpResponseStatisticsCollector.requestTypeAttribute, handlerResponse.getRequestType());
+                    return;
+                case COMMITTED_RESPONSE_FROM_HANDLER:
+                case COMPLETED_WITH_RESPONSE_FROM_HANDLER:
+                    String message = "Response already committed, can't change response code. " +
+                            "From: " + servletResponse.getStatus() + ", To: " + response.getStatus();
+                    log.log(Level.FINE, message, response.getError());
+                    throw new IllegalStateException(message);
+                case COMPLETED_WITH_ERROR_RESPONSE:
+                    log.log(Level.FINE, "Error response already written");
+                    return; // Silently ignore response from handler when request was failed out
+                default:
+                    throw new IllegalStateException();
             }
+        }
+    }
 
-            if (jdiscResponse instanceof HttpResponse) {
-                setStatus(servletResponse, jdiscResponse.getStatus(), ((HttpResponse) jdiscResponse).getMessage());
+    private static void setStatus(HttpServletResponse response, int statusCode, String reasonPhrase) {
+        org.eclipse.jetty.server.Response jettyResponse = (org.eclipse.jetty.server.Response) response;
+        if (reasonPhrase != null) {
+            jettyResponse.setStatusWithReason(statusCode, reasonPhrase);
+        } else {
+            jettyResponse.setStatus(statusCode);
+        }
+    }
+
+
+    private void commitResponseFromHandlerIfUncommitted(boolean close) {
+        synchronized (monitor) {
+            switch (state) {
+                case ACCEPTED_RESPONSE_FROM_HANDLER:
+                    state = close ? State.COMPLETED_WITH_RESPONSE_FROM_HANDLER : State.COMMITTED_RESPONSE_FROM_HANDLER;
+                    break;
+                case WAITING_FOR_RESPONSE:
+                    throw new IllegalStateException("No response provided");
+                case COMMITTED_RESPONSE_FROM_HANDLER:
+                case COMPLETED_WITH_RESPONSE_FROM_HANDLER:
+                    return;
+                case COMPLETED_WITH_ERROR_RESPONSE:
+                    log.fine("An error response is already committed - failure will be handled by ServletOutputStreamWriter");
+                    return;
+                default:
+                    throw new IllegalStateException();
+            }
+            if (handlerResponse instanceof HttpResponse) {
+                setStatus(servletResponse, handlerResponse.getStatus(), ((HttpResponse) handlerResponse).getMessage());
             } else {
-                String message = Optional.ofNullable(jdiscResponse.getError())
+                String message = Optional.ofNullable(handlerResponse.getError())
                         .flatMap(error -> Optional.ofNullable(error.getMessage()))
                         .orElse(null);
-                setStatus(servletResponse, jdiscResponse.getStatus(), message);
+                setStatus(servletResponse, handlerResponse.getStatus(), message);
             }
-            for (final Map.Entry<String, String> entry : jdiscResponse.headers().entries()) {
+            for (final Map.Entry<String, String> entry : handlerResponse.headers().entries()) {
                 servletResponse.addHeader(entry.getKey(), entry.getValue());
             }
             if (servletResponse.getContentType() == null) {
@@ -183,28 +236,10 @@ class ServletResponseController {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private static void setStatus(HttpServletResponse response, int statusCode, String reasonPhrase) {
-        if (reasonPhrase != null) {
-            // Sets the status line: a status code along with a custom message.
-            // Using a custom status message is deprecated in the Servlet API. No alternative exist.
-            response.setStatus(statusCode, reasonPhrase); // DEPRECATED
-        } else {
-            response.setStatus(statusCode);
-        }
-    }
-
-
-    private void ensureCommitted() {
-        synchronized (monitor) {
-            responseCommitted = true;
-        }
-    }
-
     private final ResponseHandler responseHandler = new ResponseHandler() {
         @Override
         public ContentChannel handleResponse(Response response) {
-            setResponse(response);
+            acceptResponseFromHandler(response);
             return responseContentChannel;
         }
     };
@@ -212,13 +247,13 @@ class ServletResponseController {
     private final ContentChannel responseContentChannel = new ContentChannel() {
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
-            ensureCommitted();
+            commitResponseFromHandlerIfUncommitted(false);
             out.writeBuffer(buf, handlerOrNoopHandler(handler));
         }
 
         @Override
         public void close(CompletionHandler handler) {
-            ensureCommitted();
+            commitResponseFromHandlerIfUncommitted(true);
             out.close(handlerOrNoopHandler(handler));
         }
 
