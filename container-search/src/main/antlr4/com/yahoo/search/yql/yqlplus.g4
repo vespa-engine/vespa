@@ -317,10 +317,6 @@ mapExpression
     : LBRACE propertyNameAndValue? (COMMA propertyNameAndValue)* RBRACE
     ;
 
-constantMapExpression
-    : LBRACE constantPropertyNameAndValue? (COMMA constantPropertyNameAndValue)* RBRACE
-    ;
-
 arguments[boolean in_select]
 	:  LPAREN RPAREN                                                    
 	|  LPAREN (argument[$in_select] (COMMA argument[$in_select])*) RPAREN
@@ -354,7 +350,7 @@ annotateExpression
 	;
 
 annotation
-    : LBRACKET constantMapExpression RBRACKET
+    : LBRACKET mapExpression RBRACKET
     ;
 
 logicalORExpression
@@ -441,27 +437,18 @@ primaryExpression
 @init {
     boolean in_select = expression_stack.peek().in_select;
 }
-	: callExpresion[in_select]
-	| parameter
+	: callExpression[in_select]
 	| fieldref
-	| scalar_literal
-	| arrayLiteral
-	| mapExpression
+	| constantExpression
 	| LPAREN expression[in_select] RPAREN
 	;
 	
-callExpresion[boolean in_select]
+callExpression[boolean in_select]
 	: namespaced_name arguments[in_select]
 	;
-	
+
 fieldref
 	: namespaced_name
-	;
-arrayLiteral
-@init {
-	boolean in_select = expression_stack.peek().in_select;
-}
-    : LBRACKET expression[in_select]? (COMMA expression[in_select])* RBRACKET
 	;
 
 // a parameter is an argument from outside the YQL statement
@@ -470,10 +457,6 @@ parameter
 	;	
 	       
 propertyNameAndValue
-	: propertyName ':' expression[{expression_stack.peek().in_select}] //{return (PROPERTY propertyName expression);}
-	;
-
-constantPropertyNameAndValue
 	: propertyName ':' constantExpression
 	;
 
@@ -484,12 +467,12 @@ propertyName
 
 constantExpression
     : scalar_literal
-    | constantMapExpression
-    | constantArray
+    | mapExpression
+    | arrayLiteral
     | parameter
     ;
 
-constantArray
+arrayLiteral
     : LBRACKET i+=constantExpression? (COMMA i+=constantExpression)* RBRACKET
     ;
 

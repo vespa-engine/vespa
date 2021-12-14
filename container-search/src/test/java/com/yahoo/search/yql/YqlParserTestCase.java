@@ -551,7 +551,8 @@ public class YqlParserTestCase {
         assertParse("select foo from bar where weightedSet(description, {\"a\":1, \"b\":2});",
                     "WEIGHTEDSET description{[1]:\"a\",[2]:\"b\"}");
         assertParseFail("select foo from bar where weightedSet(description, {\"a\":g, \"b\":2});",
-                        new IllegalArgumentException("Expected operator LITERAL, got READ_FIELD."));
+                        new IllegalInputException("com.yahoo.search.yql.ProgramCompileException: " +
+                                                  "query:L1:56 no viable alternative at input 'weightedSet(description, {\"a\":g'"));
         assertParseFail("select foo from bar where weightedSet(description);",
                         new IllegalArgumentException("Expected 2 arguments, got 1."));
     }
