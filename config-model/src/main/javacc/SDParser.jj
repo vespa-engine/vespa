@@ -835,7 +835,7 @@ DataType dataType() :
     String typeName = null;
     boolean isArrayOldStyle = false;
     DataType mapType = null;
-	DataType arrayType = null;
+    DataType arrayType = null;
     DataType wsetType = null;
     TensorType tensorType;
     TemporaryStructuredDataType referenceType;

@@ -62,6 +62,7 @@ public class Processing {
                 MultifieldIndexHarmonizer::new,
                 FilterFieldNames::new,
                 MatchConsistency::new,
+                ValidateStructTypeInheritance::new,
                 ValidateFieldTypes::new,
                 SummaryDiskAccessValidator::new,
                 DisallowComplexMapAndWsetKeyTypes::new,

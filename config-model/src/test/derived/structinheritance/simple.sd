@@ -1,0 +1,17 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+search simple {
+  document simple {
+    struct base {
+      field name type string {}
+    }
+    struct child inherits base {
+      field age type int {}
+    }
+    struct grandchild inherits child {
+      field toy type string {}
+    }
+    field f1 type child {}
+    field f2 type grandchild {}
+  }
+}

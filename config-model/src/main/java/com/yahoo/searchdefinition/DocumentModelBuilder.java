@@ -390,6 +390,13 @@ public class DocumentModelBuilder {
                 throw new IllegalArgumentException("Data type '" + sdoc.getName() + "' is not a struct => tostring='" + sdoc.toString() + "'.");
             }
         }
+        for (SDDocumentType type : sdoc.getTypes()) {
+            for (SDDocumentType proxy : type.getInheritedTypes()) {
+                var inherited = dt.getDataTypeRecursive(proxy.getName());
+                var converted = (StructDataType) dt.getDataType(type.getName());
+                converted.inherit((StructDataType) inherited);
+            }
+        }
         for (AnnotationType annotation : sdoc.getAnnotations().values()) {
             dt.add(annotation);
         }
