@@ -28,7 +28,7 @@ private:
     double _maxDeadBytesRatio; // Max ratio of dead bytes before compaction
     double _maxDeadAddressSpaceRatio; // Max ratio of dead address space before compaction
     uint32_t _max_buffers; // Max number of buffers to compact for each reason (memory usage, address space usage)
-    double _max_buffers_ratio; // Ratio of active buffers to compact for each reason (memory usage, address space usage)
+    double _active_buffers_ratio; // Ratio of active buffers to compact for each reason (memory usage, address space usage)
     bool should_compact_memory(size_t used_bytes, size_t dead_bytes) const {
         return ((dead_bytes >= DEAD_BYTES_SLACK) &&
                 (dead_bytes > used_bytes * getMaxDeadBytesRatio()));
@@ -42,32 +42,32 @@ public:
         : _maxDeadBytesRatio(0.05),
           _maxDeadAddressSpaceRatio(0.2),
           _max_buffers(1),
-          _max_buffers_ratio(0.1)
+          _active_buffers_ratio(0.1)
     {
     }
     CompactionStrategy(double maxDeadBytesRatio, double maxDeadAddressSpaceRatio) noexcept
         : _maxDeadBytesRatio(maxDeadBytesRatio),
           _maxDeadAddressSpaceRatio(maxDeadAddressSpaceRatio),
           _max_buffers(1),
-          _max_buffers_ratio(0.1)
+          _active_buffers_ratio(0.1)
     {
     }
-    CompactionStrategy(double maxDeadBytesRatio, double maxDeadAddressSpaceRatio, uint32_t max_buffers, double max_buffers_ratio) noexcept
+    CompactionStrategy(double maxDeadBytesRatio, double maxDeadAddressSpaceRatio, uint32_t max_buffers, double active_buffers_ratio) noexcept
         : _maxDeadBytesRatio(maxDeadBytesRatio),
           _maxDeadAddressSpaceRatio(maxDeadAddressSpaceRatio),
           _max_buffers(max_buffers),
-          _max_buffers_ratio(max_buffers_ratio)
+          _active_buffers_ratio(active_buffers_ratio)
     {
     }
     double getMaxDeadBytesRatio() const { return _maxDeadBytesRatio; }
     double getMaxDeadAddressSpaceRatio() const { return _maxDeadAddressSpaceRatio; }
     uint32_t get_max_buffers() const noexcept { return _max_buffers; }
-    double get_max_buffers_ratio() const noexcept { return _max_buffers_ratio; }
+    double get_active_buffers_ratio() const noexcept { return _active_buffers_ratio; }
     bool operator==(const CompactionStrategy & rhs) const {
         return (_maxDeadBytesRatio == rhs._maxDeadBytesRatio) &&
             (_maxDeadAddressSpaceRatio == rhs._maxDeadAddressSpaceRatio) &&
             (_max_buffers == rhs._max_buffers) &&
-            (_max_buffers_ratio == rhs._max_buffers_ratio);
+            (_active_buffers_ratio == rhs._active_buffers_ratio);
     }
     bool operator!=(const CompactionStrategy & rhs) const { return !(operator==(rhs)); }
 

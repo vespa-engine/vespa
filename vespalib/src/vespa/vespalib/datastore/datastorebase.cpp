@@ -533,9 +533,9 @@ std::vector<uint32_t>
 DataStoreBase::startCompactWorstBuffers(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy)
 {
     // compact memory usage
-    CompactBufferCandidates elem_buffers(_numBuffers, compaction_strategy.get_max_buffers(), compaction_strategy.get_max_buffers_ratio(), compaction_strategy.getMaxDeadBytesRatio() / 2, CompactionStrategy::DEAD_BYTES_SLACK);
+    CompactBufferCandidates elem_buffers(_numBuffers, compaction_strategy.get_max_buffers(), compaction_strategy.get_active_buffers_ratio(), compaction_strategy.getMaxDeadBytesRatio() / 2, CompactionStrategy::DEAD_BYTES_SLACK);
     // compact address space
-    CompactBufferCandidates array_buffers(_numBuffers, compaction_strategy.get_max_buffers(), compaction_strategy.get_max_buffers_ratio(), compaction_strategy.getMaxDeadAddressSpaceRatio() / 2, CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK);
+    CompactBufferCandidates array_buffers(_numBuffers, compaction_strategy.get_max_buffers(), compaction_strategy.get_active_buffers_ratio(), compaction_strategy.getMaxDeadAddressSpaceRatio() / 2, CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK);
     uint32_t free_buffers = 0;
     for (uint32_t bufferId = 0; bufferId < _numBuffers; ++bufferId) {
         const auto &state = getBufferState(bufferId);

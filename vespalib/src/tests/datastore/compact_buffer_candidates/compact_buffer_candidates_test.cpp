@@ -10,7 +10,7 @@ namespace {
 constexpr uint32_t num_buffers = 1024;
 constexpr double default_ratio = 0.2 / 2;
 constexpr size_t default_slack = 1000;
-constexpr double default_max_buffers_ratio = 1.0;
+constexpr double default_active_buffers_ratio = 1.0;
 
 };
 
@@ -21,7 +21,7 @@ public:
     CompactBufferCandidates candidates;
     CompactBufferCandidatesTest();
     ~CompactBufferCandidatesTest() override;
-    void reset_candidates(uint32_t max_buffers, double max_buffers_ratio = default_max_buffers_ratio);
+    void reset_candidates(uint32_t max_buffers, double active_buffers_ratio = default_active_buffers_ratio);
     CompactBufferCandidatesTest& add(uint32_t buffer_id, size_t used, size_t dead);
     void assert_select(const std::vector<uint32_t>& exp);
     void set_free_buffers(uint32_t free_buffers = 100);
@@ -29,16 +29,16 @@ public:
 
 CompactBufferCandidatesTest::CompactBufferCandidatesTest()
     : ::testing::Test(),
-      candidates(num_buffers, 1, default_max_buffers_ratio, default_ratio, default_slack)
+      candidates(num_buffers, 1, default_active_buffers_ratio, default_ratio, default_slack)
 {
 }
 
 CompactBufferCandidatesTest::~CompactBufferCandidatesTest() = default;
 
 void
-CompactBufferCandidatesTest::reset_candidates(uint32_t max_buffers, double max_buffers_ratio)
+CompactBufferCandidatesTest::reset_candidates(uint32_t max_buffers, double active_buffers_ratio)
 {
-    candidates = CompactBufferCandidates(num_buffers, max_buffers, max_buffers_ratio, default_ratio, default_slack);
+    candidates = CompactBufferCandidates(num_buffers, max_buffers, active_buffers_ratio, default_ratio, default_slack);
 }
 
 CompactBufferCandidatesTest&
@@ -96,7 +96,7 @@ TEST_F(CompactBufferCandidatesTest, select_cutoff_by_slack)
     assert_select({9, 3});
 }
 
-TEST_F(CompactBufferCandidatesTest, select_cutoff_by_max_buffers_ratio)
+TEST_F(CompactBufferCandidatesTest, select_cutoff_by_active_buffers_ratio)
 {
     reset_candidates(4, 0.5);
     add(1, 10000, 2000).add(3, 10000, 4000).add(8, 10000, 3000).set_free_buffers();
