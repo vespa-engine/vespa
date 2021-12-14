@@ -51,9 +51,9 @@ import com.yahoo.search.yql.yqlplusParser.StatementContext;
 import com.yahoo.search.yql.yqlplusParser.TimeoutContext;
 import com.yahoo.search.yql.yqlplusParser.UnaryExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.WhereContext;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
@@ -78,13 +78,11 @@ import java.util.Set;
 final class ProgramParser {
 
     public yqlplusParser prepareParser(String programName, InputStream input) throws IOException {
-        //TODO ANTLRInputStream goes away on 4.7, so must use CharStreams.fromXXX() when upgrading
-        return prepareParser(programName, new CaseInsensitiveCharStream(new ANTLRInputStream(input)));
+        return prepareParser(programName, new CaseInsensitiveCharStream(CharStreams.fromStream(input)));
     }
 
     public yqlplusParser prepareParser(String programName, String input) throws IOException {
-        //TODO ANTLRInputStream goes away on 4.7, so must use CharStreams.fromXXX() when upgrading
-        return prepareParser(programName, new CaseInsensitiveCharStream(new ANTLRInputStream(input)));
+        return prepareParser(programName, new CaseInsensitiveCharStream(CharStreams.fromString(input)));
     }
 
     private static class ErrorListener extends BaseErrorListener {

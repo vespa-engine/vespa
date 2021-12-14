@@ -69,11 +69,10 @@ public class YqlParserTestCase {
 
     private final YqlParser parser = new YqlParser(new ParserEnvironment());
 
-    @Test
+    @Test(timeout = 120_000)
     public void failsGracefullyOnMissingQuoteEscapingAndSubsequentUnicodeCharacter() {
         assertParseFail("select * from bar where rank(ids contains 'http://en.wikipedia.org/wiki/Hors_d'œuvre') limit 10;",
-                new IllegalInputException("com.yahoo.search.yql.ProgramCompileException: query:L1:79 " +
-                        "no viable alternative at input 'rank(ids contains 'http://en.wikipedia.org/wiki/Hors_d''"));
+                new IllegalInputException("com.yahoo.search.yql.ProgramCompileException: query:L1:79 token recognition error at: 'œ'"));
     }
 
     @Test
