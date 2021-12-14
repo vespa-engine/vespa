@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.proxy;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.config.subscription.impl.JRTConfigRequester;
+import com.yahoo.config.subscription.impl.JrtConfigRequesters;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
@@ -53,7 +53,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     private final ScheduledExecutorService nextConfigScheduler =
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("next config"));
     private final ScheduledFuture<?> nextConfigFuture;
-    private final JRTConfigRequester requester;
+    private final JrtConfigRequesters requesters;
     // Scheduled executor that periodically checks for requests that have timed out and response should be returned to clients
     private final ScheduledExecutorService delayedResponsesScheduler =
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("delayed responses"));
@@ -66,7 +66,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         this.delayedResponses = new DelayedResponses();
         checkConfigSources();
         nextConfigFuture = nextConfigScheduler.scheduleAtFixedRate(this, 0, 10, MILLISECONDS);
-        this.requester = JRTConfigRequester.create(configSourceSet, timingValues);
+        this.requesters = new JrtConfigRequesters();
         DelayedResponseHandler command = new DelayedResponseHandler(delayedResponses, memoryCache, responseHandler);
         this.delayedResponsesFuture = delayedResponsesScheduler.scheduleAtFixedRate(command, 5, 1, SECONDS);
     }
@@ -145,7 +145,8 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
             if (subscribers.containsKey(configCacheKey)) return;
 
             log.log(Level.FINE, () -> "Could not find good config in cache, creating subscriber for: " + configCacheKey);
-            var subscriber = new Subscriber(input, configSourceSet, timingValues, requester);
+            var subscriber = new Subscriber(input, timingValues, requesters
+                    .getRequester(configSourceSet, timingValues));
             try {
                 subscriber.subscribe();
                 subscribers.put(configCacheKey, subscriber);
@@ -197,12 +198,12 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         log.log(Level.FINE, "nextConfigScheduler.shutdownNow");
         nextConfigScheduler.shutdownNow();
         log.log(Level.FINE, "requester.close");
-        requester.close();
+        requesters.close();
     }
 
     @Override
     public String getActiveSourceConnection() {
-        return requester.getConnectionPool().getCurrent().getAddress();
+        return requesters.getRequester(configSourceSet, timingValues).getConnectionPool().getCurrent().getAddress();
     }
 
     @Override

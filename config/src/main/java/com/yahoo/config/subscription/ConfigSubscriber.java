@@ -5,15 +5,13 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.impl.ConfigSubscription;
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
+import com.yahoo.config.subscription.impl.JrtConfigRequesters;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.TimingValues;
 import com.yahoo.yolean.Exceptions;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +38,7 @@ public class ConfigSubscriber implements AutoCloseable {
     private final ConfigSource source;
     private final Object monitor = new Object();
     private final Throwable stackTraceAtConstruction; // TODO Remove once finalizer is gone
+    private final JrtConfigRequesters requesters = new JrtConfigRequesters();
 
     /** The last complete config generation received by this */
     private long generation = -1;
@@ -50,11 +49,6 @@ public class ConfigSubscriber implements AutoCloseable {
      * once there is a generation which require restart.
      */
     private boolean applyOnRestart = false;
-
-    /**
-     * Reuse requesters for equal source sets, limit number if many subscriptions.
-     */
-    protected Map<ConfigSourceSet, JRTConfigRequester> requesters = new HashMap<>();
 
     /**
      * The states of the subscriber. Affects the validity of calling certain methods.
@@ -114,8 +108,8 @@ public class ConfigSubscriber implements AutoCloseable {
     // for testing
     <T extends ConfigInstance> ConfigHandle<T> subscribe(Class<T> configClass, String configId, ConfigSource source, TimingValues timingValues) {
         checkStateBeforeSubscribe();
-        final ConfigKey<T> configKey = new ConfigKey<>(configClass, configId);
-        ConfigSubscription<T> sub = ConfigSubscription.get(configKey, this, source, timingValues);
+        ConfigKey<T> configKey = new ConfigKey<>(configClass, configId);
+        ConfigSubscription<T> sub = ConfigSubscription.get(configKey, requesters, source, timingValues);
         ConfigHandle<T> handle = new ConfigHandle<>(sub);
         subscribeAndHandleErrors(sub, configKey, handle, timingValues);
         return handle;
@@ -375,17 +369,8 @@ public class ConfigSubscriber implements AutoCloseable {
         for (ConfigHandle<? extends ConfigInstance> h : subscriptionHandles) {
             h.subscription().close();
         }
-        closeRequesters();
+        requesters.close();
         log.log(FINE, () -> "Config subscriber has been closed.");
-    }
-
-    /**
-     * Closes all open requesters
-     */
-    protected void closeRequesters() {
-        for (JRTConfigRequester requester : requesters.values()) {
-            requester.close();
-        }
     }
 
     @Override
@@ -440,14 +425,6 @@ public class ConfigSubscriber implements AutoCloseable {
      */
     public ConfigSource getSource() {
         return source;
-    }
-
-    /**
-     * Implementation detail, do not use.
-     * @return requesters
-     */
-    public Map<ConfigSourceSet, JRTConfigRequester> requesters() {
-        return requesters;
     }
 
     public boolean isClosed() {
