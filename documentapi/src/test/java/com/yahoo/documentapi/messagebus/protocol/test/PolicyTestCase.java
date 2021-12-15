@@ -140,13 +140,16 @@ public class PolicyTestCase {
         assertTrue(new DocumentProtocol(manager).createPolicy("Extern", spec) instanceof ErrorPolicy);
         assertTrue(new DocumentProtocol(manager).createPolicy("Extern", spec + ";") instanceof ErrorPolicy);
         assertTrue(new DocumentProtocol(manager).createPolicy("Extern", spec + ";bar") instanceof ErrorPolicy);
+        slobrok.stop();
     }
 
     @Test
     public void requireThatExternPolicyWithUnknownPatternSelectsNone() throws Exception {
+        var slobrok = new Slobrok();
         PolicyTestFrame frame = newPutDocumentFrame("id:ns:testdoc::");
-        setupExternPolicy(frame, new Slobrok(), "foo/bar");
+        setupExternPolicy(frame, slobrok, "foo/bar");
         frame.assertSelect(null);
+        slobrok.stop();
     }
 
     @Test
@@ -175,6 +178,7 @@ public class PolicyTestCase {
             server.destroy();
         }
         frame.destroy();
+        slobrok.stop();
     }
 
     @Test
@@ -188,6 +192,7 @@ public class PolicyTestCase {
         frame.assertMergeOneReply(server.net.getConnectionSpec() + "/chain.default");
         server.destroy();
         frame.destroy();
+        slobrok.stop();
     }
 
     @Test
@@ -773,6 +778,9 @@ public class PolicyTestCase {
                 return;
             }
             Thread.sleep(10);
+            if (i == 42) {
+                ((Mirror) slobrok).dumpState();
+            }
         }
         throw new TimeoutException();
     }
