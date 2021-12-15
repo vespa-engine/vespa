@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.di.componentgraph.core;
 
-import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.AbstractComponent;
@@ -280,7 +279,8 @@ public class ComponentNode extends Node {
 
         Constructor<?> annotated = null;
         for (Constructor<?> ctor : publicConstructors) {
-            Annotation annotation = ctor.getAnnotation(Inject.class);
+            Annotation annotation = ctor.getAnnotation(com.google.inject.Inject.class);
+            if (annotation == null) annotation = ctor.getAnnotation(com.yahoo.component.annotation.Inject.class);
             if (annotation != null) {
                 if (annotated == null) {
                     annotated = ctor;
