@@ -1,15 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.graph;
 
-import com.google.inject.Inject;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.ConfigModelInstanceFactory;
+import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a node in the dependency graph, and contains information about a builders dependencies.
@@ -37,7 +44,8 @@ public class ModelNode<MODEL extends ConfigModel> implements ConfigModelInstance
 
     private Constructor<MODEL> findConstructor(Class<MODEL> clazz) {
         for (Constructor<?> ctor : clazz.getDeclaredConstructors()) {
-            if (ctor.getAnnotation(Inject.class) != null) {
+            if (ctor.getAnnotation(com.google.inject.Inject.class) != null
+                    || ctor.getAnnotation(com.yahoo.component.annotation.Inject.class) != null) {
                 return (Constructor<MODEL>) ctor;
             }
         }
