@@ -71,6 +71,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final double defaultDiskBloatFactor;
     private final int defaultDocStoreCompressionLevel;
     private final boolean forwardIssuesToQrs;
+    private final int defaultMaxCompactBuffers;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
@@ -225,6 +226,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.defaultDiskBloatFactor = featureFlags.diskBloatFactor();
         this.defaultDocStoreCompressionLevel = featureFlags.docstoreCompressionLevel();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
+        this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -387,6 +389,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
                 .global(globalDocType);
+            ddbB.allocation.max_compact_buffers(defaultMaxCompactBuffers);
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedCluster = true;

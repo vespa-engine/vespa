@@ -1026,6 +1026,22 @@ public class ContentClusterTest extends ContentBaseTest {
         assertTrue(resolveThreePhaseUpdateConfigWithFeatureFlag(true));
     }
 
+    private int resolveMaxCompactBuffers(int maxCompactBuffers) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().maxCompactBuffers(maxCompactBuffers));
+        ContentCluster cc = model.getContentClusters().get("storage");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(1, protonConfig.documentdb().size());
+        return protonConfig.documentdb(0).allocation().max_compact_buffers();
+    }
+
+    @Test
+    public void default_max_compact_buffers_config_controlled_by_properties() {
+        assertEquals(2, resolveMaxCompactBuffers(2));
+        assertEquals(7, resolveMaxCompactBuffers(7));
+    }
+
     void assertZookeeperServerImplementation(String expectedClassName,
                                              ClusterControllerContainerCluster clusterControllerCluster) {
         for (ClusterControllerContainer c : clusterControllerCluster.getContainers()) {
