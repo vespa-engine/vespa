@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadFactory;
  * Factory for creating {@link Session} instances.
  *
  * @author Einar M R Rosenvinge
- * @deprecated use either FeedClient or SyncFeedClient // TODO: Remove on Vespa 8
+ * @deprecated Vespa-http-client will be removed in Vespa 8. It's replaced by <a href="https://docs.vespa.ai/en/vespa-feed-client.html">vespa-feed-client</a>
  */
 @Deprecated
 public final class SessionFactory {

@@ -32,6 +32,7 @@ public class VespaOutputFormat extends OutputFormat {
 
 
     @Override
+    @SuppressWarnings("deprecation")
     public RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         VespaCounters counters = VespaCounters.get(context);
         VespaConfiguration configuration = VespaConfiguration.get(context.getConfiguration(), configOverride);

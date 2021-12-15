@@ -21,7 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author dybis
  * @see FeedClientFactory
+ * @deprecated Vespa-http-client will be removed in Vespa 8. It's replaced by <a href="https://docs.vespa.ai/en/vespa-feed-client.html">vespa-feed-client</a>
  */
+@Deprecated
 public interface FeedClient extends AutoCloseable {
 
     /**

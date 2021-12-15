@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client;
 
-import java.io.PrintStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -15,7 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * std err as well.
  *
  * @author dybis
+ * @deprecated Vespa-http-client will be removed in Vespa 8. It's replaced by <a href="https://docs.vespa.ai/en/vespa-feed-client.html">vespa-feed-client</a>
  */
+@Deprecated
 public class SimpleLoggerResultCallback implements FeedClient.ResultCallback {
 
     private final Object monitor = new Object();

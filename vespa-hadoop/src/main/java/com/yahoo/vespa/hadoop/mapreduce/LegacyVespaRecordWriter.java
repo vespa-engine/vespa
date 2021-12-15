@@ -8,9 +8,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
 import com.yahoo.vespa.hadoop.pig.VespaDocumentOperation;
-import com.yahoo.vespa.http.client.FeedClient;
-import com.yahoo.vespa.http.client.FeedClientFactory;
-import com.yahoo.vespa.http.client.Result;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -39,14 +36,16 @@ import java.util.logging.Logger;
  * {@link LegacyVespaRecordWriter} sends the output &lt;key, value&gt; to one or more Vespa endpoints using vespa-http-client.
  *
  * @author lesters
+ * @deprecated Replaced by {@link VespaRecordWriter}
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "deprecation"})
+@Deprecated
 public class LegacyVespaRecordWriter extends RecordWriter {
 
     private final static Logger log = Logger.getLogger(LegacyVespaRecordWriter.class.getCanonicalName());
 
     private boolean initialized = false;
-    private FeedClient feedClient;
+    private com.yahoo.vespa.http.client.FeedClient feedClient;
     private final VespaCounters counters;
     private final int progressInterval;
 
@@ -154,7 +153,7 @@ public class LegacyVespaRecordWriter extends RecordWriter {
         }
 
         ResultCallback resultCallback = new ResultCallback(counters);
-        feedClient = FeedClientFactory.create(sessionParams.build(), resultCallback);
+        feedClient = com.yahoo.vespa.http.client.FeedClientFactory.create(sessionParams.build(), resultCallback);
 
         initialized = true;
         log.info("VespaStorage configuration:\n" + configuration.toString());
@@ -204,7 +203,7 @@ public class LegacyVespaRecordWriter extends RecordWriter {
     }
 
 
-    static class ResultCallback implements FeedClient.ResultCallback {
+    static class ResultCallback implements com.yahoo.vespa.http.client.FeedClient.ResultCallback {
         final VespaCounters counters;
 
         public ResultCallback(VespaCounters counters) {
@@ -212,15 +211,15 @@ public class LegacyVespaRecordWriter extends RecordWriter {
         }
 
         @Override
-        public void onCompletion(String docId, Result documentResult) {
+        public void onCompletion(String docId, com.yahoo.vespa.http.client.Result documentResult) {
             if (!documentResult.isSuccess()) {
                 counters.incrementDocumentsFailed(1);
                 StringBuilder sb = new StringBuilder();
                 sb.append("Problems with docid ");
                 sb.append(docId);
                 sb.append(": ");
-                List<Result.Detail> details = documentResult.getDetails();
-                for (Result.Detail detail : details) {
+                List<com.yahoo.vespa.http.client.Result.Detail> details = documentResult.getDetails();
+                for (com.yahoo.vespa.http.client.Result.Detail detail : details) {
                     sb.append(detail.toString());
                     sb.append(" ");
                 }

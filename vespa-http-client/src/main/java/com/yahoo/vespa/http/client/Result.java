@@ -16,7 +16,9 @@ import java.util.List;
  * single endpoint, and a Result may wrap data for multiple endpoints.
  *
  * @author Einar M R Rosenvinge
+ * @deprecated Vespa-http-client will be removed in Vespa 8. It's replaced by <a href="https://docs.vespa.ai/en/vespa-feed-client.html">vespa-feed-client</a>
  */
+@Deprecated
 public class Result {
 
     public enum ResultType {
