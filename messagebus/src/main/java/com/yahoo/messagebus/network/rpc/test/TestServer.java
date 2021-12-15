@@ -21,6 +21,7 @@ import com.yahoo.messagebus.test.SimpleProtocol;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A simple test server implementation.
@@ -28,6 +29,8 @@ import java.util.logging.Logger;
  * @author havardpe
  */
 public class TestServer {
+
+    private static Logger log = Logger.getLogger(TestServer.class.getName());
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     public final VersionedRPCNetwork net;
@@ -52,6 +55,7 @@ public class TestServer {
         if (table != null) {
             setupRouting(table);
         }
+        log.log(Level.INFO, "Running testServer '"+name+"' at "+net.getConnectionSpec()+", location broker at "+slobrok.port());
     }
 
     /** Creates a new test server. */
@@ -73,6 +77,7 @@ public class TestServer {
      * @return true if content existed and was destroyed
      */
     public boolean destroy() {
+        log.log(Level.INFO, "Destroy testServer '"+net.getIdentity().getServicePrefix()+"' at "+net.getConnectionSpec());
         if (!destroyed.getAndSet(true)) {
             mb.destroy();
             if (net != null)
