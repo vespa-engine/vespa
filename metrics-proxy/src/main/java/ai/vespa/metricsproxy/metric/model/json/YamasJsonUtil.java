@@ -7,13 +7,14 @@ import ai.vespa.metricsproxy.metric.model.ServiceId;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
+import com.yahoo.concurrent.CopyOnWriteHashMap;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ public class YamasJsonUtil {
 
     static final String YAMAS_ROUTING = "yamas";
 
+    private static final Map<Set<ConsumerId>, Map<String, YamasJsonModel.YamasJsonNamespace>> globalNameSpaces = new CopyOnWriteHashMap<>();
     public static MetricsPacket.Builder toMetricsPacketBuilder(YamasJsonModel jsonModel) {
         if (jsonModel.application == null)
             throw new IllegalArgumentException("Service id cannot be null");
@@ -79,12 +81,12 @@ public class YamasJsonUtil {
         }
     }
 
-    private static YamasJsonModel getStatusYamasModel(String statusMessage, int statusCode, Collection<ConsumerId> consumers) {
+    private static YamasJsonModel getStatusYamasModel(String statusMessage, int statusCode, Set<ConsumerId> consumers) {
         YamasJsonModel model = new YamasJsonModel();
         model.status_code = statusCode;
         model.status_msg = statusMessage;
         model.application = "yms_check_vespa";
-        model.routing = ImmutableMap.of(YAMAS_ROUTING, toYamasJsonNamespaces(consumers));
+        model.routing = computeIfAbsent(consumers);
         return model;
     }
 
@@ -99,38 +101,38 @@ public class YamasJsonUtil {
         model.application = packet.service.id;
         model.timestamp = (packet.timestamp == 0L) ? null : packet.timestamp;
 
-        if (packet.metrics().isEmpty()) model.metrics = null;
-        else {
-            model.metrics = packet.metrics().entrySet().stream().collect(
+        model.metrics = (packet.metrics().isEmpty())
+                ? null
+                : packet.metrics().entrySet().stream().collect(
                     toLinkedMap(id2metric -> id2metric.getKey().id,
                                 id2metric -> id2metric.getValue().doubleValue()));
-        }
 
-        if (packet.dimensions().isEmpty()) model.dimensions = null;
-        else {
-            model.dimensions = packet.dimensions().entrySet()
+        model.dimensions = (packet.dimensions().isEmpty())
+                ? null
+                : packet.dimensions().entrySet()
                     .stream()
                     .filter(entry -> entry.getKey() != null && entry.getValue() != null)
-                    .collect(toLinkedMap(
-                            id2dim -> id2dim.getKey().id,
-                            Map.Entry::getValue)
-                    );
-        }
+                    .collect(toLinkedMap(id2dim -> id2dim.getKey().id, Map.Entry::getValue));
 
-        YamasJsonModel.YamasJsonNamespace namespaces = toYamasJsonNamespaces(packet.consumers());
-        if (namespaces.namespaces.isEmpty()) model.routing = null;
-        else model.routing = ImmutableMap.of(YAMAS_ROUTING, namespaces);
+        model.routing = computeIfAbsent(packet.consumers());
 
         return model;
     }
 
-    private static YamasJsonModel.YamasJsonNamespace toYamasJsonNamespaces(Collection<ConsumerId> consumers) {
-        YamasJsonModel.YamasJsonNamespace namespaces =  new YamasJsonModel.YamasJsonNamespace();
-        namespaces.namespaces = consumers.stream()
+    private static Map<String, YamasJsonModel.YamasJsonNamespace> computeIfAbsent(Set<ConsumerId> consumers) {
+        return globalNameSpaces.computeIfAbsent(consumers, YamasJsonUtil::createYamasJson);
+    }
+
+    private static Map<String, YamasJsonModel.YamasJsonNamespace> createYamasJson(Set<ConsumerId> consumers) {
+        List<String> namespaces = consumers.stream()
                 .filter(consumerId -> consumerId != defaultMetricsConsumerId)
                 .map(consumer -> consumer.id)
                 .collect(Collectors.toList());
-        return namespaces;
+        if (namespaces.isEmpty()) return null;
+
+        YamasJsonModel.YamasJsonNamespace yamasJsonNamespace = new YamasJsonModel.YamasJsonNamespace();
+        yamasJsonNamespace.namespaces = namespaces;
+        return Map.of(YAMAS_ROUTING, yamasJsonNamespace);
     }
 
 }

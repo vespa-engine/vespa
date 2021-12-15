@@ -60,29 +60,6 @@ public class YamasJsonModel {
     }
 
     /**
-     * Convenience method to add targets to the routing object
-     *
-     * @param names Namespaces E.g "Vespa"
-     */
-    public void addRouting(Set<ConsumerId> names) {
-        // Setup routing structure if not already existing
-        if (routing == null) {
-            routing = new HashMap<>();
-        }
-
-        if (! routing.containsKey("yamas")) {
-            routing.put("yamas", new YamasJsonModel.YamasJsonNamespace());
-        }
-        YamasJsonModel.YamasJsonNamespace namespace = routing.get("yamas");
-
-        if (namespace.namespaces == null) {
-            namespace.namespaces = new ArrayList<>();
-        }
-
-        namespace.namespaces.addAll(names.stream().map(consumer -> consumer.id).collect(Collectors.toList()));
-    }
-
-    /**
      * Convenience method to add dimensions
      */
     public void addDimensions(Map<DimensionId, String> additionalDimensions, boolean replace) {
