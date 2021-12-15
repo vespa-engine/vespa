@@ -30,8 +30,6 @@ import static ai.vespa.metricsproxy.node.ServiceHealthGatherer.gatherServiceHeal
  *
  * @author olaa
  */
-
-
 public class NodeMetricGatherer {
 
     private final VespaServices vespaServices;

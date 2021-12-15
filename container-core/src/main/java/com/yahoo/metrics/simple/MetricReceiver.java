@@ -22,6 +22,8 @@ public class MetricReceiver {
 
     public static final MetricReceiver nullImplementation = new NullReceiver();
     private final ThreadLocalDirectory<Bucket, Sample> metricsCollection;
+
+    // A reference to the current snapshot. The *reference* is shared with MetricsAggregator and updated from there :-/
     private final AtomicReference<Bucket> currentSnapshot;
 
     // metricSettings is volatile for reading, the lock is for updates
@@ -91,7 +93,7 @@ public class MetricReceiver {
 
         /** Gathers all data since last snapshot */
         public Bucket getSnapshot() {
-            final Bucket merged = new Bucket();
+            Bucket merged = new Bucket();
             for (Bucket b : collection.fetch()) {
                 merged.merge(b, true);
             }

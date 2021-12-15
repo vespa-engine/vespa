@@ -30,7 +30,7 @@ public class MetricsTest {
 
         Map<String, Number> map = new HashMap<>();
 
-        for (Metric metric: m.getMetrics()) {
+        for (Metric metric: m.list()) {
             String k = metric.getName().id;
 
             assertThat(map.containsKey(k), is(false));
@@ -45,8 +45,8 @@ public class MetricsTest {
     public void testBasicMetric() {
         Metrics m = new Metrics();
         m.add(new Metric(toMetricId("count"), 1, System.currentTimeMillis() / 1000));
-        assertThat(m.getMetrics().size(), is(1));
-        assertThat(m.getMetrics().get(0).getName(), is(toMetricId("count")));
+        assertThat(m.list().size(), is(1));
+        assertThat(m.list().get(0).getName(), is(toMetricId("count")));
     }
 
     @Test

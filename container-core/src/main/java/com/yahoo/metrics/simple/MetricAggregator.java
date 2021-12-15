@@ -23,8 +23,9 @@ class MetricAggregator implements Runnable {
     private long fromMillis;
     private final DimensionCache dimensions;
 
-    MetricAggregator(ThreadLocalDirectory<Bucket, Sample> metricsCollection, AtomicReference<Bucket> currentSnapshot,
-            ManagerConfig settings) {
+    MetricAggregator(ThreadLocalDirectory<Bucket, Sample> metricsCollection,
+                     AtomicReference<Bucket> currentSnapshot,
+                     ManagerConfig settings) {
         if (settings.reportPeriodSeconds() < 10) {
             throw new IllegalArgumentException("Do not use this metrics implementation" +
                                                " if report periods of less than 10 seconds is desired.");

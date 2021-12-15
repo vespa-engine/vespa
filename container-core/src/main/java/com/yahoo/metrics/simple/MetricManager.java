@@ -21,11 +21,11 @@ import java.util.logging.Level;
  */
 public class MetricManager extends AbstractComponent implements Provider<MetricReceiver> {
 
-    private static Logger log = Logger.getLogger(MetricManager.class.getName());
+    private static final Logger log = Logger.getLogger(MetricManager.class.getName());
 
     private final ScheduledThreadPoolExecutor executor;
     private final MetricReceiver receiver;
-    private ThreadLocalDirectory<Bucket, Sample> metricsCollection;
+    private final ThreadLocalDirectory<Bucket, Sample> metricsCollection;
 
     public MetricManager(ManagerConfig settings) {
         this(settings, new MetricUpdater());
@@ -42,7 +42,9 @@ public class MetricManager extends AbstractComponent implements Provider<MetricR
         // bucket has data for exactly one second, but one should strive for
         // this.buffer to contain data for as close a period to the report
         // interval as possible
-        executor.scheduleAtFixedRate(new MetricAggregator(metricsCollection, currentSnapshot, settings), 1, 1, TimeUnit.SECONDS);
+        executor.scheduleAtFixedRate(new MetricAggregator(metricsCollection, currentSnapshot, settings),
+                                     1,
+                                     1, TimeUnit.SECONDS);
         receiver = new MetricReceiver(metricsCollection, currentSnapshot);
     }
 
