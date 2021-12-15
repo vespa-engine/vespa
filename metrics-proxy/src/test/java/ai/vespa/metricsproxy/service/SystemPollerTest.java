@@ -142,7 +142,7 @@ public class SystemPollerTest {
         SystemPoller.JiffiesAndCpus diff = next.diff(prev);
 
         Metrics m = s1.getSystemMetrics();
-        List<Metric> metricList = m.getMetrics();
+        List<Metric> metricList = m.list();
         assertEquals(4, metricList.size());
         assertEquals(new Metric(MetricId.toMetricId("memory_virt"), 0L, 1), metricList.get(0));
         assertEquals(new Metric(MetricId.toMetricId("memory_rss"), 0L, 1), metricList.get(1));

@@ -7,6 +7,7 @@ import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 import org.junit.Test;
 
+import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -35,8 +36,8 @@ public class MetricsFetcherTest {
         String jsonData = TestUtil.getFileContents("metrics-state.json");
         Metrics metrics = fetch(jsonData);
         assertThat(metrics.size(), is(10));
-        assertThat(metrics.getMetric(MetricId.toMetricId("query_hits.count")).getValue().intValue(), is(28));
-        assertThat(metrics.getMetric(MetricId.toMetricId("queries.rate")).getValue().doubleValue(), is(0.4667));
+        assertThat(getMetric("query_hits.count", metrics).getValue().intValue(), is(28));
+        assertThat(getMetric("queries.rate", metrics).getValue().doubleValue(), is(0.4667));
         assertThat(metrics.getTimeStamp(), is(1334134700L));
     }
 
@@ -94,4 +95,13 @@ public class MetricsFetcherTest {
         metrics = fetch(jsonData);
         assertThat("Wrong number of metrics", metrics.size(), is(0));
     }
+
+    public Metric getMetric(String metric, Metrics metrics) {
+        for (Metric m: metrics.list()) {
+            if (m.getName().equals(toMetricId(metric)))
+                return m;
+        }
+        return null;
+    }
+
 }

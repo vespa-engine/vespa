@@ -171,7 +171,7 @@ public class VespaMetrics {
         builder.putDimension(METRIC_TYPE_DIMENSION_ID, "system")
                 .putDimension(INSTANCE_DIMENSION_ID, service.getInstanceName())
                 .putDimensions(service.getDimensions())
-                .putMetrics(systemMetrics.getMetrics());
+                .putMetrics(systemMetrics.list());
 
         builder.addConsumers(metricsConsumers.getAllConsumers());
         return Optional.of(builder);

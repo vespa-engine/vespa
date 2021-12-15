@@ -40,7 +40,7 @@ public class ContainerServiceTest {
     public void testMultipleQueryDimensions() {
         int count = 0;
         VespaService service = VespaService.create("service1", "id", httpServer.port());
-        for (Metric m : service.getMetrics().getMetrics()) {
+        for (Metric m : service.getMetrics().list()) {
             if (m.getName().equals(toMetricId("queries.rate"))) {
                 count++;
                 System.out.println("Name: " + m.getName() + " value: " + m.getValue());

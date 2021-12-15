@@ -14,7 +14,7 @@ import com.yahoo.metrics.simple.Sample;
 import com.yahoo.metrics.simple.UntypedMetric.AssumedType;
 
 /**
- * The single user facing part of the JDisc interfaces of simple metrics.
+ * The metrics consumer in JDisc.
  *
  * @author Steinar Knutsen
  */

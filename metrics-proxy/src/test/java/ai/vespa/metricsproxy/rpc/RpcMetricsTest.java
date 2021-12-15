@@ -108,9 +108,9 @@ public class RpcMetricsTest {
 
             Metrics metrics = qrserver.getMetrics();
             assertThat("Fetched number of metrics is not correct", metrics.size(), is(2));
-            Metric m = metrics.getMetric(toMetricId("foo.count"));
+            Metric m = getMetric("foo.count", metrics);
             assertNotNull("Did not find expected metric with name 'foo.count'", m);
-            Metric m2 = metrics.getMetric(toMetricId("bar.count"));
+            Metric m2 = getMetric("bar.count", metrics);
             assertNotNull("Did not find expected metric with name 'bar.count'", m2);
 
             try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
@@ -132,6 +132,14 @@ public class RpcMetricsTest {
 
             }
         }
+    }
+
+    public Metric getMetric(String metric, Metrics metrics) {
+        for (Metric m: metrics.list()) {
+            if (m.getName().equals(toMetricId(metric)))
+                return m;
+        }
+        return null;
     }
 
     private static void verifyMetricsFromRpcRequest(VespaService service, RpcClient client) throws IOException {
@@ -161,7 +169,7 @@ public class RpcMetricsTest {
     private void verfiyMetricsFromServiceObject(VespaService service) {
         Metrics storageMetrics = service.getMetrics();
         assertThat(storageMetrics.size(), is(2));
-        Metric foo = storageMetrics.getMetric(toMetricId("foo.count"));
+        Metric foo = getMetric("foo.count", storageMetrics);
         assertNotNull("Did not find expected metric with name 'foo.count'", foo);
         assertThat("Expected 2 dimensions for metric foo", foo.getDimensions().size(), is(2));
         assertThat("Metric foo did not contain correct dimension mapping for key = foo.count", foo.getDimensions().containsKey(toDimensionId("foo")), is(true));
@@ -187,10 +195,10 @@ public class RpcMetricsTest {
             assertThat(services.size(), is(1));
             Metrics metrics = services.get(0).getMetrics();
             assertThat("Fetched number of metrics is not correct", metrics.size(), is(2));
-            Metric m = metrics.getMetric(toMetricId("foo.count"));
+            Metric m = getMetric("foo.count", metrics);
             assertNotNull("Did not find expected metric with name 'foo.count'", m);
 
-            Metric m2 = metrics.getMetric(toMetricId("bar.count"));
+            Metric m2 = getMetric("bar.count", metrics);
             assertNotNull("Did not find expected metric with name 'bar'", m2);
 
             try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {

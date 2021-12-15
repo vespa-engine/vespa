@@ -175,7 +175,7 @@ public class Bucket {
 
     @Override
     public String toString() {
-        return "Bucket [values=" + (values != null ? toString(values.entrySet(), 3) : null) + "]";
+        return "Bucket [values=" + toString(values.entrySet(), 3) + "]";
     }
 
     private String toString(Collection<?> collection, int maxLen) {
