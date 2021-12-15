@@ -13,11 +13,9 @@ protected:
     class ConstIteratorImpl
     {
     public:
-        virtual ~ConstIteratorImpl() { }
+        virtual ~ConstIteratorImpl() = default;
         virtual void increment() = 0;
-
         virtual bool equal(const ConstIteratorImpl& other) const = 0;
-
         virtual PrioritizedBucket dereference() const = 0;
     };
 
@@ -33,13 +31,13 @@ public:
     {
         ConstIteratorImplPtr _impl;
     public:
-        ConstIterator(ConstIteratorImplPtr impl)
+        explicit ConstIterator(ConstIteratorImplPtr impl)
             : _impl(std::move(impl))
         {}
         ConstIterator(const ConstIterator &) = delete;
         ConstIterator(ConstIterator &&) = default;
 
-        virtual ~ConstIterator() {}
+        virtual ~ConstIterator() = default;
     private:
         friend class boost::iterator_core_access;
 
@@ -61,9 +59,7 @@ public:
     virtual ~BucketPriorityDatabase() = default;
     
     virtual const_iterator begin() const = 0;
-
     virtual const_iterator end() const  = 0;
-
     virtual void setPriority(const PrioritizedBucket&) = 0;
 };
 
