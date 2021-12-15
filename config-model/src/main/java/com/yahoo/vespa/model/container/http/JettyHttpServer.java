@@ -23,6 +23,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
     private final ContainerCluster<?> cluster;
     private volatile boolean isHostedVespa;
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
+    private final List<String> ignoredUserAgentsList = new ArrayList<>();
 
     public JettyHttpServer(String componentId, ContainerCluster<?> cluster, boolean isHostedVespa) {
         super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(), null));
@@ -44,10 +45,15 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         return Collections.unmodifiableList(connectorFactories);
     }
 
+    public void addIgnoredUserAgent(String userAgent) {
+        ignoredUserAgentsList.add(userAgent);
+    }
+
     @Override
     public void getConfig(ServerConfig.Builder builder) {
         builder.metric(new ServerConfig.Metric.Builder()
                 .monitoringHandlerPaths(List.of("/state/v1", "/status.html", "/metrics/v2"))
+                .ignoredUserAgents(ignoredUserAgentsList)
                 .searchHandlerPaths(List.of("/search"))
         );
         if (isHostedVespa) {
