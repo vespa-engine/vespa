@@ -191,4 +191,53 @@ public class Reindexing {
 
     }
 
+
+    public static class Trigger {
+
+        private final DocumentType type;
+        private final Instant readyAt;
+        private final double speed;
+
+        public Trigger(DocumentType type, Instant readyAt, double speed) {
+            this.type = requireNonNull(type);
+            this.readyAt = requireNonNull(readyAt);
+            this.speed = speed;
+        }
+
+        public DocumentType type() {
+            return type;
+        }
+
+        public Instant readyAt() {
+            return readyAt;
+        }
+
+        public double speed() {
+            return speed;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Trigger trigger = (Trigger) o;
+            return Double.compare(trigger.speed, speed) == 0 && type.equals(trigger.type) && readyAt.equals(trigger.readyAt);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, readyAt, speed);
+        }
+
+        @Override
+        public String toString() {
+            return "Trigger{" +
+                   "type=" + type +
+                   ", readyAt=" + readyAt +
+                   ", speed=" + speed +
+                   '}';
+        }
+
+    }
+
 }

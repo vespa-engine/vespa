@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 public class ReindexingTriggerer extends ControllerMaintainer {
 
     static final Duration reindexingPeriod = Duration.ofDays(91); // 13 weeks — four times a year.
+    static final double speed = 0.2; // Careful reindexing, as this is supposed to be a background operation.
 
     private static final Logger log = Logger.getLogger(ReindexingTriggerer.class.getName());
 
@@ -49,7 +50,7 @@ public class ReindexingTriggerer extends ControllerMaintainer {
                     for (Deployment deployment : deployments)
                         if (   inWindowOfOpportunity(now, id, deployment.zone())
                             && reindexingIsReady(controller().applications().applicationReindexing(id, deployment.zone()), now))
-                            controller().applications().reindex(id, deployment.zone(), List.of(), List.of(), true);
+                            controller().applications().reindex(id, deployment.zone(), List.of(), List.of(), true, speed);
                 });
             return 1.0;
         }

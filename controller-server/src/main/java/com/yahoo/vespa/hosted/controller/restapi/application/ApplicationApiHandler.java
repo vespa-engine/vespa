@@ -139,6 +139,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Scanner;
@@ -1839,10 +1840,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                              .filter(type -> ! type.isBlank())
                                              .collect(toUnmodifiableList());
 
-        controller.applications().reindex(id, zone, clusterNames, documentTypes, request.getBooleanProperty("indexedOnly"));
+        Double speed = request.hasProperty("speed") ? Double.parseDouble(request.getProperty("speed")) : null;
+        boolean indexedOnly = request.getBooleanProperty("indexedOnly");
+        controller.applications().reindex(id, zone, clusterNames, documentTypes, indexedOnly, speed);
         return new MessageResponse("Requested reindexing of " + id + " in " + zone +
-                                   (clusterNames.isEmpty() ? "" : ", on clusters " + String.join(", ", clusterNames) +
-                                                                  (documentTypes.isEmpty() ? "" : ", for types " + String.join(", ", documentTypes))));
+                                   (clusterNames.isEmpty() ? "" : ", on clusters " + String.join(", ", clusterNames)) +
+                                   (documentTypes.isEmpty() ? "" : ", for types " + String.join(", ", documentTypes)) +
+                                   (indexedOnly ? ", for indexed types" : "") +
+                                   (speed != null ? ", with speed " + speed : ""));
     }
 
     /** Gets reindexing status of an application in a zone. */
@@ -1888,6 +1893,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         status.state().map(ApplicationApiHandler::toString).ifPresent(state -> statusObject.setString("state", state));
         status.message().ifPresent(message -> statusObject.setString("message", message));
         status.progress().ifPresent(progress -> statusObject.setDouble("progress", progress));
+        status.speed().ifPresent(speed -> statusObject.setDouble("speed", speed));
     }
 
     private static String toString(ApplicationReindexing.State state) {

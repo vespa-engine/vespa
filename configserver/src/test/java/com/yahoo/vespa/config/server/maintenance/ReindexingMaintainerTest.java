@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import static com.yahoo.vespa.config.server.maintenance.ReindexingMaintainer.SPEED;
 import static com.yahoo.vespa.config.server.maintenance.ReindexingMaintainer.withNewReady;
 import static com.yahoo.vespa.config.server.maintenance.ReindexingMaintainer.withOnlyCurrentData;
 import static org.junit.Assert.assertEquals;
@@ -21,10 +22,7 @@ public class ReindexingMaintainerTest {
     public void testReadyComputation() {
         ApplicationReindexing reindexing = ApplicationReindexing.empty()
                                                                 .withPending("one", "a", 10)
-                                                                .withPending("two", "b", 20)
-                                                                .withReady("one", "a", Instant.ofEpochMilli(3))
-                                                                .withReady("two", "b", Instant.ofEpochMilli(2))
-                                                                .withReady("two", "c", Instant.ofEpochMilli(3));
+                                                                .withPending("two", "b", 20).withReady("one", "a", Instant.ofEpochMilli(3), SPEED).withReady("two", "b", Instant.ofEpochMilli(2), SPEED).withReady("two", "c", Instant.ofEpochMilli(3), SPEED);
 
         // Nothing happens without convergence.
         assertEquals(reindexing,
@@ -32,14 +30,14 @@ public class ReindexingMaintainerTest {
 
         // Status for (one, a) changes, but not (two, b).
         Instant later = Instant.ofEpochMilli(3 << 10);
-        assertEquals(reindexing.withoutPending("one", "a")      // Converged, no longer pending.
-                               .withReady("one", "a", later),   // Converged, now ready.
+        // Converged, no longer pending.
+        assertEquals(reindexing.withoutPending("one", "a").withReady("one", "a", later, SPEED),   // Converged, now ready.
                      withNewReady(reindexing, () -> 19L, later));
 
-        assertEquals(reindexing.withoutPending("one", "a")      // Converged, no longer pending.
-                               .withReady("one", "a", later)
-                               .withoutPending("two", "b")      // Converged, no Longer pending.
-                               .withReady("two", "b", later),
+        // Converged, no longer pending.
+        // Converged, no Longer pending.
+        assertEquals(reindexing.withoutPending("one", "a").withReady("one", "a", later, SPEED)
+                               .withoutPending("two", "b").withReady("two", "b", later, SPEED),
                      withNewReady(reindexing, () -> 20L, later));
 
         // Verify generation supplier isn't called when no pending document types.
@@ -52,10 +50,7 @@ public class ReindexingMaintainerTest {
     public void testGarbageRemoval() {
         ApplicationReindexing reindexing = ApplicationReindexing.empty()
                                                                 .withPending("one", "a", 10)
-                                                                .withPending("two", "b", 20)
-                                                                .withReady("one", "a", Instant.ofEpochMilli(3))
-                                                                .withReady("two", "b", Instant.ofEpochMilli(2))
-                                                                .withReady("two", "c", Instant.ofEpochMilli(3));
+                                                                .withPending("two", "b", 20).withReady("one", "a", Instant.ofEpochMilli(3), SPEED).withReady("two", "b", Instant.ofEpochMilli(2), SPEED).withReady("two", "c", Instant.ofEpochMilli(3), SPEED);
 
         assertEquals(reindexing,
                      withOnlyCurrentData(reindexing, Map.of("one", List.of("a", "b", "c", "d"),
@@ -67,13 +62,10 @@ public class ReindexingMaintainerTest {
                                                             "two", List.of("b", "c"))));
 
         assertEquals(ApplicationReindexing.empty()
-                                          .withPending("two", "b", 20)
-                                          .withReady("two", "b", Instant.ofEpochMilli(2)),
+                                          .withPending("two", "b", 20).withReady("two", "b", Instant.ofEpochMilli(2), SPEED),
                      withOnlyCurrentData(reindexing, Map.of("two", List.of("a", "b"))));
 
-        assertEquals(ApplicationReindexing.empty()
-                                          .withReady("one", "a", Instant.EPOCH).without("one", "a")
-                                          .withReady("two", "c", Instant.ofEpochMilli(3)),
+        assertEquals(ApplicationReindexing.empty().withReady("one", "a", Instant.EPOCH, SPEED).without("one", "a").withReady("two", "c", Instant.ofEpochMilli(3), SPEED),
                      withOnlyCurrentData(reindexing, Map.of("one", List.of("c"),
                                                             "two", List.of("c"))));
     }

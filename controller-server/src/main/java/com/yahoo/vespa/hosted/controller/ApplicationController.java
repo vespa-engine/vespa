@@ -178,8 +178,8 @@ public class ApplicationController {
      * if no documents types are given, reindexing is triggered for all given clusters; otherwise
      * reindexing is triggered for the cartesian product of the given clusters and document types.
      */
-    public void reindex(ApplicationId id, ZoneId zoneId, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly) {
-        configServer.reindex(new DeploymentId(id, zoneId), clusterNames, documentTypes, indexedOnly);
+    public void reindex(ApplicationId id, ZoneId zoneId, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly, Double speed) {
+        configServer.reindex(new DeploymentId(id, zoneId), clusterNames, documentTypes, indexedOnly, speed);
     }
 
     /** Returns the reindexing status for the given application in the given zone. */

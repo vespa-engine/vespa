@@ -2,6 +2,7 @@
 package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexer.Cluster;
+import ai.vespa.reindexing.Reindexing.Trigger;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static ai.vespa.reindexing.ReindexingMaintainer.parseCluster;
@@ -30,9 +32,9 @@ class ReindexingMaintainerTest {
         DocumentmanagerConfig musicConfig = Deriver.getDocumentManagerConfig("src/test/resources/schemas/music.sd").build();
         DocumentTypeManager manager = new DocumentTypeManager(musicConfig);
 
-        assertEquals(Map.of(manager.getDocumentType("music"), Instant.ofEpochMilli(123)),
+        assertEquals(List.of(new Trigger(manager.getDocumentType("music"), Instant.ofEpochMilli(123), 0.5)),
                      parseReady(new ReindexingConfig.Clusters.Builder()
-                                        .documentTypes("music", new ReindexingConfig.Clusters.DocumentTypes.Builder().readyAtMillis(123))
+                                        .documentTypes("music", new ReindexingConfig.Clusters.DocumentTypes.Builder().readyAtMillis(123).speed(0.5))
                                         .build(),
                                 manager));
 

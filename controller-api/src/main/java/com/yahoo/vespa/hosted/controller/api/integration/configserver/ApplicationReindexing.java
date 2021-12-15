@@ -103,18 +103,20 @@ public class ApplicationReindexing {
         private final State state;
         private final String message;
         private final Double progress;
+        private final Double speed;
 
-        public Status(Instant readyAt, Instant startedAt, Instant endedAt, State state, String message, Double progress) {
+        public Status(Instant readyAt, Instant startedAt, Instant endedAt, State state, String message, Double progress, Double speed) {
             this.readyAt = readyAt;
             this.startedAt = startedAt;
             this.endedAt = endedAt;
             this.state = state;
             this.message = message;
             this.progress = progress;
+            this.speed = speed;
         }
 
         public Status(Instant readyAt) {
-            this(readyAt, null, null, null, null, null);
+            this(readyAt, null, null, null, null, null, 1.0);
         }
 
         public Optional<Instant> readyAt() { return Optional.ofNullable(readyAt); }
@@ -123,23 +125,19 @@ public class ApplicationReindexing {
         public Optional<State> state() { return Optional.ofNullable(state); }
         public Optional<String> message() { return Optional.ofNullable(message); }
         public Optional<Double> progress() { return Optional.ofNullable(progress); }
+        public Optional<Double> speed() { return Optional.ofNullable(speed); }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Status status = (Status) o;
-            return Objects.equals(readyAt, status.readyAt) &&
-                   Objects.equals(startedAt, status.startedAt) &&
-                   Objects.equals(endedAt, status.endedAt) &&
-                   state == status.state &&
-                   Objects.equals(message, status.message) &&
-                   Objects.equals(progress, status.progress);
+            return Objects.equals(readyAt, status.readyAt) && Objects.equals(startedAt, status.startedAt) && Objects.equals(endedAt, status.endedAt) && state == status.state && Objects.equals(message, status.message) && Objects.equals(progress, status.progress) && Objects.equals(speed, status.speed);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(readyAt, startedAt, endedAt, state, message, progress);
+            return Objects.hash(readyAt, startedAt, endedAt, state, message, progress, speed);
         }
 
         @Override
@@ -150,7 +148,8 @@ public class ApplicationReindexing {
                    ", endedAt=" + endedAt +
                    ", state=" + state +
                    ", message='" + message + '\'' +
-                   ", progress='" + progress + '\'' +
+                   ", progress=" + progress +
+                   ", speed=" + speed +
                    '}';
         }
 

@@ -69,7 +69,7 @@ public class ReindexingTriggererTest {
                                                Map.of("cluster",
                                                       new Cluster(Map.of(),
                                                                   Map.of("type",
-                                                                         new Status(then, then, null, null, null, null)))));
+                                                                         new Status(then, then, null, null, null, null, 1.0)))));
         assertFalse("Should not be ready when reindexing is already running",
                     reindexingIsReady(reindexing, now));
 
@@ -77,7 +77,7 @@ public class ReindexingTriggererTest {
                                                Map.of("cluster",
                                                       new Cluster(Map.of("type", 123L),
                                                                   Map.of("type",
-                                                                         new Status(then, then, now, null, null, null)))));
+                                                                         new Status(then, then, now, null, null, null, 1.0)))));
         assertTrue("Should be ready when reindexing is no longer running",
                    reindexingIsReady(reindexing, now));
     }

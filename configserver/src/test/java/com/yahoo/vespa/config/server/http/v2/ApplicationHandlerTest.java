@@ -228,48 +228,37 @@ public class ApplicationHandlerTest {
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("boo", "bar", clock.instant())
-                           .withReady("foo", "bar", clock.instant())
-                           .withReady("foo", "baz", clock.instant())
-                           .withReady("foo", "bax", clock.instant());
+        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "?indexedOnly=true", "{\"message\":\"Reindexing document types [bar] in 'foo' of application default.default\"}");
-        expected = expected.withReady("foo", "bar", clock.instant());
+        expected = expected.withReady("foo", "bar", clock.instant(), 1);
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady("boo", "bar", clock.instant())
-                           .withReady("foo", "bar", clock.instant())
-                           .withReady("foo", "baz", clock.instant())
-                           .withReady("foo", "bax", clock.instant());
+        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
         reindex(applicationId, "?clusterId=", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        expected = expected.withReady("boo", "bar", clock.instant())
-                           .withReady("foo", "bar", clock.instant());
+        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1);
         reindex(applicationId, "?documentType=bar", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar] in 'foo' of application default.default\"}");
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
         reindex(applicationId, "?clusterId=foo,boo", "{\"message\":\"Reindexing document types [bar] in 'boo', [bar, bax, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("boo", "bar", clock.instant())
-                           .withReady("foo", "bar", clock.instant())
-                           .withReady("foo", "baz", clock.instant())
-                           .withReady("foo", "bax", clock.instant());
+        expected = expected.withReady("boo", "bar", clock.instant(), 1).withReady("foo", "bar", clock.instant(), 1).withReady("foo", "baz", clock.instant(), 1).withReady("foo", "bax", clock.instant(), 1);
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
         clock.advance(Duration.ofSeconds(1));
-        reindex(applicationId, "?clusterId=foo&documentType=bar,baz", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
-        expected = expected.withReady("foo", "bar", clock.instant())
-                           .withReady("foo", "baz", clock.instant());
+        reindex(applicationId, "?clusterId=foo&documentType=bar,baz&speed=0.1", "{\"message\":\"Reindexing document types [bar, baz] in 'foo' of application default.default\"}");
+        expected = expected.withReady("foo", "bar", clock.instant(), 0.1).withReady("foo", "baz", clock.instant(), 0.1);
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
 
@@ -295,7 +284,8 @@ public class ApplicationHandlerTest {
                                        "      }," +
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
-                                       "          \"readyMillis\": " + (now - 1000) +
+                                       "          \"readyMillis\": " + (now - 1000) + ", " +
+                                       "          \"speed\": 1.0" +
                                        "        }" +
                                        "      }" +
                                        "    }," +
@@ -303,13 +293,16 @@ public class ApplicationHandlerTest {
                                        "      \"pending\": {}," +
                                        "      \"ready\": {" +
                                        "        \"bar\": {" +
-                                       "          \"readyMillis\": " + now +
+                                       "          \"readyMillis\": " + now + ", " +
+                                       "          \"speed\": 0.1" +
                                        "        }," +
                                        "        \"bax\": {" +
-                                       "          \"readyMillis\": " + (now - 1000) +
+                                       "          \"readyMillis\": " + (now - 1000) + ", " +
+                                       "          \"speed\": 1.0" +
                                        "        }," +
                                        "        \"baz\": {" +
-                                       "          \"readyMillis\": " + now +
+                                       "          \"readyMillis\": " + now + ", " +
+                                       "          \"speed\": 0.1" +
                                        "        }" +
                                        "      }" +
                                        "    }" +
@@ -482,8 +475,7 @@ public class ApplicationHandlerTest {
     public void testReindexingSerialization() throws IOException {
         Instant now = Instant.ofEpochMilli(123456);
         ApplicationReindexing applicationReindexing = ApplicationReindexing.empty()
-                                                                           .withPending("foo", "bar", 123L)
-                                                                           .withReady("moo", "baz", now);
+                                                                           .withPending("foo", "bar", 123L).withReady("moo", "baz", now, 1);
         ClusterReindexing clusterReindexing = new ClusterReindexing(Map.of("bax", new Status(now, null, null, null, null),
                                                                            "baz", new Status(now.plusSeconds(1),
                                                                                              now.plusSeconds(2),
@@ -534,6 +526,7 @@ public class ApplicationHandlerTest {
                          "        },\n" +
                          "        \"baz\": {\n" +
                          "          \"readyMillis\": 123456,\n" +
+                         "          \"speed\": 1.0,\n" +
                          "          \"startedMillis\": 124456,\n" +
                          "          \"endedMillis\": 125456,\n" +
                          "          \"state\": \"failed\",\n" +

@@ -2,6 +2,7 @@
 package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
+import ai.vespa.reindexing.Reindexing.Trigger;
 import ai.vespa.reindexing.ReindexingCurator.ReindexingLockException;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.select.parser.ParseException;
@@ -18,18 +19,20 @@ import com.yahoo.vespa.curator.Lock;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+import static java.util.Comparator.comparingDouble;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Progresses reindexing efforts by creating visitor sessions against its own content cluster,
@@ -45,14 +48,14 @@ public class Reindexer {
     static final Duration failureGrace = Duration.ofMinutes(10);
 
     private final Cluster cluster;
-    private final Map<DocumentType, Instant> ready;
+    private final List<Trigger> ready;
     private final ReindexingCurator database;
     private final Function<VisitorParameters, Runnable> visitorSessions;
     private final ReindexingMetrics metrics;
     private final Clock clock;
     private final Phaser phaser = new Phaser(2); // Reindexer and visitor.
 
-    public Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
+    public Reindexer(Cluster cluster, List<Trigger> ready, ReindexingCurator database,
                      DocumentAccess access, Metric metric, Clock clock) {
         this(cluster,
              ready,
@@ -70,13 +73,15 @@ public class Reindexer {
         );
     }
 
-    Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
+    Reindexer(Cluster cluster, List<Trigger> ready, ReindexingCurator database,
               Function<VisitorParameters, Runnable> visitorSessions, Metric metric, Clock clock) {
-        for (DocumentType type : ready.keySet())
-            cluster.bucketSpaceOf(type); // Verifies this is known.
+        for (Trigger trigger : ready)
+            cluster.bucketSpaceOf(trigger.type()); // Verifies this is known.
 
         this.cluster = cluster;
-        this.ready = new TreeMap<>(ready); // Iterate through document types in consistent order.
+        this.ready = ready.stream() // Iterate through document types in consistent order.
+                          .sorted(comparingDouble(Trigger::speed).reversed().thenComparing(Trigger::readyAt).thenComparing(Trigger::type))
+                          .collect(toUnmodifiableList());
         this.database = database;
         this.visitorSessions = visitorSessions;
         this.metrics = new ReindexingMetrics(metric, cluster.name);
@@ -104,12 +109,13 @@ public class Reindexer {
             database.writeReindexing(reindexing.get(), cluster.name());
             metrics.dump(reindexing.get());
 
-            for (DocumentType type : ready.keySet()) { // We consider only document types for which we have config.
-                if (ready.get(type).isAfter(clock.instant()))
+            // We consider only document types for which we have config.
+            for (Trigger trigger : ready) {
+                if (trigger.readyAt().isAfter(clock.instant()))
                     log.log(INFO, "Received config for reindexing which is ready in the future — will process later " +
-                                  "(" + ready.get(type) + " is after " + clock.instant() + ")");
+                                  "(" + trigger.readyAt() + " is after " + clock.instant() + ")");
                 else
-                    progress(type, reindexing, new AtomicReference<>(reindexing.get().status().get(type)));
+                    progress(trigger.type(), trigger.speed(), reindexing, new AtomicReference<>(reindexing.get().status().get(trigger.type())));
 
                 if (phaser.isTerminated())
                     break;
@@ -117,21 +123,21 @@ public class Reindexer {
         }
     }
 
-    static Reindexing updateWithReady(Map<DocumentType, Instant> ready, Reindexing reindexing, Instant now) {
-        for (DocumentType type : ready.keySet()) { // We update only for document types for which we have config.
-            if ( ! ready.get(type).isAfter(now)) {
-                Status status = reindexing.status().getOrDefault(type, Status.ready(now));
-                if (status.startedAt().isBefore(ready.get(type)))
+    static Reindexing updateWithReady(List<Trigger> ready, Reindexing reindexing, Instant now) {
+        for (Trigger trigger : ready) { // We update only for document types for which we have config.
+            if ( ! trigger.readyAt().isAfter(now)) {
+                Status status = reindexing.status().get(trigger.type());
+                if (status == null || status.startedAt().isBefore(trigger.readyAt()))
                     status = Status.ready(now);
 
-                reindexing = reindexing.with(type, status);
+                reindexing = reindexing.with(trigger.type(), status);
             }
         }
         return reindexing;
     }
 
     @SuppressWarnings("fallthrough") // (ノಠ ∩ಠ)ノ彡( \o°o)\
-    private void progress(DocumentType type, AtomicReference<Reindexing> reindexing, AtomicReference<Status> status) {
+    private void progress(DocumentType type, double speed, AtomicReference<Reindexing> reindexing, AtomicReference<Status> status) {
         switch (status.get().state()) {
             default:
                 log.log(WARNING, "Unknown reindexing state '" + status.get().state() + "'—not continuing reindexing of " + type);
@@ -167,7 +173,7 @@ public class Reindexer {
             }
         };
 
-        VisitorParameters parameters = createParameters(type, status.get().progress().orElse(null));
+        VisitorParameters parameters = createParameters(type, speed, status.get().progress().orElse(null));
         parameters.setControlHandler(control);
         Runnable sessionShutdown = visitorSessions.apply(parameters); // Also starts the visitor session.
         log.log(FINE, () -> "Running reindexing of " + type);
@@ -197,12 +203,12 @@ public class Reindexer {
         metrics.dump(reindexing.get());
     }
 
-    VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
+    VisitorParameters createParameters(DocumentType type, double speed, ProgressToken progress) {
         VisitorParameters parameters = new VisitorParameters(type.getName());
-        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(0.2)
+        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(speed)
                                                                 .setWindowSizeDecrementFactor(5)
                                                                 .setResizeRate(10)
-                                                                .setMinWindowSize(1));
+                                                                .setMinWindowSize((int) (5 * speed)));
         parameters.setRemoteDataHandler(cluster.name());
         parameters.setMaxPending(8);
         parameters.setResumeToken(progress);

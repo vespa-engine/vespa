@@ -37,10 +37,10 @@ public class ApplicationReindexing implements Reindexing {
     }
 
     /** Returns a copy of this with reindexing for the given document type in the given cluster ready at the given instant. */
-    public ApplicationReindexing withReady(String cluster, String documentType, Instant readyAt) {
+    public ApplicationReindexing withReady(String cluster, String documentType, Instant readyAt, double speed) {
         Cluster current = clusters.getOrDefault(cluster, Cluster.empty());
         Cluster modified = new Cluster(current.pending,
-                                       with(documentType, new Status(readyAt), current.ready));
+                                       with(documentType, new Status(readyAt, speed), current.ready));
         return new ApplicationReindexing(enabled, with(cluster, modified, clusters));
     }
 
@@ -171,30 +171,40 @@ public class ApplicationReindexing implements Reindexing {
     public static class Status implements Reindexing.Status {
 
         private final Instant ready;
+        private final double speed;
 
-        Status(Instant ready) {
+        Status(Instant ready, double speed) {
+            if (speed <= 0 || 10 < speed)
+                throw new IllegalArgumentException("Reindexing speed must be in (0, 10], but was " + speed);
+
             this.ready = ready.truncatedTo(ChronoUnit.MILLIS);
+            this.speed = speed;
         }
 
         @Override
         public Instant ready() { return ready; }
 
         @Override
+        public double speed() {
+            return speed;
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Status status = (Status) o;
-            return ready.equals(status.ready);
+            return Double.compare(status.speed, speed) == 0 && ready.equals(status.ready);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(ready);
+            return Objects.hash(ready, speed);
         }
 
         @Override
         public String toString() {
-            return "ready at " + ready;
+            return "ready at " + ready + ", with relative speed " + speed;
         }
 
     }

@@ -23,6 +23,9 @@ public interface Reindexing {
         /** The instant at which reindexing may begin. */
         Instant ready();
 
+        /** The relative speed with which to reindex. */
+        double speed();
+
     }
 
     Reindexing DISABLED_INSTANCE = new Reindexing() {};
