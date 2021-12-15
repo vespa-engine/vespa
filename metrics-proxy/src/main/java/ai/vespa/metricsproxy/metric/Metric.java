@@ -5,8 +5,6 @@ import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -34,12 +32,12 @@ public class Metric {
         this.time = time;
         this.value = value;
         this.name = name;
-        this.dimensions = dimensions;
+        this.dimensions = Map.copyOf(dimensions);
         this.description = description;
     }
 
     public Metric(MetricId name, Number value, long timestamp) {
-        this(name, value, timestamp, Collections.emptyMap(), "");
+        this(name, value, timestamp, Map.of(), "");
     }
 
     public Metric(MetricId name, Number value) {
@@ -47,7 +45,7 @@ public class Metric {
     }
 
     public void setDimensions(Map<DimensionId, String> dimensions) {
-        this.dimensions = dimensions;
+        this.dimensions = Map.copyOf(dimensions);
     }
 
     /**
@@ -104,7 +102,7 @@ public class Metric {
 
     @Override
     public Metric clone() {
-        return new Metric(name, value, time, new LinkedHashMap<>(dimensions), getDescription());
+        return new Metric(name, value, time, dimensions, getDescription());
     }
 
     @Override
