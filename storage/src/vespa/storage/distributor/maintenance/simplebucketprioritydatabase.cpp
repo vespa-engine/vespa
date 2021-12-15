@@ -1,22 +1,28 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simplebucketprioritydatabase.h"
-#include <iostream>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <ostream>
 #include <sstream>
 
 namespace storage::distributor {
+
+SimpleBucketPriorityDatabase::SimpleBucketPriorityDatabase()
+    : _pri_fifo_buckets(),
+      _bucket_to_pri_iterators(),
+      _fifo_seq_num(0)
+{
+}
 
 SimpleBucketPriorityDatabase::~SimpleBucketPriorityDatabase() = default;
 
 void
 SimpleBucketPriorityDatabase::clearAllEntriesForBucket(const document::Bucket &bucket)
 {
-    for (PriorityMap::iterator priIter(_prioritizedBuckets.begin()),
-             priEnd(_prioritizedBuckets.end());
-         priIter != priEnd;
-         ++priIter)
-    {
-        priIter->second.erase(bucket);
+    auto maybe_iter = _bucket_to_pri_iterators.find(bucket);
+    if (maybe_iter != _bucket_to_pri_iterators.end()) {
+        _pri_fifo_buckets.erase(maybe_iter->second);
+        _bucket_to_pri_iterators.erase(maybe_iter);
     }
 }
 
@@ -25,112 +31,57 @@ SimpleBucketPriorityDatabase::setPriority(const PrioritizedBucket& bucket)
 {
     clearAllEntriesForBucket(bucket.getBucket());
     if (bucket.requiresMaintenance()) {
-        _prioritizedBuckets[bucket.getPriority()].insert(bucket.getBucket());
+        auto pri_insert_res = _pri_fifo_buckets.emplace(PriFifoCompositeKey(bucket.getPriority(), _fifo_seq_num),
+                                                        bucket.getBucket());
+        assert(pri_insert_res.second);
+        ++_fifo_seq_num;
+        auto inv_insert_res = _bucket_to_pri_iterators.insert(std::make_pair(bucket.getBucket(), pri_insert_res.first));
+        assert(inv_insert_res.second);
     }
 }
 
 void
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::initializeBucketIterToFirstAvailableEntry()
+SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::increment()
 {
-    _bucketIter = _priorityIter->second.begin();
-    if (currentPriorityAtEnd()) {
-        increment();
+    if (_pri_fifo_iter != _pri_fifo_end) {
+        ++_pri_fifo_iter;
     }
 }
 
 bool
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::atEnd() const
+SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::equal(const ConstIteratorImpl& other) const
 {
-    return _priorityIter == _priorityEnd;
-}
-
-void
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::stepWithinCurrentPriority()
-{
-    ++_bucketIter;
-}
-
-bool
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::currentPriorityAtEnd() const
-{
-    return _bucketIter == _priorityIter->second.end();
-}
-
-void
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::stepToNextPriority()
-{
-    ++_priorityIter;
-    if (atEnd()) {
-        return;
-    }
-    _bucketIter = _priorityIter->second.begin();
-}
-
-void
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::step()
-{
-    if (currentPriorityAtEnd()) {
-        stepToNextPriority();
-    } else {
-        stepWithinCurrentPriority();
-    }
-}
-
-void
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::increment()
-{
-    while (!atEnd()) {
-        step();
-        if (atEnd() || !currentPriorityAtEnd()) {
-            break;
-        }
-    }
-}
-
-bool
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::equal(const ConstIteratorImpl& otherBase) const
-{
-    const SimpleConstIteratorImpl& other(
-            static_cast<const SimpleConstIteratorImpl&>(otherBase));
-    if (_priorityIter != other._priorityIter) {
-        return false;
-    }
-    if (atEnd()) {
-        return true;
-    }
-    return _bucketIter == other._bucketIter;
+    auto& typed_other = dynamic_cast<const PriFifoMappingConstIteratorImpl&>(other);
+    return (_pri_fifo_iter == typed_other._pri_fifo_iter);
 }
 
 PrioritizedBucket
-SimpleBucketPriorityDatabase::SimpleConstIteratorImpl::dereference() const
+SimpleBucketPriorityDatabase::PriFifoMappingConstIteratorImpl::dereference() const
 {
-    return PrioritizedBucket(*_bucketIter, _priorityIter->first);
+    assert(_pri_fifo_iter != _pri_fifo_end);
+    return {_pri_fifo_iter->second, _pri_fifo_iter->first._pri};
 }
 
 SimpleBucketPriorityDatabase::const_iterator
 SimpleBucketPriorityDatabase::begin() const
 {
-    return const_iterator(ConstIteratorImplPtr(new SimpleConstIteratorImpl(
-                            _prioritizedBuckets.rbegin(),
-                            _prioritizedBuckets.rend())));
+    return const_iterator(std::make_unique<PriFifoMappingConstIteratorImpl>(
+            _pri_fifo_buckets.begin(), _pri_fifo_buckets.end()));
 }
 
 SimpleBucketPriorityDatabase::const_iterator
 SimpleBucketPriorityDatabase::end() const
 {
-    return const_iterator(ConstIteratorImplPtr(new SimpleConstIteratorImpl(
-                            _prioritizedBuckets.rend(),
-                            _prioritizedBuckets.rend())));
+    return const_iterator(std::make_unique<PriFifoMappingConstIteratorImpl>(
+            _pri_fifo_buckets.end(), _pri_fifo_buckets.end()));
 }
 
 std::string
 SimpleBucketPriorityDatabase::toString() const
 {
     std::ostringstream ss;
-    const_iterator i(begin());
-    const_iterator e(end());
-    for (; i != e; ++i) {
-        ss << *i << '\n';
+    for (const auto& e : *this) {
+        ss << e << '\n';
     }
     return ss.str();
 }
