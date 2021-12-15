@@ -250,13 +250,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag SEPARATE_TENANT_IAM_ROLES = defineFeatureFlag(
-            "separate-tenant-iam-roles", false,
-            List.of("mortent"), "2021-08-12", "2022-01-01",
-            "Create separate iam roles for tenant",
-            "Takes effect on redeploy",
-            TENANT_ID);
-
     public static final UnboundIntFlag METRICSPROXY_NUM_THREADS = defineIntFlag(
             "metricsproxy-num-threads", 2,
             List.of("balder"), "2021-09-01", "2022-01-01",
