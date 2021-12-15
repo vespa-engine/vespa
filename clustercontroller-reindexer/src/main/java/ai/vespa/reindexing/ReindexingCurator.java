@@ -2,6 +2,7 @@
 package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
+import ai.vespa.reindexing.Reindexing.Trigger;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
@@ -16,6 +17,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -48,16 +50,16 @@ public class ReindexingCurator {
     }
 
     /** If no reindexing data exists (has been wiped), assume current ready documents are already done. */
-    public void initializeIfEmpty(String cluster, Map<DocumentType, Instant> ready, Instant now) {
+    public void initializeIfEmpty(String cluster, List<Trigger> ready, Instant now) {
         if ( ! curator.exists(statusPath(cluster))) {
             try (Lock lock = lockReindexing(cluster)) {
                 if (curator.exists(statusPath(cluster)))
                     return; // Some other node already did this.
 
                 Reindexing reindexing = Reindexing.empty();
-                for (DocumentType type : ready.keySet())
-                    if (ready.get(type).isBefore(now))
-                        reindexing = reindexing.with(type, Status.ready(now).running().successful(now));
+                for (Trigger trigger : ready)
+                    if (trigger.readyAt().isBefore(now))
+                        reindexing = reindexing.with(trigger.type(), Status.ready(now).running().successful(now));
 
                 log.log(Level.INFO, "Creating initial reindexing status at '" + statusPath(cluster) + "'");
                 writeReindexing(reindexing, cluster);

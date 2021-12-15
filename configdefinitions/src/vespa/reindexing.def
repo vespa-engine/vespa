@@ -9,6 +9,5 @@ enabled                bool default=false
 # Epoch millis after which latest reprocessing may begin, per document type, per cluster
 clusters{}.documentTypes{}.readyAtMillis long
 
-# Window size increment used for the dynamic throttling policy of the reindexing visitor session
-# TODO jonmv: remove after 7.355 is gone
-windowSizeIncrement    double default=0.2
+# Window size increment used for the dynamic throttling policy of the reindexing visitor session for each type
+clusters{}.documentTypes{}.speed double default=0.2

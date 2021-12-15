@@ -2,15 +2,14 @@
 package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexer.Cluster;
+import ai.vespa.reindexing.Reindexing.Trigger;
 import ai.vespa.reindexing.ReindexingCurator.ReindexingLockException;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.DaemonThreadFactory;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.net.HostName;
@@ -23,13 +22,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.logging.Level.FINE;
@@ -37,7 +34,6 @@ import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * Runs in all cluster controller containers, and progresses reindexing efforts.
@@ -117,10 +113,12 @@ public class ReindexingMaintainer extends AbstractComponent {
         curator.close();
     }
 
-    static Map<DocumentType, Instant> parseReady(ReindexingConfig.Clusters cluster, DocumentTypeManager manager) {
+    static List<Trigger> parseReady(ReindexingConfig.Clusters cluster, DocumentTypeManager manager) {
         return cluster.documentTypes().entrySet().stream()
-                      .collect(toUnmodifiableMap(typeStatus -> manager.getDocumentType(typeStatus.getKey()),
-                                                 typeStatus -> Instant.ofEpochMilli(typeStatus.getValue().readyAtMillis())));
+                      .map(typeStatus -> new Trigger(manager.getDocumentType(typeStatus.getKey()),
+                                                     Instant.ofEpochMilli(typeStatus.getValue().readyAtMillis()),
+                                                     typeStatus.getValue().speed()))
+                      .collect(toUnmodifiableList());
     }
 
     /** Schedules a task with the given interval (across all containers in this ZK cluster). */
