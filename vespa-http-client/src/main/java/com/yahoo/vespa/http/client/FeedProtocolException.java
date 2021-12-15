@@ -7,7 +7,9 @@ import com.yahoo.vespa.http.client.config.Endpoint;
  * An exception thrown when a feed endpoint returns an error during feeding.
  *
  * @author bjorncs
+ * @deprecated Vespa-http-client will be removed in Vespa 8. It's replaced by <a href="https://docs.vespa.ai/en/vespa-feed-client.html">vespa-feed-client</a>
  */
+@Deprecated
 public class FeedProtocolException extends FeedEndpointException {
 
     private final int httpStatusCode;

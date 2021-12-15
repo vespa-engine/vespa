@@ -14,7 +14,9 @@ import java.util.concurrent.ThreadFactory;
  * Factory for creating FeedClient.
  *
  * @author dybis
+ * @deprecated Vespa-http-client will be removed in Vespa 8. It's Vespa-http-client will be removed in Vespa 8. It's replaced by <a href="https://docs.vespa.ai/en/vespa-feed-client.html">vespa-feed-client</a>
  */
+@Deprecated
 public class FeedClientFactory {
 
     /**

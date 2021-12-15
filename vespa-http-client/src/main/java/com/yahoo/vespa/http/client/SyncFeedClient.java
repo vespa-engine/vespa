@@ -19,7 +19,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * (but it can and should be reused for multiple subsequent synchronous calls).
  *
  * @author bratseth
+ * @deprecated Vespa-http-client will be removed in Vespa 8. It's replaced by <a href="https://docs.vespa.ai/en/vespa-feed-client.html">vespa-feed-client</a>
  */
+@Deprecated
 public class SyncFeedClient implements AutoCloseable {
 
     private final FeedClient wrappedClient;
