@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
+import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.AsyncContextEvent;
 import org.eclipse.jetty.server.Handler;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -106,12 +108,25 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
         }
     }
 
-    private void observeEndOfRequest(Request request, HttpServletResponse flushableResponse) throws IOException {
-        var metrics = StatusCodeMetric.of(request, monitoringHandlerPaths, searchHandlerPaths);
-        metrics.forEach(metric ->
-                statistics.computeIfAbsent(metric, __ -> new LongAdder())
-                        .increment());
+    void ignoreUserAgent(String agentName) {
+        ignoredUserAgents.add(agentName);
+    }
 
+    private Set<String> ignoredUserAgents = new HashSet<>();
+
+    private boolean shouldLogMetricsFor(Request request) {
+        String agent = request.getHeader(HttpHeader.USER_AGENT.toString());
+        if (agent == null) return true;
+        return ! ignoredUserAgents.contains(agent);
+    }
+
+    private void observeEndOfRequest(Request request, HttpServletResponse flushableResponse) throws IOException {
+        if (shouldLogMetricsFor(request)) {
+            var metrics = StatusCodeMetric.of(request, monitoringHandlerPaths, searchHandlerPaths);
+            metrics.forEach(metric ->
+                            statistics.computeIfAbsent(metric, __ -> new LongAdder())
+                            .increment());
+        }
         long live = inFlight.decrementAndGet();
         FutureCallback shutdownCb = shutdown.get();
         if (shutdownCb != null) {
