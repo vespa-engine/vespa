@@ -42,13 +42,13 @@ public class MetricsPacket {
         this.statusMessage = statusMessage;
         this.timestamp = timestamp;
         this.service = service;
-        this.metrics = Map.copyOf(metrics);
-        this.dimensions = unmodifiableMap(dimensions);
+        this.metrics = metrics;
+        this.dimensions = dimensions;
         this.consumers = Set.copyOf(consumers);
     }
 
-    public Map<MetricId, Number> metrics() { return metrics; }
-    public Map<DimensionId, String> dimensions() { return dimensions; }
+    public Map<MetricId, Number> metrics() { return unmodifiableMap(metrics); }
+    public Map<DimensionId, String> dimensions() { return unmodifiableMap(dimensions); }
     public Set<ConsumerId> consumers() { return consumers;}
 
     @Override
