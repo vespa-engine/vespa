@@ -153,11 +153,8 @@ public class VespaMetrics {
         }
 
         private static Set<ConsumerId> extractConsumers(Set<ConsumerId> configuredConsumers) {
-            Set<ConsumerId> consumers = Collections.emptySet();
-            if (configuredConsumers != null) {
-                consumers = configuredConsumers;
-            }
-            return consumers;
+            if (configuredConsumers != null) return configuredConsumers;
+            return Set.of();
         }
     }
 
@@ -189,14 +186,7 @@ public class VespaMetrics {
             mergedDimensions.putAll(metric.getDimensions());
             mergedDimensions.putAll(serviceDimensions);
             AggregationKey aggregationKey = new AggregationKey(mergedDimensions, metric.getConsumers());
-
-            if (aggregated.containsKey(aggregationKey)) {
-                aggregated.get(aggregationKey).add(metric);
-            } else {
-                List<Metric> ml = new ArrayList<>();
-                ml.add(metric);
-                aggregated.put(aggregationKey, ml);
-            }
+            aggregated.computeIfAbsent(aggregationKey, key -> new ArrayList<>()).add(metric);
         }
     }
 
