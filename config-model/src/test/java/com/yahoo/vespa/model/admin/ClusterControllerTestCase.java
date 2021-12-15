@@ -525,5 +525,6 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         @Override public Optional<Status> status(String cluster, String documentType) { return Optional.of(this); }
         @Override public boolean enabled() { return true; }
         @Override public Instant ready() { return Instant.EPOCH; }
+        @Override public double speed() { return 1; }
     }
 }

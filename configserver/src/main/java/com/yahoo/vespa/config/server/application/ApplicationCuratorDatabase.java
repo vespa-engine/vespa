@@ -173,6 +173,7 @@ public class ApplicationCuratorDatabase {
         private static final String NAME = "name";
         private static final String GENERATION = "generation";
         private static final String EPOCH_MILLIS = "epochMillis";
+        private static final String SPEED = "speed";
 
         private static byte[] toBytes(ApplicationReindexing reindexing) {
             Cursor root = new Slime().setObject();
@@ -202,6 +203,7 @@ public class ApplicationCuratorDatabase {
 
         private static void setStatus(Cursor statusObject, Status status) {
             statusObject.setLong(EPOCH_MILLIS, status.ready().toEpochMilli());
+            statusObject.setDouble(SPEED, status.speed());
         }
 
         private static ApplicationReindexing fromBytes(byte[] data) {
@@ -222,7 +224,8 @@ public class ApplicationCuratorDatabase {
         }
 
         private static Status getStatus(Inspector statusObject) {
-            return new Status(Instant.ofEpochMilli(statusObject.field(EPOCH_MILLIS).asLong()));
+            return new Status(Instant.ofEpochMilli(statusObject.field(EPOCH_MILLIS).asLong()),
+                              statusObject.field(SPEED).valid() ? statusObject.field(SPEED).asDouble() : 0.2);
         }
 
     }

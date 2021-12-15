@@ -39,6 +39,9 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     /** Timeout per service when getting config generations. */
     private static final Duration timeout = Duration.ofSeconds(10);
 
+    /** Relative reindexing speed. */
+    static final double SPEED = 1;
+
     private final ConfigConvergenceChecker convergence;
     private final Clock clock;
 
@@ -92,9 +95,10 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
         // Config convergence means reindexing of detected reindex actions may begin.
         for (var cluster : reindexing.clusters().entrySet())
             for (var pending : cluster.getValue().pending().entrySet())
-                if (pending.getValue() <= oldestGeneration.get())
-                    reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now)
+                if (pending.getValue() <= oldestGeneration.get()) {
+                    reindexing = reindexing.withReady(cluster.getKey(), pending.getKey(), now, SPEED)
                                            .withoutPending(cluster.getKey(), pending.getKey());
+                }
 
         return reindexing;
     }

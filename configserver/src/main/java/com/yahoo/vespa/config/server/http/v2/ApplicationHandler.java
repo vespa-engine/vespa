@@ -19,6 +19,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpHandler;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -207,6 +209,7 @@ public class ApplicationHandler extends HttpHandler {
         boolean indexedOnly = request.getBooleanProperty("indexedOnly");
         Set<String> clusters = StringUtilities.split(request.getProperty("clusterId"));
         Set<String> types = StringUtilities.split(request.getProperty("documentType"));
+        double speed = Double.parseDouble(Objects.requireNonNullElse(request.getProperty("speed"), "1"));
 
         Map<String, Set<String>> reindexed = new TreeMap<>();
         Instant now = applicationRepository.clock().instant();
@@ -222,7 +225,7 @@ public class ApplicationHandler extends HttpHandler {
                                                            String.join(", ", documentTypes.get(cluster)));
 
                     if ( ! indexedOnly || indexedDocumentTypes.get(cluster).contains(type)) {
-                        reindexing = reindexing.withReady(cluster, type, now);
+                        reindexing = reindexing.withReady(cluster, type, now, speed);
                         reindexed.computeIfAbsent(cluster, __ -> new TreeSet<>()).add(type);
                     }
                 }

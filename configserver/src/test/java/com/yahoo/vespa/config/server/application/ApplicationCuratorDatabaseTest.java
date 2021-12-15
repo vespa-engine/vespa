@@ -23,11 +23,8 @@ public class ApplicationCuratorDatabaseTest {
         assertEquals(Optional.empty(), db.readReindexingStatus(id));
 
         ApplicationReindexing reindexing = ApplicationReindexing.empty()
-                                                                .withPending("one", "a", 10)
-                                                                .withReady("two", "b", Instant.ofEpochMilli(2))
-                                                                .withPending("two", "b", 20)
-                                                                .withReady("one", "a", Instant.ofEpochMilli(1))
-                                                                .withReady("two", "c", Instant.ofEpochMilli(3))
+                                                                .withPending("one", "a", 10).withReady("two", "b", Instant.ofEpochMilli(2), 0.2)
+                                                                .withPending("two", "b", 20).withReady("one", "a", Instant.ofEpochMilli(1), 0.2).withReady("two", "c", Instant.ofEpochMilli(3), 0.2)
                                                                 .enabled(false);
 
         db.writeReindexingStatus(id, reindexing);
