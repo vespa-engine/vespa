@@ -13,6 +13,7 @@ import com.yahoo.component.Vtag;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -22,6 +23,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.extractConfigserverDimensions;
+import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static java.util.logging.Level.FINE;
 import static java.util.stream.Collectors.toList;
 
@@ -79,9 +81,18 @@ public class MetricsManager {
      * @return metrics for all matching services
      */
     public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime) {
-        return getMetricsAsBuilders(services, startTime).stream()
-                .map(MetricsPacket.Builder::build)
-                .collect(Collectors.toList());
+        MetricsPacket.Builder [] builderArray = getMetricsBuildersAsArray(services, startTime);
+        List<MetricsPacket> metricsPackets = new ArrayList<>(builderArray.length);
+        for (int i = 0; i < builderArray.length; i++) {
+            metricsPackets.add(builderArray[i].build());
+            builderArray[i] = null; // Set null to be able to GC the builder when packet has been created
+        }
+        return metricsPackets;
+    }
+
+    public MetricsPacket.Builder [] getMetricsBuildersAsArray(List<VespaService> services, Instant startTime) {
+        List<MetricsPacket.Builder> builders = getMetricsAsBuilders(services, startTime);
+        return builders.toArray(new MetricsPacket.Builder[builders.size()]);
     }
 
     /**

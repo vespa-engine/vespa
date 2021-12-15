@@ -19,6 +19,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,8 +67,7 @@ public class MetricsV2Handler  extends HttpHandlerBase {
 
     private JsonResponse valuesResponse(String consumer) {
         try {
-            List<MetricsPacket.Builder> builders = valuesFetcher.fetchMetricsAsBuilders(consumer);
-            List<MetricsPacket> metrics = processAndBuild(builders,
+            List<MetricsPacket> metrics = processAndBuild(valuesFetcher.fetchMetricsAsBuilders(consumer),
                                                           new ServiceIdDimensionProcessor(),
                                                           new ClusterIdDimensionProcessor(),
                                                           new PublicDimensionsProcessor(MAX_DIMENSIONS));
@@ -81,12 +81,15 @@ public class MetricsV2Handler  extends HttpHandlerBase {
         }
     }
 
-    private static List<MetricsPacket> processAndBuild(List<MetricsPacket.Builder> builders,
+    private static List<MetricsPacket> processAndBuild(MetricsPacket.Builder [] builders,
                                                        MetricsProcessor... processors) {
-        return builders.stream()
-                .map(builder -> applyProcessors(builder, processors))
-                .map(MetricsPacket.Builder::build)
-                .collect(toList());
+        List<MetricsPacket> metricsPackets = new ArrayList<>(builders.length);
+        for (int i = 0; i < builders.length; i++) {
+            applyProcessors(builders[i], processors);
+            metricsPackets.add(builders[i].build());
+            builders[i] = null; // Set null to be able to GC the builder when packet has been created
+        }
+        return metricsPackets;
     }
 
 }
