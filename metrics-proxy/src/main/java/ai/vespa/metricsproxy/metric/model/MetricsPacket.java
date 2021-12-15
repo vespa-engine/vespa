@@ -36,7 +36,7 @@ public class MetricsPacket {
     public final ServiceId service;
     private final Map<MetricId, Number> metrics;
     private final Map<DimensionId, String> dimensions;
-    private final List<ConsumerId> consumers;
+    private final Set<ConsumerId> consumers;
 
     private MetricsPacket(int statusCode, String statusMessage, long timestamp, ServiceId service,
                           Map<MetricId, Number> metrics, Map<DimensionId, String> dimensions, Set<ConsumerId> consumers ) {
@@ -46,7 +46,7 @@ public class MetricsPacket {
         this.service = service;
         this.metrics = metrics;
         this.dimensions = dimensions;
-        this.consumers = new ArrayList<>(consumers);
+        this.consumers = Set.copyOf(consumers);
     }
 
     public Map<MetricId, Number> metrics() {
@@ -57,8 +57,8 @@ public class MetricsPacket {
         return unmodifiableMap(dimensions);
     }
 
-    public List<ConsumerId> consumers() {
-        return unmodifiableList(consumers);
+    public Set<ConsumerId> consumers() {
+        return consumers;
     }
 
     @Override

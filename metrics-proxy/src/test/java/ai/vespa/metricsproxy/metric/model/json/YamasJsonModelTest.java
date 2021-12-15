@@ -16,6 +16,7 @@ import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for YamasJsonModel and YamasArrayJsonModel
@@ -43,7 +44,7 @@ public class YamasJsonModelTest {
 
         // Do some sanity checking
         assertEquals("vespa.searchnode", jsonModel.application);
-        assertEquals("Vespa", jsonModel.routing.get("yamas").namespaces.get(0));
+        assertTrue(jsonModel.routing.get("yamas").namespaces.contains("Vespa"));
         assertEquals(5.555555555E9, jsonModel.metrics.get("memory_rss"), 0.1d); //Not using custom double renderer
 
         // Serialize and verify
@@ -60,7 +61,7 @@ public class YamasJsonModelTest {
 
         // Do some sanity checking
         assertEquals(toServiceId("vespa.searchnode"), metricsPacket.service);
-        assertEquals(toConsumerId("Vespa"), metricsPacket.consumers().get(0));
+        assertTrue(metricsPacket.consumers().contains(toConsumerId("Vespa")));
         assertEquals(5.555555555E9, metricsPacket.metrics().get(toMetricId("memory_rss")).doubleValue(), 0.1d); //Not using custom double rendrer
 
         // Serialize and verify

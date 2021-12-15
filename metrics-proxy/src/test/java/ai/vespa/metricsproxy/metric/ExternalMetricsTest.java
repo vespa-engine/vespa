@@ -10,11 +10,12 @@ import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Set;
 
-import static ai.vespa.metricsproxy.metric.ExternalMetrics.VESPA_NODE_SERVICE_ID;
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -64,10 +65,10 @@ public class ExternalMetricsTest {
         List<MetricsPacket.Builder> packets = externalMetrics.getMetrics();
         assertEquals(1, packets.size());
 
-        List<ConsumerId> consumerIds = packets.get(0).build().consumers();
+        Set<ConsumerId> consumerIds = packets.get(0).build().consumers();
         assertEquals(2, consumerIds.size());
-        assertEquals(CUSTOM_CONSUMER_1, consumerIds.get(0));
-        assertEquals(CUSTOM_CONSUMER_2, consumerIds.get(1));
+        assertTrue(consumerIds.contains(CUSTOM_CONSUMER_1));
+        assertTrue(consumerIds.contains(CUSTOM_CONSUMER_2));
     }
 
 }
