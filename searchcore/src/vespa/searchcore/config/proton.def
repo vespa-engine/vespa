@@ -321,6 +321,15 @@ documentdb[].allocation.max_dead_bytes_ratio double default=0.05
 ## The ratio of used address space that can be dead before attempting to perform compaction.
 documentdb[].allocation.max_dead_address_space_ratio double default=0.2
 
+## Upper bound for number of buffers that can be compacted at the same time in
+## a data store for a specific reason (e.g. memory used, address space used).
+documentdb[].allocation.max_compact_buffers int default=1
+
+## Ratio of active buffers that can be compacted at the same time in a data
+## store for a specific reason (e.g. memory used, address space used).
+## Effective limit is ceil(active_buffers * active_buffers_ratio).
+documentdb[].allocation.active_buffers_ratio double default=0.1
+
 ## The interval of when periodic tasks should be run
 periodic.interval double default=3600.0
 
