@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Context {
+
     private DocumentOperation documentOperation;
     private Map<String, Object> variables = new HashMap<>();
 

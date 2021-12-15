@@ -321,7 +321,7 @@ public class DocumentType extends StructuredDataType {
     /**
      * Return whether this document type inherits the given document type.
      *
-     * @param superType The documenttype to check if it inherits.
+     * @param superType the documenttype to check if it inherits
      * @return true if it inherits the superType, false if not
      */
     public boolean inherits(DocumentType superType) {
@@ -335,8 +335,8 @@ public class DocumentType extends StructuredDataType {
     /**
      * Gets the field matching a given name.
      *
-     * @param name the name of a field.
-     * @return returns the matching field, or null if not found.
+     * @param name the name of a field
+     * @return returns the matching field, or null if not found
      */
     public Field getField(String name) {
         Field field = headerType.getField(name);

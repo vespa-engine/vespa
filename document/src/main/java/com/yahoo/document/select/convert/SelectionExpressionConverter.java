@@ -7,6 +7,7 @@ import com.yahoo.document.select.rule.ArithmeticNode;
 import com.yahoo.document.select.rule.AttributeNode;
 import com.yahoo.document.select.rule.ComparisonNode;
 import com.yahoo.document.select.rule.DocumentNode;
+import com.yahoo.document.select.rule.DocumentTypeNode;
 import com.yahoo.document.select.rule.EmbracedNode;
 import com.yahoo.document.select.rule.ExpressionNode;
 import com.yahoo.document.select.rule.IdNode;
@@ -27,13 +28,15 @@ import java.util.Map;
  */
 public class SelectionExpressionConverter implements Visitor {
 
-    private Map<String, NowQueryExpression> expressionMap = new HashMap<>();
+    private final Map<String, NowQueryExpression> expressionMap = new HashMap<>();
 
-    private class BuildState {
+    private static class BuildState {
+
         public AttributeNode attribute;
         public ComparisonNode comparison;
         public ArithmeticNode arithmetic;
         public NowNode now;
+
     }
 
     private BuildState state;
@@ -55,7 +58,6 @@ public class SelectionExpressionConverter implements Visitor {
         }
         return ret;
     }
-
 
     public void visit(ArithmeticNode node) {
         if (state == null ) return;
@@ -111,6 +113,10 @@ public class SelectionExpressionConverter implements Visitor {
     }
 
     public void visit(DocumentNode node) {
+        // Silently ignore
+    }
+
+    public void visit(DocumentTypeNode node) {
         // Silently ignore
     }
 

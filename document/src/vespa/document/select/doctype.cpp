@@ -15,6 +15,7 @@ namespace {
                                 vespalib::stringref name)
     {
         if (type.getName() == name) return true;
+        // TODO Vespa 8: Remove this for loop on Vespa 8
         for (std::vector<const DocumentType *>::const_iterator it
                 = type.getInheritedTypes().begin();
              it != type.getInheritedTypes().end(); ++it)

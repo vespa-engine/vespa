@@ -27,18 +27,11 @@ import java.util.List;
 public class AttributeNode implements ExpressionNode {
 
     private ExpressionNode value;
-    private final List<Item> items = new ArrayList<>();
+    private final List<Item> items;
 
-    public AttributeNode(ExpressionNode value, List items) {
+    public AttributeNode(ExpressionNode value, List<Item> items) {
         this.value = value;
-        for (Object obj : items) {
-            if (obj instanceof Item) {
-                this.items.add((Item)obj);
-            } else {
-                throw new IllegalStateException("Can not add an instance of " + obj.getClass().getName() +
-                                                " as a function item.");
-            }
-        }
+        this.items = new ArrayList<>(items);
     }
 
     public ExpressionNode getValue() {
@@ -99,12 +92,14 @@ public class AttributeNode implements ExpressionNode {
     }
 
     static class IteratorHandler extends FieldPathIteratorHandler {
+
         VariableValueList values = new VariableValueList();
 
         @Override
         public void onPrimitive(FieldValue fv) {
             values.add(new ResultList.VariableValue((VariableMap)getVariables().clone(), fv));
         }
+
     }
 
     private static Object applyFunction(String function, Object value) {
@@ -153,7 +148,7 @@ public class AttributeNode implements ExpressionNode {
 
     private static Object evaluateFieldPath(String fieldPathStr, Object value) {
         if (value instanceof DocumentPut) {
-            final Document doc = ((DocumentPut) value).getDocument();
+            Document doc = ((DocumentPut) value).getDocument();
             if (isSimpleImportedField(fieldPathStr, doc.getDataType())) {
                 // Imported fields can only be meaningfully evaluated in the backend, so we
                 // explicitly treat them as if they are valid fields with missing values. This
@@ -211,6 +206,7 @@ public class AttributeNode implements ExpressionNode {
     }
 
     public static class Item {
+
         public static final int ATTRIBUTE = 0;
         public static final int FUNCTION = 1;
 
@@ -242,5 +238,7 @@ public class AttributeNode implements ExpressionNode {
         @Override public String toString() {
             return name + (type == FUNCTION ? "()" : "");
         }
+
     }
+
 }

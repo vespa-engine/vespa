@@ -159,15 +159,23 @@ VariableNode variable() :
 
 ExpressionNode attribute() :
 {
-    ExpressionNode val;
+    ExpressionNode value;
     AttributeNode.Item item;
-    List lst = new ArrayList();
+    List items = new ArrayList();
 }
 {
-    ( val = value() ( <DOT> identifier()  { item = new AttributeNode.Item(token.image); }
-                      [ <LBRACE> <RBRACE> { item.setType(AttributeNode.Item.FUNCTION); } ]
-                                          { lst.add(item); } )* )
-    { return lst.size() > 0 ? new AttributeNode(val, lst) : val; }
+    ( value = value() ( <DOT> identifier()  { item = new AttributeNode.Item(token.image); }
+                        [ <LBRACE> <RBRACE> { item.setType(AttributeNode.Item.FUNCTION); } ]
+                                            { items.add(item); } )* )
+    {
+        if ( ! items.isEmpty()) // A value followed by dotted access/method call
+            return new AttributeNode(value, items);
+
+        if (value instanceof DocumentNode) // A standalone document type access: Convert to exact type matching
+            return new DocumentTypeNode(((DocumentNode)value).getType());
+
+        return value;
+     }
 }
 
 ExpressionNode value() :

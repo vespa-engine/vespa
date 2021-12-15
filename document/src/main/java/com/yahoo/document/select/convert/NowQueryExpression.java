@@ -12,6 +12,7 @@ import com.yahoo.document.select.rule.ComparisonNode;
  * @author Ulf Lilleengen
  */
 public class NowQueryExpression {
+
     private final AttributeNode attribute;
     private final ComparisonNode comparison;
     private final NowQueryNode now;
@@ -33,7 +34,7 @@ public class NowQueryExpression {
             sb.append(item.getName()).append(".");
         }
         sb.deleteCharAt(sb.length() - 1);
-        return sb.toString() + ":" + comparison.getOperator() + now;
+        return sb + ":" + comparison.getOperator() + now;
     }
 
 }

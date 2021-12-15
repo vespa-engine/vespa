@@ -6,11 +6,11 @@ import com.yahoo.document.select.convert.SelectionExpressionConverter;
 import com.yahoo.document.select.parser.ParseException;
 import java.util.Map;
 
-
 /**
  * @author Ulf Lilleengen
  */
-// TODO: Public methods only used in tests. What is this class for?
+// TODO: This should be renamed to reflect it is only a validator of expressions
+//       (in DocumentSelector and SelectionExpressionConverter)
 public class DocumentSelectionConverter {
 
     private final DocumentSelector selector;

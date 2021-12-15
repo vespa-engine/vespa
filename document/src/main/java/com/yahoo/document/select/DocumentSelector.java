@@ -9,17 +9,18 @@ import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.document.select.rule.ExpressionNode;
 
 /**
- * <p>A document selector is a filter which accepts or rejects documents
+ * A document selector is a filter which accepts or rejects documents
  * based on their type and content. A document selector has a textual
- * representation which is called the <i>Document Selection Language</i></p>
+ * representation which is called the
+ * <a href="https://docs.vespa.ai/en/reference/document-select-language.html">document selection language</a>.
  *
- * <p>Document selectors are multithread safe.</p>
+ * Document selectors are multithread safe.
  *
  * @author bratseth
  */
 public class DocumentSelector {
 
-    private ExpressionNode expression;
+    private final ExpressionNode expression;
 
     /**
      * Creates a document selector from a Document Selection Language string
