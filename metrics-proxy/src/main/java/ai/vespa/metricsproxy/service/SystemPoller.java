@@ -119,11 +119,13 @@ public class SystemPoller {
         String line;
         try {
             while ((line = br.readLine()) != null) {
-                String[] elems = line.split("\\s+");
+
                 /* Memory size is given in kB - convert to bytes by multiply with 1024*/
                 if (line.startsWith("Rss:")) {
+                    String[] elems = line.split("\\s+");
                     size[memoryTypeResident] += Long.parseLong(elems[1]) * 1024;
                 } else if (line.startsWith("Size:")) {
+                    String[] elems = line.split("\\s+");
                     size[memoryTypeVirtual] += Long.parseLong(elems[1]) * 1024;
                 }
             }
