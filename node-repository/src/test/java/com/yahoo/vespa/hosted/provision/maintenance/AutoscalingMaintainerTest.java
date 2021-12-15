@@ -211,6 +211,7 @@ public class AutoscalingMaintainerTest {
         tester.deploy(app1, cluster1, capacity);
         // fast completion
         tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
+        tester.clock().advance(Duration.ofSeconds(150));
         tester.addMeasurements(1.0f, 0.3f, 0.3f, 0, 1, app1);
         tester.maintainer().maintain();
         assertEquals("Scale up: " + tester.cluster(app1, cluster1).autoscalingStatus(),
@@ -219,6 +220,7 @@ public class AutoscalingMaintainerTest {
 
         // fast completion, with initially overloaded cpu
         tester.addMeasurements(3.0f, 0.3f, 0.3f, 1, 1, app1);
+        tester.clock().advance(Duration.ofSeconds(150));
         tester.addMeasurements(0.2f, 0.3f, 0.3f, 1, 1, app1);
         tester.maintainer().maintain();
         assertEquals("No autoscaling since we ignore the (first) data point in the warup period",
