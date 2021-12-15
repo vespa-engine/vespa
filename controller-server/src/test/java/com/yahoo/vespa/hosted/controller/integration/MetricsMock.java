@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.integration;
 
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
 
 import java.util.Collections;
@@ -72,6 +73,11 @@ public class MetricsMock implements Metric {
             if (metric != null) return Optional.of(metric);
         }
         return Optional.empty();
+    }
+
+    /** Returns the most recently added metric for given instance */
+    public Optional<Number> getMetric(ApplicationId instance, String name) {
+        return getMetric(d -> instance.toFullString().equals(d.get("applicationId")), name);
     }
 
     public static class MapContext implements Context {

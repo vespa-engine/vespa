@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -24,11 +25,14 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,6 +53,7 @@ public class MetricsReporter extends ControllerMaintainer {
     public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
     public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
     public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
+    public static final String DEPLOYMENT_OVERDUE_UPGRADE = "deployment.overdueUpgradeSeconds";
     public static final String OS_CHANGE_DURATION = "deployment.osChangeDuration";
     public static final String PLATFORM_CHANGE_DURATION = "deployment.platformChangeDuration";
     public static final String OS_NODE_COUNT = "deployment.nodeCountByOsVersion";
@@ -146,15 +151,19 @@ public class MetricsReporter extends ControllerMaintainer {
         metric.set(DEPLOYMENT_FAIL_METRIC, deploymentFailRatio(deployments) * 100, metric.createContext(Map.of()));
 
         averageDeploymentDurations(deployments, clock.instant()).forEach((instance, duration) -> {
-            metric.set(DEPLOYMENT_AVERAGE_DURATION, duration.getSeconds(), metric.createContext(dimensions(instance)));
+            metric.set(DEPLOYMENT_AVERAGE_DURATION, duration.toSeconds(), metric.createContext(dimensions(instance)));
         });
 
         deploymentsFailingUpgrade(deployments).forEach((instance, failingJobs) -> {
             metric.set(DEPLOYMENT_FAILING_UPGRADES, failingJobs, metric.createContext(dimensions(instance)));
         });
 
-        deploymentWarnings(deployments).forEach((application, warnings) -> {
-            metric.set(DEPLOYMENT_WARNINGS, warnings, metric.createContext(dimensions(application)));
+        deploymentWarnings(deployments).forEach((instance, warnings) -> {
+            metric.set(DEPLOYMENT_WARNINGS, warnings, metric.createContext(dimensions(instance)));
+        });
+
+        overdueUpgradeDurationByInstance(deployments).forEach((instance, overduePeriod) -> {
+            metric.set(DEPLOYMENT_OVERDUE_UPGRADE, overduePeriod.toSeconds(), metric.createContext(dimensions(instance)));
         });
 
         for (Application application : applications.asList())
@@ -163,6 +172,38 @@ public class MetricsReporter extends ControllerMaintainer {
                        .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
                                                           controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),
                                                           metric.createContext(dimensions(application.id().defaultInstance()))));
+    }
+
+    private Map<ApplicationId, Duration> overdueUpgradeDurationByInstance(DeploymentStatusList deployments) {
+        Instant now = clock.instant();
+        Map<ApplicationId, Duration> overdueUpgrades = new HashMap<>();
+        for (var deploymentStatus : deployments) {
+            for (var kv : deploymentStatus.instanceJobs().entrySet()) {
+                ApplicationId instance = kv.getKey();
+                JobList jobs = kv.getValue();
+                boolean upgradeRunning = !jobs.production().upgrading().isEmpty();
+                DeploymentInstanceSpec instanceSpec = deploymentStatus.application().deploymentSpec().requireInstance(instance.instance());
+                Duration overdueDuration = upgradeRunning ? overdueUpgradeDuration(now, instanceSpec) : Duration.ZERO;
+                overdueUpgrades.put(instance, overdueDuration);
+            }
+        }
+        return Collections.unmodifiableMap(overdueUpgrades);
+    }
+
+    /** Returns how long an upgrade has been running inside a block window */
+    static Duration overdueUpgradeDuration(Instant upgradingAt, DeploymentInstanceSpec instanceSpec) {
+        Optional<Instant> lastOpened = Optional.empty(); // When the upgrade window most recently opened
+        Instant oneWeekAgo = upgradingAt.minus(Duration.ofDays(7));
+        Duration step = Duration.ofHours(1);
+        for (Instant instant = upgradingAt; !instanceSpec.canUpgradeAt(instant); instant = instant.minus(step).truncatedTo(ChronoUnit.HOURS)) {
+            if (!instant.isAfter(oneWeekAgo)) { // Wrapped around, the entire week is being blocked
+                lastOpened = Optional.empty();
+                break;
+            }
+            lastOpened = Optional.of(instant);
+        }
+        if (lastOpened.isEmpty()) return Duration.ZERO;
+        return Duration.between(lastOpened.get(), upgradingAt);
     }
 
     private void reportQueuedNameServiceRequests() {

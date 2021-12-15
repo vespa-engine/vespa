@@ -15,10 +15,11 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -27,9 +28,11 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -494,6 +497,66 @@ public class MetricsReporterTest {
         assertEquals(1, metrics.getMetric(d -> "trial".equals(d.get("plan")), MetricsReporter.TENANT_METRIC).get());
     }
 
+    @Test
+    public void overdue_upgrade_metric() {
+        ApplicationPackage pkg = new ApplicationPackageBuilder().region("us-west-1")
+                                                                // window 1
+                                                                .blockChange(false, true, "mon-tue", "2-9", "CET")
+                                                                // window 2
+                                                                .blockChange(false, true, "mon-tue", "1-8,11-12", "CET")
+                                                                // window 3
+                                                                .blockChange(false, true, "wed-thu", "0-23", "CET")
+                                                                // window 4 (does not apply to upgrade)
+                                                                .blockChange(true, false, "mon-sun", "0-7", "CET")
+                                                                .build();
+
+        Instant mondayNight = Instant.parse("2021-12-13T23:00:00.00Z");
+        DeploymentTester tester = new DeploymentTester().at(mondayNight);
+        MetricsReporter reporter = createReporter(tester.controller());
+        DeploymentContext context = tester.newDeploymentContext();
+        Supplier<Duration> metric = () -> {
+            reporter.maintain();
+            return Duration.ofSeconds(metrics.getMetric(context.instanceId(),MetricsReporter.DEPLOYMENT_OVERDUE_UPGRADE)
+                                             .get().longValue());
+        };
+
+        // Deploy completely once
+        context.submit(pkg).completeRollout();
+
+        // System is upgraded, triggering upgrade of application
+        tester.controllerTester().upgradeSystem(Version.fromString("7.0"));
+        tester.upgrader().maintain();
+
+        // Start production job for upgrade, without completing it
+        context.runJob(systemTest)
+               .runJob(stagingTest)
+               .triggerJobs()
+               .assertRunning(productionUsWest1);
+        assertEquals("Upgrade is not overdue yet", Duration.ZERO, metric.get());
+
+        // Upgrade continues into block window
+        tester.clock().advance(Duration.ofHours(3)); // Tuesday at 02:00 (03:00 CET)
+        assertEquals("Upgrade is overdue measured relative to window 2", Duration.ofHours(2), metric.get());
+
+        tester.clock().advance(Duration.ofHours(6)); // Tuesday at 08:00 (09:00 CET)
+        assertEquals("Upgrade is overdue measured relative to window 1", Duration.ofHours(8), metric.get());
+
+        tester.clock().advance(Duration.ofHours(1)); // Tuesday at 09:00 (10:00 CET)
+        assertEquals("Upgrade is no longer overdue", Duration.ZERO, metric.get());
+
+        tester.clock().advance(Duration.ofDays(2)); // Thursday at 10:00 (11:00 CET)
+        assertEquals("Upgrade is overdue measure relative to window 3", Duration.ofHours(34), metric.get());
+    }
+
+    @Test
+    public void overdue_upgrade_completely_blocked() {
+        ApplicationPackage pkg = new ApplicationPackageBuilder().region("us-west-1")
+                                                                .blockChange(false, true, "mon-sun", "0-23", "CET")
+                                                                .build();
+        Instant mondayNight = Instant.parse("2021-12-13T23:00:00.00Z");
+        assertEquals(Duration.ZERO, MetricsReporter.overdueUpgradeDuration(mondayNight, pkg.deploymentSpec().requireInstance("default")));
+    }
+
     private void assertNodeCount(String metric, int n, Version version) {
         long nodeCount = metrics.getMetric((dimensions) -> version.toFullString().equals(dimensions.get("currentVersion")), metric)
                                 .stream()
@@ -605,4 +668,5 @@ public class MetricsReporterTest {
     }
 
 }
+
 

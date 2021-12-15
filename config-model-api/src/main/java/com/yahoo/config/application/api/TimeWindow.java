@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.TreeSet;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -28,9 +28,9 @@ public class TimeWindow {
     private final ZoneId zone;
 
     private TimeWindow(List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
-        this.days = Collections.unmodifiableList(new ArrayList<>(new TreeSet<>(days)));
-        this.hours = Collections.unmodifiableList(new ArrayList<>(new TreeSet<>(hours)));
-        this.zone = zone;
+        this.days = Objects.requireNonNull(days).stream().distinct().sorted().collect(Collectors.toUnmodifiableList());
+        this.hours = Objects.requireNonNull(hours).stream().distinct().sorted().collect(Collectors.toUnmodifiableList());
+        this.zone = Objects.requireNonNull(zone);
     }
 
     /** Returns days in this time window */
@@ -57,8 +57,8 @@ public class TimeWindow {
         return "time window for hour(s) " +
                hours.toString() +
                " on " + days.stream().map(DayOfWeek::name)
-                       .map(String::toLowerCase)
-                       .collect(Collectors.toList()).toString() +
+                            .map(String::toLowerCase)
+                            .collect(Collectors.toList()) +
                " in " + zone;
     }
 
