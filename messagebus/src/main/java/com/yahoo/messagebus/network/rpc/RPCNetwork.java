@@ -151,16 +151,17 @@ public class RPCNetwork implements Network, MethodHandler {
         int i = 0;
         do {
             if (mirror.ready()) {
-                if (i > 100) {
+                if (i > 200) {
                     log.log(Level.INFO, "network became ready (at "+i+" ms)");
                 }
                 return true;
             }
-            if ((i == 100) || ((i > 100) && ((i % 1000) == 0))) {
+            if ((i == 200) || ((i > 200) && ((i % 1000) == 0))) {
                 log.log(Level.INFO, "waiting for network to become ready ("+i+" of "+millis+" ms)");
                 mirror.dumpState();
             }
             try {
+                // could maybe have some back-off here, fixed at 10ms for now
                 i += 10;
                 Thread.sleep(10);
             } catch (InterruptedException e) {
