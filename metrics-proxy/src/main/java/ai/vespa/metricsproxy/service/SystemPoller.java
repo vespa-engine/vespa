@@ -5,6 +5,7 @@ import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 
+import java.io.Reader;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -106,7 +107,6 @@ public class SystemPoller {
      * @return array[0] = memoryResident, array[1] = memoryVirtual (kB units)
      */
     static long[] getMemoryUsage(VespaService service) {
-        long[] size = new long[2];
         BufferedReader br;
         int pid = service.getPid();
 
@@ -114,24 +114,33 @@ public class SystemPoller {
             br = new BufferedReader(new FileReader("/proc/" + pid + "/smaps"));
         } catch (FileNotFoundException ex) {
             service.setAlive(false);
-            return size;
+            return new long[2];
         }
-        String line;
         try {
-            while ((line = br.readLine()) != null) {
-                String[] elems = line.split("\\s+");
-                /* Memory size is given in kB - convert to bytes by multiply with 1024*/
-                if (line.startsWith("Rss:")) {
-                    size[memoryTypeResident] += Long.parseLong(elems[1]) * 1024;
-                } else if (line.startsWith("Size:")) {
-                    size[memoryTypeVirtual] += Long.parseLong(elems[1]) * 1024;
-                }
-            }
-
-            br.close();
+            return getMemoryUsage(br);
         } catch (IOException ex) {
             log.log(Level.FINE, "Unable to read line from smaps file", ex);
-            return size;
+            return new long[2];
+        } finally {
+            try {
+                br.close();
+            } catch (IOException ex) {
+                log.log(Level.FINE, "Closing of smaps file failed", ex);
+            }
+        }
+    }
+    static long[] getMemoryUsage(BufferedReader br) throws IOException{
+        String line;
+        long[] size = new long[2];
+        while ((line = br.readLine()) != null) {
+            /* Memory size is given in kB - convert to bytes by multiply with 1024*/
+            if (line.startsWith("Rss:")) {
+                String remain = line.substring(4).trim();
+                size[memoryTypeResident] += Long.parseLong(remain.substring(0, remain.indexOf(' '))) * 1024;
+            } else if (line.startsWith("Size:")) {
+                String remain = line.substring(5).trim();
+                size[memoryTypeVirtual] += Long.parseLong(remain.substring(0, remain.indexOf(' '))) * 1024;
+            }
         }
 
         return size;

@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -123,7 +122,7 @@ public class MetricsParser {
             description = metric.get("description").textValue();
         }
 
-        Map<DimensionId, String> dim = Collections.emptyMap();
+        Map<DimensionId, String> dim = Map.of();
         if (metric.has("dimensions")) {
             JsonNode dimensions = metric.get("dimensions");
             StringBuilder sb = new StringBuilder();
@@ -139,7 +138,7 @@ public class MetricsParser {
                     String v = dimensions.get(k).textValue();
                     dim.put(toDimensionId(k), v);
                 }
-                uniqueDimensions.put(sb.toString(), Collections.unmodifiableMap(dim));
+                uniqueDimensions.put(sb.toString(), Map.copyOf(dim));
             }
             dim = uniqueDimensions.get(sb.toString());
         }
