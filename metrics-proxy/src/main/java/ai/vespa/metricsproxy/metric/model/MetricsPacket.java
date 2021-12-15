@@ -4,7 +4,6 @@ package ai.vespa.metricsproxy.metric.model;
 import ai.vespa.metricsproxy.metric.Metric;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -15,7 +14,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
 
@@ -49,17 +47,9 @@ public class MetricsPacket {
         this.consumers = Set.copyOf(consumers);
     }
 
-    public Map<MetricId, Number> metrics() {
-        return unmodifiableMap(metrics);
-    }
-
-    public Map<DimensionId, String> dimensions() {
-        return unmodifiableMap(dimensions);
-    }
-
-    public Set<ConsumerId> consumers() {
-        return consumers;
-    }
+    public Map<MetricId, Number> metrics() { return unmodifiableMap(metrics); }
+    public Map<DimensionId, String> dimensions() { return unmodifiableMap(dimensions); }
+    public Set<ConsumerId> consumers() { return consumers;}
 
     @Override
     public String toString() {
