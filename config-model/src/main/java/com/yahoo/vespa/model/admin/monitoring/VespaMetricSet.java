@@ -780,7 +780,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.puts.sum.failures.timeout.rate"));
         metrics.add(new Metric("vds.distributor.puts.sum.failures.busy.rate"));
         metrics.add(new Metric("vds.distributor.puts.sum.failures.inconsistent_bucket.rate"));
-        metrics.add(new Metric("vds.distributor.puts.sum.failures.concurrent_mutations.rate"));        
         metrics.add(new Metric("vds.distributor.removes.sum.latency.max"));
         metrics.add(new Metric("vds.distributor.removes.sum.latency.sum"));
         metrics.add(new Metric("vds.distributor.removes.sum.latency.count"));
