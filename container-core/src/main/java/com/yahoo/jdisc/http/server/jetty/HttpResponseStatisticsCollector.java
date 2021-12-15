@@ -108,7 +108,7 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
         }
     }
 
-    public void ignoreUserAgent(String agentName) {
+    void ignoreUserAgent(String agentName) {
         ignoredUserAgents.add(agentName);
     }
 
