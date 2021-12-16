@@ -255,15 +255,8 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         return (com.yahoo.jdisc.http.HttpRequest) request;
     }
 
-
-    public static Context testOnlyContext() {
-        return new Context(new Executor() {
-            @Override
-            public void execute(Runnable command) {
-                command.run();
-            }
-        },
-                           null);
+    public static Context testContext() {
+        return new Context(Runnable::run, null);
     }
 
     public static class Context {
