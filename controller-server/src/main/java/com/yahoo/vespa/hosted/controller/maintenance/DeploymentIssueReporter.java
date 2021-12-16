@@ -67,6 +67,7 @@ public class DeploymentIssueReporter extends ControllerMaintainer {
      */
     private double maintainDeploymentIssues(List<Application> applications) {
         List<TenantAndApplicationId> failingApplications = controller().jobController().deploymentStatuses(ApplicationList.from(applications))
+                                                                       .matching(status -> ! status.jobSteps().isEmpty())
                                                                        .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
                                                                        .mapToList(status -> status.application().id());
 
