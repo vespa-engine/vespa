@@ -153,7 +153,6 @@ vespa_define_module(
     src/tests/visit_ranges
     src/tests/invokeservice
     src/tests/wakeup
-    src/tests/websocket
     src/tests/zcurve
 
     LIBS
@@ -181,5 +180,4 @@ vespa_define_module(
     src/vespa/vespalib/time
     src/vespa/vespalib/trace
     src/vespa/vespalib/util
-    src/vespa/vespalib/websocket
 )

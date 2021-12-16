@@ -24,7 +24,6 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_time>
     $<TARGET_OBJECTS:vespalib_vespalib_trace>
     $<TARGET_OBJECTS:vespalib_vespalib_util>
-    $<TARGET_OBJECTS:vespalib_vespalib_websocket>
     INSTALL lib64
     DEPENDS
     ${VESPA_GCC_LIB}
