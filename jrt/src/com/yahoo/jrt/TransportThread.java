@@ -269,6 +269,23 @@ public class TransportThread {
     }
 
     /**
+     * Wake up this transport thread explicitly.
+     **/
+    public void wakeup() {
+        selector.wakeup();
+    }
+
+    /**
+     * Wake up this transport thread explicitly, but only if the
+     * calling thread is not the transport thread itself.
+     **/
+    public void wakeup_if_not_self() {
+        if (Thread.currentThread() != thread) {
+            wakeup();
+        }
+    }
+
+    /**
      * Synchronize with the transport thread. This method will block
      * until all commands issued before this method was invoked has
      * completed. If the transport thread has been shut down (or is in
