@@ -42,7 +42,7 @@ public class PolicyFactoryTestCase {
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         srv = new TestServer(new MessageBusParams().addProtocol(new DocumentProtocol(new DocumentTypeManager())),
-                             new RPCNetworkParams().setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
+                             new RPCNetworkParams().setNumNetworkThreads(1).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
         src = srv.mb.createSourceSession(new SourceSessionParams().setReplyHandler(new Receptor()));
     }
 

@@ -48,6 +48,7 @@ public class TestServer {
         this(new MessageBusParams().addProtocol(new SimpleProtocol()),
              new RPCNetworkParams()
                      .setIdentity(new Identity(name))
+                     .setNumNetworkThreads(1)
                      .setSlobrokConfigId(getSlobrokConfig(slobrok)));
         if (protocol != null) {
             mb.putProtocol(protocol);
@@ -62,6 +63,7 @@ public class TestServer {
     public TestServer(MessageBusParams mbusParams, Slobrok slobrok) {
         this(mbusParams,
              new RPCNetworkParams()
+             .setNumNetworkThreads(1)
              .setSlobrokConfigId(getSlobrokConfig(slobrok)));
         log.log(Level.INFO, "Running testServer <unnamed> at "+net.getConnectionSpec()+", location broker at "+slobrok.port());
     }

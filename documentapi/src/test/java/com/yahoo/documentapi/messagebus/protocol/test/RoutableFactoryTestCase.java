@@ -51,11 +51,11 @@ public class RoutableFactoryTestCase {
         DocumentTypeManager docMan = new DocumentTypeManager();
         dstProtocol = new DocumentProtocol(docMan);
         dstServer = new TestServer(new MessageBusParams().addProtocol(dstProtocol),
-                                   new RPCNetworkParams().setIdentity(new Identity("dst")).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
+                                   new RPCNetworkParams().setNumNetworkThreads(1).setIdentity(new Identity("dst")).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
         dstSession = dstServer.mb.createDestinationSession(new DestinationSessionParams().setName("session").setMessageHandler(new Receptor()));
         srcProtocol = new DocumentProtocol(docMan);
         srcServer = new TestServer(new MessageBusParams().addProtocol(srcProtocol),
-                                   new RPCNetworkParams().setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
+                                   new RPCNetworkParams().setNumNetworkThreads(1).setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
         srcSession = srcServer.mb.createSourceSession(new SourceSessionParams().setReplyHandler(new Receptor()));
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
     }

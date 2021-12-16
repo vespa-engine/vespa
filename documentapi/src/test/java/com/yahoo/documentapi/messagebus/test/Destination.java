@@ -47,7 +47,7 @@ public class Destination implements MessageHandler {
         access = new LocalDocumentAccess(params);
         local = access.createSyncSession(new SyncParameters.Builder().build());
         bus = new RPCMessageBus(Arrays.asList((Protocol)new DocumentProtocol(access.getDocumentTypeManager())),
-                                new RPCNetworkParams()
+                                new RPCNetworkParams().setNumNetworkThreads(1)
                                         .setIdentity(new Identity("test/destination"))
                                         .setSlobrokConfigId(slobrokConfigId),
                                 "file:src/test/cfg/messagebus.cfg");
