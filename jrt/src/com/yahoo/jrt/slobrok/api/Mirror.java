@@ -69,7 +69,7 @@ public class Mirror implements IMirror {
                     updateTask.scheduleNow();
                 }
             };
-        updateTask.scheduleNow();
+        startFetchRequest();
     }
 
     /**
