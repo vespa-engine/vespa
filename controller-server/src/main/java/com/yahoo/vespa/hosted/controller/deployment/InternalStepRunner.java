@@ -737,6 +737,9 @@ public class InternalStepRunner implements StepRunner {
 
     /** Sends a mail with a notification of a failed run, if one should be sent. */
     private void sendEmailNotification(Run run, DualLogger logger) {
+        if ( ! isNewFailure(run))
+            return;
+
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
         Notifications notifications = application.deploymentSpec().requireInstance(run.id().application().instance()).notifications();
         boolean newCommit = application.require(run.id().application().instance()).change().application()
@@ -758,6 +761,12 @@ public class InternalStepRunner implements StepRunner {
         catch (RuntimeException e) {
             logger.log(WARNING, "Exception trying to send mail for " + run.id(), e);
         }
+    }
+
+    private boolean isNewFailure(Run run) {
+        return controller.jobController().lastCompleted(run.id().job())
+                         .map(previous -> ! previous.hasFailed() || ! previous.versions().targetsMatch(run.versions()))
+                         .orElse(true);
     }
 
     private void updateConsoleNotification(Run run) {

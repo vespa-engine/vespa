@@ -368,9 +368,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void notificationIsSent() {
-        app.startSystemTestTests();
-        tester.cloud().set(TesterCloud.Status.NOT_STARTED);
-        tester.runner().run();
+        app.submit().failDeployment(JobType.systemTest);
         MockMailer mailer = tester.controllerTester().serviceRegistry().mailer();
         assertEquals(1, mailer.inbox("a@b").size());
         assertEquals("Vespa application tenant.application: System test failing due to system error",
@@ -378,6 +376,16 @@ public class InternalStepRunnerTest {
         assertEquals(1, mailer.inbox("b@a").size());
         assertEquals("Vespa application tenant.application: System test failing due to system error",
                      mailer.inbox("b@a").get(0).subject());
+
+        // Re-run failing causes no additional email to be sent.
+        app.failDeployment(JobType.systemTest);
+        assertEquals(1, mailer.inbox("a@b").size());
+        assertEquals(1, mailer.inbox("b@a").size());
+
+        // Failure with new package causes new email to be sent.
+        app.submit().failDeployment(JobType.systemTest);
+        assertEquals(2, mailer.inbox("a@b").size());
+        assertEquals(2, mailer.inbox("b@a").size());
     }
 
     @Test
