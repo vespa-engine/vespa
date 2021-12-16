@@ -147,20 +147,27 @@ public class RPCNetwork implements Network, MethodHandler {
 
     @Override
     public boolean waitUntilReady(double seconds) {
-        for (int i = 0; i < seconds * 100; ++i) {
+        int millis = (int) seconds * 1000;
+        int i = 0;
+        do {
             if (mirror.ready()) {
+                if (i > 200) {
+                    log.log(Level.INFO, "network became ready (at "+i+" ms)");
+                }
                 return true;
             }
-            if ((i % 100) == 0) {
-                log.log(Level.INFO, "waiting for network to become ready ("+(i/100)+" of "+((int)seconds)+" seconds)");
+            if ((i == 200) || ((i > 200) && ((i % 1000) == 0))) {
+                log.log(Level.INFO, "waiting for network to become ready ("+i+" of "+millis+" ms)");
                 mirror.dumpState();
             }
             try {
+                // could maybe have some back-off here, fixed at 10ms for now
+                i += 10;
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 // empty
             }
-        }
+        } while (i < millis);
         return false;
     }
 

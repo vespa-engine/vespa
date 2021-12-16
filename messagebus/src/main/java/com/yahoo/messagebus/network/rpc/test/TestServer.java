@@ -21,6 +21,7 @@ import com.yahoo.messagebus.test.SimpleProtocol;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * A simple test server implementation.
@@ -28,6 +29,8 @@ import java.util.logging.Logger;
  * @author havardpe
  */
 public class TestServer {
+
+    private static Logger log = Logger.getLogger(TestServer.class.getName());
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     public final VersionedRPCNetwork net;
@@ -52,6 +55,15 @@ public class TestServer {
         if (table != null) {
             setupRouting(table);
         }
+        log.log(Level.INFO, "Running testServer '"+name+"' at "+net.getConnectionSpec()+", location broker at "+slobrok.port());
+    }
+
+    /** Creates a new test server. */
+    public TestServer(MessageBusParams mbusParams, Slobrok slobrok) {
+        this(mbusParams,
+             new RPCNetworkParams()
+             .setSlobrokConfigId(getSlobrokConfig(slobrok)));
+        log.log(Level.INFO, "Running testServer <unnamed> at "+net.getConnectionSpec()+", location broker at "+slobrok.port());
     }
 
     /** Creates a new test server. */
@@ -64,6 +76,7 @@ public class TestServer {
     public TestServer(MessageBusParams mbusParams) {
         mb = new MessageBus(new LocalNetwork(), mbusParams);
         net = null;
+        log.log(Level.INFO, "Running testServer without network");
     }
 
     /**
@@ -74,6 +87,11 @@ public class TestServer {
      */
     public boolean destroy() {
         if (!destroyed.getAndSet(true)) {
+            if (net != null) {
+                log.log(Level.INFO, "Destroy testServer '"+net.getIdentity().getServicePrefix()+"' at "+net.getConnectionSpec());
+            } else {
+                log.log(Level.INFO, "Destroy testServer without network");
+            }
             mb.destroy();
             if (net != null)
                 net.destroy();
