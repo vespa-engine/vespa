@@ -10,6 +10,9 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -51,11 +54,13 @@ public class LoadBalancerProvisioner {
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
     private final LoadBalancerService service;
+    private final BooleanFlag deactivateRouting;
 
     public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
+        this.deactivateRouting = PermanentFlags.DEACTIVATE_ROUTING.bindTo(nodeRepository.flagSource());
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         for (var id : db.readLoadBalancerIds()) {
             try (var lock = db.lock(id.application())) {
@@ -204,12 +209,20 @@ public class LoadBalancerProvisioner {
 
     /** Provision or reconfigure a load balancer instance, if necessary */
     private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, NodeList nodes, Optional<LoadBalancer> currentLoadBalancer) {
-        Set<Real> reals = realsOf(nodes);
+        boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.APPLICATION_ID,
+                                                                 id.application().serializedForm())
+                                                           .value();
+        Set<Real> reals;
+        if (shouldDeactivateRouting) {
+            reals = Set.of();
+        } else {
+            reals = realsOf(nodes);
+        }
         if (hasReals(currentLoadBalancer, reals)) return currentLoadBalancer.get().instance();
         log.log(Level.INFO, () -> "Provisioning instance for " + id + ", targeting: " + reals);
         try {
             return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals),
-                                              allowEmptyReals(currentLoadBalancer)));
+                                              shouldDeactivateRouting || allowEmptyReals(currentLoadBalancer)));
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not (re)configure " + id + ", targeting: " +
                                             reals + ". The operation will be retried on next deployment");
@@ -237,7 +250,7 @@ public class LoadBalancerProvisioner {
 
     /** Returns real servers for given nodes */
     private Set<Real> realsOf(NodeList nodes) {
-        Set<Real> reals = new LinkedHashSet<Real>();
+        Set<Real> reals = new LinkedHashSet<>();
         for (var node : nodes) {
             for (var ip : reachableIpAddresses(node)) {
                 reals.add(new Real(HostName.from(node.hostname()), ip));
