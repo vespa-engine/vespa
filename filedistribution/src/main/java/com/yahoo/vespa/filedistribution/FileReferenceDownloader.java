@@ -67,9 +67,9 @@ public class FileReferenceDownloader {
                 return;
 
             retryCount++;
-            // There is no one connection that will always work for each file reference (each file reference might
-            // exist on just one config server, and which one could be different for each file reference), so we
-            // should get a new connection for every retry
+            // There might not be one connection that works for all file references (each file reference might
+            // exist on just one config server, and which one could be different for each file reference), so
+            // switch to a new connection for every retry
             connection = connectionPool.switchConnection(connection);
         } while (retryCount < 5 || Instant.now().isAfter(end));
 
@@ -120,9 +120,8 @@ public class FileReferenceDownloader {
                 return false;
             }
         } else {
-            log.log(logLevel, "Downloading " + fileReference + " from " + connection.getAddress() + " failed: " +
-                    request + ", error: " + request.errorCode() + "(" + request.errorMessage() +
-                    "). Will switch config server for next request" +
+            log.log(logLevel, "Downloading " + fileReference + " from " + connection.getAddress() + " failed:" +
+                    " error code " + request.errorCode() + " (" + request.errorMessage() + ")." +
                     " (retry " + retryCount + ", rpc timeout " + rpcTimeout + ")");
             return false;
         }
@@ -136,7 +135,7 @@ public class FileReferenceDownloader {
     }
 
     private Duration rpcTimeout(int retryCount) {
-        return Duration.ofSeconds(rpcTimeout.getSeconds()).plus(Duration.ofSeconds(retryCount * 10L));
+        return Duration.ofSeconds(rpcTimeout.getSeconds()).plus(Duration.ofSeconds(retryCount * 5L));
     }
 
     private boolean validateResponse(Request request) {
