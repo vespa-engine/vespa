@@ -195,7 +195,7 @@ public class MetricsReporter extends ControllerMaintainer {
         Optional<Instant> lastOpened = Optional.empty(); // When the upgrade window most recently opened
         Instant oneWeekAgo = upgradingAt.minus(Duration.ofDays(7));
         Duration step = Duration.ofHours(1);
-        for (Instant instant = upgradingAt; !instanceSpec.canUpgradeAt(instant); instant = instant.minus(step).truncatedTo(ChronoUnit.HOURS)) {
+        for (Instant instant = upgradingAt.truncatedTo(ChronoUnit.HOURS); !instanceSpec.canUpgradeAt(instant); instant = instant.minus(step)) {
             if (!instant.isAfter(oneWeekAgo)) { // Wrapped around, the entire week is being blocked
                 lastOpened = Optional.empty();
                 break;
