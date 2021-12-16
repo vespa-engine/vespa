@@ -20,6 +20,13 @@ public class TransportThread {
     private static final int CLOSING = 2;
     private static final int CLOSED  = 3;
 
+    private static final int SELECT_TIMEOUT_MS = getSelectTimeoutMs();
+
+    private static int getSelectTimeoutMs() {
+        // can override with a System property
+        return Integer.getInteger("vespa.jrt.select.timeout", 100);
+    }
+
     private class Run implements Runnable {
         public void run() {
             try {
@@ -311,7 +318,7 @@ public class TransportThread {
 
             // perform I/O selection
             try {
-                selector.select(100);
+                selector.select(SELECT_TIMEOUT_MS);
             } catch (IOException e) {
                 log.log(Level.WARNING, "error during select", e);
             }
