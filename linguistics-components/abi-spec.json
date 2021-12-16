@@ -1,4 +1,132 @@
 {
+  "com.yahoo.language.bert.BertConfig$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.language.bert.BertConfig)",
+      "public com.yahoo.language.bert.BertConfig$Builder model(com.yahoo.language.bert.BertConfig$Model$Builder)",
+      "public com.yahoo.language.bert.BertConfig$Builder model(java.util.function.Consumer)",
+      "public com.yahoo.language.bert.BertConfig$Builder model(java.util.List)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public com.yahoo.language.bert.BertConfig build()"
+    ],
+    "fields": [
+      "public java.util.List model"
+    ]
+  },
+  "com.yahoo.language.bert.BertConfig$Model$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigBuilder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.language.bert.BertConfig$Model)",
+      "public com.yahoo.language.bert.BertConfig$Model$Builder language(java.lang.String)",
+      "public com.yahoo.language.bert.BertConfig$Model$Builder path(com.yahoo.config.FileReference)",
+      "public com.yahoo.language.bert.BertConfig$Model build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.bert.BertConfig$Model": {
+    "superClass": "com.yahoo.config.InnerNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.language.bert.BertConfig$Model$Builder)",
+      "public java.lang.String language()",
+      "public java.nio.file.Path path()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.bert.BertConfig$Producer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void getConfig(com.yahoo.language.bert.BertConfig$Builder)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.bert.BertConfig": {
+    "superClass": "com.yahoo.config.ConfigInstance",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public static java.lang.String getDefVersion()",
+      "public void <init>(com.yahoo.language.bert.BertConfig$Builder)",
+      "public java.util.List model()",
+      "public com.yahoo.language.bert.BertConfig$Model model(int)"
+    ],
+    "fields": [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String CONFIG_DEF_VERSION",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "com.yahoo.language.bert.BertEmbedder$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void addModel(com.yahoo.language.Language, java.nio.file.Path)",
+      "public com.yahoo.language.bert.BertEmbedder$Builder addDefaultModel(java.nio.file.Path)",
+      "public java.util.Map getModels()",
+      "public com.yahoo.language.bert.BertEmbedder build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.bert.BertEmbedder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.language.process.Embedder",
+      "com.yahoo.language.process.Segmenter"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.language.bert.BertConfig)",
+      "public java.util.List segment(java.lang.String, com.yahoo.language.Language)",
+      "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
+      "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
+    ],
+    "fields": []
+  },
   "com.yahoo.language.sentencepiece.Scoring": {
     "superClass": "java.lang.Enum",
     "interfaces": [],

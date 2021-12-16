@@ -3,6 +3,7 @@ package com.yahoo.language.process;
 
 import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public interface Embedder {
      * @param text the text to embed
      * @param context the context which may influence an embedder's behavior
      * @param tensorType the type of the tensor to be returned
-     * @return the tensor embedding of the text, as the spoecified tensor type
+     * @return the tensor embedding of the text, as the specified tensor type
      * @throws IllegalArgumentException if the language or tensor type is not supported by this embedder
      */
     Tensor embed(String text, Context context, TensorType tensorType);
@@ -69,7 +70,7 @@ public interface Embedder {
         /**
          * Sets the name of the recipient of this tensor.
          *
-         * This iseither a query feature name
+         * This is either a query feature name
          * ("query(feature)"), or a schema and field name concatenated by a dot ("schema.field").
          */
         public Context setDestination(String destination) {
