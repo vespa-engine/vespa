@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1026,8 +1027,12 @@ public class ContentClusterTest extends ContentBaseTest {
         assertTrue(resolveThreePhaseUpdateConfigWithFeatureFlag(true));
     }
 
-    private int resolveMaxCompactBuffers(int maxCompactBuffers) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().maxCompactBuffers(maxCompactBuffers));
+    private int resolveMaxCompactBuffers(OptionalInt maxCompactBuffers) {
+        TestProperties testProperties = new TestProperties();
+        if (maxCompactBuffers.isPresent()) {
+            testProperties.maxCompactBuffers(maxCompactBuffers.getAsInt());
+        }
+        VespaModel model = createEnd2EndOneNode(testProperties);
         ContentCluster cc = model.getContentClusters().get("storage");
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
         cc.getSearch().getConfig(protonBuilder);
@@ -1038,8 +1043,9 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void default_max_compact_buffers_config_controlled_by_properties() {
-        assertEquals(2, resolveMaxCompactBuffers(2));
-        assertEquals(7, resolveMaxCompactBuffers(7));
+        assertEquals(1, resolveMaxCompactBuffers(OptionalInt.empty()));
+        assertEquals(2, resolveMaxCompactBuffers(OptionalInt.of(2)));
+        assertEquals(7, resolveMaxCompactBuffers(OptionalInt.of(7)));
     }
 
     void assertZookeeperServerImplementation(String expectedClassName,
