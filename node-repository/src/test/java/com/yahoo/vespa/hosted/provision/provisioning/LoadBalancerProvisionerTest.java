@@ -13,6 +13,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
@@ -160,6 +161,18 @@ public class LoadBalancerProvisionerTest {
         tester.activate(app1, prepare(app1,
                                       clusterRequest(ClusterSpec.Type.container, containerCluster1),
                                       clusterRequest(ClusterSpec.Type.content, contentCluster)));
+
+        // Routing is disabled through feature flag. Reals are removed on next deployment
+        tester.loadBalancerService().throwOnCreate(false);
+        flagSource.withBooleanFlag(PermanentFlags.DEACTIVATE_ROUTING.id(), true);
+        tester.activate(app1, prepare(app1,
+                                      clusterRequest(ClusterSpec.Type.container, containerCluster1),
+                                      clusterRequest(ClusterSpec.Type.content, contentCluster)));
+        List<LoadBalancer> activeLoadBalancers = lbApp1.get().stream()
+                                                       .filter(lb -> lb.state() == LoadBalancer.State.active)
+                                                       .collect(Collectors.toList());
+        assertEquals(1, activeLoadBalancers.size());
+        assertEquals(Set.of(), activeLoadBalancers.get(0).instance().get().reals());
     }
 
     @Test

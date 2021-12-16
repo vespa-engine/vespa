@@ -219,6 +219,13 @@ public class PermanentFlags {
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DEACTIVATE_ROUTING = defineFeatureFlag(
+            "deactivate-routing", false,
+            "Deactivates routing for an application by removing all reals from its load balancers. Used in " +
+            "cases where we immediately need to stop serving an application, i.e. in case of service violations",
+            "Takes effect on next redeployment",
+            APPLICATION_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
