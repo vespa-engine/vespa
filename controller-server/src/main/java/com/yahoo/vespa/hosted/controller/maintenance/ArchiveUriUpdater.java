@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -31,7 +30,7 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
     private final CuratorArchiveBucketDb archiveBucketDb;
 
     public ArchiveUriUpdater(Controller controller, Duration duration) {
-        super(controller, duration, ArchiveUriUpdater.class.getSimpleName(), SystemName.all());
+        super(controller, duration);
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.archiveBucketDb = controller.archiveBucketDb();
