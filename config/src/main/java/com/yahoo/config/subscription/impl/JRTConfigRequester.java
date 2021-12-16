@@ -19,12 +19,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINEST;
-import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
@@ -170,15 +168,11 @@ public class JRTConfigRequester implements RequestWaiter {
     private void handleFailedRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub, Connection connection) {
         logError(jrtReq, connection);
 
-        log.log(INFO, "Failure of config subscription to " + connection.getAddress() +
-                ", clients will keep existing config until resolved: " + sub);
         connectionPool.switchConnection(connection);
         if (failures < 10)
             failures++;
         long delay = calculateFailedRequestDelay(failures, timingValues);
-        // The logging depends on whether we are configured or not.
-        Level logLevel = sub.getConfigState().getConfig() == null ? Level.FINE : Level.INFO;
-        log.log(logLevel, () -> "Request for config " + jrtReq.getShortDescription() + "' failed with error code " +
+        log.log(FINE, () -> "Request for config " + jrtReq.getShortDescription() + "' failed with error code " +
                 jrtReq.errorCode() + " (" + jrtReq.errorMessage() + "), scheduling new request " +
                 " in " + delay + " ms");
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
