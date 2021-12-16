@@ -510,7 +510,7 @@ public class MetricsReporterTest {
                                                                 .blockChange(true, false, "mon-sun", "0-7", "CET")
                                                                 .build();
 
-        Instant mondayNight = Instant.parse("2021-12-13T23:00:00.00Z");
+        Instant mondayNight = Instant.parse("2021-12-13T23:30:00.00Z");
         DeploymentTester tester = new DeploymentTester().at(mondayNight);
         MetricsReporter reporter = createReporter(tester.controller());
         DeploymentContext context = tester.newDeploymentContext();
@@ -535,17 +535,23 @@ public class MetricsReporterTest {
         assertEquals("Upgrade is not overdue yet", Duration.ZERO, metric.get());
 
         // Upgrade continues into block window
-        tester.clock().advance(Duration.ofHours(3)); // Tuesday at 02:00 (03:00 CET)
-        assertEquals("Upgrade is overdue measured relative to window 2", Duration.ofHours(2), metric.get());
+        tester.clock().advance(Duration.ofHours(1)); // Tuesday at 00:30 (01:30 CET)
+        assertEquals("Upgrade is overdue measured relative to window 2", Duration.ofHours(0).plusMinutes(30), metric.get());
 
-        tester.clock().advance(Duration.ofHours(6)); // Tuesday at 08:00 (09:00 CET)
-        assertEquals("Upgrade is overdue measured relative to window 1", Duration.ofHours(8), metric.get());
+        tester.clock().advance(Duration.ofHours(1)); // Tuesday at 01:30 (02:30 CET)
+        assertEquals("Upgrade is overdue measured relative to window 2", Duration.ofHours(1).plusMinutes(30), metric.get());
 
-        tester.clock().advance(Duration.ofHours(1)); // Tuesday at 09:00 (10:00 CET)
+        tester.clock().advance(Duration.ofHours(1)); // Tuesday at 02:30 (03:30 CET)
+        assertEquals("Upgrade is overdue measured relative to window 2", Duration.ofHours(2).plusMinutes(30), metric.get());
+
+        tester.clock().advance(Duration.ofHours(6)); // Tuesday at 08:30 (09:30 CET)
+        assertEquals("Upgrade is overdue measured relative to window 1", Duration.ofHours(8).plusMinutes(30), metric.get());
+
+        tester.clock().advance(Duration.ofHours(1)); // Tuesday at 09:30 (10:30 CET)
         assertEquals("Upgrade is no longer overdue", Duration.ZERO, metric.get());
 
-        tester.clock().advance(Duration.ofDays(2)); // Thursday at 10:00 (11:00 CET)
-        assertEquals("Upgrade is overdue measure relative to window 3", Duration.ofHours(34), metric.get());
+        tester.clock().advance(Duration.ofDays(2)); // Thursday at 10:30 (11:30 CET)
+        assertEquals("Upgrade is overdue measure relative to window 3", Duration.ofHours(34).plusMinutes(30), metric.get());
     }
 
     @Test
