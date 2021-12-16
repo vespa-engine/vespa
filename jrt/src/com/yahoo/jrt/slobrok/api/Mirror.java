@@ -67,9 +67,10 @@ public class Mirror implements IMirror {
                 public void handleRequestDone(Request req) {
                     requestDone = true;
                     updateTask.scheduleNow();
+                    transportThread.wakeup_if_not_self();
                 }
             };
-        updateTask.scheduleNow();
+        startFetchRequest();
     }
 
     /**
@@ -174,9 +175,11 @@ public class Mirror implements IMirror {
         if (requestDone) {
             handleUpdate();
             requestDone = false;
-            return;
         }
+        startFetchRequest();
+    }
 
+    private void startFetchRequest() {
         if (target != null && ! slobroks.contains(currSlobrok)) {
             log.log(Level.INFO, "location broker "+currSlobrok+" removed, will disconnect and use one of: "+slobroks);
             target.close();
@@ -204,7 +207,7 @@ public class Mirror implements IMirror {
         req.parameters().add(new Int32Value(5000));     // mstimeout
         target.invokeAsync(req, 40.0, reqWait);
     }
-    
+
     private void handleUpdate() {
         if (!req.checkReturnTypes("iSSSi")
             || (req.returnValues().get(2).count() !=
@@ -215,8 +218,7 @@ public class Mirror implements IMirror {
                         " (error code " + req.errorCode() + ")");
             }
             target.close();
-            target = null;
-            updateTask.scheduleNow(); // try next slobrok
+            target = null; // try next slobrok
             return;
         }
         Values answer = req.returnValues();
@@ -235,7 +237,6 @@ public class Mirror implements IMirror {
             Entry[]  newSpecs;
             if (diffFromGeneration == 0) {
                 newSpecs = new Entry[numNames];
-
                 for (int idx = 0; idx < numNames; idx++) {
                     newSpecs[idx] = new Entry(n[idx], s[idx]);
                 }
@@ -270,7 +271,6 @@ public class Mirror implements IMirror {
             updates = u;
         }
         backOff.reset();
-        updateTask.schedule(0.1); // be nice
     }
 
     /**
