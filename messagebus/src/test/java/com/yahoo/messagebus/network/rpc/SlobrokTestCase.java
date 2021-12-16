@@ -85,9 +85,9 @@ public class SlobrokTestCase {
     public void setUp() throws ListenFailedException {
         slobrok = new Slobrok();
         String slobrokCfgId = "raw:slobrok[1]\nslobrok[0].connectionspec \"" + new Spec("localhost", slobrok.port()).toString() + "\"\n";
-        net1 = new RPCNetwork(new RPCNetworkParams().setIdentity(new Identity("net/a")).setSlobrokConfigId(slobrokCfgId));
-        net2 = new RPCNetwork(new RPCNetworkParams().setIdentity(new Identity("net/b")).setSlobrokConfigId(slobrokCfgId));
-        net3 = new RPCNetwork(new RPCNetworkParams().setIdentity(new Identity("net/c")).setSlobrokConfigId(slobrokCfgId));
+        net1 = new RPCNetwork(new RPCNetworkParams().setNumNetworkThreads(1).setIdentity(new Identity("net/a")).setSlobrokConfigId(slobrokCfgId));
+        net2 = new RPCNetwork(new RPCNetworkParams().setNumNetworkThreads(1).setIdentity(new Identity("net/b")).setSlobrokConfigId(slobrokCfgId));
+        net3 = new RPCNetwork(new RPCNetworkParams().setNumNetworkThreads(1).setIdentity(new Identity("net/c")).setSlobrokConfigId(slobrokCfgId));
         port1 = net1.getPort();
         port2 = net2.getPort();
         port3 = net3.getPort();

@@ -80,7 +80,7 @@ public class PolicyTestFrame {
             e.printStackTrace();
             fail(e.getMessage());
         }
-        net = new MyNetwork(new RPCNetworkParams()
+        net = new MyNetwork(new RPCNetworkParams().setNumNetworkThreads(1)
                 .setIdentity(new Identity(identity))
                 .setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
         mbus = new MessageBus(net, new MessageBusParams()
