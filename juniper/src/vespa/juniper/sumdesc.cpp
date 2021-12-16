@@ -33,28 +33,26 @@ bool wordchar(const unsigned char* s)
     }
 }
 
-bool wordchar_or_il_ann_anchor(const unsigned char* s)
+bool wordchar_or_il_ann_char(const unsigned char* s, ucs4_t annotation_char)
 {
     unsigned char c = *s;
     if (c & 0x80) {
         ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
         return Fast_UnicodeUtil::IsWordChar(u) ||
-            u == il_ann_anchor;
+            u == annotation_char;
     } else {
         return isalnum(c);
     }
 }
 
+bool wordchar_or_il_ann_anchor(const unsigned char* s)
+{
+    return wordchar_or_il_ann_char(s, il_ann_anchor);
+}
+
 bool wordchar_or_il_ann_terminator(const unsigned char* s)
 {
-    unsigned char c = *s;
-    if (c & 0x80) {
-        ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
-        return Fast_UnicodeUtil::IsWordChar(u) ||
-            u == il_ann_terminator;
-    } else {
-        return isalnum(c);
-    }
+    return wordchar_or_il_ann_char(s, il_ann_terminator);
 }
 
 bool nonwordchar(const unsigned char* s)
@@ -69,39 +67,33 @@ bool nonwordchar(const unsigned char* s)
 }
 
 bool
-il_ann_anchor_char(const unsigned char* s)
+il_ann_char(const unsigned char* s, ucs4_t annotation_char)
 {
     unsigned char c = *s;
     if (c & 0x80) {
         ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
-        return u == il_ann_anchor;
+        return u == annotation_char;
     } else {
         return false;
     }
+}
+
+bool
+il_ann_anchor_char(const unsigned char* s)
+{
+    return il_ann_char(s, il_ann_anchor);
 }
 
 bool
 il_ann_separator_char(const unsigned char* s)
 {
-    unsigned char c = *s;
-    if (c & 0x80) {
-        ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
-        return u == il_ann_separator;
-    } else {
-        return false;
-    }
+    return il_ann_char(s, il_ann_separator);
 }
 
 bool
 il_ann_terminator_char(const unsigned char* s)
 {
-    unsigned char c = *s;
-    if (c & 0x80) {
-        ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
-        return u == il_ann_terminator;
-    } else {
-        return false;
-    }
+    return il_ann_char(s, il_ann_terminator);
 }
 
 /* Move backwards/forwards from ptr (no longer than to start) in an
@@ -127,7 +119,9 @@ int complete_word(unsigned char* start, ssize_t length,
     }
 
     // Figure out if a word needs completion or if we are just going
-    // to eliminate whitespace
+    // to eliminate whitespace. Consider sequence from interlinear
+    // annotation anchor to interlinear annotation terminator to be a
+    // word.
     if (!wordchar(ptr)) {
         if (increment > 0 && il_ann_anchor_char(ptr)) {
             chartest = il_ann_terminator_char;
