@@ -207,8 +207,8 @@ public class PermanentFlags {
 
     // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
     public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
-            "host-memory", 0.6,
-            "The memory in GB required by a host's management processes.",
+            "host-memory", 1.0,
+            "The memory required by a hosts management processes.",
             "Takes effect immediately",
             ZONE_ID
     );
