@@ -59,6 +59,14 @@ public class TestServer {
     }
 
     /** Creates a new test server. */
+    public TestServer(MessageBusParams mbusParams, Slobrok slobrok) {
+        this(mbusParams,
+             new RPCNetworkParams()
+             .setSlobrokConfigId(getSlobrokConfig(slobrok)));
+        log.log(Level.INFO, "Running testServer <unnamed> at "+net.getConnectionSpec()+", location broker at "+slobrok.port());
+    }
+
+    /** Creates a new test server. */
     public TestServer(MessageBusParams mbusParams, RPCNetworkParams netParams) {
         net = new VersionedRPCNetwork(netParams);
         mb = new MessageBus(net, mbusParams);
@@ -68,6 +76,7 @@ public class TestServer {
     public TestServer(MessageBusParams mbusParams) {
         mb = new MessageBus(new LocalNetwork(), mbusParams);
         net = null;
+        log.log(Level.INFO, "Running testServer without network");
     }
 
     /**
@@ -77,8 +86,12 @@ public class TestServer {
      * @return true if content existed and was destroyed
      */
     public boolean destroy() {
-        log.log(Level.INFO, "Destroy testServer '"+net.getIdentity().getServicePrefix()+"' at "+net.getConnectionSpec());
         if (!destroyed.getAndSet(true)) {
+            if (net != null) {
+                log.log(Level.INFO, "Destroy testServer '"+net.getIdentity().getServicePrefix()+"' at "+net.getConnectionSpec());
+            } else {
+                log.log(Level.INFO, "Destroy testServer without network");
+            }
             mb.destroy();
             if (net != null)
                 net.destroy();

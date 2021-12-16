@@ -53,15 +53,13 @@ public class RoutingTestCase {
     @Before
     public void setUp() throws ListenFailedException, UnknownHostException {
         slobrok = new Slobrok();
-        dstServer = new TestServer(new MessageBusParams().addProtocol(new SimpleProtocol()),
-                                   new RPCNetworkParams().setIdentity(new Identity("dst")).setSlobrokConfigId(
-                                           TestServer.getSlobrokConfig(slobrok)));
+        dstServer = new TestServer("dst", null, slobrok, null);
         dstSession = dstServer.mb.createDestinationSession(
                 new DestinationSessionParams().setName("session").setMessageHandler(new Receptor()));
         retryPolicy = new RetryTransientErrorsPolicy();
         retryPolicy.setBaseDelay(0);
         srcServer = new TestServer(new MessageBusParams().setRetryPolicy(retryPolicy).addProtocol(new SimpleProtocol()),
-                                   new RPCNetworkParams().setSlobrokConfigId(TestServer.getSlobrokConfig(slobrok)));
+                                   slobrok);
         srcSession = srcServer.mb.createSourceSession(
                 new SourceSessionParams().setTimeout(600.0).setThrottlePolicy(null).setReplyHandler(new Receptor()));
         assertTrue(srcServer.waitSlobrok("dst/session", 1));
