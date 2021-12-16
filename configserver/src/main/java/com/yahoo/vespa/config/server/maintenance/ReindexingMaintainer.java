@@ -40,7 +40,7 @@ public class ReindexingMaintainer extends ConfigServerMaintainer {
     private static final Duration timeout = Duration.ofSeconds(10);
 
     /** Relative reindexing speed. */
-    static final double SPEED = 1;
+    static final double SPEED = 5;
 
     private final ConfigConvergenceChecker convergence;
     private final Clock clock;
