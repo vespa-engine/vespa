@@ -1,24 +1,25 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.yamas;
 
-import ai.vespa.metricsproxy.metric.model.json.JacksonUtil;
-import ai.vespa.metricsproxy.metric.model.json.YamasArrayJsonModel;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil;
 import com.yahoo.container.jdisc.HttpResponse;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
+
 
 /**
  * @author olaa
  */
 public class YamasResponse extends HttpResponse {
 
-    private final YamasArrayJsonModel data;
+    private final List<MetricsPacket> metrics;
 
-    public YamasResponse(int code, YamasArrayJsonModel data) {
+    public YamasResponse(int code, List<MetricsPacket> metrics) {
         super(code);
-        this.data = data;
+        this.metrics = metrics;
     }
 
     @Override
@@ -28,8 +29,7 @@ public class YamasResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        ObjectMapper mapper = JacksonUtil.createObjectMapper();
-        mapper.writeValue(outputStream, data);
+        YamasJsonUtil.toJson(metrics, outputStream, true);
     }
 
 }

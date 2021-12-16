@@ -19,6 +19,12 @@ import java.util.Locale;
  */
 public class JacksonUtil {
 
+    private static final DecimalFormat decimalFormat = createDecimalFormat();
+    private static DecimalFormat createDecimalFormat() {
+        DecimalFormat df = new DecimalFormat("#.####", new DecimalFormatSymbols(Locale.ENGLISH));
+        df.setMaximumFractionDigits(13);
+        return df;
+    }
     /**
      * Returns an object mapper with a custom floating point serializer to avoid scientific notation
      */
@@ -30,14 +36,17 @@ public class JacksonUtil {
         mapper.registerModule(module);
         return mapper;
     }
+    /**
+     * Returns an object mapper with a custom floating point serializer to avoid scientific notation
+     */
+    public static void writeDouble(JsonGenerator jgen, Double value) throws IOException {
+        jgen.writeNumber(decimalFormat.format(value));
+    }
 
     public static class DoubleSerializer extends JsonSerializer<Double> {
         @Override
-        public void serialize(Double value, JsonGenerator jgen,
-                              SerializerProvider provider) throws IOException {
-            DecimalFormat df = new DecimalFormat("#.####", new DecimalFormatSymbols(Locale.ENGLISH));
-            df.setMaximumFractionDigits(13);
-            jgen.writeNumber(df.format(value));
+        public void serialize(Double value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+            writeDouble(jgen, value);
         }
     }
 
