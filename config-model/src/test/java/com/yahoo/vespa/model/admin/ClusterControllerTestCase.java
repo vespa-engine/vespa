@@ -505,7 +505,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(1, reindexingConfig.clusters().size());
         String contentClusterId = "bar";
         assertEquals(Instant.EPOCH.toEpochMilli(), reindexingConfig.clusters(contentClusterId).documentTypes("type1").readyAtMillis());
-        assertEquals(1.0, reindexingConfig.clusters(contentClusterId).documentTypes("type1").speed());
+        assertEquals(1.0, reindexingConfig.clusters(contentClusterId).documentTypes("type1").speed(), 0);
     }
 
     private static void assertReindexingConfiguredOnAdminCluster(VespaModel model) {
