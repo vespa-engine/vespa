@@ -379,6 +379,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag MAX_COMPACT_BUFFERS = defineIntFlag(
+                "max-compact-buffers", 1,
+                List.of("baldersheim", "geirst", "toregge"), "2021-12-15", "2022-03-31",
+                "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
+                "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
