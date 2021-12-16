@@ -177,8 +177,7 @@ public class ClusterControllerContainer extends Container implements
                         status -> clusterBuilder.documentTypes(
                                 typeName,
                                 new ReindexingConfig.Clusters.DocumentTypes.Builder()
-                                        .readyAtMillis(status.ready().toEpochMilli())
-                                        .speed(status.speed())));
+                                        .readyAtMillis(status.ready().toEpochMilli())));
             }
             builder.clusters(clusterId, clusterBuilder);
         }
