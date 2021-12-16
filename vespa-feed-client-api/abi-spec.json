@@ -103,6 +103,8 @@
       "public abstract java.util.concurrent.CompletableFuture put(ai.vespa.feed.client.DocumentId, java.lang.String, ai.vespa.feed.client.OperationParameters)",
       "public abstract java.util.concurrent.CompletableFuture update(ai.vespa.feed.client.DocumentId, java.lang.String, ai.vespa.feed.client.OperationParameters)",
       "public abstract java.util.concurrent.CompletableFuture remove(ai.vespa.feed.client.DocumentId, ai.vespa.feed.client.OperationParameters)",
+      "public static java.util.List await(java.util.List)",
+      "public static varargs java.util.List await(java.util.concurrent.CompletableFuture[])",
       "public abstract ai.vespa.feed.client.OperationStats stats()",
       "public abstract ai.vespa.feed.client.FeedClient$CircuitBreaker$State circuitBreakerState()",
       "public abstract void close(boolean)",
@@ -218,6 +220,19 @@
       "public java.util.concurrent.CompletableFuture feedMany(java.io.InputStream, ai.vespa.feed.client.JsonFeeder$ResultCallback)",
       "public java.util.concurrent.CompletableFuture feedMany(java.io.InputStream)",
       "public void close()"
+    ],
+    "fields": []
+  },
+  "ai.vespa.feed.client.MultiFeedException": {
+    "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.Collection)",
+      "public java.util.Collection feedExceptions()",
+      "public java.util.Set documentIds()"
     ],
     "fields": []
   },
