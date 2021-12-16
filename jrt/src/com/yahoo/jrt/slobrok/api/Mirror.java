@@ -67,6 +67,7 @@ public class Mirror implements IMirror {
                 public void handleRequestDone(Request req) {
                     requestDone = true;
                     updateTask.scheduleNow();
+                    transportThread.wakeup_if_not_self();
                 }
             };
         startFetchRequest();

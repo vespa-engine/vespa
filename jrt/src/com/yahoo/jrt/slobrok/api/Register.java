@@ -87,6 +87,7 @@ public class Register {
                 public void handleRequestDone(Request req) {
                     reqDone = true;
                     updateTask.scheduleNow();
+                    transportThread.wakeup_if_not_self();
                 }
             };
         m_list = new Method("slobrok.callback.listNamesServed",
@@ -159,6 +160,7 @@ public class Register {
         pending.add(name);
         discard(unreg, name);
         updateTask.scheduleNow();
+        transportThread.wakeup();
     }
 
     /**
@@ -171,6 +173,7 @@ public class Register {
         discard(pending, name);
         unreg.add(name);
         updateTask.scheduleNow();
+        transportThread.wakeup();
     }
 
     /**
