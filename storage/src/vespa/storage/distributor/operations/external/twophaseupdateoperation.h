@@ -16,6 +16,7 @@ namespace storage {
 
 namespace api {
 class UpdateCommand;
+class UpdateReply;
 class CreateBucketReply;
 class ReturnCode;
 }
@@ -94,7 +95,7 @@ private:
     static const char* stateToString(SendState);
 
     void sendReply(DistributorStripeMessageSender&,
-                   std::shared_ptr<api::StorageReply>&);
+                   std::shared_ptr<api::UpdateReply>);
     void sendReplyWithResult(DistributorStripeMessageSender&, const api::ReturnCode&);
     void ensureUpdateReplyCreated();
 
@@ -144,7 +145,7 @@ private:
     PersistenceOperationMetricSet& _getMetric;
     PersistenceOperationMetricSet& _metadata_get_metrics;
     std::shared_ptr<api::UpdateCommand> _updateCmd;
-    std::shared_ptr<api::StorageReply> _updateReply;
+    std::shared_ptr<api::UpdateReply> _updateReply;
     const DistributorNodeContext& _node_ctx;
     DistributorStripeOperationContext& _op_ctx;
     const DocumentSelectionParser& _parser;
