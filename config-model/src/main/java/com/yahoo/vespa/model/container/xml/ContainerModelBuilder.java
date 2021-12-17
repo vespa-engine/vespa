@@ -93,6 +93,7 @@ import org.w3c.dom.Node;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -1126,7 +1127,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
+    /**
+     * Validates JVM GC options and logs a warning if anyone of them has invalid syntax or is an option
+     * that is unsupported for the running system (e.g. uses CMS options for hosted Vespa, which uses JDK 17)
+     */
     private static class JvmGcOptions {
+
+        private static final Pattern validPattern = Pattern.compile("-XX:[+-][a-zA-z0-9=]+");
+        private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[a-zA-z0-9=]+");
 
         private final DeployState deployState;
         private final String jvmGcOptions;
@@ -1143,9 +1151,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private String build() {
             String options = deployState.getProperties().jvmGCOptions();
             if (jvmGcOptions != null) {
-                log(jvmGcOptions);
                 options = jvmGcOptions;
-                // TODO: Verify options against lists of allowed and/or disallowed options
+                String[] optionList = options.split(" ");
+                List<String> invalidOptions = Arrays.stream(optionList)
+                                                    .filter(option -> !option.isEmpty())
+                                                    .filter(option -> !Pattern.matches(validPattern.pattern(), option))
+                                                    .collect(Collectors.toList());
+
+                if (isHosted) {
+                    // CMS GC options cannot be used in hosted, CMS is unsupported in JDK 17
+                    invalidOptions.addAll(Arrays.stream(optionList)
+                                                .filter(option -> !option.isEmpty())
+                                                .filter(option -> Pattern
+                                                        .matches(invalidCMSPattern.pattern(), option) ||
+                                                        option.equals("-XX:+UseConcMarkSweepGC"))
+                                                .collect(Collectors.toList()));
+                }
+
+                logInvalidOptions(invalidOptions);
             }
 
             if (options == null || options.isEmpty())
@@ -1154,9 +1177,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return options;
         }
 
-        private void log(String jvmGcOptions) {
-            if (isHosted)
-                logger.logApplicationPackage(Level.INFO, "JVM GC options from services.xml: " + jvmGcOptions);
+        private void logInvalidOptions(List<String> options) {
+            if (options.isEmpty()) return;
+
+            Collections.sort(options);
+            logger.logApplicationPackage(WARNING, "Invalid JVM GC options from services.xml: " + String.join(",", options));
         }
 
     }
