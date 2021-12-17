@@ -6,7 +6,6 @@ import com.yahoo.component.Vtag;
 import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import java.util.logging.Level;
 import com.yahoo.messagebus.MessageBus;
 import com.yahoo.messagebus.MessageBusParams;
 import com.yahoo.messagebus.Protocol;
@@ -141,7 +140,8 @@ public class TestServer {
      * @return whether or not the required state was reached
      */
     public boolean waitState(SlobrokState slobrokState) {
-        for (int i = 0; i < 6000 && !Thread.currentThread().isInterrupted(); ++i) {
+        int millis = 120 * 1000;
+        for (int i = 0; i < millis && !Thread.currentThread().isInterrupted(); ++i) {
             boolean done = true;
             for (String pattern : slobrokState.getPatterns()) {
                 List<Mirror.Entry> res = net.getMirror().lookup(pattern);
@@ -150,10 +150,16 @@ public class TestServer {
                 }
             }
             if (done) {
+                if (i > 50) log.log(Level.INFO, "waitState OK after "+i+" ms");
                 return true;
             }
+            if ((i % 1000) == 50) {
+                log.log(Level.INFO, "waitState still waiting, "+i+" ms");
+                var m = (Mirror) net.getMirror();
+                m.dumpState();
+            }
             try {
-                Thread.sleep(10);
+                Thread.sleep(1);
             }
             catch (InterruptedException e) {
                 // ignore
