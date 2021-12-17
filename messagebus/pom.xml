@@ -53,6 +53,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <forkCount>4</forkCount>
+          <systemPropertyVariables>
+            <java.util.logging.SimpleFormatter.format>%1$Ts.%1$TL [%4$s] %5$s {%3$s}%n</java.util.logging.SimpleFormatter.format>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
