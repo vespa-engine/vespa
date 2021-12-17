@@ -12,8 +12,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiReference;
 import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import ai.vespa.intellij.schema.psi.SdIdentifierVal;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 
@@ -25,7 +23,7 @@ import com.intellij.openapi.project.Project;
 public class SdCallHierarchyProvider implements HierarchyProvider {
 
     @Override
-    public @Nullable PsiElement getTarget(@NotNull DataContext dataContext) {
+    public PsiElement getTarget(DataContext dataContext) {
         final Project project = CommonDataKeys.PROJECT.getData(dataContext);
         final Editor editor = CommonDataKeys.EDITOR.getData(dataContext);
         if (project == null || editor == null) return null;
@@ -53,12 +51,12 @@ public class SdCallHierarchyProvider implements HierarchyProvider {
     }
 
     @Override
-    public @NotNull HierarchyBrowser createHierarchyBrowser(@NotNull PsiElement target) {
+    public HierarchyBrowser createHierarchyBrowser(PsiElement target) {
         return new SdCallHierarchyBrowser(target.getProject(), target);
     }
 
     @Override
-    public void browserActivated(@NotNull HierarchyBrowser hierarchyBrowser) {
+    public void browserActivated(HierarchyBrowser hierarchyBrowser) {
         ((SdCallHierarchyBrowser) hierarchyBrowser).changeView(CallHierarchyBrowserBase.getCallerType());
     }
 

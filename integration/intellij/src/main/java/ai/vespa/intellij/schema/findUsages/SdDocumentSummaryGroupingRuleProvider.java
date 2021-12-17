@@ -4,8 +4,6 @@ package ai.vespa.intellij.schema.findUsages;
 import com.intellij.openapi.project.Project;
 import com.intellij.usages.impl.FileStructureGroupRuleProvider;
 import com.intellij.usages.rules.UsageGroupingRule;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml) to the class SdDocumentSummaryGroupingRule.
@@ -15,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 public class SdDocumentSummaryGroupingRuleProvider implements FileStructureGroupRuleProvider {
     
     @Override
-    public @Nullable UsageGroupingRule getUsageGroupingRule(@NotNull Project project) {
+    public UsageGroupingRule getUsageGroupingRule(Project project) {
         return new SdDocumentSummaryGroupingRule();
     }
 }

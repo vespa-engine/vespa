@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Objects;
 
 /**
@@ -54,7 +52,7 @@ public class EndpointId implements Comparable<EndpointId> {
     public static EndpointId of(String id) { return new EndpointId(id); }
 
     @Override
-    public int compareTo(@NotNull EndpointId o) {
+    public int compareTo(EndpointId o) {
         return id.compareTo(o.id);
     }
 

@@ -7,8 +7,6 @@ import com.intellij.ide.structureView.TreeBasedStructureViewBuilder;
 import com.intellij.lang.PsiStructureViewFactory;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.PsiFile;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml) to the class SdStructureViewModel. It make the IDE use our 
@@ -18,13 +16,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public class SdStructureViewFactory implements PsiStructureViewFactory {
 
-    @Nullable
-    @Override
-    public StructureViewBuilder getStructureViewBuilder(@NotNull final PsiFile psiFile) {
+    public StructureViewBuilder getStructureViewBuilder(PsiFile psiFile) {
         return new TreeBasedStructureViewBuilder() {
-            @NotNull
             @Override
-            public StructureViewModel createStructureViewModel(@Nullable Editor editor) {
+            public StructureViewModel createStructureViewModel(Editor editor) {
                 return new SdStructureViewModel(psiFile);
             }
         };

@@ -4,7 +4,6 @@ package ai.vespa.intellij.schema;
 import com.intellij.lang.Language;
 import com.intellij.psi.codeStyle.CodeStyleSettingsCustomizable;
 import com.intellij.psi.codeStyle.LanguageCodeStyleSettingsProvider;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for the extension (in plugin.xml), to make the IDE use our plugin's code for coding style.
@@ -13,14 +12,13 @@ import org.jetbrains.annotations.NotNull;
  */
 public class SdLanguageCodeStyleSettingsProvider extends LanguageCodeStyleSettingsProvider {
     
-    @NotNull
     @Override
     public Language getLanguage() {
         return SdLanguage.INSTANCE;
     }
     
     @Override
-    public void customizeSettings(@NotNull CodeStyleSettingsCustomizable consumer, @NotNull SettingsType settingsType) {
+    public void customizeSettings(CodeStyleSettingsCustomizable consumer, SettingsType settingsType) {
         if (settingsType == SettingsType.SPACING_SETTINGS) {
             consumer.showStandardOptions("SPACE_AFTER_COLON");
 //            consumer.renameStandardOption("SPACE_AROUND_ASSIGNMENT_OPERATORS", "Separator");
@@ -32,7 +30,7 @@ public class SdLanguageCodeStyleSettingsProvider extends LanguageCodeStyleSettin
     }
     
     @Override
-    public String getCodeSample(@NotNull SettingsType settingsType) {
+    public String getCodeSample(SettingsType settingsType) {
         return "field myField type int {\n    indexing: summary\n}";
     }
     

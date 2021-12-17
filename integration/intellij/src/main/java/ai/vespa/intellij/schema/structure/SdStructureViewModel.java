@@ -6,7 +6,6 @@ import com.intellij.ide.structureView.StructureViewModelBase;
 import com.intellij.ide.structureView.StructureViewTreeElement;
 import com.intellij.ide.util.treeView.smartTree.Sorter;
 import com.intellij.psi.PsiFile;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This class represents the "Structure View" window.
@@ -14,15 +13,14 @@ import org.jetbrains.annotations.NotNull;
  * @author Shahar Ariel
  */
 public class SdStructureViewModel extends StructureViewModelBase implements StructureViewModel.ElementInfoProvider {
+
     public SdStructureViewModel(PsiFile psiFile) {
         super(psiFile, new SdStructureViewElement(psiFile));
     }
-    
-    
-    public Sorter @NotNull [] getSorters() {
+
+    public Sorter[] getSorters() {
         return new Sorter[]{Sorter.ALPHA_SORTER};
     }
-
 
     @Override
     public boolean isAlwaysShowsPlus(StructureViewTreeElement element) {

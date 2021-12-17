@@ -11,8 +11,6 @@ import com.intellij.psi.SmartPsiElementPointer;
 import com.intellij.usages.UsageGroup;
 import com.intellij.usages.UsageView;
 import ai.vespa.intellij.schema.psi.SdDeclaration;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
@@ -61,7 +59,7 @@ public class SdUsageGroup implements UsageGroup {
     }
 
     @Override
-    public int compareTo(@NotNull UsageGroup usageGroup) {
+    public int compareTo(UsageGroup usageGroup) {
 //        return getPresentableGroupText().compareToIgnoreCase(usageGroup.getPresentableGroupText());
         return getText(null).compareTo(usageGroup.getText(null));
     }
@@ -86,12 +84,12 @@ public class SdUsageGroup implements UsageGroup {
     }
 
     @Override
-    public @NotNull String getPresentableGroupText() {
+    public String getPresentableGroupText() {
         return myText;
     }
     
     @Override
-    public @Nullable Icon getIcon() {
+    public Icon getIcon() {
         return myIcon;
     }
     

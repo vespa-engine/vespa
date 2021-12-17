@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.auditlog;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Ordering;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -101,7 +100,7 @@ public class AuditLog {
         }
 
         @Override
-        public int compareTo(@NotNull Entry that) {
+        public int compareTo(Entry that) {
             return comparator.compare(this, that);
         }
 

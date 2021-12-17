@@ -16,7 +16,6 @@ import ai.vespa.intellij.schema.psi.SdDocumentSummaryDefinition;
 import ai.vespa.intellij.schema.psi.SdFile;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaAnnotationDefinition;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,14 +53,12 @@ public class SdStructureViewElement implements StructureViewTreeElement, Sortabl
         return myElement.canNavigateToSource();
     }
     
-    @NotNull
     @Override
     public String getAlphaSortKey() {
         String name = myElement.getName();
         return name != null ? name : "";
     }
     
-    @NotNull
     @Override
     public ItemPresentation getPresentation() {
         ItemPresentation presentation = myElement.getPresentation();
@@ -69,7 +66,7 @@ public class SdStructureViewElement implements StructureViewTreeElement, Sortabl
     }
     
     @Override
-    public TreeElement @NotNull [] getChildren() {
+    public TreeElement[] getChildren() {
         List<PsiElement> children = new ArrayList<>();
         if (myElement instanceof SdFile) {
             children = SdUtil.findSchemaChildren(myElement);

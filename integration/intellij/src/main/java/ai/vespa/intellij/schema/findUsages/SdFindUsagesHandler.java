@@ -16,7 +16,6 @@ import com.intellij.util.Processor;
 import ai.vespa.intellij.schema.SdUtil;
 import ai.vespa.intellij.schema.psi.SdFile;
 import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,16 +29,16 @@ public class SdFindUsagesHandler extends FindUsagesHandler {
     
     protected HashMap<String, List<PsiElement>> macrosMap;
     
-    protected SdFindUsagesHandler(@NotNull PsiElement psiElement) {
+    protected SdFindUsagesHandler(PsiElement psiElement) {
         super(psiElement);
         PsiFile file = psiElement.getContainingFile();
         macrosMap = file instanceof SdFile ? SdUtil.createMacrosMap((SdFile) psiElement.getContainingFile()) : new HashMap<>();
     }
     
     @Override
-    public boolean processElementUsages(@NotNull final PsiElement elementToSearch,
-                                        @NotNull final Processor<? super UsageInfo> processor,
-                                        @NotNull final FindUsagesOptions options) {
+    public boolean processElementUsages(PsiElement elementToSearch,
+                                        Processor<? super UsageInfo> processor,
+                                        FindUsagesOptions options) {
         final ReadActionProcessor<PsiReference> refProcessor = new ReadActionProcessor<>() {
             @Override
             public boolean processInReadAction(final PsiReference ref) {

@@ -3,8 +3,6 @@ package ai.vespa.intellij.schema.psi;
 
 import com.intellij.psi.tree.IElementType;
 import ai.vespa.intellij.schema.SdLanguage;
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * An SdTokenType.
@@ -13,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class SdTokenType extends IElementType {
     
-    public SdTokenType(@NotNull @NonNls String debugName) {
+    public SdTokenType(String debugName) {
         super(debugName, SdLanguage.INSTANCE);
     }
     

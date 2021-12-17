@@ -11,7 +11,6 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.containers.ContainerUtil;
 import ai.vespa.intellij.schema.psi.SdFirstPhaseDefinition;
 import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,13 +31,12 @@ public class SdCallerTreeStructure extends SdCallTreeStructure {
         macroTreeChildren = new HashMap<>();
     }
     
-    @NotNull
     @Override
-    protected HashSet<PsiElement> getChildren(@NotNull SdFunctionDefinition element) {
+    protected HashSet<PsiElement> getChildren(SdFunctionDefinition element) {
         return getCallers(element, macrosMap);
     }
     
-    private HashSet<PsiElement> getCallers(@NotNull SdFunctionDefinition macro, @NotNull HashMap<String, List<PsiElement>> macrosMap) {
+    private HashSet<PsiElement> getCallers(SdFunctionDefinition macro, HashMap<String, List<PsiElement>> macrosMap) {
         String macroName = macro.getName();
 
         if (macroTreeChildren.containsKey(macroName)) {

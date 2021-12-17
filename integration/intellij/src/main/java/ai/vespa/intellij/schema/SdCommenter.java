@@ -2,7 +2,6 @@
 package ai.vespa.intellij.schema;
 
 import com.intellij.lang.Commenter;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml), to enable turning a line into a comment with 
@@ -12,31 +11,26 @@ import org.jetbrains.annotations.Nullable;
  */
 public class SdCommenter implements Commenter {
     
-    @Nullable
     @Override
     public String getLineCommentPrefix() {
         return "#";
     }
     
-    @Nullable
     @Override
     public String getBlockCommentPrefix() {
         return "";
     }
     
-    @Nullable
     @Override
     public String getBlockCommentSuffix() {
         return null;
     }
     
-    @Nullable
     @Override
     public String getCommentedBlockCommentPrefix() {
         return null;
     }
     
-    @Nullable
     @Override
     public String getCommentedBlockCommentSuffix() {
         return null;
