@@ -14,6 +14,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 
@@ -23,6 +25,7 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
  * @author Jo Kristian Bergum
  */
 public class MetricsParser {
+    private final static Logger log = Logger.getLogger(MetricsParser.class.getName());
     public interface Consumer {
         void consume(Metric metric);
     }
@@ -128,15 +131,23 @@ public class MetricsParser {
             StringBuilder sb = new StringBuilder();
             for (Iterator<?> it = dimensions.fieldNames(); it.hasNext(); ) {
                 String k = (String) it.next();
-                String v = dimensions.get(k).asText();
-                sb.append(toDimensionId(k)).append(v);
+                String v = dimensions.get(k).textValue();
+                if (v != null) {
+                    sb.append(toDimensionId(k)).append(v);
+                }
             }
             if ( ! uniqueDimensions.containsKey(sb.toString())) {
                 dim = new HashMap<>();
                 for (Iterator<?> it = dimensions.fieldNames(); it.hasNext(); ) {
                     String k = (String) it.next();
                     String v = dimensions.get(k).textValue();
-                    dim.put(toDimensionId(k), v);
+                    if (v != null) {
+                        dim.put(toDimensionId(k), v);
+                    } else {
+                        // TODO This should never happen, but it has been seen. This should be flagged as warning,
+                        // but will try to find root cause before flooding the log.
+                        log.log(Level.FINE, "Metric '" + name + "': dimension '" + k + "' is null");
+                    }
                 }
                 uniqueDimensions.put(sb.toString(), Map.copyOf(dim));
             }

@@ -3,7 +3,6 @@ package ai.vespa.metricsproxy.service;
 
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
-import ai.vespa.metricsproxy.metric.model.MetricId;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,9 +10,7 @@ import org.junit.Test;
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.service.RemoteMetricsFetcher.METRICS_PATH;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -40,17 +37,17 @@ public class VespaServiceTest {
     @Test
     public void testService() {
         VespaService service = new VespaService("qrserver", "container/qrserver.0");
-        assertThat(service.getServiceName(), is("qrserver"));
-        assertThat(service.getInstanceName(), is("qrserver"));
-        assertThat(service.getPid(), is(-1));
-        assertThat(service.getConfigId(), is("container/qrserver.0"));
+        assertEquals("qrserver", service.getServiceName());
+        assertEquals("qrserver", service.getInstanceName());
+        assertEquals(-1, service.getPid());
+        assertEquals("container/qrserver.0", service.getConfigId());
 
 
         service = VespaService.create("qrserver2", "container/qrserver.0", -1);
-        assertThat(service.getServiceName(), is("qrserver"));
-        assertThat(service.getInstanceName(), is("qrserver2"));
-        assertThat(service.getPid(), is(-1));
-        assertThat(service.getConfigId(), is("container/qrserver.0"));
+        assertEquals("qrserver", service.getServiceName());
+        assertEquals("qrserver2", service.getInstanceName());
+        assertEquals(-1, service.getPid());
+        assertEquals("container/qrserver.0", service.getConfigId());
     }
 
     @Test

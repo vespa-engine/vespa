@@ -110,7 +110,7 @@ public class MetricsPacket {
 
         public Builder putMetrics(Collection<Metric> extraMetrics) {
             if (extraMetrics != null)
-                extraMetrics.forEach(metric -> metrics.put(metric.getName(), metric.getValue().doubleValue()));
+                extraMetrics.forEach(metric -> metrics.put(metric.getName(), metric.getValue()));
             return this;
         }
 

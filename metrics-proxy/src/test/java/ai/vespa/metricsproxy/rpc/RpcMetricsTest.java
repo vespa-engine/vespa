@@ -28,12 +28,9 @@ import static ai.vespa.metricsproxy.rpc.IntegrationTester.MONITORING_SYSTEM;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_1_CONFIG_ID;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_2_CONFIG_ID;
 import static ai.vespa.metricsproxy.service.VespaServices.ALL_SERVICES;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -72,8 +69,8 @@ public class RpcMetricsTest {
 
                 // Verify that application is used as serviceId, and that metric exists.
                 JsonNode extraMetrics = findExtraMetricsObject(allServicesResponse);
-                assertThat(extraMetrics.get("metrics").get("foo.count").intValue(), is(3));
-                assertThat(extraMetrics.get("dimensions").get("role").textValue(), is("extra-role"));
+                assertEquals(3, extraMetrics.get("metrics").get("foo.count").intValue());
+                assertEquals("extra-role", extraMetrics.get("dimensions").get("role").textValue());
             }
         }
     }
@@ -101,13 +98,13 @@ public class RpcMetricsTest {
             tester.httpServer().setResponse(METRICS_RESPONSE);
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
 
-            assertThat("#Services should be 1 for config id " + SERVICE_1_CONFIG_ID, services.size(), is(1));
+            assertEquals("#Services should be 1 for config id " + SERVICE_1_CONFIG_ID, 1, services.size());
 
             VespaService qrserver = services.get(0);
-            assertThat(qrserver.getMonitoringName().id, is(MONITORING_SYSTEM + VespaService.SEPARATOR + "qrserver"));
+            assertEquals(MONITORING_SYSTEM + VespaService.SEPARATOR + "qrserver", qrserver.getMonitoringName().id);
 
             Metrics metrics = qrserver.getMetrics();
-            assertThat("Fetched number of metrics is not correct", metrics.size(), is(2));
+            assertEquals("Fetched number of metrics is not correct", 2, metrics.size());
             Metric m = getMetric("foo.count", metrics);
             assertNotNull("Did not find expected metric with name 'foo.count'", m);
             Metric m2 = getMetric("bar.count", metrics);
@@ -117,16 +114,16 @@ public class RpcMetricsTest {
                 verifyMetricsFromRpcRequest(qrserver, rpcClient);
 
                 services = tester.vespaServices().getInstancesById(SERVICE_2_CONFIG_ID);
-                assertThat("#Services should be 1 for config id " + SERVICE_2_CONFIG_ID, services.size(), is(1));
+                assertEquals("#Services should be 1 for config id " + SERVICE_2_CONFIG_ID, 1, services.size());
 
                 VespaService storageService = services.get(0);
                 verfiyMetricsFromServiceObject(storageService);
 
                 String metricsById = getMetricsById(storageService.getConfigId(), rpcClient);
-                assertThat(metricsById, is("'storage.cluster.storage.storage.0'.foo_count=1 "));
+                assertEquals("'storage.cluster.storage.storage.0'.foo_count=1 ", metricsById);
 
                 String jsonResponse = getMetricsForYamas("non-existing", rpcClient).trim();
-                assertThat(jsonResponse, is("105: No service with name 'non-existing'"));
+                assertEquals("105: No service with name 'non-existing'", jsonResponse);
 
                 verifyMetricsFromRpcRequestForAllServices(rpcClient);
 
@@ -145,21 +142,21 @@ public class RpcMetricsTest {
     private static void verifyMetricsFromRpcRequest(VespaService service, RpcClient client) throws IOException {
         String jsonResponse = getMetricsForYamas(service.getMonitoringName().id, client).trim();
         ArrayNode metrics = (ArrayNode) jsonMapper.readTree(jsonResponse).get("metrics");
-        assertThat("Expected 3 metric messages", metrics.size(), is(3));
+        assertEquals("Expected 3 metric messages", 3, metrics.size());
         for (int i = 0; i < metrics.size() - 1; i++) { // The last "metric message" contains only status code/message
             JsonNode jsonObject = metrics.get(i);
             assertFalse(jsonObject.has("status_code"));
             assertFalse(jsonObject.has("status_msg"));
             assertEquals("bar", jsonObject.get("dimensions").get("foo").textValue());
-            assertThat(jsonObject.get("dimensions").get("bar").textValue(), is("foo"));
-            assertThat(jsonObject.get("dimensions").get("serviceDim").textValue(), is("serviceDimValue"));
-            assertThat(jsonObject.get("routing").get("yamas").get("namespaces").size(), is(1));
+            assertEquals("foo", jsonObject.get("dimensions").get("bar").textValue());
+            assertEquals("serviceDimValue", jsonObject.get("dimensions").get("serviceDim").textValue());
+            assertEquals(1, jsonObject.get("routing").get("yamas").get("namespaces").size());
             if (jsonObject.get("metrics").has("foo_count")) {
-                assertThat(jsonObject.get("metrics").get("foo_count").intValue(), is(1));
-                assertThat(jsonObject.get("routing").get("yamas").get("namespaces").get(0).textValue(), is(vespaMetricsConsumerId.id));
+                assertEquals(1, jsonObject.get("metrics").get("foo_count").intValue());
+                assertEquals(vespaMetricsConsumerId.id, jsonObject.get("routing").get("yamas").get("namespaces").get(0).textValue());
             } else {
-                assertThat(jsonObject.get("metrics").get("foo.count").intValue(), is(1));
-                assertThat(jsonObject.get("routing").get("yamas").get("namespaces").get(0).textValue(), is(CUSTOM_CONSUMER_ID.id));
+                assertEquals(1, jsonObject.get("metrics").get("foo.count").intValue());
+                assertEquals(CUSTOM_CONSUMER_ID.id, jsonObject.get("routing").get("yamas").get("namespaces").get(0).textValue());
             }
         }
 
@@ -168,21 +165,21 @@ public class RpcMetricsTest {
 
     private void verfiyMetricsFromServiceObject(VespaService service) {
         Metrics storageMetrics = service.getMetrics();
-        assertThat(storageMetrics.size(), is(2));
+        assertEquals(2, storageMetrics.size());
         Metric foo = getMetric("foo.count", storageMetrics);
         assertNotNull("Did not find expected metric with name 'foo.count'", foo);
-        assertThat("Expected 2 dimensions for metric foo", foo.getDimensions().size(), is(2));
-        assertThat("Metric foo did not contain correct dimension mapping for key = foo.count", foo.getDimensions().containsKey(toDimensionId("foo")), is(true));
-        assertThat("Metric foo did not contain correct dimension", foo.getDimensions().get(toDimensionId("foo")), is("bar"));
-        assertThat("Metric foo did not contain correct dimension", foo.getDimensions().containsKey(toDimensionId("bar")), is(true));
-        assertThat("Metric foo did not contain correct dimension for key = bar", foo.getDimensions().get(toDimensionId("bar")), is("foo"));
+        assertEquals("Expected 2 dimensions for metric foo", 2, foo.getDimensions().size());
+        assertTrue("Metric foo did not contain correct dimension mapping for key = foo.count", foo.getDimensions().containsKey(toDimensionId("foo")));
+        assertEquals("Metric foo did not contain correct dimension", "bar", foo.getDimensions().get(toDimensionId("foo")));
+        assertTrue("Metric foo did not contain correct dimension", foo.getDimensions().containsKey(toDimensionId("bar")));
+        assertEquals("Metric foo did not contain correct dimension for key = bar", "foo", foo.getDimensions().get(toDimensionId("bar")));
     }
 
     private void verifyMetricsFromRpcRequestForAllServices(RpcClient client) throws IOException {
         // Verify that metrics for all services can be retrieved in one request.
         String allServicesResponse = getMetricsForYamas(ALL_SERVICES, client).trim();
         ArrayNode allServicesMetrics = (ArrayNode) jsonMapper.readTree(allServicesResponse).get("metrics");
-        assertThat(allServicesMetrics.size(), is(5));
+        assertEquals(5, allServicesMetrics.size());
     }
 
     @Test
@@ -192,9 +189,9 @@ public class RpcMetricsTest {
             tester.httpServer().setResponse(METRICS_RESPONSE);
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
 
-            assertThat(services.size(), is(1));
+            assertEquals(1, services.size());
             Metrics metrics = services.get(0).getMetrics();
-            assertThat("Fetched number of metrics is not correct", metrics.size(), is(2));
+            assertEquals("Fetched number of metrics is not correct", 2, metrics.size());
             Metric m = getMetric("foo.count", metrics);
             assertNotNull("Did not find expected metric with name 'foo.count'", m);
 
@@ -203,7 +200,7 @@ public class RpcMetricsTest {
 
             try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
                 String response = getAllMetricNamesForService(services.get(0).getMonitoringName().id, vespaMetricsConsumerId, rpcClient);
-                assertThat(response, is("foo.count=ON;output-name=foo_count,bar.count=OFF,"));
+                assertEquals("foo.count=ON;output-name=foo_count,bar.count=OFF,", response);
             }
         }
     }
@@ -263,11 +260,11 @@ public class RpcMetricsTest {
     }
 
     private static void verifyStatusMessage(JsonNode jsonObject) {
-        assertThat(jsonObject.get("status_code").intValue(), is(0));
-        assertThat(jsonObject.get("status_msg").textValue(), notNullValue());
-        assertThat(jsonObject.get("application").textValue(), notNullValue());
-        assertThat(jsonObject.get("routing"), notNullValue());
-        assertThat(jsonObject.size(), is(4));
+        assertEquals(0, jsonObject.get("status_code").intValue());
+        assertNotNull(jsonObject.get("status_msg"));
+        assertNotNull(jsonObject.get("application"));
+        assertNotNull(jsonObject.get("routing"));
+        assertEquals(4, jsonObject.size());
     }
 
 }

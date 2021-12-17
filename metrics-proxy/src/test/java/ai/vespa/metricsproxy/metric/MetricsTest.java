@@ -9,15 +9,15 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Unknowm
  */
 public class MetricsTest {
-
+    private static final double EPSILON = 0.00000000001;
     @Test
     public void testIterator() {
         Metrics m = new Metrics();
@@ -33,36 +33,36 @@ public class MetricsTest {
         for (Metric metric: m.list()) {
             String k = metric.getName().id;
 
-            assertThat(map.containsKey(k), is(false));
+            assertFalse(map.containsKey(k));
             map.put(k, metric.getValue());
         }
 
-        assertThat(map.get("a").intValue(), is(1));
-        assertThat(map.get("b").doubleValue(), is(2.5));
+        assertEquals(1, map.get("a").intValue());
+        assertEquals(2.5, map.get("b").doubleValue(), EPSILON);
     }
 
     @Test
     public void testBasicMetric() {
         Metrics m = new Metrics();
         m.add(new Metric(toMetricId("count"), 1, System.currentTimeMillis() / 1000));
-        assertThat(m.list().size(), is(1));
-        assertThat(m.list().get(0).getName(), is(toMetricId("count")));
+        assertEquals(1, m.list().size());
+        assertEquals(toMetricId("count"), m.list().get(0).getName());
     }
 
     @Test
     public void testHealthMetric() {
         HealthMetric m = HealthMetric.get(null, null);
-        assertThat(m.isOk(), is(false));
+        assertFalse(m.isOk());
         m = HealthMetric.get("up", "test message");
-        assertThat(m.isOk(), is(true));
-        assertThat(m.getMessage(), is("test message"));
+        assertTrue(m.isOk());
+        assertEquals("test message", m.getMessage());
         m = HealthMetric.get("ok", "test message");
-        assertThat(m.isOk(), is(true));
-        assertThat(m.getMessage(), is("test message"));
+        assertTrue(m.isOk());
+        assertEquals("test message", m.getMessage());
 
         m = HealthMetric.get("bad", "test message");
-        assertThat(m.isOk(), is(false));
-        assertThat(m.getStatus(), is(StatusCode.UNKNOWN));
+        assertFalse(m.isOk());
+        assertEquals(StatusCode.UNKNOWN, m.getStatus());
     }
 
     @Test
@@ -70,30 +70,30 @@ public class MetricsTest {
         MetricsFormatter formatter = new MetricsFormatter(false, false);
         VespaService service = new DummyService(0, "config.id");
         String data = formatter.format(service, "key", 1);
-        assertThat(data, is("'config.id'.key=1"));
+        assertEquals("'config.id'.key=1", data);
 
         formatter = new MetricsFormatter(true, false);
         data = formatter.format(service, "key", 1);
-        assertThat(data, is("dummy.'config.id'.key=1"));
+        assertEquals("dummy.'config.id'.key=1", data);
 
 
         formatter = new MetricsFormatter(true, true);
         data = formatter.format(service, "key", 1);
-        assertThat(data, is("dummy.config.'id'.key=1"));
+        assertEquals("dummy.config.'id'.key=1", data);
 
         formatter = new MetricsFormatter(false, true);
         data = formatter.format(service, "key", 1);
-        assertThat(data, is("config.'id'.key=1"));
+        assertEquals("config.'id'.key=1", data);
     }
 
     @Test
     public void testTimeAdjustment() {
-        assertThat(Metric.adjustTime(0L, 0L), is(0L));
-        assertThat(Metric.adjustTime(59L, 59L), is(59L));
-        assertThat(Metric.adjustTime(60L, 60L), is(60L));
-        assertThat(Metric.adjustTime(59L, 60L), is(60L));
-        assertThat(Metric.adjustTime(60L, 59L), is(60L));
-        assertThat(Metric.adjustTime(59L, 61L), is(59L));
+        assertEquals(0L, Metric.adjustTime(0L, 0L));
+        assertEquals(59L, Metric.adjustTime(59L, 59L));
+        assertEquals(60L, Metric.adjustTime(60L, 60L));
+        assertEquals(60L, Metric.adjustTime(59L, 60L));
+        assertEquals(60L, Metric.adjustTime(60L, 59L));
+        assertEquals(59L, Metric.adjustTime(59L, 61L));
     }
 
 }

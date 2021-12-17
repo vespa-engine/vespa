@@ -34,11 +34,8 @@ import static ai.vespa.metricsproxy.metric.ExternalMetrics.ROLE_DIMENSION;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -72,40 +69,40 @@ public class MetricsManagerTest {
                                                                       getMetricsConsumers(),getApplicationDimensions(), getNodeDimensions());
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
-        assertThat(packets.size(), is(1));
+        assertEquals(1, packets.size());
         assertTrue(packets.get(0).metrics().isEmpty());
-        assertThat(packets.get(0).dimensions().get(toDimensionId("instance")), is(DownService.NAME));
-        assertThat(packets.get(0).dimensions().get(toDimensionId("global")), is("value"));
+        assertEquals(DownService.NAME, packets.get(0).dimensions().get(toDimensionId("instance")));
+        assertEquals("value", packets.get(0).dimensions().get(toDimensionId("global")));
     }
 
     @Test
     public void each_service_gets_separate_metrics_packets() {
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
-        assertThat(packets.size(), is(2));
+        assertEquals(2, packets.size());
 
-        assertThat(packets.get(0).dimensions().get(toDimensionId("instance")), is("dummy0"));
-        assertThat(packets.get(0).metrics().get(toMetricId("c.test")), is(1.0));
-        assertThat(packets.get(0).metrics().get(toMetricId("val")), is(1.05));
+        assertEquals("dummy0", packets.get(0).dimensions().get(toDimensionId("instance")));
+        assertEquals(1, packets.get(0).metrics().get(toMetricId("c.test")));
+        assertEquals(1.05, packets.get(0).metrics().get(toMetricId("val")));
 
-        assertThat(packets.get(1).dimensions().get(toDimensionId("instance")), is("dummy1"));
-        assertThat(packets.get(1).metrics().get(toMetricId("c.test")), is(6.0));
-        assertThat(packets.get(1).metrics().get(toMetricId("val")), is(2.35));
+        assertEquals("dummy1", packets.get(1).dimensions().get(toDimensionId("instance")));
+        assertEquals(6, packets.get(1).metrics().get(toMetricId("c.test")));
+        assertEquals(2.35, packets.get(1).metrics().get(toMetricId("val")));
     }
 
     @Test
     public void verify_expected_output_from_getMetricsById() {
         String dummy0Metrics = metricsManager.getMetricsByConfigId(SERVICE_0_ID);
-        assertThat(dummy0Metrics, containsString("'dummy.id.0'.val=1.050"));
-        assertThat(dummy0Metrics, containsString("'dummy.id.0'.c_test=1"));
+        assertTrue(dummy0Metrics.contains("'dummy.id.0'.val=1.050"));
+        assertTrue(dummy0Metrics.contains("'dummy.id.0'.c_test=1"));
 
         String dummy1Metrics = metricsManager.getMetricsByConfigId(SERVICE_1_ID);
-        assertThat(dummy1Metrics, containsString("'dummy.id.1'.val=2.350"));
-        assertThat(dummy1Metrics, containsString("'dummy.id.1'.c_test=6"));
+        assertTrue(dummy1Metrics.contains("'dummy.id.1'.val=2.350"));
+        assertTrue(dummy1Metrics.contains("'dummy.id.1'.c_test=6"));
     }
 
     @Test
     public void getServices_returns_service_types() {
-        assertThat(metricsManager.getAllVespaServices(), is("dummy"));
+        assertEquals("dummy", metricsManager.getAllVespaServices());
     }
 
     @Test
@@ -134,8 +131,8 @@ public class MetricsManagerTest {
         assertEquals(3, packets.size());
 
         MetricsPacket systemPacket = packets.get(0); // system metrics are added before other metrics
-        assertThat(systemPacket.metrics().get(toMetricId("cpu")), is(1.0));
-        assertThat(systemPacket.dimensions().get(toDimensionId("metrictype")), is("system"));
+        assertEquals(1, systemPacket.metrics().get(toMetricId("cpu")));
+        assertEquals("system", systemPacket.dimensions().get(toDimensionId("metrictype")));
 
         service0.setSystemMetrics(oldSystemMetrics);
     }
@@ -148,7 +145,7 @@ public class MetricsManagerTest {
                         .putMetrics(ImmutableList.of(new Metric(WHITELISTED_METRIC_ID, 0)))));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
-        assertThat(packets.size(), is(3));
+        assertEquals(3, packets.size());
     }
 
     @Test
@@ -158,7 +155,7 @@ public class MetricsManagerTest {
                         .putMetrics(ImmutableList.of(new Metric(toMetricId("not-whitelisted"), 0)))));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
-        assertThat(packets.size(), is(2));
+        assertEquals(2, packets.size());
     }
 
     @Test
@@ -185,7 +182,7 @@ public class MetricsManagerTest {
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
         for (MetricsPacket packet : packets) {
-            assertThat(packet.dimensions().get(ROLE_DIMENSION), is("role from extraMetrics"));
+            assertEquals("role from extraMetrics", packet.dimensions().get(ROLE_DIMENSION));
         }
     }
 
@@ -197,9 +194,9 @@ public class MetricsManagerTest {
                         .putDimension(METRIC_TYPE_DIMENSION_ID, "from extraMetrics")));
 
         List<MetricsPacket> packets = metricsManager.getMetrics(testServices, Instant.EPOCH);
-        assertThat(packets.get(0).dimensions().get(METRIC_TYPE_DIMENSION_ID), is("standard"));
-        assertThat(packets.get(1).dimensions().get(METRIC_TYPE_DIMENSION_ID), is("standard"));
-        assertThat(packets.get(2).dimensions().get(METRIC_TYPE_DIMENSION_ID), is("from extraMetrics"));
+        assertEquals("standard", packets.get(0).dimensions().get(METRIC_TYPE_DIMENSION_ID));
+        assertEquals("standard", packets.get(1).dimensions().get(METRIC_TYPE_DIMENSION_ID));
+        assertEquals("from extraMetrics", packets.get(2).dimensions().get(METRIC_TYPE_DIMENSION_ID));
     }
 
     @Test

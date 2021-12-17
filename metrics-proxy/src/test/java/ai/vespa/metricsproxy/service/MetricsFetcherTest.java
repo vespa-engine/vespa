@@ -4,27 +4,30 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
-import ai.vespa.metricsproxy.metric.model.MetricId;
 import org.junit.Test;
 
+import java.io.IOException;
+
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  */
 public class MetricsFetcherTest {
 
-    private static int port = 9;  //port number is not used in this test
+    private static final int port = 9;  //port number is not used in this test
 
-    private class MetricsConsumer implements MetricsParser.Consumer {
+    private static class MetricsConsumer implements MetricsParser.Consumer {
         Metrics metrics = new Metrics();
         @Override
         public void consume(Metric metric) {
             metrics.add(metric);
         }
     }
-    Metrics fetch(String data) {
+    Metrics fetch(String data) throws IOException {
         RemoteMetricsFetcher fetcher = new RemoteMetricsFetcher(new DummyService(0, "dummy/id/0"), port);
         MetricsConsumer consumer = new MetricsConsumer();
         fetcher.createMetrics(data, consumer, 0);
@@ -32,30 +35,59 @@ public class MetricsFetcherTest {
     }
 
     @Test
-    public void testStateFormatMetricsParse() {
+    public void testStateFormatMetricsParse() throws IOException {
         String jsonData = TestUtil.getFileContents("metrics-state.json");
         Metrics metrics = fetch(jsonData);
-        assertThat(metrics.size(), is(10));
-        assertThat(getMetric("query_hits.count", metrics).getValue().intValue(), is(28));
-        assertThat(getMetric("queries.rate", metrics).getValue().doubleValue(), is(0.4667));
-        assertThat(metrics.getTimeStamp(), is(1334134700L));
+        assertEquals(10, metrics.size());
+        assertEquals(28, getMetric("query_hits.count", metrics).getValue());
+        assertEquals(0.4667, getMetric("queries.rate", metrics).getValue());
+        assertEquals(1334134700L, metrics.getTimeStamp());
     }
 
     @Test
-    public void testEmptyJson() {
+    public void testEmptyJson() throws IOException {
         String  jsonData = "{}";
         Metrics metrics = fetch(jsonData);
-        assertThat("Wrong number of metrics", metrics.size(), is(0));
+        assertEquals(0, metrics.size());
     }
 
     @Test
-    public void testErrors() {
+    public void testSkippingNullDimensions() throws IOException {
+        String jsonData =
+                "{\"status\" : {\"code\" : \"up\",\"message\" : \"Everything ok here\"}," +
+                "\"metrics\" : {\"snapshot\" : {\"from\" : 1334134640.089,\"to\" : 1334134700.088" + "  }," +
+                "\"values\" : [" +
+                "{" +
+                "      \"name\" : \"some.bogus.metric\"," +
+                "      \"values\" : {" +
+                "        \"count\" : 12," +
+                "        \"rate\" : 0.2" +
+                "      }," +
+                "      \"dimensions\" : {" +
+                "        \"version\" : null" +
+                "      }" +
+                "    }" +
+                "]}}";
+
+        Metrics metrics = fetch(jsonData);
+        assertEquals(2, metrics.size());
+        assertTrue(metrics.list().get(0).getDimensions().isEmpty());
+        assertTrue(metrics.list().get(1).getDimensions().isEmpty());
+    }
+
+    @Test
+    public void testErrors() throws IOException {
         String jsonData;
-        Metrics metrics;
+        Metrics metrics = null;
 
         jsonData = "";
-        metrics = fetch(jsonData);
-        assertThat("Wrong number of metrics", metrics.size(), is(0));
+        try {
+            metrics = fetch(jsonData);
+            fail("Should have an IOException instead");
+        } catch (IOException e) {
+            assertEquals("Expected start of object, got null", e.getMessage());
+        }
+        assertNull(metrics);
 
         jsonData = "{\n" +
                 "\"status\" : {\n" +
@@ -64,7 +96,7 @@ public class MetricsFetcherTest {
                 "}\n" +
                 "}";
         metrics = fetch(jsonData);
-        assertThat("Wrong number of metrics", metrics.size(), is(0));
+        assertEquals(0, metrics.size());
 
         jsonData = "{\n" +
                 "\"status\" : {\n" +
@@ -92,8 +124,14 @@ public class MetricsFetcherTest {
                 "}\n" +
                 "}";
 
-        metrics = fetch(jsonData);
-        assertThat("Wrong number of metrics", metrics.size(), is(0));
+        metrics = null;
+        try {
+            metrics = fetch(jsonData);
+            fail("Should have an IOException instead");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Value for aggregator 'count' is not a number", e.getMessage());
+        }
+        assertNull(metrics);
     }
 
     public Metric getMetric(String metric, Metrics metrics) {
