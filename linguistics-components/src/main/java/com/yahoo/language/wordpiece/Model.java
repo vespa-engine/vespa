@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.language.bert;
+package com.yahoo.language.wordpiece;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.language.Language;
@@ -23,7 +23,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
- * A BERT embedder "model" - just a vocabulary of strings with a fixed id (index).
+ * A WordPiece embedder "model" - just a vocabulary of strings with a fixed id (index).
  *
  * Adapted from
  * https://github.com/eclipse/deeplearning4j/blob/master/deeplearning4j/deeplearning4j-nlp-parent/deeplearning4j-nlp/src/main/java/org/deeplearning4j/text/tokenization/tokenizer/BertWordPieceTokenizer.java
@@ -34,12 +34,14 @@ import java.util.stream.Collectors;
  */
 class Model {
 
-    final Path source;
-    final Language language;
+    private final String subwordPrefix;
+    private final Path source;
+    private final Language language;
     private final NavigableMap<String, Integer> vocabulary;
     private final Map<Integer, String> tokenId2Token;
 
-    Model(Language language, Path path) {
+    Model(String subwordPrefix, Language language, Path path) {
+        this.subwordPrefix = subwordPrefix;
         this.source = path;
         this.language = language;
 
@@ -56,23 +58,25 @@ class Model {
             }
         }
         catch (IOException e) {
-            throw new IllegalArgumentException("Could not read a BERT model from " + path, e);
+            throw new IllegalArgumentException("Could not read a WordPiece model from " + path, e);
         }
 
     }
 
-    public List<Integer> embed(String text, Tokenizer tokenizer) {
+    Language language() { return language; }
+
+    List<Integer> embed(String text, Tokenizer tokenizer) {
         List<Integer> ids = new ArrayList<>();
         text = text.toLowerCase();
         for (Token t : tokenizer.tokenize(text, language, StemMode.NONE, true)) {
             String originalToken = t.getTokenString();
             String candidate = originalToken;
             int count = 0;
-            while (candidate.length() > 0 && !"##".equals(candidate)) {
+            while (candidate.length() > 0 && !candidate.equals(subwordPrefix)) {
                 Tuple2<String, Integer> entry = findLongestSubstring(candidate);
                 if (entry == null) break;
                 ids.add(entry.second);
-                candidate = "##" + candidate.substring(entry.first.length());
+                candidate = subwordPrefix + candidate.substring(entry.first.length());
                 if (count++ > originalToken.length()) break;
             }
         }
@@ -80,7 +84,7 @@ class Model {
         return ids;
     }
 
-    public List<String> segment(String text, Tokenizer tokenizer) {
+    List<String> segment(String text, Tokenizer tokenizer) {
         return embed(text, tokenizer).stream().map(tokenId -> tokenId2Token.get(tokenId)).collect(Collectors.toList());
     }
 
@@ -100,6 +104,11 @@ class Model {
             id = tailMap.firstEntry().getValue();
         }
         return new Tuple2<>(longestSubstring, id);
+    }
+
+    @Override
+    public String toString() {
+        return "WordPiece model for " + language + ": '" + source + "'";
     }
 
 }

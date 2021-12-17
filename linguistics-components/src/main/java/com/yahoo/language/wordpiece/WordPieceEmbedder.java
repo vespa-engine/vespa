@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.language.bert;
+package com.yahoo.language.wordpiece;
 
 import com.google.inject.Inject;
 import com.yahoo.language.tools.Embed;
@@ -10,7 +10,9 @@ import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.language.wordpiece.WordPieceConfig;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
@@ -18,35 +20,37 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * An embedder to use with BERT models: Text is tokenized into tokens from a configured vocabulary,
+ * An implementation of the WordPiece embedder, usually used with BERT models,
+ * see https://arxiv.org/pdf/1609.08144v2.pdf
+ * Text is tokenized into tokens from a configured vocabulary,
  * and optionally returned as a 1-d dense tensor of token ids.
  *
  * @author bratseth
  */
-public class BertEmbedder implements Embedder, Segmenter {
+public class WordPieceEmbedder implements Embedder, Segmenter {
 
     private final Map<Language, Model> models;
 
     private final Tokenizer tokenizer;
 
     @Inject
-    public BertEmbedder(BertConfig config) {
+    public WordPieceEmbedder(WordPieceConfig config) {
         this(new Builder(config));
     }
 
-    private BertEmbedder(Builder builder) {
+    private WordPieceEmbedder(Builder builder) {
         super();
         this.tokenizer = new SimpleLinguistics().getTokenizer(); // always just split on spaces etc. and lowercase
         models = builder.getModels().entrySet()
                         .stream()
-                        .map(e -> new Model(e.getKey(), e.getValue()))
-                        .collect(Collectors.toUnmodifiableMap(m -> m.language, m -> m));
+                        .map(e -> new Model(builder.getSubwordPrefix(), e.getKey(), e.getValue()))
+                        .collect(Collectors.toUnmodifiableMap(m -> m.language(), m -> m));
         if (models.isEmpty())
-            throw new IllegalArgumentException("BertEmbedder requires at least one model configured");
+            throw new IllegalArgumentException("WordPieceEmbedder requires at least one model configured");
     }
 
     /**
-     * Segments the given text into token segments from the BERT vocabulary.
+     * Segments the given text into token segments from the WordPiece vocabulary.
      *
      * @param text the text to segment. The text should be of a language using space-separated words.
      * @return the list of zero or more token ids resulting from segmenting the input text
@@ -57,7 +61,7 @@ public class BertEmbedder implements Embedder, Segmenter {
     }
 
     /**
-     * Segments the given text into token segments from the BERT vocabulary and returns the token ids.
+     * Segments the given text into token segments from the WordPiece vocabulary and returns the token ids.
      *
      * @param text the text to segment. The text should be of a language using space-separated words.
      * @param context the context which specifies the language used to select a model
@@ -90,20 +94,32 @@ public class BertEmbedder implements Embedder, Segmenter {
         // Disregard language if there is default model
         if (models.size() == 1 && models.containsKey(Language.UNKNOWN)) return models.get(Language.UNKNOWN);
         if (models.containsKey(language)) return models.get(language);
-        throw new IllegalArgumentException("No BERT model for language " + language + " is configured");
+        throw new IllegalArgumentException("No WordPiece model for language " + language + " is configured");
     }
 
-    public static class Builder {
+    public static final class Builder {
 
+        private String subwordPrefix = "##";
         private final Map<Language, Path> models = new EnumMap<>(Language.class);
 
-        public Builder() {
+        public Builder() {}
+
+        public Builder(String defaultModelFile) {
+            addDefaultModel(new File(defaultModelFile).toPath());
         }
 
-        private Builder(BertConfig config) {
-            for (BertConfig.Model model : config.model())
+        private Builder(WordPieceConfig config) {
+            this.subwordPrefix = config.subwordPrefix();
+            for (WordPieceConfig.Model model : config.model())
                 addModel(Language.fromLanguageTag(model.language()), model.path());
         }
+
+        public Builder setSubwordPrefix(String prefix) {
+            this.subwordPrefix = subwordPrefix;
+            return this;
+        }
+
+        public String getSubwordPrefix() { return subwordPrefix; }
 
         public void addModel(Language language, Path model) {
             models.put(language, model);
@@ -113,16 +129,16 @@ public class BertEmbedder implements Embedder, Segmenter {
          * Adds the model that will be used if the language is unknown, OR only one model is specified.
          * The same as addModel(Language.UNKNOWN, model).
          */
-        public BertEmbedder.Builder addDefaultModel(Path model) {
+        public WordPieceEmbedder.Builder addDefaultModel(Path model) {
             addModel(Language.UNKNOWN, model);
             return this;
         }
 
         public Map<Language, Path> getModels() { return models; }
 
-        public BertEmbedder build() {
+        public WordPieceEmbedder build() {
             if (models.isEmpty()) throw new IllegalStateException("At least one model must be supplied");
-            return new BertEmbedder(this);
+            return new WordPieceEmbedder(this);
         }
 
     }

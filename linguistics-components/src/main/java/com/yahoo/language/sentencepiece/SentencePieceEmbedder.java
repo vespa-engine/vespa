@@ -10,6 +10,7 @@ import com.yahoo.language.process.Segmenter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -136,13 +137,16 @@ public class SentencePieceEmbedder implements Segmenter, Embedder {
         return b.toString();
     }
 
-    public static class Builder {
+    public static final class Builder {
 
         private final Map<Language, Path> models = new EnumMap<>(Language.class);
         private boolean collapseUnknowns = true;
         private Scoring scoring = Scoring.fewestSegments;
 
-        public Builder() {
+        public Builder() {}
+
+        public Builder(String defaultModelFile) {
+            addDefaultModel(new File(defaultModelFile).toPath());
         }
 
         private Builder(SentencePieceConfig config) {
