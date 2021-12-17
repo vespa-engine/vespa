@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.rpc;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil;
 import ai.vespa.metricsproxy.service.VespaService;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.yahoo.jrt.ErrorCode;
@@ -17,11 +18,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ai.vespa.metricsproxy.metric.model.ConsumerId.toConsumerId;
+import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toJson;
 import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toMetricsPackets;
-import static ai.vespa.metricsproxy.metric.model.json.YamasJsonUtil.toYamasArray;
 import static com.yahoo.collections.CollectionUtil.mkString;
 import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -125,9 +125,9 @@ public class RpcServer {
         log.log(FINE, () -> "Getting metrics for services: " + mkString(services, "[", ", ", "]"));
         if (services.isEmpty()) setNoServiceError(req, service);
         else withExceptionHandling(req, () -> {
-            List<MetricsPacket> packets = metricsManager.getMetrics(services, startTime);
+            List<MetricsPacket> packets = YamasJsonUtil.appendOptionalStatusPacket(metricsManager.getMetrics(services, startTime));
             log.log(FINE,() -> "Returning metrics packets:\n" + mkString(packets, "\n"));
-            req.returnValues().add(new StringValue(toYamasArray(packets).serialize()));
+            req.returnValues().add(new StringValue(toJson(packets, false)));
         });
         req.returnRequest();
     }
@@ -138,8 +138,8 @@ public class RpcServer {
         List<VespaService> services = vespaServices.getMonitoringServices(service);
         if (services.isEmpty()) setNoServiceError(req, service);
         else withExceptionHandling(req, () -> {
-            List<MetricsPacket> packets = metricsManager.getHealthMetrics(services);
-            req.returnValues().add(new StringValue(toYamasArray(packets, true).serialize()));
+            List<MetricsPacket> packets = YamasJsonUtil.appendOptionalStatusPacket(metricsManager.getHealthMetrics(services));
+            req.returnValues().add(new StringValue(toJson(packets, true)));
         });
         req.returnRequest();
     }

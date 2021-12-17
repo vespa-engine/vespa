@@ -150,7 +150,7 @@ public class RpcMetricsTest {
             JsonNode jsonObject = metrics.get(i);
             assertFalse(jsonObject.has("status_code"));
             assertFalse(jsonObject.has("status_msg"));
-            assertThat(jsonObject.get("dimensions").get("foo").textValue(), is("bar"));
+            assertEquals("bar", jsonObject.get("dimensions").get("foo").textValue());
             assertThat(jsonObject.get("dimensions").get("bar").textValue(), is("foo"));
             assertThat(jsonObject.get("dimensions").get("serviceDim").textValue(), is("serviceDimValue"));
             assertThat(jsonObject.get("routing").get("yamas").get("namespaces").size(), is(1));
