@@ -3,6 +3,7 @@ package com.yahoo.vespa.zookeeper.cli;
 
 import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.zookeeper.ZooKeeperMain;
+import org.slf4j.impl.SimpleLogger;
 
 import java.io.IOException;
 
@@ -10,6 +11,11 @@ import java.io.IOException;
  * @author bjorncs
  */
 public class Main {
+
+    static {
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "WARN");
+    }
+
     public static void main(String[] args) throws IOException, InterruptedException {
         new ZkClientConfigBuilder()
                 .toConfigProperties()
