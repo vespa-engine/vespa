@@ -155,18 +155,20 @@ TwoPhaseUpdateOperation::sendReply(
     _replySent = true;
 }
 
+// This particular method is called when we synthesize our own UpdateReply,
+// not when we take over an already produced one from an UpdateOperation.
+// The latter will already increment _updateMetric fields implicitly.
 void
 TwoPhaseUpdateOperation::sendReplyWithResult(
         DistributorStripeMessageSender& sender,
         const api::ReturnCode& result)
 {
     ensureUpdateReplyCreated();
-    // This particular method is called when we synthesize our own UpdateReply,
-    // not when we take over an already produced one from an UpdateOperation.
-    // The latter will already increment the TaS metric implicitly.
-    if (result.getResult() == api::ReturnCode::Result::TEST_AND_SET_CONDITION_FAILED) {
-        _updateMetric.failures.test_and_set_failed.inc();
-    }
+    // Don't bump metrics if document not found but otherwise OK.
+    // Already counted in metrics prior to calling this method.
+    if (!(result.success() && (_updateReply->getOldTimestamp() == 0))) {
+        _updateMetric.updateFromResult(result);
+    } // else: `notfound` metric already incremented.
     _updateReply->setResult(result);
     sendReply(sender, _updateReply);
 }
@@ -553,6 +555,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSende
     if (reply.getDocument()) {
         api::Timestamp receivedTimestamp = reply.getLastModifiedTimestamp();
         if (!satisfiesUpdateTimestampConstraint(receivedTimestamp)) {
+            _updateMetric.failures.notfound.inc();
             sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::OK,
                                                         "No document with requested timestamp found"));
             return;
