@@ -15,13 +15,19 @@ public class WordPieceEmbedderTest {
     private static final String vocabulary = "src/test/models/wordpiece/bert-base-uncased-vocab.txt";
 
     @Test
-    public void testWordPieceEmbedder() {
+    public void testWordPieceSegmentation() {
+        var tester = new EmbedderTester(new WordPieceEmbedder.Builder(vocabulary).build());
+        tester.assertSegmented("what was the impact of the manhattan project",
+                               "what", "was", "the", "impact", "of", "the", "manhattan", "project");
+        tester.assertSegmented("overcommunication", "over", "##com", "##mun", "##ication");
+    }
+
+    @Test
+    public void testWordPieceEmbedding() {
         var tester = new EmbedderTester(new WordPieceEmbedder.Builder(vocabulary).build());
         tester.assertEmbedded("what was the impact of the manhattan project",
                               "tensor(x[8])",
                               2054, 2001, 1996, 4254, 1997, 1996, 7128, 2622);
-        tester.assertSegmented("what was the impact of the manhattan project",
-                               "what", "was", "the", "impact", "of", "the", "manhattan", "project");
     }
 
     @Test

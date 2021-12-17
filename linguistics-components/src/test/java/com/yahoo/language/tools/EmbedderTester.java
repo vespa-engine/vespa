@@ -9,6 +9,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -53,7 +54,9 @@ public class EmbedderTester {
     }
 
     public void assertSegmented(Language language, String input, String... expectedSegments) {
-        assertArrayEquals(expectedSegments, ((Segmenter)embedder).segment(input, language).toArray());
+        List<String> segments = ((Segmenter)embedder).segment(input, language);
+        assertArrayEquals("Actual segments: " + segments,
+                          expectedSegments, ((Segmenter)embedder).segment(input, language).toArray());
     }
 
 }
