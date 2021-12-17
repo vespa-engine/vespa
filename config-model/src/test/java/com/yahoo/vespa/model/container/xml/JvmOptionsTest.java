@@ -9,7 +9,6 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
-
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -18,6 +17,9 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
@@ -145,13 +147,36 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatJvmGcOptionsAreLogged()  throws IOException, SAXException {
-        verifyLoggingOfJvmOptions(true, "gc-options", "-XX:+UseCMSInitiatingOccupancyOnly foo     bar");
-        verifyLoggingOfJvmOptions(true, "gc-options", "-XX:+UseConcMarkSweepGC");
-        verifyLoggingOfJvmOptions(false, "gc-options", "-XX:+UseConcMarkSweepGC");
+    public void requireThatInvalidJvmGcOptionsAreLogged() throws IOException, SAXException {
+        verifyLoggingOfJvmGcOptions(true,
+                                    "-XX:+ParallelGCThreads=8 foo     bar",
+                                    "foo", "bar");
+        verifyLoggingOfJvmGcOptions(true,
+                                    "-XX:+UseCMSInitiatingOccupancyOnly foo     bar",
+                                    "-XX:+UseCMSInitiatingOccupancyOnly", "foo", "bar");
+        verifyLoggingOfJvmGcOptions(true,
+                                    "-XX:+UseConcMarkSweepGC",
+                                    "-XX:+UseConcMarkSweepGC");
+        verifyLoggingOfJvmGcOptions(true,
+                                    "$(touch /tmp/hello-from-gc-options)",
+                                    "$(touch", "/tmp/hello-from-gc-options)");
+
+        verifyLoggingOfJvmGcOptions(false,
+                                    "$(touch /tmp/hello-from-gc-options)",
+                                    "$(touch", "/tmp/hello-from-gc-options)");
+
+        // Valid options, should not log anything
+        verifyLoggingOfJvmGcOptions(true,
+                                    "-XX:+ParallelGCThreads=8");
+        verifyLoggingOfJvmGcOptions(false, "-XX:+UseConcMarkSweepGC");
     }
 
-    private void verifyLoggingOfJvmOptions(boolean isHosted, String optionName, String override) throws IOException, SAXException  {
+
+    private void verifyLoggingOfJvmGcOptions(boolean isHosted, String override, String... invalidOptions) throws IOException, SAXException  {
+        verifyLoggingOfJvmOptions(isHosted, "gc-options", override, invalidOptions);
+    }
+
+    private void verifyLoggingOfJvmOptions(boolean isHosted, String optionName, String override, String... invalidOptions) throws IOException, SAXException  {
         String servicesXml =
                 "<container version='1.0'>" +
                 "  <nodes>" +
@@ -166,14 +191,15 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                 .deployLogger(logger)
                 .properties(new TestProperties().setHostedVespa(isHosted))
                 .build());
-        if (isHosted) {
-            Pair<Level, String> firstOption = logger.msgs.get(0);
-            assertEquals(Level.INFO, firstOption.getFirst());
-            assertEquals("JVM " + (optionName.equals("gc-options") ? "GC " : "") +
-                                 "options from services.xml: " + override, firstOption.getSecond());
-        } else {
-            assertEquals(0, logger.msgs.size());
-        }
+
+        List<String> strings = Arrays.asList(invalidOptions.clone());
+        if (strings.isEmpty()) return;
+
+        Collections.sort(strings);
+        Pair<Level, String> firstOption = logger.msgs.get(0);
+        assertEquals(Level.WARNING, firstOption.getFirst());
+        assertEquals("Invalid JVM " + (optionName.equals("gc-options") ? "GC " : "") +
+                             "options from services.xml: " + String.join(",", strings), firstOption.getSecond());
     }
 
     @Test
