@@ -4,18 +4,17 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.TestUtil;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
-import ai.vespa.metricsproxy.metric.model.MetricId;
 import org.junit.Test;
 
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  */
 public class MetricsFetcherTest {
 
-    private static int port = 9;  //port number is not used in this test
+    private static final int port = 9;  //port number is not used in this test
+    private static final double EPSILON = 0.00000000001;
 
     private class MetricsConsumer implements MetricsParser.Consumer {
         Metrics metrics = new Metrics();
@@ -35,17 +34,17 @@ public class MetricsFetcherTest {
     public void testStateFormatMetricsParse() {
         String jsonData = TestUtil.getFileContents("metrics-state.json");
         Metrics metrics = fetch(jsonData);
-        assertThat(metrics.size(), is(10));
-        assertThat(getMetric("query_hits.count", metrics).getValue().intValue(), is(28));
-        assertThat(getMetric("queries.rate", metrics).getValue().doubleValue(), is(0.4667));
-        assertThat(metrics.getTimeStamp(), is(1334134700L));
+        assertEquals(10, metrics.size());
+        assertEquals(28, getMetric("query_hits.count", metrics).getValue());
+        assertEquals(0.4667, getMetric("queries.rate", metrics).getValue());
+        assertEquals(1334134700L, metrics.getTimeStamp());
     }
 
     @Test
     public void testEmptyJson() {
         String  jsonData = "{}";
         Metrics metrics = fetch(jsonData);
-        assertThat("Wrong number of metrics", metrics.size(), is(0));
+        assertEquals(0, metrics.size());
     }
 
     @Test
@@ -55,7 +54,7 @@ public class MetricsFetcherTest {
 
         jsonData = "";
         metrics = fetch(jsonData);
-        assertThat("Wrong number of metrics", metrics.size(), is(0));
+        assertEquals(0, metrics.size());
 
         jsonData = "{\n" +
                 "\"status\" : {\n" +
@@ -64,7 +63,7 @@ public class MetricsFetcherTest {
                 "}\n" +
                 "}";
         metrics = fetch(jsonData);
-        assertThat("Wrong number of metrics", metrics.size(), is(0));
+        assertEquals(0, metrics.size());
 
         jsonData = "{\n" +
                 "\"status\" : {\n" +
@@ -93,7 +92,7 @@ public class MetricsFetcherTest {
                 "}";
 
         metrics = fetch(jsonData);
-        assertThat("Wrong number of metrics", metrics.size(), is(0));
+        assertEquals(0, metrics.size());
     }
 
     public Metric getMetric(String metric, Metrics metrics) {

@@ -16,9 +16,10 @@ import java.util.List;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_1_CONFIG_ID;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author jobergum
@@ -40,21 +41,21 @@ public class RpcHealthMetricsTest {
             mockHttpServer.setResponse(HEALTH_OK_RESPONSE);
             List<VespaService> services = tester.vespaServices().getInstancesById(SERVICE_1_CONFIG_ID);
 
-            assertThat(services.size(), is(1));
+            assertEquals(1, services.size());
             VespaService qrserver = services.get(0);
             HealthMetric h = qrserver.getHealth();
             assertNotNull("Health metric should never be null", h);
-            assertThat("Status failed, reason = " + h.getMessage(), h.isOk(), is(true));
-            assertThat(h.getMessage(), is("WORKING"));
+            assertTrue("Status failed, reason = " + h.getMessage(), h.isOk());
+            assertEquals("WORKING", h.getMessage());
 
             mockHttpServer.setResponse(HEALTH_FAILED_RESPONSE);
             h = qrserver.getHealth();
             assertNotNull("Health metric should never be null", h);
-            assertThat("Status should be failed" + h.getMessage(), h.isOk(), is(false));
-            assertThat(h.getMessage(), is("SOMETHING FAILED"));
+            assertFalse("Status should be failed" + h.getMessage(), h.isOk());
+            assertEquals("SOMETHING FAILED", h.getMessage());
 
             String jsonRPCMessage = getHealthMetrics(tester, qrserver.getMonitoringName().id);
-            assertThat(jsonRPCMessage, is(WANTED_RPC_RESPONSE));
+            assertEquals(WANTED_RPC_RESPONSE, jsonRPCMessage);
         }
     }
 
@@ -62,7 +63,7 @@ public class RpcHealthMetricsTest {
     public void non_existent_service_name_returns_an_error_message() {
         try (IntegrationTester tester = new IntegrationTester()) {
             String jsonRPCMessage = getHealthMetrics(tester, "non-existing service");
-            assertThat(jsonRPCMessage, is("105: No service with name 'non-existing service'"));
+            assertEquals("105: No service with name 'non-existing service'", jsonRPCMessage);
         }
     }
 

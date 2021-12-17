@@ -11,8 +11,8 @@ import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.service.RemoteMetricsFetcher.METRICS_PATH;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Unknown
@@ -45,15 +45,15 @@ public class ContainerServiceTest {
                 count++;
                 System.out.println("Name: " + m.getName() + " value: " + m.getValue());
                 if (m.getDimensions().get(toDimensionId("chain")).equals("asvBlendingResult")) {
-                    assertThat((Double)m.getValue(), is(26.4));
+                    assertEquals(26.4, m.getValue());
                 } else if (m.getDimensions().get(toDimensionId("chain")).equals("blendingResult")) {
-                    assertThat((Double)m.getValue(), is(0.36666666666666664));
+                    assertEquals(0.36666666666666664, m.getValue());
                 } else {
-                    assertThat("Unknown unknown chain", false, is(true));
+                    assertTrue("Unknown unknown chain", false);
                 }
             }
         }
-        assertThat(count, is(2));
+        assertEquals(2, count);
     }
 
     @After

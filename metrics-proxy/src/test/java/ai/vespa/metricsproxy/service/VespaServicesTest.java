@@ -7,8 +7,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.service.VespaServices.ALL_SERVICES;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * TODO: add more tests
@@ -24,7 +23,7 @@ public class VespaServicesTest {
                 new DummyService(1, "dummy/id/1"));
         VespaServices services = new VespaServices(dummyServices);
 
-        assertThat(services.getMonitoringServices("vespa.dummy").size(), is(2));
+        assertEquals(2, services.getMonitoringServices("vespa.dummy").size());
     }
 
     @Test
@@ -33,7 +32,7 @@ public class VespaServicesTest {
                 new DummyService(0, "dummy/id/0"));
         VespaServices services = new VespaServices(dummyServices);
 
-        assertThat(services.getMonitoringServices(ALL_SERVICES).size(), is(1));
+        assertEquals(1, services.getMonitoringServices(ALL_SERVICES).size());
     }
 
 }
