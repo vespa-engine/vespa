@@ -5,6 +5,7 @@ import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricId;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -14,7 +15,7 @@ import java.util.Set;
  */
 public class Metric {
 
-    private final long time;
+    private final Instant time;
     private final Number value;
     private final String description;
     private MetricId name;
@@ -28,7 +29,7 @@ public class Metric {
      * @param value The numeric value
      * @param time  The timestamp of this metric in seconds
      */
-    public Metric(MetricId name, Number value, long time, Map<DimensionId, String> dimensions, String description) {
+    public Metric(MetricId name, Number value, Instant time, Map<DimensionId, String> dimensions, String description) {
         this.time = time;
         this.value = value;
         this.name = name;
@@ -37,11 +38,15 @@ public class Metric {
     }
 
     public Metric(MetricId name, Number value, long timestamp) {
+        this(name, value, Instant.ofEpochSecond(timestamp), Map.of(), "");
+    }
+
+    public Metric(MetricId name, Number value, Instant timestamp) {
         this(name, value, timestamp, Map.of(), "");
     }
 
     public Metric(MetricId name, Number value) {
-        this(name, value, System.currentTimeMillis() / 1000);
+        this(name, value, Instant.now());
     }
 
     public void setDimensions(Map<DimensionId, String> dimensions) {
@@ -86,7 +91,7 @@ public class Metric {
     /**
      * @return The UTC timestamp for when this metric was collected
      */
-    public long getTimeStamp() {
+    public Instant getTimeStamp() {
         return this.time;
     }
 
@@ -112,7 +117,7 @@ public class Metric {
         return name.equals(rhs.name)
                 && description.equals(rhs.description)
                 && value.equals(rhs.value)
-                && (time == rhs.time)
+                && time.equals(rhs.time)
                 && Objects.equals(dimensions, rhs.dimensions)
                 && Objects.equals(consumers, rhs.consumers);
     }

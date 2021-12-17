@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -56,21 +57,18 @@ public class MetricsParser {
             }
         }
     }
-    private static long secondsSince1970UTC() {
-        return System.currentTimeMillis() / 1000L;
-    }
-    static private long parseSnapshot(JsonParser parser) throws IOException {
+    static private Instant parseSnapshot(JsonParser parser) throws IOException {
         if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of 'snapshot' object, got " + parser.currentToken());
         }
-        long timestamp = secondsSince1970UTC();
+        Instant timestamp = Instant.now();
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
             JsonToken token = parser.nextToken();
             if (fieldName.equals("to")) {
-                timestamp = parser.getLongValue();
+                timestamp = Instant.ofEpochSecond(parser.getLongValue());
                 long now = System.currentTimeMillis() / 1000;
-                timestamp = Metric.adjustTime(timestamp, now);
+                timestamp = Instant.ofEpochSecond(Metric.adjustTime(timestamp.getEpochSecond(), Instant.now().getEpochSecond()));
             } else {
                 if (token == JsonToken.START_OBJECT || token == JsonToken.START_ARRAY) {
                     parser.skipChildren();
@@ -80,7 +78,7 @@ public class MetricsParser {
         return timestamp;
     }
 
-    static private void parseValues(JsonParser parser, long timestamp, Consumer consumer) throws IOException {
+    static private void parseValues(JsonParser parser, Instant timestamp, Consumer consumer) throws IOException {
         if (parser.getCurrentToken() != JsonToken.START_ARRAY) {
             throw new IOException("Expected start of 'metrics:values' array, got " + parser.currentToken());
         }
@@ -100,7 +98,7 @@ public class MetricsParser {
         if (parser.getCurrentToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of 'metrics' object, got " + parser.currentToken());
         }
-        long timestamp = System.currentTimeMillis() / 1000L;
+        Instant timestamp = Instant.now();
         for (parser.nextToken(); parser.getCurrentToken() != JsonToken.END_OBJECT; parser.nextToken()) {
             String fieldName = parser.getCurrentName();
             JsonToken token = parser.nextToken();
@@ -116,7 +114,7 @@ public class MetricsParser {
         }
     }
 
-    static private void handleValue(JsonNode metric, long timestamp, Consumer consumer,
+    static private void handleValue(JsonNode metric, Instant timestamp, Consumer consumer,
                                     Map<String, Map<DimensionId, String>> uniqueDimensions) {
         String name = metric.get("name").textValue();
         String description = "";

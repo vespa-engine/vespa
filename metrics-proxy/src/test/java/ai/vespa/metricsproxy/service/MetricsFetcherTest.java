@@ -7,6 +7,7 @@ import ai.vespa.metricsproxy.metric.Metrics;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Instant;
 
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static org.junit.Assert.assertEquals;
@@ -41,7 +42,7 @@ public class MetricsFetcherTest {
         assertEquals(10, metrics.size());
         assertEquals(28, getMetric("query_hits.count", metrics).getValue());
         assertEquals(0.4667, getMetric("queries.rate", metrics).getValue());
-        assertEquals(1334134700L, metrics.getTimeStamp());
+        assertEquals(Instant.ofEpochSecond(1334134700L), metrics.getTimeStamp());
     }
 
     @Test
