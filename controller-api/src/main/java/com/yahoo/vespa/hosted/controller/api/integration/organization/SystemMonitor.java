@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 import com.yahoo.component.Version;
 
 /**
- * Montitors a Vespa controller and its system.
+ * Monitors a Vespa controller and its system.
  *
  * @author jonmv
  */
@@ -14,7 +14,7 @@ public interface SystemMonitor {
     void reportSystemVersion(Version systemVersion, Confidence confidence);
 
     enum Confidence {
-        broken, low, normal, high;
+        aborted, broken, low, normal, high;
     }
 
 }

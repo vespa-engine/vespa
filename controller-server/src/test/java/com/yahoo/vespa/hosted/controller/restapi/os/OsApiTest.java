@@ -55,8 +55,8 @@ public class OsApiTest extends ControllerContainerTest {
         zoneRegistryMock().setSystemName(SystemName.cd)
                           .setZones(zone1, zone2, zone3)
                           .reprovisionToUpgradeOsIn(zone3)
-                          .setOsUpgradePolicy(cloud1, UpgradePolicy.create().upgrade(zone1).upgrade(zone2))
-                          .setOsUpgradePolicy(cloud2, UpgradePolicy.create().upgrade(zone3));
+                          .setOsUpgradePolicy(cloud1, UpgradePolicy.builder().upgrade(zone1).upgrade(zone2).build())
+                          .setOsUpgradePolicy(cloud2, UpgradePolicy.builder().upgrade(zone3).build());
         osUpgraders = List.of(
                 new OsUpgrader(tester.controller(), Duration.ofDays(1),
                                cloud1),

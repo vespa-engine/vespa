@@ -28,11 +28,11 @@ public class OsVersionStatusUpdaterTest {
         OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1)
         );
         // Add all zones to upgrade policy
-        UpgradePolicy upgradePolicy = UpgradePolicy.create();
+        UpgradePolicy.Builder upgradePolicy = UpgradePolicy.builder();
         for (ZoneApi zone : tester.zoneRegistry().zones().controllerUpgraded().zones()) {
             upgradePolicy = upgradePolicy.upgrade(zone);
         }
-        tester.zoneRegistry().setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy);
+        tester.zoneRegistry().setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy.build());
 
         // Initially empty
         assertSame(OsVersionStatus.empty, tester.controller().osVersionStatus());

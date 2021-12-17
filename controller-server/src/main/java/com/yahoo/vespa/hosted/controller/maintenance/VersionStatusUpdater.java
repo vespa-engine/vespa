@@ -14,6 +14,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.organization.Sys
 import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.low;
 import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.normal;
+import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.aborted;
 
 /**
  * This maintenance job periodically updates the version status.
@@ -47,10 +48,11 @@ public class VersionStatusUpdater extends ControllerMaintainer {
 
     static SystemMonitor.Confidence convert(VespaVersion.Confidence confidence) {
         switch (confidence) {
-            case broken: return broken;
-            case low:    return low;
-            case normal: return normal;
-            case high:   return high;
+            case aborted: return aborted;
+            case broken:  return broken;
+            case low:     return low;
+            case normal:  return normal;
+            case high:    return high;
             default: throw new IllegalArgumentException("Unexpected confidence '" + confidence + "'");
         }
     }
