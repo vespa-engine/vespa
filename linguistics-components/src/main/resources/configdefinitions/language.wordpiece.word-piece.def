@@ -1,0 +1,14 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# Configures com.yahoo.language.wordpiece.WordPieceEmbedder
+
+namespace=language.wordpiece
+
+# The prefix to prepend to subword tokens
+subwordPrefix string default="##"
+
+# The language a model is for, one of the language tags in com.yahoo.language.Language.
+# Use "unknown" for a model to be used for any language (i.e by default).
+model[].language string
+# The path to the model relative to the application package root
+model[].path path
