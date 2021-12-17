@@ -143,4 +143,21 @@ public class GenericJsonModelTest {
         return mapper.readValue(getFileContents(filename), GenericJsonModel.class);
     }
 
+    @Test
+    public void within_long_range_as_long_if_possible() {
+        assertEquals("7", JacksonUtil.format(7D));
+        assertEquals("7.1", JacksonUtil.format(7.1));
+        assertEquals("-7", JacksonUtil.format(-7D));
+        assertEquals("-7.1", JacksonUtil.format(-7.1));
+    }
+
+    @Test
+    public void outside_long_range_as_decimal_if_possible() {
+        double within = Long.MAX_VALUE;
+        double outside = 3 * within;
+        assertEquals("9223372036854776000", JacksonUtil.format(within));
+        assertEquals("-9223372036854776000", JacksonUtil.format(-within));
+        assertEquals("27670116110564327000.0", JacksonUtil.format(outside));
+        assertEquals("-27670116110564327000.0", JacksonUtil.format(-outside));
+    }
 }

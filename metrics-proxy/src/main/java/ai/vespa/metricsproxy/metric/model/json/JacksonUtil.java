@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.Locale;
 
 /**
@@ -19,9 +20,15 @@ import java.util.Locale;
  */
 public class JacksonUtil {
 
-    private static final DecimalFormat decimalFormat = createDecimalFormat();
-    private static DecimalFormat createDecimalFormat() {
+    private static final ThreadLocal<DecimalFormat> withinLongRangeFormat = ThreadLocal.withInitial(JacksonUtil::createWithinLongRangeFormat);
+    private static final ThreadLocal<DecimalFormat> outsideLongRangeFormat = ThreadLocal.withInitial(JacksonUtil::createOutsideLongRangeFormat);
+    private static DecimalFormat createWithinLongRangeFormat() {
         DecimalFormat df = new DecimalFormat("#.####", new DecimalFormatSymbols(Locale.ENGLISH));
+        df.setMaximumFractionDigits(13);
+        return df;
+    }
+    private static DecimalFormat createOutsideLongRangeFormat() {
+        DecimalFormat df = new DecimalFormat("#.0###", new DecimalFormatSymbols(Locale.ENGLISH));
         df.setMaximumFractionDigits(13);
         return df;
     }
@@ -40,13 +47,27 @@ public class JacksonUtil {
      * Returns an object mapper with a custom floating point serializer to avoid scientific notation
      */
     public static void writeDouble(JsonGenerator jgen, Double value) throws IOException {
-        jgen.writeNumber(decimalFormat.format(value));
+        jgen.writeNumber(format(value));
+    }
+
+    public static String format(Double value) {
+        return format(value, withinLongRangeFormat.get(), outsideLongRangeFormat.get());
+    }
+
+    private static String format(Double value, NumberFormat withinLongRange, NumberFormat outsideLongRange) {
+        if ((value <= Long.MAX_VALUE) && (value >= Long.MIN_VALUE)) {
+            return withinLongRange.format(value);
+        } else {
+            return outsideLongRange.format(value);
+        }
     }
 
     public static class DoubleSerializer extends JsonSerializer<Double> {
+        private DecimalFormat withinLongRangeFormat = createWithinLongRangeFormat();
+        private DecimalFormat outsideLongRangeFormat = createOutsideLongRangeFormat();
         @Override
         public void serialize(Double value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-            writeDouble(jgen, value);
+            jgen.writeNumber(format(value, withinLongRangeFormat, outsideLongRangeFormat));
         }
     }
 
