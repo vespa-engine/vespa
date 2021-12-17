@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
 import static java.util.Collections.unmodifiableSet;
@@ -31,6 +32,7 @@ public class MetricsConsumers {
 
     // All metrics for each consumer.
     private final Map<ConsumerId, List<ConfiguredMetric>> consumerMetrics;
+    private final Map<ConsumerId, Map<MetricId, ConfiguredMetric>> configuredMetricByMetricByConsumer;
 
     // All consumers for each metric (more useful than the opposite map).
     private final Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric;
@@ -42,6 +44,10 @@ public class MetricsConsumers {
         consumerMetrics = config.consumer().stream().collect(
                 toUnmodifiableLinkedMap(consumer -> ConsumerId.toConsumerId(consumer.name()), consumer -> convert(consumer.metric())));
 
+        configuredMetricByMetricByConsumer = new HashMap<>();
+        consumerMetrics.forEach((consumer, configuredList) ->
+            configuredMetricByMetricByConsumer.put(consumer,
+                    configuredList.stream().collect(Collectors.toMap(ConfiguredMetric::id, Function.identity()))));
         consumersByMetric = createConsumersByMetric(consumerMetrics);
         consumersByMetricByMetricId = new HashMap<>();
         consumersByMetric.forEach((configuredMetric, consumers) -> {
@@ -65,6 +71,10 @@ public class MetricsConsumers {
 
     public Map<ConfiguredMetric, Set<ConsumerId>> getConsumersByMetric(MetricId id) {
         return consumersByMetricByMetricId.get(id);
+    }
+
+    public Map<MetricId, ConfiguredMetric> getMetricsForConsumer(ConsumerId consumerId) {
+        return configuredMetricByMetricByConsumer.get(consumerId);
     }
 
     public Set<ConsumerId> getAllConsumers() {
