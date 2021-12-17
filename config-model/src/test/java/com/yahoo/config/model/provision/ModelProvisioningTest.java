@@ -929,6 +929,10 @@ public class ModelProvisioningTest {
         assertNull(hostResource.getService("logserver"));
         assertNotNull(hostResource.getService("container"));
         assertNotNull(hostResource.getService("logforwarder"));
+
+        var lfs = hostResource.getService("logforwarder");
+        String shutdown = lfs.getPreShutdownCommand().orElse("<none>");
+        assertThat(shutdown, is("/usr/bin/env SPLUNK_HOME=/opt/splunkforwarder /opt/splunkforwarder/bin/splunk stop"));
     }
 
 
