@@ -12,7 +12,6 @@ import com.intellij.psi.TokenType;
 import com.intellij.psi.tree.IElementType;
 import ai.vespa.intellij.schema.lexer.SdLexerAdapter;
 import ai.vespa.intellij.schema.psi.SdTypes;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 
@@ -54,14 +53,13 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
     private static final TextAttributesKey[] COMMENT_KEYS = new TextAttributesKey[]{COMMENT};
     private static final TextAttributesKey[] EMPTY_KEYS = new TextAttributesKey[0];
     
-    @NotNull
     @Override
     public Lexer getHighlightingLexer() {
         return new SdLexerAdapter();
     }
     
     @Override
-    public TextAttributesKey @NotNull [] getTokenHighlights(IElementType tokenType) {
+    public TextAttributesKey[] getTokenHighlights(IElementType tokenType) {
         if (tokenType.equals(SdTypes.IDENTIFIER_VAL) || tokenType.equals(SdTypes.IDENTIFIER_WITH_DASH_VAL)) {
             return IDENTIFIER_KEYS;
         } else if (keyWordsSet.contains(tokenType)) {

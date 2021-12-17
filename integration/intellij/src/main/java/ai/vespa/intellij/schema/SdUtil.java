@@ -30,7 +30,6 @@ import ai.vespa.intellij.schema.psi.SdSchemaAnnotationDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaFieldDefinition;
 import ai.vespa.intellij.schema.psi.SdSummaryDefinition;
 import ai.vespa.intellij.schema.psi.SdTypes;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,7 +43,7 @@ import java.util.List;
  */
 public class SdUtil {
     
-    public static @NotNull HashMap<String, List<PsiElement>> createMacrosMap(SdFile file) {
+    public static HashMap<String, List<PsiElement>> createMacrosMap(SdFile file) {
         HashMap<String, List<PsiElement>> macrosMap = new HashMap<>();
         for (SdRankProfileDefinition rankProfile : PsiTreeUtil
             .findChildrenOfType(file, SdRankProfileDefinition.class)) {

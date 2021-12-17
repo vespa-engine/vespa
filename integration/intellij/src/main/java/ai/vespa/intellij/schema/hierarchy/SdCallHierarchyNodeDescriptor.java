@@ -16,8 +16,6 @@ import ai.vespa.intellij.schema.psi.SdFirstPhaseDefinition;
 import ai.vespa.intellij.schema.psi.impl.SdFirstPhaseDefinitionMixin;
 import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 
-import org.jetbrains.annotations.NotNull;
-
 import javax.swing.Icon;
 
 /**
@@ -27,7 +25,7 @@ import javax.swing.Icon;
  */
 public class SdCallHierarchyNodeDescriptor extends HierarchyNodeDescriptor {
 
-    public SdCallHierarchyNodeDescriptor(final NodeDescriptor parentDescriptor, @NotNull final PsiElement element, final boolean isBase) {
+    public SdCallHierarchyNodeDescriptor(NodeDescriptor parentDescriptor, PsiElement element, boolean isBase) {
         super(element.getProject(), parentDescriptor, element, isBase);
         CompositeAppearance.DequeEnd beginning = myHighlightedText.getBeginning();
         if (element instanceof SdFunctionDefinition) {

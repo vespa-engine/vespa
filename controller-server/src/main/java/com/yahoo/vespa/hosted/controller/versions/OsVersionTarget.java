@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -61,7 +59,7 @@ public class OsVersionTarget implements Comparable<OsVersionTarget> {
     }
 
     @Override
-    public int compareTo(@NotNull OsVersionTarget o) {
+    public int compareTo(OsVersionTarget o) {
         return osVersion.compareTo(o.osVersion);
     }
 

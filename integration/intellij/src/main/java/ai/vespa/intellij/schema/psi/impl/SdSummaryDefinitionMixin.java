@@ -6,8 +6,6 @@ import com.intellij.lang.ASTNode;
 import com.intellij.navigation.ItemPresentation;
 import ai.vespa.intellij.schema.SdIcons;
 import ai.vespa.intellij.schema.psi.SdTypes;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Icon;
 
@@ -19,11 +17,10 @@ import javax.swing.Icon;
  */
 public abstract class SdSummaryDefinitionMixin extends ASTWrapperPsiElement {
     
-    public SdSummaryDefinitionMixin(@NotNull ASTNode node) {
+    public SdSummaryDefinitionMixin(ASTNode node) {
         super(node);
     }
     
-    @NotNull
     public String getName() {
         ASTNode node;
         node = this.getNode().findChildByType(SdTypes.IDENTIFIER_WITH_DASH_VAL);
@@ -44,7 +41,6 @@ public abstract class SdSummaryDefinitionMixin extends ASTWrapperPsiElement {
                 return getName();
             }
             
-            @Nullable
             @Override
             public String getLocationString() {
                 return element.getContainingFile() != null ? element.getContainingFile().getName() : null;

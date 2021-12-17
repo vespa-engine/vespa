@@ -7,8 +7,6 @@ import com.intellij.navigation.ItemPresentation;
 import com.intellij.psi.util.PsiTreeUtil;
 import ai.vespa.intellij.schema.SdIcons;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Icon;
 
@@ -20,11 +18,10 @@ import javax.swing.Icon;
  */
 public class SdFirstPhaseDefinitionMixin extends ASTWrapperPsiElement {
     
-    public SdFirstPhaseDefinitionMixin(@NotNull ASTNode node) {
+    public SdFirstPhaseDefinitionMixin(ASTNode node) {
         super(node);
     }
     
-    @NotNull
     public String getName() {
         SdRankProfileDefinition rankProfile = PsiTreeUtil.getParentOfType(this, SdRankProfileDefinition.class);
         if (rankProfile == null) {
@@ -45,7 +42,6 @@ public class SdFirstPhaseDefinitionMixin extends ASTWrapperPsiElement {
                 return "first-phase of " + rankProfile.getName();
             }
             
-            @Nullable
             @Override
             public String getLocationString() {
                 return element.getContainingFile() != null ? element.getContainingFile().getName() : null;

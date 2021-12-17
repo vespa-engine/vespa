@@ -12,7 +12,6 @@ import ai.vespa.intellij.schema.SdUtil;
 import ai.vespa.intellij.schema.psi.SdFile;
 import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,11 +38,10 @@ public abstract class SdCallTreeStructure extends HierarchyTreeStructure {
         ranksHeritageMap = new HashMap<>();
     }
     
-    @NotNull
-    protected abstract HashSet<PsiElement> getChildren(@NotNull SdFunctionDefinition element);
+    protected abstract HashSet<PsiElement> getChildren(SdFunctionDefinition element);
     
     @Override
-    protected Object @NotNull [] buildChildren(@NotNull HierarchyNodeDescriptor descriptor) {
+    protected Object[] buildChildren(HierarchyNodeDescriptor descriptor) {
         final List<SdCallHierarchyNodeDescriptor> descriptors = new ArrayList<>();
         
         if (descriptor instanceof SdCallHierarchyNodeDescriptor) {

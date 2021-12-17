@@ -5,8 +5,6 @@ import com.intellij.psi.ElementDescriptionLocation;
 import com.intellij.psi.ElementDescriptionProvider;
 import com.intellij.psi.PsiElement;
 import ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml), to enable "find Usages" window take the element description from 
@@ -22,9 +20,8 @@ public class SdElementDescriptionProvider implements ElementDescriptionProvider 
      * @param psiElement the element to describe
      * @return a string with the description to write in the headline
      */
-    @Nullable
     @Override
-    public String getElementDescription(@NotNull PsiElement psiElement, @NotNull ElementDescriptionLocation elementDescriptionLocation) {
+    public String getElementDescription(PsiElement psiElement, ElementDescriptionLocation elementDescriptionLocation) {
         if (psiElement instanceof SdDeclaration) {
             return ((SdNamedElementImpl) psiElement).getTypeName();
         } else {

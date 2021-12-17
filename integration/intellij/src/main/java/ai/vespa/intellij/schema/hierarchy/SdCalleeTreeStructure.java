@@ -10,7 +10,6 @@ import ai.vespa.intellij.schema.psi.SdExpressionDefinition;
 import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import ai.vespa.intellij.schema.psi.SdIdentifier;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,13 +26,12 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
         super(project, element, currentScopeType);
     }
         
-    @NotNull
     @Override
-    protected HashSet<PsiElement> getChildren(@NotNull SdFunctionDefinition element) {
+    protected HashSet<PsiElement> getChildren(SdFunctionDefinition element) {
         return getCallees(element, macrosMap);
     }
     
-    private HashSet<PsiElement> getCallees(@NotNull SdFunctionDefinition macro, HashMap<String, List<PsiElement>> macrosMap) {
+    private HashSet<PsiElement> getCallees(SdFunctionDefinition macro, HashMap<String, List<PsiElement>> macrosMap) {
         final HashSet<PsiElement> results = new HashSet<>();
         SdExpressionDefinition expression = PsiTreeUtil.findChildOfType(macro, SdExpressionDefinition.class);
         if (expression == null) {
@@ -68,6 +66,5 @@ public class SdCalleeTreeStructure extends SdCallTreeStructure {
         
         return results;
     }
-    
     
 }

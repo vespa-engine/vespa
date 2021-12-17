@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import org.jetbrains.annotations.TestOnly;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -48,7 +47,6 @@ public class LoggingDeploymentIssues implements DeploymentIssues {
         this(Clock.systemUTC());
     }
 
-    @TestOnly
     protected LoggingDeploymentIssues(Clock clock) {
         this.clock = clock;
     }

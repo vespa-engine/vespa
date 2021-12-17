@@ -30,8 +30,6 @@ import ai.vespa.intellij.schema.psi.SdSchemaAnnotationDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaFieldDefinition;
 import ai.vespa.intellij.schema.psi.SdStructFieldDefinition;
 import ai.vespa.intellij.schema.psi.SdTypes;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.Icon;
 
@@ -42,11 +40,10 @@ import javax.swing.Icon;
  */
 public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements SdNamedElement {
     
-    public SdNamedElementImpl(@NotNull ASTNode node) {
+    public SdNamedElementImpl(ASTNode node) {
         super(node);
     }
     
-    @NotNull
     public String getName() {
         ASTNode node;
         if (this instanceof SdImportFieldDefinition) {
@@ -106,8 +103,7 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
         }
     }
     
-    @NotNull
-    public PsiElement setName(@NotNull String newName) {
+    public PsiElement setName(String newName) {
         ASTNode node;
         if (this instanceof SdImportFieldDefinition) {
             ASTNode asNode = this.getNode().findChildByType(SdTypes.AS);
@@ -144,7 +140,6 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
     public ItemPresentation getPresentation() {
         final SdNamedElement element = this;
         return new ItemPresentation() {
-            @Nullable
             @Override
             public String getPresentableText() {
                 if (element instanceof SdFunctionDefinition) {
@@ -160,13 +155,11 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
                 return element.getName();
             }
             
-            @Nullable
             @Override
             public String getLocationString() {
                 return element.getContainingFile() != null ? element.getContainingFile().getName() : null;
             }
             
-            @Nullable
             @Override
             public Icon getIcon(boolean unused) {
                 if (element instanceof SdSchemaFieldDefinition || element instanceof SdDocumentFieldDefinition || 

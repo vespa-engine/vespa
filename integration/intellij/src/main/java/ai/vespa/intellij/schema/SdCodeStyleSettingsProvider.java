@@ -8,8 +8,6 @@ import com.intellij.psi.codeStyle.CodeStyleConfigurable;
 import com.intellij.psi.codeStyle.CodeStyleSettings;
 import com.intellij.psi.codeStyle.CodeStyleSettingsProvider;
 import com.intellij.psi.codeStyle.CustomCodeStyleSettings;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml) to the class SdCodeStyleSettings.
@@ -23,14 +21,12 @@ public class SdCodeStyleSettingsProvider extends CodeStyleSettingsProvider {
         return new SdCodeStyleSettings(settings);
     }
     
-    @Nullable
     @Override
     public String getConfigurableDisplayName() {
         return "Sd";
     }
     
-    @NotNull
-    public CodeStyleConfigurable createConfigurable(@NotNull CodeStyleSettings settings, @NotNull CodeStyleSettings modelSettings) {
+    public CodeStyleConfigurable createConfigurable(CodeStyleSettings settings, CodeStyleSettings modelSettings) {
         return new CodeStyleAbstractConfigurable(settings, modelSettings, this.getConfigurableDisplayName()) {
             @Override
             protected CodeStyleAbstractPanel createPanel(CodeStyleSettings settings) {

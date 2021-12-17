@@ -10,7 +10,6 @@ import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.util.ProcessingContext;
 import ai.vespa.intellij.schema.psi.SdTypes;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for the extension (in plugin.xml) to enables Auto-Complete. Partially works for now.
@@ -24,9 +23,9 @@ public class SdCompletionContributor extends CompletionContributor {
         extend(CompletionType.BASIC, 
                PlatformPatterns.psiElement(SdTypes.IDENTIFIER_VAL),
                new CompletionProvider<>() {
-                   public void addCompletions(@NotNull CompletionParameters parameters, //completion parameters contain details of the cursor position
-                                              @NotNull ProcessingContext context,
-                                              @NotNull CompletionResultSet resultSet) { //result set contains completion details to suggest
+                   public void addCompletions(CompletionParameters parameters, //completion parameters contain details of the cursor position
+                                              ProcessingContext context,
+                                              CompletionResultSet resultSet) { //result set contains completion details to suggest
                        resultSet.addElement(LookupElementBuilder.create(""));
                    }
                }

@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -50,7 +49,7 @@ public class ControllerVersion implements Comparable<ControllerVersion> {
     }
 
     @Override
-    public int compareTo(@NotNull ControllerVersion o) {
+    public int compareTo(ControllerVersion o) {
         return version.compareTo(o.version);
     }
 

@@ -13,8 +13,6 @@ import ai.vespa.intellij.schema.psi.SdIdentifierVal;
 import ai.vespa.intellij.schema.psi.SdIdentifierWithDashVal;
 import ai.vespa.intellij.schema.psi.SdTypes;
 import ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * This class is used for the extension (in plugin.xml), to enable "find Usages" window using the plugin code.
@@ -23,8 +21,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public class SdFindUsagesProvider implements FindUsagesProvider {
 
-    @Nullable
-    @Override
     public WordsScanner getWordsScanner() {
         return new DefaultWordsScanner(new SdLexerAdapter(),
                                        TokenSet.create(SdTypes.ID_REG, SdTypes.ID_WITH_DASH_REG, SdTypes.IDENTIFIER_VAL,
@@ -34,19 +30,17 @@ public class SdFindUsagesProvider implements FindUsagesProvider {
     }
 
     @Override
-    public boolean canFindUsagesFor(@NotNull PsiElement psiElement) {
+    public boolean canFindUsagesFor(PsiElement psiElement) {
         return psiElement instanceof PsiNamedElement;
     }
 
-    @Nullable
     @Override
-    public String getHelpId(@NotNull PsiElement psiElement) {
+    public String getHelpId(PsiElement psiElement) {
         return null;
     }
 
-    @NotNull
     @Override
-    public String getType(@NotNull PsiElement element) {
+    public String getType(PsiElement element) {
         if (element instanceof SdDeclaration) {
             return ((SdNamedElementImpl) element).getTypeName();
         } else {
@@ -54,15 +48,13 @@ public class SdFindUsagesProvider implements FindUsagesProvider {
         }
     }
 
-    @NotNull
     @Override
-    public String getDescriptiveName(@NotNull PsiElement element) {
+    public String getDescriptiveName(PsiElement element) {
         return "";
     }
 
-    @NotNull
     @Override
-    public String getNodeText(@NotNull PsiElement element, boolean useFullName) {
+    public String getNodeText(PsiElement element, boolean useFullName) {
         if (element instanceof SdIdentifierVal || element instanceof SdIdentifierWithDashVal) {
             String name = ((PsiNamedElement) element).getName();
             return name != null ? name : "";

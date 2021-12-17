@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
-import org.jetbrains.annotations.TestOnly;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
@@ -39,7 +38,6 @@ public class JobRunner extends ControllerMaintainer {
         this(controller, duration, Executors.newFixedThreadPool(32, new DaemonThreadFactory("job-runner-")), new InternalStepRunner(controller));
     }
 
-    @TestOnly
     public JobRunner(Controller controller, Duration duration, ExecutorService executors, StepRunner runner) {
         super(controller, duration);
         this.jobs = controller.jobController();

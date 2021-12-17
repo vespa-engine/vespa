@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -56,7 +55,7 @@ public class OsVersion implements Comparable<OsVersion> {
     }
 
     @Override
-    public int compareTo(@NotNull OsVersion that) {
+    public int compareTo(OsVersion that) {
         return comparator.compare(this, that);
     }
 

@@ -7,7 +7,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiReference;
 import ai.vespa.intellij.schema.SdReference;
 import ai.vespa.intellij.schema.psi.SdIdentifier;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is used for methods' implementations for SdIdentifier. The abstract class SdIdentifierMixin extents it.
@@ -16,11 +15,10 @@ import org.jetbrains.annotations.NotNull;
  */
 public class SdIdentifierMixinImpl extends ASTWrapperPsiElement implements SdIdentifier {
     
-    public SdIdentifierMixinImpl(@NotNull ASTNode node) {
+    public SdIdentifierMixinImpl(ASTNode node) {
         super(node);
     }
     
-    @NotNull
     public PsiReference getReference() {
         return new SdReference(this, new TextRange(0, getNode().getText().length()));
     }

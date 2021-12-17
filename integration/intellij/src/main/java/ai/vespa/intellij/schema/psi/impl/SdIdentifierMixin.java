@@ -7,7 +7,6 @@ import com.intellij.psi.PsiNamedElement;
 import ai.vespa.intellij.schema.psi.SdElementFactory;
 import ai.vespa.intellij.schema.psi.SdIdentifier;
 import ai.vespa.intellij.schema.psi.SdIdentifierVal;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * This abstract class is used for methods' implementations for SdIdentifier. Connected with "mixin" to IdentifierVal and 
@@ -17,18 +16,16 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class SdIdentifierMixin extends SdIdentifierMixinImpl implements PsiNamedElement {
     
-    public SdIdentifierMixin(@NotNull ASTNode node) {
+    public SdIdentifierMixin(ASTNode node) {
         super(node);
     }
     
-    @NotNull
     public String getName() {
         // IMPORTANT: Convert embedded escaped spaces to simple spaces
         return this.getText().replaceAll("\\\\ ", " ");
     }
     
-    @NotNull
-    public PsiElement setName(@NotNull String newName) {
+    public PsiElement setName(String newName) {
         ASTNode node =  this.getNode().getFirstChildNode();
         if (node != null) {
             SdIdentifier elementName;

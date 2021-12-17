@@ -12,8 +12,6 @@ import com.intellij.psi.PsiReferenceBase;
 import com.intellij.psi.ResolveResult;
 import com.intellij.util.IncorrectOperationException;
 import ai.vespa.intellij.schema.psi.SdDeclaration;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,14 +25,13 @@ public class SdReference extends PsiReferenceBase<PsiElement> implements PsiPoly
     
     private final String elementName;
     
-    public SdReference(@NotNull PsiElement element, TextRange textRange) {
+    public SdReference(PsiElement element, TextRange textRange) {
         super(element, textRange);
         elementName = element.getText().substring(textRange.getStartOffset(), textRange.getEndOffset());
     }
     
-    @NotNull
     @Override
-    public ResolveResult @NotNull [] multiResolve(boolean incompleteCode) {
+    public ResolveResult[] multiResolve(boolean incompleteCode) {
         
         PsiElement file = myElement.getContainingFile();
         
@@ -48,7 +45,6 @@ public class SdReference extends PsiReferenceBase<PsiElement> implements PsiPoly
         return results.toArray(new ResolveResult[results.size()]);
     }
     
-    @Nullable
     @Override
     public PsiElement resolve() {
         ResolveResult[] resolveResults = multiResolve(false);
@@ -56,7 +52,7 @@ public class SdReference extends PsiReferenceBase<PsiElement> implements PsiPoly
     }
     
     @Override
-    public Object @NotNull [] getVariants() {
+    public Object[] getVariants() {
         List<SdDeclaration> declarations = SdUtil.findDeclarations(myElement.getContainingFile());
         List<LookupElement> variants = new ArrayList<>();
         for (final SdDeclaration element : declarations) {
@@ -71,7 +67,7 @@ public class SdReference extends PsiReferenceBase<PsiElement> implements PsiPoly
     }
     
     @Override
-    public PsiElement handleElementRename(@NotNull String newElementName) throws IncorrectOperationException {
+    public PsiElement handleElementRename(String newElementName) throws IncorrectOperationException {
         return ((PsiNamedElement) myElement).setName(newElementName);
     }
     

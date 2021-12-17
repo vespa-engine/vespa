@@ -10,8 +10,6 @@ import com.intellij.usages.rules.PsiElementUsage;
 import com.intellij.usages.rules.SingleParentUsageGroupingRule;
 import ai.vespa.intellij.schema.SdLanguage;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * A Rank Profile that groups elements in the "Find Usages" window.
@@ -21,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 public class SdRankProfileGroupingRule extends SingleParentUsageGroupingRule implements DumbAware {
 
     @Override
-    protected @Nullable UsageGroup getParentGroupFor(@NotNull Usage usage, UsageTarget @NotNull [] targets) {
+    protected UsageGroup getParentGroupFor(Usage usage, UsageTarget[] targets) {
         PsiElement psiElement = usage instanceof PsiElementUsage ? ((PsiElementUsage)usage).getElement() : null;
         if (psiElement == null || psiElement.getLanguage() != SdLanguage.INSTANCE) return null;
         

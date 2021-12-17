@@ -6,7 +6,6 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.psi.FileViewProvider;
 import ai.vespa.intellij.schema.SdFileType;
 import ai.vespa.intellij.schema.SdLanguage;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * An SD file.
@@ -15,11 +14,10 @@ import org.jetbrains.annotations.NotNull;
  */
 public class SdFile extends PsiFileBase {
     
-    public SdFile(@NotNull FileViewProvider viewProvider) {
+    public SdFile(FileViewProvider viewProvider) {
         super(viewProvider, SdLanguage.INSTANCE);
     }
     
-    @NotNull
     @Override
     public FileType getFileType() {
         return SdFileType.INSTANCE;
