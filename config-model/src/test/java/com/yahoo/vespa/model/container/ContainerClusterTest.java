@@ -205,7 +205,9 @@ public class ContainerClusterTest {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
         addClusterController(root.deployLogger(), cluster, "host-c1", root.getDeployState());
+
         assertFalse(contains("com.yahoo.language.provider.DefaultLinguisticsProvider", cluster.getAllComponents()));
+        assertFalse(contains("com.yahoo.language.opennlp.LangDetectModel183", cluster.getAllComponents()));
     }
 
     private static boolean contains(String componentId, Collection<Component<?, ?>> componentList) {

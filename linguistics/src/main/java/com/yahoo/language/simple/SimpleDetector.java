@@ -130,10 +130,14 @@ public class SimpleDetector implements Detector {
     }
 
     public String guessEncoding(byte[] input) {
+        return guessEncoding(input, 0, input.length);
+    }
+
+    public String guessEncoding(byte[] input, int offset, int length) {
         boolean isUtf8 = true;
         boolean hasHighs = false;
         scan:
-        for (int i = 0; i < input.length; i++) {
+        for (int i = offset; i < offset + length; i++) {
             final int l = isLeadingFor(input[i]);
             if (l < 0 || i + l >= input.length) {
                 hasHighs = true;

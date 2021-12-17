@@ -105,6 +105,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
         addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
         addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");
+        addSimpleComponent("com.yahoo.language.opennlp.LangDetectModel183");
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.DeprecatedSecretStoreProvider");
         addSimpleComponent("com.yahoo.container.jdisc.CertificateStoreProvider");
