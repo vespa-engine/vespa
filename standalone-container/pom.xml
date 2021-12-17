@@ -15,6 +15,18 @@
   <dependencies>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>linguistics-components</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>linguistics</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-provisioning</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
