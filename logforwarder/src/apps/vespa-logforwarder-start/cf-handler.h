@@ -9,7 +9,7 @@ using cloud::config::LogforwarderConfig;
 
 class CfHandler {
 private:
-    ChildHandler childHandler;
+    ChildHandler _childHandler;
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<LogforwarderConfig>::UP _handle;
     void subscribe(const std::string & configId, std::chrono::milliseconds timeout);
@@ -18,5 +18,6 @@ public:
     CfHandler();
     virtual ~CfHandler();
     void start(const char *configId);
+    void stop();
     void check();
 };
