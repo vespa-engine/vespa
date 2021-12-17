@@ -81,7 +81,16 @@ public class MetricsManager {
      * @return metrics for all matching services
      */
     public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime) {
-        MetricsPacket.Builder [] builderArray = getMetricsBuildersAsArray(services, startTime);
+        MetricsPacket.Builder [] builderArray = getMetricsBuildersAsArray(services, startTime, null);
+        List<MetricsPacket> metricsPackets = new ArrayList<>(builderArray.length);
+        for (int i = 0; i < builderArray.length; i++) {
+            metricsPackets.add(builderArray[i].build());
+            builderArray[i] = null; // Set null to be able to GC the builder when packet has been created
+        }
+        return metricsPackets;
+    }
+    public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime, ConsumerId consumerId) {
+        MetricsPacket.Builder [] builderArray = getMetricsBuildersAsArray(services, startTime, consumerId);
         List<MetricsPacket> metricsPackets = new ArrayList<>(builderArray.length);
         for (int i = 0; i < builderArray.length; i++) {
             metricsPackets.add(builderArray[i].build());
@@ -90,8 +99,8 @@ public class MetricsManager {
         return metricsPackets;
     }
 
-    public MetricsPacket.Builder [] getMetricsBuildersAsArray(List<VespaService> services, Instant startTime) {
-        List<MetricsPacket.Builder> builders = getMetricsAsBuilders(services, startTime);
+    private MetricsPacket.Builder [] getMetricsBuildersAsArray(List<VespaService> services, Instant startTime, ConsumerId consumerId) {
+        List<MetricsPacket.Builder> builders = getMetricsAsBuilders(services, startTime, consumerId);
         return builders.toArray(new MetricsPacket.Builder[builders.size()]);
     }
 
@@ -99,13 +108,13 @@ public class MetricsManager {
      * Returns the metrics for the given services, in mutable state for further processing.
      * NOTE: Use {@link #getMetrics(List, Instant)} instead, unless further processing of the metrics is necessary.
      */
-    public List<MetricsPacket.Builder> getMetricsAsBuilders(List<VespaService> services, Instant startTime) {
+    public List<MetricsPacket.Builder> getMetricsAsBuilders(List<VespaService> services, Instant startTime, ConsumerId consumerId) {
         if (services.isEmpty()) return Collections.emptyList();
 
         log.log(FINE, () -> "Updating services prior to fetching metrics, number of services= " + services.size());
         vespaServices.updateServices(services);
 
-        List<MetricsPacket.Builder> result = vespaMetrics.getMetrics(services);
+        List<MetricsPacket.Builder> result = vespaMetrics.getMetrics(services, consumerId);
         log.log(FINE, () -> "Got " + result.size() + " metrics packets for vespa services.");
 
         purgeStaleMetrics();

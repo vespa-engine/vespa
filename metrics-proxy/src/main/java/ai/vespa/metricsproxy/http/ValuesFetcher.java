@@ -41,7 +41,7 @@ public class ValuesFetcher {
     public List<MetricsPacket> fetch(String requestedConsumer) throws JsonRenderingException {
         ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
 
-        return fetchAllMetrics()
+        return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now(), consumer)
                 .stream()
                 .filter(metricsPacket -> metricsPacket.consumers().contains(consumer))
                 .collect(Collectors.toList());
@@ -50,7 +50,7 @@ public class ValuesFetcher {
     public MetricsPacket.Builder [] fetchMetricsAsBuilders(String requestedConsumer) throws JsonRenderingException {
         ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
 
-        List<MetricsPacket.Builder> builders = metricsManager.getMetricsAsBuilders(vespaServices.getVespaServices(), Instant.now())
+        List<MetricsPacket.Builder> builders = metricsManager.getMetricsAsBuilders(vespaServices.getVespaServices(), Instant.now(), consumer)
                 .stream()
                 .filter(builder -> builder.hasConsumer(consumer))
                 .collect(Collectors.toList());

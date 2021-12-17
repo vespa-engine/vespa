@@ -65,7 +65,7 @@ public class VespaMetrics {
      * @param services the services to get metrics for
      * @return a list of metrics packet builders (to allow modification by the caller)
      */
-    public List<MetricsPacket.Builder> getMetrics(List<VespaService> services) {
+    public List<MetricsPacket.Builder> getMetrics(List<VespaService> services, ConsumerId consumerId) {
         List<MetricsPacket.Builder> metricsPackets = new ArrayList<>();
 
         for (VespaService service : services) {
@@ -74,7 +74,9 @@ public class VespaMetrics {
             systemCheck.ifPresent(metricsPackets::add);
 
             MetricAggregator aggregator = new MetricAggregator(service.getDimensions());
-            GetServiceMetricsConsumer metricsConsumer = new GetServiceMetricsConsumer(metricsConsumers, aggregator);
+            MetricsParser.Consumer metricsConsumer = (consumerId != null)
+                    ? new GetServiceMetricsConsumer(metricsConsumers, aggregator, consumerId)
+                    : new GetServiceMetricsConsumerForAll(metricsConsumers, aggregator);
             service.consumeMetrics(metricsConsumer);
 
             if (! aggregator.getAggregated().isEmpty()) {
@@ -115,24 +117,14 @@ public class VespaMetrics {
      * In order to include a metric, it must exist in the given map of metric to consumers.
      * Each returned metric will contain a collection of consumers that it should be routed to.
      */
-    private static class GetServiceMetricsConsumer implements MetricsParser.Consumer {
-        private final MetricAggregator aggregator;
-        private final MetricsConsumers metricsConsumers;
-        GetServiceMetricsConsumer(MetricsConsumers metricsConsumers, MetricAggregator aggregator) {
-            this.metricsConsumers = metricsConsumers;
+    private static abstract class GetServiceMetricsConsumerBase implements MetricsParser.Consumer {
+        protected final MetricAggregator aggregator;
+
+        GetServiceMetricsConsumerBase(MetricAggregator aggregator) {
             this.aggregator = aggregator;
         }
 
-        @Override
-        public void consume(Metric candidate) {
-            Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric(candidate.getName());
-            if (consumersByMetric != null) {
-                consumersByMetric.keySet().forEach(
-                        configuredMetric -> aggregator.aggregate(
-                                metricWithConfigProperties(candidate, configuredMetric, consumersByMetric.get(configuredMetric))));
-            }
-        }
-        private static Metric metricWithConfigProperties(Metric candidate,
+        protected static Metric metricWithConfigProperties(Metric candidate,
                                                          ConfiguredMetric configuredMetric,
                                                          Set<ConsumerId> consumers) {
             Metric metric = candidate.clone();
@@ -153,8 +145,46 @@ public class VespaMetrics {
         }
 
         private static Set<ConsumerId> extractConsumers(Set<ConsumerId> configuredConsumers) {
-            if (configuredConsumers != null) return configuredConsumers;
-            return Set.of();
+            return (configuredConsumers != null) ? configuredConsumers : Set.of();
+        }
+    }
+
+    private static class GetServiceMetricsConsumer extends GetServiceMetricsConsumerBase {
+        private final Map<MetricId, ConfiguredMetric> configuredMetrics;
+        private final Set<ConsumerId> consumerId;
+
+        GetServiceMetricsConsumer(MetricsConsumers metricsConsumers, MetricAggregator aggregator, ConsumerId consumerId) {
+            super(aggregator);
+            this.consumerId = Set.of(consumerId);
+            this.configuredMetrics = metricsConsumers.getMetricsForConsumer(consumerId);
+        }
+
+        @Override
+        public void consume(Metric candidate) {
+            ConfiguredMetric configuredMetric = configuredMetrics.get(candidate.getName());
+            if (configuredMetric != null) {
+                aggregator.aggregate(
+                        metricWithConfigProperties(candidate, configuredMetric, consumerId));
+            }
+        }
+    }
+
+    private static class GetServiceMetricsConsumerForAll extends GetServiceMetricsConsumerBase {
+        private final MetricsConsumers metricsConsumers;
+
+        GetServiceMetricsConsumerForAll(MetricsConsumers metricsConsumers, MetricAggregator aggregator) {
+            super(aggregator);
+            this.metricsConsumers = metricsConsumers;
+        }
+
+        @Override
+        public void consume(Metric candidate) {
+            Map<ConfiguredMetric, Set<ConsumerId>> consumersByMetric = metricsConsumers.getConsumersByMetric(candidate.getName());
+            if (consumersByMetric != null) {
+                consumersByMetric.keySet().forEach(
+                        configuredMetric -> aggregator.aggregate(
+                                metricWithConfigProperties(candidate, configuredMetric, consumersByMetric.get(configuredMetric))));
+            }
         }
     }
 
