@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
+import java.util.Optional;
 
 public class LogForwarder extends AbstractService implements LogforwarderConfig.Producer {
 
@@ -77,6 +78,15 @@ public class LogForwarder extends AbstractService implements LogforwarderConfig.
         if (config.phoneHomeInterval != null) {
             builder.phoneHomeInterval(config.phoneHomeInterval);
         }
+    }
+
+    @Override
+    public Optional<String> getPreShutdownCommand() {
+        var builder = new LogforwarderConfig.Builder();
+        getConfig(builder);
+        var cfg = new LogforwarderConfig(builder);
+        var home = cfg.splunkHome();
+        return Optional.of("/usr/bin/env SPLUNK_HOME="+home+" "+home+"/bin/splunk stop");
     }
 
 }

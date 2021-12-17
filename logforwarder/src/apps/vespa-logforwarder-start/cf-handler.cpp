@@ -84,7 +84,7 @@ CfHandler::doConfigure()
         getenv("VESPA_INSTANCE") != NULL &&
         getenv("VESPA_ENVIRONMENT") != NULL &&
         getenv("VESPA_REGION") != NULL)
-        {
+    {
         path = cfFilePath(config.splunkHome, "inputs.conf");
         tmpPath = path + ".new";
         fp = fopen(tmpPath.c_str(), "w");
@@ -99,9 +99,9 @@ CfHandler::doConfigure()
     if (config.clientName.size() == 0 ||
         config.deploymentServer.size() == 0)
     {
-        childHandler.stopChild(config.splunkHome);
+        _childHandler.stopChild();
     } else {
-        childHandler.startChild(config.splunkHome);
+        _childHandler.startChild(config.splunkHome);
     }
 }
 
@@ -111,6 +111,10 @@ CfHandler::check()
     if (_subscriber.nextConfigNow()) {
         doConfigure();
     }
+}
+
+void CfHandler::stop() {
+    _childHandler.stopChild();
 }
 
 constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS(30 * 1000);

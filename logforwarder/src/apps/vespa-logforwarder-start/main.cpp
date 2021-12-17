@@ -21,6 +21,7 @@ public:
             handler.check();
             usleep(12500); // Avoid busy looping;
         }
+        handler.stop();
     }
 };
 
