@@ -39,9 +39,14 @@ PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
     sum.addMetricToSum(timeout);
     sum.addMetricToSum(busy);
     sum.addMetricToSum(inconsistent_bucket);
-    sum.addMetricToSum(notfound);
-    // TaS/concurrent mutation failures not added to the main failure metric, as they're not "failures" as per se.
-    // TODO introduce separate aggregate for such metrics
+    // We don't consider the following as explicit failures (even though they're in the failure set)
+    // and therefore don't count them as part of the aggregate sum:
+    //
+    //  - Test-and-set mismatches
+    //  - Concurrent mutation failures
+    //  - Document to be updated not found
+    //
+    // TODO introduce separate aggregate for such metrics. Presumably when we deprecate legacy metric paths.
 }
 
 PersistenceFailuresMetricSet::~PersistenceFailuresMetricSet() = default;
