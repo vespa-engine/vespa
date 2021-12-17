@@ -2,6 +2,7 @@
 package com.yahoo.container.jdisc;
 
 import com.google.inject.Inject;
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.BufferedContentChannel;
@@ -45,6 +46,11 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
     @Inject
     public ThreadedHttpRequestHandler(Executor executor, Metric metric) {
         this(executor, metric, false);
+    }
+
+    // TODO: move Inject annotation here!
+    public ThreadedHttpRequestHandler(Context context) {
+        this(context.executor, context.metric);
     }
 
     public ThreadedHttpRequestHandler(Executor executor, Metric metric, boolean allowAsyncResponse) {
@@ -249,5 +255,36 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         return (com.yahoo.jdisc.http.HttpRequest) request;
     }
 
+    public static Context testContext() {
+        return new Context(Runnable::run, null);
+    }
+
+    public static class Context {
+
+        final Executor executor;
+        final Metric metric;
+
+        /** @deprecated Use {@link #Context(Executor, Metric)} instead */
+        @Deprecated(forRemoval = true, since = "7")
+        public Context(Executor executor, AccessLog ignored, Metric metric) {
+            this(executor, metric);
+        }
+
+        @Inject
+        public Context(Executor executor, Metric metric) {
+            this.executor = executor;
+            this.metric = metric;
+        }
+
+        public Context(Context other) {
+            this.executor = other.executor;
+            this.metric = other.metric;
+        }
+
+        public Executor getExecutor() { return executor; }
+        @Deprecated(forRemoval = true, since = "7") public AccessLog getAccessLog() { return null; }
+        public Metric getMetric() { return metric; }
+
+    }
 
 }

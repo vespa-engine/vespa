@@ -29,6 +29,7 @@ import java.util.logging.Level;
 // TODO Vespa 8: Remove deprecated constructors
 public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
+    // TODO: Deprecate
     public static class Context {
 
         final Executor executor;
@@ -57,6 +58,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
     }
 
+    // TODO: Deprecate
     public static Context testOnlyContext() {
         return new Context(new Executor() {
                 @Override

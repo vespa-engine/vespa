@@ -875,6 +875,22 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
+      "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
+      "public void <init>(com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context)",
+      "public java.util.concurrent.Executor getExecutor()",
+      "public com.yahoo.container.logging.AccessLog getAccessLog()",
+      "public com.yahoo.jdisc.Metric getMetric()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.ThreadedHttpRequestHandler$LazyContentChannel": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -903,13 +919,15 @@
     "methods": [
       "public void <init>(java.util.concurrent.Executor)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
+      "public void <init>(com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric, boolean)",
       "public abstract com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest)",
       "public com.yahoo.container.jdisc.HttpResponse handle(com.yahoo.container.jdisc.HttpRequest, com.yahoo.jdisc.handler.ContentChannel)",
       "public final void handleRequest(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.BufferedContentChannel, com.yahoo.jdisc.handler.ResponseHandler)",
       "protected void addDateHeader(com.yahoo.container.jdisc.HttpResponse, long)",
       "protected com.yahoo.container.jdisc.LoggingCompletionHandler createLoggingCompletionHandler(long, long, com.yahoo.container.jdisc.HttpResponse, com.yahoo.container.jdisc.HttpRequest, com.yahoo.container.jdisc.ContentChannelOutputStream)",
-      "protected com.yahoo.jdisc.http.HttpRequest asHttpRequest(com.yahoo.jdisc.Request)"
+      "protected com.yahoo.jdisc.http.HttpRequest asHttpRequest(com.yahoo.jdisc.Request)",
+      "public static com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context testContext()"
     ],
     "fields": [
       "public static final java.lang.String CONTENT_TYPE",
