@@ -77,15 +77,14 @@ public abstract class HttpMetricFetcher {
     }
 
     void handleException(Exception e, Object data, int timesFetched) {
-        logMessage("Unable to parse json '" + data + "' for service '" + service + "': " +
-                           Exceptions.toMessageString(e), timesFetched);
+        logMessage("Unable to parse json '" + data + "' for service '" + service + "': ", e, timesFetched);
     }
 
-    private void logMessage(String message, int timesFetched) {
+    private void logMessage(String message, Exception e, int timesFetched) {
         if (service.isAlive() && timesFetched > 5) {
-            log.log(Level.INFO, message);
+            log.log(Level.INFO, message, e);
         } else {
-            log.log(Level.FINE, message);
+            log.log(Level.FINE, message, e);
         }
     }
 
