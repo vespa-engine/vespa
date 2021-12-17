@@ -87,6 +87,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -436,10 +437,12 @@ public class ApplicationController {
         // Validate new deployment spec thoroughly before storing it.
         controller.jobController().deploymentStatus(application.get());
 
-        // Clear notifications for instances that are no longer declared
-        for (var name : existingInstances)
-            if ( ! declaredInstances.contains(name))
-                controller.notificationsDb().removeNotifications(NotificationSource.from(application.get().id().instance(name)));
+        for (Notification notification : controller.notificationsDb().listNotifications(NotificationSource.from(application.get().id()), true)) {
+            if ( ! notification.source().instance().map(declaredInstances::contains).orElse(false))
+                controller.notificationsDb().removeNotifications(notification.source());
+            if ( ! notification.source().zoneId().map(application.get().require(notification.source().instance().get()).deployments()::containsKey).orElse(false))
+                controller.notificationsDb().removeNotifications(notification.source());
+        }
 
         store(application);
         return application;
