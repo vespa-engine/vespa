@@ -21,8 +21,7 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
 
     @Inject
     public OpenNlpLinguistics(LangDetectModel model) {
-        LanguageDetectorModel loaded = model.load();
-        this.detector = loaded != null ? new OpenNlpDetector(loaded) : new SimpleDetector();
+        this.detector = new OpenNlpDetector(model.load());
     }
 
     @Override
