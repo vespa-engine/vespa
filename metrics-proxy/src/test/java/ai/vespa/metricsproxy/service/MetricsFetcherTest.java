@@ -11,6 +11,7 @@ import java.io.IOException;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -48,6 +49,30 @@ public class MetricsFetcherTest {
         String  jsonData = "{}";
         Metrics metrics = fetch(jsonData);
         assertEquals(0, metrics.size());
+    }
+
+    @Test
+    public void testSkippingNullDimensions() throws IOException {
+        String jsonData =
+                "{\"status\" : {\"code\" : \"up\",\"message\" : \"Everything ok here\"}," +
+                "\"metrics\" : {\"snapshot\" : {\"from\" : 1334134640.089,\"to\" : 1334134700.088" + "  }," +
+                "\"values\" : [" +
+                "{" +
+                "      \"name\" : \"some.bogus.metric\"," +
+                "      \"values\" : {" +
+                "        \"count\" : 12," +
+                "        \"rate\" : 0.2" +
+                "      }," +
+                "      \"dimensions\" : {" +
+                "        \"version\" : null" +
+                "      }" +
+                "    }" +
+                "]}}";
+
+        Metrics metrics = fetch(jsonData);
+        assertEquals(2, metrics.size());
+        assertTrue(metrics.list().get(0).getDimensions().isEmpty());
+        assertTrue(metrics.list().get(1).getDimensions().isEmpty());
     }
 
     @Test
