@@ -205,7 +205,9 @@ class HttpRequestStrategyTest {
         DocumentId id2 = DocumentId.of("ns", "type", "2");
         DocumentId id3 = DocumentId.of("ns", "type", "3");
         DocumentId id4 = DocumentId.of("ns", "type", "4");
+        DocumentId id5 = DocumentId.of("ns", "type", "5");
         HttpRequest failing = new HttpRequest("POST", "/", null, null, null);
+        HttpRequest partial = new HttpRequest("POST", "/", null, null, null);
         HttpRequest request = new HttpRequest("POST", "/", null, null, null);
         HttpRequest blocking = new HttpRequest("POST", "/", null, null, null);
 
@@ -218,22 +220,28 @@ class HttpRequestStrategyTest {
                 blocker.arriveAndAwaitAdvance(); // ... block dispatch thread, so we get something in the queue.
                 throw new RuntimeException("armageddon"); // Dispatch thread should die, tearing down everything.
             }
-            else if (req == failing) {
+            else if (req == partial) {
                 phaser.arriveAndAwaitAdvance();  // Let test thread enqueue more ops before failing (and retrying) this.
                 vessel.completeExceptionally(new IOException("failed"));
-                phaser.arriveAndAwaitAdvance();  // Ensure a retry is scheduled before test thread is allowed to continue.
             }
-            else phaser.arriveAndAwaitAdvance(); // Don't complete from mock cluster, but require destruction to do this.
+            else if (req == failing) {
+                System.err.println("failing");
+                vessel.completeExceptionally(new RuntimeException("fatal"));
+            }
         });
+        // inflight completes dispatch, but causes no response.
         CompletableFuture<HttpResponse> inflight = strategy.enqueue(id1, request);
+        // serialised 1 and 2 are waiting for the above inflight to complete.
         CompletableFuture<HttpResponse> serialised1 = strategy.enqueue(id1, request);
         CompletableFuture<HttpResponse> serialised2 = strategy.enqueue(id1, request);
-        CompletableFuture<HttpResponse> failed = strategy.enqueue(id2, failing);
-        CompletableFuture<HttpResponse> blocked = strategy.enqueue(id3, blocking);
-        CompletableFuture<HttpResponse> delayed = strategy.enqueue(id4, request);
-        phaser.arriveAndAwaitAdvance(); // inflight completes dispatch, but causes no response.
-        phaser.arriveAndAwaitAdvance(); // failed is allowed to dispatch ...
-        phaser.arriveAndAwaitAdvance(); // ... and a retry is enqueued.
+        CompletableFuture<HttpResponse> retried = strategy.enqueue(id2, partial);
+        CompletableFuture<HttpResponse> failed = strategy.enqueue(id3, failing);
+        CompletableFuture<HttpResponse> blocked = strategy.enqueue(id4, blocking);
+        CompletableFuture<HttpResponse> delayed = strategy.enqueue(id5, request);
+        phaser.arriveAndAwaitAdvance(); // retried is allowed to dispatch, and will be retried async.
+        // failed immediately fails, and lets us assert the above retry is indeed enqueued.
+        assertEquals("ai.vespa.feed.client.FeedException: java.lang.RuntimeException: fatal",
+                     assertThrows(ExecutionException.class, failed::get).getMessage());
         phaser.arriveAndAwaitAdvance(); // blocked starts dispatch, and hangs, blocking dispatch thread.
 
         // Current state: inflight is "inflight to cluster", serialised1/2 are waiting completion of it;
@@ -242,7 +250,8 @@ class HttpRequestStrategyTest {
         assertFalse(inflight.isDone());
         assertFalse(serialised1.isDone());
         assertFalse(serialised2.isDone());
-        assertFalse(failed.isDone());
+        assertTrue(failed.isDone());
+        assertFalse(retried.isDone());
         assertFalse(blocked.isDone());
         assertFalse(delayed.isDone());
 
@@ -259,7 +268,7 @@ class HttpRequestStrategyTest {
         assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
                      assertThrows(ExecutionException.class, delayed::get).getMessage());
         assertEquals("ai.vespa.feed.client.FeedException: java.io.IOException: failed",
-                     assertThrows(ExecutionException.class, failed::get).getMessage());
+                     assertThrows(ExecutionException.class, retried::get).getMessage());
         assertEquals("ai.vespa.feed.client.FeedException: Operation aborted",
                      assertThrows(ExecutionException.class, strategy.enqueue(id1, request)::get).getMessage());
     }
