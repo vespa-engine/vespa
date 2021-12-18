@@ -86,10 +86,10 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
 
         public Builder(Map<String, NewDocumentType> documentDefinitions,
                        Set<NewDocumentType> globallyDistributedDocuments,
-                       boolean combined, ResourceLimits resourceLimits) {
+                       double fractionOfMemoryReserved, ResourceLimits resourceLimits) {
             this.documentDefinitions = documentDefinitions;
             this.globallyDistributedDocuments = globallyDistributedDocuments;
-            this.fractionOfMemoryReserved = combined ? ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01 : 0.0;
+            this.fractionOfMemoryReserved = fractionOfMemoryReserved;
             this.resourceLimits = resourceLimits;
         }
 
