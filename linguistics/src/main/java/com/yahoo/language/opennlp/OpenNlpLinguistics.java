@@ -7,21 +7,36 @@ import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleDetector;
 import com.yahoo.language.simple.SimpleLinguistics;
-import opennlp.tools.langdetect.LanguageDetectorModel;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
- * Returns a linguistics implementation based on OpenNlp.
+ * Returns a linguistics implementation based on OpenNlp,
+ * and (optionally, default on) Optimaize for language detection.
  *
  * @author bratseth
- * @author jonmv
  */
 public class OpenNlpLinguistics extends SimpleLinguistics {
 
+    private static final Logger log = Logger.getLogger(OpenNlpLinguistics.class.getName());
     private final Detector detector;
 
-    @Inject
     public OpenNlpLinguistics() {
-        this.detector = new OpenNlpDetector();
+        this(true);
+    }
+
+    @Inject
+    public OpenNlpLinguistics(OpennlpLinguisticsConfig config) {
+        this(config.detector().enableOptimaize());
+    }
+
+    public OpenNlpLinguistics(boolean enableOptimaize) {
+        this(enableOptimaize ? new OptimaizeDetector() : new SimpleDetector());
+        log.log(Level.FINE, "using "+(enableOptimaize ? "Optimaize" : "Simple")+" detector");
+    }
+
+    private OpenNlpLinguistics(Detector detector) {
+        this.detector = detector;
     }
 
     @Override
