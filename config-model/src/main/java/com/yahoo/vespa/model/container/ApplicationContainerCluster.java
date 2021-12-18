@@ -167,11 +167,17 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage;
     }
 
-    /**
-     * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
-     * or empty if this is not specified by the application.
-     */
-    public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
+    @Override
+    public Optional<Integer> getMemoryPercentage() {
+        if (memoryPercentage != null) {
+            return Optional.of(memoryPercentage);
+        } else if (isHostedVespa()) {
+            return getHostClusterId().isPresent() ?
+                    Optional.of(heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster) :
+                    Optional.of(heapSizePercentageOfTotalNodeMemory);
+        }
+        return Optional.empty();
+    }
 
     /*
       Create list of endpoints, these will be consumed later by the LBservicesProducer
@@ -291,10 +297,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                 .heapsize(1536);
         if (getMemoryPercentage().isPresent()) {
             builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());
-        } else if (isHostedVespa()) {
-            builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ?
-                                                             heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster :
-                                                             heapSizePercentageOfTotalNodeMemory);
         }
     }
 

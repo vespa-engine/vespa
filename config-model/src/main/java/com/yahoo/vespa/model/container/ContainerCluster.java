@@ -653,4 +653,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public boolean getDeferChangesUntilRestart() { return deferChangesUntilRestart; }
 
+    /**
+     * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
+     * or empty if this is not specified by the application.
+     */
+    public Optional<Integer> getMemoryPercentage() { return Optional.empty(); }
 }
