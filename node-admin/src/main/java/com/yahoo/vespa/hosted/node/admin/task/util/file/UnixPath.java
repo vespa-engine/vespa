@@ -263,9 +263,8 @@ public class UnixPath {
         return uncheck(() -> Files.deleteIfExists(path));
     }
 
-    public UnixPath deleteIfExists() {
-        uncheck(() -> Files.deleteIfExists(path));
-        return this;
+    public boolean deleteIfExists() {
+        return uncheck(() -> Files.deleteIfExists(path));
     }
 
     /** @return false path does not exist, is not a directory, or has at least one entry. */
