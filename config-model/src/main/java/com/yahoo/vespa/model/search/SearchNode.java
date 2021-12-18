@@ -19,7 +19,6 @@ import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.content.ContentNode;
 import com.yahoo.vespa.model.content.ResourceLimits;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
