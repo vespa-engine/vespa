@@ -40,7 +40,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
-import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,9 +50,7 @@ import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.applic
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.global;
 import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -100,8 +97,8 @@ public class ContainerClusterTest {
         assertEquals("cd", config.system());
     }
 
-    private ApplicationContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster) {
-        return createContainerCluster(root, isCombinedCluster, null);
+    private ApplicationContainerCluster createContainerCluster(MockRoot root) {
+        return createContainerCluster(root, false, null);
     }
     private ApplicationContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster, Integer memoryPercentage) {
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", root.getDeployState());
@@ -162,7 +159,7 @@ public class ContainerClusterTest {
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocProc) {
         MockRoot root = createRoot(isHosted);
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root);
         if (hasDocProc) {
             cluster.setDocproc(new ContainerDocproc(cluster, null));
         }
@@ -227,7 +224,7 @@ public class ContainerClusterTest {
     public void requireThatJvmOmitStackTraceInFastThrowOptionWorks() {
         // Empty option if option not set in property
         MockRoot root = createRoot(new DeployState.Builder().build());
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root);
         addContainer(root, cluster, "c1", "host-c1");
         ApplicationContainer container = cluster.getContainers().get(0);
         assertEquals("", container.getJvmOptions());
@@ -235,7 +232,7 @@ public class ContainerClusterTest {
         String jvmOption = "-XX:-foo";
         DeployState deployState = new DeployState.Builder().properties(new TestProperties().setJvmOmitStackTraceInFastThrowOption(jvmOption)).build();
         root = createRoot(deployState);
-        cluster = createContainerCluster(root, false);
+        cluster = createContainerCluster(root);
         addContainer(root, cluster, "c1", "host-c1");
         container = cluster.getContainers().get(0);
         assertEquals(jvmOption, container.getJvmOptions());
@@ -244,7 +241,7 @@ public class ContainerClusterTest {
     @Test
     public void requireThatWeCanHandleNull() {
         MockRoot root = createRoot(false);
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root);
         addContainer(root, cluster, "c1", "host-c1");
         Container container = cluster.getContainers().get(0);
         container.setJvmOptions("");
@@ -256,7 +253,7 @@ public class ContainerClusterTest {
     @Test
     public void requireThatNonHostedUsesExpectedDefaultThreadpoolConfiguration() {
         MockRoot root = new MockRoot("foo");
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
@@ -268,13 +265,13 @@ public class ContainerClusterTest {
     @Test
     public void container_cluster_has_default_threadpool_provider() {
         MockRoot root = new MockRoot("foo");
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ComponentId expectedComponentId = new ComponentId("default-threadpool");
         var components = cluster.getComponentsMap();
-        assertThat(components, hasKey(expectedComponentId));
+        assertTrue(components.containsKey(expectedComponentId));
         Component<?, ?> component = components.get(expectedComponentId);
         assertEquals(ThreadPoolProvider.class.getName(), component.getClassId().getName());
     }
@@ -287,7 +284,7 @@ public class ContainerClusterTest {
                         .properties(new TestProperties().setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
                         .build());
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
@@ -304,7 +301,7 @@ public class ContainerClusterTest {
                         .properties(new TestProperties().setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
                         .build());
-        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        ApplicationContainerCluster cluster = createContainerCluster(root);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 

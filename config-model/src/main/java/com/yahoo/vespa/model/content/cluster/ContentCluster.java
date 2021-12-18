@@ -131,7 +131,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                     resourceLimits.getClusterControllerLimits()).build(deployState, c, contentElement.getXml());
             c.search = new ContentSearchCluster.Builder(documentDefinitions,
                     globallyDistributedDocuments,
-                    isCombined(getClusterId(contentElement), containers),
+                    fractionOfMemoryReserved(getClusterId(contentElement), containers),
                     resourceLimits.getContentNodeLimits()).build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
@@ -241,11 +241,14 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
         }
 
         /** Returns whether this hosts one of the given container clusters */
-        private boolean isCombined(String clusterId, Collection<ContainerModel> containers) {
-            return containers.stream()
-                             .map(model -> model.getCluster().getHostClusterId())
-                             .filter(Optional::isPresent)
-                             .anyMatch(id -> id.get().equals(clusterId));
+        private double fractionOfMemoryReserved(String clusterId, Collection<ContainerModel> containers) {
+            for (ContainerModel containerModel : containers) {
+                Optional<String> hostClusterId = containerModel.getCluster().getHostClusterId();
+                if (hostClusterId.isPresent() && hostClusterId.get().equals(clusterId) && containerModel.getCluster().getMemoryPercentage().isPresent()) {
+                    return containerModel.getCluster().getMemoryPercentage().get() * 0.01;
+                }
+            }
+            return 0.0;
         }
 
         private void setupExperimental(ContentCluster cluster, ModelElement experimental) {

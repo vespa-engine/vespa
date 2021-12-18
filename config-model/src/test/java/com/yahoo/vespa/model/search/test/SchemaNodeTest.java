@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.search.test;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
@@ -52,12 +51,12 @@ public class SchemaNodeTest {
     }
 
     private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey,
-                                               NodeSpec nodeSpec, boolean flushOnShutDown, boolean isHosted, boolean combined) {
-        return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty(), Optional.empty(), isHosted, combined);
+                                               NodeSpec nodeSpec, boolean flushOnShutDown, boolean isHosted) {
+        return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty(), Optional.empty(), isHosted, 0.0);
     }
 
     private static SearchNode createSearchNode(MockRoot root) {
-        return createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), true, true, false);
+        return createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), true, true);
     }
 
     @Test
@@ -70,7 +69,7 @@ public class SchemaNodeTest {
     @Test
     public void requireThatBasedirIsCorrectForElasticMode() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), false);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted());
         prepare(root, node, true);
         assertBaseDir(Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster.mycluster/n3"), node);
     }
@@ -78,7 +77,7 @@ public class SchemaNodeTest {
     @Test
     public void requireThatPreShutdownCommandIsEmptyWhenNotActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), false);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted());
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
         node.initService(root.deployLogger());
         assertFalse(node.getPreShutdownCommand().isPresent());
@@ -87,7 +86,7 @@ public class SchemaNodeTest {
     @Test
     public void requireThatPreShutdownCommandUsesPrepareRestartWhenActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted(), false);
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted());
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.deployLogger());
         assertTrue(node.getPreShutdownCommand().isPresent());
