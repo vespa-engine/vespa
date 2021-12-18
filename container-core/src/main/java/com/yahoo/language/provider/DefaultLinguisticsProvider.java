@@ -6,7 +6,6 @@ import com.google.common.base.Suppliers;
 import com.google.inject.Inject;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.opennlp.LangDetectModel;
 import com.yahoo.language.opennlp.OpenNlpLinguistics;
 
 /**
@@ -22,8 +21,8 @@ public class DefaultLinguisticsProvider implements Provider<Linguistics> {
     private final Supplier<Linguistics> linguisticsSupplier;
 
     @Inject
-    public DefaultLinguisticsProvider(LangDetectModel detectorModel) {
-        linguisticsSupplier = Suppliers.memoize(() -> new OpenNlpLinguistics(detectorModel));
+    public DefaultLinguisticsProvider() {
+        linguisticsSupplier = Suppliers.memoize(OpenNlpLinguistics::new);
     }
 
     @Override

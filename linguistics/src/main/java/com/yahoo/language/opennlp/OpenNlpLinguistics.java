@@ -20,8 +20,8 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
     private final Detector detector;
 
     @Inject
-    public OpenNlpLinguistics(LangDetectModel model) {
-        this.detector = new OpenNlpDetector(model.load());
+    public OpenNlpLinguistics() {
+        this.detector = new OpenNlpDetector();
     }
 
     @Override

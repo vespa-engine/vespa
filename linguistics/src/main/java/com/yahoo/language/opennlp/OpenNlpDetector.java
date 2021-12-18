@@ -6,7 +6,6 @@ import com.yahoo.language.detect.Detection;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.detect.Hint;
 import com.yahoo.language.simple.SimpleDetector;
-import opennlp.tools.cmdline.langdetect.LanguageDetectorModelLoader;
 import opennlp.tools.langdetect.LanguageDetectorConfig;
 import opennlp.tools.langdetect.LanguageDetectorME;
 import opennlp.tools.langdetect.LanguageDetectorModel;
@@ -15,7 +14,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -29,18 +27,35 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 class OpenNlpDetector implements Detector {
 
+    private static final Object monitor = new Object();
+    private static LanguageDetectorModel model;
+
     private final SimpleDetector simple = new SimpleDetector();
     private final Map<String, Language> languagesByISO3 = new HashMap<>();
     private final LanguageDetectorME detector;
     private final LanguageDetectorConfig config;
 
-    OpenNlpDetector(LanguageDetectorModel model) {
-        detector = new LanguageDetectorME(model);
+    OpenNlpDetector() {
+        detector = new LanguageDetectorME(loadModel());
         config = new LanguageDetectorConfig();
         config.setMinDiff(0.02);
         config.setChunkSize(64);
         for (Locale locale : Locale.getAvailableLocales())
             languagesByISO3.put(locale.getISO3Language(), Language.fromLocale(locale));
+    }
+
+    private static LanguageDetectorModel loadModel() {
+        synchronized (monitor) {
+            if (model == null) {
+                try {
+                    model = new LanguageDetectorModel(OpenNlpDetector.class.getResourceAsStream("/models/langdetect-183.bin"));
+                }
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        }
+        return model;
     }
 
     @Override
