@@ -11,6 +11,7 @@ import com.yahoo.vespa.model.builder.UserConfigBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomSearchTuningBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -74,13 +75,13 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final int defaultMaxCompactBuffers;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
-    private final boolean combined;
+    private final double fractionOfMemoryReserved;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<ContentSearchCluster> {
 
         private final Map<String, NewDocumentType> documentDefinitions;
         private final Set<NewDocumentType> globallyDistributedDocuments;
-        private final boolean combined;
+        private final double fractionOfMemoryReserved;
         private final ResourceLimits resourceLimits;
 
         public Builder(Map<String, NewDocumentType> documentDefinitions,
@@ -88,7 +89,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                        boolean combined, ResourceLimits resourceLimits) {
             this.documentDefinitions = documentDefinitions;
             this.globallyDistributedDocuments = globallyDistributedDocuments;
-            this.combined = combined;
+            this.fractionOfMemoryReserved = combined ? ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01 : 0.0;
             this.resourceLimits = resourceLimits;
         }
 
@@ -106,7 +107,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                                                    globallyDistributedDocuments,
                                                                    getFlushOnShutdown(flushOnShutdownElem),
                                                                    syncTransactionLog,
-                                                                   combined);
+                                                                   fractionOfMemoryReserved);
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
             if (tuning != null) {
@@ -208,7 +209,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                  Set<NewDocumentType> globallyDistributedDocuments,
                                  boolean flushOnShutdown,
                                  Boolean syncTransactionLog,
-                                 boolean combined)
+                                 double fractionOfMemoryReserved)
     {
         super(parent, "search");
         this.clusterName = clusterName;
@@ -217,7 +218,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.flushOnShutdown = flushOnShutdown;
         this.syncTransactionLog = syncTransactionLog;
 
-        this.combined = combined;
+        this.fractionOfMemoryReserved = fractionOfMemoryReserved;
         this.feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         this.feedTaskLimit = featureFlags.feedTaskLimit();
         this.feedMasterTaskLimit = featureFlags.feedMasterTaskLimit();
@@ -290,7 +291,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
-                                           clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(), combined);
+                                           clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(), fractionOfMemoryReserved);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState.getDeployLogger());
 
@@ -298,7 +299,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             tls.setHostResource(searchNode.getHostResource());
             tls.initService(deployState.getDeployLogger());
         } else {
-            searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning, resourceLimits, combined).build(deployState, parent, element.getXml());
+            searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning, resourceLimits, fractionOfMemoryReserved).build(deployState, parent, element.getXml());
             tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
         searchNode.setTls(tls);
