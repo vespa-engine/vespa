@@ -2,8 +2,7 @@
 package com.yahoo.language.simple;
 
 import com.google.inject.Inject;
-import com.yahoo.collections.Tuple2;
-import com.yahoo.component.Version;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.CharacterClasses;
@@ -16,7 +15,6 @@ import com.yahoo.language.process.Stemmer;
 import com.yahoo.language.process.StemmerImpl;
 import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.process.Transformer;
-import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 
 import java.util.List;
 
