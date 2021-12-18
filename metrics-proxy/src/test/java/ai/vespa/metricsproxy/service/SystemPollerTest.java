@@ -10,6 +10,7 @@ import org.junit.Test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -188,7 +189,7 @@ public class SystemPollerTest {
         List<VespaService> services = List.of(s1);
         lastCpuJiffiesMetrics.put(s1, SystemPoller.getPidJiffies(new BufferedReader(new StringReader(perProcStats[0]))));
 
-        SystemPoller.JiffiesAndCpus next = SystemPoller.updateMetrics(prev, 1,
+        SystemPoller.JiffiesAndCpus next = SystemPoller.updateMetrics(prev, Instant.ofEpochSecond(1),
                 new SystemPoller.GetJiffies() {
                     @Override
                     public SystemPoller.JiffiesAndCpus getTotalSystemJiffies() {

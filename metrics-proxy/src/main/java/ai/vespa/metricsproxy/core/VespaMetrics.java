@@ -15,6 +15,7 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.MetricsParser;
 import ai.vespa.metricsproxy.service.VespaService;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -227,8 +228,8 @@ public class VespaMetrics {
         return definitions == null ? Collections.emptyList() : definitions;
     }
 
-    private static void setMetaInfo(MetricsPacket.Builder builder, long timestamp) {
-        builder.timestamp(timestamp)
+    private static void setMetaInfo(MetricsPacket.Builder builder, Instant timestamp) {
+        builder.timestamp(timestamp.getEpochSecond())
                 .statusCode(0)
                 .statusMessage("Data collected successfully");
     }

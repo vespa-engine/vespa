@@ -161,7 +161,7 @@ public class SystemPoller {
         log.log(Level.FINE, () -> "Monitoring system metrics for " + services.size() + " services");
 
         boolean someAlive = services.stream().anyMatch(VespaService::isAlive);
-        lastTotalCpuJiffies = updateMetrics(lastTotalCpuJiffies, interval.getSeconds(), jiffiesInterface, services, lastCpuJiffiesMetrics);
+        lastTotalCpuJiffies = updateMetrics(lastTotalCpuJiffies, startTime, jiffiesInterface, services, lastCpuJiffiesMetrics);
 
         // If none of the services were alive, reschedule in a short time
         if (!someAlive) {
@@ -171,7 +171,7 @@ public class SystemPoller {
         }
     }
 
-    static JiffiesAndCpus updateMetrics(JiffiesAndCpus prevTotalJiffies, long timeStamp, GetJiffies getJiffies,
+    static JiffiesAndCpus updateMetrics(JiffiesAndCpus prevTotalJiffies, Instant timeStamp, GetJiffies getJiffies,
                                         List<VespaService> services, Map<VespaService, Long> lastCpuJiffiesMetrics) {
         Map<VespaService, Long> currentServiceJiffies = new HashMap<>();
         for (VespaService s : services) {

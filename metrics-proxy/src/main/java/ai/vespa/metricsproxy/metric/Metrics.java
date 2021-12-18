@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,14 +14,14 @@ import java.util.List;
 public class Metrics {
 
     private final List<Metric> metrics = new ArrayList<>();
-    private long timestamp;
+    private Instant timestamp;
     private boolean isFrozen = false;
 
     public Metrics() {
-        this(System.currentTimeMillis() / 1000L);
+        this(Instant.now());
     }
 
-    public Metrics(long timestamp) {
+    public Metrics(Instant timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -28,7 +29,7 @@ public class Metrics {
         if (isFrozen) throw new IllegalStateException("Frozen Metrics cannot be modified!");
     }
 
-    public long getTimeStamp() {
+    public Instant getTimeStamp() {
         return this.timestamp;
     }
 
@@ -37,7 +38,7 @@ public class Metrics {
      *
      * @param timestamp IN UTC seconds resolution
      */
-    public void setTimeStamp(long timestamp) {
+    public void setTimeStamp(Instant timestamp) {
         ensureNotFrozen();
         this.timestamp = timestamp;
     }
