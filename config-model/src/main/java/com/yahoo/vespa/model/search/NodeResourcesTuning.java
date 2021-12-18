@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import static java.lang.Long.min;
 
@@ -20,17 +19,17 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final static long MEMORY_COST_PER_DOCUMENT_STORE_ONLY = 46L;
     private final NodeResources resources;
     private final int threadsPerSearch;
-    private final boolean combined;
+    private final double fractionOfMemoryReserved;
 
     // "Reserve" 0.5GB of memory for other processes running on the content node (config-proxy, metrics-proxy).
     public static final double reservedMemoryGb = 0.5;
 
     public NodeResourcesTuning(NodeResources resources,
                                int threadsPerSearch,
-                               boolean combined) {
+                               double fractionOfMemoryReserved) {
         this.resources = resources;
         this.threadsPerSearch = threadsPerSearch;
-        this.combined = combined;
+        this.fractionOfMemoryReserved = fractionOfMemoryReserved;
     }
 
     @Override
@@ -122,12 +121,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     /** Returns the memory we can expect will be available for the content node processes */
     private double usableMemoryGb() {
         double usableMemoryGb = resources.memoryGb() - reservedMemoryGb;
-        if ( ! combined) {
-            return usableMemoryGb;
-        }
-
-        double fractionTakenByContainer = ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 1e-2;
-        return usableMemoryGb * (1 - fractionTakenByContainer);
+        return usableMemoryGb * (1 - fractionOfMemoryReserved);
     }
 
 }

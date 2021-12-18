@@ -19,6 +19,7 @@ import com.yahoo.vespa.model.PortAllocBridge;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.content.ContentNode;
 import com.yahoo.vespa.model.content.ResourceLimits;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
@@ -281,7 +282,7 @@ public class SearchNode extends AbstractService implements
         if (nodeResources.isPresent()) {
             var nodeResourcesTuning = new NodeResourcesTuning(nodeResources.get(),
                                                               tuning.map(Tuning::threadsPerSearch).orElse(1),
-                                                              combined);
+                                                              combined ? ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01 : 0.0);
             nodeResourcesTuning.getConfig(builder);
 
             tuning.ifPresent(t -> t.getConfig(builder));

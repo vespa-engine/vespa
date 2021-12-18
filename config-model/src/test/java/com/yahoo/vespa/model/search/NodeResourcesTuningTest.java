@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -31,8 +32,8 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_hwinfo_memory_size_is_set() {
-        assertEquals(24 * GB, configFromMemorySetting(24 + reservedMemoryGb, false).hwinfo().memory().size());
-        assertEquals(combinedFactor * 24 * GB, configFromMemorySetting(24 + reservedMemoryGb, true).hwinfo().memory().size(), 1000);
+        assertEquals(24 * GB, configFromMemorySetting(24 + reservedMemoryGb, 0).hwinfo().memory().size());
+        assertEquals(combinedFactor * 24 * GB, configFromMemorySetting(24 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).hwinfo().memory().size(), 1000);
     }
 
     @Test
@@ -153,14 +154,14 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
-        assertEquals(1*GB / 20, configFromMemorySetting(1 + reservedMemoryGb, false).summary().cache().maxbytes());
-        assertEquals(256*GB / 20, configFromMemorySetting(256 + reservedMemoryGb, false).summary().cache().maxbytes());
+        assertEquals(1*GB / 20, configFromMemorySetting(1 + reservedMemoryGb, 0).summary().cache().maxbytes());
+        assertEquals(256*GB / 20, configFromMemorySetting(256 + reservedMemoryGb, 0).summary().cache().maxbytes());
     }
 
     @Test
     public void require_that_summary_cache_memory_is_reduced_with_combined_cluster() {
-        assertEquals(combinedFactor * 1*GB / 20, configFromMemorySetting(1 + reservedMemoryGb, true).summary().cache().maxbytes(), 1000);
-        assertEquals(combinedFactor * 256*GB / 20, configFromMemorySetting(256 + reservedMemoryGb, true).summary().cache().maxbytes(), 1000);
+        assertEquals(combinedFactor * 1*GB / 20, configFromMemorySetting(1 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).summary().cache().maxbytes(), 1000);
+        assertEquals(combinedFactor * 256*GB / 20, configFromMemorySetting(256 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).summary().cache().maxbytes(), 1000);
     }
 
     @Test
@@ -169,12 +170,12 @@ public class NodeResourcesTuningTest {
     }
 
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int wantedMemoryGb) {
-        assertEquals(expFileSizeBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, false).summary().log().maxfilesize());
+        assertEquals(expFileSizeBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, 0).summary().log().maxfilesize());
     }
 
     private static void assertFlushStrategyMemory(long expMemoryBytes, int wantedMemoryGb) {
-        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, false).flush().memory().maxmemory());
-        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, false).flush().memory().each().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, 0).flush().memory().maxmemory());
+        assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, 0).flush().memory().each().maxmemory());
     }
 
     private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {
@@ -194,55 +195,55 @@ public class NodeResourcesTuningTest {
     }
 
     private static void assertWriteFilter(double expMemoryLimit, int memoryGb) {
-        assertEquals(expMemoryLimit, configFromMemorySetting(memoryGb, false).writefilter().memorylimit(), delta);
+        assertEquals(expMemoryLimit, configFromMemorySetting(memoryGb, 0).writefilter().memorylimit(), delta);
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().fastDisk(fastDisk), false);
+        return getConfig(new FlavorsConfig.Flavor.Builder().fastDisk(fastDisk), 0);
     }
 
     private static ProtonConfig configFromDiskSetting(int diskGb) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb), false);
+        return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb), 0);
     }
 
-    private static ProtonConfig configFromMemorySetting(double memoryGb, boolean combined) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), combined);
+    private static ProtonConfig configFromMemorySetting(double memoryGb, double fractionOfMemoryReserved) {
+        return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), fractionOfMemoryReserved);
     }
 
     private static ProtonConfig configFromMemorySetting(double memoryGb, ProtonConfig.Builder builder) {
         return getConfig(new FlavorsConfig.Flavor.Builder()
-                                 .minMainMemoryAvailableGb(memoryGb), builder, false);
+                                 .minMainMemoryAvailableGb(memoryGb), builder, 0);
     }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores), false);
+        return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores), 0);
     }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores, int numThreadsPerSearch) {
         return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores),
-                         new ProtonConfig.Builder(), numThreadsPerSearch, false);
+                         new ProtonConfig.Builder(), numThreadsPerSearch, 0);
     }
 
     private static ProtonConfig configFromEnvironmentType(boolean docker) {
         String environment = (docker ? "DOCKER_CONTAINER" : "undefined");
-        return getConfig(new FlavorsConfig.Flavor.Builder().environment(environment), false);
+        return getConfig(new FlavorsConfig.Flavor.Builder().environment(environment), 0);
     }
 
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, boolean combined) {
-        return getConfig(flavorBuilder, new ProtonConfig.Builder(), combined);
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, double fractionOfMemoryReserved) {
+        return getConfig(flavorBuilder, new ProtonConfig.Builder(), fractionOfMemoryReserved);
     }
 
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, boolean combined) {
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, double fractionOfMemoryReserved) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), 1, combined);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), 1, fractionOfMemoryReserved);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
-                                          int numThreadsPerSearch, boolean combined) {
+                                          int numThreadsPerSearch, double fractionOfMemoryReserved) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), numThreadsPerSearch, combined);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), numThreadsPerSearch, fractionOfMemoryReserved);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
