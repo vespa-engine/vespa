@@ -67,8 +67,8 @@ public class JRTConfigRequester implements RequestWaiter {
         this.scheduler = scheduler;
         this.connectionPool = connectionPool;
         this.timingValues = timingValues;
-        // Adjust so that we wait 1 second with logging warning in case there are some errors just when starting up
-        timeForLastLogWarning = Instant.now().minus(delayBetweenWarnings.plus(Duration.ofSeconds(5)));
+        // Adjust so that we wait 5 seconds with logging warning in case there are some errors just when starting up
+        timeForLastLogWarning = Instant.now().minus(delayBetweenWarnings).plus(Duration.ofSeconds(5));
     }
 
     /**
