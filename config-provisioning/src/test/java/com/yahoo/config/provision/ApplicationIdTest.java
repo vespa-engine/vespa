@@ -7,8 +7,6 @@ import com.yahoo.cloud.config.ApplicationIdConfig;
 import com.yahoo.test.TotalOrderTester;
 import org.junit.Test;
 import com.google.common.testing.EqualsTester;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.Matchers.*;
 
 /**
  * @author Ulf Lilleengen
@@ -53,9 +51,9 @@ public class ApplicationIdTest {
         ApplicationId id1 = applicationId("foo");
         ApplicationId id2 = applicationId("bar");
         ApplicationId id3 = idFrom("tenant", "baz", "bim");
-        assertThat(id1.serializedForm(), is("default:foo:default"));
-        assertThat(id2.serializedForm(), is("default:bar:default"));
-        assertThat(id3.serializedForm(), is("tenant:baz:bim"));
+        assertEquals("default:foo:default", id1.serializedForm());
+        assertEquals("default:bar:default", id2.serializedForm());
+        assertEquals("tenant:baz:bim", id3.serializedForm());
     }
 
     @Test
@@ -63,20 +61,20 @@ public class ApplicationIdTest {
         ApplicationId id1 = applicationId("foo");
         ApplicationId id2 = idFrom("bar", "baz", "default");
         ApplicationId id3 = idFrom("tenant", "baz", "bim");
-        assertThat(id1.toShortString(), is("default.foo"));
-        assertThat(id1.toFullString(), is("default.foo.default"));
-        assertThat(id2.toShortString(), is("bar.baz"));
-        assertThat(id2.toFullString(), is("bar.baz.default"));
-        assertThat(id3.toShortString(), is("tenant.baz.bim"));
-        assertThat(id3.toFullString(), is("tenant.baz.bim"));
+        assertEquals("default.foo", id1.toShortString());
+        assertEquals("default.foo.default", id1.toFullString());
+        assertEquals("bar.baz", id2.toShortString());
+        assertEquals("bar.baz.default", id2.toFullString());
+        assertEquals("tenant.baz.bim", id3.toShortString());
+        assertEquals("tenant.baz.bim", id3.toFullString());
     }
 
     @Test
     public void require_that_idstring_can_be_parsed() {
         ApplicationId id = ApplicationId.fromSerializedForm("ten:foo:bim");
-        assertThat(id.tenant().value(), is("ten"));
-        assertThat(id.application().value(), is("foo"));
-        assertThat(id.instance().value(), is("bim"));
+        assertEquals("ten", id.tenant().value());
+        assertEquals("foo", id.application().value());
+        assertEquals("bim", id.instance().value());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -87,8 +85,8 @@ public class ApplicationIdTest {
     @Test
     public void require_that_defaults_are_given() {
         ApplicationId id1 = applicationId("foo");
-        assertThat(id1.tenant().value(), is("default"));
-        assertThat(id1.instance().value(), is("default"));
+        assertEquals("default", id1.tenant().value());
+        assertEquals("default", id1.instance().value());
     }
 
     @Test

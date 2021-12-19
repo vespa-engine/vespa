@@ -4,10 +4,9 @@ package com.yahoo.config.provision;
 import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -29,8 +28,8 @@ public abstract class IdentifierTestBase<ID_TYPE> {
         assertTrue(isDefault(def));
         assertTrue(isDefault(def2));
         assertFalse(isDefault(notdef));
-        assertThat(def, is(def2));
-        assertThat(def2, is(not(notdef)));
+        assertEquals(def, def2);
+        assertNotEquals(def2, notdef);
     }
 
     @Test
