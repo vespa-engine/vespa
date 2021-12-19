@@ -31,7 +31,7 @@ public class MetricsParser {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    static void parse(String data, Consumer consumer) throws IOException {
+    public static void parse(String data, Consumer consumer) throws IOException {
         parse(jsonMapper.createParser(data), consumer);
     }
 
