@@ -3,13 +3,8 @@ package com.yahoo.searchlib.expression;
 
 import com.yahoo.vespa.objects.ObjectDumper;
 import org.junit.Test;
-
-import java.util.regex.Pattern;
-
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -20,17 +15,17 @@ public class NullResultNodeTestCase {
     @Test
     public void testNullResultNode() {
         NullResultNode nullRes = new NullResultNode();
-        assertThat(nullRes.onGetClassId(), is(NullResultNode.classId));
-        assertThat(nullRes.getInteger(), is(0l));
-        assertThat(nullRes.getString(), is(""));
-        assertThat(nullRes.getRaw(), is(new byte[0]));
-        assertEquals(nullRes.getFloat(), 0.0, 0.01);
-        assertThat(nullRes.onCmp(new NullResultNode()), is(0));
-        assertThat(nullRes.onCmp(new IntegerResultNode(0)), is(not(0)));
+        assertEquals(NullResultNode.classId, nullRes.onGetClassId());
+        assertEquals(0, nullRes.getInteger());
+        assertTrue(nullRes.getString().isEmpty());
+        assertEquals(0, nullRes.getRaw().length);
+        assertEquals(0.0, nullRes.getFloat(), 0.01);
+        assertEquals(0, nullRes.onCmp(new NullResultNode()));
+        assertNotEquals(0, nullRes.onCmp(new IntegerResultNode(0)));
         ObjectDumper dumper = new ObjectDumper();
         nullRes.visitMembers(dumper);
         assertTrue(dumper.toString().contains("result: <NULL>"));
         nullRes.set(new IntegerResultNode(3));
-        assertThat(nullRes.onCmp(new IntegerResultNode(3)), is(not(0)));
+        assertNotEquals(0, nullRes.onCmp(new IntegerResultNode(3)));
     }
 }

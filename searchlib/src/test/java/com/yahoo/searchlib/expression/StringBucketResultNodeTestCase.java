@@ -2,9 +2,7 @@
 package com.yahoo.searchlib.expression;
 
 import org.junit.Test;
-
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -22,8 +20,8 @@ public class StringBucketResultNodeTestCase extends ResultNodeTest {
     @Test
     public void testRange() {
         StringBucketResultNode bucket = new StringBucketResultNode("a", "d");
-        assertThat(bucket.getFrom(), is("a"));
-        assertThat(bucket.getTo(), is("d"));
+        assertEquals("a", bucket.getFrom());
+        assertEquals("d", bucket.getTo());
         assertTrue(dumpNode(bucket).contains("value: 'a'"));
         assertTrue(dumpNode(bucket).contains("value: 'd'"));
         assertCorrectSerialization(bucket, new StringBucketResultNode());

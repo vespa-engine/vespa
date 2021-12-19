@@ -10,9 +10,8 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
 import static com.yahoo.container.plugin.BundleTest.findBundleJar;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies that the 'useArtifactVersionForExportPackages' setting for the bundle-plugin works as intended.
@@ -42,16 +41,16 @@ public class ExportPackageVersionTest {
         String expectedExport = "ai.vespa.noversion;version=" + bundleVersion;
 
         String exportPackage = mainAttributes.getValue("Export-Package");
-        assertThat(exportPackage, containsString(expectedExport));
+        assertTrue(exportPackage.contains(expectedExport));
 
         // Verify that there is no qualifier
-        assertThat(exportPackage, not(containsString(expectedExport + ".")));
+        assertFalse(exportPackage.contains(expectedExport + "."));
     }
 
     @Test
     public void explicit_version_in_ExportPackage_annotation_overrides_artifact_version() {
         String exportPackage = mainAttributes.getValue("Export-Package");
-        assertThat(exportPackage, containsString("ai.vespa.explicitversion;version=2.4.6.RELEASE"));
+        assertTrue(exportPackage.contains("ai.vespa.explicitversion;version=2.4.6.RELEASE"));
     }
 
     @Test
@@ -60,13 +59,13 @@ public class ExportPackageVersionTest {
 
         // TODO: This test should have checked for a fixed version of the dependency bundle, different than the main bundle version.
         //       See comment in the dependency bundle's pom.xml for why this is not the case.
-        assertThat(exportPackage, containsString("ai.vespa.noversion_dep;version=" + bundleVersion));
+        assertTrue(exportPackage.contains("ai.vespa.noversion_dep;version=" + bundleVersion));
     }
 
     @Test
     public void explicit_version_in_ExportPackage_annotation_overrides_artifact_version_of_compile_scoped_dependency() {
         String exportPackage = mainAttributes.getValue("Export-Package");
-        assertThat(exportPackage, containsString("ai.vespa.explicitversion_dep;version=3.6.9.RELEASE"));
+        assertTrue(exportPackage.contains("ai.vespa.explicitversion_dep;version=3.6.9.RELEASE"));
     }
 
 }

@@ -12,28 +12,22 @@ import com.yahoo.container.plugin.classanalysis.sampleclasses.MethodAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.MethodInvocation;
 import com.yahoo.osgi.annotation.ExportPackage;
 import com.yahoo.osgi.annotation.Version;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import javax.security.auth.login.LoginException;
 import java.awt.Image;
 import java.awt.image.ImagingOpException;
 import java.awt.image.Kernel;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.analyzeClass;
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.classFile;
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.name;
-import static com.yahoo.container.plugin.classanalysis.TestUtilities.throwableMessage;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests that analysis of class files works.
@@ -45,128 +39,127 @@ public class AnalyzeClassTest {
 
     @Test
     public void require_that_full_class_name_is_returned() {
-        assertThat(analyzeClass(Base.class).getName(), is(name(Base.class)));
+        assertEquals(name(Base.class), analyzeClass(Base.class).getName());
     }
 
     @Test
     public void require_that_base_class_is_included() {
-        assertThat(analyzeClass(Derived.class).getReferencedClasses(), hasItem(name(Base.class)));
+        assertTrue(analyzeClass(Derived.class).getReferencedClasses().contains(name(Base.class)));
     }
 
     @Test
     public void require_that_implemented_interfaces_are_included() {
-        assertThat(analyzeClass(Base.class).getReferencedClasses(),
-                allOf(hasItem(name(Interface1.class)), hasItem(name(Interface2.class))));
+        assertTrue(analyzeClass(Base.class).getReferencedClasses().containsAll(
+                List.of(name(Interface1.class), name(Interface2.class))));
     }
 
     @Test
     public void require_that_interface_can_be_analyzed() {
         ClassFileMetaData classMetaData = analyzeClass(Interface1.class);
 
-        assertThat(classMetaData.getName(), is(name(Interface1.class)));
-        assertThat(classMetaData.getReferencedClasses(), hasItem(name(Interface2.class)));
+        assertEquals(name(Interface1.class), classMetaData.getName());
+        assertTrue(classMetaData.getReferencedClasses().contains(name(Interface2.class)));
     }
 
     @Test
     public void require_that_return_type_is_included() {
-        assertThat(analyzeClass(Interface1.class).getReferencedClasses(), hasItem(name(Image.class)));
+        assertTrue(analyzeClass(Interface1.class).getReferencedClasses().contains(name(Image.class)));
     }
 
     @Test
     public void require_that_parameters_are_included() {
-        assertThat(analyzeClass(Interface1.class).getReferencedClasses(), hasItem(name(Kernel.class)));
+        assertTrue(analyzeClass(Interface1.class).getReferencedClasses().contains(name(Kernel.class)));
     }
 
     @Test
     public void require_that_exceptions_are_included() {
-        assertThat(analyzeClass(Interface1.class).getReferencedClasses(), hasItem(name(ImagingOpException.class)));
+        assertTrue(analyzeClass(Interface1.class).getReferencedClasses().contains(name(ImagingOpException.class)));
     }
 
     @Test
     public void require_that_basic_types_ignored() {
-        assertThat(analyzeClass(Interface1.class).getReferencedClasses(),
-                   not(Matchers.<Iterable<? super String>>anyOf(hasItem("int"), hasItem("float"))));
+        List.of("int", "float").forEach(type ->
+                assertFalse(analyzeClass(Interface1.class).getReferencedClasses().contains(type)));
     }
 
     @Test
     public void require_that_arrays_of_basic_types_ignored() {
-        assertThat(analyzeClass(Interface1.class).getReferencedClasses(),
-                   not(Matchers.<Iterable<? super String>>anyOf(hasItem("int[]"), hasItem("int[][]"))));
+        List.of("int[]", "int[][]").forEach(type ->
+                assertFalse(analyzeClass(Interface1.class).getReferencedClasses().contains(type)));
     }
 
     @Test
     public void require_that_instance_field_types_are_included() {
-        assertThat(analyzeClass(Fields.class).getReferencedClasses(), hasItem(name(String.class)));
+        assertTrue(analyzeClass(Fields.class).getReferencedClasses().contains(name(String.class)));
     }
 
     @Test
     public void require_that_static_field_types_are_included() {
-        assertThat(analyzeClass(Fields.class).getReferencedClasses(), hasItem(name(java.util.List.class)));
+        assertTrue(analyzeClass(Fields.class).getReferencedClasses().contains(name(java.util.List.class)));
     }
 
     @Test
     public void require_that_field_annotation_is_included() {
-        assertThat(analyzeClass(Fields.class).getReferencedClasses(), hasItem(name(DummyAnnotation.class)));
+        assertTrue(analyzeClass(Fields.class).getReferencedClasses().contains(name(DummyAnnotation.class)));
     }
 
     @Test
     public void require_that_class_annotation_is_included() {
-        assertThat(analyzeClass(ClassAnnotation.class).getReferencedClasses(), hasItem(name(DummyAnnotation.class)));
+        assertTrue(analyzeClass(ClassAnnotation.class).getReferencedClasses().contains(name(DummyAnnotation.class)));
     }
 
     @Test
     public void require_that_method_annotation_is_included() {
-        assertThat(analyzeClass(MethodAnnotation.class).getReferencedClasses(), hasItem(name(DummyAnnotation.class)));
+        assertTrue(analyzeClass(MethodAnnotation.class).getReferencedClasses().contains(name(DummyAnnotation.class)));
     }
 
     @Test
     public void require_that_export_package_annotations_are_ignored() {
-        assertThat(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info"))
-                .getReferencedClasses(), not(Matchers.<Iterable<? super String>>anyOf(
-                        hasItem(name(ExportPackage.class)), hasItem(name(Version.class)))));
+        List.of(ExportPackage.class, Version.class).forEach(type ->
+                assertFalse(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info"))
+                        .getReferencedClasses().contains(type)));
     }
 
     @Test
     public void require_that_export_annotations_are_processed() {
-        assertThat(
-                Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info")).getExportPackage(),
-                is(Optional.of(new ExportPackageAnnotation(3, 1, 4, "TEST_QUALIFIER-2"))));
+        assertEquals(Optional.of(new ExportPackageAnnotation(3, 1, 4, "TEST_QUALIFIER-2")),
+                Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info")).getExportPackage());
     }
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void require_that_export_annotations_are_validated() {
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(containsString("invalid/package-info"));
-        expectedException.expectCause(throwableMessage(containsString("qualifier must follow the format")));
-        expectedException.expectCause(throwableMessage(containsString("'EXAMPLE INVALID QUALIFIER'")));
 
-        Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.invalid.package-info"));
+        try {
+            Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.invalid.package-info"));
+            fail();
+        } catch (RuntimeException e) {
+            assertTrue(e.getMessage().contains("invalid/package-info"));
+            assertTrue(e.getCause().getMessage().contains("qualifier must follow the format"));
+            assertTrue(e.getCause().getMessage().contains("'EXAMPLE INVALID QUALIFIER'"));
+        }
     }
 
     @Test
     public void require_that_catch_clauses_are_included() {
-        assertThat(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.CatchException"))
-                .getReferencedClasses(), hasItem(name(LoginException.class)));
+        assertTrue(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.CatchException"))
+                .getReferencedClasses().contains(name(LoginException.class)));
     }
 
     @Test
     public void require_that_class_references_are_included() {
-        assertThat(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.ClassReference"))
-                .getReferencedClasses(), hasItem(name(Interface1.class)));
+        assertTrue(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.ClassReference"))
+                .getReferencedClasses().contains(name(Interface1.class)));
     }
 
     @Test
     public void require_that_return_type_of_method_invocations_are_included() {
-        assertThat(analyzeClass(MethodInvocation.class).getReferencedClasses(), hasItem(name(Image.class)));
+        assertTrue(analyzeClass(MethodInvocation.class).getReferencedClasses().contains(name(Image.class)));
     }
 
     @Test
     public void require_that_attributes_are_included() {
         //Uses com/coremedia/iso/Utf8.class from com.googlecode.mp4parser:isoparser:1.0-RC-1
-        assertThat(Analyze.analyzeClass(classFile("class/Utf8")).getReferencedClasses(),
-                hasItem("org.aspectj.weaver.MethodDeclarationLineNumber"));
+        assertTrue(Analyze.analyzeClass(classFile("class/Utf8")).getReferencedClasses()
+                .contains("org.aspectj.weaver.MethodDeclarationLineNumber"));
     }
 }

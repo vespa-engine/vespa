@@ -3,17 +3,13 @@ package com.yahoo.container.plugin.osgi;
 
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.osgi.ExportPackages.Parameter;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Tony Vaagenes
@@ -26,41 +22,41 @@ public class ExportPackageParserTest {
     public void require_that_package_is_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("sample.exported.package");
 
-        assertThat(exports.size(), is(1));
-        assertThat(exports.get(0).getParameters(), empty());
-        assertThat(exports.get(0).getPackageNames(), contains("sample.exported.package"));
+        assertEquals(1, exports.size());
+        assertTrue(exports.get(0).getParameters().isEmpty());
+        assertTrue(exports.get(0).getPackageNames().contains("sample.exported.package"));
     }
 
     @Test
     public void require_that_version_is_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("com.yahoo.sample.exported.package;version=\"1.2.3.sample\"");
 
-        assertThat(exports.size(), is(1));
+        assertEquals(1, exports.size());
         Export export = exports.get(0);
-        assertThat(export.getPackageNames(), contains("com.yahoo.sample.exported.package"));
-        assertThat(export.getParameters(), contains(parameterMatching(versionParameter)));
+        assertTrue(export.getPackageNames().contains("com.yahoo.sample.exported.package"));
+        assertTrue(export.getParameters().contains(versionParameter));
     }
 
     @Test
     public void require_that_multiple_packages_with_same_parameters_is_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("exported.package1;exported.package2;version=\"1.2.3.sample\"");
 
-        assertThat(exports.size(), is(1));
+        assertEquals(1, exports.size());
         Export export = exports.get(0);
-        assertThat(export.getPackageNames(), contains("exported.package1", "exported.package2"));
-        assertThat(export.getParameters(), contains(parameterMatching(versionParameter)));
+        assertTrue(export.getPackageNames().containsAll(List.of("exported.package1", "exported.package2")));
+        assertTrue(export.getParameters().contains(versionParameter));
     }
 
     @Test
     public void require_that_spaces_between_separators_are_allowed() {
         List<Export> exports = ExportPackageParser.parseExports("exported.package1  ,  exported.package2 ; version   = \"1.2.3.sample\"  ");
 
-        assertThat(exports.size(), is(2));
+        assertEquals(2, exports.size());
         Export export = exports.get(0);
-        assertThat(export.getPackageNames(), contains("exported.package1"));
+        assertTrue(export.getPackageNames().contains("exported.package1"));
         export = exports.get(1);
-        assertThat(export.getPackageNames(), contains("exported.package2"));
-        assertThat(export.getParameters(), contains(parameterMatching(versionParameter)));
+        assertTrue(export.getPackageNames().contains("exported.package2"));
+        assertTrue(export.getParameters().contains(versionParameter));
     }
 
     @SuppressWarnings("unchecked")
@@ -68,39 +64,39 @@ public class ExportPackageParserTest {
     public void require_that_multiple_parameters_for_a_package_is_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("exported.package;version=\"1.2.3.sample\";param2=true");
 
-        assertThat(exports.size(), is(1));
+        assertEquals(1, exports.size());
         Export export = exports.get(0);
-        assertThat(export.getParameters(), contains(parameterMatching(versionParameter), parameterMatching("param2", "true")));
+        assertTrue(export.getParameters().containsAll(List.of(versionParameter, new Parameter("param2", "true"))));
     }
 
     @Test
     public void require_that_multiple_exports_are_parsed_correctly() {
         List<Export> exports = ExportPackageParser.parseExports("exported.package1,exported.package2");
-        assertThat(exports.size(), is(2));
+        assertEquals(2, exports.size());
         Export export = exports.get(0);
-        assertThat(export.getPackageNames(), contains("exported.package1"));
-        assertThat(export.getParameters(), empty());
+        assertTrue(export.getPackageNames().contains("exported.package1"));
+        assertTrue(export.getParameters().isEmpty());
         export = exports.get(1);
-        assertThat(export.getPackageNames(), contains("exported.package2"));
-        assertThat(export.getParameters(), empty());
+        assertTrue(export.getPackageNames().contains("exported.package2"));
+        assertTrue(export.getParameters().isEmpty());
 
         exports = ExportPackageParser.parseExports("exported.package1;version=\"1.2.3.sample\",exported.package2");
-        assertThat(exports.size(), is(2));
+        assertEquals(2, exports.size());
         export = exports.get(0);
-        assertThat(export.getPackageNames(), contains("exported.package1"));
-        assertThat(export.getParameters(), contains(parameterMatching(versionParameter)));
+        assertTrue(export.getPackageNames().contains("exported.package1"));
+        assertTrue(export.getParameters().contains(versionParameter));
         export = exports.get(1);
-        assertThat(export.getPackageNames(), contains("exported.package2"));
-        assertThat(export.getParameters(), empty());
+        assertTrue(export.getPackageNames().contains("exported.package2"));
+        assertTrue(export.getParameters().isEmpty());
 
         exports = ExportPackageParser.parseExports("exported.package1,exported.package2;version=\"1.2.3.sample\"");
-        assertThat(exports.size(), is(2));
+        assertEquals(2, exports.size());
         export = exports.get(0);
-        assertThat(export.getPackageNames(), contains("exported.package1"));
-        assertThat(export.getParameters(), empty());
+        assertTrue(export.getPackageNames().contains("exported.package1"));
+        assertTrue(export.getParameters().isEmpty());
         export = exports.get(1);
-        assertThat(export.getPackageNames(), contains("exported.package2"));
-        assertThat(export.getParameters(), contains(parameterMatching(versionParameter)));
+        assertTrue(export.getPackageNames().contains("exported.package2"));
+        assertTrue(export.getParameters().contains(versionParameter));
     }
 
     // TODO: MAVEN_OPTS are not propagated by the maven-surefire-plugin. Either try to fix the underlying problem or set -Xss in plugin config.
@@ -278,21 +274,4 @@ public class ExportPackageParserTest {
         ExportPackageParser.parseExports(exportHeader);
     }
 
-    private static TypeSafeMatcher<Parameter> parameterMatching(final String name, final String value) {
-        return new TypeSafeMatcher<Parameter>() {
-            @Override
-            protected boolean matchesSafely(Parameter parameter) {
-                return parameter.getName().equals(name) && parameter.getValue().equals(value);
-            }
-
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("Parameter with name ").appendValue(name).appendText(" with value ").appendValue(value);
-            }
-        };
-    }
-
-    private static TypeSafeMatcher<Parameter> parameterMatching(final Parameter param) {
-        return parameterMatching(param.getName(), param.getValue());
-    }
 }

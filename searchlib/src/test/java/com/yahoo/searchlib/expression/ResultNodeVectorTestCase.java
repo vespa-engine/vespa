@@ -1,14 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.expression;
 
-import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Test;
-
-import java.util.List;
-
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -18,12 +13,12 @@ import static org.junit.Assert.assertTrue;
 public class ResultNodeVectorTestCase extends ResultNodeTest {
     @Test
     public void testClassId() {
-        assertThat(new IntegerResultNodeVector().getClassId(), is(IntegerResultNodeVector.classId));
-        assertThat(new Int32ResultNodeVector().getClassId(), is(Int32ResultNodeVector.classId));
-        assertThat(new Int16ResultNodeVector().getClassId(), is(Int16ResultNodeVector.classId));
-        assertThat(new Int8ResultNodeVector().getClassId(), is(Int8ResultNodeVector.classId));
-        assertThat(new FloatResultNodeVector().getClassId(), is(FloatResultNodeVector.classId));
-        assertThat(new BoolResultNodeVector().getClassId(), is(BoolResultNodeVector.classId));
+        assertEquals(IntegerResultNodeVector.classId, new IntegerResultNodeVector().getClassId());
+        assertEquals(Int32ResultNodeVector.classId, new Int32ResultNodeVector().getClassId());
+        assertEquals(Int16ResultNodeVector.classId, new Int16ResultNodeVector().getClassId());
+        assertEquals(Int8ResultNodeVector.classId, new Int8ResultNodeVector().getClassId());
+        assertEquals(FloatResultNodeVector.classId, new FloatResultNodeVector().getClassId());
+        assertEquals(BoolResultNodeVector.classId, new BoolResultNodeVector().getClassId());
     }
 
     @Test
@@ -32,37 +27,37 @@ public class ResultNodeVectorTestCase extends ResultNodeTest {
         b.add(new BoolResultNode(true));
         b.add(new BoolResultNode(false));
         b.add((ResultNode)new BoolResultNode(false));
-        assertThat(b.getVector().size(), is(3));
+        assertEquals(3, b.getVector().size());
 
         Int8ResultNodeVector i8 = new Int8ResultNodeVector();
         i8.add(new Int8ResultNode((byte)9));
         i8.add(new Int8ResultNode((byte)2));
         i8.add((ResultNode)new Int8ResultNode((byte)5));
-        assertThat(i8.getVector().size(), is(3));
+        assertEquals(3, i8.getVector().size());
 
         Int16ResultNodeVector i16 = new Int16ResultNodeVector();
         i16.add(new Int16ResultNode((short)9));
         i16.add(new Int16ResultNode((short)2));
         i16.add((ResultNode)new Int16ResultNode((short)5));
-        assertThat(i16.getVector().size(), is(3));
+        assertEquals(3, i16.getVector().size());
 
         Int32ResultNodeVector i32 = new Int32ResultNodeVector();
         i32.add(new Int32ResultNode(9));
         i32.add(new Int32ResultNode(2));
         i32.add((ResultNode)new Int32ResultNode(5));
-        assertThat(i32.getVector().size(), is(3));
+        assertEquals(3, i32.getVector().size());
 
         IntegerResultNodeVector ieger = new IntegerResultNodeVector();
         ieger.add(new IntegerResultNode(9));
         ieger.add(new IntegerResultNode(2));
         ieger.add((ResultNode)new IntegerResultNode(5));
-        assertThat(ieger.getVector().size(), is(3));
+        assertEquals(3, ieger.getVector().size());
 
         FloatResultNodeVector floatvec = new FloatResultNodeVector();
         floatvec.add(new FloatResultNode(3.3));
         floatvec.add(new FloatResultNode(3.4));
         floatvec.add((ResultNode)new FloatResultNode(3.5));
-        assertThat(floatvec.getVector().size(), is(3));
+        assertEquals(3, floatvec.getVector().size());
     }
 
     @Test
@@ -155,11 +150,11 @@ public class ResultNodeVectorTestCase extends ResultNodeTest {
     }
 
     private void assertVecEqual(ResultNodeVector vec1, ResultNodeVector vec2) {
-        assertThat(vec1.onCmp(vec2), is(0));
+        assertEquals(0, vec1.onCmp(vec2));
     }
 
     private void assertClassCmp(ResultNodeVector add) {
-        assertThat(add.onCmp(new NullResultNode()), is(not(0)));
+        assertNotEquals(0, add.onCmp(new NullResultNode()));
     }
 
     @Test
