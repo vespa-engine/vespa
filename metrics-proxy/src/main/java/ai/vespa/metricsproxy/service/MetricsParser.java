@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
@@ -26,7 +25,6 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
  * @author Jo Kristian Bergum
  */
 public class MetricsParser {
-    private final static Logger log = Logger.getLogger(MetricsParser.class.getName());
     public interface Consumer {
         void consume(Metric metric);
     }
