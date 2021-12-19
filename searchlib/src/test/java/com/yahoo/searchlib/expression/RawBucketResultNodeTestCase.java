@@ -3,9 +3,8 @@ package com.yahoo.searchlib.expression;
 
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -24,8 +23,8 @@ public class RawBucketResultNodeTestCase extends ResultNodeTest {
     public void testRange() {
         RawBucketResultNode bucket = new RawBucketResultNode(new RawResultNode(new byte[]{6, 9}), new RawResultNode(new byte[]{9, 6}));
         assertFalse(bucket.empty());
-        assertThat(bucket.getFrom(), is(new byte[]{6, 9}));
-        assertThat(bucket.getTo(), is(new byte[]{9, 6}));
+        assertArrayEquals(new byte[]{6, 9}, bucket.getFrom());
+        assertArrayEquals(new byte[]{9, 6}, bucket.getTo());
         assertCorrectSerialization(bucket, new RawBucketResultNode());
         assertTrue(dumpNode(bucket).contains("value: RawData(data = [6, 9])"));
         assertTrue(dumpNode(bucket).contains("value: RawData(data = [9, 6])"));

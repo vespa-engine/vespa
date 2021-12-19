@@ -11,13 +11,12 @@ import com.yahoo.container.plugin.classanalysis.sampleclasses.Methods;
 import org.junit.Test;
 
 import java.io.PrintStream;
+import java.util.List;
 
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.analyzeClass;
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.name;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests that classes used in method bodies are included in the imports list.
@@ -27,47 +26,46 @@ import static org.junit.Assert.assertThat;
 public class AnalyzeMethodBodyTest {
     @Test
     public void require_that_class_of_locals_are_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(), hasItem(name(Base.class)));
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Base.class)));
     }
 
     @Test
     public void require_that_class_of_locals_in_static_method_are_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(), hasItem(name(Derived.class)));
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Derived.class)));
     }
 
     @Test
     public void require_that_field_references_are_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(),
-                allOf(hasItem(name(java.util.List.class)), hasItem(name(Fields.class))));
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().containsAll(List.of(name(java.util.List.class), name(Fields.class))));
     }
 
     @Test
     public void require_that_class_owning_field_is_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(), hasItem(name(System.class)));
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(System.class)));
     }
 
     @Test
     public void require_that_class_containing_method_is_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(), hasItem(name(PrintStream.class)));
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(PrintStream.class)));
     }
 
     @Test
     public void require_that_element_of_new_multidimensional_array_is_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(), hasItem(name(Interface1.class)));
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Interface1.class)));
     }
 
     @Test
     public void require_that_basic_arrays_are_not_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(), not(hasItem("int[]")));
+        assertFalse(analyzeClass(Methods.class).getReferencedClasses().contains("int[]"));
     }
 
     @Test
     public void require_that_container_generic_parameters_are_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(), hasItem(name(Dummy.class)));
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Dummy.class)));
     }
 
     @Test
     public void require_that_class_owning_method_handler_is_included() {
-        assertThat(analyzeClass(Methods.class).getReferencedClasses(), hasItem(name(ClassWithMethod.class)));
+        assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(ClassWithMethod.class)));
     }
 }

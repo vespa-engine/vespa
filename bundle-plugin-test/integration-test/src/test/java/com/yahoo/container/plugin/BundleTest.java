@@ -18,10 +18,8 @@ import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -35,7 +33,7 @@ public class BundleTest {
     // If bundle-plugin-test is compiled in a mvn command that also built dependencies, e.g. jrt,
     // the artifact is jrt.jar, otherwise the installed and versioned artifact
     // is used: jrt-7-SNAPSHOT.jar or e.g. jrt-7.123.45.jar.
-    private static String snapshotOrVersionOrNone = "(-\\d+((-SNAPSHOT)|((\\.\\d+(\\.\\d+)?)?))?)?\\.jar";
+    private static final String snapshotOrVersionOrNone = "(-\\d+((-SNAPSHOT)|((\\.\\d+(\\.\\d+)?)?))?)?\\.jar";
 
     private JarFile jarFile;
     private Attributes mainAttributes;
@@ -67,12 +65,12 @@ public class BundleTest {
 
         // Because of snapshot builds, we can only verify the major version.
         int majorBundleVersion = Integer.valueOf(bundleVersion.substring(0, bundleVersion.indexOf('.')));
-        assertThat(majorBundleVersion, is(VespaVersion.major));
+        assertEquals(VespaVersion.major, majorBundleVersion);
     }
 
     @Test
     public void require_that_bundle_symbolic_name_matches_pom_artifactId() {
-        assertThat(mainAttributes.getValue("Bundle-SymbolicName"), is("main"));
+        assertEquals("main", mainAttributes.getValue("Bundle-SymbolicName"));
     }
 
     @Test
@@ -80,29 +78,29 @@ public class BundleTest {
         String importPackage = mainAttributes.getValue("Import-Package");
 
         // From SimpleSearcher
-        assertThat(importPackage, containsString("com.yahoo.prelude.hitfield"));
+        assertTrue(importPackage.contains("com.yahoo.prelude.hitfield"));
 
         // From SimpleSearcher2
-        assertThat(importPackage, containsString("com.yahoo.processing"));
-        assertThat(importPackage, containsString("com.yahoo.metrics.simple"));
-        assertThat(importPackage, containsString("com.google.inject"));
+        assertTrue(importPackage.contains("com.yahoo.processing"));
+        assertTrue(importPackage.contains("com.yahoo.metrics.simple"));
+        assertTrue(importPackage.contains("com.google.inject"));
     }
 
     @Test
     public void require_that_manifest_contains_manual_imports() {
         String importPackage = mainAttributes.getValue("Import-Package");
 
-        assertThat(importPackage, containsString("manualImport.withoutVersion"));
-        assertThat(importPackage, containsString("manualImport.withVersion;version=\"12.3.4\""));
+        assertTrue(importPackage.contains("manualImport.withoutVersion"));
+        assertTrue(importPackage.contains("manualImport.withVersion;version=\"12.3.4\""));
 
         for (int i=1; i<=2; ++i)
-            assertThat(importPackage, containsString("multiple.packages.with.the.same.version" + i + ";version=\"[1,2)\""));
+            assertTrue(importPackage.contains("multiple.packages.with.the.same.version" + i + ";version=\"[1,2)\""));
     }
 
     @Test
     public void require_that_manifest_contains_exports() {
         String exportPackage = mainAttributes.getValue("Export-Package");
-        assertThat(exportPackage, containsString("com.yahoo.test;version=1.2.3.RELEASE"));
+        assertTrue(exportPackage.contains("com.yahoo.test;version=1.2.3.RELEASE"));
     }
 
     @Test
@@ -110,7 +108,7 @@ public class BundleTest {
     //       generated bundle. (It's compile scoped in pom.xml to be added to the bundle-cp.)
     public void require_that_manifest_contains_bundle_class_path() {
         String bundleClassPath = mainAttributes.getValue("Bundle-ClassPath");
-        assertThat(bundleClassPath, containsString(".,"));
+        assertTrue(bundleClassPath.contains(".,"));
 
         Pattern jrtPattern = Pattern.compile("dependencies/jrt" + snapshotOrVersionOrNone);
         assertTrue("Bundle class path did not contain jrt.", jrtPattern.matcher(bundleClassPath).find());
@@ -139,7 +137,7 @@ public class BundleTest {
     @Test
     public void require_that_web_inf_url_is_propagated_to_the_manifest() {
         String webInfUrl = mainAttributes.getValue("WebInfUrl");
-        assertThat(webInfUrl, containsString("/WEB-INF/web.xml"));
+        assertTrue(webInfUrl.contains("/WEB-INF/web.xml"));
     }
 
 }

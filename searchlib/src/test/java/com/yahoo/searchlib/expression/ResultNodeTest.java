@@ -4,8 +4,7 @@ package com.yahoo.searchlib.expression;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.ObjectDumper;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -24,7 +23,7 @@ public class ResultNodeTest {
         from.serialize(buffer);
         buffer.flip();
         to.deserialize(buffer);
-        assertThat(from.onCmp(to), is(0));
+        assertEquals(0, from.onCmp(to));
     }
 
     public void assertOrder(ResultNode a, ResultNode b, ResultNode c) {
