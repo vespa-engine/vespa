@@ -40,7 +40,7 @@ public class MetricsFetcherTest {
         String jsonData = TestUtil.getFileContents("metrics-state.json");
         Metrics metrics = fetch(jsonData);
         assertEquals(10, metrics.size());
-        assertEquals(28, getMetric("query_hits.count", metrics).getValue());
+        assertEquals(28L, getMetric("query_hits.count", metrics).getValue());
         assertEquals(0.4667, getMetric("queries.rate", metrics).getValue());
         assertEquals(Instant.ofEpochSecond(1334134700L), metrics.getTimeStamp());
     }
