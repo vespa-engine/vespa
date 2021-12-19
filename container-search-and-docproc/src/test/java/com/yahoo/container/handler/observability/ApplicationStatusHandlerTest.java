@@ -5,7 +5,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.processing.Processor;
@@ -17,11 +16,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
-import java.util.concurrent.Executors;
 
 import static com.yahoo.container.jdisc.JdiscBindingsConfig.Handlers;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -30,7 +27,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 public class ApplicationStatusHandlerTest {
 
     @Test
-    public void application_configs_are_rendered() throws Exception {
+    public void application_configs_are_rendered()  {
         ApplicationMetadataConfig metaConfig = new ApplicationMetadataConfig(
                 new ApplicationMetadataConfig.Builder()
                         .checksum("abc")
@@ -44,28 +41,28 @@ public class ApplicationStatusHandlerTest {
                         .version("v1"));
 
         String json = ApplicationStatusHandler.renderApplicationConfigs(metaConfig, userConfig).toString();
-        assertThat(json, containsString("version"));
-        assertThat(json, containsString("meta"));
-        assertThat(json, containsString("abc"));
-        assertThat(json, containsString("app"));
-        assertThat(json, containsString("/a/b/c"));
-        assertThat(json, containsString("3000"));
-        assertThat(json, containsString("donald"));
+        assertTrue(json.contains("version"));
+        assertTrue(json.contains("meta"));
+        assertTrue(json.contains("abc"));
+        assertTrue(json.contains("app"));
+        assertTrue(json.contains("/a/b/c"));
+        assertTrue(json.contains("3000"));
+        assertTrue(json.contains("donald"));
 
-        assertThat(json, containsString("v1"));
+        assertTrue(json.contains("v1"));
     }
 
     @Test
-    public void object_components_are_rendered() throws Exception {
+    public void object_components_are_rendered() {
         HashMap<ComponentId, Object> id2object = new HashMap<>();
         id2object.put(new ComponentId("myComponent"), new Object());
 
         String json = ApplicationStatusHandler.renderObjectComponents(id2object).toString();
-        assertThat(json, containsString("myComponent"));
+        assertTrue(json.contains("myComponent"));
     }
 
     @Test
-    public void request_handlers_are_rendered() throws Exception {
+    public void request_handlers_are_rendered() {
         final String id = "myHandler";
         final String serverBinding1 = "http://*/serverBinding";
         final String serverBinding2 = "http://*/anotherServerBinding";
@@ -81,14 +78,14 @@ public class ApplicationStatusHandlerTest {
                         .clientBindings(clientBinding))
         );
         String json = ApplicationStatusHandler.renderRequestHandlers(bindingsConfig, handlersById).toString();
-        assertThat(json, containsString("\"" + id + "\""));
-        assertThat(json, containsString(serverBinding1));
-        assertThat(json, containsString(serverBinding2));
-        assertThat(json, containsString(clientBinding));
+        assertTrue(json.contains("\"" + id + "\""));
+        assertTrue(json.contains(serverBinding1));
+        assertTrue(json.contains(serverBinding2));
+        assertTrue(json.contains(clientBinding));
     }
 
     @Test
-    public void client_providers_are_rendered() throws Exception {
+    public void client_providers_are_rendered() {
         final String id = "myClient";
         final String clientBinding = "http://*/clientBinding";
         final String clientBinding2 = "http://*/anotherClientBinding";
@@ -105,21 +102,21 @@ public class ApplicationStatusHandlerTest {
         );
         String json = ApplicationStatusHandler.renderRequestHandlers(bindingsConfig, clientsById).toString();
         System.out.println(json);
-        assertThat(json, containsString("\"" + id + "\""));
-        assertThat(json, containsString(clientBinding));
-        assertThat(json, containsString(clientBinding2));
-        assertThat(json, containsString(serverBinding));
+        assertTrue(json.contains("\"" + id + "\""));
+        assertTrue(json.contains(clientBinding));
+        assertTrue(json.contains(clientBinding2));
+        assertTrue(json.contains(serverBinding));
     }
 
     @Test
-    public void chains_are_rendered() throws Exception {
+    public void chains_are_rendered()  {
         ChainRegistry<Processor> chains = new ChainRegistry<>();
-        Chain<Processor> chain = new Chain<Processor>("myChain", new VoidProcessor(new ComponentId("voidProcessor")));
+        Chain<Processor> chain = new Chain<>("myChain", new VoidProcessor(new ComponentId("voidProcessor")));
         chains.register(new ComponentId("myChain"), chain);
 
         String json = ApplicationStatusHandler.StatusResponse.renderChains(chains).toString();
-        assertThat(json, containsString("myChain"));
-        assertThat(json, containsString("voidProcessor"));
+        assertTrue(json.contains("myChain"));
+        assertTrue(json.contains("voidProcessor"));
     }
 
     private static class VoidProcessor extends Processor {

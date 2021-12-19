@@ -23,10 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -103,13 +101,13 @@ public class RealNodeRepositoryTest {
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
         List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
-        assertThat(containersToRun.size(), is(1));
+        assertEquals(1, containersToRun.size());
         NodeSpec node = containersToRun.get(0);
-        assertThat(node.hostname(), is("host4.yahoo.com"));
-        assertThat(node.wantedDockerImage().get(), is(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.42.0")));
-        assertThat(node.state(), is(NodeState.active));
-        assertThat(node.wantedRestartGeneration().get(), is(0L));
-        assertThat(node.currentRestartGeneration().get(), is(0L));
+        assertEquals("host4.yahoo.com", node.hostname());
+        assertEquals(DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa:6.42.0"), node.wantedDockerImage().get());
+        assertEquals(NodeState.active, node.state());
+        assertEquals(Long.valueOf(0), node.wantedRestartGeneration().get());
+        assertEquals(Long.valueOf(0), node.currentRestartGeneration().get());
         assertEquals(1, node.vcpu(), delta);
         assertEquals(4, node.memoryGb(), delta);
         assertEquals(100, node.diskGb(), delta);

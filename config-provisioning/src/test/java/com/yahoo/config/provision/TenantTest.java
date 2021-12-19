@@ -4,8 +4,7 @@ package com.yahoo.config.provision;
 import com.yahoo.test.TotalOrderTester;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -29,7 +28,7 @@ public class TenantTest extends IdentifierTestBase<TenantName> {
 
     @Test
     public void testComparator() {
-        assertThat(TenantName.defaultName().compareTo(TenantName.defaultName()), is(0));
+        assertEquals(0, TenantName.defaultName().compareTo(TenantName.defaultName()));
 
         new TotalOrderTester<TenantName>()
                 .theseObjects(TenantName.from("a"), TenantName.from("a"))

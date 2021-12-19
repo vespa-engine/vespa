@@ -9,7 +9,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
@@ -17,10 +16,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -29,9 +28,6 @@ public class FilesApplicationPackageTest {
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testPreprocessing() throws IOException {
@@ -112,9 +108,12 @@ public class FilesApplicationPackageTest {
         IOUtils.copyDirectory(new File("src/test/resources/multienvapp"), appDir);
         Files.delete(new File(appDir, "services.xml").toPath());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString("services.xml in application package is empty"));
-        app.preprocess(new Zone(Environment.dev, RegionName.defaultName()), new BaseDeployLogger());
+        try {
+            app.preprocess(new Zone(Environment.dev, RegionName.defaultName()), new BaseDeployLogger());
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("services.xml in application package is empty"));
+        }
     }
 
 }

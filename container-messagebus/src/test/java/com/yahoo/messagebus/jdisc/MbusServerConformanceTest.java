@@ -18,7 +18,6 @@ import com.yahoo.messagebus.shared.ServerSession;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.test.SimpleMessage;
 import com.yahoo.messagebus.test.SimpleProtocol;
-import org.hamcrest.Matcher;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -31,12 +30,12 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.messagebus.ErrorCode.APP_FATAL_ERROR;
-import static com.yahoo.messagebus.ErrorCode.SEND_QUEUE_CLOSED;
 import static com.yahoo.messagebus.ErrorCode.SESSION_BUSY;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -51,28 +50,28 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Test
     public void testContainerNotReadyException() throws Throwable {
         new TestRunner().setRequestTimeout(100, TimeUnit.MILLISECONDS)
-                        .expectError(is(SESSION_BUSY))
+                        .expectError(SESSION_BUSY)
                         .executeAndClose();
     }
 
     @Override
     @Test
     public void testBindingSetNotFoundException() throws Throwable {
-        new TestRunner().expectError(is(APP_FATAL_ERROR))
+        new TestRunner().expectError(APP_FATAL_ERROR)
                         .executeAndClose();
     }
 
     @Override
     @Test
     public void testNoBindingSetSelectedException() throws Throwable {
-        new TestRunner().expectError(is(APP_FATAL_ERROR))
+        new TestRunner().expectError(APP_FATAL_ERROR)
                         .executeAndClose();
     }
 
     @Override
     @Test
     public void testBindingNotFoundException() throws Throwable {
-        new TestRunner().expectError(is(APP_FATAL_ERROR))
+        new TestRunner().expectError(APP_FATAL_ERROR)
                         .executeAndClose();
     }
 
@@ -107,7 +106,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestException() throws Throwable {
-        new TestRunner().expectError(is(APP_FATAL_ERROR))
+        new TestRunner().expectError(APP_FATAL_ERROR)
                         .executeAndClose();
     }
 
@@ -142,7 +141,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestExceptionAfterResponseWriteWithSyncHandleResponse() throws Throwable {
+    public void testRequestExceptionAfterResponseWriteWithSyncHandleResponse() {
     }
 
     @Override
@@ -154,7 +153,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestExceptionBeforeResponseWriteWithAsyncHandleResponse() throws Throwable {
-        new TestRunner().expectError(is(APP_FATAL_ERROR))
+        new TestRunner().expectError(APP_FATAL_ERROR)
                         .executeAndClose();
     }
 
@@ -168,181 +167,181 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestExceptionAfterResponseWriteWithAsyncHandleResponse() throws Throwable {
+    public void testRequestExceptionAfterResponseWriteWithAsyncHandleResponse() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithSyncCompletion() throws Throwable {
+    public void testRequestContentWriteWithSyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithAsyncCompletion() throws Throwable {
+    public void testRequestContentWriteWithAsyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithNondeterministicSyncFailure() throws Throwable {
+    public void testRequestContentWriteWithNondeterministicSyncFailure() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithSyncFailureBeforeResponseWrite() throws Throwable {
+    public void testRequestContentWriteWithSyncFailureBeforeResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithSyncFailureAfterResponseWrite() throws Throwable {
+    public void testRequestContentWriteWithSyncFailureAfterResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithNondeterministicAsyncFailure() throws Throwable {
+    public void testRequestContentWriteWithNondeterministicAsyncFailure() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithAsyncFailureBeforeResponseWrite() throws Throwable {
+    public void testRequestContentWriteWithAsyncFailureBeforeResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithAsyncFailureAfterResponseWrite() throws Throwable {
+    public void testRequestContentWriteWithAsyncFailureAfterResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteWithAsyncFailureAfterResponseCloseNoContent() throws Throwable {
+    public void testRequestContentWriteWithAsyncFailureAfterResponseCloseNoContent() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteNondeterministicException() throws Throwable {
+    public void testRequestContentWriteNondeterministicException() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionBeforeResponseWrite() throws Throwable {
+    public void testRequestContentWriteExceptionBeforeResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionAfterResponseWrite() throws Throwable {
+    public void testRequestContentWriteExceptionAfterResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionAfterResponseCloseNoContent() throws Throwable {
+    public void testRequestContentWriteExceptionAfterResponseCloseNoContent() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteNondeterministicExceptionWithSyncCompletion() throws Throwable {
+    public void testRequestContentWriteNondeterministicExceptionWithSyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionBeforeResponseWriteWithSyncCompletion() throws Throwable {
+    public void testRequestContentWriteExceptionBeforeResponseWriteWithSyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionAfterResponseWriteWithSyncCompletion() throws Throwable {
+    public void testRequestContentWriteExceptionAfterResponseWriteWithSyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionAfterResponseCloseNoContentWithSyncCompletion() throws Throwable {
+    public void testRequestContentWriteExceptionAfterResponseCloseNoContentWithSyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteNondeterministicExceptionWithAsyncCompletion() throws Throwable {
+    public void testRequestContentWriteNondeterministicExceptionWithAsyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionBeforeResponseWriteWithAsyncCompletion() throws Throwable {
+    public void testRequestContentWriteExceptionBeforeResponseWriteWithAsyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionAfterResponseWriteWithAsyncCompletion() throws Throwable {
+    public void testRequestContentWriteExceptionAfterResponseWriteWithAsyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionAfterResponseCloseNoContentWithAsyncCompletion() throws Throwable {
+    public void testRequestContentWriteExceptionAfterResponseCloseNoContentWithAsyncCompletion() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionWithNondeterministicSyncFailure() throws Throwable {
+    public void testRequestContentWriteExceptionWithNondeterministicSyncFailure() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionWithSyncFailureBeforeResponseWrite() throws Throwable {
+    public void testRequestContentWriteExceptionWithSyncFailureBeforeResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionWithSyncFailureAfterResponseWrite() throws Throwable {
+    public void testRequestContentWriteExceptionWithSyncFailureAfterResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionWithSyncFailureAfterResponseCloseNoContent() throws Throwable {
+    public void testRequestContentWriteExceptionWithSyncFailureAfterResponseCloseNoContent() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionWithNondeterministicAsyncFailure() throws Throwable {
+    public void testRequestContentWriteExceptionWithNondeterministicAsyncFailure() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionWithAsyncFailureBeforeResponseWrite() throws Throwable {
+    public void testRequestContentWriteExceptionWithAsyncFailureBeforeResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionWithAsyncFailureAfterResponseWrite() throws Throwable {
+    public void testRequestContentWriteExceptionWithAsyncFailureAfterResponseWrite() {
     }
 
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentWriteExceptionWithAsyncFailureAfterResponseCloseNoContent() throws Throwable {
+    public void testRequestContentWriteExceptionWithAsyncFailureAfterResponseCloseNoContent() {
     }
 
     @Override
@@ -376,7 +375,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentCloseWithSyncFailureAfterResponseWrite() throws Throwable {
+    public void testRequestContentCloseWithSyncFailureAfterResponseWrite() {
     }
 
     @Override
@@ -403,7 +402,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentCloseWithAsyncFailureAfterResponseWrite() throws Throwable {
+    public void testRequestContentCloseWithAsyncFailureAfterResponseWrite() {
     }
 
     @Override
@@ -430,7 +429,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentCloseExceptionAfterResponseWrite() throws Throwable {
+    public void testRequestContentCloseExceptionAfterResponseWrite() {
     }
 
     @Override
@@ -457,7 +456,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentCloseExceptionAfterResponseWriteWithSyncCompletion() throws Throwable {
+    public void testRequestContentCloseExceptionAfterResponseWriteWithSyncCompletion() {
     }
 
     @Override
@@ -484,7 +483,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentCloseExceptionAfterResponseWriteWithAsyncCompletion() throws Throwable {
+    public void testRequestContentCloseExceptionAfterResponseWriteWithAsyncCompletion() {
     }
 
     @Override
@@ -511,7 +510,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentCloseExceptionAfterResponseWriteWithSyncFailure() throws Throwable {
+    public void testRequestContentCloseExceptionAfterResponseWriteWithSyncFailure() {
     }
 
     @Override
@@ -538,7 +537,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testRequestContentCloseExceptionAfterResponseWriteWithAsyncFailure() throws Throwable {
+    public void testRequestContentCloseExceptionAfterResponseWriteWithAsyncFailure() {
     }
 
     @Override
@@ -551,7 +550,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     @Ignore // N/A: The messagebus protocol does not have content.
-    public void testResponseWriteCompletionException() throws Throwable {
+    public void testResponseWriteCompletionException() {
     }
 
     @Override
@@ -573,7 +572,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
         final LocalWire wire = new LocalWire();
         final SharedMessageBus mbus;
         final ServerSession session;
-        Matcher<Integer> expectedError = null;
+        Integer expectedError = null;
         boolean successExpected = false;
         long timeoutMillis = TimeUnit.SECONDS.toMillis(60);
 
@@ -592,14 +591,14 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
             return this;
         }
 
-        TestRunner expectError(Matcher<Integer> matcher) {
-            assertThat(successExpected, is(false));
+        TestRunner expectError(Integer matcher) {
+            assertFalse(successExpected);
             expectedError = matcher;
             return this;
         }
 
         TestRunner expectSuccess() {
-            assertThat(expectedError, is(nullValue()));
+            assertNull(expectedError);
             successExpected = true;
             return this;
         }
@@ -621,24 +620,24 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
         }
 
         @Override
-        public MyClient newClient(MbusServer server) throws Throwable {
+        public MyClient newClient(MbusServer server) {
             return new MyClient(wire, server.connectionSpec());
         }
 
         @Override
         public Reply executeRequest(MyClient client, boolean withRequestContent) throws Throwable {
             // This protocol doesn't have the concept of "request content", so if we are asked to send any, it's a bug.
-            assertThat(withRequestContent, is(false));
+            assertFalse(withRequestContent);
 
             final SimpleMessage msg = new SimpleMessage("foo");
             msg.getTrace().setLevel(9);
             msg.setRoute(client.route);
             msg.setTimeRemaining(timeoutMillis);
-            assertThat("client.session.send(msg).isAccepted()",
-                       client.session.send(msg).isAccepted(), is(true));
+            assertTrue("client.session.send(msg).isAccepted()",
+                       client.session.send(msg).isAccepted());
 
             final Reply reply = client.replies.poll(60, TimeUnit.SECONDS);
-            assertThat("reply != null", reply, notNullValue());
+            assertNotNull("reply != null", reply);
             return reply;
         }
 
@@ -648,15 +647,15 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
         }
 
         @Override
-        public void validateResponse(Reply reply) throws Throwable {
+        public void validateResponse(Reply reply) {
             final String trace = String.valueOf(reply.getTrace());
             if (expectedError != null) {
-                assertThat(reply.hasErrors(), is(true));
+                assertTrue(reply.hasErrors());
                 final int error = reply.getError(0).getCode();
-                assertThat(trace, error, expectedError);
+                assertEquals(trace, Integer.valueOf(error), expectedError);
             }
             if (successExpected) {
-                assertThat(trace, reply.hasErrors(), is(false));
+                assertFalse(trace, reply.hasErrors());
             }
         }
 

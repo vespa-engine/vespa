@@ -31,8 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -56,11 +55,11 @@ public class ClientThreadingTestCase {
         }
         final ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
         for (final Future<Boolean> res : executor.invokeAll(lst, 60, TimeUnit.SECONDS)) {
-            assertThat(res.get(), is(true));
+            assertTrue(res.get());
         }
 
-        assertThat(client.close(), is(true));
-        assertThat(server.close(), is(true));
+        assertTrue(client.close());
+        assertTrue(server.close());
     }
 
     private static final class RequestTask implements Callable<Boolean> {
