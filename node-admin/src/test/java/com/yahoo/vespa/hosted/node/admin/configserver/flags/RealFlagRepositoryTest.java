@@ -6,14 +6,13 @@ import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import com.yahoo.vespa.flags.json.wire.WireFlagDataList;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
-import org.hamcrest.collection.IsMapContaining;
-import org.hamcrest.collection.IsMapWithSize;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -35,7 +34,7 @@ public class RealFlagRepositoryTest {
 
         when(configServerApi.get(any(), eq(WireFlagDataList.class))).thenReturn(list);
         Map<FlagId, FlagData> allFlagData = repository.getAllFlagData();
-        assertThat(allFlagData, IsMapWithSize.aMapWithSize(1));
-        assertThat(allFlagData, IsMapContaining.hasKey(new FlagId("id1")));
+        assertEquals(1, allFlagData.size());
+        assertTrue(allFlagData.containsKey(new FlagId("id1")));
     }
 }

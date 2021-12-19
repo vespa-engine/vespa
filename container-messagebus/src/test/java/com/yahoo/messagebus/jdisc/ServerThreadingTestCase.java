@@ -28,9 +28,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -50,16 +49,16 @@ public class ServerThreadingTestCase {
             final Message msg = new SimpleMessage("foo");
             msg.setRoute(Route.parse(server.delegate.connectionSpec()));
             msg.pushHandler(client);
-            assertThat(client.session.send(msg).isAccepted(), is(true));
+            assertTrue(client.session.send(msg).isAccepted());
         }
         for (int i = 0; i < NUM_REQUESTS; ++i) {
             final Reply reply = client.replies.poll(600, TimeUnit.SECONDS);
-            assertThat(reply, instanceOf(EmptyReply.class));
-            assertThat(reply.hasErrors(), is(false));
+            assertTrue(reply instanceof EmptyReply);
+            assertFalse(reply.hasErrors());
         }
 
-        assertThat(client.close(), is(true));
-        assertThat(server.close(), is(true));
+        assertTrue(client.close());
+        assertTrue(server.close());
     }
 
     private static class Client implements ReplyHandler {
@@ -106,14 +105,10 @@ public class ServerThreadingTestCase {
 
         @Override
         public void handleMessage(final Message msg) {
-            executor.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    final Reply reply = new EmptyReply();
-                    reply.swapState(msg);
-                    reply.popHandler().handleReply(reply);
-                }
+            executor.execute(() -> {
+                final Reply reply = new EmptyReply();
+                reply.swapState(msg);
+                reply.popHandler().handleReply(reply);
             });
         }
 

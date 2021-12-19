@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -88,7 +87,7 @@ public class ConfigServerApiImplTest {
     @Test
     public void testBasicParsingSingleServer() {
         TestPojo answer = configServerApi.get("/path", TestPojo.class);
-        assertThat(answer.foo, is("bar"));
+        assertEquals(answer.foo, "bar");
         assertLogStringContainsGETForAHost();
     }
 

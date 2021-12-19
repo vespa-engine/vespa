@@ -5,10 +5,8 @@ import org.junit.Test;
 
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -174,7 +172,7 @@ public class YumPackageNameTest {
             YumPackageName.fromString("epoch:docker-engine-selinux-1.12.6-1.el7.x86_64");
             fail();
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), containsStringIgnoringCase("epoch"));
+            assertTrue(e.getMessage().toLowerCase().contains("epoch"));
         }
     }
 

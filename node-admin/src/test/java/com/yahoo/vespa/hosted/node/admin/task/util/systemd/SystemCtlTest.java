@@ -6,9 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcessFailureEx
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -139,7 +137,7 @@ public class SystemCtlTest {
             systemCtl.serviceExists(taskContext, "foo");
             fail();
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("garbage"));
+            assertTrue(e.getMessage().contains("garbage"));
         }
     }
 

@@ -10,10 +10,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -34,86 +33,86 @@ public class VersionsTestCase {
     private static final List<String> GARBAGE = Collections.singletonList("garbage");
 
     @Test
-    public void testEmpty() throws Exception {
+    public void testEmpty() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(EMPTY);
-        assertThat(v.first, instanceOf(ErrorHttpResponse.class));
-        assertThat(v.second, is(-1));
+        assertTrue(v.first instanceof ErrorHttpResponse);
+        assertEquals(Integer.valueOf(-1), v.second);
     }
 
     @Test
-    public void testOneTwo() throws Exception {
+    public void testOneTwo() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_TWO);
-        assertThat(v.first, instanceOf(ErrorHttpResponse.class));
-        assertThat(v.second, is(-1));
+        assertTrue(v.first instanceof ErrorHttpResponse);
+        assertEquals(Integer.valueOf(-1), v.second);
     }
 
     @Test
-    public void testOneThree() throws Exception {
+    public void testOneThree() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_THREE);
-        assertThat(v.first, nullValue());
-        assertThat(v.second, is(3));
+        assertNull(v.first);
+        assertEquals(Integer.valueOf(3), v.second);
     }
 
     @Test
-    public void testTwoThree() throws Exception {
+    public void testTwoThree() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(TWO_THREE);
-        assertThat(v.first, nullValue());
-        assertThat(v.second, is(3));
+        assertNull(v.first);
+        assertEquals(Integer.valueOf(3), v.second);
     }
 
     @Test
-    public void testOneNullThree() throws Exception {
+    public void testOneNullThree() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_NULL_THREE);
-        assertThat(v.first, nullValue());
-        assertThat(v.second, is(3));
+        assertNull(v.first);
+        assertEquals(Integer.valueOf(3), v.second);
     }
 
     @Test
-    public void testOneCommaThree() throws Exception {
+    public void testOneCommaThree() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_COMMA_THREE);
-        assertThat(v.first, nullValue());
-        assertThat(v.second, is(3));
+        assertNull(v.first);
+        assertEquals(Integer.valueOf(3), v.second);
     }
 
     @Test
-    public void testOneEmptyThree() throws Exception {
+    public void testOneEmptyThree() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_EMPTY_THREE);
-        assertThat(v.first, nullValue());
-        assertThat(v.second, is(3));
+        assertNull(v.first);
+        assertEquals(Integer.valueOf(3), v.second);
     }
 
     @Test
     public void testTooLarge() throws Exception {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(TOO_LARGE_NUMBER);
-        assertThat(v.first, instanceOf(ErrorHttpResponse.class));
+        assertTrue(v.first instanceof ErrorHttpResponse);
         ByteArrayOutputStream errorMsg = new ByteArrayOutputStream();
         ErrorHttpResponse errorResponse = (ErrorHttpResponse) v.first;
         errorResponse.render(errorMsg);
-        assertThat(errorMsg.toString(),
-                is("Could not parse X-Yahoo-Feed-Protocol-Versionheader of request (values: [1000000000]). " +
-                            "Server supports protocol versions [3]"));
-        assertThat(v.second, is(-1));
+        assertEquals(errorMsg.toString(),
+                "Could not parse X-Yahoo-Feed-Protocol-Versionheader of request (values: [1000000000]). " +
+                            "Server supports protocol versions [3]");
+        assertEquals(Integer.valueOf(-1), v.second);
     }
 
     @Test
-    public void testThreeTooLarge() throws Exception {
+    public void testThreeTooLarge() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(THREE_TOO_LARGE_NUMBER);
-        assertThat(v.first, nullValue());
-        assertThat(v.second, is(3));
+        assertNull(v.first);
+        assertEquals(Integer.valueOf(3), v.second);
     }
 
     @Test
-    public void testTwoCommaTooLarge() throws Exception {
+    public void testTwoCommaTooLarge() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(THREE_COMMA_TOO_LARGE_NUMBER);
-        assertThat(v.first, nullValue());
-        assertThat(v.second, is(3));
+        assertNull(v.first);
+        assertEquals(Integer.valueOf(3), v.second);
     }
 
     @Test
-    public void testGarbage() throws Exception {
+    public void testGarbage() {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(GARBAGE);
-        assertThat(v.first, instanceOf(ErrorHttpResponse.class));
-        assertThat(v.second, is(-1));
+        assertTrue(v.first instanceof ErrorHttpResponse);
+        assertEquals(Integer.valueOf(-1), v.second);
     }
 
 }
