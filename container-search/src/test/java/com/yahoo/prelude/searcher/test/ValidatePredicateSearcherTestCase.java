@@ -30,7 +30,7 @@ public class ValidatePredicateSearcherTestCase {
     @Test
     public void testValidQuery() {
         ValidatePredicateSearcher searcher = new ValidatePredicateSearcher();
-        String q = "select * from sources * where predicate(predicate_field,0,{\"age\":20L});";
+        String q = "select * from sources * where predicate(predicate_field,0,{\"age\":20L})";
         Result r = doSearch(searcher, q, "predicate-bounds [0..99]");
         assertNull(r.hits().getError());
     }
@@ -38,7 +38,7 @@ public class ValidatePredicateSearcherTestCase {
     @Test
     public void testQueryOutOfBounds() {
         ValidatePredicateSearcher searcher = new ValidatePredicateSearcher();
-        String q = "select * from sources * where predicate(predicate_field,0,{\"age\":200L});";
+        String q = "select * from sources * where predicate(predicate_field,0,{\"age\":200L})";
         Result r = doSearch(searcher, q, "predicate-bounds [0..99]");
         assertEquals(ErrorMessage.createIllegalQuery("age=200 outside configured predicate bounds."), r.hits().getError());
     }
@@ -46,7 +46,7 @@ public class ValidatePredicateSearcherTestCase {
     @Test
     public void queryFailsWhenPredicateFieldIsUsedInTermSearch() {
         ValidatePredicateSearcher searcher = new ValidatePredicateSearcher();
-        String q = "select * from sources * where predicate_field CONTAINS \"true\";";
+        String q = "select * from sources * where predicate_field CONTAINS \"true\"";
         Result r = doSearch(searcher, q, "predicate-bounds [0..99]");
         assertEquals(ErrorMessage.createIllegalQuery("Index 'predicate_field' is predicate attribute and can only be used in conjunction with a predicate query operator."), r.hits().getError());
     }

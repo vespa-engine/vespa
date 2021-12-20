@@ -96,14 +96,14 @@ public class YqlParserTestCase {
                      toString(parser.getGroupingSteps()));
 
         assertParse("select foo from bar where baz contains 'cox' " +
-                    "| all(group(a) each(output(count())));",
+                    "| all(group(a) each(output(count())))",
                     "baz:cox");
         assertEquals("[[]all(group(a) each(output(count())))]",
                      toString(parser.getGroupingSteps()));
 
         assertParse("select foo from bar where baz contains 'cox' " +
                     "| all(group(a) each(output(count()))) " +
-                    "| all(group(b) each(output(count())));",
+                    "| all(group(b) each(output(count())))",
                     "baz:cox");
         assertEquals("[[]all(group(a) each(output(count())))," +
                      " []all(group(b) each(output(count())))]",
@@ -129,19 +129,19 @@ public class YqlParserTestCase {
 
     @Test
     public void testHitLimit() {
-        assertParse("select artist_name, track_name, track_uri from sources * where (myField contains ([{\"prefix\":true}]\"m\") and ([{\"hitLimit\": 5000, \"descending\": true}]range(static_score,0,Infinity))) limit 30 offset 0;",
+        assertParse("select artist_name, track_name, track_uri from sources * where (myField contains ([{prefix:true}]\"m\") and ([{hitLimit: 5000, descending: true}]range(static_score,0,Infinity))) limit 30 offset 0",
                     "AND myField:m* static_score:[0;;-5000]");
     }
 
     @Test
     public void test() {
-        assertParse("select foo from bar where title contains \"madonna\";",
+        assertParse("select foo from bar where title contains \"madonna\"",
                     "title:madonna");
     }
 
     @Test
     public void testKeywordAsFieldName() {
-        assertParse("select * from sources * where cast contains sameElement(id contains '16');",
+        assertParse("select * from sources * where cast contains sameElement(id contains '16')",
                     "cast:{id:16}");
     }
 
@@ -159,27 +159,27 @@ public class YqlParserTestCase {
 
     @Test
     public void testDottedFieldNames() {
-        assertParse("select foo from bar where my.nested.title contains \"madonna\";",
+        assertParse("select foo from bar where my.nested.title contains \"madonna\"",
                 "my.nested.title:madonna");
     }
     @Test
     public void testDottedNestedFieldNames() {
-        assertParse("select foo from bar where my.title contains \"madonna\";",
+        assertParse("select foo from bar where my.title contains \"madonna\"",
                 "my.title:madonna");
     }
 
     @Test
     public void testOr() {
-        assertParse("select foo from bar where title contains \"madonna\" or title contains \"saint\";",
+        assertParse("select foo from bar where title contains \"madonna\" or title contains \"saint\"",
                     "OR title:madonna title:saint");
         assertParse("select foo from bar where title contains \"madonna\" or title contains \"saint\" or title " +
-                    "contains \"angel\";",
+                    "contains \"angel\"",
                     "OR title:madonna title:saint title:angel");
     }
 
     @Test
     public void testAnd() {
-        assertParse("select foo from bar where title contains \"madonna\" and title contains \"saint\";",
+        assertParse("select foo from bar where title contains \"madonna\" and title contains \"saint\"",
                     "AND title:madonna title:saint");
         assertParse("select foo from bar where title contains \"madonna\" and title contains \"saint\" and title " +
                     "contains \"angel\";",
@@ -188,7 +188,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testAndNot() {
-        assertParse("select foo from bar where title contains \"madonna\" and !(title contains \"saint\");",
+        assertParse("select foo from bar where title contains \"madonna\" and !(title contains \"saint\")",
                     "+title:madonna -title:saint");
     }
 
@@ -200,8 +200,8 @@ public class YqlParserTestCase {
 
     @Test
     public void testGreaterThan() {
-        assertParse("select foo from bar where price > 500;", "price:>500");
-        assertParse("select foo from bar where 500 > price;", "price:<500");
+        assertParse("select foo from bar where price > 500", "price:>500");
+        assertParse("select foo from bar where 500 > price", "price:<500");
     }
 
     @Test
@@ -212,74 +212,74 @@ public class YqlParserTestCase {
 
     @Test
     public void testGreaterThanOrEqual() {
-        assertParse("select foo from bar where price >= 500;", "price:[500;]");
-        assertParse("select foo from bar where 500 >= price;", "price:[;500]");
+        assertParse("select foo from bar where price >= 500", "price:[500;]");
+        assertParse("select foo from bar where 500 >= price", "price:[;500]");
     }
 
     @Test
     public void testEquality() {
-        assertParse("select foo from bar where price = 500;", "price:500");
-        assertParse("select foo from bar where 500 = price;", "price:500");
+        assertParse("select foo from bar where price = 500", "price:500");
+        assertParse("select foo from bar where 500 = price", "price:500");
     }
 
     @Test
     public void testNegativeLessThan() {
-        assertParse("select foo from bar where price < -500;", "price:<-500");
-        assertParse("select foo from bar where -500 < price;", "price:>-500");
+        assertParse("select foo from bar where price < -500", "price:<-500");
+        assertParse("select foo from bar where -500 < price", "price:>-500");
     }
 
     @Test
     public void testNegativeGreaterThan() {
-        assertParse("select foo from bar where price > -500;", "price:>-500");
-        assertParse("select foo from bar where -500 > price;", "price:<-500");
+        assertParse("select foo from bar where price > -500", "price:>-500");
+        assertParse("select foo from bar where -500 > price", "price:<-500");
     }
 
     @Test
     public void testNegativeLessThanOrEqual() {
-        assertParse("select foo from bar where price <= -500;", "price:[;-500]");
-        assertParse("select foo from bar where -500 <= price;", "price:[-500;]");
+        assertParse("select foo from bar where price <= -500", "price:[;-500]");
+        assertParse("select foo from bar where -500 <= price", "price:[-500;]");
     }
 
     @Test
     public void testNegativeGreaterThanOrEqual() {
-        assertParse("select foo from bar where price >= -500;", "price:[-500;]");
-        assertParse("select foo from bar where -500 >= price;", "price:[;-500]");
+        assertParse("select foo from bar where price >= -500", "price:[-500;]");
+        assertParse("select foo from bar where -500 >= price", "price:[;-500]");
     }
 
     @Test
     public void testNegativeEquality() {
-        assertParse("select foo from bar where price = -500;", "price:-500");
-        assertParse("select foo from bar where -500 = price;", "price:-500");
+        assertParse("select foo from bar where price = -500", "price:-500");
+        assertParse("select foo from bar where -500 = price", "price:-500");
     }
 
     @Test
     public void testAnnotatedLessThan() {
-        assertParse("select foo from bar where price < ([{\"filter\": true}](-500));", "|price:<-500");
-        assertParse("select foo from bar where ([{\"filter\": true}]500) < price;", "|price:>500");
+        assertParse("select foo from bar where price < ([{filter: true}](-500))", "|price:<-500");
+        assertParse("select foo from bar where ([{filter: true}]500) < price", "|price:>500");
     }
 
     @Test
     public void testAnnotatedGreaterThan() {
-        assertParse("select foo from bar where price > ([{\"filter\": true}]500);", "|price:>500");
-        assertParse("select foo from bar where ([{\"filter\": true}](-500)) > price;", "|price:<-500");
+        assertParse("select foo from bar where price > ([{filter: true}]500)", "|price:>500");
+        assertParse("select foo from bar where ([{filter: true}](-500)) > price", "|price:<-500");
     }
 
     @Test
     public void testAnnotatedLessThanOrEqual() {
-        assertParse("select foo from bar where price <= ([{\"filter\": true}](-500));", "|price:[;-500]");
-        assertParse("select foo from bar where ([{\"filter\": true}]500) <= price;", "|price:[500;]");
+        assertParse("select foo from bar where price <= ([{filter: true}](-500))", "|price:[;-500]");
+        assertParse("select foo from bar where ([{filter: true}]500) <= price", "|price:[500;]");
     }
 
     @Test
     public void testAnnotatedGreaterThanOrEqual() {
-        assertParse("select foo from bar where price >= ([{\"filter\": true}]500);", "|price:[500;]");
-        assertParse("select foo from bar where ([{\"filter\": true}](-500)) >= price;", "|price:[;-500]");
+        assertParse("select foo from bar where price >= ([{filter: true}]500)", "|price:[500;]");
+        assertParse("select foo from bar where ([{filter: true}](-500)) >= price", "|price:[;-500]");
     }
 
     @Test
     public void testAnnotatedEquality() {
-        assertParse("select foo from bar where price = ([{\"filter\": true}](-500));", "|price:-500");
-        assertParse("select foo from bar where ([{\"filter\": true}]500) = price;", "|price:500");
+        assertParse("select foo from bar where price = ([{filter: true}](-500))", "|price:-500");
+        assertParse("select foo from bar where ([{filter: true}]500) = price", "|price:500");
     }
 
     @Test
@@ -296,26 +296,26 @@ public class YqlParserTestCase {
     public void testTermAnnotations() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {\"label\": \"merkelapp\"} ]\"colors\");").getLabel());
+                                 "([ {label: \"merkelapp\"} ]\"colors\");").getLabel());
         assertEquals("another",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {\"annotations\": {\"cox\": \"another\"}} ]\"colors\");").getAnnotation("cox"));
+                                 "([ {annotations: {cox: \"another\"}} ]\"colors\")").getAnnotation("cox"));
         assertEquals(23.0, getRootWord("select foo from bar where baz contains " +
-                                       "([ {\"significance\": 23.0} ]\"colors\");").getSignificance(), 1E-6);
+                                       "([ {significance: 23.0} ]\"colors\")").getSignificance(), 1E-6);
         assertEquals(23, getRootWord("select foo from bar where baz contains " +
-                                     "([ {\"id\": 23} ]\"colors\");").getUniqueID());
+                                     "([ {id: 23} ]\"colors\")").getUniqueID());
         assertEquals(150, getRootWord("select foo from bar where baz contains " +
-                                      "([ {\"weight\": 150} ]\"colors\");").getWeight());
+                                      "([ {weight: 150} ]\"colors\")").getWeight());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {\"usePositionData\": false} ]\"colors\");").usePositionData());
+                                "([ {usePositionData: false} ]\"colors\")").usePositionData());
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                               "([ {\"filter\": true} ]\"colors\");").isFilter());
+                               "([ {filter: true} ]\"colors\")").isFilter());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {\"ranked\": false} ]\"colors\");").isRanked());
+                                "([ {ranked: false} ]\"colors\")").isRanked());
 
         Substring origin = getRootWord("select foo from bar where baz contains " +
-                                       "([ {\"origin\": {\"original\": \"abc\", \"offset\": 1, \"length\": 2}} ]" +
-                                       "\"colors\");").getOrigin();
+                                       "([ {origin: {original: \"abc\", 'offset': 1, length: 2}} ]" +
+                                       "\"colors\")").getOrigin();
         assertEquals("abc", origin.string);
         assertEquals(1, origin.start);
         assertEquals(3, origin.end);
@@ -323,34 +323,34 @@ public class YqlParserTestCase {
 
     @Test
     public void testSameElement() {
-        assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 contains \"b\");",
+        assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 contains \"b\")",
                 "baz:{f1:a f2:b}");
-        assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 = 10);",
+        assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 = 10)",
                 "baz:{f1:a f2:10}");
-        assertParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10);",
+        assertParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10)",
                 "baz:{key:a value.f2:10}");
-        assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10);",
+        assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\", value.f2 = 10)",
                 "baz:{key:a value.f2:10}");
-        assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\");",
+        assertCanonicalParse("select foo from bar where baz contains sameElement(key contains \"a\")",
                 "baz.key:a");
     }
 
     @Test
     public void testPhrase() {
-        assertParse("select foo from bar where baz contains phrase(\"a\", \"b\");",
+        assertParse("select foo from bar where baz contains phrase(\"a\", \"b\")",
                     "baz:\"a b\"");
     }
 
     @Test
     public void testNestedPhrase() {
-        assertParse("select foo from bar where baz contains phrase(\"a\", \"b\", phrase(\"c\", \"d\"));",
+        assertParse("select foo from bar where baz contains phrase(\"a\", \"b\", phrase(\"c\", \"d\"))",
                     "baz:\"a b c d\"");
     }
 
     @Test
     public void testNestedPhraseSegment() {
         assertParse("select foo from bar where baz contains " +
-                    "phrase(\"a\", \"b\", [ {\"origin\": {\"original\": \"c d\", \"offset\": 0, \"length\": 3}} ]" +
+                    "phrase(\"a\", \"b\", [ {origin: {original: \"c d\", 'offset': 0, length: 3}} ]" +
                     "phrase(\"c\", \"d\"));",
                     "baz:\"a b 'c d'\"");
     }
@@ -358,9 +358,9 @@ public class YqlParserTestCase {
     @Test
     public void testStemming() {
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                               "([ {\"stem\": false} ]\"colors\");").isStemmed());
+                               "([ {stem: false} ]\"colors\")").isStemmed());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {\"stem\": true} ]\"colors\");").isStemmed());
+                                "([ {stem: true} ]\"colors\")").isStemmed());
         assertFalse(getRootWord("select foo from bar where baz contains " +
                                 "\"colors\";").isStemmed());
     }
@@ -368,23 +368,23 @@ public class YqlParserTestCase {
     @Test
     public void testRaw() {
         // Default: Not raw, for comparison
-        Item root = parse("select foo from bar where baz contains (\"yoni jo dima\");").getRoot();
+        Item root = parse("select foo from bar where baz contains (\"yoni jo dima\")").getRoot();
         assertEquals("baz:'yoni jo dima'", root.toString());
         assertFalse(root instanceof WordItem);
         assertTrue(root instanceof PhraseSegmentItem);
 
-        root = parse("select foo from bar where baz contains ([{\"grammar\":\"raw\"}]\"yoni jo dima\");").getRoot();
+        root = parse("select foo from bar where baz contains ([{grammar:\"raw\"}]\"yoni jo dima\")").getRoot();
         assertEquals("baz:yoni jo dima", root.toString());
         assertTrue(root instanceof WordItem);
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem)root).getWord());
 
-        root = parse("select foo from bar where userInput(\"yoni jo dima\");").getRoot();
+        root = parse("select foo from bar where userInput(\"yoni jo dima\")").getRoot();
         assertTrue(root instanceof AndItem);
         AndItem andItem = (AndItem) root;
         assertEquals(3, andItem.getItemCount());
 
-        root = parse("select foo from bar where [{\"grammar\":\"raw\"}]userInput(\"yoni jo dima\");").getRoot();
+        root = parse("select foo from bar where [{grammar:\"raw\"}]userInput(\"yoni jo dima\")").getRoot();
         assertTrue(root instanceof WordItem);
         assertTrue(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem)root).getWord());
@@ -393,65 +393,65 @@ public class YqlParserTestCase {
     @Test
     public void testAccentDropping() {
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {\"accentDrop\": false} ]\"colors\");").isNormalizable());
+                                "([ {accentDrop: false} ]\"colors\")").isNormalizable());
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                               "([ {\"accentDrop\": true} ]\"colors\");").isNormalizable());
+                               "([ {accentDrop: true} ]\"colors\")").isNormalizable());
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                               "\"colors\";").isNormalizable());
+                               "\"colors\"").isNormalizable());
     }
 
     @Test
     public void testCaseNormalization() {
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                               "([ {\"normalizeCase\": false} ]\"colors\");").isLowercased());
+                               "([ {normalizeCase: false} ]\"colors\")").isLowercased());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {\"normalizeCase\": true} ]\"colors\");").isLowercased());
+                                "([ {normalizeCase: true} ]\"colors\")").isLowercased());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "\"colors\";").isLowercased());
+                                "\"colors\"").isLowercased());
     }
 
     @Test
     public void testSegmentingRule() {
         assertEquals(SegmentingRule.PHRASE,
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {\"andSegmenting\": false} ]\"colors\");").getSegmentingRule());
+                                 "([ {andSegmenting: false} ]\"colors\")").getSegmentingRule());
         assertEquals(SegmentingRule.BOOLEAN_AND,
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {\"andSegmenting\": true} ]\"colors\");").getSegmentingRule());
+                                 "([ {andSegmenting: true} ]\"colors\")").getSegmentingRule());
         assertEquals(SegmentingRule.LANGUAGE_DEFAULT,
                      getRootWord("select foo from bar where baz contains " +
-                                 "\"colors\";").getSegmentingRule());
+                                 "\"colors\"").getSegmentingRule());
     }
 
     @Test
     public void testNfkc() {
         assertEquals("a\u030a",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {\"nfkc\": false} ]\"a\\u030a\");").getWord());
+                                 "([ {nfkc: false} ]\"a\\u030a\")").getWord());
         assertEquals("\u00e5",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {\"nfkc\": true} ]\"a\\u030a\");").getWord());
+                                 "([ {nfkc: true} ]\"a\\u030a\")").getWord());
         assertEquals("No NKFC by default", 
                      "a\u030a",
                      getRootWord("select foo from bar where baz contains " +
-                                 "(\"a\\u030a\");").getWord());
+                                 "(\"a\\u030a\")").getWord());
     }
 
     @Test
     public void testImplicitTransforms() {
-        assertFalse(getRootWord("select foo from bar where baz contains ([ {\"implicitTransforms\": " +
-                                "false} ]\"cox\");").isFromQuery());
-        assertTrue(getRootWord("select foo from bar where baz contains ([ {\"implicitTransforms\": " +
-                               "true} ]\"cox\");").isFromQuery());
-        assertTrue(getRootWord("select foo from bar where baz contains \"cox\";").isFromQuery());
+        assertFalse(getRootWord("select foo from bar where baz contains ([ {implicitTransforms: " +
+                                "false} ]\"cox\")").isFromQuery());
+        assertTrue(getRootWord("select foo from bar where baz contains ([ {implicitTransforms: " +
+                               "true} ]\"cox\")").isFromQuery());
+        assertTrue(getRootWord("select foo from bar where baz contains \"cox\"").isFromQuery());
     }
 
     @Test
     public void testConnectivity() {
         QueryTree parsed = parse("select foo from bar where " +
-                                 "title contains ([{\"id\": 1, \"connectivity\": {\"id\": 3, \"weight\": 7.0}}]\"madonna\") " +
-                                 "and title contains ([{\"id\": 2}]\"saint\") " +
-                                 "and title contains ([{\"id\": 3}]\"angel\");");
+                                 "title contains ([{id: 1, connectivity: {\"id\": 3, weight: 7.0}}]\"madonna\") " +
+                                 "and title contains ([{id: 2}]\"saint\") " +
+                                 "and title contains ([{id: 3}]\"angel\")");
         assertEquals("AND title:madonna title:saint title:angel",
                      parsed.toString());
         AndItem root = (AndItem)parsed.getRoot();
@@ -463,9 +463,9 @@ public class YqlParserTestCase {
         assertNull(second.getConnectedItem());
 
         assertParseFail("select foo from bar where " +
-                        "title contains ([{\"id\": 1, \"connectivity\": {\"id\": 4, \"weight\": 7.0}}]\"madonna\") " +
-                        "and title contains ([{\"id\": 2}]\"saint\") " +
-                        "and title contains ([{\"id\": 3}]\"angel\");",
+                        "title contains ([{id: 1, connectivity: {id: 4, weight: 7.0}}]\"madonna\") " +
+                        "and title contains ([{id: 2}]\"saint\") " +
+                        "and title contains ([{id: 3}]\"angel\")",
                         new IllegalArgumentException("Item 'title:madonna' was specified to connect to item with ID 4, " +
                                                      "which does not exist in the query."));
     }
@@ -473,7 +473,7 @@ public class YqlParserTestCase {
     @Test
     public void testAnnotatedPhrase() {
         QueryTree parsed =
-                parse("select foo from bar where baz contains ([{\"label\": \"hello world\"}]phrase(\"a\", \"b\"));");
+                parse("select foo from bar where baz contains ([{label: \"hello world\"}]phrase(\"a\", \"b\"))");
         assertEquals("baz:\"a b\"", parsed.toString());
         PhraseItem phrase = (PhraseItem)parsed.getRoot();
         assertEquals("hello world", phrase.getLabel());
@@ -481,39 +481,39 @@ public class YqlParserTestCase {
 
     @Test
     public void testRange() {
-        QueryTree parsed = parse("select foo from bar where range(baz,1,8);");
+        QueryTree parsed = parse("select foo from bar where range(baz,1,8)");
         assertEquals("baz:[1;8]", parsed.toString());
     }
 
     @Test
     public void testRangeWithEndInfinity() {
-        QueryTree parsed = parse("select foo from bar where range(baz,1,Infinity);");
+        QueryTree parsed = parse("select foo from bar where range(baz,1,Infinity)");
         assertEquals("baz:[1;]", parsed.toString());
     }
 
     @Test
     public void testRangeWithStartInfinity() {
-        QueryTree parsed = parse("select foo from bar where range(baz,-Infinity,8);");
+        QueryTree parsed = parse("select foo from bar where range(baz,-Infinity,8)");
         assertEquals("baz:[;8]", parsed.toString());
     }
 
     @Test
     public void testNegativeRange() {
-        QueryTree parsed = parse("select foo from bar where range(baz,-8,-1);");
+        QueryTree parsed = parse("select foo from bar where range(baz,-8,-1)");
         assertEquals("baz:[-8;-1]", parsed.toString());
     }
 
     @Test
     public void testRangeIllegalArguments() {
-        assertParseFail("select foo from bar where range(baz,cox,8);",
+        assertParseFail("select foo from bar where range(baz,cox,8)",
                         new IllegalArgumentException("Expected a numerical argument (or 'Infinity') to range but got 'cox'"));
     }
 
     @Test
     public void testNear() {
-        assertParse("select foo from bar where description contains near(\"a\", \"b\");",
+        assertParse("select foo from bar where description contains near(\"a\", \"b\")",
                     "NEAR(2) description:a description:b");
-        assertParse("select foo from bar where description contains ([ {\"distance\": 100} ]near(\"a\", \"b\"));",
+        assertParse("select foo from bar where description contains ([ {distance: 100} ]near(\"a\", \"b\"))",
                     "NEAR(100) description:a description:b");
     }
 
@@ -521,25 +521,31 @@ public class YqlParserTestCase {
     public void testOrderedNear() {
         assertParse("select foo from bar where description contains onear(\"a\", \"b\");",
                     "ONEAR(2) description:a description:b");
-        assertParse("select foo from bar where description contains ([ {\"distance\": 100} ]onear(\"a\", \"b\"));",
+        assertParse("select foo from bar where description contains ([ {distance: 100} ]onear(\"a\", \"b\"))",
                     "ONEAR(100) description:a description:b");
     }
 
-    //This test is order dependent. Fix this!!
     @Test
     public void testWand() {
         assertParse("select foo from bar where wand(description, {\"a\":1, \"b\":2});",
                 "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
-        assertParse("select foo from bar where [ {\"scoreThreshold\": 13.3, \"targetHits\": 7, " +
-                    "\"thresholdBoostFactor\": 2.3} ]wand(description, {\"a\":1, \"b\":2});",
+        assertParse("select foo from bar where [ {scoreThreshold : 13.3, targetHits: 7, " +
+                    "thresholdBoostFactor: 2.3} ]wand(description, {\"a\":1, \"b\":2})",
                     "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
+    }
+
+    @Test
+    public void testQuotedAnnotations() {
+        assertParse("select foo from bar where [ {\"scoreThreshold\": 13.3, \"targetHits\": 7, " +
+                    "'thresholdBoostFactor': 2.3} ]wand(description, {\"a\":1})",
+                    "WAND(7,13.3,2.3) description{[1]:\"a\"}");
     }
 
     @Test
     public void testNumericWand() {
         String numWand = "WAND(10,0.0,1.0) description{[1]:\"11\",[2]:\"37\"}";
-        assertParse("select foo from bar where wand(description, [[11,1], [37,2]]);", numWand);
-        assertParse("select foo from bar where wand(description, [[11L,1], [37L,2]]);", numWand);
+        assertParse("select foo from bar where wand(description, [[11,1], [37,2]])", numWand);
+        assertParse("select foo from bar where wand(description, [[11L,1], [37L,2]])", numWand);
         assertParseFail("select foo from bar where wand(description, 12);",
                         new IllegalArgumentException("Expected ARRAY or MAP, got LITERAL."));
     }
@@ -547,9 +553,9 @@ public class YqlParserTestCase {
     @Test
     //This test is order dependent. Fix it!
     public void testWeightedSet() {
-        assertParse("select foo from bar where weightedSet(description, {\"a\":1, \"b\":2});",
+        assertParse("select foo from bar where weightedSet(description, {\"a\":1, \"b\":2})",
                     "WEIGHTEDSET description{[1]:\"a\",[2]:\"b\"}");
-        assertParseFail("select foo from bar where weightedSet(description, {\"a\":g, \"b\":2});",
+        assertParseFail("select foo from bar where weightedSet(description, {\"a\":g, \"b\":2})",
                         new IllegalInputException("com.yahoo.search.yql.ProgramCompileException: " +
                                                   "query:L1:56 no viable alternative at input 'weightedSet(description, {\"a\":g'"));
         assertParseFail("select foo from bar where weightedSet(description);",
@@ -561,25 +567,25 @@ public class YqlParserTestCase {
     public void testDotProduct() {
         assertParse("select foo from bar where dotProduct(description, {\"a\":1, \"b\":2});",
                     "DOTPRODUCT description{[1]:\"a\",[2]:\"b\"}");
-        assertParse("select foo from bar where dotProduct(description, {\"a\":2});",
+        assertParse("select foo from bar where dotProduct(description, {\"a\":2})",
                     "DOTPRODUCT description{[2]:\"a\"}");
     }
 
     @Test
     public void testGeoLocation() {
-        assertParse("select foo from bar where geoLocation(workplace, 63.418417, 10.433033, \"0.5 deg\");",
+        assertParse("select foo from bar where geoLocation(workplace, 63.418417, 10.433033, \"0.5 deg\")",
                     "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
-        assertParse("select foo from bar where geoLocation(headquarters, \"37.416383\", \"-122.024683\", \"100 miles\");",
+        assertParse("select foo from bar where geoLocation(headquarters, \"37.416383\", \"-122.024683\", \"100 miles\")",
                     "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
-        assertParse("select foo from bar where geoLocation(home, \"E10.433033\", \"N63.418417\", \"5km\");",
+        assertParse("select foo from bar where geoLocation(home, \"E10.433033\", \"N63.418417\", \"5km\")",
                     "GEO_LOCATION home:(2,10433033,63418417,45066,0,1,0,1921876103)");
 
-        assertParseFail("select foo from bar where geoLocation(qux, 1, 2);",
+        assertParseFail("select foo from bar where geoLocation(qux, 1, 2)",
                         new IllegalArgumentException("Expected 4 arguments, got 3."));
         assertParseFail("select foo from bar where geoLocation(qux, 2.0, \"N5.0\", \"0.5 deg\");",
                         new IllegalArgumentException(
                                 "Invalid geoLocation coordinates 'Latitude: 2.0 degrees' and 'Latitude: 5.0 degrees'"));
-        assertParse("select foo from bar where geoLocation(workplace, -12, -34, \"-77 d\");",
+        assertParse("select foo from bar where geoLocation(workplace, -12, -34, \"-77 d\")",
                     "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
     }
 
@@ -587,71 +593,71 @@ public class YqlParserTestCase {
     public void testNearestNeighbor() {
         assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");
-        assertParse("select foo from bar where [{\"targetHits\": 37}]nearestNeighbor(semantic_embedding, my_vector);",
+        assertParse("select foo from bar where [{targetHits: 37}]nearestNeighbor(semantic_embedding, my_vector)",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=37}");
-        assertParse("select foo from bar where [{\"approximate\": false, \"hnsw.exploreAdditionalHits\": 8, \"targetHits\": 3}]nearestNeighbor(semantic_embedding, my_vector);",
+        assertParse("select foo from bar where [{\"approximate\": false, \"hnsw.exploreAdditionalHits\": 8, targetHits: 3}]nearestNeighbor(semantic_embedding, my_vector)",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=8,distanceThreshold=Infinity,approximate=false,targetHits=3}");
 
-        assertParse("select foo from bar where [{\"targetHits\": 7, \"distanceThreshold\": 100100.25}]nearestNeighbor(semantic_embedding, my_vector);",
+        assertParse("select foo from bar where [{targetHits: 7, \"distanceThreshold\": 100100.25}]nearestNeighbor(semantic_embedding, my_vector)",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=100100.25,approximate=true,targetHits=7}");
 
     }
 
     @Test
     public void testTrueAndFalse() {
-        assertParse("select foo from bar where true;", "TRUE");
-        assertParse("select foo from bar where false;", "FALSE");
-        assertParse("select foo from bar where ((title contains \"foo\") AND true) AND !((title contains \"bar\") or false);",
+        assertParse("select foo from bar where true", "TRUE");
+        assertParse("select foo from bar where false", "FALSE");
+        assertParse("select foo from bar where ((title contains \"foo\") AND true) AND !((title contains \"bar\") or false)",
                     "+(AND title:foo TRUE) -(OR title:bar FALSE)");
     }
 
     @Test
     public void testPredicate() {
         assertParse("select foo from bar where predicate(predicate_field, " +
-                "{\"gender\":\"male\", \"hobby\":[\"music\", \"hiking\"]}, {\"age\":23L});",
+                "{\"gender\":\"male\", \"hobby\":[\"music\", \"hiking\"]}, {\"age\":23L})",
                 "PREDICATE_QUERY_ITEM gender=male, hobby=music, hobby=hiking, age:23");
         assertParse("select foo from bar where predicate(predicate_field, " +
-                "{\"gender\":\"male\", \"hobby\":[\"music\", \"hiking\"]}, {\"age\":23});",
+                "{\"gender\":\"male\", \"hobby\":[\"music\", \"hiking\"]}, {\"age\":23})",
                 "PREDICATE_QUERY_ITEM gender=male, hobby=music, hobby=hiking, age:23");
-        assertParse("select foo from bar where predicate(predicate_field, 0, void);",
+        assertParse("select foo from bar where predicate(predicate_field, 0, void)",
                 "PREDICATE_QUERY_ITEM ");
     }
 
     @Test
     public void testPredicateWithSubQueries() {
         assertParse("select foo from bar where predicate(predicate_field, " +
-                "{\"0x03\":{\"gender\":\"male\"},\"0x01\":{\"hobby\":[\"music\", \"hiking\"]}}, {\"0x80ffffffffffffff\":{\"age\":23L}});",
+                "{\"0x03\":{\"gender\":\"male\"},\"0x01\":{\"hobby\":[\"music\", \"hiking\"]}}, {\"0x80ffffffffffffff\":{\"age\":23L}})",
                 "PREDICATE_QUERY_ITEM gender=male[0x3], hobby=music[0x1], hobby=hiking[0x1], age:23[0x80ffffffffffffff]");
-        assertParseFail("select foo from bar where predicate(foo, null, {\"0x80000000000000000\":{\"age\":23}});",
+        assertParseFail("select foo from bar where predicate(foo, null, {\"0x80000000000000000\":{\"age\":23}})",
                 new NumberFormatException("Too long subquery string: 0x80000000000000000"));
         assertParse("select foo from bar where predicate(predicate_field, " +
-                        "{\"[0,1]\":{\"gender\":\"male\"},\"[0]\":{\"hobby\":[\"music\", \"hiking\"]}}, {\"[62, 63]\":{\"age\":23L}});",
+                        "{\"[0,1]\":{\"gender\":\"male\"},\"[0]\":{\"hobby\":[\"music\", \"hiking\"]}}, {\"[62, 63]\":{\"age\":23L}})",
                 "PREDICATE_QUERY_ITEM gender=male[0x3], hobby=music[0x1], hobby=hiking[0x1], age:23[0xc000000000000000]");
     }
 
     @Test
     public void testRank() {
-        assertParse("select foo from bar where rank(a contains \"A\", b contains \"B\");",
+        assertParse("select foo from bar where rank(a contains \"A\", b contains \"B\")",
                     "RANK a:A b:B");
         assertParse("select foo from bar where rank(a contains \"A\", b contains \"B\", c " +
-                    "contains \"C\");",
+                    "contains \"C\")",
                     "RANK a:A b:B c:C");
         assertParse("select foo from bar where rank(a contains \"A\", b contains \"B\"  or c " +
-                    "contains \"C\");",
+                    "contains \"C\")",
                     "RANK a:A (OR b:B c:C)");
     }
 
     @Test
     @SuppressWarnings("deprecation")
     public void testWeakAnd() {
-        assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\");",
+        assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")",
                     "WEAKAND(100) a:A b:B");
         assertParse("select foo from bar where [{\"targetHits\": 37}]weakAnd(a contains \"A\", " +
-                    "b contains \"B\");",
+                    "b contains \"B\")",
                     "WEAKAND(37) a:A b:B");
 
         QueryTree tree = parse("select foo from bar where [{\"scoreThreshold\": 41}]weakAnd(a " +
-                               "contains \"A\", b contains \"B\");");
+                               "contains \"A\", b contains \"B\")");
         assertEquals("WEAKAND(100) a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
         assertEquals(41, ((WeakAndItem)tree.getRoot()).getScoreThreshold());
@@ -659,32 +665,32 @@ public class YqlParserTestCase {
 
     @Test
     public void testEquiv() {
-        assertParse("select foo from bar where fieldName contains equiv(\"A\",\"B\");",
+        assertParse("select foo from bar where fieldName contains equiv(\"A\",\"B\")",
                     "EQUIV fieldName:A fieldName:B");
         assertParse("select foo from bar where fieldName contains " +
                     "equiv(\"ny\",phrase(\"new\",\"york\"));",
                     "EQUIV fieldName:ny fieldName:\"new york\"");
-        assertParseFail("select foo from bar where fieldName contains equiv(\"ny\");",
+        assertParseFail("select foo from bar where fieldName contains equiv(\"ny\")",
                         new IllegalArgumentException("Expected 2 or more arguments, got 1."));
-        assertParseFail("select foo from bar where fieldName contains equiv(\"ny\", nalle(void));",
+        assertParseFail("select foo from bar where fieldName contains equiv(\"ny\", nalle(void))",
                         new IllegalArgumentException("Expected function 'phrase', got 'nalle'."));
-        assertParseFail("select foo from bar where fieldName contains equiv(\"ny\", 42);",
+        assertParseFail("select foo from bar where fieldName contains equiv(\"ny\", 42)",
                         new ClassCastException("Cannot cast java.lang.Integer to java.lang.String"));
     }
 
     @Test
     public void testAffixItems() {
-        assertRootClass("select foo from bar where baz contains ([ {\"suffix\": true} ]\"colors\");",
+        assertRootClass("select foo from bar where baz contains ([ {suffix: true} ]\"colors\")",
                         SuffixItem.class);
-        assertRootClass("select foo from bar where baz contains ([ {\"prefix\": true} ]\"colors\");",
+        assertRootClass("select foo from bar where baz contains ([ {\"prefix\": true} ]\"colors\")",
                         PrefixItem.class);
-        assertRootClass("select foo from bar where baz contains ([ {\"substring\": true} ]\"colors\");",
+        assertRootClass("select foo from bar where baz contains ([ {substring: true} ]\"colors\")",
                         SubstringItem.class);
-        assertParseFail("select foo from bar where description contains ([ {\"suffix\": true, " +
-                        "\"prefix\": true} ]\"colors\");",
+        assertParseFail("select foo from bar where description contains ([ {suffix: true, " +
+                        "prefix: true} ]\"colors\")",
                         new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
-        assertParseFail("select foo from bar where description contains ([ {\"suffix\": true, " +
-                        "\"substring\": true} ]\"colors\");",
+        assertParseFail("select foo from bar where description contains ([ {suffix: true, " +
+                        "substring: true} ]\"colors\")",
                         new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
     }
 
@@ -705,7 +711,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testQueryWithSemicolon() {
-        assertParse("select foo from bar where price = 1;", "price:1");
+        assertParse("select foo from bar where price = 1", "price:1");
     }
 
     @Test
@@ -792,7 +798,7 @@ public class YqlParserTestCase {
     public void testAnnotatedOrdering() {
         assertParse(
                 "select foo from bar where title contains \"madonna\""
-                        + " order by [{\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}]other desc"
+                        + " order by [{function: \"uca\", locale: \"en_US\", strength: \"IDENTICAL\"}]other desc"
                         + " limit 600" + " timeout 3", "title:madonna");
         FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
         assertEquals("other", fieldOrder.getFieldName());
@@ -838,23 +844,23 @@ public class YqlParserTestCase {
 
     @Test
     public void testNegativeHitLimit() {
-        assertParse("select * from sources * where [{\"hitLimit\": -38}]range(foo, 0, 1)", "foo:[0;1;-38]");
+        assertParse("select * from sources * where [{hitLimit: -38}]range(foo, 0, 1)", "foo:[0;1;-38]");
     }
 
     @Test
     public void testRangeSearchHitPopulationOrdering() {
-        assertParse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": true}]range(foo, 0, 1)",
+        assertParse("select * from sources * where [{hitLimit: 38, \"ascending\": true}]range(foo, 0, 1)",
                     "foo:[0;1;38]");
-        assertParse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": false}]range(foo, 0, 1)",
+        assertParse("select * from sources * where [{hitLimit: 38, \"ascending\": false}]range(foo, 0, 1)",
                     "foo:[0;1;-38]");
-        assertParse("select * from sources * where [{\"hitLimit\": 38, \"descending\": true}]range(foo, 0, 1)",
+        assertParse("select * from sources * where [{hitLimit: 38, \"descending\": true}]range(foo, 0, 1)",
                     "foo:[0;1;-38]");
-        assertParse("select * from sources * where [{\"hitLimit\": 38, \"descending\": false}]range(foo, 0, 1)",
+        assertParse("select * from sources * where [{hitLimit: 38, \"descending\": false}]range(foo, 0, 1)",
                     "foo:[0;1;38]");
 
         boolean gotExceptionFromParse = false;
         try {
-            parse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": true, \"descending\": false}]range(foo, 0, 1)");
+            parse("select * from sources * where [{hitLimit: 38, ascending: true, descending: false}]range(foo, 0, 1)");
         } catch (IllegalArgumentException e) {
             assertTrue("Expected information about abuse of settings.",
                     e.getMessage().contains("both ascending and descending ordering set"));
@@ -868,20 +874,20 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where range(title, 0.0, 500.0)",
                 "title:[0.0;500.0]");
         assertParse(
-                "select * from sources * where [{\"bounds\": \"open\"}]range(title, 0.0, 500.0)",
+                "select * from sources * where [{bounds: \"open\"}]range(title, 0.0, 500.0)",
                 "title:<0.0;500.0>");
         assertParse(
-                "select * from sources * where [{\"bounds\": \"leftOpen\"}]range(title, 0.0, 500.0)",
+                "select * from sources * where [{bounds: \"leftOpen\"}]range(title, 0.0, 500.0)",
                 "title:<0.0;500.0]");
         assertParse(
-                "select * from sources * where [{\"bounds\": \"rightOpen\"}]range(title, 0.0, 500.0)",
+                "select * from sources * where [{bounds: \"rightOpen\"}]range(title, 0.0, 500.0)",
                 "title:[0.0;500.0>");
     }
 
     @Test
     public void testInheritedAnnotations() {
         {
-            QueryTree x = parse("select * from sources * where ([{\"ranked\": false}](foo contains \"a\" and bar contains \"b\")) or foor contains ([{\"ranked\": false}]\"c\")");
+            QueryTree x = parse("select * from sources * where ([{ranked: false}](foo contains \"a\" and bar contains \"b\")) or foor contains ([{ranked: false}]\"c\")");
             List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
             assertEquals(3, terms.size());
             for (IndexedItem term : terms) {
@@ -889,7 +895,7 @@ public class YqlParserTestCase {
             }
         }
         {
-            QueryTree x = parse("select * from sources * where [{\"ranked\": false}](foo contains \"a\" and bar contains \"b\")");
+            QueryTree x = parse("select * from sources * where [{ranked: false}](foo contains \"a\" and bar contains \"b\")");
             List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
             assertEquals(2, terms.size());
             for (IndexedItem term : terms) {
@@ -901,10 +907,10 @@ public class YqlParserTestCase {
     @Test
     public void testMoreInheritedAnnotations() {
         String yqlQuery = "select * from sources * where " +
-                          "([{\"ranked\": false}](foo contains \"a\" " +
-                          "and ([{\"ranked\": true}](bar contains \"b\" " +
-                          "or ([{\"ranked\": false}](foo contains \"c\" " +
-                          "and foo contains ([{\"ranked\": true}]\"d\")))))))";
+                          "([{ranked: false}](foo contains \"a\" " +
+                          "and ([{ranked: true}](bar contains \"b\" " +
+                          "or ([{ranked: false}](foo contains \"c\" " +
+                          "and foo contains ([{ranked: true}]\"d\")))))))";
         QueryTree x = parse(yqlQuery);
         List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
         assertEquals(4, terms.size());
@@ -953,7 +959,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testWordAlternatives() {
-        QueryTree x = parse("select * from sources * where foo contains alternatives({\"trees\": 1.0, \"tree\": 0.7})");
+        QueryTree x = parse("select * from sources * where foo contains alternatives({trees: 1.0, \"tree\": 0.7})");
         Item root = x.getRoot();
         assertSame(WordAlternativesItem.class, root.getClass());
         WordAlternativesItem alternatives = (WordAlternativesItem) root;
@@ -963,8 +969,8 @@ public class YqlParserTestCase {
     @Test
     public void testWordAlternativesWithOrigin() {
         QueryTree q = parse("select * from sources * where foo contains" +
-                            " ([{\"origin\": {\"original\": \" trees \", \"offset\": 1, \"length\": 5}}]" +
-                            "alternatives({\"trees\": 1.0, \"tree\": 0.7}))");
+                            " ([{origin: {original: \" trees \", 'offset': 1, length: 5}}]" +
+                            "alternatives({trees: 1.0, tree: 0.7}))");
         Item root = q.getRoot();
         assertSame(WordAlternativesItem.class, root.getClass());
         WordAlternativesItem alternatives = (WordAlternativesItem) root;
@@ -979,7 +985,7 @@ public class YqlParserTestCase {
     @Test
     public void testWordAlternativesInPhrase() {
         QueryTree q = parse("select * from sources * where" +
-                            " foo contains phrase(\"forest\", alternatives({\"trees\": 1.0, \"tree\": 0.7}))");
+                            " foo contains phrase(\"forest\", alternatives({trees: 1.0, tree: 0.7}))");
         Item root = q.getRoot();
         assertSame(PhraseItem.class, root.getClass());
         PhraseItem phrase = (PhraseItem) root;
@@ -993,7 +999,7 @@ public class YqlParserTestCase {
     @Test
     public void testBackslash() {
         {
-            String queryString = "select * from testtype where title contains \"\\\\\";"; // Java escaping * YQL escaping
+            String queryString = "select * from testtype where title contains \"\\\\\""; // Java escaping * YQL escaping
 
             QueryTree query = parse(queryString);
 
@@ -1031,7 +1037,7 @@ public class YqlParserTestCase {
 
         // YQL query
         Query yql = new Query();
-        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{\"endAnchor\": false }]uri(\"google.com\"))");
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{endAnchor: false }]uri(\"google.com\"))");
         assertUrlQuery("urlfield.hostname", yql, false, false, true);
     }
 
@@ -1042,7 +1048,7 @@ public class YqlParserTestCase {
 
         // YQL query
         Query yql = new Query();
-        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{\"startAnchor\": true }] uri(\"google.com\"))");
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{startAnchor: true }] uri(\"google.com\"))");
         assertUrlQuery("urlfield.hostname", yql, true, true, true);
     }
 
@@ -1065,7 +1071,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testAndSegmenting() {
-        parse("select * from sources * where (default contains ([{\"stem\": false}]\"m\") AND default contains ([{\"origin\": {\"original\": \"m\'s\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"m\", \"s\"))) timeout 472");
+        parse("select * from sources * where (default contains ([{stem: false}]\"m\") AND default contains ([{origin: {original: \"m\'s\", 'offset': 0, length: 3}, andSegmenting: true}]phrase(\"m\", \"s\"))) timeout 472");
     }
 
     private void assertUrlQuery(String field, Query query, boolean startAnchor, boolean endAnchor, boolean endAnchorIsDefault) {

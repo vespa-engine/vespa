@@ -90,7 +90,7 @@ options {
  * LEXER RULES
  *------------------------------------------------------------------*/
 
-ID  :	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|':'|'-')*
+IDENTIFIER  :	('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'-')*
     ;
 
 LONG_INT :	'-'?'0'..'9'+ ('L'|'l')
@@ -117,8 +117,8 @@ LETTER  : 'a'..'z'
     	| 'A'..'Z'
     	;
 
-STRING  :  '"' ( ESC_SEQ | ~('\\'| '"') )* '"'
-        |  '\'' ( ESC_SEQ | ~('\\' | '\'') )* '\''
+STRING  :  DQ ( ESC_SEQ | ~('\\'| '"') )* DQ
+        |  SQ ( ESC_SEQ | ~('\\' | '\'') )* SQ
 	;
 
 fragment
@@ -166,8 +166,8 @@ VESPA_GROUPING_ARG
 // --------- parser rules ------------
 
 ident
-   : keyword_as_ident //{addChild(new TerminalNodeImpl(keyword_as_ident.getText()));}
-   | ID
+   : keyword_as_ident
+   | IDENTIFIER
    ;
 
 keyword_as_ident
@@ -178,11 +178,11 @@ program : (statement SEMI?)* EOF
 	;
 
 moduleId
-    :  ID
+    :  IDENTIFIER
     ;
     
 moduleName
-	: literalString
+	: STRING
 	| namespaced_name
 	;
 
@@ -261,7 +261,7 @@ source_spec
 	;
 
 alias_def
-	:	(AS? ID)
+	:	(AS? IDENTIFIER)
 	;
 
 data_source
@@ -428,7 +428,7 @@ indexref[boolean in_select]
 	:	LBRACKET idx=expression[in_select] RBRACKET
 	;
 propertyref
-	: 	DOT nm=ID
+	: 	DOT nm=IDENTIFIER
 	;
 
 primaryExpression
@@ -459,8 +459,8 @@ propertyNameAndValue
 	;
 
 propertyName
-	: ID 
-	| literalString
+	: IDENTIFIER
+	| STRING
 	;
 
 constantExpression
@@ -483,10 +483,6 @@ scalar_literal
 	| FLOAT
 	;
 	
-literalString
-	: STRING
-	;
-
 array_parameter
     : AT i=ident {isArrayParameter($i.ctx)}?
     ;
