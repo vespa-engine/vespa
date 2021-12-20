@@ -1565,6 +1565,20 @@
       "protected final java.util.Random randomizer"
     ]
   },
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$InstabilityChecker": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract boolean tooManyFailures(int)",
+      "public abstract void addFailure(java.lang.Integer)"
+    ],
+    "fields": []
+  },
   "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$Parameters": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -1576,7 +1590,8 @@
       "public java.lang.String getClusterName()",
       "public com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostPatternGenerator createPatternGenerator()",
       "public com.yahoo.documentapi.messagebus.protocol.ContentPolicy$HostFetcher createHostFetcher(com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy, int)",
-      "public com.yahoo.vdslib.distribution.Distribution createDistribution(com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy)"
+      "public com.yahoo.vdslib.distribution.Distribution createDistribution(com.yahoo.documentapi.messagebus.protocol.SlobrokPolicy)",
+      "public com.yahoo.documentapi.messagebus.protocol.ContentPolicy$InstabilityChecker createInstabilityChecker()"
     ],
     "fields": [
       "protected final java.lang.String clusterName",
@@ -1584,6 +1599,21 @@
       "protected final com.yahoo.vespa.config.content.DistributionConfig distributionConfig",
       "protected final com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostPatternGenerator slobrokHostPatternGenerator"
     ]
+  },
+  "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$PerNodeCountingInstabilityChecker": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$InstabilityChecker"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int)",
+      "public boolean tooManyFailures(int)",
+      "public void addFailure(java.lang.Integer)"
+    ],
+    "fields": []
   },
   "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$SlobrokHostFetcher": {
     "superClass": "com.yahoo.documentapi.messagebus.protocol.ContentPolicy$HostFetcher",
