@@ -40,6 +40,7 @@ class OpenNlpDetector implements Detector {
         config = new LanguageDetectorConfig();
         config.setMinDiff(0.02);
         config.setChunkSize(64);
+        config.setMaxLength(256);
         for (Locale locale : Locale.getAvailableLocales()) {
             Language language = Language.fromLocale(locale);
             if (language != null)
@@ -83,13 +84,9 @@ class OpenNlpDetector implements Detector {
     }
 
     private Language detectLanguage(String input) {
-        Language simpleGuess = simple.guessLanguage(input);
-        if (simpleGuess != Language.UNKNOWN)
-            return simpleGuess;
-
         var prediction = detector.probingPredictLanguages(input, config).getLanguages()[0];
-        return prediction.getConfidence() > 0.03 ? languagesByISO3.getOrDefault(prediction.getLang(), Language.UNKNOWN)
-                                                 : Language.UNKNOWN;
+        var result = prediction.getConfidence() > 0.02 ? languagesByISO3.get(prediction.getLang()) : null;
+        return result != null ? result : simple.guessLanguage(input.substring(0, Math.min(input.length(), 256)));
     }
 
 }
