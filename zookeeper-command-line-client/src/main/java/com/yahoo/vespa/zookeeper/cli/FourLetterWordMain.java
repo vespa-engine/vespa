@@ -3,6 +3,7 @@ package com.yahoo.vespa.zookeeper.cli;
 
 import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.zookeeper.common.X509Exception;
+import org.slf4j.impl.SimpleLogger;
 
 import java.io.IOException;
 import java.util.Map;
@@ -13,6 +14,10 @@ import java.util.Map;
  * @author bjorncs
  */
 public class FourLetterWordMain {
+
+    static {
+        System.setProperty(SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "WARN");
+    }
 
     public static void main(String[] args) throws X509Exception.SSLContextException, IOException {
         Map<String, String> zkClientConfig = new ZkClientConfigBuilder().toConfigProperties();
