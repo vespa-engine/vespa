@@ -41,15 +41,40 @@ public class OpenNlpDetectorTestCase {
 
         // Test fallback to SimpleDetector
         assertLanguage(Language.CHINESE_TRADITIONAL, // CHINESE_SIMPLIFIED input
-                       "\u6211\u80FD\u541E\u4E0B\u73BB\u7483\u800C\u4E0D\u4F24\u8EAB\u4F53\u3002",
+                       "我能吞下玻璃而不伤身体。",
                        detector);
 
-        // from https://ru.wikipedia.org/wiki/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F
+        // from https://zh.wikipedia.org/wiki/Yahoo
+        assertLanguage(Language.CHINESE_TRADITIONAL,
+                       "Yahoo! Next是一个展示雅虎新技术、新产品的场所，目前在测试阶段。",
+                       detector);
+
+        // from https://th.wikipedia.org/wiki/Yahoo
+        assertLanguage(Language.THAI,
+                       "เดือนกรกฎาคม 2012 Yahoo! ก็ได้ประธานเจ้าหน้าที่บริหารคนใหม่ \"มาริสสา เมเยอร์\" อดีตผู้บริหารจาก Google มาทำหน้าที่พลิกฟื้นบริษัท",
+                       detector);
+
+        // from https://ar.wikipedia.org/wiki/Yahoo
+        assertLanguage(Language.ARABIC,
+                       "وفقًا لمزودي تحليلات الويب دائما كأليكسا وسميلارويب،وصل موقع ياهولأكثر من 7 مليارات مشاهدة شهريًا - حيث احتل المرتبة السادسة بين أكثر مواقع الويب زيارة على مستوى العالم في عام 2016.",
+                       detector);
+
+        // from https://ko.wikipedia.org/wiki/Yahoo
+        assertLanguage(Language.KOREAN,
+                       "야후!의 전신인 디렉터리 사이트는 1994년 1월에 스탠퍼드 대학교 출신의 제리 양과 데이비드 파일로가 만들었으며, 회사는 1995년 3월 2일에 설립되었다.",
+                       detector);
+
+        // from https://ja.wikipedia.org/wiki/Yahoo
+        assertLanguage(Language.JAPANESE,
+                       "日本では、ヤフー株式会社がYahoo!（後にベライゾンがアルタバに売却）とソフトバンクの合弁会社として1996年に設立した。",
+                       detector);
+
+        // from https://ru.wikipedia.org/wiki/Yahoo
         assertLanguage(Language.RUSSIAN,
                        "7 февраля 2000 года Yahoo.com подвергся DDoS атаке и на несколько часов приостановил работу.",
                        detector);
 
-        // https://he.wikipedia.org/wiki/Yahoo!
+        // from https://he.wikipedia.org/wiki/Yahoo
         assertLanguage(Language.HEBREW,
                        "אתר יאהו! הוא אחד מאתרי האינטרנט הפופולריים ביותר בעולם, עם מעל 500 מיליון כניסות בכל יום",
                        detector);
