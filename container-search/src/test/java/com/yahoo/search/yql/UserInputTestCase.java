@@ -48,24 +48,21 @@ public class UserInputTestCase {
     public void testSimpleUserInput() {
         {
             URIBuilder builder = searchUri();
-            builder.setParameter("yql",
-                    "select * from sources * where userInput(\"nalle\");");
+            builder.setParameter("yql", "select * from sources * where userInput(\"nalle\")");
             Query query = searchAndAssertNoErrors(builder);
             assertEquals("select * from sources * where default contains \"nalle\";", query.yqlRepresentation());
         }
         {
             URIBuilder builder = searchUri();
             builder.setParameter("nalle", "bamse");
-            builder.setParameter("yql",
-                    "select * from sources * where userInput(@nalle);");
+            builder.setParameter("yql", "select * from sources * where userInput(@nalle)");
             Query query = searchAndAssertNoErrors(builder);
             assertEquals("select * from sources * where default contains \"bamse\";", query.yqlRepresentation());
         }
         {
             URIBuilder builder = searchUri();
             builder.setParameter("nalle", "bamse");
-            builder.setParameter("yql",
-                    "select * from sources * where userInput(nalle);");
+            builder.setParameter("yql", "select * from sources * where userInput(nalle)");
             Query query = new Query(builder.toString());
             Result r = execution.search(query);
             assertNotNull(r.hits().getError());
@@ -75,8 +72,7 @@ public class UserInputTestCase {
     @Test
     public void testRawUserInput() {
         URIBuilder builder = searchUri();
-        builder.setParameter("yql",
-                "select * from sources * where [{\"grammar\": \"raw\"}]userInput(\"nal le\");");
+        builder.setParameter("yql", "select * from sources * where [{\"grammar\": \"raw\"}]userInput(\"nal le\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where default contains \"nal le\";", query.yqlRepresentation());
     }
@@ -85,7 +81,7 @@ public class UserInputTestCase {
     public void testSegmentedUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{\"grammar\": \"segment\"}]userInput(\"nal le\");");
+                "select * from sources * where [{\"grammar\": \"segment\"}]userInput(\"nal le\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where default contains ([{\"origin\": {\"original\": \"nal le\", \"offset\": 0, \"length\": 6}}]phrase(\"nal\", \"le\"));", query.yqlRepresentation());
     }
@@ -94,7 +90,7 @@ public class UserInputTestCase {
     public void testSegmentedNoiseUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{\"grammar\": \"segment\"}]userInput(\"^^^^^^^^\");");
+                "select * from sources * where [{\"grammar\": \"segment\"}]userInput(\"^^^^^^^^\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where default contains \"^^^^^^^^\";", query.yqlRepresentation());
     }
@@ -103,7 +99,7 @@ public class UserInputTestCase {
     public void testCustomDefaultIndexUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{\"defaultIndex\": \"glompf\"}]userInput(\"nalle\");");
+                "select * from sources * where [{\"defaultIndex\": \"glompf\"}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where glompf contains \"nalle\";", query.yqlRepresentation());
     }
@@ -112,7 +108,7 @@ public class UserInputTestCase {
     public void testAnnotatedUserInputStemming() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{\"stem\": false}]userInput(\"nalle\");");
+                "select * from sources * where [{\"stem\": false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
                 "select * from sources * where default contains ([{\"stem\": false}]\"nalle\");",
@@ -124,7 +120,7 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("myinput", "-5");
         builder.setParameter("yql",
-                             "select * from ecitem where rank(([{\"defaultIndex\":\"myfield\"}](userInput(@myinput))));");
+                             "select * from ecitem where rank(([{\"defaultIndex\":\"myfield\"}](userInput(@myinput))))");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from ecitem where rank(myfield = (-5));", query.yqlRepresentation());
         assertEquals("RANK myfield:-5", query.getModel().getQueryTree().getRoot().toString());
@@ -134,7 +130,7 @@ public class UserInputTestCase {
     public void testAnnotatedUserInputUnrankedTerms() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{\"ranked\": false}]userInput(\"nalle\");");
+                "select * from sources * where [{\"ranked\": false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
                 "select * from sources * where default contains ([{\"ranked\": false}]\"nalle\");",
@@ -145,7 +141,7 @@ public class UserInputTestCase {
     public void testAnnotatedUserInputFiltersTerms() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{\"filter\": true}]userInput(\"nalle\");");
+                "select * from sources * where [{\"filter\": true}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
                 "select * from sources * where default contains ([{\"filter\": true}]\"nalle\");",
@@ -157,7 +153,7 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter(
                 "yql",
-                "select * from sources * where [{\"normalizeCase\": false}]userInput(\"nalle\");");
+                "select * from sources * where [{\"normalizeCase\": false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
                 "select * from sources * where default contains ([{\"normalizeCase\": false}]\"nalle\");",
@@ -168,7 +164,7 @@ public class UserInputTestCase {
     public void testAnnotatedUserInputAccentRemoval() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{\"accentDrop\": false}]userInput(\"nalle\");");
+                "select * from sources * where [{\"accentDrop\": false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
                 "select * from sources * where default contains ([{\"accentDrop\": false}]\"nalle\");",
@@ -179,7 +175,7 @@ public class UserInputTestCase {
     public void testAnnotatedUserInputPositionData() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{\"usePositionData\": false}]userInput(\"nalle\");");
+                "select * from sources * where [{\"usePositionData\": false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
                 "select * from sources * where default contains ([{\"usePositionData\": false}]\"nalle\");",
@@ -192,7 +188,7 @@ public class UserInputTestCase {
         builder.setParameter("nalle", "bamse");
         builder.setParameter("meta", "syntactic");
         builder.setParameter("yql",
-                "select * from sources * where foo contains @nalle and foo contains phrase(@nalle, @meta, @nalle);");
+                "select * from sources * where foo contains @nalle and foo contains phrase(@nalle, @meta, @nalle)");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where (foo contains \"bamse\" AND foo contains phrase(\"bamse\", \"syntactic\", \"bamse\"));", query.yqlRepresentation());
     }
@@ -201,7 +197,7 @@ public class UserInputTestCase {
     public void testReferenceInComparison() {
         URIBuilder builder = searchUri();
         builder.setParameter("varref", "1980");
-        builder.setParameter("yql", "select * from sources * where year > @varref;");
+        builder.setParameter("yql", "select * from sources * where year > @varref");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where year > 1980;", query.yqlRepresentation());
     }
@@ -212,7 +208,7 @@ public class UserInputTestCase {
         builder.setParameter("continuation", "BCBCBCBEBG");
         builder.setParameter("yql",
                              "select * from sources * where myfield contains 'token'" +
-                             "| [{'continuations':[@continuation, 'BCBKCBACBKCCK'] }] all(group(f) each(output(count())));");
+                             "| [{'continuations':[@continuation, 'BCBKCBACBKCCK'] }] all(group(f) each(output(count())))");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where myfield contains \"token\" | [{ 'continuations':['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(f) each(output(count())));", query.yqlRepresentation());
     }
@@ -222,7 +218,7 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("term", "A");
         builder.setParameter("yql",
-                             "select foo from bar where fieldName contains equiv(@term,'B');");
+                             "select foo from bar where fieldName contains equiv(@term,'B')");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select foo from bar where fieldName contains equiv(\"A\", \"B\");", query.yqlRepresentation());
     }
@@ -249,7 +245,7 @@ public class UserInputTestCase {
     @Test
     public void testEmptyUserInput() {
         URIBuilder builder = searchUri();
-        builder.setParameter("yql", "select * from sources * where userInput(\"\");");
+        builder.setParameter("yql", "select * from sources * where userInput(\"\")");
         assertQueryFails(builder);
     }
 
@@ -257,7 +253,7 @@ public class UserInputTestCase {
     public void testEmptyUserInputFromQueryProperty() {
         URIBuilder builder = searchUri();
         builder.setParameter("foo", "");
-        builder.setParameter("yql", "select * from sources * where userInput(@foo);");
+        builder.setParameter("yql", "select * from sources * where userInput(@foo)");
         assertQueryFails(builder);
     }
 
@@ -265,7 +261,7 @@ public class UserInputTestCase {
     public void testEmptyQueryProperty() {
         URIBuilder builder = searchUri();
         builder.setParameter("foo", "");
-        builder.setParameter("yql", "select * from sources * where bar contains \"a\" and nonEmpty(foo contains @foo);");
+        builder.setParameter("yql", "select * from sources * where bar contains \"a\" and nonEmpty(foo contains @foo)");
         assertQueryFails(builder);
     }
 
@@ -274,17 +270,17 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("foo", "");
         builder.setParameter("yql",
-                "select * from sources * where bar contains \"a\" and nonEmpty(bar contains \"bar\" and foo contains @foo);");
+                "select * from sources * where bar contains \"a\" and nonEmpty(bar contains \"bar\" and foo contains @foo)");
         assertQueryFails(builder);
     }
 
     @Test
     public void testCompositeWithoutArguments() {
         URIBuilder builder = searchUri();
-        builder.setParameter("yql", "select * from sources * where bar contains \"a\" and foo contains phrase();");
+        builder.setParameter("yql", "select * from sources * where bar contains \"a\" and foo contains phrase()");
         searchAndAssertNoErrors(builder);
         builder = searchUri();
-        builder.setParameter("yql", "select * from sources * where bar contains \"a\" and nonEmpty(foo contains phrase());");
+        builder.setParameter("yql", "select * from sources * where bar contains \"a\" and nonEmpty(foo contains phrase())");
         assertQueryFails(builder);
     }
 
@@ -292,7 +288,7 @@ public class UserInputTestCase {
     public void testAnnoyingPlacementOfNonEmpty() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where bar contains \"a\" and foo contains nonEmpty(phrase(\"a\", \"b\"));");
+                "select * from sources * where bar contains \"a\" and foo contains nonEmpty(phrase(\"a\", \"b\"))");
         assertQueryFails(builder);
     }
 
@@ -305,7 +301,7 @@ public class UserInputTestCase {
     public void testAllowEmptyUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("foo", "");
-        builder.setParameter("yql", "select * from sources * where [{\"allowEmpty\": true}]userInput(@foo);");
+        builder.setParameter("yql", "select * from sources * where [{\"allowEmpty\": true}]userInput(@foo)");
         searchAndAssertNoErrors(builder);
     }
 
@@ -313,7 +309,7 @@ public class UserInputTestCase {
     public void testAllowEmptyNullFromQueryParsing() {
         URIBuilder builder = searchUri();
         builder.setParameter("foo", ",,,,,,,,");
-        builder.setParameter("yql", "select * from sources * where [{\"allowEmpty\": true}]userInput(@foo);");
+        builder.setParameter("yql", "select * from sources * where [{\"allowEmpty\": true}]userInput(@foo)");
         searchAndAssertNoErrors(builder);
     }
 
@@ -321,7 +317,7 @@ public class UserInputTestCase {
     public void testDisallowEmptyNullFromQueryParsing() {
         URIBuilder builder = searchUri();
         builder.setParameter("foo", ",,,,,,,,");
-        builder.setParameter("yql", "select * from sources * where userInput(@foo);");
+        builder.setParameter("yql", "select * from sources * where userInput(@foo)");
         assertQueryFails(builder);
     }
 

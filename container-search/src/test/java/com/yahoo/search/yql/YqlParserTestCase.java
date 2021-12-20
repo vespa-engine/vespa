@@ -71,7 +71,7 @@ public class YqlParserTestCase {
 
     @Test(timeout = 120_000)
     public void failsGracefullyOnMissingQuoteEscapingAndSubsequentUnicodeCharacter() {
-        assertParseFail("select * from bar where rank(ids contains 'http://en.wikipedia.org/wiki/Hors_d'œuvre') limit 10;",
+        assertParseFail("select * from bar where rank(ids contains 'http://en.wikipedia.org/wiki/Hors_d'œuvre') limit 10",
                 new IllegalInputException("com.yahoo.search.yql.ProgramCompileException: query:L1:79 token recognition error at: 'œ'"));
     }
 
@@ -84,13 +84,13 @@ public class YqlParserTestCase {
     @Test
     public void testLanguageDetection() {
         // SimpleDetector used here can detect japanese and will set that as language at the root of the user input
-        QueryTree tree = parse("select * from sources * where userInput(\"\u30ab\u30bf\u30ab\u30ca\");");
+        QueryTree tree = parse("select * from sources * where userInput(\"\u30ab\u30bf\u30ab\u30ca\")");
         assertEquals(Language.JAPANESE, tree.getRoot().getLanguage());
     }
 
     @Test
     public void testGroupingStep() {
-        assertParse("select foo from bar where baz contains 'cox';",
+        assertParse("select foo from bar where baz contains 'cox'",
                     "baz:cox");
         assertEquals("[]",
                      toString(parser.getGroupingSteps()));
@@ -113,14 +113,14 @@ public class YqlParserTestCase {
     @Test
     public void testGroupingContinuation() {
         assertParse("select foo from bar where baz contains 'cox' " +
-                    "| [{ 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(a) each(output(count())));",
+                    "| [{ 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(a) each(output(count())))",
                     "baz:cox");
         assertEquals("[[BCBCBCBEBG, BCBKCBACBKCCK]all(group(a) each(output(count())))]",
                      toString(parser.getGroupingSteps()));
 
         assertParse("select foo from bar where baz contains 'cox' " +
                     "| [{ 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(a) each(output(count()))) " +
-                    "| [{ 'continuations': ['BCBBBBBDBF', 'BCBJBPCBJCCJ'] }]all(group(b) each(output(count())));",
+                    "| [{ 'continuations': ['BCBBBBBDBF', 'BCBJBPCBJCCJ'] }]all(group(b) each(output(count())))",
                     "baz:cox");
         assertEquals("[[BCBCBCBEBG, BCBKCBACBKCCK]all(group(a) each(output(count())))," +
                      " [BCBBBBBDBF, BCBJBPCBJCCJ]all(group(b) each(output(count())))]",
@@ -194,8 +194,8 @@ public class YqlParserTestCase {
 
     @Test
     public void testLessThan() {
-        assertParse("select foo from bar where price < 500;", "price:<500");
-        assertParse("select foo from bar where 500 < price;", "price:>500");
+        assertParse("select foo from bar where price < 500", "price:<500");
+        assertParse("select foo from bar where 500 < price", "price:>500");
     }
 
     @Test
@@ -206,8 +206,8 @@ public class YqlParserTestCase {
 
     @Test
     public void testLessThanOrEqual() {
-        assertParse("select foo from bar where price <= 500;", "price:[;500]");
-        assertParse("select foo from bar where 500 <= price;", "price:[500;]");
+        assertParse("select foo from bar where price <= 500", "price:[;500]");
+        assertParse("select foo from bar where 500 <= price", "price:[500;]");
     }
 
     @Test
@@ -690,80 +690,72 @@ public class YqlParserTestCase {
 
     @Test
     public void testLongNumberInSimpleExpression() {
-        assertParse("select foo from bar where price = 8589934592L;",
-                    "price:8589934592");
+        assertParse("select foo from bar where price = 8589934592L", "price:8589934592");
     }
 
     @Test
     public void testNegativeLongNumberInSimpleExpression() {
-        assertParse("select foo from bar where price = -8589934592L;",
-                "price:-8589934592");
+        assertParse("select foo from bar where price = -8589934592L", "price:-8589934592");
     }
 
     @Test
     public void testSources() {
-        assertSources("select foo from sourceA where price <= 500;",
-                      Arrays.asList("sourceA"));
+        assertSources("select foo from sourceA where price <= 500", List.of("sourceA"));
+    }
+
+    @Test
+    public void testQueryWithSemicolon() {
+        assertParse("select foo from bar where price = 1;", "price:1");
     }
 
     @Test
     public void testSourcesWithDash() {
-        assertSources("select foo from source-a where price <= 500;",
-                      Arrays.asList("source-a"));
+        assertSources("select foo from source-a where price <= 500", List.of("source-a"));
     }
 
     @Test
     public void testWildCardSources() {
-        assertSources("select foo from sources * where price <= 500;",
-                      Collections.<String>emptyList());
+        assertSources("select foo from sources * where price <= 500", List.of());
     }
 
     @Test
     public void testMultiSources() {
-        assertSources("select foo from sources sourceA, sourceB where price <= 500;",
-                      Arrays.asList("sourceA", "sourceB"));
+        assertSources("select foo from sources sourceA, sourceB where price <= 500", List.of("sourceA", "sourceB"));
     }
 
     @Test
     public void testFields() {
-        assertSummaryFields("select fieldA from bar where price <= 500;",
-                            Arrays.asList("fieldA"));
-        assertSummaryFields("select fieldA, fieldB from bar where price <= 500;",
-                            Arrays.asList("fieldA", "fieldB"));
-        assertSummaryFields("select fieldA, fieldB, fieldC from bar where price <= 500;",
-                            Arrays.asList("fieldA", "fieldB", "fieldC"));
-        assertSummaryFields("select * from bar where price <= 500;",
-                            Collections.<String>emptyList());
+        assertSummaryFields("select fieldA from bar where price <= 500", List.of("fieldA"));
+        assertSummaryFields("select fieldA, fieldB from bar where price <= 500", List.of("fieldA", "fieldB"));
+        assertSummaryFields("select fieldA, fieldB, fieldC from bar where price <= 500", List.of("fieldA", "fieldB", "fieldC"));
+        assertSummaryFields("select * from bar where price <= 500", List.of());
     }
 
     @Test
     public void testFieldsRoot() {
-        assertParse("select * from bar where price <= 500;",
-                    "price:[;500]");
+        assertParse("select * from bar where price <= 500", "price:[;500]");
     }
 
     @Test
     public void testOffset() {
-        assertParse("select foo from bar where title contains \"madonna\" offset 37;",
-                    "title:madonna");
+        assertParse("select foo from bar where title contains \"madonna\" offset 37", "title:madonna");
         assertEquals(Integer.valueOf(37), parser.getOffset());
     }
 
     @Test
     public void testLimit() {
-        assertParse("select foo from bar where title contains \"madonna\" limit 29;",
-                    "title:madonna");
+        assertParse("select foo from bar where title contains \"madonna\" limit 29", "title:madonna");
         assertEquals(Integer.valueOf(29), parser.getHits());
     }
 
     @Test
     public void testOffsetAndLimit() {
-        assertParse("select foo from bar where title contains \"madonna\" limit 31 offset 29;",
+        assertParse("select foo from bar where title contains \"madonna\" limit 31 offset 29",
                     "title:madonna");
         assertEquals(Integer.valueOf(29), parser.getOffset());
         assertEquals(Integer.valueOf(2), parser.getHits());
 
-        assertParse("select * from bar where title contains \"madonna\" limit 41 offset 37;",
+        assertParse("select * from bar where title contains \"madonna\" limit 41 offset 37",
                     "title:madonna");
         assertEquals(Integer.valueOf(37), parser.getOffset());
         assertEquals(Integer.valueOf(4), parser.getHits());
@@ -771,19 +763,17 @@ public class YqlParserTestCase {
 
     @Test
     public void testTimeout() {
-        assertParse("select * from bar where title contains \"madonna\" timeout 7;",
-                    "title:madonna");
+        assertParse("select * from bar where title contains \"madonna\" timeout 7", "title:madonna");
         assertEquals(Integer.valueOf(7), parser.getTimeout());
 
-        assertParse("select foo from bar where title contains \"madonna\" limit 600 timeout 3;",
-                    "title:madonna");
+        assertParse("select foo from bar where title contains \"madonna\" limit 600 timeout 3", "title:madonna");
         assertEquals(Integer.valueOf(3), parser.getTimeout());
     }
 
     @Test
     public void testOrdering() {
         assertParse("select foo from bar where title contains \"madonna\" order by something asc, " +
-                    "shoesize desc limit 600 timeout 3;",
+                    "shoesize desc limit 600 timeout 3",
                     "title:madonna");
         assertEquals(2, parser.getSorting().fieldOrders().size());
         assertEquals("something", parser.getSorting().fieldOrders().get(0).getFieldName());
@@ -792,7 +782,7 @@ public class YqlParserTestCase {
         assertEquals(Order.DESCENDING, parser.getSorting().fieldOrders().get(1).getSortOrder());
 
         assertParse("select foo from bar where title contains \"madonna\" order by other limit 600 " +
-                    "timeout 3;",
+                    "timeout 3",
                     "title:madonna");
         assertEquals("other", parser.getSorting().fieldOrders().get(0).getFieldName());
         assertEquals(Order.ASCENDING, parser.getSorting().fieldOrders().get(0).getSortOrder());
@@ -803,7 +793,7 @@ public class YqlParserTestCase {
         assertParse(
                 "select foo from bar where title contains \"madonna\""
                         + " order by [{\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}]other desc"
-                        + " limit 600" + " timeout 3;", "title:madonna");
+                        + " limit 600" + " timeout 3", "title:madonna");
         FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
         assertEquals("other", fieldOrder.getFieldName());
         assertEquals(Order.DESCENDING, fieldOrder.getSortOrder());
@@ -820,7 +810,7 @@ public class YqlParserTestCase {
                 "select foo from bar where title contains \"madonna\""
                         + " order by [{\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}]other desc,"
                         + " [{\"function\": \"lowercase\"}]something asc"
-                        + " limit 600" + " timeout 3;", "title:madonna");
+                        + " limit 600" + " timeout 3", "title:madonna");
         {
             FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
             assertEquals("other", fieldOrder.getFieldName());
@@ -842,29 +832,29 @@ public class YqlParserTestCase {
 
     @Test
     public void testSegmenting() {
-        assertParse("select * from bar where title contains 'foo.bar';",
-                    "title:'foo bar'");
-
-        assertParse("select * from bar where title contains 'foo&123';",
-                    "title:'foo 123'");
+        assertParse("select * from bar where title contains 'foo.bar'", "title:'foo bar'");
+        assertParse("select * from bar where title contains 'foo&123'", "title:'foo 123'");
     }
 
     @Test
     public void testNegativeHitLimit() {
-        assertParse("select * from sources * where [{\"hitLimit\": -38}]range(foo, 0, 1);",
-                    "foo:[0;1;-38]");
+        assertParse("select * from sources * where [{\"hitLimit\": -38}]range(foo, 0, 1)", "foo:[0;1;-38]");
     }
 
     @Test
     public void testRangeSearchHitPopulationOrdering() {
-        assertParse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": true}]range(foo, 0, 1);", "foo:[0;1;38]");
-        assertParse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": false}]range(foo, 0, 1);", "foo:[0;1;-38]");
-        assertParse("select * from sources * where [{\"hitLimit\": 38, \"descending\": true}]range(foo, 0, 1);", "foo:[0;1;-38]");
-        assertParse("select * from sources * where [{\"hitLimit\": 38, \"descending\": false}]range(foo, 0, 1);", "foo:[0;1;38]");
+        assertParse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": true}]range(foo, 0, 1)",
+                    "foo:[0;1;38]");
+        assertParse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": false}]range(foo, 0, 1)",
+                    "foo:[0;1;-38]");
+        assertParse("select * from sources * where [{\"hitLimit\": 38, \"descending\": true}]range(foo, 0, 1)",
+                    "foo:[0;1;-38]");
+        assertParse("select * from sources * where [{\"hitLimit\": 38, \"descending\": false}]range(foo, 0, 1)",
+                    "foo:[0;1;38]");
 
         boolean gotExceptionFromParse = false;
         try {
-            parse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": true, \"descending\": false}]range(foo, 0, 1);");
+            parse("select * from sources * where [{\"hitLimit\": 38, \"ascending\": true, \"descending\": false}]range(foo, 0, 1)");
         } catch (IllegalArgumentException e) {
             assertTrue("Expected information about abuse of settings.",
                     e.getMessage().contains("both ascending and descending ordering set"));
@@ -875,23 +865,23 @@ public class YqlParserTestCase {
 
     @Test
     public void testOpenIntervals() {
-        assertParse("select * from sources * where range(title, 0.0, 500.0);",
+        assertParse("select * from sources * where range(title, 0.0, 500.0)",
                 "title:[0.0;500.0]");
         assertParse(
-                "select * from sources * where [{\"bounds\": \"open\"}]range(title, 0.0, 500.0);",
+                "select * from sources * where [{\"bounds\": \"open\"}]range(title, 0.0, 500.0)",
                 "title:<0.0;500.0>");
         assertParse(
-                "select * from sources * where [{\"bounds\": \"leftOpen\"}]range(title, 0.0, 500.0);",
+                "select * from sources * where [{\"bounds\": \"leftOpen\"}]range(title, 0.0, 500.0)",
                 "title:<0.0;500.0]");
         assertParse(
-                "select * from sources * where [{\"bounds\": \"rightOpen\"}]range(title, 0.0, 500.0);",
+                "select * from sources * where [{\"bounds\": \"rightOpen\"}]range(title, 0.0, 500.0)",
                 "title:[0.0;500.0>");
     }
 
     @Test
     public void testInheritedAnnotations() {
         {
-            QueryTree x = parse("select * from sources * where ([{\"ranked\": false}](foo contains \"a\" and bar contains \"b\")) or foor contains ([{\"ranked\": false}]\"c\");");
+            QueryTree x = parse("select * from sources * where ([{\"ranked\": false}](foo contains \"a\" and bar contains \"b\")) or foor contains ([{\"ranked\": false}]\"c\")");
             List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
             assertEquals(3, terms.size());
             for (IndexedItem term : terms) {
@@ -899,7 +889,7 @@ public class YqlParserTestCase {
             }
         }
         {
-            QueryTree x = parse("select * from sources * where [{\"ranked\": false}](foo contains \"a\" and bar contains \"b\");");
+            QueryTree x = parse("select * from sources * where [{\"ranked\": false}](foo contains \"a\" and bar contains \"b\")");
             List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
             assertEquals(2, terms.size());
             for (IndexedItem term : terms) {
@@ -914,7 +904,7 @@ public class YqlParserTestCase {
                           "([{\"ranked\": false}](foo contains \"a\" " +
                           "and ([{\"ranked\": true}](bar contains \"b\" " +
                           "or ([{\"ranked\": false}](foo contains \"c\" " +
-                          "and foo contains ([{\"ranked\": true}]\"d\")))))));";
+                          "and foo contains ([{\"ranked\": true}]\"d\")))))))";
         QueryTree x = parse(yqlQuery);
         List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
         assertEquals(4, terms.size());
@@ -945,7 +935,7 @@ public class YqlParserTestCase {
         ParserEnvironment parserEnvironment = new ParserEnvironment().setIndexFacts(indexFacts);
         YqlParser configuredParser = new YqlParser(parserEnvironment);
         QueryTree x = configuredParser.parse(new Parsable()
-                .setQuery("select * from sources * where title contains \"a\" and song contains \"b\";"));
+                .setQuery("select * from sources * where title contains \"a\" and song contains \"b\""));
         List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
         assertEquals(2, terms.size());
         for (IndexedItem term : terms) {
@@ -955,7 +945,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testRegexp() {
-        QueryTree x = parse("select * from sources * where foo matches \"a b\";");
+        QueryTree x = parse("select * from sources * where foo matches \"a b\"");
         Item root = x.getRoot();
         assertSame(RegExpItem.class, root.getClass());
         assertEquals("a b", ((RegExpItem) root).stringValue());
@@ -963,7 +953,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testWordAlternatives() {
-        QueryTree x = parse("select * from sources * where foo contains alternatives({\"trees\": 1.0, \"tree\": 0.7});");
+        QueryTree x = parse("select * from sources * where foo contains alternatives({\"trees\": 1.0, \"tree\": 0.7})");
         Item root = x.getRoot();
         assertSame(WordAlternativesItem.class, root.getClass());
         WordAlternativesItem alternatives = (WordAlternativesItem) root;
@@ -974,7 +964,7 @@ public class YqlParserTestCase {
     public void testWordAlternativesWithOrigin() {
         QueryTree q = parse("select * from sources * where foo contains" +
                             " ([{\"origin\": {\"original\": \" trees \", \"offset\": 1, \"length\": 5}}]" +
-                            "alternatives({\"trees\": 1.0, \"tree\": 0.7}));");
+                            "alternatives({\"trees\": 1.0, \"tree\": 0.7}))");
         Item root = q.getRoot();
         assertSame(WordAlternativesItem.class, root.getClass());
         WordAlternativesItem alternatives = (WordAlternativesItem) root;
@@ -989,7 +979,7 @@ public class YqlParserTestCase {
     @Test
     public void testWordAlternativesInPhrase() {
         QueryTree q = parse("select * from sources * where" +
-                            " foo contains phrase(\"forest\", alternatives({\"trees\": 1.0, \"tree\": 0.7}));");
+                            " foo contains phrase(\"forest\", alternatives({\"trees\": 1.0, \"tree\": 0.7}))");
         Item root = q.getRoot();
         assertSame(PhraseItem.class, root.getClass());
         PhraseItem phrase = (PhraseItem) root;
@@ -1011,7 +1001,7 @@ public class YqlParserTestCase {
         }
 
         {
-            Query query = new Query("search?yql=select%20*%20from%20testtype%20where%20title%20contains%20%22%5C%5C%22;");
+            Query query = new Query("search?yql=select%20*%20from%20testtype%20where%20title%20contains%20%22%5C%5C%22");
 
             // Cause parsing :-\
             Chain<Searcher> searchChain = new Chain<>(new MinimalQueryInserter());
@@ -1030,7 +1020,7 @@ public class YqlParserTestCase {
 
         // YQL query
         Query yql = new Query();
-        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains uri(\"google.com\");");
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains uri(\"google.com\")");
         assertUrlQuery("urlfield.hostname", yql, false, true, true);
     }
 
@@ -1041,7 +1031,7 @@ public class YqlParserTestCase {
 
         // YQL query
         Query yql = new Query();
-        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{\"endAnchor\": false }]uri(\"google.com\"));");
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{\"endAnchor\": false }]uri(\"google.com\"))");
         assertUrlQuery("urlfield.hostname", yql, false, false, true);
     }
 
@@ -1052,7 +1042,7 @@ public class YqlParserTestCase {
 
         // YQL query
         Query yql = new Query();
-        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{\"startAnchor\": true }] uri(\"google.com\"));");
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{\"startAnchor\": true }] uri(\"google.com\"))");
         assertUrlQuery("urlfield.hostname", yql, true, true, true);
     }
 
@@ -1063,19 +1053,19 @@ public class YqlParserTestCase {
 
         // YQL query
         Query yql = new Query();
-        yql.properties().set("yql", "select * from sources * where urlfield contains uri(\"google.com\");");
+        yql.properties().set("yql", "select * from sources * where urlfield contains uri(\"google.com\")");
         assertUrlQuery("urlfield", yql, false, false, false);
     }
 
     @Test
     public void testReservedWordInSource() {
-        parse("select * from sources like where text contains \"test\";");
+        parse("select * from sources like where text contains \"test\"");
         // success: parsed without exception
     }
 
     @Test
     public void testAndSegmenting() {
-        parse("select * from sources * where (default contains ([{\"stem\": false}]\"m\") AND default contains ([{\"origin\": {\"original\": \"m\'s\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"m\", \"s\"))) timeout 472;");
+        parse("select * from sources * where (default contains ([{\"stem\": false}]\"m\") AND default contains ([{\"origin\": {\"original\": \"m\'s\", \"offset\": 0, \"length\": 3}, \"andSegmenting\": true}]phrase(\"m\", \"s\"))) timeout 472");
     }
 
     private void assertUrlQuery(String field, Query query, boolean startAnchor, boolean endAnchor, boolean endAnchorIsDefault) {

@@ -174,7 +174,7 @@ keyword_as_ident
    : SELECT | LIMIT | OFFSET | WHERE | 'order' | 'by' | DESC | OUTPUT | COUNT | SOURCES | MATCHES | LIKE
    ;
 
-program : (statement SEMI)* EOF
+program : (statement SEMI?)* EOF
 	;
 
 moduleId
