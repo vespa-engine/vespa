@@ -46,6 +46,7 @@ struct ChangeBase {
     uint32_t get_entry_ref() const { return _cached_entry_ref; }
     void set_entry_ref(uint32_t entry_ref) const { _cached_entry_ref = entry_ref; }
     bool has_entry_ref() const { return _cached_entry_ref != UNSET_ENTRY_REF; }
+    void clear_entry_ref() const { _cached_entry_ref = UNSET_ENTRY_REF; }
 
     Type               _type;
     uint32_t           _doc;

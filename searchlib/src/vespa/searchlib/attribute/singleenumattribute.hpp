@@ -181,6 +181,8 @@ void
 SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     ValueModifier valueGuard(this->getValueModifier());
+    // This avoids searching for the defaultValue in the enum store for each CLEARDOC in the change vector.
+    this->cache_change_data_entry_ref(this->_defaultValue);
     for (const auto& change : this->_changes.getInsertOrder()) {
         if (change._type == ChangeBase::UPDATE) {
             applyUpdateValueChange(change, updater);
@@ -192,6 +194,8 @@ SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
             applyUpdateValueChange(clearDoc, updater);
         }
     }
+    // We must clear the cached entry ref as the defaultValue might be located in another data buffer on later invocations.
+    this->_defaultValue.clear_entry_ref();
 }
 
 template <typename B>
