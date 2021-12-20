@@ -145,14 +145,37 @@ public abstract class ContentPolicyTestEnvironment {
         }
     }
 
+    public static class TestWrappingInstabilityChecker implements ContentPolicy.InstabilityChecker {
+
+        public int recordedFailures = 0;
+        private final ContentPolicy.InstabilityChecker fwdChecker;
+
+        TestWrappingInstabilityChecker(ContentPolicy.InstabilityChecker fwdChecker) {
+            this.fwdChecker = fwdChecker;
+        }
+
+        @Override
+        public boolean tooManyFailures(int nodeIndex) {
+            return fwdChecker.tooManyFailures(nodeIndex);
+        }
+
+        @Override
+        public void addFailure(Integer calculatedDistributor) {
+            ++recordedFailures;
+            fwdChecker.addFailure(calculatedDistributor);
+        }
+    }
+
     public static class TestParameters extends ContentPolicy.Parameters {
         private final TestHostFetcher hostFetcher;
         private final Distribution distribution;
+        public final TestWrappingInstabilityChecker instabilityChecker;
 
         public TestParameters(String parameters, Set<Integer> nodes) {
             super(SlobrokPolicy.parse(parameters));
             hostFetcher = new TestHostFetcher(getClusterName(), nodes);
             distribution = new Distribution(Distribution.getDefaultDistributionConfig(2, 10));
+            instabilityChecker = new TestWrappingInstabilityChecker(new ContentPolicy.PerNodeCountingInstabilityChecker(5));
         }
 
         @Override
@@ -160,6 +183,9 @@ public abstract class ContentPolicyTestEnvironment {
 
         @Override
         public Distribution createDistribution(SlobrokPolicy policy) { return distribution; }
+
+        @Override
+        public ContentPolicy.InstabilityChecker createInstabilityChecker() { return instabilityChecker; }
     }
 
     public static class ContentPolicyTestFactory implements RoutingPolicyFactory {
@@ -182,8 +208,6 @@ public abstract class ContentPolicyTestEnvironment {
             }
         }
         public TestParameters getLastParameters() { return parameterInstances.getLast(); }
-        public void destroy() {
-        }
     }
 
     private int findPreferredAvailableNodeForTestBucket() {

@@ -188,7 +188,7 @@ public abstract class Simulator extends ContentPolicyTestEnvironment {
                 if (badNode != null && randomizer.nextDouble() < badNode.getFailureRate()) {
                     ++failed[half];
                     switch (badNode.getFailureType()) {
-                        case TRANSIENT_ERROR: replyError(target, new com.yahoo.messagebus.Error(DocumentProtocol.ERROR_BUSY, "Transient error")); break;
+                        case TRANSIENT_ERROR: replyError(target, new com.yahoo.messagebus.Error(DocumentProtocol.ERROR_ABORTED, "Transient error")); break;
                         case FATAL_ERROR: replyError(target, new com.yahoo.messagebus.Error(DocumentProtocol.ERROR_UNPARSEABLE, "Fatal error")); break;
                         case OLD_CLUSTER_STATE:
                         case RESET_CLUSTER_STATE:
