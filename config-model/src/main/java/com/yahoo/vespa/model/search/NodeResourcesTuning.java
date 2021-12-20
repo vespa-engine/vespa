@@ -5,6 +5,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 
 import static java.lang.Long.min;
+import static java.lang.Long.max;
 
 /**
  * Tuning of proton config for a search node based on the resources on the node.
@@ -20,16 +21,19 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final NodeResources resources;
     private final int threadsPerSearch;
     private final double fractionOfMemoryReserved;
+    private final double tlsSizeFraction;
 
     // "Reserve" 0.5GB of memory for other processes running on the content node (config-proxy, metrics-proxy).
     public static final double reservedMemoryGb = 0.5;
 
     public NodeResourcesTuning(NodeResources resources,
                                int threadsPerSearch,
-                               double fractionOfMemoryReserved) {
+                               double fractionOfMemoryReserved,
+                               double tlsSizeFraction) {
         this.resources = resources;
         this.threadsPerSearch = threadsPerSearch;
         this.fractionOfMemoryReserved = fractionOfMemoryReserved;
+        this.tlsSizeFraction = tlsSizeFraction;
     }
 
     @Override
@@ -94,8 +98,8 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {
-        long tlsSizeBytes = (long) ((resources.diskGb() * 0.07) * GB);
-        tlsSizeBytes = min(tlsSizeBytes, 100 * GB);
+        long tlsSizeBytes = (long) ((resources.diskGb() * tlsSizeFraction) * GB);
+        tlsSizeBytes = max(2*GB, min(tlsSizeBytes, 100 * GB));
         builder.maxtlssize(tlsSizeBytes);
     }
 

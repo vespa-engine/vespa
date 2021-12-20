@@ -203,6 +203,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8GeoPositions;
         private final boolean useV8DocManagerCfg;
         private final int maxCompactBuffers;
+        private final double tlsSizeFraction;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -244,6 +245,7 @@ public class ModelContextImpl implements ModelContext {
             this.useV8GeoPositions = flagValue(source, appId, Flags.USE_V8_GEO_POSITIONS);
             this.useV8DocManagerCfg = flagValue(source, appId, Flags.USE_V8_DOC_MANAGER_CFG);
             this.maxCompactBuffers = flagValue(source, appId, Flags.MAX_COMPACT_BUFFERS);
+            this.tlsSizeFraction = flagValue(source, appId, Flags.TLS_SIZE_FRACTION);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -286,6 +288,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public boolean useV8DocManagerCfg() { return useV8DocManagerCfg; }
+        @Override public int maxCompactBuffers() { return maxCompactBuffers; }
+        @Override public double tlsSizeFraction() { return tlsSizeFraction; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
