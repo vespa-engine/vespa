@@ -26,7 +26,7 @@ public class DefaultLanguageDetectorContextGenerator extends opennlp.tools.langd
             for (int j = minLength; j <= maxLength && i + j < normalized.length; j++)
                 grams.add(new String(normalized, i, j));
 
-        return grams.toArray(new String[0]);
+        return grams.toArray(new String[grams.size()]);
     }
 
 }
