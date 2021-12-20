@@ -232,6 +232,47 @@ public class ContentPolicy extends SlobrokPolicy {
 
     }
 
+    /**
+     * Tracks "instability" across nodes based on number of failures received versus some
+     * implementation-specific limit.
+     *
+     * Implementations must be thread-safe.
+     *
+     * TODO should ideally be protected, but there's a package mismatch between policy classes and its tests
+     */
+    public interface InstabilityChecker {
+        boolean tooManyFailures(int nodeIndex);
+        void addFailure(Integer calculatedDistributor);
+    }
+
+    /** Class that tracks a failure of a given type per node. */
+    public static class PerNodeCountingInstabilityChecker implements InstabilityChecker {
+        private final List<Integer> nodeFailures = new CopyOnWriteArrayList<>();
+        private final int failureLimit;
+
+        public PerNodeCountingInstabilityChecker(int failureLimit) {
+            this.failureLimit = failureLimit;
+        }
+
+        @Override
+        public boolean tooManyFailures(int nodeIndex) {
+            if (nodeFailures.size() > nodeIndex && nodeFailures.get(nodeIndex) > failureLimit) {
+                nodeFailures.set(nodeIndex, 0);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public void addFailure(Integer calculatedDistributor) {
+            while (nodeFailures.size() <= calculatedDistributor) {
+                nodeFailures.add(0);
+            }
+            nodeFailures.set(calculatedDistributor, nodeFailures.get(calculatedDistributor) + 1);
+        }
+    }
+
     /** Class parsing the semicolon separated parameter string and exposes the appropriate value to the policy. */
     public static class Parameters {
 
@@ -270,6 +311,9 @@ public class ContentPolicy extends SlobrokPolicy {
         public Distribution createDistribution(SlobrokPolicy policy) {
             return distributionConfig == null ? new Distribution(getDistributionConfigId())
                                               : new Distribution(distributionConfig.cluster(clusterName));
+        }
+        public InstabilityChecker createInstabilityChecker() {
+            return new PerNodeCountingInstabilityChecker(getAttemptRandomOnFailuresLimit());
         }
 
         /**
@@ -324,27 +368,6 @@ public class ContentPolicy extends SlobrokPolicy {
 
     /** Class handling the logic of picking a distributor */
     public static class DistributorSelectionLogic {
-        /** Class that tracks a failure of a given type per node. */
-        static class InstabilityChecker {
-            private final List<Integer> nodeFailures = new CopyOnWriteArrayList<>();
-            private final int failureLimit;
-
-            InstabilityChecker(int failureLimit) { this.failureLimit = failureLimit; }
-
-            boolean tooManyFailures(int nodeIndex) {
-                if (nodeFailures.size() > nodeIndex && nodeFailures.get(nodeIndex) > failureLimit) {
-                    nodeFailures.set(nodeIndex, 0);
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-
-            void addFailure(Integer calculatedDistributor) {
-                while (nodeFailures.size() <= calculatedDistributor) nodeFailures.add(0);
-                nodeFailures.set(calculatedDistributor, nodeFailures.get(calculatedDistributor) + 1);
-            }
-        }
         /** Message context class. Contains data we want to inspect about a request at reply time. */
         private static class MessageContext {
             final Integer calculatedDistributor;
@@ -375,7 +398,7 @@ public class ContentPolicy extends SlobrokPolicy {
             try {
                 hostFetcher = params.createHostFetcher(policy, params.getRequiredUpPercentageToSendToKnownGoodNodes());
                 distribution = params.createDistribution(policy);
-                persistentFailureChecker = new InstabilityChecker(params.getAttemptRandomOnFailuresLimit());
+                persistentFailureChecker = params.createInstabilityChecker();
                 maxOldClusterVersionBeforeSendingRandom = params.maxOldClusterStatesSeenBeforeThrowingCachedState();
             } catch (Throwable e) {
                 destroy();
@@ -556,10 +579,37 @@ public class ContentPolicy extends SlobrokPolicy {
             }
         }
 
+        /**
+         * Returns whether a given error Reply should be counted towards potentially ignoring the cached
+         * cluster state and triggering a random send (and thus likely WrongDistributionReply with the
+         * current cluster state). Certain error codes may be used frequently by the content layer for
+         * purposes that do _not_ indicate that a change in cluster state may have happened, and should
+         * therefore not be counted for this purpose:
+         *  - ERROR_TEST_AND_SET_CONDITION_FAILED: may happen for any mutating operation that has an
+         *    associated TaS condition. Technically an APP_FATAL_ERROR since resending doesn't make sense.
+         *  - ERROR_BUSY: may happen for concurrent mutations and if distributors are in the process of
+         *    changing bucket ownership and the grace period hasn't passed yet.
+         */
+        private static boolean shouldCountAsErrorForRandomSendTrigger(Reply reply) {
+            if (reply.getNumErrors() != 1) {
+                return !reply.hasErrors(); // For simplicity, count any reply with > 1 error.
+            }
+            var error = reply.getError(0);
+            switch (error.getCode()) {
+                // TODO this feels like a layering violation, but we use DocumentProtocol directly in other places in this policy anyway...
+                case DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED:
+                case DocumentProtocol.ERROR_BUSY:
+                    return false;
+                default: return true;
+            }
+        }
+
         void handleErrorReply(Reply reply, Object untypedContext) {
             MessageContext messageContext = (MessageContext) untypedContext;
             if (messageContext.calculatedDistributor != null) {
-                persistentFailureChecker.addFailure(messageContext.calculatedDistributor);
+                if (shouldCountAsErrorForRandomSendTrigger(reply)) {
+                    persistentFailureChecker.addFailure(messageContext.calculatedDistributor);
+                }
                 if (reply.getTrace().shouldTrace(1)) {
                     reply.getTrace().trace(1, "Failed with " + messageContext.toString());
                 }

@@ -1,8 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol.test.storagepolicy;
 
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.messagebus.routing.RoutingNode;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class ContentPolicyTest extends Simulator {
 
@@ -127,6 +131,46 @@ public class ContentPolicyTest extends Simulator {
                                                            .addBadNode(new BadNode(4, FailureType.TRANSIENT_ERROR).setDownInCurrentState())
                                                            .setTotalRequests(500));
             // Note that we use extra requests here as with only 200 requests there was a pretty good chance of not going to any down node on random anyhow.
+    }
+
+    private void setUpSingleNodeFixturesWithInitializedPolicy() {
+        setClusterNodes(new int[]{ 0 });
+        // Seed policy with initial, correct cluster state.
+        {
+            RoutingNode target = select();
+            replyWrongDistribution(target, "foo", null, "version:1234 distributor:1 storage:1");
+        }
+    }
+
+    @Test
+    public void transient_errors_expected_during_normal_feed_are_not_counted_as_errors_that_may_trigger_random_send() {
+        setUpSingleNodeFixturesWithInitializedPolicy();
+        var checker = policyFactory.getLastParameters().instabilityChecker;
+        assertEquals(0, checker.recordedFailures); // WrongDistributionReply not counted as regular error
+        {
+            frame.setMessage(createMessage("id:ns:testdoc:n=2:foo"));
+            RoutingNode target = select();
+            replyError(target, new com.yahoo.messagebus.Error(DocumentProtocol.ERROR_BUSY, "Get busy livin' or get busy resendin'"));
+        }
+        assertEquals(0, checker.recordedFailures); // BUSY not counted as error
+        {
+            frame.setMessage(createMessage("id:ns:testdoc:n=3:foo"));
+            RoutingNode target = select();
+            replyError(target, new com.yahoo.messagebus.Error(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED, "oh no"));
+        }
+        assertEquals(0, checker.recordedFailures); // TaS failures not counted as error
+    }
+
+    @Test
+    public void other_errors_during_feed_are_counted_as_errors_that_may_trigger_random_send() {
+        setUpSingleNodeFixturesWithInitializedPolicy();
+        var checker = policyFactory.getLastParameters().instabilityChecker;
+        {
+            frame.setMessage(createMessage("id:ns:testdoc:n=1:foo"));
+            RoutingNode target = select();
+            replyError(target, new com.yahoo.messagebus.Error(DocumentProtocol.ERROR_ABORTED, "shop's closing, go home"));
+        }
+        assertEquals(1, checker.recordedFailures);
     }
 
     // Left to test?
