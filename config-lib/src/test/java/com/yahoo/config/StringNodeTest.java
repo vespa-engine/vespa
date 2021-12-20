@@ -3,8 +3,7 @@ package com.yahoo.config;
 
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author hmusum
@@ -15,11 +14,11 @@ public class StringNodeTest {
     @Test
     public void testUnescapeQuotedString() {
         String a = "\"Hei\"";
-        assertThat(StringNode.unescapeQuotedString(a), is("Hei"));
-        assertThat(StringNode.unescapeQuotedString("foo\"bar\""), is("foo\"bar\""));
-        assertThat(StringNode.unescapeQuotedString("foo\\\"bar\\\""), is("foo\"bar\""));
-        assertThat(StringNode.unescapeQuotedString("a\\rb\\tc\\fd"), is("a\rb\tc\fd"));
-        assertThat(StringNode.unescapeQuotedString("\\x55"), is("U"));
+        assertEquals("Hei", StringNode.unescapeQuotedString(a));
+        assertEquals("foo\"bar\"", StringNode.unescapeQuotedString("foo\"bar\""));
+        assertEquals("foo\"bar\"", StringNode.unescapeQuotedString("foo\\\"bar\\\""));
+        assertEquals("a\rb\tc\fd", StringNode.unescapeQuotedString("a\\rb\\tc\\fd"));
+        assertEquals("U", StringNode.unescapeQuotedString("\\x55"));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -30,17 +29,17 @@ public class StringNodeTest {
     @Test
     public void testToString() {
         StringNode n = new StringNode();
-        assertThat(n.toString(), is("(null)"));
+        assertEquals("(null)", n.toString());
         n.setValue("foo");
-        assertThat(n.toString(), is("\"foo\""));
+        assertEquals("\"foo\"", n.toString());
     }
 
     @Test
     public void testSetValue() {
         StringNode n = new StringNode();
         n.setValue("\"foo\"");
-        assertThat(n.getValue(), is("foo"));
+        assertEquals("foo", n.getValue());
         n.setValue("foo");
-        assertThat(n.getValue(), is("foo"));
+        assertEquals("foo", n.getValue());
     }
 }

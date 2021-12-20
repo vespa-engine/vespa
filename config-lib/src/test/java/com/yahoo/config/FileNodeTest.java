@@ -3,9 +3,7 @@ package com.yahoo.config;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -16,11 +14,11 @@ public class FileNodeTest {
     @Test
     public void testSetValue() {
         FileNode n = new FileNode();
-        assertThat(n.toString(), is("(null)"));
+        assertEquals("(null)", n.toString());
         assertTrue(n.doSetValue("foo.txt"));
-        assertThat(n.value().value(), is("foo.txt"));
+        assertEquals("foo.txt", n.value().value());
         assertTrue(n.doSetValue("\"foo.txt\""));
-        assertThat(n.value().value(), is("foo.txt"));
-        assertThat(n.toString(), is("\"foo.txt\""));
+        assertEquals("foo.txt", n.value().value());
+        assertEquals("\"foo.txt\"", n.toString());
     }
 }

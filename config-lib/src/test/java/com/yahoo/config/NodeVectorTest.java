@@ -5,9 +5,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -61,10 +60,10 @@ public class NodeVectorTest {
         StringNode val = new StringNode("foo");
         TestNodeVector v = new TestNodeVector(val.getValue());
         assertFalse(v.isEmpty());
-        assertThat(v.indexOf(val), is(0));
-        assertThat(v.indexOf(barNode()), is(-1));
-        assertThat(v.lastIndexOf(val), is(0));
-        assertThat(v.lastIndexOf(barNode()), is(-1));
+        assertEquals(0, v.indexOf(val));
+        assertEquals(-1, v.indexOf(barNode()));
+        assertEquals(0, v.lastIndexOf(val));
+        assertEquals(-1, v.lastIndexOf(barNode()));
     }
 
     @Test
@@ -82,11 +81,11 @@ public class NodeVectorTest {
     public void require_that_sublisting_works() {
         String val = "foo";
         TestNodeVector v = new TestNodeVector(val, val, val);
-        assertThat(v.subList(0, 1).size(), is(1));
-        assertThat(v.subList(0, 2).size(), is(2));
-        assertThat(v.subList(0, 3).size(), is(3));
+        assertEquals(1, v.subList(0, 1).size());
+        assertEquals(2, v.subList(0, 2).size());
+        assertEquals(3, v.subList(0, 3).size());
         StringNode[] vals = v.toArray(new StringNode[0]);
-        assertThat(vals.length, is(3));
+        assertEquals(3, vals.length);
     }
 
     private StringNode barNode() { return new StringNode("bar");}

@@ -5,8 +5,7 @@ import org.junit.Test;
 
 import java.io.File;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -17,10 +16,10 @@ public class PathNodeTest {
     @Test
     public void testSetValue() {
         PathNode n = new PathNode();
-        assertThat(n.toString(), is("(null)"));
+        assertEquals("(null)", n.toString());
 
         n = new PathNode(new FileReference("foo.txt"));
-        assertThat(n.value(), is(new File("foo.txt").toPath()));
+        assertEquals(new File("foo.txt").toPath(), n.value());
     }
 
 }
