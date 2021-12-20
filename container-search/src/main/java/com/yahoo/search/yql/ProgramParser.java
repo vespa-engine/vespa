@@ -872,17 +872,11 @@ final class ProgramParser {
                         result = OperatorNode.create(loc, ExpressionOperator.READ_RECORD, alias);
                         start = 1;
                     }
-                } else if (scope.isBound(alias)) {
-                    return OperatorNode.create(loc, ExpressionOperator.READ_MODULE, scope.getBinding(alias).toPathWith(path.subList(1, path.size())));
                 } else if (scope.getCursors().size() == 1) {
                     alias = scope.getCursors().iterator().next();
                     result = OperatorNode.create(loc, ExpressionOperator.READ_FIELD, alias, path.get(0));
                     start = 1;
                 } else {
-                    // ah ha, we can't end up with a 'loose' UDF call because it
-                    // won't be a module or known alias
-                    // so we need not support implicit imports for constants used in
-                    // UDFs
                     throw new ProgramCompileException(loc, "Unknown field or alias '%s'", alias);
                 }
                 for (int idx = start; idx < path.size(); ++idx) {
@@ -932,7 +926,7 @@ final class ProgramParser {
             case yqlplusParser.LONG_INT:
                 return Long.parseLong(text.substring(0, text.length()-1));
             default:
-                throw new ProgramCompileException("Unknow literal type " + text);
+                throw new ProgramCompileException("Unknown literal type " + text);
         }
     }
 

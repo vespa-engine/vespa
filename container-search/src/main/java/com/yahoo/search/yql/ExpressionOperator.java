@@ -55,7 +55,6 @@ enum ExpressionOperator implements Operator {
 
     READ_RECORD(String.class),
     READ_FIELD(String.class, String.class),
-    READ_MODULE(TypeCheckers.LIST_OF_STRING),
 
     VESPA_GROUPING(String.class),
 
@@ -64,7 +63,7 @@ enum ExpressionOperator implements Operator {
     private final ArgumentsTypeChecker checker;
 
 
-    private ExpressionOperator(Object... types) {
+    ExpressionOperator(Object... types) {
         checker = TypeCheckers.make(this, types);
     }
 
