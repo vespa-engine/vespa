@@ -76,6 +76,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean unorderedMergeChaining = false;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
+    private double tlsSizeFraction = 0.07;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -132,6 +133,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
+    @Override public double tlsSizeFraction() { return tlsSizeFraction; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -344,6 +346,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxCompactBuffers(int maxCompactBuffers) {
         this.maxCompactBuffers = maxCompactBuffers;
+        return this;
+    }
+
+    public TestProperties tlsSizeFraction(double tlsSizeFraction) {
+        this.tlsSizeFraction = tlsSizeFraction;
         return this;
     }
 

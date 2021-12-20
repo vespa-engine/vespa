@@ -111,6 +111,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
         @ModelFeatureFlag(owners = {"arnej", "baldersheim"}) default boolean useV8DocManagerCfg() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default int maxCompactBuffers() { return 1; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default double tlsSizeFraction() { throw new UnsupportedOperationException("TODO specify default value"); }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
