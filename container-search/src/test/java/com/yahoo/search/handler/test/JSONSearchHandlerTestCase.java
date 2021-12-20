@@ -155,7 +155,7 @@ public class JSONSearchHandlerTestCase {
         assertTrue("Do I have a new instance of the search handler?", searchHandler != newSearchHandler);
         try (RequestHandlerTestDriver newDriver = new RequestHandlerTestDriver(newSearchHandler)) {
             ObjectNode json = jsonMapper.createObjectNode();
-            json.put("yql", "select * from foo where bar > 1453501295");
+            json.put("yql", "selectz * from foo where bar > 1453501295");
             RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
             responseHandler.readAll();
             assertThat(responseHandler.getStatus(), is(400));
