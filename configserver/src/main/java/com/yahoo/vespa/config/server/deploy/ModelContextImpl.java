@@ -203,6 +203,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8GeoPositions;
         private final boolean useV8DocManagerCfg;
         private final int maxCompactBuffers;
+        private final boolean failDeploymentWithInvalidJvmOptions;
         private final double tlsSizeFraction;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
@@ -245,6 +246,7 @@ public class ModelContextImpl implements ModelContext {
             this.useV8GeoPositions = flagValue(source, appId, Flags.USE_V8_GEO_POSITIONS);
             this.useV8DocManagerCfg = flagValue(source, appId, Flags.USE_V8_DOC_MANAGER_CFG);
             this.maxCompactBuffers = flagValue(source, appId, Flags.MAX_COMPACT_BUFFERS);
+            this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
             this.tlsSizeFraction = flagValue(source, appId, Flags.TLS_SIZE_FRACTION);
         }
 
@@ -288,6 +290,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public boolean useV8DocManagerCfg() { return useV8DocManagerCfg; }
+        @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public double tlsSizeFraction() { return tlsSizeFraction; }
 
