@@ -240,7 +240,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
         }
 
-        /** Returns whether this hosts one of the given container clusters */
+        /** Returns of memory reserved on a host. Memory is reserved for the jvm if th ecluster is combined */
         private double fractionOfMemoryReserved(String clusterId, Collection<ContainerModel> containers) {
             for (ContainerModel containerModel : containers) {
                 Optional<String> hostClusterId = containerModel.getCluster().getHostClusterId();
