@@ -45,8 +45,8 @@ SingleValueStringPostingAttributeT<B>::applyUpdateValueChange(const Change & c,
                                                               std::map<DocId, EnumIndex> &currEnumIndices)
 {
     EnumIndex newIdx;
-    if (c.isEnumValid()) {
-        newIdx = EnumIndex(vespalib::datastore::EntryRef(c.getEnum()));
+    if (c.has_entry_ref()) {
+        newIdx = EnumIndex(vespalib::datastore::EntryRef(c.get_entry_ref()));
     } else {
         enumStore.find_index(c._data.raw(), newIdx);
     }
