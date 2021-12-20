@@ -5,14 +5,12 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
 import static com.yahoo.config.codegen.DefParserTest.assertLineFails;
 import static com.yahoo.config.codegen.DefParserTest.createDefTemplate;
 import static com.yahoo.config.codegen.DefParserTest.createParser;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Tests setting explicit java package in the def file.
@@ -26,7 +24,7 @@ public class DefParserPackageTest {
     public void package_is_set_on_root_node() {
         DefParser parser = createParser("package=" + PACKAGE + "\n");
         CNode root = parser.getTree();
-        assertThat(root.getPackage(), is(PACKAGE));
+        assertEquals(PACKAGE, root.getPackage());
     }
 
     @Test
@@ -35,8 +33,8 @@ public class DefParserPackageTest {
         DefParser parser = createParser("package=" + PACKAGE +
                                                 "\nnamespace=" + namespace +"\n");
         CNode root = parser.getTree();
-        assertThat(root.getPackage(), is(PACKAGE));
-        assertThat(root.getNamespace(), is(namespace));
+        assertEquals(PACKAGE, root.getPackage());
+        assertEquals(namespace, root.getNamespace());
     }
 
     // Required by JavaClassBuilder ctor.
@@ -45,7 +43,7 @@ public class DefParserPackageTest {
         String namespace = "test.namespace";
         DefParser parser = createParser("namespace=" + namespace + "\n");
         CNode root = parser.getTree();
-        assertThat(root.getPackage(), nullValue());
+        assertNull(root.getPackage());
     }
 
     @Test(expected = CodegenRuntimeException.class)
@@ -57,7 +55,7 @@ public class DefParserPackageTest {
     public void spaces_are_allowed_around_equals_sign() {
         DefParser parser = createParser("package =  " + PACKAGE + "\n");
         CNode root = parser.getTree();
-        assertThat(root.getPackage(), is(PACKAGE));
+        assertEquals(PACKAGE, root.getPackage());
     }
 
     @Test
@@ -78,7 +76,7 @@ public class DefParserPackageTest {
         parser = createParser("package=" + PACKAGE + "\na string\n");
         CNode rootWithPackage = parser.getTree();
 
-        assertThat(root.defMd5, not(rootWithPackage.defMd5));
+        assertNotEquals(root.defMd5, rootWithPackage.defMd5);
     }
 
 
@@ -91,12 +89,12 @@ public class DefParserPackageTest {
     }
 
     @Test
-    public void number_is_not_allowed_as_package_start_char() throws IOException, DefParser.DefParserException {
+    public void number_is_not_allowed_as_package_start_char() {
         assertLineFails("package=2.a.b");
     }
 
     @Test
-    public void number_is_not_allowed_as_leading_char_in_package_token() throws IOException, DefParser.DefParserException {
+    public void number_is_not_allowed_as_leading_char_in_package_token() {
         assertLineFails("package=a.b.2c");
     }
 

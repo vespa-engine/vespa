@@ -3,9 +3,8 @@ package com.yahoo.config;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -18,6 +17,6 @@ public class IntegerNodeTest {
         IntegerNode n = new IntegerNode();
         assertFalse(n.setValue("invalid"));
         assertTrue(n.setValue("10"));
-        assertThat(n.value(), is(10));
+        assertEquals(10, n.value().intValue());
     }
 }

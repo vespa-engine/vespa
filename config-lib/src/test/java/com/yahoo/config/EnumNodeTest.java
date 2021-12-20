@@ -3,8 +3,10 @@ package com.yahoo.config;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -31,10 +33,10 @@ public class EnumNodeTest {
     public void testEnumNode() {
         MyNode n = new MyNode();
         assertNull(n.getValue());
-        assertThat(n.toString(), is("(null)"));
+        assertEquals("(null)", n.toString());
         assertTrue(n.doSetValue("ONE"));
-        assertThat(n.getValue(), is("ONE"));
-        assertThat(n.toString(), is("ONE"));
+        assertEquals("ONE", n.getValue());
+        assertEquals("ONE", n.toString());
         assertFalse(n.doSetValue("THREE"));
     }
 }

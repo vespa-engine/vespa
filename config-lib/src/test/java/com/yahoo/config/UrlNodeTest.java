@@ -3,8 +3,7 @@ package com.yahoo.config;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author lesters
@@ -14,13 +13,13 @@ public class UrlNodeTest {
     @Test
     public void testSetValue() {
         UrlNode url = new UrlNode();
-        assertThat(url.toString(), is("(null)"));
+        assertEquals("(null)", url.toString());
 
         url = new UrlNode(new UrlReference("https://docs.vespa.ai/"));
-        assertThat(url.getUrlReference().value(), is("https://docs.vespa.ai/"));
+        assertEquals("https://docs.vespa.ai/", url.getUrlReference().value());
 
         url = new UrlNode(new UrlReference("pom.xml"));
-        assertThat(url.getValue(), is("pom.xml"));
+        assertEquals("pom.xml", url.getValue());
     }
 
 }

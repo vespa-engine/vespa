@@ -6,9 +6,8 @@ import org.junit.Test;
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -22,8 +21,8 @@ public class Pkcs10CsrUtilsTest {
         Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA512_WITH_ECDSA).build();
         String pem = Pkcs10CsrUtils.toPem(csr);
         Pkcs10Csr deserializedCsr = Pkcs10CsrUtils.fromPem(pem);
-        assertThat(pem, containsString("BEGIN CERTIFICATE REQUEST"));
-        assertThat(pem, containsString("END CERTIFICATE REQUEST"));
+        assertTrue(pem.contains("BEGIN CERTIFICATE REQUEST"));
+        assertTrue(pem.contains("END CERTIFICATE REQUEST"));
         assertEquals(subject, deserializedCsr.getSubject());
     }
 

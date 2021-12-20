@@ -14,10 +14,8 @@ import static com.yahoo.test.FunctionTestConfig.Enum_val;
 import static com.yahoo.test.FunctionTestConfig.Enumarr;
 import static com.yahoo.test.FunctionTestConfig.Myarray;
 import static com.yahoo.test.FunctionTestConfig.RootStruct;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class ConfigInstanceEqualsTest {
     FunctionTestConfig config1;
@@ -33,90 +31,90 @@ public class ConfigInstanceEqualsTest {
 
     @Test
     public void require_same_hashCode_for_equal_instances() {
-        assertThat(config1.hashCode(), is(config2.hashCode()));
+        assertEquals(config1.hashCode(), config2.hashCode());
     }
 
     @Test
     public void require_true_for_equal_instances() {
-        assertThat(config1, is(config2));
+        assertEquals(config1, config2);
     }
 
     @Test
     public void require_false_for_null() {
-        assertThat(config1, not((FunctionTestConfig) null));
+        assertNotEquals(null, config1);
 
     }
 
     @Test
     public void require_false_for_different_subclass() {
-        assertFalse(config1.equals(new AppConfig(new AppConfig.Builder())));
+        assertNotEquals(config1, new AppConfig(new AppConfig.Builder()));
     }
 
     @Test
     public void require_false_for_different_scalars_at_root_node() {
-        assertThat(config1, not(new FunctionTestConfig(newBuilder().bool_val(true))));
-        assertThat(config1, not(new FunctionTestConfig(newBuilder().int_val(0))));
-        assertThat(config1, not(new FunctionTestConfig(newBuilder().long_val(0L))));
-        assertThat(config1, not(new FunctionTestConfig(newBuilder().double_val(0.0))));
-        assertThat(config1, not(new FunctionTestConfig(newBuilder().string_val(""))));
-        assertThat(config1, not(new FunctionTestConfig(newBuilder().enum_val(Enum_val.FOO))));
-        assertThat(config1, not(new FunctionTestConfig(newBuilder().refval(""))));
-        assertThat(config1, not(new FunctionTestConfig(newBuilder().fileVal(""))));
+        assertNotEquals(config1, new FunctionTestConfig(newBuilder().bool_val(true)));
+        assertNotEquals(config1, new FunctionTestConfig(newBuilder().int_val(0)));
+        assertNotEquals(config1, new FunctionTestConfig(newBuilder().long_val(0L)));
+        assertNotEquals(config1, new FunctionTestConfig(newBuilder().double_val(0.0)));
+        assertNotEquals(config1, new FunctionTestConfig(newBuilder().string_val("")));
+        assertNotEquals(config1, new FunctionTestConfig(newBuilder().enum_val(Enum_val.FOO)));
+        assertNotEquals(config1, new FunctionTestConfig(newBuilder().refval("")));
+        assertNotEquals(config1, new FunctionTestConfig(newBuilder().fileVal("")));
     }
 
     @Test
     public void require_false_for_different_leaf_array_at_root_node() {
         builder2.longarr.set(0, 0L);
-        assertThat(config1, not(new FunctionTestConfig(builder2)));
+        assertNotEquals(config1, new FunctionTestConfig(builder2));
     }
 
     @Test
     public void require_false_for_different_scalar_in_struct() {
         builder2.basicStruct(new BasicStruct.Builder(config1.basicStruct()).bar(0));
-        assertThat(config1, not(new FunctionTestConfig(builder2)));
+        assertNotEquals(config1, new FunctionTestConfig(builder2));
     }
 
     @Test
     public void require_false_for_different_scalar_in_inner_array() {
         builder2.myarray.get(0).intval(0);
-        assertThat(config1, not(new FunctionTestConfig(builder2)));
+        assertNotEquals(config1, new FunctionTestConfig(builder2));
     }
 
     @Test
     public void require_false_for_different_leaf_array_in_inner_array() {
         builder2.myarray.get(0).stringval.set(0, "");
-        assertThat(config1, not(new FunctionTestConfig(builder2)));
+        assertNotEquals(config1, new FunctionTestConfig(builder2));
     }
 
     @Test
     public void require_equal_structs_for_equal_configs() {
-        assertThat(config1.basicStruct(), is(config2.basicStruct()));
-        assertThat(config1.rootStruct(), is(config2.rootStruct()));
-        assertThat(config1.rootStruct().inner0(), is(config2.rootStruct().inner0()));
+        assertEquals(config1.basicStruct(), config2.basicStruct());
+        assertEquals(config1.rootStruct(), config2.rootStruct());
+        assertEquals(config1.rootStruct().inner0(), config2.rootStruct().inner0());
     }
 
     @Test
     public void require_equal_inner_arrays_for_equal_configs() {
-        assertThat(config1.myarray(), is(config2.myarray()));
-        assertThat(config1.myarray(0).anotherarray(), is(config2.myarray(0).anotherarray()));
+        assertEquals(config1.myarray(), config2.myarray());
+        assertEquals(config1.myarray(0).anotherarray(), config2.myarray(0).anotherarray());
     }
 
     @Test
     public void require_equal_inner_array_elements_for_equal_configs() {
-        assertThat(config1.myarray(0), is(config2.myarray(0)));
-        assertThat(config1.myarray(0).anotherarray(0), is(config2.myarray(0).anotherarray(0)));
+        assertEquals(config1.myarray(0), config2.myarray(0));
+        assertEquals(config1.myarray(0).anotherarray(0), config2.myarray(0).anotherarray(0));
     }
 
     @Test
     public void require_equal_leaf_arrays_for_equal_configs() {
-        assertThat(config1.intarr(), is(config2.intarr()));
-        assertThat(config1.boolarr(), is(config2.boolarr()));
-        assertThat(config1.longarr(), is(config2.longarr()));
-        assertThat(config1.doublearr(), is(config2.doublearr()));
-        assertThat(config1.stringarr(), is(config2.stringarr()));
-        assertThat(config1.enumarr(), is(config2.enumarr()));
-        assertThat(config1.refarr(), is(config2.refarr()));
-        assertThat(config1.fileArr(), is(config2.fileArr()));
+        assertEquals(config1.intarr(), config2.intarr());
+        assertEquals(config1.boolarr(), config2.boolarr());
+        assertEquals(config1.longarr(), config2.longarr());
+        assertEquals(config1.doublearr(), config2.doublearr());
+        assertEquals(config1.stringarr(), config2.stringarr());
+        assertEquals(config1.enumarr(), config2.enumarr());
+        assertEquals(config1.refarr(), config2.refarr());
+        assertEquals(config1.fileArr(), config2.fileArr());
     }
 
     private static FunctionTestConfig.Builder newBuilder() {

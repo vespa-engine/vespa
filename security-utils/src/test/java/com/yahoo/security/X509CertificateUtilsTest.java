@@ -13,12 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.Matchers.is;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -32,8 +29,8 @@ public class X509CertificateUtilsTest {
         X509Certificate cert = TestUtils.createCertificate(keypair, subject);
         assertEquals(subject, cert.getSubjectX500Principal());
         String pem = X509CertificateUtils.toPem(cert);
-        assertThat(pem, containsString("BEGIN CERTIFICATE"));
-        assertThat(pem, containsString("END CERTIFICATE"));
+        assertTrue(pem.contains("BEGIN CERTIFICATE"));
+        assertTrue(pem.contains("END CERTIFICATE"));
         X509Certificate deserializedCert = X509CertificateUtils.fromPem(pem);
         assertEquals(subject, deserializedCert.getSubjectX500Principal());
     }
@@ -70,8 +67,8 @@ public class X509CertificateUtilsTest {
                 .build();
 
         List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(cert);
-        assertThat(sans.size(), is(1));
-        assertThat(sans.get(0), equalTo(san));
+        assertEquals(1, sans.size());
+        assertEquals(san, sans.get(0));
     }
 
     @Test

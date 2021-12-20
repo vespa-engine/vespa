@@ -6,8 +6,7 @@ import com.github.myproject.PackageConfig;
 import com.yahoo.my.namespace.NamespaceConfig;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -18,17 +17,17 @@ public class NamespaceAndPackageTest {
 
     @Test
     public void namespace_is_set_from_def_file() {
-        assertThat(NamespaceConfig.CONFIG_DEF_NAMESPACE, is(NAMESPACE));
+        assertEquals(NAMESPACE, NamespaceConfig.CONFIG_DEF_NAMESPACE);
     }
 
     @Test
     public void package_is_used_as_namespace_when_namespace_is_not_set_explicitly() {
-        assertThat(PackageConfig.CONFIG_DEF_NAMESPACE, is(PACKAGE));
+        assertEquals(PACKAGE, PackageConfig.CONFIG_DEF_NAMESPACE);
     }
 
     @Test
     public void package_does_not_override_namespace() {
-        assertThat(NamespaceAndPackageConfig.CONFIG_DEF_NAMESPACE, is(NAMESPACE));
+        assertEquals(NAMESPACE, NamespaceAndPackageConfig.CONFIG_DEF_NAMESPACE);
 
     }
 }

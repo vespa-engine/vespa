@@ -1,15 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 import org.junit.Ignore;
 
-import static org.hamcrest.CoreMatchers.is;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.StringReader;
 
 /**
  * Unit tests for DefParser.
@@ -28,7 +31,7 @@ public class DefParserTest {
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
         assertNotNull(root);
         CNode[] children = root.getChildren();
-        assertThat(children.length, is(34));
+        assertEquals(34, children.length);
 
         int numGrandChildren = 0;
         int numGreatGrandChildren = 0;
@@ -39,45 +42,45 @@ public class DefParserTest {
                 numGreatGrandChildren += grandChild.getChildren().length;
             }
         }
-        assertThat(numGrandChildren, is(14));
-        assertThat(numGreatGrandChildren, is(6));
+        assertEquals(14, numGrandChildren);
+        assertEquals(6, numGreatGrandChildren);
 
         // Verify that each array creates a sub-tree, and that defaults for leafs are handled correctly.
         CNode myArray = root.getChild("myArray");
-        assertThat(myArray.getChildren().length, is(5));
+        assertEquals(5, myArray.getChildren().length);
         // int within array
         LeafCNode myArrayInt = (LeafCNode) myArray.getChild("intVal");
-        assertThat(myArrayInt.getDefaultValue().getValue(), is("14"));
+        assertEquals("14", myArrayInt.getDefaultValue().getValue());
         // enum within array
         LeafCNode myArrayEnum = (LeafCNode) myArray.getChild("enumVal");
-        assertThat(myArrayEnum.getDefaultValue().getValue(), is("TYPE"));
+        assertEquals("TYPE", myArrayEnum.getDefaultValue().getValue());
 
         // Verify array within array and a default value for a leaf in the inner array.
         CNode anotherArray = myArray.getChild("anotherArray");
-        assertThat(anotherArray.getChildren().length, is(1));
+        assertEquals(1, anotherArray.getChildren().length);
         LeafCNode foo = (LeafCNode) anotherArray.getChild("foo");
-        assertThat(foo.getDefaultValue().getValue(), is("-4"));
+        assertEquals("-4", foo.getDefaultValue().getValue());
     }
 
     @Test
     public void testFileWithNamespaceInFilename() throws IOException {
         File defFile = new File(TEST_DIR + "baz.bar.foo.def");
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
-        assertThat(root.defMd5, is("31a0f9bda0e5ff929762a29569575a7e"));
+        assertEquals("31a0f9bda0e5ff929762a29569575a7e", root.defMd5);
     }
 
     @Test
     public void testMd5Sum() throws IOException {
         File defFile = new File(DEF_NAME);
         CNode root = new DefParser("test", new FileReader(defFile)).getTree();
-        assertThat(root.defMd5, is("f901bdc5c96e7005130399c63f247823"));
+        assertEquals("f901bdc5c96e7005130399c63f247823", root.defMd5);
     }
 
     @Test
     public void testMd5Sum2() {
         String def = "version=1\na string\n";
         CNode root = new DefParser("testMd5Sum2", new StringReader(def)).getTree();
-        assertThat(root.defMd5, is("a5e5fdbb2b27e56ba7d5e60e335c598b"));
+        assertEquals("a5e5fdbb2b27e56ba7d5e60e335c598b", root.defMd5);
     }
 
     @Test
@@ -104,7 +107,7 @@ public class DefParserTest {
 
     private void testExpectedVersion(String versionLine, String expectedVersion) {
         InnerCNode root = createParser(versionLine).getTree();
-        assertThat(root.defVersion, is(expectedVersion));
+        assertEquals(expectedVersion, root.defVersion);
     }
 
     @Test
@@ -146,7 +149,7 @@ public class DefParserTest {
 
     @Test(expected = CodegenRuntimeException.class)
     @Ignore("Not implemented yet")
-    public void testInvalidEnum() throws DefParser.DefParserException {
+    public void testInvalidEnum() {
         DefParser parser = createParser("version=1\nanEnum enum {A, B, A}\n");
         //parser.validateDef(def);
     }
@@ -171,7 +174,7 @@ public class DefParserTest {
         CNode root = parser.getTree();
         LeafCNode node = (LeafCNode) root.getChild("enum1");
         assertNotNull(node);
-        assertThat(node.getDefaultValue().getStringRepresentation(), is("A"));
+        assertEquals("A", node.getDefaultValue().getStringRepresentation());
     }
 
     @Test(expected = DefParser.DefParserException.class)

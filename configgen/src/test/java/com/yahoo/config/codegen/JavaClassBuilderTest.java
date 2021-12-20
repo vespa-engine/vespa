@@ -12,9 +12,7 @@ import java.util.List;
 
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
 import static com.yahoo.config.codegen.JavaClassBuilder.createUniqueSymbol;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -82,8 +80,8 @@ public class JavaClassBuilderTest {
                 "n int\n";
         InnerCNode root = new DefParser("test", new StringReader(testDefinition)).getTree();
 
-        assertThat(createUniqueSymbol(root, "foo"), is("f"));
-        assertThat(createUniqueSymbol(root, "name"), is("na"));
+        assertEquals("f", createUniqueSymbol(root, "foo"));
+        assertEquals("na", createUniqueSymbol(root, "name"));
         assertTrue(createUniqueSymbol(root, "m").startsWith(ReservedWords.INTERNAL_PREFIX + "m"));
 
         // The basis string is not a legal return value, even if unique, to avoid
@@ -93,12 +91,12 @@ public class JavaClassBuilderTest {
 
     @Test
     public void testCreateClassName() {
-        assertThat(createClassName("simple"), is("SimpleConfig"));
-        assertThat(createClassName("a"), is("AConfig"));
-        assertThat(createClassName("a-b-c"), is("ABCConfig"));
-        assertThat(createClassName("a-1-2b"), is("A12bConfig"));
-        assertThat(createClassName("my-app"), is("MyAppConfig"));
-        assertThat(createClassName("MyApp"), is("MyAppConfig"));
+        assertEquals("SimpleConfig", createClassName("simple"));
+        assertEquals("AConfig", createClassName("a"));
+        assertEquals("ABCConfig", createClassName("a-b-c"));
+        assertEquals("A12bConfig", createClassName("a-1-2b"));
+        assertEquals("MyAppConfig", createClassName("my-app"));
+        assertEquals("MyAppConfig", createClassName("MyApp"));
     }
 
     @Test(expected = CodegenRuntimeException.class)
