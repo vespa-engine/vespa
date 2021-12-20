@@ -58,7 +58,6 @@ import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;

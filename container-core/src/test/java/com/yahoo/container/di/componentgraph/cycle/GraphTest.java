@@ -2,18 +2,16 @@
 
 package com.yahoo.container.di.componentgraph.cycle;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+
+import java.util.List;
 
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.A;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.B;
 import static com.yahoo.container.di.componentgraph.cycle.GraphTest.Vertices.C;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -22,9 +20,6 @@ public class GraphTest {
 
     enum Vertices {A, B, C}
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Test
     public void vertices_and_edges_are_added_and_can_be_retrieved() {
         var graph = new Graph<Vertices>();
@@ -32,19 +27,22 @@ public class GraphTest {
         graph.edge(B, C);
         graph.edge(A, C);
 
-        assertThat(graph.getVertices().size(), is(3));
-        assertThat(graph.getAdjacent(A), containsInAnyOrder(B, C));
-        assertThat(graph.getAdjacent(B), containsInAnyOrder(C));
-        assertThat(graph.getAdjacent(C), empty());
+        assertEquals(3, graph.getVertices().size());
+        assertTrue(graph.getAdjacent(A).containsAll(List.of(B, C)));
+        assertTrue(graph.getAdjacent(B).contains(C));
+        assertTrue(graph.getAdjacent(C).isEmpty());
     }
 
     @Test
     public void null_vertices_are_not_allowed() {
         var graph = new Graph<Vertices>();
 
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Null vertices are not allowed");
-        graph.edge(A, null);
+        try {
+            graph.edge(A, null);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Null vertices are not allowed, edge: A->null", e.getMessage());
+        }
     }
 
     @Test
@@ -53,7 +51,7 @@ public class GraphTest {
         graph.edge(A, B);
         graph.edge(A, B);
 
-        assertThat(graph.getAdjacent(A).size(), is(1));
+        assertEquals(1, graph.getAdjacent(A).size());
     }
 
     @Test
@@ -61,7 +59,7 @@ public class GraphTest {
         var graph = new Graph<Vertices>();
         graph.edge(A, A);
 
-        assertThat(graph.getAdjacent(A), contains(A));
+        assertTrue(graph.getAdjacent(A).contains(A));
     }
 
 }

@@ -31,11 +31,10 @@ import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -91,7 +90,7 @@ public class AthenzPrincipalFilterTest {
         AthenzPrincipalFilter filter = createFilter(true);
         filter.filter(request, responseHandler);
 
-        assertThat(responseHandler.response, nullValue());
+        assertNull(responseHandler.response);
     }
 
     private DiscFilterRequest createRequestMock() {
@@ -103,9 +102,9 @@ public class AthenzPrincipalFilterTest {
     }
 
     private static void assertUnauthorized(DiscFilterRequest request, ResponseHandlerMock responseHandler, String expectedMessageSubstring) {
-        assertThat(responseHandler.response, notNullValue());
-        assertThat(responseHandler.response.getStatus(), equalTo(UNAUTHORIZED));
-        assertThat(responseHandler.getResponseContent(), containsString(expectedMessageSubstring));
+        assertNotNull(responseHandler.response);
+        assertEquals(UNAUTHORIZED, responseHandler.response.getStatus());
+        assertTrue(responseHandler.getResponseContent().contains(expectedMessageSubstring));
         verify(request).setAttribute(AthenzPrincipalFilter.RESULT_ERROR_CODE_ATTRIBUTE, UNAUTHORIZED);
     }
 

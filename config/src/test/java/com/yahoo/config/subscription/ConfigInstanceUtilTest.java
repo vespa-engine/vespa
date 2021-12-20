@@ -13,11 +13,9 @@ import org.junit.Test;
 import java.io.File;
 import java.util.Arrays;
 
-import static org.hamcrest.CoreMatchers.is;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static com.yahoo.foo.FunctionTestConfig.*;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -43,26 +41,26 @@ public class ConfigInstanceUtilTest {
         ConfigInstanceUtil.setValues(destination, source);
 
         FunctionTestConfig result = new FunctionTestConfig(destination);
-        assertThat(result.int_val(), is(-1));
-        assertThat(result.string_val(), is("foo"));
-        assertThat(result.intarr().size(), is(1));
-        assertThat(result.intarr(0), is(0));
-        assertThat(result.longarr().size(), is(2));
-        assertThat(result.doublearr().size(), is(3));
+        assertEquals(-1, result.int_val());
+        assertEquals("foo", result.string_val());
+        assertEquals(1, result.intarr().size());
+        assertEquals(0, result.intarr(0));
+        assertEquals(2, result.longarr().size());
+        assertEquals(3, result.doublearr().size());
         assertEquals(2344.0, result.doublearr(0), 0.01);
         assertEquals(123.0, result.doublearr(1), 0.01);
         assertEquals(0.0, result.doublearr(2), 0.01);
-        assertThat(result.basicStruct().bar(), is(-1));
-        assertThat(result.basicStruct().foo(), is("basicFoo"));
-        assertThat(result.basicStruct().intArr().size(), is(3));
-        assertThat(result.basicStruct().intArr(0), is(310));
-        assertThat(result.basicStruct().intArr(1), is(311));
-        assertThat(result.basicStruct().intArr(2), is(0));
-        assertThat(result.myarray().size(), is(3));
-        assertThat(result.myarray(2).intval(), is(-1));
-        assertThat(result.myarray(2).refval(), is(""));
-        assertThat(result.myarray(2).fileVal().value(), is(""));
-        assertThat(result.myarray(2).myStruct().a(), is(0));
+        assertEquals(-1, result.basicStruct().bar());
+        assertEquals("basicFoo", result.basicStruct().foo());
+        assertEquals(3, result.basicStruct().intArr().size());
+        assertEquals(310, result.basicStruct().intArr(0));
+        assertEquals(311, result.basicStruct().intArr(1));
+        assertEquals(0, result.basicStruct().intArr(2));
+        assertEquals(3, result.myarray().size());
+        assertEquals(-1, result.myarray(2).intval());
+        assertTrue(result.myarray(2).refval().isEmpty());
+        assertTrue(result.myarray(2).fileVal().value().isEmpty());
+        assertEquals(0, result.myarray(2).myStruct().a());
 
     }
 

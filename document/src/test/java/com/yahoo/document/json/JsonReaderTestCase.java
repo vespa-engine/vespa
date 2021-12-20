@@ -56,9 +56,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -95,9 +93,6 @@ public class JsonReaderTestCase {
 
     private DocumentTypeManager types;
     private JsonFactory parserFactory;
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
@@ -202,7 +197,6 @@ public class JsonReaderTestCase {
     public void tearDown() throws Exception {
         types = null;
         parserFactory = null;
-        exception = ExpectedException.none();
     }
 
     private JsonReader createReader(String jsonInput) {
@@ -963,9 +957,12 @@ public class JsonReaderTestCase {
         DocumentParseInfo parseInfo = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(parseInfo.documentId);
         DocumentPut put = new DocumentPut(new Document(docType, parseInfo.documentId));
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("No field 'smething' in the structure of type 'smoke'");
-        new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
+        try {
+            new VespaJsonDocumentReader().readPut(parseInfo.fieldsBuffer, put);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().startsWith("No field 'smething' in the structure of type 'smoke'"));
+        }
     }
 
     @Test
@@ -975,9 +972,12 @@ public class JsonReaderTestCase {
                 "  { 'put': 'id:test:smoke::1', 'fields': { 'something': 'foo' } },",
                 "  { 'put': 'id:test:smoke::2', 'fields': { 'something': 'foo' } },",
                 "]"));
-        exception.expect(RuntimeException.class);
-        exception.expectMessage("JsonParseException");
-        while (r.next() != null);
+        try {
+            while (r.next() != null) ;
+            fail();
+        } catch (RuntimeException e) {
+            assertTrue(e.getMessage().contains("JsonParseException"));
+        }
     }
 
     @Test
@@ -1869,9 +1869,6 @@ public class JsonReaderTestCase {
 
     @Test
     public void requireThatUnknownDocTypeThrowsIllegalArgumentException() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Document type walrus does not exist");
-
         final String jsonData = inputJson(
                 "[",
                 "      {",
@@ -1881,8 +1878,12 @@ public class JsonReaderTestCase {
                 "          }",
                 "      }",
                 "]");
-
-        new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+        try {
+            new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Document type walrus does not exist", e.getMessage());
+        }
     }
 
     private static final String TENSOR_DOC_ID = "id:unittest:testtensor::0";
@@ -2051,10 +2052,13 @@ public class JsonReaderTestCase {
 
     // NOTE: Do not call this method multiple times from a test method as it's using the ExpectedException rule
     private void assertParserErrorMatches(String expectedError, String... json) {
-        exception.expect(JsonReaderException.class);
-        exception.expectMessage(expectedError);
         String jsonData = inputJson(json);
-        new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+        try {
+            new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
+            fail();
+        } catch (JsonReaderException e) {
+            assertEquals(expectedError, e.getMessage());
+        }
     }
 
     private void assertCreatePutFails(String tensor, String name, String msg) {

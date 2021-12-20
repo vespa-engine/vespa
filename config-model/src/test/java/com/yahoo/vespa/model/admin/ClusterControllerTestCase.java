@@ -43,11 +43,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -106,11 +104,11 @@ public class ClusterControllerTestCase extends DomBuilderTest {
             model.getConfig(builder, "admin/cluster-controllers/" + i + "/components/clustercontroller-bar-configurer");
 
             FleetcontrollerConfig cfg = new FleetcontrollerConfig(builder);
-            assertThat(cfg.index(), is(i));
-            assertThat(cfg.fleet_controller_count(), is(3));
-            assertThat(cfg.init_progress_time(), is(34567000));
-            assertThat(cfg.storage_transition_time(), is(4000));
-            assertThat(cfg.stable_state_time_period(), is(3600000));
+            assertEquals(i, cfg.index());
+            assertEquals(3, cfg.fleet_controller_count());
+            assertEquals(34567000, cfg.init_progress_time());
+            assertEquals(4000, cfg.storage_transition_time());
+            assertEquals(3600000, cfg.stable_state_time_period());
         }
     }
 
@@ -222,15 +220,15 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         ZookeepersConfig.Builder builder = new ZookeepersConfig.Builder();
         root.getConfig(builder, "admin/standalone");
         ZookeepersConfig config = new ZookeepersConfig(builder);
-        assertThat(config.zookeeperserverlist().split(",").length, is(3));
+        assertEquals(3, config.zookeeperserverlist().split(",").length);
     }
 
     private void assertZookeeperServerConfig(TestRoot root, int id) {
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         root.getConfig(builder, "admin/standalone/cluster-controllers/" + id);
         ZookeeperServerConfig config = new ZookeeperServerConfig(builder);
-        assertThat(config.server().size(), is(3));
-        assertThat(config.myid(), is(id));
+        assertEquals(3, config.server().size());
+        assertEquals(id, config.myid());
         Collection<Integer> serverIds = Collections2.transform(config.server(), ZookeeperServerConfig.Server::id);
         assertTrue(serverIds.contains(id));
     }
@@ -281,15 +279,15 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
         assertTrue(existsHostsWithClusterControllerConfigId(model));
         assertGroupSize(model, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer", 1);
-        assertThat(model.getAdmin().getClusterControllers().getContainers().size(), is(1));
+        assertEquals(1, model.getAdmin().getClusterControllers().getContainers().size());
 
         FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
         model.getConfig(builder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");
 
         FleetcontrollerConfig cfg = new FleetcontrollerConfig(builder);
-        assertThat(cfg.index(), is(0));
-        assertThat(cfg.fleet_controller_count(), is(1));
-        assertThat(cfg.init_progress_time(), is(34567000));
+        assertEquals(0, cfg.index());
+        assertEquals(1, cfg.fleet_controller_count());
+        assertEquals(34567000, cfg.init_progress_time());
 
         Service cc = model.getService("admin/cluster-controllers/0").get();
         assertTrue(cc instanceof ClusterControllerContainer);
@@ -344,7 +342,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
         VespaModel model = createVespaModel(xml);
 
-        assertThat(model.getAdmin().getClusterControllers().getContainers().size(), is(3));
+        assertEquals(3, model.getAdmin().getClusterControllers().getContainers().size());
         assertGroupSize(model, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer", 1);
         assertGroupSize(model, "admin/cluster-controllers/1/components/clustercontroller-bar-configurer", 1);
         assertGroupSize(model, "admin/cluster-controllers/2/components/clustercontroller-bar-configurer", 1);
@@ -475,7 +473,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         StorDistributionConfig.Builder builder = new StorDistributionConfig.Builder();
         model.getConfig(builder, configId);
         StorDistributionConfig cfg = new StorDistributionConfig(builder);
-        assertThat(cfg.group().size(), is(size));
+        assertEquals(size, cfg.group().size());
     }
 
     private VespaModel createVespaModel(String servicesXml) throws IOException, SAXException {

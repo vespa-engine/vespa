@@ -10,8 +10,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -58,7 +57,7 @@ public class GenericConfigTest {
         StorageCluster cluster = model.getContentClusters().get("storage").getStorageCluster();
 
         StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());
-        assertThat(config.num_threads(), is(7));
+        assertEquals(7, config.num_threads());
     }
 
     @Test
@@ -66,7 +65,7 @@ public class GenericConfigTest {
         ContentCluster cluster = model.getContentClusters().get("storage");
 
         StorFilestorConfig config = model.getConfig(StorFilestorConfig.class, cluster.getConfigId());
-        assertThat(config.num_threads(), is(7));
+        assertEquals(7, config.num_threads());
     }
 
 }

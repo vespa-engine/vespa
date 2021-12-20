@@ -11,8 +11,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Unit tests for ConfigDefinition.
@@ -56,14 +56,14 @@ public class ConfigDefinitionTest {
         def.addIntDef("xyzzy", 2, 0, null);
 
         assertNull(def.getIntDefs().get("foo").getDefVal());
-        assertThat(def.getIntDefs().get("foo").getMin(), is(ConfigDefinition.INT_MIN));
-        assertThat(def.getIntDefs().get("foo").getMax(), is(ConfigDefinition.INT_MAX));
-        assertThat(def.getIntDefs().get("bar").getDefVal(), is(0));
-        assertThat(def.getIntDefs().get("baz").getDefVal(), is(1));
+        assertEquals(ConfigDefinition.INT_MIN, def.getIntDefs().get("foo").getMin());
+        assertEquals(ConfigDefinition.INT_MAX, def.getIntDefs().get("foo").getMax());
+        assertEquals(0, def.getIntDefs().get("bar").getDefVal().longValue());
+        assertEquals(1, def.getIntDefs().get("baz").getDefVal().longValue());
 
-        assertThat(def.getIntDefs().get("xyzzy").getDefVal(), is(2));
-        assertThat(def.getIntDefs().get("xyzzy").getMin(), is(0));
-        assertThat(def.getIntDefs().get("xyzzy").getMax(), is(ConfigDefinition.INT_MAX));
+        assertEquals(2, def.getIntDefs().get("xyzzy").getDefVal().longValue());
+        assertEquals(0, def.getIntDefs().get("xyzzy").getMin().longValue());
+        assertEquals(ConfigDefinition.INT_MAX, def.getIntDefs().get("xyzzy").getMax());
     }
 
     @Test
@@ -75,17 +75,16 @@ public class ConfigDefinitionTest {
         def.addLongDef("xyzzy", 2L, 0L, null);
 
         assertNull(def.getLongDefs().get("foo").getDefVal());
-        assertThat(def.getLongDefs().get("foo").getMin(), is(ConfigDefinition.LONG_MIN));
-        assertThat(def.getLongDefs().get("foo").getMax(), is(ConfigDefinition.LONG_MAX));
-        assertThat(def.getLongDefs().get("bar").getDefVal(), is(1234567890123L));
+        assertEquals(ConfigDefinition.LONG_MIN, def.getLongDefs().get("foo").getMin());
+        assertEquals(ConfigDefinition.LONG_MAX, def.getLongDefs().get("foo").getMax());
+        assertEquals(1234567890123L, def.getLongDefs().get("bar").getDefVal().longValue());
 
-        assertThat(def.getLongDefs().get("xyzzy").getDefVal(), is(2L));
-        assertThat(def.getLongDefs().get("xyzzy").getMin(), is(0L));
-        assertThat(def.getLongDefs().get("xyzzy").getMax(), is(ConfigDefinition.LONG_MAX));
+        assertEquals(2L, def.getLongDefs().get("xyzzy").getDefVal().longValue());
+        assertEquals(0L, def.getLongDefs().get("xyzzy").getMin().longValue());
+        assertEquals(ConfigDefinition.LONG_MAX, def.getLongDefs().get("xyzzy").getMax());
     }
 
     @Test
-    @SuppressWarnings("serial")
     public void testDefaultsPayloadMap() {
         ConfigDefinition def = new ConfigDefinition("foo", "namespace1");
         def.addStringDef("mystring");
@@ -122,7 +121,7 @@ public class ConfigDefinitionTest {
         def.addIntDef("intval");
         def.addLongDef("longval");
         def.addDoubleDef("doubleval");
-        def.addEnumDef("enumval", new EnumDef(Arrays.asList("FOO"), "FOO"));
+        def.addEnumDef("enumval", new EnumDef(List.of("FOO"), "FOO"));
         def.addReferenceDef("refval");
         def.addFileDef("fileval");
         def.addInnerArrayDef("innerarr");

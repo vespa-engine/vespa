@@ -17,13 +17,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Einar M R Rosenvinge
@@ -36,7 +33,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         Map<String, Handler<?>> handlerMap = new HashMap<>();
         Collection<Handler<?>> handlers = cluster.getHandlers();
         for (Handler<?> handler : handlers) {
-            assertThat(handlerMap.containsKey(handler.getComponentId().toString()), is(false));  //die on overwrites
+            assertFalse(handlerMap.containsKey(handler.getComponentId().toString()));  //die on overwrites
             handlerMap.put(handler.getComponentId().toString(), handler);
         }
         return handlerMap;
@@ -59,10 +56,10 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     private void verifyCustomBindings(String id) {
         Handler<?> handler = getHandlers("cluster1").get(id);
 
-        assertThat(handler.getServerBindings(), hasItem(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi")));
-        assertThat(handler.getServerBindings(), hasItem(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi/")));
+        assertTrue(handler.getServerBindings().contains(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi")));
+        assertTrue(handler.getServerBindings().contains(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi/")));
 
-        assertThat(handler.getServerBindings().size(), is(2));
+        assertEquals(2, handler.getServerBindings().size());
     }
 
     @Test
@@ -76,18 +73,16 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
 
         Map<String, Handler<?>> handlerMap = getHandlers("cluster1");
 
-        assertThat(handlerMap.get("com.yahoo.container.handler.VipStatusHandler"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.container.handler.observability.ApplicationStatusHandler"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.container.jdisc.state.StateHandler"), not(nullValue()));
+        assertNotNull(handlerMap.get("com.yahoo.container.handler.VipStatusHandler"));
+        assertNotNull(handlerMap.get("com.yahoo.container.handler.observability.ApplicationStatusHandler"));
+        assertNotNull(handlerMap.get("com.yahoo.container.jdisc.state.StateHandler"));
 
-        assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
-                .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")),
-                is(true));
-        assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
-                .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")),
-                is(true));
-        assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size(), equalTo(2));
+        assertNotNull(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"));
+        assertTrue(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
+                .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")));
+        assertTrue(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
+                .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")));
+        assertEquals(2, handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size());
     }
 
     @Test
@@ -102,7 +97,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         Map<String, Handler<?>> handlers = getHandlers("cluster1");
         Handler<?> feedApiHandler = handlers.get("com.yahoo.vespa.http.server.FeedHandler");
         Set<String> injectedComponentIds = feedApiHandler.getInjectedComponentIds();
-        assertThat(injectedComponentIds, hasItem("threadpool@feedapi-handler"));
+        assertTrue(injectedComponentIds.contains("threadpool@feedapi-handler"));
 
         ContainerThreadpoolConfig config = root.getConfig(
                 ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");

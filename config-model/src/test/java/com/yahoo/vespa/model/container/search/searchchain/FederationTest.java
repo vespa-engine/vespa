@@ -7,8 +7,10 @@ import org.w3c.dom.Element;
 
 import java.util.List;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Fail.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test generated config for federation.
@@ -65,7 +67,7 @@ public class FederationTest extends SchemaChainsTestBase {
             }
         }
 
-        assertThat(config.target().size(), is(5));
+        assertEquals(5, config.target().size());
         assertUseByDefault(config, "source1", false);
         assertUseByDefault(config, "source2", false);
 
@@ -82,7 +84,7 @@ public class FederationTest extends SchemaChainsTestBase {
 
         FederationConfig.Target target = getTarget(config.target(), sourceName);
         FederationConfig.Target.SearchChain searchChain = getProvider(target, providerName);
-        assertThat(searchChain.useByDefault(), is(expectedValue));
+        assertEquals(expectedValue, searchChain.useByDefault());
     }
 
     private FederationConfig.Target.SearchChain getProvider(FederationConfig.Target target, String providerName) {
@@ -96,8 +98,8 @@ public class FederationTest extends SchemaChainsTestBase {
 
     private void assertUseByDefault(FederationConfig config, String chainName, boolean expectedValue) {
         FederationConfig.Target target = getTarget(config.target(), chainName);
-        assertThat(target.searchChain().size(), is(1));
-        assertThat(target.searchChain().get(0).useByDefault(), is(expectedValue));
+        assertEquals(1, target.searchChain().size());
+        assertEquals(expectedValue, target.searchChain().get(0).useByDefault());
     }
 
     private FederationConfig.Target getTarget(List<FederationConfig.Target> targets, String chainId) {

@@ -25,10 +25,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -99,8 +97,9 @@ public class FederationSearcherTest {
         assertEquals(target.id(), "source");
         assertTrue("Not used by default", target.useByDefault());
         assertEquals(2, target.searchChain().size());
-        assertThat(target.searchChain().stream().map(FederationConfig.Target.SearchChain::providerId).collect(toList()),
-                contains("provider1", "provider2"));
+        assertTrue(target.searchChain().stream()
+                        .map(FederationConfig.Target.SearchChain::providerId)
+                        .collect(toList()).containsAll(List.of("provider1", "provider2")));
     }
 
     @Test

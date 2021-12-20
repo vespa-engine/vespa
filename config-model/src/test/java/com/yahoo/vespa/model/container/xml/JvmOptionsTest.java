@@ -12,9 +12,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -24,18 +22,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author baldersheim
  * @author gjoranv
  */
 public class JvmOptionsTest extends ContainerModelBuilderTestBase {
-
-    @Rule public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void verify_jvm_tag_with_attributes() throws IOException, SAXException {
@@ -178,12 +174,15 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void requireThatInvalidJvmGcOptionsFailDeployment() throws IOException, SAXException {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString("Invalid JVM GC options from services.xml: bar,foo"));
-        buildModelWithJvmOptions(new TestProperties().setHostedVespa(true).failDeploymentWithInvalidJvmOptions(true),
-                                    new TestLogger(),
-                                    "gc-options",
-                                    "-XX:+ParallelGCThreads=8 foo     bar");
+        try {
+            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true).failDeploymentWithInvalidJvmOptions(true),
+                    new TestLogger(),
+                    "gc-options",
+                    "-XX:+ParallelGCThreads=8 foo     bar");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Invalid JVM GC options from services.xml: bar,foo"));
+        }
     }
 
     private void verifyLoggingOfJvmGcOptions(boolean isHosted, String override, String... invalidOptions) throws IOException, SAXException  {

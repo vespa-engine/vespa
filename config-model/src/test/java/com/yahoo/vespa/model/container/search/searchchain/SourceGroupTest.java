@@ -2,19 +2,17 @@
 package com.yahoo.vespa.model.container.search.searchchain;
 
 import com.yahoo.component.ComponentId;
-import com.yahoo.component.ComponentSpecification;
-import com.yahoo.component.chain.Phase;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.hamcrest.Matchers.containsString;
 
 /**
  * @author Tony Vaagenes
@@ -41,7 +39,7 @@ public class SourceGroupTest {
 
             searchChains.validate();
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Missing leader for the source s1."));
+            assertTrue(e.getMessage().contains("Missing leader for the source s1."));
             return;
         }
         fail("Expected exception");
@@ -54,8 +52,8 @@ public class SourceGroupTest {
     private ChainSpecification createSearchChainSpecification(String id) {
         return new ChainSpecification(ComponentId.fromString(id),
                 new ChainSpecification.Inheritance(null, null),
-                Collections.<Phase>emptyList(),
-                Collections.<ComponentSpecification>emptySet());
+                List.of(),
+                Set.of());
     }
 
     private Source createSource(String sourceId, Source.GroupOption groupOption) {
@@ -82,8 +80,8 @@ public class SourceGroupTest {
             searchChains.validate();
             fail("Expected exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Same id used for a source"));
-            assertThat(e.getMessage(), containsString("'sameId'"));
+            assertTrue(e.getMessage().contains("Same id used for a source"));
+            assertTrue(e.getMessage().contains("'sameId'"));
         }
     }
 }

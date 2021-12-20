@@ -15,8 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -56,6 +55,6 @@ public class BundleInstantiationSpecificationBuilderTest {
         Element component = XmlHelper.getDocumentBuilder().parse(xmlStream).getDocumentElement();
 
         BundleInstantiationSpecification spec = BundleInstantiationSpecificationBuilder.build(component);
-        assertThat(spec.bundle, is(ComponentSpecification.fromString(expectedBundle)));
+        assertEquals(ComponentSpecification.fromString(expectedBundle), spec.bundle);
     }
 }

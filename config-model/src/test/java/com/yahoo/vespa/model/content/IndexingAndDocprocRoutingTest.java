@@ -23,10 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -247,7 +245,7 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
                 expectedDocprocChainStrings.add(spec.name);
             }
 
-            assertThat(actualDocprocChains, hasItems(expectedDocprocChainStrings.toArray(new String[0])));
+            assertTrue(actualDocprocChains.containsAll(expectedDocprocChainStrings));
         }
     }
 
@@ -279,32 +277,32 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
 
         HopBlueprint indexingHop = table.getHop("indexing");
 
-        assertThat(indexingHop, not(nullValue()));
+        assertNotNull(indexingHop);
 
-        assertThat(indexingHop.getNumDirectives(), is(1));
-        assertThat(indexingHop.getDirective(0), instanceOf(PolicyDirective.class));
-        assertThat(indexingHop.getDirective(0).toString(), is("[DocumentRouteSelector]"));
+        assertEquals(1, indexingHop.getNumDirectives());
+        assertTrue(indexingHop.getDirective(0) instanceof PolicyDirective);
+        assertEquals("[DocumentRouteSelector]", indexingHop.getDirective(0).toString());
         //assertThat(indexingHop.getNumRecipients(), is(1));
         //assertThat(indexingHop.getRecipient(0).getServiceName(), is(searchClusterName));
 
         Route route = table.getRoute(searchClusterName);
         assertNotNull(route);
 
-        assertThat(route.getNumHops(), is(1));
+        assertEquals(1, route.getNumHops());
         Hop messageTypeHop = route.getHop(0);
-        assertThat(messageTypeHop.getNumDirectives(), is(1));
-        assertThat(messageTypeHop.getDirective(0), instanceOf(PolicyDirective.class));
-        assertThat(messageTypeHop.getDirective(0).toString(), is("[MessageType:" + searchClusterName + "]"));
+        assertEquals(1, messageTypeHop.getNumDirectives());
+        assertTrue(messageTypeHop.getDirective(0) instanceof PolicyDirective);
+        assertEquals("[MessageType:" + searchClusterName + "]", messageTypeHop.getDirective(0).toString());
         PolicyDirective messageTypeDirective = (PolicyDirective) messageTypeHop.getDirective(0);
-        assertThat(messageTypeDirective.getName(), is("MessageType"));
-        assertThat(messageTypeDirective.getParam(), is(searchClusterName));
+        assertEquals("MessageType", messageTypeDirective.getName());
+        assertEquals(searchClusterName, messageTypeDirective.getParam());
 
         String indexingRouteName = DocumentProtocol.getIndexedRouteName(model.getContentClusters().get(searchClusterName).getConfigId());
         Route indexingRoute = table.getRoute(indexingRouteName);
 
-        assertThat(indexingRoute.getNumHops(), is(2));
-        assertThat(indexingRoute.getHop(0).getServiceName(), is(indexingHopName));
-        assertThat(indexingRoute.getHop(1), not(nullValue()));
+        assertEquals(2, indexingRoute.getNumHops());
+        assertEquals(indexingHopName, indexingRoute.getHop(0).getServiceName());
+        assertNotNull(indexingRoute.getHop(1));
     }
 
     private void assertFeedingRouteIndexed(VespaModel model, String searchClusterName, String indexingHopName) {
@@ -323,9 +321,9 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         RoutingTable table = new RoutingTable(documentProtocol.getRoutingTableSpec());
 
         Route indexingRoute = table.getRoute("searchcluster-index");
-        assertThat(indexingRoute.getNumHops(), is(2));
-        assertThat(indexingRoute.getHop(0).toString(), is(indexingHopName));
-        assertThat(indexingRoute.getHop(1).toString(), is("[Content:cluster=" + searchClusterName + "]"));
+        assertEquals(2, indexingRoute.getNumHops());
+        assertEquals(indexingHopName, indexingRoute.getHop(0).toString());
+        assertEquals("[Content:cluster=" + searchClusterName + "]", indexingRoute.getHop(1).toString());
     }
 
 

@@ -5,9 +5,7 @@ import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.vespa.objects.BufferSerializer;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 
 import java.io.BufferedReader;
@@ -17,17 +15,16 @@ import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class DocumentIdTestCase {
 
     DocumentTypeManager manager = new DocumentTypeManager();
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setUp() {
@@ -87,16 +84,22 @@ public class DocumentIdTestCase {
 
     @Test
     public void empty_user_location_value_throws_exception() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("ID location value for 'n=' key is empty");
-        new DocumentId("id:namespace:type:n=:foo");
+        try {
+            new DocumentId("id:namespace:type:n=:foo");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("ID location value for 'n=' key is empty", e.getMessage());
+        }
     }
 
     @Test
     public void empty_group_location_value_throws_exception() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("ID location value for 'g=' key is empty");
-        new DocumentId("id:namespace:type:g=:foo");
+        try {
+            new DocumentId("id:namespace:type:g=:foo");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("ID location value for 'g=' key is empty", e.getMessage());
+        }
     }
 
     //Compares globalId with C++ implementation located in
@@ -198,14 +201,10 @@ public class DocumentIdTestCase {
         DocumentId docId0Copy = new DocumentId("id:blabla:type::0");
         byte[] docId0CopyGid = docId0Copy.getGlobalId();
 
-
-        //GIDs should be the same
-        for (int i = 0; i < docId0Gid.length; i++) {
-            assertEquals(docId0Gid[i], docId0CopyGid[i]);
-        }
+        assertArrayEquals(docId0Gid, docId0CopyGid);
 
         //straight hashCode() of byte arrays won't be the same
-        assertFalse(docId0Gid.hashCode() == docId0CopyGid.hashCode());
+        assertNotEquals(docId0Gid.hashCode(), docId0CopyGid.hashCode());
 
         //Arrays.hashCode() works better...
         assertEquals(Arrays.hashCode(docId0Gid), Arrays.hashCode(docId0CopyGid));
@@ -231,7 +230,7 @@ public class DocumentIdTestCase {
     }
 
     @Test
-    public void testSerializedDocumentIdCanContainNonTextCharacter() throws UnsupportedEncodingException {
+    public void testSerializedDocumentIdCanContainNonTextCharacter() {
         String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}); // "id:a:b::0x7c"
         DocumentId docId = DocumentId.createFromSerialized(strId);
         {
@@ -247,7 +246,7 @@ public class DocumentIdTestCase {
     }
 
     @Test
-    public void testSerializedDocumentIdCannotContainZeroByte() throws UnsupportedEncodingException {
+    public void testSerializedDocumentIdCannotContainZeroByte() {
         String strId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 0, 99}); // "id:a:b::0x0c"
         try {
             DocumentId.createFromSerialized(strId);

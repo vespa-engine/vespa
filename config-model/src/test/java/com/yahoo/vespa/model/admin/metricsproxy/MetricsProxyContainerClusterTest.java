@@ -20,6 +20,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import org.junit.Test;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_FILE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.zoneString;
@@ -34,10 +35,8 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.servicesWithAdminOnly;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.CoreMatchers.endsWith;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -51,7 +50,10 @@ public class MetricsProxyContainerClusterTest {
         var builder = new PlatformBundlesConfig.Builder();
         model.getConfig(builder, CLUSTER_CONFIG_ID);
         PlatformBundlesConfig config = builder.build();
-        assertThat(config.bundlePaths(), hasItem(endsWith(METRICS_PROXY_BUNDLE_FILE.toString())));
+        assertFalse(config.bundlePaths().stream()
+                .filter(p -> p.endsWith(METRICS_PROXY_BUNDLE_FILE.toString()))
+                .collect(Collectors.toList())
+                .isEmpty());
     }
 
     @Test
@@ -71,10 +73,10 @@ public class MetricsProxyContainerClusterTest {
         Collection<Handler<?>> handlers = model.getAdmin().getMetricsProxyCluster().getHandlers();
         Collection<ComponentSpecification> handlerClasses = handlers.stream().map(Component::getClassId).collect(toList());
 
-        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(MetricsV1Handler.class.getName())));
-        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(PrometheusHandler.class.getName())));
-        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(YamasHandler.class.getName())));
-        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(ApplicationMetricsHandler.class.getName())));
+        assertTrue(handlerClasses.contains(ComponentSpecification.fromString(MetricsV1Handler.class.getName())));
+        assertTrue(handlerClasses.contains(ComponentSpecification.fromString(PrometheusHandler.class.getName())));
+        assertTrue(handlerClasses.contains(ComponentSpecification.fromString(YamasHandler.class.getName())));
+        assertTrue(handlerClasses.contains(ComponentSpecification.fromString(ApplicationMetricsHandler.class.getName())));
     }
 
     @Test

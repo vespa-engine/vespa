@@ -19,8 +19,7 @@ import java.util.List;
 
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.assertEqualActions;
 import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.normalizeServicesInActions;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class StreamingSchemaClusterChangeValidatorTest {
 
@@ -77,7 +76,7 @@ public class StreamingSchemaClusterChangeValidatorTest {
         }
 
         public void assertValidation() {
-            assertThat(validate().size(), is(0));
+            assertTrue(validate().isEmpty());
         }
 
         public void assertValidation(ConfigChangeAction exp) {

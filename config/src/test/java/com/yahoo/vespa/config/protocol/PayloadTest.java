@@ -10,8 +10,7 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -23,13 +22,13 @@ public class PayloadTest {
         String json = "{\"foo\":13}";
         ConfigPayload configPayload = ConfigPayload.fromString(json);
         Payload payload = Payload.from(configPayload);
-        assertThat(payload.getData().toString(), is(json));
+        assertEquals(json, payload.getData().toString());
         payload = Payload.from(payload.getData(), CompressionInfo.create(CompressionType.UNCOMPRESSED, 0));
         Payload compressed = payload.withCompression(CompressionType.LZ4);
         Payload uncompressed = compressed.withCompression(CompressionType.UNCOMPRESSED);
-        assertThat(uncompressed.getData().toString(), is(json));
-        assertThat(compressed.toString(), is(json));
-        assertThat(uncompressed.toString(), is(json));
+        assertEquals(json, uncompressed.getData().toString());
+        assertEquals(json, compressed.toString());
+        assertEquals(json, uncompressed.toString());
     }
 
     @Test
@@ -52,10 +51,7 @@ public class PayloadTest {
         slime.setString("foo 2");
         Payload f = Payload.from(new ConfigPayload(slime));
 
-        Payload g = null;
-        Payload h = null;
-        Payload i = null;
-        Payload j = null;
+        Payload g, h, i, j;
         g = Payload.from(new Utf8Array(foo1.getBytes(StandardCharsets.UTF_8)), CompressionInfo.uncompressed());
         h = Payload.from(new Utf8Array(foo1.getBytes(StandardCharsets.UTF_8)), CompressionInfo.uncompressed());
 

@@ -23,8 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -89,8 +88,8 @@ public class FileSenderTest {
         builder.setField("stringVal", "foo.txt");
         fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
         fileSender().sendUserConfiguredFiles(producer);
-        assertThat(builder.getObject("fileVal").getValue(), is("fooshash"));
-        assertThat(builder.getObject("stringVal").getValue(), is("foo.txt"));
+        assertEquals("fooshash", builder.getObject("fileVal").getValue());
+        assertEquals("foo.txt", builder.getObject("stringVal").getValue());
     }
 
     @Test
@@ -101,8 +100,8 @@ public class FileSenderTest {
         builder.setField("stringVal", "foo.txt");
         fileRegistry.pathToRef.put("foo.txt", new FileNode("fooshash").value());
         fileSender().sendUserConfiguredFiles(producer);
-        assertThat(builder.getObject("fileVal").getValue(), is("fooshash"));
-        assertThat(builder.getObject("stringVal").getValue(), is("foo.txt"));
+        assertEquals("fooshash", builder.getObject("fileVal").getValue());
+        assertEquals("foo.txt", builder.getObject("stringVal").getValue());
     }
 
     @Test
@@ -114,8 +113,8 @@ public class FileSenderTest {
         inner.setField("stringVal", "bar.txt");
         fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
         fileSender().sendUserConfiguredFiles(producer);
-        assertThat(builder.getArray("inner").get(0).getObject("fileVal").getValue(), is("barhash"));
-        assertThat(builder.getArray("inner").get(0).getObject("stringVal").getValue(), is("bar.txt"));
+        assertEquals("barhash", builder.getArray("inner").get(0).getObject("fileVal").getValue());
+        assertEquals("bar.txt", builder.getArray("inner").get(0).getObject("stringVal").getValue());
     }
 
     @Test
@@ -131,10 +130,10 @@ public class FileSenderTest {
         fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
         fileRegistry.pathToRef.put("path.txt", new FileNode("pathhash").value());
         fileSender().sendUserConfiguredFiles(producer);
-        assertThat(builder.getArray("fileArray").get(0).getValue(), is("foohash"));
-        assertThat(builder.getArray("fileArray").get(1).getValue(), is("barhash"));
-        assertThat(builder.getArray("pathArray").get(0).getValue(), is("pathhash"));
-        assertThat(builder.getArray("stringArray").get(0).getValue(), is("foo.txt"));
+        assertEquals("foohash", builder.getArray("fileArray").get(0).getValue());
+        assertEquals("barhash", builder.getArray("fileArray").get(1).getValue());
+        assertEquals("pathhash", builder.getArray("pathArray").get(0).getValue());
+        assertEquals("foo.txt", builder.getArray("stringArray").get(0).getValue());
     }
 
     @Test
@@ -145,8 +144,8 @@ public class FileSenderTest {
         builder.getObject("struct").setField("stringVal", "foo.txt");
         fileRegistry.pathToRef.put("foo.txt", new FileNode("foohash").value());
         fileSender().sendUserConfiguredFiles(producer);
-        assertThat(builder.getObject("struct").getObject("fileVal").getValue(), is("foohash"));
-        assertThat(builder.getObject("struct").getObject("stringVal").getValue(), is("foo.txt"));
+        assertEquals("foohash", builder.getObject("struct").getObject("fileVal").getValue());
+        assertEquals("foo.txt", builder.getObject("struct").getObject("stringVal").getValue());
     }
 
     @Test
@@ -162,10 +161,10 @@ public class FileSenderTest {
         fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
         fileRegistry.pathToRef.put("path.txt", new FileNode("pathhash").value());
         fileSender().sendUserConfiguredFiles(producer);
-        assertThat(builder.getMap("fileMap").get("foo").getValue(), is("foohash"));
-        assertThat(builder.getMap("fileMap").get("bar").getValue(), is("barhash"));
-        assertThat(builder.getMap("pathMap").get("path").getValue(), is("pathhash"));
-        assertThat(builder.getMap("stringMap").get("bar").getValue(), is("bar.txt"));
+        assertEquals("foohash", builder.getMap("fileMap").get("foo").getValue());
+        assertEquals("barhash", builder.getMap("fileMap").get("bar").getValue());
+        assertEquals("pathhash", builder.getMap("pathMap").get("path").getValue());
+        assertEquals("bar.txt", builder.getMap("stringMap").get("bar").getValue());
     }
 
     @Test
@@ -177,8 +176,8 @@ public class FileSenderTest {
         inner.setField("stringVal", "bar.txt");
         fileRegistry.pathToRef.put("bar.txt", new FileNode("barhash").value());
         fileSender().sendUserConfiguredFiles(producer);
-        assertThat(builder.getMap("inner").get("foo").getObject("fileVal").getValue(), is("barhash"));
-        assertThat(builder.getMap("inner").get("foo").getObject("stringVal").getValue(), is("bar.txt"));
+        assertEquals("barhash", builder.getMap("inner").get("foo").getObject("fileVal").getValue());
+        assertEquals("bar.txt", builder.getMap("inner").get("foo").getObject("stringVal").getValue());
     }
 
     @Test(expected = IllegalArgumentException.class)

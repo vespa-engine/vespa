@@ -4,13 +4,13 @@ package com.yahoo.container.di.componentgraph.cycle;
 
 import org.junit.Test;
 
+import java.util.List;
+
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertices.A;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertices.B;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertices.C;
 import static com.yahoo.container.di.componentgraph.cycle.CycleFinderTest.Vertices.D;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -28,7 +28,7 @@ public class CycleFinderTest {
         graph.edge(D, A);
 
         var cycleFinder = new CycleFinder<>(graph);
-        assertThat(cycleFinder.findCycle(), empty());
+        assertTrue(cycleFinder.findCycle().isEmpty());
     }
 
     @Test
@@ -39,7 +39,7 @@ public class CycleFinderTest {
         graph.edge(C, A);
 
         var cycleFinder = new CycleFinder<>(graph);
-        assertThat(cycleFinder.findCycle(), contains(A, B, C, A));
+        assertTrue(cycleFinder.findCycle().containsAll(List.of(A, B, C, A)));
     }
 
     @Test
@@ -48,7 +48,7 @@ public class CycleFinderTest {
         graph.edge(A, A);
 
         var cycleFinder = new CycleFinder<>(graph);
-        assertThat(cycleFinder.findCycle(), contains(A, A));
+        assertTrue(cycleFinder.findCycle().containsAll(List.of(A, A)));
     }
 
     @Test
@@ -59,7 +59,7 @@ public class CycleFinderTest {
         graph.edge(C, B);
 
         var cycleFinder = new CycleFinder<>(graph);
-        assertThat(cycleFinder.findCycle(), contains(B, C, B));
+        assertTrue(cycleFinder.findCycle().containsAll(List.of(B, C, B)));
     }
 
     @Test
@@ -68,8 +68,8 @@ public class CycleFinderTest {
         graph.edge(A, A);
 
         var cycleFinder = new CycleFinder<>(graph);
-        assertThat(cycleFinder.findCycle(), contains(A, A));
-        assertThat(cycleFinder.findCycle(), contains(A, A));
+        assertTrue(cycleFinder.findCycle().containsAll(List.of(A, A)));
+        assertTrue(cycleFinder.findCycle().containsAll(List.of(A, A)));
     }
 
     @Test
@@ -78,8 +78,8 @@ public class CycleFinderTest {
         graph.edge(A, B);
 
         var cycleFinder = new CycleFinder<>(graph);
-        assertThat(cycleFinder.findCycle(), empty());
-        assertThat(cycleFinder.findCycle(), empty());
+        assertTrue(cycleFinder.findCycle().isEmpty());
+        assertTrue(cycleFinder.findCycle().isEmpty());
     }
 
 }

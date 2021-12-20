@@ -30,12 +30,10 @@ import org.junit.Test;
 import java.util.Set;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 
@@ -55,7 +53,7 @@ public class AdminTestCase {
         VespaModel vespaModel = getVespaModel(TESTDIR + "adminconfig20");
 
         // Verify that the admin plugin has been loaded (always loads routing).
-        assertThat(vespaModel.configModelRepo().asMap().size(), is(2));
+        assertEquals(2, vespaModel.configModelRepo().asMap().size());
 
         ApplicationConfigProducerRoot root = vespaModel.getVespa();
         assertNotNull(root);
@@ -102,12 +100,12 @@ public class AdminTestCase {
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
         SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertThat(sentinelConfig.service().size(), is(5));
-        assertThat(sentinelConfig.service(0).name(), is("logserver"));
-        assertThat(sentinelConfig.service(1).name(), is("slobrok"));
-        assertThat(sentinelConfig.service(2).name(), is("slobrok2"));
-        assertThat(sentinelConfig.service(3).name(), is(METRICS_PROXY_CONTAINER.serviceName));
-        assertThat(sentinelConfig.service(4).name(), is("logd"));
+        assertEquals(5, sentinelConfig.service().size());
+        assertEquals("logserver", sentinelConfig.service(0).name());
+        assertEquals("slobrok", sentinelConfig.service(1).name());
+        assertEquals("slobrok2", sentinelConfig.service(2).name());
+        assertEquals(METRICS_PROXY_CONTAINER.serviceName, sentinelConfig.service(3).name());
+        assertEquals("logd", sentinelConfig.service(4).name());
     }
 
     /**
@@ -119,7 +117,7 @@ public class AdminTestCase {
         VespaModel vespaModel = getVespaModel(TESTDIR + "simpleadminconfig20");
 
         // Verify that the admin plugin has been loaded (always loads routing).
-        assertThat(vespaModel.configModelRepo().asMap().size(), is(2));
+        assertEquals(2, vespaModel.configModelRepo().asMap().size());
 
         ApplicationConfigProducerRoot root = vespaModel.getVespa();
         assertNotNull(root);
@@ -138,12 +136,12 @@ public class AdminTestCase {
         SentinelConfig.Builder b = new SentinelConfig.Builder();
         vespaModel.getConfig(b, localhostConfigId);
         SentinelConfig sentinelConfig = new SentinelConfig(b);
-        assertThat(sentinelConfig.service().size(), is(4));
-        assertThat(sentinelConfig.service(0).name(), is("logserver"));
-        assertThat(sentinelConfig.service(1).name(), is("slobrok"));
-        assertThat(sentinelConfig.service(2).name(), is(METRICS_PROXY_CONTAINER.serviceName));
-        assertThat(sentinelConfig.service(3).name(), is("logd"));
-        assertThat(sentinelConfig.service(0).affinity().cpuSocket(), is(-1));
+        assertEquals(4, sentinelConfig.service().size());
+        assertEquals("logserver", sentinelConfig.service(0).name());
+        assertEquals("slobrok", sentinelConfig.service(1).name());
+        assertEquals(METRICS_PROXY_CONTAINER.serviceName, sentinelConfig.service(2).name());
+        assertEquals("logd", sentinelConfig.service(3).name());
+        assertEquals(-1, sentinelConfig.service(0).affinity().cpuSocket());
         assertTrue(sentinelConfig.service(0).preShutdownCommand().isEmpty());
 
         // Confirm slobrok config
@@ -168,11 +166,11 @@ public class AdminTestCase {
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig config = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
-        assertThat(config.application().tenant(), is("quux"));
-        assertThat(config.application().name(), is("foo"));
-        assertThat(config.application().environment(), is("dev"));
-        assertThat(config.application().region(), is("baz"));
-        assertThat(config.application().instance(), is("bim"));
+        assertEquals("quux", config.application().tenant());
+        assertEquals("foo", config.application().name());
+        assertEquals("dev", config.application().environment());
+        assertEquals("baz", config.application().region());
+        assertEquals("bim", config.application().instance());
     }
 
     @Test
@@ -180,7 +178,7 @@ public class AdminTestCase {
         VespaModel vespaModel = getVespaModel(TESTDIR + "multipleconfigservers");
 
         // Verify that the admin plugin has been loaded (always loads routing).
-        assertThat(vespaModel.configModelRepo().asMap().size(), is(2));
+        assertEquals(2, vespaModel.configModelRepo().asMap().size());
         ApplicationConfigProducerRoot root = vespaModel.getVespa();
         assertNotNull(root);
 
@@ -196,14 +194,14 @@ public class AdminTestCase {
         assertTrue(configIds.contains("admin/configservers/configserver.0"));
         assertTrue(configIds.contains("admin/configservers/configserver.1"));
 
-        assertThat(admin.getConfigservers().size(), is(2));
+        assertEquals(2, admin.getConfigservers().size());
 
         // Default configserver is the first one in the list and should have the default ports too
         Configserver server1 = admin.getConfigservers().get(0);
         assertEquals(admin.getConfigserver(), server1);
-        assertThat(server1.getPortCount(), is(2));
-        assertThat(server1.getRelativePort(0), is(19070));
-        assertThat(server1.getRelativePort(1), is(19071));
+        assertEquals(2, server1.getPortCount());
+        assertEquals(19070, server1.getRelativePort(0));
+        assertEquals(19071, server1.getRelativePort(1));
 
 
         // Second configserver should be on second host but have the same port number
@@ -212,9 +210,9 @@ public class AdminTestCase {
         assertNotSame(server1, server2);
         assertNotSame(server1.getHostName(), server2.getHostName());
 
-        assertThat(server2.getPortCount(), is(2));
-        assertThat(server2.getRelativePort(0), is(19070));
-        assertThat(server2.getRelativePort(1), is(19071));
+        assertEquals(2, server2.getPortCount());
+        assertEquals(19070, server2.getRelativePort(0));
+        assertEquals(19071, server2.getRelativePort(1));
     }
 
     @Test
@@ -293,11 +291,11 @@ public class AdminTestCase {
         TestRoot root = new TestDriver().buildModel(state);
         String localhost = HostName.getLocalhost();
         SentinelConfig sentinelConfig = root.getConfig(SentinelConfig.class, "hosts/" + localhost);
-        assertThat(sentinelConfig.service().size(), is(4));
-        assertThat(sentinelConfig.service(0).name(), is("logserver"));
-        assertThat(sentinelConfig.service(1).name(), is("slobrok"));
-        assertThat(sentinelConfig.service(2).name(), is(METRICS_PROXY_CONTAINER.serviceName));
-        assertThat(sentinelConfig.service(3).name(), is("logd"));
+        assertEquals(4, sentinelConfig.service().size());
+        assertEquals("logserver", sentinelConfig.service(0).name());
+        assertEquals("slobrok", sentinelConfig.service(1).name());
+        assertEquals(METRICS_PROXY_CONTAINER.serviceName, sentinelConfig.service(2).name());
+        assertEquals("logd", sentinelConfig.service(3).name());
     }
 
 }

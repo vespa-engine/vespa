@@ -10,10 +10,8 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
@@ -89,12 +87,12 @@ public class ConfigPayloadBuilderTest {
         map.put("barkey", "barvalue");
         map.put("bazkey", "bazvalue");
         map.put("fookey", "lolvalue");
-        assertThat(map.getElements().size(), is(3));
+        assertEquals(3, map.getElements().size());
         Cursor root = createSlime(builder);
         Cursor a = root.field("foo");
-        assertThat(a.field("barkey").asString(), is("barvalue"));
-        assertThat(a.field("bazkey").asString(), is("bazvalue"));
-        assertThat(a.field("fookey").asString(), is("lolvalue"));
+        assertEquals("barvalue", a.field("barkey").asString());
+        assertEquals("bazvalue", a.field("bazkey").asString());
+        assertEquals("lolvalue", a.field("fookey").asString());
     }
 
     @Test
@@ -111,7 +109,7 @@ public class ConfigPayloadBuilderTest {
         array.append("bar");
         array.append("baz");
         array.append("bim");
-        assertThat(array.getElements().size(), is(3));
+        assertEquals(3, array.getElements().size());
         Cursor root = createSlime(builder);
         Cursor a = root.field("foo");
         assertEquals("bar", a.entry(0).asString());
@@ -174,16 +172,16 @@ public class ConfigPayloadBuilderTest {
         ConfigPayloadBuilder b2 = array.get(1);
         ConfigPayloadBuilder b3 = array.get(0);
         ConfigPayloadBuilder b4 = array.get(1);
-        assertThat(b1, is(b3));
-        assertThat(b2, is(b4));
+        assertEquals(b1, b3);
+        assertEquals(b2, b4);
 
         ConfigPayloadBuilder.Array array_indexed = builder.getArray("bar");
         ConfigPayloadBuilder bi3 = array_indexed.set(3);
         ConfigPayloadBuilder bi1 = array_indexed.set(1);
         ConfigPayloadBuilder bi32 = array_indexed.get(3);
         ConfigPayloadBuilder bi12 = array_indexed.get(1);
-        assertThat(bi12, is(bi1));
-        assertThat(bi32, is(bi3));
+        assertEquals(bi12, bi1);
+        assertEquals(bi32, bi3);
     }
 
     @Test
@@ -204,30 +202,30 @@ public class ConfigPayloadBuilderTest {
         b3.getArray("eee").append("lll");
         b3.setField("uuu", "vvv");
 
-        assertThat(b1.override(b2), is(b1));
-        assertThat(b1.override(b3), is(b1));
+        assertEquals(b1, b1.override(b2));
+        assertEquals(b1, b1.override(b3));
 
         Cursor b1root = createSlime(b1);
         Cursor b2root = createSlime(b2);
         Cursor b3root = createSlime(b3);
-        assertThat(b3root.field("aaa").asString(), is("c"));
-        assertThat(b3root.field("bbb").field("ccc").asString(), is("fff"));
-        assertThat(b3root.field("eee").children(), is(1));
-        assertThat(b3root.field("eee").entry(0).asString(), is("lll"));
-        assertThat(b3root.field("uuu").asString(), is("vvv"));
+        assertEquals("c", b3root.field("aaa").asString());
+        assertEquals("fff", b3root.field("bbb").field("ccc").asString());
+        assertEquals(1, b3root.field("eee").children());
+        assertEquals("lll", b3root.field("eee").entry(0).asString());
+        assertEquals("vvv", b3root.field("uuu").asString());
 
-        assertThat(b2root.field("aaa").asString(), is("b"));
-        assertThat(b2root.field("bbb").field("ccc").asString(), is("eee"));
-        assertThat(b2root.field("eee").children(), is(1));
-        assertThat(b2root.field("eee").entry(0).asString(), is("kkk"));
-        assertThat(b2root.field("uuu").asString(), is("ttt"));
+        assertEquals("b", b2root.field("aaa").asString());
+        assertEquals("eee", b2root.field("bbb").field("ccc").asString());
+        assertEquals(1, b2root.field("eee").children());
+        assertEquals("kkk", b2root.field("eee").entry(0).asString());
+        assertEquals("ttt", b2root.field("uuu").asString());
 
-        assertThat(b1root.field("aaa").asString(), is("c"));
-        assertThat(b1root.field("bbb").field("ccc").asString(), is("fff"));
-        assertThat(b1root.field("eee").children(), is(2));
-        assertThat(b1root.field("eee").entry(0).asString(), is("kkk"));
-        assertThat(b1root.field("eee").entry(1).asString(), is("lll"));
-        assertThat(b1root.field("uuu").asString(), is("vvv"));
+        assertEquals("c", b1root.field("aaa").asString());
+        assertEquals("fff", b1root.field("bbb").field("ccc").asString());
+        assertEquals(2, b1root.field("eee").children());
+        assertEquals("kkk", b1root.field("eee").entry(0).asString());
+        assertEquals("lll", b1root.field("eee").entry(1).asString());
+        assertEquals("vvv", b1root.field("uuu").asString());
     }
 
     @Test(expected=IllegalStateException.class)
@@ -266,7 +264,8 @@ public class ConfigPayloadBuilderTest {
         ConfigPayloadBuilder builder = new ConfigPayloadBuilder(new ConfigPayload(slime));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ConfigPayload.fromBuilder(builder).serialize(baos, new JsonFormat(true));
-        assertThat(baos.toString(), is("{\"foo\":\"bar\",\"foorio\":{\"bar\":\"bam\",\"bario\":{\"bim\":\"bul\"},\"blim\":[{\"fim\":\"fam\"},{\"blim\":\"blam\"}]},\"arrio\":[\"himbio\"]}"));
+        assertEquals("{\"foo\":\"bar\",\"foorio\":{\"bar\":\"bam\",\"bario\":{\"bim\":\"bul\"},\"blim\":[{\"fim\":\"fam\"},{\"blim\":\"blam\"}]},\"arrio\":[\"himbio\"]}",
+                     baos.toString());
     }
 
     @Test(expected=IllegalArgumentException.class)

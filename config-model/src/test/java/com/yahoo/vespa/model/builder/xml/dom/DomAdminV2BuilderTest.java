@@ -20,10 +20,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.core.IsNot.not;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -122,12 +120,12 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
                 new TestProperties.Spec("test2", 19070, 2181),
                 new TestProperties.Spec("test3", 19070, 2181));
         Admin admin = buildAdmin(servicesMultitenantAdminOnly(), true, configServerSpecs);
-        assertThat(admin.getConfigservers().size(), is(3));
-        assertThat(admin.getSlobroks().size(), is(1));
+        assertEquals(3, admin.getConfigservers().size());
+        assertEquals(1, admin.getSlobroks().size());
         assertNotNull(admin.hostSystem().getHostByHostname("test1"));
         for (Configserver configserver : admin.getConfigservers()) {
             for (Slobrok slobrok : admin.getSlobroks()) {
-                assertThat(slobrok.getHostName(), is(not(configserver.getHostName())));
+                assertNotEquals(configserver.getHostName(), slobrok.getHostName());
             }
         }
     }
@@ -138,7 +136,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Test
     public void adminWithConfigserverElement() {
         Admin admin = buildAdmin(servicesConfigserver());
-        assertThat(admin.getConfigservers().size(), is(1));
+        assertEquals(1, admin.getConfigservers().size());
     }
 
     /**
@@ -147,15 +145,15 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Test
     public void adminWithConfigserversElement() {
         Admin admin = buildAdmin(servicesConfigservers());
-        assertThat(admin.getConfigservers().size(), is(1));
+        assertEquals(1, admin.getConfigservers().size());
     }
 
     @Test
     public void basicYamasNoXml() {
         Admin admin = buildAdmin(servicesNoYamas());
         Monitoring y = admin.getMonitoring();
-        assertThat(y.getClustername(), is("vespa"));
-        assertThat(y.getInterval(), is(1));
+        assertEquals("vespa", y.getClustername());
+        assertEquals(1, y.getInterval().intValue());
     }
 
     @Test
@@ -168,16 +166,16 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     public void basicYamasXml() {
         Admin admin = buildAdmin(servicesYamas());
         Monitoring y = admin.getMonitoring();
-        assertThat(y.getClustername(), is("foo"));
-        assertThat(y.getInterval(), is(1));
+        assertEquals("foo", y.getClustername());
+        assertEquals(1, y.getInterval().intValue());
     }
 
     @Test
     public void yamasWithIntervalOverride() {
         Admin admin = buildAdmin(servicesYamasIntervalOverride());
         Monitoring y = admin.getMonitoring();
-        assertThat(y.getClustername(), is("foo"));
-        assertThat(y.getInterval(), is(5));
+        assertEquals("foo", y.getClustername());
+        assertEquals(5, y.getInterval().intValue());
     }
 
     /**
@@ -196,11 +194,11 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Test
     public void configOverridesCanBeUsedInAdmin() {
         Admin admin = buildAdmin(servicesOverride());
-        assertThat(admin.getUserConfigs().size(), is(1));
+        assertEquals(1, admin.getUserConfigs().size());
         LogdConfig.Builder logdBuilder = new LogdConfig.Builder();
         admin.addUserConfig(logdBuilder);
         LogdConfig config = new LogdConfig(logdBuilder);
-        assertThat(config.logserver().host(), is("foobar"));
+        assertEquals("foobar", config.logserver().host());
     }
 
     private Admin buildAdmin(Element xml) {

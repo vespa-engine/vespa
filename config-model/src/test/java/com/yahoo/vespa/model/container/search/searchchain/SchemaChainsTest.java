@@ -5,14 +5,12 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.prelude.cluster.ClusterSearcher;
 import com.yahoo.search.config.ClusterConfig;
-import com.yahoo.search.federation.ProviderConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -24,7 +22,6 @@ import static org.junit.Assert.*;
 public class SchemaChainsTest extends SchemaChainsTestBase {
 
     private ChainsConfig chainsConfig;
-    private ProviderConfig providerConfig;
     private ClusterConfig clusterConfig;
 
     @Before
@@ -93,7 +90,7 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
     @Test
     public void require_that_source_chain_spec_id_is_namespaced_in_provider_id() {
         Source source = (Source) getSearchChains().allChains().getComponent("source:1@provider:1");
-        assertThat(source.getChainSpecification().componentId.getNamespace(), is(ComponentId.fromString("provider:1")));
+        assertEquals(ComponentId.fromString("provider:1"), source.getChainSpecification().componentId.getNamespace());
     }
 
     @Test

@@ -4,8 +4,7 @@ package com.yahoo.vespa.config;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -24,6 +23,6 @@ public class LZ4PayloadCompressorTest {
         byte[] data = Utf8.toBytes(input);
         byte[] compressed = compressor.compress(data);
         byte[] output = compressor.decompress(compressed, data.length);
-        assertThat(data, is(output));
+        assertArrayEquals(output, data);
     }
 }

@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-import java.util.Arrays;
+import java.util.List;
 
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StringUtilitiesTest {
 
@@ -40,7 +43,7 @@ public class StringUtilitiesTest {
 
     @Test
     public void testImplode() {
-        assertEquals(StringUtilities.implode(null, null), null);
+        assertNull(StringUtilities.implode(null, null));
         assertEquals(StringUtilities.implode(new String[0], null), "");
         assertEquals(StringUtilities.implode(new String[] {"foo"}, null), "foo");
         assertEquals(StringUtilities.implode(new String[] {"foo"}, "asdfsdfsadfsadfasdfs"), "foo");
@@ -55,17 +58,17 @@ public class StringUtilitiesTest {
     
     @Test
     public void testImplodeMultiline() {
-        assertEquals(StringUtilities.implodeMultiline(Arrays.asList("foo", "bar")), "foo\nbar");
-        assertEquals(StringUtilities.implodeMultiline(Arrays.asList("")), "");
-        assertEquals(StringUtilities.implodeMultiline(null), null);
-        assertEquals(StringUtilities.implodeMultiline(Arrays.asList("\n")), "\n");
+        assertEquals(StringUtilities.implodeMultiline(List.of("foo", "bar")), "foo\nbar");
+        assertEquals(StringUtilities.implodeMultiline(List.of("")), "");
+        assertNull(StringUtilities.implodeMultiline(null));
+        assertEquals(StringUtilities.implodeMultiline(List.of("\n")), "\n");
     }
 
     @Test
     public void testTruncation() {
         String a = "abbc";
-        assertTrue(a == StringUtilities.truncateSequencesIfNecessary(a, 2));
-        assertTrue(a != StringUtilities.truncateSequencesIfNecessary(a, 1));
+        assertSame(a, StringUtilities.truncateSequencesIfNecessary(a, 2));
+        assertNotSame(a, StringUtilities.truncateSequencesIfNecessary(a, 1));
         assertEquals("abc", StringUtilities.truncateSequencesIfNecessary(a, 1));
         assertEquals("abc", StringUtilities.truncateSequencesIfNecessary("aabbccc", 1));
         assertEquals("abc", StringUtilities.truncateSequencesIfNecessary("abcc", 1));
@@ -77,9 +80,9 @@ public class StringUtilitiesTest {
 
     @Test
     public void testStripSuffix() {
-        assertThat(StringUtilities.stripSuffix("abc.def", ".def"), is("abc"));
-        assertThat(StringUtilities.stripSuffix("abc.def", ""), is("abc.def"));
-        assertThat(StringUtilities.stripSuffix("", ".def"), is(""));
-        assertThat(StringUtilities.stripSuffix("", ""), is(""));
+        assertEquals("abc", StringUtilities.stripSuffix("abc.def", ".def"));
+        assertEquals("abc.def", StringUtilities.stripSuffix("abc.def", ""));
+        assertTrue(StringUtilities.stripSuffix("", ".def").isEmpty());
+        assertTrue(StringUtilities.stripSuffix("", "").isEmpty());
     }
 }

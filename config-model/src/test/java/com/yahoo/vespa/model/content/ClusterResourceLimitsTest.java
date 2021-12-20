@@ -5,16 +5,15 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author geirst
@@ -67,9 +66,6 @@ public class ClusterResourceLimitsTest {
             return builder.build();
         }
     }
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void content_node_limits_are_derived_from_cluster_controller_limits_if_not_set() {
@@ -137,9 +133,12 @@ public class ClusterResourceLimitsTest {
 
     @Test
     public void hosted_exception_is_thrown_when_resource_limits_are_specified() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString("Element 'resource-limits' is not allowed to be set"));
-        hostedBuild();
+        try {
+            hostedBuild();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Element 'resource-limits' is not allowed to be set"));
+        }
     }
 
     @Test
@@ -158,14 +157,22 @@ public class ClusterResourceLimitsTest {
     public void exception_is_thrown_when_resource_limits_are_out_of_range() {
         TestProperties featureFlags = new TestProperties();
         featureFlags.setResourceLimitDisk(1.1);
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage(containsString("Resource limit for disk is set to illegal value 1.1, but must be in the range [0.0, 1.0]"));
-        hostedBuild(featureFlags, false);
+
+        try {
+            hostedBuild(featureFlags, false);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Resource limit for disk is set to illegal value 1.1, but must be in the range [0.0, 1.0]"));
+        }
 
         featureFlags = new TestProperties();
         featureFlags.setResourceLimitDisk(-0.1);
-        expectedException.expectMessage(containsString("Resource limit for disk is set to illegal value -0.1, but must be in the range [0.0, 1.0]"));
-        hostedBuild(featureFlags, false);
+        try {
+            hostedBuild(featureFlags, false);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Resource limit for disk is set to illegal value -0.1, but must be in the range [0.0, 1.0]"));
+        }
     }
 
     private ClusterResourceLimits hostedBuild() {

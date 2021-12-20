@@ -12,9 +12,8 @@ import com.yahoo.vespa.model.search.DocumentDatabase;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test fixture to setup current and next content clusters used for change validation.
@@ -62,7 +61,7 @@ public abstract class ContentClusterFixture {
 
     public void assertValidation() {
         List<VespaConfigChangeAction> act = validate();
-        assertThat(act.size(), is(0));
+        assertTrue(act.isEmpty());
     }
 
     public void assertValidation(VespaConfigChangeAction exp) {
@@ -71,7 +70,7 @@ public abstract class ContentClusterFixture {
 
     public void assertValidation(List<VespaConfigChangeAction> exp) {
         List<VespaConfigChangeAction> act = validate();
-        assertThat(act, equalTo(exp));
+        assertEquals(exp, act);
     }
 
     public abstract List<VespaConfigChangeAction> validate();

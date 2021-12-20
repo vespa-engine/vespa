@@ -5,8 +5,6 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -15,6 +13,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class BlockFeedGlobalEndpointsFilterTest {
 
@@ -25,7 +24,7 @@ public class BlockFeedGlobalEndpointsFilterTest {
         var config = getConfig(filter);
         assertEquals(1, config.rule().size());
         var rule = config.rule().get(0);
-        assertThat(rule.hostNames(), Matchers.containsInAnyOrder("foo", "bar"));
+        assertTrue(rule.hostNames().containsAll(List.of("foo", "bar")));
         assertEquals(rule.action(), RuleBasedFilterConfig.Rule.Action.Enum.BLOCK);
     }
 

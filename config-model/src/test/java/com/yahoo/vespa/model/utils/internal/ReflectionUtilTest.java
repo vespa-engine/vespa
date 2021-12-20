@@ -12,10 +12,8 @@ import org.junit.Test;
 import java.util.Set;
 
 import static com.yahoo.vespa.model.utils.internal.ReflectionUtil.getAllConfigsProduced;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -71,14 +69,14 @@ public class ReflectionUtilTest {
     @Test
     public void getAllConfigsProduced_includes_configs_produced_by_super_class() {
         Set<ConfigKey<?>> configs = getAllConfigsProduced(ConcreteProducer.class, "foo");
-        assertThat(configs.size(), is(1));
+        assertEquals(1, configs.size());
         assertTrue(configs.contains(new ConfigKey<>(SimpletypesConfig.CONFIG_DEF_NAME, "foo", SimpletypesConfig.CONFIG_DEF_NAMESPACE)));
     }
 
     @Test
     public void getAllConfigsProduced_includes_configs_produced_by_implemented_interface() {
         Set<ConfigKey<?>> configs = getAllConfigsProduced(InterfaceImplementingProducer.class, "foo");
-        assertThat(configs.size(), is(2));
+        assertEquals(2, configs.size());
         assertTrue(configs.contains(new ConfigKey<>(SimpletypesConfig.CONFIG_DEF_NAME, "foo", SimpletypesConfig.CONFIG_DEF_NAMESPACE)));
         assertTrue(configs.contains(new ConfigKey<>(ArraytypesConfig.CONFIG_DEF_NAME, "foo", ArraytypesConfig.CONFIG_DEF_NAMESPACE)));
     }
@@ -86,7 +84,7 @@ public class ReflectionUtilTest {
     @Test
     public void getAllConfigsProduced_includes_configs_directly_implemented_by_producer() {
         Set<ConfigKey<?>> configs = getAllConfigsProduced(SimpleProducer.class, "foo");
-        assertThat(configs.size(), is(1));
+        assertEquals(1, configs.size());
         assertTrue(configs.contains(new ConfigKey<>(SimpletypesConfig.CONFIG_DEF_NAME, "foo", SimpletypesConfig.CONFIG_DEF_NAMESPACE)));
     }
 

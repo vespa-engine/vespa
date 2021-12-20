@@ -17,14 +17,11 @@ import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * Test for using the content model to create indexed search clusters.
@@ -113,12 +110,12 @@ public class IndexedTest extends ContentBaseTest {
 
     private VespaModelCreatorWithMockPkg getIndexedVespaModelCreator() {
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2", "type3");
-        return new VespaModelCreatorWithMockPkg(getHosts(), createProtonIndexedVespaServices(Arrays.asList("type1", "type2", "type3")), sds);
+        return new VespaModelCreatorWithMockPkg(getHosts(), createProtonIndexedVespaServices(List.of("type1", "type2", "type3")), sds);
     }
 
     private VespaModel getStreamingVespaModel() {
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1");
-        return new VespaModelCreatorWithMockPkg(getHosts(), createProtonStreamingVespaServices(Arrays.asList("type1")), sds).create();
+        return new VespaModelCreatorWithMockPkg(getHosts(), createProtonStreamingVespaServices(List.of("type1")), sds).create();
     }
 
     @Test
@@ -190,9 +187,9 @@ public class IndexedTest extends ContentBaseTest {
         assertNotNull(s);
         assertFalse(s.getSearch().hasIndexedCluster());
         ClusterListConfig config = model.getConfig(ClusterListConfig.class, VespaModel.ROOT_CONFIGID);
-        assertThat(config.storage().size(), is(1));
-        assertThat(config.storage(0).name(), is("test"));
-        assertThat(config.storage(0).configid(), is("test"));
+        assertEquals(1, config.storage().size());
+        assertEquals("test", config.storage(0).name());
+        assertEquals("test", config.storage(0).configid());
     }
 
     @Test

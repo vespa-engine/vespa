@@ -23,15 +23,12 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -45,7 +42,7 @@ public class AsynchronousSectionedRendererTest {
         TestRenderer rendererPrototype = new TestRenderer();
         TestRenderer rendererCopy1 = (TestRenderer)rendererPrototype.clone();
         rendererCopy1.init();
-        assertTrue(rendererPrototype.getRenderingExecutor() == rendererCopy1.getRenderingExecutor());
+        assertSame(rendererPrototype.getRenderingExecutor(), rendererCopy1.getRenderingExecutor());
     }
 
     @Test
@@ -57,7 +54,7 @@ public class AsynchronousSectionedRendererTest {
         TestRenderer rendererPrototype2 = new TestRenderer();
         TestRenderer rendererCopy2 = (TestRenderer)rendererPrototype2.clone();
         rendererCopy2.init();
-        assertTrue(rendererPrototype1.getRenderingExecutor() != rendererCopy2.getRenderingExecutor());
+        assertNotSame(rendererPrototype1.getRenderingExecutor(), rendererCopy2.getRenderingExecutor());
     }
 
     @Test
@@ -69,9 +66,9 @@ public class AsynchronousSectionedRendererTest {
 
         String str = render(renderer, dataList);
 
-        assertThat(str,
-                   equalTo(" beginResponse beginList[f\\o\"o, [b/a\br, f\f\no\ro\tbar\u0005]] dataf\\o\"o beginList[b/a\br, " +
-                           "f\f\no\ro\tbar\u0005] datab/a\br dataf\f\no\ro\tbar\u0005 endList[b/a\br, f\f\no\ro\tbar\u0005] endList[f\\o\"o, [b/a\br, f\f\no\ro\tbar\u0005]] endResponse"));
+        assertEquals(" beginResponse beginList[f\\o\"o, [b/a\br, f\f\no\ro\tbar\u0005]] dataf\\o\"o beginList[b/a\br, " +
+                "f\f\no\ro\tbar\u0005] datab/a\br dataf\f\no\ro\tbar\u0005 endList[b/a\br, f\f\no\ro\tbar\u0005] endList[f\\o\"o, [b/a\br, f\f\no\ro\tbar\u0005]] endResponse",
+                str);
     }
 
     @Test
@@ -79,23 +76,21 @@ public class AsynchronousSectionedRendererTest {
         Request request = new Request();
         DataList dataList = ArrayDataList.create(request);
 
-        assertThat(render(dataList),
-                          equalTo("{\"datalist\":[" +
-                                          "]}"));
+        assertEquals("{\"datalist\":[]}", render(dataList));
     }
 
     @Test
     public void testProcessingRendering() throws IOException, InterruptedException {
         StringDataList dataList = createDataListWithStrangeStrings();
 
-        assertThat(render(dataList),
-                equalTo("{\"datalist\":[" +
+        assertEquals("{\"datalist\":[" +
                         "{\"data\":\"f\\\\o\\\"o\"}," +
                         "{\"datalist\":[" +
                           "{\"data\":\"b/a\\br\"}," +
                           "{\"data\":\"f\\f\\no\\ro\\tbar\\u0005\"}" +
                         "]}" +
-                        "]}"));
+                        "]}",
+                render(dataList));
     }
 
     @Test
@@ -106,8 +101,7 @@ public class AsynchronousSectionedRendererTest {
         dataList.request().errors().add(new ErrorMessage("m1","d1"));
         dataList.request().errors().add(new ErrorMessage("m2","d2"));
 
-        assertThat(render(dataList),
-                equalTo("{\"errors\":[" +
+        assertEquals("{\"errors\":[" +
                           "\"m1: d1\"," +
                           "\"m2: d2\"" +
                         "]," +
@@ -117,12 +111,13 @@ public class AsynchronousSectionedRendererTest {
                             "{\"data\":\"l11\"}," +
                             "{\"data\":\"l12\"}" +
                           "]}" +
-                        "]}"));
+                        "]}",
+                render(dataList));
     }
 
     @Test
     public void testProcessingRenderingWithStackTraces() throws IOException, InterruptedException {
-        Exception exception=null;
+        Exception exception;
         // Create thrown exception
         try {
             throw new RuntimeException("Thrown");
@@ -155,8 +150,7 @@ public class AsynchronousSectionedRendererTest {
         dataList.add(new StringDataList(dataList.request().clone())); // Cloning a request which contains errors
         // ... should not cause repetition of those errors
 
-        assertThat(render(dataList),
-                equalTo("{\"errors\":[" +
+        assertEquals("{\"errors\":[" +
                           "\"m1: d1\"," +
                           "\"m2: d2\"" +
                         "]," +
@@ -167,7 +161,8 @@ public class AsynchronousSectionedRendererTest {
                             "{\"data\":\"l12\"}" +
                           "]}," +
                           "{\"datalist\":[]}" +
-                        "]}"));
+                        "]}",
+                render(dataList));
     }
 
     @Test
@@ -181,8 +176,7 @@ public class AsynchronousSectionedRendererTest {
         // and adding new errors to it
         dataList.asList().get(2).request().errors().add(new ErrorMessage("m3","d3"));
 
-        assertThat(render(dataList),
-                equalTo("{\"errors\":[" +
+        assertEquals("{\"errors\":[" +
                           "\"m1: d1\"," +
                           "\"m2: d2\"" +
                         "]," +
@@ -196,7 +190,8 @@ public class AsynchronousSectionedRendererTest {
                             "\"m3: d3\"" +
                            "]," +
                            "\"datalist\":[]}" +
-                        "]}"));
+                        "]}",
+                render(dataList));
     }
 
     public StringDataList createDataList() {
@@ -334,7 +329,7 @@ public class AsynchronousSectionedRendererTest {
         }
     }
 
-    private abstract class StringData extends ListenableFreezableClass implements Data {
+    private static abstract class StringData extends ListenableFreezableClass implements Data {
         private final Request request;
 
         private StringData(Request request) {
@@ -410,7 +405,7 @@ public class AsynchronousSectionedRendererTest {
         @Override
         @SuppressWarnings("removal")
         public ListenableFuture<DataList<StringData>> complete() {
-            return new ListenableFuture<DataList<StringData>>() {
+            return new ListenableFuture<>() {
                 @Override
                 public void addListener(Runnable runnable, Executor executor) {
                 }
@@ -431,13 +426,12 @@ public class AsynchronousSectionedRendererTest {
                 }
 
                 @Override
-                public DataList<StringData> get() throws InterruptedException, ExecutionException {
+                public DataList<StringData> get()  {
                     return StringDataList.this;
                 }
 
                 @Override
-                public DataList<StringData> get(long l, TimeUnit timeUnit)
-                        throws InterruptedException, ExecutionException, TimeoutException {
+                public DataList<StringData> get(long l, TimeUnit timeUnit) {
                     return StringDataList.this;
                 }
             };

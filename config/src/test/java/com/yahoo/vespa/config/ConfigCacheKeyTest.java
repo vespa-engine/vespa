@@ -3,9 +3,8 @@ package com.yahoo.vespa.config;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  *
@@ -30,10 +29,10 @@ public class ConfigCacheKeyTest {
         assertEquals(k1, k2);
         assertNotEquals(k3, k2);
         assertNotEquals(k4, k1);
-        assertThat(k1.hashCode(), is(k2.hashCode()));
-        assertThat(k1.getDefMd5(), is(defMd5));
-        assertThat(k1.toString(), is(configKey.toString() + "," + defMd5));
-        assertThat(k5.hashCode(), is(not(k1.hashCode())));
+        assertEquals(k2.hashCode(), k1.hashCode());
+        assertEquals(defMd5, k1.getDefMd5());
+        assertEquals(configKey + "," + defMd5, k1.toString());
+        assertNotEquals(k1.hashCode(), k5.hashCode());
     }
 
 }

@@ -39,14 +39,10 @@ import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFil
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
 import static com.yahoo.vespa.athenz.zpe.AuthorizationResult.Type;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -240,13 +236,13 @@ public class AthenzAuthorizationFilterTest {
     }
 
     private void assertMetrics(MetricMock metric, String metricName, Map<String, String> dimensions) {
-        assertThat(metric.addInvocations.keySet(), hasItem(metricName));
+        assertTrue(metric.addInvocations.keySet().contains(metricName));
         SimpleMetricContext metricContext = metric.addInvocations.get(metricName);
         assertNotNull("Metric not found " + metricName, metricName);
         for (Map.Entry<String, String> entry : dimensions.entrySet()) {
             String dimensionName = entry.getKey();
             String expected = entry.getValue();
-            assertThat(metricContext.dimensions.keySet(), hasItem(dimensionName));
+            assertTrue(metricContext.dimensions.keySet().contains(dimensionName));
             assertEquals(expected, metricContext.dimensions.get(dimensionName));
         }
     }
@@ -307,8 +303,8 @@ public class AthenzAuthorizationFilterTest {
 
     private static void assertStatusCode(MockResponseHandler responseHandler, int statusCode) {
         Response response = responseHandler.getResponse();
-        assertThat(response, notNullValue());
-        assertThat(response.getStatus(), equalTo(statusCode));
+        assertNotNull(response);
+        assertEquals(statusCode, response.getStatus());
     }
 
     private static void assertMatchedCredentialType(DiscFilterRequest request, EnabledCredentials.Enum expectedType) {
@@ -316,7 +312,7 @@ public class AthenzAuthorizationFilterTest {
     }
 
     private static void assertRequestNotFiltered(MockResponseHandler responseHandler) {
-        assertThat(responseHandler.getResponse(), nullValue());
+        assertNull(responseHandler.getResponse());
     }
 
     private static void assertMatchedRole(DiscFilterRequest request, AthenzRole role) {
@@ -325,9 +321,9 @@ public class AthenzAuthorizationFilterTest {
 
     private static void assertErrorMessage(MockResponseHandler responseHandler, String errorMessage) {
         Response response = responseHandler.getResponse();
-        assertThat(response, notNullValue());
+        assertNotNull(response);
         String content = responseHandler.readAll();
-        assertThat(content, containsString(errorMessage));
+        assertTrue(content.contains(errorMessage));
     }
 
     private static class AllowingZpe implements Zpe {

@@ -8,7 +8,11 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
-import com.yahoo.vespa.model.container.search.searchchain.*;
+import com.yahoo.vespa.model.container.search.searchchain.GenericTarget;
+import com.yahoo.vespa.model.container.search.searchchain.Provider;
+import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
+import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
+import com.yahoo.vespa.model.container.search.searchchain.Source;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -23,11 +27,10 @@ import java.util.List;
 import static com.yahoo.container.core.ChainsConfig.Chains;
 import static com.yahoo.container.core.ChainsConfig.Components;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -92,7 +95,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
             new DomSearchChainsBuilder().build(root.getDeployState(), root, element);
             fail("Expected exception when referring to an outer 'federation' as a 'searcher'.");
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), containsString("Two different types declared for the component with name 'federationSearcher'"));
+            assertTrue(e.getMessage().contains("Two different types declared for the component with name 'federationSearcher'"));
         }
     }
 
@@ -163,10 +166,10 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
         Components searcher = getSearcherConfig(config.components(), partOfSearcherName);
         ComponentId searcherId = ComponentId.fromString(searcher.id());
 
-        assertThat(searcherId.getNamespace(), is(getSearchChain(searchChainName).getComponentId()));
+        assertEquals(getSearchChain(searchChainName).getComponentId(), searcherId.getNamespace());
 
         Chains searchChain = getSearchChainConfig(config.chains(), searchChainName);
-        assertThat(ComponentId.fromString(searchChain.components(0)), is(searcherId));
+        assertEquals(searcherId, ComponentId.fromString(searchChain.components(0)));
     }
 
     private Chains getSearchChainConfig(List<Chains> searchChains,

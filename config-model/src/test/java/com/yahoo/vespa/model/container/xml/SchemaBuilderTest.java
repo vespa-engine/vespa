@@ -19,9 +19,7 @@ import org.w3c.dom.Element;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
 import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,7 +48,7 @@ public class SchemaBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(GUIHandler.BINDING_PATH));
+        assertTrue(discBindingsConfig.contains(GUIHandler.BINDING_PATH));
 
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
 
@@ -77,9 +75,9 @@ public class SchemaBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
-        assertThat(discBindingsConfig, not(containsString("/search/*")));
+        assertTrue(discBindingsConfig.contains(".serverBindings[0] \"http://*/binding0\""));
+        assertTrue(discBindingsConfig.contains(".serverBindings[1] \"http://*/binding1\""));
+        assertFalse(discBindingsConfig.contains("/search/*"));
     }
 
     @Test
@@ -238,7 +236,7 @@ public class SchemaBuilderTest extends ContainerModelBuilderTestBase {
                 .findAny()
                 .get();
 
-        assertThat(searchHandler.getInjectedComponentIds(), hasItem("threadpool@search-handler"));
+        assertTrue(searchHandler.getInjectedComponentIds().contains("threadpool@search-handler"));
 
         ContainerThreadpoolConfig config = root.getConfig(
                 ContainerThreadpoolConfig.class, "default/component/" + SearchHandler.HANDLER_CLASS + "/threadpool@search-handler");

@@ -6,9 +6,7 @@ import org.junit.Test;
 
 import java.util.Locale;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
@@ -20,32 +18,32 @@ public class LowercaseTestCase {
     public void testAZ() {
         {
             String lowercase = Lowercase.toLowerCase("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-            assertThat(lowercase, equalTo("abcdefghijklmnopqrstuvwxyz"));
+            assertEquals("abcdefghijklmnopqrstuvwxyz", lowercase);
         }
         {
             String lowercase = Lowercase.toLowerCase("abcdefghijklmnopqrstuvwxyz");
-            assertThat(lowercase, equalTo("abcdefghijklmnopqrstuvwxyz"));
+            assertEquals("abcdefghijklmnopqrstuvwxyz", lowercase);
         }
         {
             String lowercase = Lowercase.toLowerCase("AbCDEfGHIJklmnoPQRStuvwXyz");
-            assertThat(lowercase, equalTo("abcdefghijklmnopqrstuvwxyz"));
+            assertEquals("abcdefghijklmnopqrstuvwxyz", lowercase);
         }
 
         {
             String lowercase = Lowercase.toLowerCase("@+#");
-            assertThat(lowercase, equalTo("@+#"));
+            assertEquals("@+#", lowercase);
         }
         {
             String lowercase = Lowercase.toLowerCase("[]");
-            assertThat(lowercase, equalTo("[]"));
+            assertEquals("[]", lowercase);
         }
         {
             String lowercase = Lowercase.toLowerCase("{}");
-            assertThat(lowercase, equalTo("{}"));
+            assertEquals("{}", lowercase);
         }
         {
             String lowercase = Lowercase.toLowerCase("\u00cd\u00f4");
-            assertThat(lowercase, equalTo("\u00ed\u00f4"));
+            assertEquals("\u00ed\u00f4", lowercase);
         }
     }
 

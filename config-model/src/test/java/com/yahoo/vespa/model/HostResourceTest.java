@@ -9,13 +9,11 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
-import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -30,7 +28,7 @@ public class HostResourceTest {
         try {
             service.initService(root.deployLogger());
         } catch (RuntimeException e) {
-            assertThat(e.getMessage(), endsWith("No host found for service 'hostresourcetest$testservice0'. " +
+            assertTrue(e.getMessage().endsWith("No host found for service 'hostresourcetest$testservice0'. " +
                     "The hostalias is probably missing from hosts.xml."));
         }
     }

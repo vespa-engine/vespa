@@ -8,8 +8,7 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -27,8 +26,8 @@ public class ConfigInstanceSerializationTest {
         ConfigPayload payload = new CfgConfigPayloadBuilder().deserialize(lines);
 
         FunctionTestConfig config2 = ConfigInstanceUtil.getNewInstance(FunctionTestConfig.class, ":parent:", payload);
-        assertThat(config, is(config2));
-        assertThat(ConfigInstance.serialize(config), is(ConfigInstance.serialize(config2)));
+        assertEquals(config, config2);
+        assertEquals(ConfigInstance.serialize(config), ConfigInstance.serialize(config2));
     }
 
 }

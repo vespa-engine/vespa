@@ -12,10 +12,8 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.C
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -29,8 +27,8 @@ public class TelegrafTest {
         VespaModel hostedModel = getModel(services, hosted);
 
         var clusterComponents = hostedModel.getAdmin().getMetricsProxyCluster().getComponentsMap();
-        assertThat(clusterComponents.keySet(), hasItem(ComponentId.fromString(Telegraf.class.getName())));
-        assertThat(clusterComponents.keySet(), hasItem(ComponentId.fromString(TelegrafRegistry.class.getName())));
+        assertTrue(clusterComponents.containsKey(ComponentId.fromString(Telegraf.class.getName())));
+        assertTrue(clusterComponents.containsKey(ComponentId.fromString(TelegrafRegistry.class.getName())));
     }
 
     @Test
@@ -47,8 +45,8 @@ public class TelegrafTest {
         VespaModel hostedModel = getModel(services, hosted);
 
         var clusterComponents = hostedModel.getAdmin().getMetricsProxyCluster().getComponentsMap();
-        assertThat(clusterComponents.keySet(), not(hasItem(ComponentId.fromString(Telegraf.class.getName()))));
-        assertThat(clusterComponents.keySet(), not(hasItem(ComponentId.fromString(TelegrafRegistry.class.getName()))));
+        assertFalse(clusterComponents.containsKey(ComponentId.fromString(Telegraf.class.getName())));
+        assertFalse(clusterComponents.containsKey(ComponentId.fromString(TelegrafRegistry.class.getName())));
     }
 
     @Test

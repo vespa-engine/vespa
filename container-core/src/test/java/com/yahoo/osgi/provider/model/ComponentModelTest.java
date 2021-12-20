@@ -4,8 +4,7 @@ package com.yahoo.osgi.provider.model;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -13,7 +12,7 @@ import static org.junit.Assert.assertThat;
 public class ComponentModelTest {
 
     @Test
-    public void create_from_instantiation_spec() throws Exception {
+    public void create_from_instantiation_spec() {
         ComponentModel model = new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings("id", "class", "bundle"));
         verifyBundleSpec(model);
@@ -29,19 +28,19 @@ public class ComponentModelTest {
         ComponentModel model = new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings("id", "class", "bundle"), "configId");
         verifyBundleSpec(model);
-        assertThat(model.configId, is("configId"));
+        assertEquals("configId", model.configId);
     }
 
     @Test
     public void create_from_strings() throws Exception {
         ComponentModel model = new ComponentModel("id", "class", "bundle", "configId");
         verifyBundleSpec(model);
-        assertThat(model.configId, is("configId"));
+        assertEquals("configId", model.configId);
     }
 
     private void verifyBundleSpec(ComponentModel model) {
-         assertThat(model.getComponentId().stringValue(), is("id"));
-         assertThat(model.getClassId().stringValue(), is("class"));
-         assertThat(model.bundleInstantiationSpec.bundle.stringValue(), is("bundle"));
+         assertEquals("id", model.getComponentId().stringValue());
+         assertEquals("class", model.getClassId().stringValue());
+         assertEquals("bundle", model.bundleInstantiationSpec.bundle.stringValue());
      }
 }

@@ -9,21 +9,17 @@ import com.yahoo.container.di.ConfigRetriever.BootstrapConfigs;
 import com.yahoo.container.di.ConfigRetriever.ComponentsConfigs;
 import com.yahoo.container.di.ConfigRetriever.ConfigSnapshot;
 import com.yahoo.vespa.config.ConfigKey;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -52,7 +48,7 @@ public class ConfigRetrieverTest {
         ConfigRetriever retriever = createConfigRetriever();
         ConfigSnapshot bootstrapConfigs = retriever.getConfigs(Collections.emptySet(), 0, true);
 
-        assertThat(bootstrapConfigs, Matchers.instanceOf(BootstrapConfigs.class));
+        assertTrue(bootstrapConfigs instanceof BootstrapConfigs);
     }
 
     @Test
@@ -66,19 +62,15 @@ public class ConfigRetrieverTest {
         ConfigSnapshot componentsConfigs = retriever.getConfigs(Collections.singleton(testConfigKey), 0, true);
 
         if (componentsConfigs instanceof ComponentsConfigs) {
-            assertThat(componentsConfigs.size(), is(3));
+            assertEquals(3, componentsConfigs.size());
         } else {
             fail("ComponentsConfigs has unexpected type: " + componentsConfigs);
         }
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Ignore
     @SuppressWarnings("unused")
     public void require_exception_upon_modified_components_keys_without_bootstrap() {
-        expectedException.expect(IllegalArgumentException.class);
 
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
@@ -88,15 +80,20 @@ public class ConfigRetrieverTest {
         Set<ConfigKey<? extends ConfigInstance>> keys = new HashSet<>();
         keys.add(testConfigKey);
         keys.add(new ConfigKey<>(TestConfig.class, ""));
-        retriever.getConfigs(keys, 0, true);
+        try {
+            retriever.getConfigs(keys, 0, true);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("", e.getMessage());
+        }
     }
 
     @Test
     public void require_that_empty_components_keys_after_bootstrap_returns_components_configs() {
         writeConfigs();
         ConfigRetriever retriever = createConfigRetriever();
-        assertThat(retriever.getConfigs(Collections.emptySet(), 0, true), instanceOf(BootstrapConfigs.class));
-        assertThat(retriever.getConfigs(Collections.emptySet(), 0, true), instanceOf(ComponentsConfigs.class));
+        assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof BootstrapConfigs);
+        assertTrue(retriever.getConfigs(Collections.emptySet(), 0, true) instanceof ComponentsConfigs);
     }
 
     public void writeConfigs() {

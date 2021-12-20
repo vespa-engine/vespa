@@ -10,8 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class ConfigChangeTestUtils {
 
@@ -63,7 +62,7 @@ public class ConfigChangeTestUtils {
         var mutableAct = new ArrayList<>(act);
         mutableExp.sort((lhs, rhs) -> lhs.getMessage().compareTo(rhs.getMessage()));
         mutableAct.sort((lhs, rhs) -> lhs.getMessage().compareTo(rhs.getMessage()));
-        assertThat(mutableAct, equalTo(mutableExp));
+        assertEquals(mutableExp, mutableAct);
     }
 
 }
