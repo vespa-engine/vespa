@@ -181,7 +181,7 @@ public class QueryTree extends CompositeItem {
     }
 
     /**
-     * @return The total number of items in this query tree
+     * Returns the total number of items in this query tree.
      */
     public int getTreeSize() {
         if (isEmpty()) return 0;
