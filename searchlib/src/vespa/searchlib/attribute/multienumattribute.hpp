@@ -25,10 +25,10 @@ template <typename B, typename M>
 bool
 MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & idx)
 {
-    if ( ! c.isEnumValid() ) {
+    if ( ! c.has_entry_ref() ) {
         return this->_enumStore.find_index(c._data.raw(), idx);
     }
-    idx = EnumIndex(vespalib::datastore::EntryRef(c.getEnum()));
+    idx = EnumIndex(vespalib::datastore::EntryRef(c.get_entry_ref()));
     return true;
 }
 
@@ -42,9 +42,9 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, EnumSto
     {
         EnumIndex idx;
         if (!this->_enumStore.find_index(c._data.raw(), idx)) {
-            c.setEnum(inserter.insert(c._data.raw()).ref());
+            c.set_entry_ref(inserter.insert(c._data.raw()).ref());
         } else {
-            c.setEnum(idx.ref());
+            c.set_entry_ref(idx.ref());
         }
     }
 }

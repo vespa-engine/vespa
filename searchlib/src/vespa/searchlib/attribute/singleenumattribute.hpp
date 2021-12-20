@@ -140,9 +140,9 @@ SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, Enu
 {
     EnumIndex idx;
     if (!this->_enumStore.find_index(c._data.raw(), idx)) {
-        c.setEnum(inserter.insert(c._data.raw()).ref());
+        c.set_entry_ref(inserter.insert(c._data.raw()).ref());
     } else {
-        c.setEnum(idx.ref());
+        c.set_entry_ref(idx.ref());
     }
     considerUpdateAttributeChange(c); // for numeric
 }
@@ -168,8 +168,8 @@ SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBa
 {
     EnumIndex oldIdx = _enumIndices[c._doc];
     EnumIndex newIdx;
-    if (c.isEnumValid()) {
-        newIdx = EnumIndex(vespalib::datastore::EntryRef(c.getEnum()));
+    if (c.has_entry_ref()) {
+        newIdx = EnumIndex(vespalib::datastore::EntryRef(c.get_entry_ref()));
     } else {
         this->_enumStore.find_index(c._data.raw(), newIdx);
     }
@@ -181,6 +181,8 @@ void
 SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     ValueModifier valueGuard(this->getValueModifier());
+    // This avoids searching for the defaultValue in the enum store for each CLEARDOC in the change vector.
+    this->cache_change_data_entry_ref(this->_defaultValue);
     for (const auto& change : this->_changes.getInsertOrder()) {
         if (change._type == ChangeBase::UPDATE) {
             applyUpdateValueChange(change, updater);
@@ -192,6 +194,8 @@ SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
             applyUpdateValueChange(clearDoc, updater);
         }
     }
+    // We must clear the cached entry ref as the defaultValue might be located in another data buffer on later invocations.
+    this->_defaultValue.clear_entry_ref();
 }
 
 template <typename B>
