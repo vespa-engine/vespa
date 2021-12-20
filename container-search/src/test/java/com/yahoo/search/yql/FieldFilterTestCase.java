@@ -42,7 +42,7 @@ public class FieldFilterTestCase {
         DocumentSourceSearcher mockBackend = new DocumentSourceSearcher();
         mockBackend.addResult(query, result);
 
-        searchChain = new Chain<Searcher>(new FieldFilter(), mockBackend);
+        searchChain = new Chain<>(new FieldFilter(), mockBackend);
         context = Execution.Context.createContextStub();
         execution = new Execution(searchChain, context);
 

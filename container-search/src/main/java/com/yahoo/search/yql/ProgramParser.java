@@ -389,7 +389,7 @@ final class ProgramParser {
         OperatorNode<SequenceOperator> result = convertQuery(queryStatementContext.getChild(0), scope.getRoot());
         for (Pipeline_stepContext step:nodes) {
             if (getParseTreeIndex(step.getChild(0)) == yqlplusParser.RULE_vespa_grouping) {
-                result = OperatorNode.create(SequenceOperator.PIPE, result, ImmutableList.<String>of(),
+                result = OperatorNode.create(SequenceOperator.PIPE, result, List.of(),
                                              ImmutableList.of(convertExpr(step.getChild(0), scope)));
             } else {
                 List<String> name = readName(step.namespaced_name());
@@ -421,7 +421,6 @@ final class ProgramParser {
         } else {
             throw new IllegalArgumentException("Unexpected argument type to convertQueryStatement: " + node.toStringTree());
         }
-
     }
 
     private String assignAlias(String alias, ParserRuleContext node, Scope scope) {
@@ -583,7 +582,7 @@ final class ProgramParser {
             String aliasName = null;
             if (rulenode.getChildCount() > 1) {
                 // ^(ALIAS ID)
-                aliasName = rulenode.alias_def().ID().getText();
+                aliasName = rulenode.alias_def().IDENTIFIER().getText();
             }
             proj.addField(aliasName, expr);
             // no grammar for the other rule types at this time

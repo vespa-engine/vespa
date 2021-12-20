@@ -638,7 +638,7 @@ public class SelectTestCase {
     @Test
     public void testOpenIntervals() {
         assertParse("{ \"range\" : { \"children\":[ \"title\", { \">=\" : 0.0, \"<=\" : 500.0 }] } }" +
-                        "select * from sources * where range(title, 0.0, 500.0);",
+                        "select * from sources * where range(title, 0.0, 500.0)",
                 "title:[0.0;500.0]");
         assertParse(
                 "{ \"range\" : { \"children\":[ \"title\", { \">\" : 0.0, \"<\" : 500.0 }] } }",

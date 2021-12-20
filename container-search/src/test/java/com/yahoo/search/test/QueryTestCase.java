@@ -100,7 +100,7 @@ public class QueryTestCase {
     @Ignore
     @Test
     public void testSimpleProgramParameterAlias() {
-        Query q = new Query(httpEncode("/sdfsd.html?yql=select * from source where myfield contains(word);"));
+        Query q = new Query(httpEncode("/sdfsd.html?yql=select * from source where myfield contains(word)"));
         assertEquals("", q.getModel().getQueryTree().toString());
     }
 
@@ -901,7 +901,7 @@ public class QueryTestCase {
 
         { // Select all Persons whose hobbies contains 'sport'
             // YQL
-            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where hobbies contains 'sports';&type=yql"));
+            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where hobbies contains 'sports'&type=yql"));
             assertEquals("hobbies:sports", yqlQuery.getModel().getQueryTree().toString());
 
             // JSON
@@ -916,7 +916,7 @@ public class QueryTestCase {
 
         { // Select all Persons whose Phones areaCode equals 'NY'
             // YQL
-            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where phones.areaCode contains 'NY';&type=yql"));
+            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where phones.areaCode contains 'NY'&type=yql"));
             assertEquals("phones.areaCode:NY", yqlQuery.getModel().getQueryTree().toString());
 
             // JSON
@@ -931,7 +931,7 @@ public class QueryTestCase {
 
         { // Select all Persons whose Mother's Birthyear is greater than 1960
             // YQL
-            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where mother.Birthyear > 1960;&type=yql"));
+            Query yqlQuery = new Query(httpEncode("?query=select * from Persons where mother.Birthyear > 1960&type=yql"));
             assertEquals("mother.Birthyear:>1960", yqlQuery.getModel().getQueryTree().toString());
 
             // JSON

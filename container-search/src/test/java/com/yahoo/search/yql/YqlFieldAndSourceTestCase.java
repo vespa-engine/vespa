@@ -27,8 +27,7 @@ import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import static com.yahoo.search.searchchain.testutil.DocumentSourceSearcher.DEFAULT_SUMMARY_CLASS;;
 
 /**
- * Test translation of fields and sources in YQL+ to the associated concepts in
- * Vespa.
+ * Test translation of fields and sources in YQL+ to the associated concepts in Vespa.
  */
 public class YqlFieldAndSourceTestCase {
 

@@ -640,7 +640,7 @@ public class GroupingParserTestCase {
 
     private static void assertYqlParsable(String request, String... expectedOperations) {
         YqlParser parser = new YqlParser(new ParserEnvironment());
-        parser.parse(new Parsable().setQuery("select foo from bar where baz contains 'baz' | " + request + ";"));
+        parser.parse(new Parsable().setQuery("select foo from bar where baz contains 'baz' | " + request));
         List<VespaGroupingStep> steps = parser.getGroupingSteps();
         List<String> actual = new ArrayList<>(steps.size());
         for (VespaGroupingStep step : steps) {
