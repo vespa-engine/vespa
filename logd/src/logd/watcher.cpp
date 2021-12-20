@@ -366,7 +366,7 @@ Watcher::removeOldLogs(const char *prefix)
             }
         }
     } else if (globresult == GLOB_NOMATCH) {
-        LOG(info, "no old logfiles matching %s", pattern);
+        LOG(debug, "no old logfiles matching %s", pattern);
     } else {
         LOG(warning, "glob %s failed: %d", pattern, globresult);
     }
