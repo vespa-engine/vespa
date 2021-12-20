@@ -205,7 +205,7 @@ public class NodeResourcesTuningTest {
     }
 
     private static ProtonConfig configFromDiskSetting(int diskGb) {
-        return configFromDiskSetting(diskGb, 0.05);
+        return configFromDiskSetting(diskGb, 0.07);
     }
     private static ProtonConfig configFromDiskSetting(int diskGb, double tlsSizeFraction) {
         return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb), 0, tlsSizeFraction);
