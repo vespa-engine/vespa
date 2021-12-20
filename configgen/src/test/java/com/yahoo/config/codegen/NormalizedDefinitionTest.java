@@ -1,14 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import static org.junit.Assert.*;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 
 /**
@@ -38,13 +42,13 @@ public class NormalizedDefinitionTest {
         }
 
         assertNotNull(out);
-        assertThat(out.size(), is(6));
-        assertThat(out.get(0), is ("version=1\n"));
-        assertThat(out.get(1), is ("aString string\n"));
-        assertThat(out.get(2), is ("anInt int\n"));
-        assertThat(out.get(3), is ("aStringCommentCharacterAfter string default=\"ab\"\n"));
-        assertThat(out.get(4), is ("aStringWithCommentCharacter string default=\"a#b\"\n"));
-        assertThat(out.get(5), is ("aStringWithEscapedQuote string default=\"a\"b\"\n"));
+        assertEquals(6, out.size());
+        assertEquals("version=1\n", out.get(0));
+        assertEquals("aString string\n", out.get(1));
+        assertEquals("anInt int\n", out.get(2));
+        assertEquals("aStringCommentCharacterAfter string default=\"ab\"\n", out.get(3));
+        assertEquals("aStringWithCommentCharacter string default=\"a#b\"\n", out.get(4));
+        assertEquals("aStringWithEscapedQuote string default=\"a\"b\"\n", out.get(5));
 
         reader.close();
     }
@@ -68,7 +72,7 @@ public class NormalizedDefinitionTest {
         }
 
         assertNotNull(out);
-        assertThat(out.size(), is(72));
+        assertEquals(72, out.size());
 
         assertNotNull(fileReader);
         fileReader.close();

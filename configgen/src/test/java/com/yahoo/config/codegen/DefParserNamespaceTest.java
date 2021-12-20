@@ -8,9 +8,8 @@ import java.io.IOException;
 import static com.yahoo.config.codegen.DefParserTest.assertLineFails;
 import static com.yahoo.config.codegen.DefParserTest.createDefTemplate;
 import static com.yahoo.config.codegen.DefParserTest.createParser;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author gjoranv
@@ -22,7 +21,7 @@ public class DefParserNamespaceTest {
     public void namespace_is_set_on_root_node() {
         DefParser parser = createParser("version=1\nnamespace=myproject.config\n");
         CNode root = parser.getTree();
-        assertThat(root.getNamespace(), is("myproject.config"));
+        assertEquals("myproject.config", root.getNamespace());
     }
 
     @Test
@@ -30,7 +29,7 @@ public class DefParserNamespaceTest {
         String PACKAGE = "com.github.myproject";
         DefParser parser = createParser("package=" + PACKAGE + "\n");
         CNode root = parser.getTree();
-        assertThat(root.getNamespace(), is(PACKAGE));
+        assertEquals(PACKAGE, root.getNamespace());
     }
 
     @Test(expected = CodegenRuntimeException.class)
@@ -48,7 +47,7 @@ public class DefParserNamespaceTest {
     public void spaces_are_allowed_around_equals_sign() {
         DefParser parser = createParser("version=1\nnamespace =  myproject.config\n");
         CNode root = parser.getTree();
-        assertThat(root.getNamespace(), is("myproject.config"));
+        assertEquals("myproject.config", root.getNamespace());
     }
 
     @Test
@@ -69,7 +68,7 @@ public class DefParserNamespaceTest {
         parser = createParser("version=1\nnamespace=myproject.config\n");
         CNode namespaceRoot = parser.getTree();
 
-        assertThat(root.defMd5, not(namespaceRoot.defMd5));
+        assertNotEquals(root.defMd5, namespaceRoot.defMd5);
     }
 
 
@@ -82,12 +81,12 @@ public class DefParserNamespaceTest {
     }
 
     @Test
-    public void number_is_not_allowed_as_namespace_start_char() throws IOException, DefParser.DefParserException {
+    public void number_is_not_allowed_as_namespace_start_char() {
         assertLineFails("namespace=2.a.b");
     }
 
     @Test
-    public void number_is_not_allowed_as_leading_char_in_namespace_token() throws IOException, DefParser.DefParserException {
+    public void number_is_not_allowed_as_leading_char_in_namespace_token() {
         assertLineFails("namespace=a.b.2c");
     }
 

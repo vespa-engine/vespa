@@ -9,14 +9,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mortent
@@ -54,7 +53,7 @@ public class TenantRoleMaintainerTest {
         var roleService = tester.controller().serviceRegistry().roleService();
         List<TenantName> tenantNames = ((MockRoleService) roleService).maintainedTenants();
 
-        assertThat(tenantNames, Matchers.containsInAnyOrder(prodAppTenant2.application().id().tenant(), perfAppTenant1.application().id().tenant()));
+        assertTrue(tenantNames.containsAll(List.of(prodAppTenant2.application().id().tenant(), perfAppTenant1.application().id().tenant())));
     }
 
     private long permanentDeployments(Instance instance) {

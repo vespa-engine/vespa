@@ -7,10 +7,9 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
@@ -55,8 +54,8 @@ public class KeyUtilsTest {
     public void can_serialize_and_deserialize_rsa_publickey_using_pem_format() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         String pem = KeyUtils.toPem(keyPair.getPublic());
-        assertThat(pem, containsString("BEGIN PUBLIC KEY"));
-        assertThat(pem, containsString("END PUBLIC KEY"));
+        assertTrue(pem.contains("BEGIN PUBLIC KEY"));
+        assertTrue(pem.contains("END PUBLIC KEY"));
         PublicKey deserializedKey = KeyUtils.fromPemEncodedPublicKey(pem);
         assertEquals(keyPair.getPublic(), deserializedKey);
         assertEquals(KeyAlgorithm.RSA.getAlgorithmName(), deserializedKey.getAlgorithm());
@@ -66,8 +65,8 @@ public class KeyUtilsTest {
     public void can_serialize_and_deserialize_ec_publickey_using_pem_format() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
         String pem = KeyUtils.toPem(keyPair.getPublic());
-        assertThat(pem, containsString("BEGIN PUBLIC KEY"));
-        assertThat(pem, containsString("END PUBLIC KEY"));
+        assertTrue(pem.contains("BEGIN PUBLIC KEY"));
+        assertTrue(pem.contains("END PUBLIC KEY"));
         PublicKey deserializedKey = KeyUtils.fromPemEncodedPublicKey(pem);
         assertEquals(keyPair.getPublic(), deserializedKey);
         assertEquals(KeyAlgorithm.EC.getAlgorithmName(), deserializedKey.getAlgorithm());
@@ -76,8 +75,8 @@ public class KeyUtilsTest {
     private static void testPrivateKeySerialization(KeyAlgorithm keyAlgorithm, KeyFormat keyFormat, String pemLabel) {
         KeyPair keyPair = KeyUtils.generateKeypair(keyAlgorithm);
         String pem = KeyUtils.toPem(keyPair.getPrivate(), keyFormat);
-        assertThat(pem, containsString("BEGIN " + pemLabel));
-        assertThat(pem, containsString("END " + pemLabel));
+        assertTrue(pem.contains("BEGIN " + pemLabel));
+        assertTrue(pem.contains("END " + pemLabel));
         PrivateKey deserializedKey = KeyUtils.fromPemEncodedPrivateKey(pem);
         assertEquals(keyPair.getPrivate(), deserializedKey);
         assertEquals(keyAlgorithm.getAlgorithmName(), deserializedKey.getAlgorithm());

@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
-
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests parsing of a single line of a .def file
@@ -225,9 +227,9 @@ public class DefLineParsingTest {
         DefLine i = new DefLine("i int range=[0, 100]");
         DefLine l = new DefLine("l long range=[-1e10, 0]");
         DefLine d = new DefLine("d double range=[0, 1.0]");
-        assertThat(i.getRange(), is("[0, 100]"));
-        assertThat(l.getRange(), is("[-1e10, 0]"));
-        assertThat(d.getRange(), is("[0, 1.0]"));
+        assertEquals("[0, 100]", i.getRange());
+        assertEquals("[-1e10, 0]", l.getRange());
+        assertEquals("[0, 1.0]", d.getRange());
     }
 
     @Test
