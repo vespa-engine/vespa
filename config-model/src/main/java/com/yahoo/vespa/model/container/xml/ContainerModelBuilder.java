@@ -1140,12 +1140,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private final String jvmGcOptions;
         private final DeployLogger logger;
         private final boolean isHosted;
+        private final boolean failDeploymentWithInvalidJvmOptions;
 
         public JvmGcOptions(DeployState deployState, String jvmGcOptions) {
             this.deployState = deployState;
             this.jvmGcOptions = jvmGcOptions;
             this.logger = deployState.getDeployLogger();
             this.isHosted = deployState.isHosted();
+            this.failDeploymentWithInvalidJvmOptions = deployState.featureFlags().failDeploymentWithInvalidJvmOptions();
         }
 
         private String build() {
@@ -1162,13 +1164,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     // CMS GC options cannot be used in hosted, CMS is unsupported in JDK 17
                     invalidOptions.addAll(Arrays.stream(optionList)
                                                 .filter(option -> !option.isEmpty())
-                                                .filter(option -> Pattern
-                                                        .matches(invalidCMSPattern.pattern(), option) ||
+                                                .filter(option -> Pattern.matches(invalidCMSPattern.pattern(), option) ||
                                                         option.equals("-XX:+UseConcMarkSweepGC"))
                                                 .collect(Collectors.toList()));
                 }
 
-                logInvalidOptions(invalidOptions);
+                logOrFailInvalidOptions(invalidOptions);
             }
 
             if (options == null || options.isEmpty())
@@ -1177,11 +1178,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return options;
         }
 
-        private void logInvalidOptions(List<String> options) {
+        private void logOrFailInvalidOptions(List<String> options) {
             if (options.isEmpty()) return;
 
             Collections.sort(options);
-            logger.logApplicationPackage(WARNING, "Invalid JVM GC options from services.xml: " + String.join(",", options));
+            String message = "Invalid JVM GC options from services.xml: " + String.join(",", options);
+            if (failDeploymentWithInvalidJvmOptions)
+                throw new IllegalArgumentException(message);
+            else
+                logger.logApplicationPackage(WARNING, message);
         }
 
     }
