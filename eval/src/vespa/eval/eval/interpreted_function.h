@@ -50,6 +50,11 @@ public:
             stack.pop_back();
             stack.back() = value;
         }
+        void pop_pop_pop_push(const Value &value) {
+            stack.pop_back();
+            stack.pop_back();
+            stack.back() = value;
+        }
         void pop_n_push(size_t n, const Value &value) {
             stack.resize(stack.size() - (n - 1), value);
             stack.back() = value;

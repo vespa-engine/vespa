@@ -153,6 +153,10 @@ inline bool are_fast(const Value::Index &a, const Value::Index &b) {
     return (is_fast(a) && is_fast(b));
 }
 
+inline bool are_fast(const Value::Index &a, const Value::Index &b, const Value::Index &c) {
+    return (is_fast(a) && is_fast(b) && is_fast(c));
+}
+
 constexpr const FastValueIndex &as_fast(const Value::Index &index) {
     return static_cast<const FastValueIndex &>(index);
 }
