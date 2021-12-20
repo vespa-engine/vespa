@@ -21,7 +21,7 @@ import java.util.Map;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Detects the language of some sample text using {@link SimpleDetector} for CJK input, and OpenNLP otherwise.
+ * Detects text language using patched OpenNLP, with fallback to {@link SimpleDetector} for undetected CJK input.
  *
  * @author jonmv
  */
@@ -39,7 +39,7 @@ class OpenNlpDetector implements Detector {
         detector = new LanguageDetectorME(loadModel());
         config = new LanguageDetectorConfig();
         config.setMinDiff(0.02);
-        config.setChunkSize(64);
+        config.setChunkSize(32);
         config.setMaxLength(256);
         for (Locale locale : Locale.getAvailableLocales()) {
             Language language = Language.fromLocale(locale);
