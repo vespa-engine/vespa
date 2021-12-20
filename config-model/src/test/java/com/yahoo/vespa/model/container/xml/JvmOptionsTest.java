@@ -171,8 +171,8 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                                     "$(touch", "/tmp/hello-from-gc-options)");
 
         // Valid options, should not log anything
-        verifyLoggingOfJvmGcOptions(true,
-                                    "-XX:+ParallelGCThreads=8");
+        verifyLoggingOfJvmGcOptions(true, "-XX:+ParallelGCThreads=8");
+        verifyLoggingOfJvmGcOptions(true, "-XX:MaxTenuringThreshold"); // No + or - after colon
         verifyLoggingOfJvmGcOptions(false, "-XX:+UseConcMarkSweepGC");
     }
 

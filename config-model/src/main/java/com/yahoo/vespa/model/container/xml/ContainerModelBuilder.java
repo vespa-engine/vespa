@@ -1133,7 +1133,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
      */
     private static class JvmGcOptions {
 
-        private static final Pattern validPattern = Pattern.compile("-XX:[+-][a-zA-z0-9=]+");
+        private static final Pattern validPattern = Pattern.compile("-XX:[+-]*[a-zA-z0-9=]+");
         private static final Pattern invalidCMSPattern = Pattern.compile("-XX:[+-]\\w*CMS[a-zA-z0-9=]+");
 
         private final DeployState deployState;
