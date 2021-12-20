@@ -290,7 +290,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
-                                           clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(), fractionOfMemoryReserved);
+                                           clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(),
+                                           fractionOfMemoryReserved, deployState.featureFlags().tlsSizeFraction());
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState.getDeployLogger());
 
@@ -298,7 +299,9 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             tls.setHostResource(searchNode.getHostResource());
             tls.initService(deployState.getDeployLogger());
         } else {
-            searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning, resourceLimits, fractionOfMemoryReserved).build(deployState, parent, element.getXml());
+            searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
+                                                tuning, resourceLimits, fractionOfMemoryReserved)
+                    .build(deployState, parent, element.getXml());
             tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
         searchNode.setTls(tls);
