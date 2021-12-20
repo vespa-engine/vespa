@@ -40,8 +40,11 @@ class OpenNlpDetector implements Detector {
         config = new LanguageDetectorConfig();
         config.setMinDiff(0.02);
         config.setChunkSize(64);
-        for (Locale locale : Locale.getAvailableLocales())
-            languagesByISO3.put(locale.getISO3Language(), Language.fromLocale(locale));
+        for (Locale locale : Locale.getAvailableLocales()) {
+            Language language = Language.fromLocale(locale);
+            if (language != null)
+                languagesByISO3.put(locale.getISO3Language(), language);
+        }
     }
 
     private static LanguageDetectorModel loadModel() {
