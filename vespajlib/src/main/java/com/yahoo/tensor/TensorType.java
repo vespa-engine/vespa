@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.text.Ascii7BitMatcher;
 
 import java.util.ArrayList;
@@ -86,7 +85,7 @@ public class TensorType {
     private final Value valueType;
 
     /** Sorted list of the dimensions of this */
-    private final ImmutableList<Dimension> dimensions;
+    private final List<Dimension> dimensions;
 
     private final TensorType mappedSubtype;
 
@@ -94,7 +93,7 @@ public class TensorType {
         this.valueType = valueType;
         List<Dimension> dimensionList = new ArrayList<>(dimensions);
         Collections.sort(dimensionList);
-        this.dimensions = ImmutableList.copyOf(dimensionList);
+        this.dimensions = List.copyOf(dimensionList);
 
         if (dimensionList.stream().allMatch(d -> d.isIndexed()))
             mappedSubtype = empty;
