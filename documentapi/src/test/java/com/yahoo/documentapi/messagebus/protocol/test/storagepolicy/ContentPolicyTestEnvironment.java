@@ -44,7 +44,7 @@ public abstract class ContentPolicyTestEnvironment {
     protected PolicyTestFrame frame;
     private Set<Integer> nodes;
     protected static int[] bucketOneNodePreference = new int[]{ 3, 5, 7, 6, 8, 0, 9, 2, 1, 4 };
-    protected boolean debug = true;
+    protected boolean debug = false;
 
     @Before
     public void setUp() throws Exception {
