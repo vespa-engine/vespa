@@ -51,7 +51,7 @@ public class QueryCanonicalizer {
         ListIterator<Item> rootItemIterator = query.getItemIterator();
         CanonicalizationResult result = recursivelyCanonicalize(rootItemIterator.next(), rootItemIterator);
         if (query.isEmpty() && ! result.isError()) result = CanonicalizationResult.error("No query");
-        int itemCount = query.getTreeSize();
+        int itemCount = query.treeSize();
         if (itemCount > maxQueryItems) result = CanonicalizationResult.error(String.format("Query tree exceeds allowed item count. Configured limit: %d - Item count: %d", maxQueryItems, itemCount));
         return result.error().orElse(null); // preserve old API, unfortunately
     }

@@ -45,7 +45,7 @@ public class QueryTreeTest {
      @Test
      public void getCorrectTreeSize() {
         QueryTree nullTree = new QueryTree(new NullItem());
-        assertEquals(0, nullTree.getTreeSize());
+        assertEquals(0, nullTree.treeSize());
 
          NotItem not1 = new NotItem();
          not1.addPositiveItem(new WordItem("p1"));
@@ -60,7 +60,7 @@ public class QueryTreeTest {
          QueryTree tree = new QueryTree(not1);
          tree.and(not2);
 
-         assertEquals(8, tree.getTreeSize());
+         assertEquals(8, tree.treeSize());
      }
 
 }

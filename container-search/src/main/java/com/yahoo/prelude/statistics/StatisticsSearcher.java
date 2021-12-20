@@ -400,7 +400,7 @@ public class StatisticsSearcher extends Searcher {
     }
 
     private void addItemCountMetric(Query query, Metric.Context context) {
-        metric.set(QUERY_ITEM_COUNT, query.getModel().getQueryTree().getTreeSize(), context);
+        metric.set(QUERY_ITEM_COUNT, query.getModel().getQueryTree().treeSize(), context);
     }
 
     /**
