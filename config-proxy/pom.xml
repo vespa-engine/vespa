@@ -54,11 +54,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>filedistribution</artifactId>
       <version>${project.version}</version>

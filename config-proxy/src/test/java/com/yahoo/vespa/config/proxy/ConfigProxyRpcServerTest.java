@@ -20,9 +20,8 @@ import org.junit.rules.TemporaryFolder;
 import java.io.IOException;
 import java.time.Duration;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author hmusum
@@ -60,7 +59,7 @@ public class ConfigProxyRpcServerTest {
         ProxyServer proxy = createTestServer(new MockConfigSource());
         Spec spec = new Spec("localhost", 12345);
         ConfigProxyRpcServer server = new ConfigProxyRpcServer(proxy, new Supervisor(new Transport()), spec);
-        assertThat(server.getSpec(), is(spec));
+        assertEquals(spec, server.getSpec());
     }
 
     /**
@@ -72,8 +71,8 @@ public class ConfigProxyRpcServerTest {
         client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
-        assertThat(req.returnValues().get(0).asInt32(), is(0));
+        assertEquals(1, req.returnValues().size());
+        assertEquals(0, req.returnValues().get(0).asInt32());
     }
 
     /**
@@ -88,21 +87,20 @@ public class ConfigProxyRpcServerTest {
 
         assertFalse(req.errorMessage(), req.isError());
         String[] ret = req.returnValues().get(0).asStringArray();
-        assertThat(req.returnValues().size(), is(1));
-        assertThat(ret.length, is(0));
+        assertEquals(1, req.returnValues().size());
+        assertEquals(0, ret.length);
 
         final RawConfig config = ProxyServerTest.fooConfig;
         server.proxyServer().memoryCache().update(config);
         req = new Request("listCachedConfig");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
+        assertEquals(1, req.returnValues().size());
         ret = req.returnValues().get(0).asStringArray();
-        assertThat(ret.length, is(1));
-        assertThat(ret[0], is(config.getNamespace() + "." + config.getName() + "," +
-                config.getConfigId() + "," +
-                config.getGeneration() + "," +
-                config.getPayloadChecksums()));
+        assertEquals(1, ret.length);
+        assertEquals(config.getNamespace() + "." + config.getName() + "," + config.getConfigId() + "," +
+                config.getGeneration() + "," + config.getPayloadChecksums(),
+                ret[0]);
     }
 
     /**
@@ -114,9 +112,9 @@ public class ConfigProxyRpcServerTest {
         client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
+        assertEquals(1, req.returnValues().size());
         String[] ret = req.returnValues().get(0).asStringArray();
-        assertThat(ret.length, is(0));
+        assertEquals(0, ret.length);
 
         final RawConfig config = ProxyServerTest.fooConfig;
         server.proxyServer().memoryCache().update(config);
@@ -124,12 +122,10 @@ public class ConfigProxyRpcServerTest {
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
         ret = req.returnValues().get(0).asStringArray();
-        assertThat(ret.length, is(1));
-        assertThat(ret[0], is(config.getNamespace() + "." + config.getName() + "," +
-                config.getConfigId() + "," +
-                config.getGeneration() + "," +
-                config.getPayloadChecksums() + "," +
-                config.getPayload().getData()));
+        assertEquals(1, ret.length);
+        assertEquals(config.getNamespace() + "." + config.getName() + "," + config.getConfigId() + "," +
+                config.getGeneration() + "," + config.getPayloadChecksums() + "," + config.getPayload().getData(),
+                ret[0]);
     }
 
     /**
@@ -143,11 +139,11 @@ public class ConfigProxyRpcServerTest {
         client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
+        assertEquals(1, req.returnValues().size());
         final String[] ret = req.returnValues().get(0).asStringArray();
-        assertThat(ret.length, is(2));
-        assertThat(ret[0], is("Current source: " + configSourceAddress));
-        assertThat(ret[1], is("All sources:\n" + configSourceAddress + "\n"));
+        assertEquals(2, ret.length);
+        assertEquals("Current source: " + configSourceAddress, ret[0]);
+        assertEquals("All sources:\n" + configSourceAddress + "\n", ret[1]);
     }
 
     /**
@@ -159,11 +155,11 @@ public class ConfigProxyRpcServerTest {
         client.invoke(req);
 
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
+        assertEquals(1, req.returnValues().size());
         final String[] ret = req.returnValues().get(0).asStringArray();
-        assertThat(ret.length, is(2));
-        assertThat(ret[0], is("0"));
-        assertThat(ret[1], is("success"));
+        assertEquals(2, ret.length);
+        assertEquals("0", ret[0]);
+        assertEquals("success", ret[1]);
     }
 
     /**
@@ -174,26 +170,26 @@ public class ConfigProxyRpcServerTest {
         Request req = new Request("getMode");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
-        assertThat(req.returnValues().get(0).asString(), is("default"));
+        assertEquals(1, req.returnValues().size());
+        assertEquals("default", req.returnValues().get(0).asString());
 
         req = new Request("setMode");
         String mode = "memorycache";
         req.parameters().add(new StringValue(mode));
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
+        assertEquals(1, req.returnValues().size());
         String[] ret = req.returnValues().get(0).asStringArray();
-        assertThat(ret.length, is(2));
-        assertThat(ret[0], is("0"));
-        assertThat(ret[1], is("success"));
-        assertThat(server.proxyServer().getMode().name(), is(mode));
+        assertEquals(2, ret.length);
+        assertEquals("0", ret[0]);
+        assertEquals("success", ret[1]);
+        assertEquals(mode, server.proxyServer().getMode().name());
 
         req = new Request("getMode");
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
-        assertThat(req.returnValues().get(0).asString(), is(mode));
+        assertEquals(1, req.returnValues().size());
+        assertEquals(mode, req.returnValues().get(0).asString());
 
         req = new Request("setMode");
         String oldMode = mode;
@@ -203,10 +199,10 @@ public class ConfigProxyRpcServerTest {
 
         assertFalse(req.errorMessage(), req.isError());
         ret = req.returnValues().get(0).asStringArray();
-        assertThat(ret.length, is(2));
-        assertThat(ret[0], is("1"));
-        assertThat(ret[1], is("Unrecognized mode '" + mode + "' supplied. Legal modes are '" + Mode.modes() + "'"));
-        assertThat(server.proxyServer().getMode().name(), is(oldMode));
+        assertEquals(2, ret.length);
+        assertEquals("1", ret[0]);
+        assertEquals("Unrecognized mode '" + mode + "' supplied. Legal modes are '" + Mode.modes() + "'", ret[1]);
+        assertEquals(oldMode, server.proxyServer().getMode().name());
     }
 
     /**
@@ -222,8 +218,8 @@ public class ConfigProxyRpcServerTest {
         req.parameters().add(new StringValue(spec1 + "," + spec2));
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
-        assertThat(req.returnValues().get(0).asString(), is("Updated config sources to: " + spec1 + "," + spec2));
+        assertEquals(1, req.returnValues().size());
+        assertEquals("Updated config sources to: " + spec1 + "," + spec2, req.returnValues().get(0).asString());
 
 
         server.proxyServer().setMode(Mode.ModeName.MEMORYCACHE.name());
@@ -232,17 +228,17 @@ public class ConfigProxyRpcServerTest {
         req.parameters().add(new StringValue(spec1 + "," + spec2));
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
-        assertThat(req.returnValues().get(0).asString(), is("Cannot update sources when in '" + Mode.ModeName.MEMORYCACHE.name().toLowerCase() + "' mode"));
+        assertEquals(1, req.returnValues().size());
+        assertEquals("Cannot update sources when in '" + Mode.ModeName.MEMORYCACHE.name().toLowerCase() + "' mode", req.returnValues().get(0).asString());
 
         // TODO source connections needs to have deterministic order to work
         /*req = new Request("listSourceConnections");
         rpcServer.listSourceConnections(req);
         assertFalse(req.errorMessage(), req.isError());
         final String[] ret = req.returnValues().get(0).asStringArray();
-        assertThat(ret.length, is(2));
-        assertThat(ret[0], is("Current source: " + spec1));
-        assertThat(ret[1], is("All sources:\n" + spec2 + "\n" + spec1 + "\n"));
+        assertEquals(ret.length, is(2));
+        assertEquals(ret[0], is("Current source: " + spec1));
+        assertEquals(ret[1], is("All sources:\n" + spec2 + "\n" + spec1 + "\n"));
         */
     }
 
@@ -256,8 +252,8 @@ public class ConfigProxyRpcServerTest {
         req.parameters().add(new StringValue(path));
         client.invoke(req);
         assertFalse(req.errorMessage(), req.isError());
-        assertThat(req.returnValues().size(), is(1));
-        assertThat(req.returnValues().get(0).asString(), is("success"));
+        assertEquals(1, req.returnValues().size());
+        assertEquals("success", req.returnValues().get(0).asString());
     }
 
     private static ProxyServer createTestServer(ConfigSourceSet source) {
