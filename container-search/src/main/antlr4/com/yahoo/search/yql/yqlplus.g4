@@ -450,9 +450,13 @@ propertyNameAndValue
 	;
 
 propertyName
-	: IDENTIFIER
+	: dottedIdentifiers
 	| STRING
 	;
+
+dottedIdentifiers
+    :   IDENTIFIER (DOT IDENTIFIER)*
+    ;
 
 constantExpression
     : scalar_literal
