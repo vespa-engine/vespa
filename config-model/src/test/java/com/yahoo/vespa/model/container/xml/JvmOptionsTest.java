@@ -181,7 +181,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                     "-XX:+ParallelGCThreads=8 foo     bar");
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Invalid JVM GC options from services.xml: bar,foo"));
+            assertTrue(e.getMessage().contains("Invalid JVM GC options in services.xml: bar,foo"));
         }
     }
 
@@ -194,13 +194,17 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         buildModelWithJvmOptions(isHosted, logger, optionName, override);
 
         List<String> strings = Arrays.asList(invalidOptions.clone());
-        if (strings.isEmpty()) return;
+        // Verify that nothing is logged if there are no invalid options
+        if (strings.isEmpty()) {
+            assertEquals(0, logger.msgs.size());
+            return;
+        }
 
         Collections.sort(strings);
         Pair<Level, String> firstOption = logger.msgs.get(0);
         assertEquals(Level.WARNING, firstOption.getFirst());
         assertEquals("Invalid JVM " + (optionName.equals("gc-options") ? "GC " : "") +
-                             "options from services.xml: " + String.join(",", strings), firstOption.getSecond());
+                             "options in services.xml: " + String.join(",", strings), firstOption.getSecond());
     }
 
     private void buildModelWithJvmOptions(boolean isHosted, TestLogger logger, String optionName, String override) throws IOException, SAXException {
@@ -225,8 +229,37 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void requireThatJvmOptionsAreLogged()  throws IOException, SAXException {
+        verifyLoggingOfJvmOptions(true,
+                                  "options",
+                                  "-Xms2G foo     bar",
+                                  "foo", "bar");
+        verifyLoggingOfJvmOptions(true,
+                                  "options",
+                                  "$(touch /tmp/hello-from-gc-options)",
+                                  "$(touch", "/tmp/hello-from-gc-options)");
+
+        verifyLoggingOfJvmOptions(false,
+                                  "options",
+                                  "$(touch /tmp/hello-from-gc-options)",
+                                  "$(touch", "/tmp/hello-from-gc-options)");
+
+        // Valid options, should not log anything
         verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
+        verifyLoggingOfJvmOptions(true, "options", "-verbose:gc");
         verifyLoggingOfJvmOptions(false, "options", "-Xms2G");
+    }
+
+    @Test
+    public void requireThatInvalidJvmOptionsFailDeployment() throws IOException, SAXException {
+        try {
+            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true).failDeploymentWithInvalidJvmOptions(true),
+                                     new TestLogger(),
+                                     "options",
+                                     "-Xms2G foo     bar");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Invalid JVM options in services.xml: bar,foo"));
+        }
     }
 
 }
