@@ -52,6 +52,11 @@ public abstract class Role {
         return new TenantRole(RoleDefinition.developer, tenant);
     }
 
+    /** Returns a {@link RoleDefinition#hostedDeveloper} for the current system and given tenant. */
+    public static TenantRole hostedDeveloper(TenantName tenant) {
+        return new TenantRole(RoleDefinition.hostedDeveloper, tenant);
+    }
+
     /** Returns a {@link RoleDefinition#administrator} for the current system and given tenant. */
     public static TenantRole administrator(TenantName tenant) {
         return new TenantRole(RoleDefinition.administrator, tenant);
