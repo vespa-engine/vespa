@@ -270,7 +270,7 @@ sequence_source
 	;
 
 namespaced_name
-    :   (ident (DOT ident)* (DOT STAR)?)
+    :   (dotted_idents (DOT STAR)?)
     ;
 
 orderby
@@ -302,8 +302,8 @@ field_def
 	: expression[true] alias_def?
 	;
 
-mapExpression
-    : LBRACE propertyNameAndValue? (COMMA propertyNameAndValue)* RBRACE
+map_expression
+    : LBRACE property_name_and_value? (COMMA property_name_and_value)* RBRACE
     ;
 
 arguments[boolean in_select]
@@ -325,90 +325,90 @@ expression [boolean select]
 @after {
 	expression_stack.pop();	
 }
-	: annotateExpression
-	| logicalORExpression
-	| nullOperator
+	: annotate_expression
+	| logical_OR_expression
+	| null_operator
 	;
 	
-nullOperator
+null_operator
 	: 'null'
 	;
 
-annotateExpression
-	: annotation logicalORExpression
+annotate_expression
+	: annotation logical_OR_expression
 	;
 
 annotation
-    : LBRACKET mapExpression RBRACKET
+    : LBRACKET map_expression RBRACKET
     ;
 
-logicalORExpression
-	: logicalANDExpression (OR logicalANDExpression)+
-	| logicalANDExpression
+logical_OR_expression
+	: logical_AND_expression (OR logical_AND_expression)+
+	| logical_AND_expression
 	;
 		
-logicalANDExpression
-	: equalityExpression (AND equalityExpression)*
+logical_AND_expression
+	: equality_expression (AND equality_expression)*
 	;
 
-equalityExpression
-	: relationalExpression (  ((IN | NOT_IN) inNotInTarget)
+equality_expression
+	: relational_expression (  ((IN | NOT_IN) in_not_in_target)
 	                         | (IS_NULL | IS_NOT_NULL)
-	                         | (equalityOp relationalExpression) )
-	 | relationalExpression
+	                         | (equality_op relational_expression) )
+	 | relational_expression
 	;
 
-inNotInTarget
+in_not_in_target
     : {expression_stack.peek().in_select}? LPAREN select_statement RPAREN
     | literal_list
     ;
 
-equalityOp 
+equality_op
 	:	(EQ | NEQ | LIKE | NOTLIKE | MATCHES | NOTMATCHES | CONTAINS)
 	;
 	
-relationalExpression
-	: additiveExpression (relationalOp additiveExpression)?
+relational_expression
+	: additive_expression (relational_op additive_expression)?
 	;
 
-relationalOp
+relational_op
 	:	(LT | GT | LTEQ | GTEQ)
 	;
 	
-additiveExpression
-	: multiplicativeExpression (additiveOp additiveExpression)?
+additive_expression
+	: multiplicative_expression (additive_op additive_expression)?
 	;
 	
-additiveOp
+additive_op
 	:	'+'
 	|   '-'
 	;	
 	
-multiplicativeExpression
-	: unaryExpression (multOp multiplicativeExpression)?
+multiplicative_expression
+	: unary_expression (mult_op multiplicative_expression)?
 	;
 	
-multOp
+mult_op
 	:	'*'
 	|   '/'
 	|   '%'
 	;
 
-unaryOp
+unary_op
     : '-'
     | '!'
 	;	
 	
-unaryExpression
-    : dereferencedExpression
-    | unaryOp dereferencedExpression
+unary_expression
+    : dereferenced_expression
+    | unary_op dereferenced_expression
 	;
 	
-dereferencedExpression
+dereferenced_expression
 @init{
 	boolean	in_select = expression_stack.peek().in_select;	
 }
-	:	 primaryExpression
+	:	 primary_expression
 	     (
 	        indexref[in_select]
           | propertyref
@@ -422,17 +422,17 @@ propertyref
 	: 	DOT nm=IDENTIFIER
 	;
 
-primaryExpression
+primary_expression
 @init {
     boolean in_select = expression_stack.peek().in_select;
 }
-	: callExpression[in_select]
+	: call_expression[in_select]
 	| fieldref
-	| constantExpression
+	| constant_expression
 	| LPAREN expression[in_select] RPAREN
 	;
 	
-callExpression[boolean in_select]
+call_expression[boolean in_select]
 	: namespaced_name arguments[in_select]
 	;
 
@@ -445,28 +445,28 @@ parameter
 	: AT ident
 	;	
 	       
-propertyNameAndValue
-	: propertyName ':' constantExpression
+property_name_and_value
+	: property_name ':' constant_expression
 	;
 
-propertyName
-	: dottedIdentifiers
+property_name
+	: dotted_idents
 	| STRING
 	;
 
-dottedIdentifiers
-    :   IDENTIFIER (DOT IDENTIFIER)*
+dotted_idents
+    :   ident (DOT ident)*
     ;
 
-constantExpression
+constant_expression
     : scalar_literal
-    | mapExpression
-    | arrayLiteral
+    | map_expression
+    | array_literal
     | parameter
     ;
 
-arrayLiteral
-    : LBRACKET i+=constantExpression? (COMMA i+=constantExpression)* RBRACKET
+array_literal
+    : LBRACKET i+=constant_expression? (COMMA i+=constant_expression)* RBRACKET
     ;
 
 scalar_literal

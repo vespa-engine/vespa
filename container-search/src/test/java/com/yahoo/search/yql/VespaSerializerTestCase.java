@@ -242,7 +242,7 @@ public class VespaSerializerTestCase {
         phraseSegment.setLabel("labeled");
         phraseSegment.lock();
         String q = VespaSerializer.serialize(phraseSegment);
-        assertEquals("someIndexName contains ([{origin: {original: \"abc\", 'offset': 0, length: 3}, label: \"labeled\"}]phrase(\"a\", \"b\"))", q);
+        assertEquals("someIndexName contains ([{origin: {original: \"abc\", offset: 0, length: 3}, label: \"labeled\"}]phrase(\"a\", \"b\"))", q);
     }
 
     @Test
@@ -261,12 +261,12 @@ public class VespaSerializerTestCase {
         andSegment.addItem(new WordItem("b", "indexNamePlaceholder"));
         andSegment.setLabel("labeled");
         String q = VespaSerializer.serialize(andSegment);
-        assertEquals("indexNamePlaceholder contains ([{origin: {original: \"abc\", 'offset': 0, length: 3}, andSegmenting: true}]phrase(\"a\", \"b\"))", q);
+        assertEquals("indexNamePlaceholder contains ([{origin: {original: \"abc\", offset: 0, length: 3}, andSegmenting: true}]phrase(\"a\", \"b\"))", q);
 
         andSegment.setIndexName("someIndexName");
         andSegment.lock();
         q = VespaSerializer.serialize(andSegment);
-        assertEquals("someIndexName contains ([{origin: {original: \"abc\", 'offset': 0, length: 3}, andSegmenting: true}]phrase(\"a\", \"b\"))", q);
+        assertEquals("someIndexName contains ([{origin: {original: \"abc\", offset: 0, length: 3}, andSegmenting: true}]phrase(\"a\", \"b\"))", q);
     }
 
     @Test
@@ -276,7 +276,7 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testPhraseSegmentInPhrase() {
-        parseAndConfirm("description contains phrase(\"a\", \"b\", ([{origin: {original: \"c d\", 'offset': 0, length: 3}}]phrase(\"c\", \"d\")))");
+        parseAndConfirm("description contains phrase(\"a\", \"b\", ([{origin: {original: \"c d\", offset: 0, length: 3}}]phrase(\"c\", \"d\")))");
     }
 
     @Test
@@ -432,14 +432,14 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testWordAlternatives() {
-        parseAndConfirm("foo contains" + " ([{origin: {original: \" trees \", 'offset': 1, length: 5}}]"
+        parseAndConfirm("foo contains" + " ([{origin: {original: \" trees \", offset: 1, length: 5}}]"
                 + "alternatives({\"trees\": 1.0, \"tree\": 0.7}))");
     }
 
     @Test
     public void testWordAlternativesInPhrase() {
         parseAndConfirm("foo contains phrase(\"forest\","
-                + " ([{origin: {original: \" trees \", 'offset': 1, length: 5}}]"
+                + " ([{origin: {original: \" trees \", offset: 1, length: 5}}]"
                 + "alternatives({\"trees\": 1.0, \"tree\": 0.7}))"
                 + ")");
     }

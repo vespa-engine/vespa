@@ -1485,7 +1485,7 @@ public class VespaSerializer {
     private static void serializeOrigin(StringBuilder destination, String image, int offset, int length) {
         destination.append(ORIGIN).append(": {").append(ORIGIN_ORIGINAL).append(": \"");
         escape(image, destination);
-        destination.append("\", '").append(ORIGIN_OFFSET).append("': ")
+        destination.append("\", ").append(ORIGIN_OFFSET).append(": ")
                 .append(offset).append(", ").append(ORIGIN_LENGTH)
                 .append(": ").append(length).append("}");
     }
