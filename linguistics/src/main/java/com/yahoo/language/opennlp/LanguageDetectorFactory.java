@@ -12,7 +12,7 @@ import opennlp.tools.util.normalizer.TwitterCharSequenceNormalizer;
  *
  * @author jonmv
  */
-@SuppressWarnings("unused") // Loaded by black magic.
+@SuppressWarnings("unused") // Loaded by black magic: specified in properties in the loaded model.
 public class LanguageDetectorFactory extends opennlp.tools.langdetect.LanguageDetectorFactory {
 
     @Override
