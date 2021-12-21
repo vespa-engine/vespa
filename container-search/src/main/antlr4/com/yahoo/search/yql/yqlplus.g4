@@ -177,15 +177,6 @@ keyword_as_ident
 program : (statement SEMI?)* EOF
 	;
 
-moduleId
-    :  IDENTIFIER
-    ;
-    
-moduleName
-	: STRING
-	| namespaced_name
-	;
-
 statement
       : output_statement
 	  ;

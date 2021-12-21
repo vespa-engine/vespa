@@ -9,8 +9,8 @@ import java.util.Set;
 
 class ProjectionBuilder {
 
-    private Map<String, OperatorNode<ExpressionOperator>> fields = Maps.newLinkedHashMap();
-    private Set<String> aliasNames = Sets.newHashSet();
+    private final Map<String, OperatorNode<ExpressionOperator>> fields = Maps.newLinkedHashMap();
+    private final Set<String> aliasNames = Sets.newHashSet();
 
     public void addField(String name, OperatorNode<ExpressionOperator> expr) {
         String aliasName = name;
