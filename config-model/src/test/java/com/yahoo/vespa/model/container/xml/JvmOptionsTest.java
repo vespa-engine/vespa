@@ -194,7 +194,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         buildModelWithJvmOptions(isHosted, logger, optionName, override);
 
         List<String> strings = Arrays.asList(invalidOptions.clone());
-        if (strings.isEmpty()) return;
+        // Verify that nothing is logged if there are no invalid options
+        if (strings.isEmpty()) {
+            assertEquals(0, logger.msgs.size());
+            return;
+        }
 
         Collections.sort(strings);
         Pair<Level, String> firstOption = logger.msgs.get(0);
