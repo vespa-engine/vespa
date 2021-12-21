@@ -558,7 +558,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
         private void invokeRpcIfValidConnection(Request request) {
             if (target.isValid()) {
-                target.invokeSync(request, 60);
+                target.invokeSync(request, 600);
             } else {
                 throw new RuntimeException("Connection to " + target + " is invalid", target.getConnectionLostReason());
             }
