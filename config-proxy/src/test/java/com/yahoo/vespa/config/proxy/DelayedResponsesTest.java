@@ -3,8 +3,7 @@ package com.yahoo.vespa.config.proxy;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author hmusum
@@ -18,14 +17,14 @@ public class DelayedResponsesTest {
         DelayedResponse delayedResponse = new DelayedResponse(tester.createRequest("foo", "id", "bar", 10));
         responses.add(delayedResponse);
 
-        assertThat(responses.size(), is(1));
-        assertThat(responses.responses().take(), is(delayedResponse));
-        assertThat(responses.size(), is(0));
+        assertEquals(1, responses.size());
+        assertEquals(delayedResponse, responses.responses().take());
+        assertEquals(0, responses.size());
 
         responses.add(delayedResponse);
-        assertThat(responses.size(), is(1));
+        assertEquals(1, responses.size());
         responses.remove(delayedResponse);
-        assertThat(responses.size(), is(0));
+        assertEquals(0, responses.size());
     }
 
 }

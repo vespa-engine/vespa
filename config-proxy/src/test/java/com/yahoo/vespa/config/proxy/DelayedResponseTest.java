@@ -7,8 +7,7 @@ import org.junit.Test;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -28,17 +27,17 @@ public class DelayedResponseTest {
         final String configName = "foo";
         final JRTServerConfigRequest request = tester.createRequest(configName, configId, namespace, timeout);
         DelayedResponse delayedResponse = new DelayedResponse(request, returnTime);
-        assertThat(delayedResponse.getRequest(), is(request));
-        assertThat(delayedResponse.getReturnTime(), is(returnTime));
+        assertEquals(request, delayedResponse.getRequest());
+        assertEquals(returnTime, delayedResponse.getReturnTime().longValue());
         assertTrue(delayedResponse.getDelay(TimeUnit.SECONDS) < returnTime);
 
         DelayedResponse before = new DelayedResponse(request, returnTime - 1000L);
         DelayedResponse after = new DelayedResponse(request, returnTime + 1000L);
 
-        assertThat(delayedResponse.compareTo(delayedResponse), is(0));
-        assertThat(delayedResponse.compareTo(before), is(1));
-        assertThat(delayedResponse.compareTo(after), is(-1));
-        assertThat(delayedResponse.compareTo(new Delayed() {
+        assertEquals(0, delayedResponse.compareTo(delayedResponse));
+        assertEquals(1, delayedResponse.compareTo(before));
+        assertEquals(-1, delayedResponse.compareTo(after));
+        assertEquals(0, delayedResponse.compareTo(new Delayed() {
             @Override
             public long getDelay(TimeUnit unit) {
                 return 0;
@@ -48,7 +47,7 @@ public class DelayedResponseTest {
             public int compareTo(Delayed o) {
                 return 0;
             }
-        }), is(0));
+        }));
     }
 
     @Test
@@ -75,9 +74,9 @@ public class DelayedResponseTest {
                 delayed2.getReturnTime() > delayed1.getReturnTime());
 
         // Test compareTo() method
-        assertThat(delayed1.compareTo(delayed1), is(0));
-        assertThat(delayed1.compareTo(delayed2), is(-1));
-        assertThat(delayed2.compareTo(delayed1), is(1));
+        assertEquals(0, delayed1.compareTo(delayed1));
+        assertEquals(-1, delayed1.compareTo(delayed2));
+        assertEquals(1, delayed2.compareTo(delayed1));
     }
 
 }

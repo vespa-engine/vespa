@@ -14,8 +14,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author hmusum
@@ -79,21 +80,21 @@ public class MemoryCacheTest {
 
         cache.update(config);
         cache.update(config2);
-        assertThat(cache.size(), is(2));
+        assertEquals(2, cache.size());
         assertTrue(cache.containsKey(cacheKey));
         assertTrue(cache.containsKey(cacheKey2));
 
         RawConfig response = cache.get(cacheKey);
         assertNotNull(response);
-        assertThat(response.getName(), is(defName));
-        assertThat(response.getPayload().toString(), is(payload.toString()));
-        assertThat(response.getGeneration(), is(generation));
+        assertEquals(defName, response.getName());
+        assertEquals(payload.toString(), response.getPayload().toString());
+        assertEquals(generation, response.getGeneration());
 
         response = cache.get(cacheKey2);
         assertNotNull(response);
-        assertThat(response.getName(), is(defName2));
-        assertThat(response.getPayload().toString(), is(payload2.toString()));
-        assertThat(response.getGeneration(), is(generation));
+        assertEquals(defName2, response.getName());
+        assertEquals(payload2.toString(), response.getPayload().toString());
+        assertEquals(generation, response.getGeneration());
 
         cache.clear();
     }
@@ -104,22 +105,22 @@ public class MemoryCacheTest {
 
         cache.update(config);
         cache.update(configDifferentMd5); // same name, different defMd5
-        assertThat(cache.size(), is(2));
+        assertEquals(2, cache.size());
         assertTrue(cache.containsKey(cacheKey));
 
         RawConfig response = cache.get(cacheKey);
         assertNotNull(response);
-        assertThat(response.getName(), is(defName));
-        assertThat(response.getPayload().getData(), is(payload.getData()));
-        assertThat(response.getGeneration(), is(generation));
+        assertEquals(defName, response.getName());
+        assertEquals(payload.getData(), response.getPayload().getData());
+        assertEquals(generation, response.getGeneration());
 
         response = cache.get(cacheKeyDifferentMd5);
         assertNotNull(response);
-        assertThat(response.getName(), is(defName));
-        assertThat(response.getPayload().getData(), is(payloadDifferentMd5.getData()));
-        assertThat(response.getGeneration(), is(generation));
+        assertEquals(defName, response.getName());
+        assertEquals(payloadDifferentMd5.getData(), response.getPayload().getData());
+        assertEquals(generation, response.getGeneration());
 
         cache.clear();
-        assertThat(cache.size(), is(0));
+        assertEquals(0, cache.size());
     }
 }
