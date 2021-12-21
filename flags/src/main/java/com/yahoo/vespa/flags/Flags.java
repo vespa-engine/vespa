@@ -288,7 +288,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag USE_NEW_ENDPOINT_CERTIFICATE_PROVIDER_URL = defineFeatureFlag(
-            "use-new-endpoint-certificate-provider-url", false,
+            "use-new-endpoint-certificate-provider-url", true,
             List.of("andreer"), "2021-12-14", "2022-01-14",
             "Use the new URL for the endpoint certificate provider API",
             "Takes effect immediately"
