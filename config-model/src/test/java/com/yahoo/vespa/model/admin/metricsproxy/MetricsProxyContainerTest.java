@@ -20,10 +20,8 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.g
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getVespaServicesConfig;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -38,15 +36,15 @@ public class MetricsProxyContainerTest {
         tester.addHosts(numberOfHosts);
 
         VespaModel model = tester.createModel(hostedServicesWithManyNodes(), true);
-        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         for (var host : model.hostSystem().getHosts()) {
-            assertThat(host.getService(METRICS_PROXY_CONTAINER.serviceName), notNullValue());
+            assertNotNull(host.getService(METRICS_PROXY_CONTAINER.serviceName));
 
             long metricsProxies = host.getServices().stream()
                                       .filter(s -> s.getClass().equals(MetricsProxyContainer.class))
                                       .count();
-            assertThat(metricsProxies, is(1L));
+            assertEquals(1, metricsProxies);
         }
     }
 
@@ -57,15 +55,15 @@ public class MetricsProxyContainerTest {
         tester.addHosts(numberOfHosts);
 
         VespaModel model = tester.createModel(hostedServicesWithManyNodes(), true);
-        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         for (var host : model.hostSystem().getHosts()) {
-            assertThat(host.getService(METRICS_PROXY_CONTAINER.serviceName), notNullValue());
+            assertNotNull(host.getService(METRICS_PROXY_CONTAINER.serviceName));
 
             long metricsProxies = host.getServices().stream()
                                       .filter(s -> s.getClass().equals(MetricsProxyContainer.class))
                                       .count();
-            assertThat(metricsProxies, is(1L));
+            assertEquals(1, metricsProxies);
         }
     }
 

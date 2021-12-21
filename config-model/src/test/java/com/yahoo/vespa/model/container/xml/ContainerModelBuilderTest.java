@@ -80,19 +80,16 @@ import static com.yahoo.vespa.model.container.ContainerCluster.ROOT_HANDLER_BIND
 import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.isEmptyString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -112,8 +109,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     public void model_evaluation_bundles_are_deployed() {
         createBasicContainerModel();
         PlatformBundlesConfig config = root.getConfig(PlatformBundlesConfig.class, "default");
-        assertThat(config.bundlePaths(), hasItem(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE.toString()));
-        assertThat(config.bundlePaths(), hasItem(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE.toString()));
+        assertTrue(config.bundlePaths().contains(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE.toString()));
+        assertTrue(config.bundlePaths().contains(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE.toString()));
     }
 
     @Test
@@ -140,7 +137,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "</container>" );
         createModel(root, clusterElem);
         AbstractService container = (AbstractService)root.getProducer("container/container.0");
-        assertThat(container.getRelativePort(0), is(getDefaults().vespaWebServicePort()));
+        assertEquals(getDefaults().vespaWebServicePort(), container.getRelativePort(0));
     }
 
     @Test
@@ -154,8 +151,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "</container>" );
         createModel(root, clusterElem);
         AbstractService container = (AbstractService)root.getProducer("container/container.0");
-        assertThat(container.getRelativePort(0), is(9000));
-        assertThat(container.getRelativePort(1), is(not(9001)));
+        assertEquals(9000, container.getRelativePort(0));
+        assertNotEquals(9001, container.getRelativePort(1));
     }
 
     @Test
@@ -265,11 +262,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         // The handler is still set up.
         ComponentsConfig.Components userRootHandler = getComponent(componentsConfig(), BindingsOverviewHandler.class.getName());
-        assertThat(userRootHandler, notNullValue());
+        assertNotNull(userRootHandler);
 
         // .. but it has no bindings
         var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
-        assertThat(discBindingsConfig.handlers(BindingsOverviewHandler.class.getName()), is(nullValue()));
+        assertNull(discBindingsConfig.handlers(BindingsOverviewHandler.class.getName()));
     }
 
     @Test
@@ -439,7 +436,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         root = ContentClusterUtils.createMockRoot(new String[]{"host1", "host2"});
         createModel(root, containerElem);
         ContainerCluster cluster = (ContainerCluster)root.getChildren().get("default");
-        assertThat(cluster.getContainers().size(), is(2));
+        assertEquals(2, cluster.getContainers().size());
         assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.0").requesttimeout(), 111);
         assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.1").requesttimeout(), 222);
     }
@@ -472,7 +469,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Map<ComponentId, Component<?, ?>> componentsMap = cluster.getComponentsMap();
         Component<?,?> example = componentsMap.get(
                 ComponentId.fromString("test.Exampledocproc"));
-        assertThat(example.getComponentId().getName(), is("test.Exampledocproc"));
+        assertEquals("test.Exampledocproc", example.getComponentId().getName());
     }
 
     @Test
@@ -488,7 +485,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "</container>");
         createModel(root, clusterElem);
         assertTrue(getContainerCluster("default").getContainers().get(0).getAffinity().isPresent());
-        assertThat(getContainerCluster("default").getContainers().get(0).getAffinity().get().cpuSocket(), is(0));
+        assertEquals(0, getContainerCluster("default").getContainers().get(0).getAffinity().get().cpuSocket());
     }
 
     @Test
@@ -504,7 +501,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .withServices(servicesXml)
                 .build();
         VespaModel model = new VespaModel(applicationPackage);
-        assertThat(model.hostSystem().getHosts().size(), is(1));
+        assertEquals(1, model.hostSystem().getHosts().size());
     }
 
     @Test
@@ -950,9 +947,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals("KEY", connectorConfig.ssl().privateKey());
         assertEquals(4443, connectorConfig.listenPort());
 
-        assertThat("Connector must use Athenz truststore in a non-public system.",
-                   connectorConfig.ssl().caCertificateFile(), equalTo("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"));
-        assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
+        assertEquals("Connector must use Athenz truststore in a non-public system.",
+                "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem",
+                connectorConfig.ssl().caCertificateFile());
+        assertTrue(connectorConfig.ssl().caCertificate().isEmpty());
     }
 
     @Test
@@ -986,9 +984,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals("KEY", connectorConfig.ssl().privateKey());
         assertEquals(4443, connectorConfig.listenPort());
 
-        assertThat("Connector must use Athenz truststore in a non-public system.",
-                connectorConfig.ssl().caCertificateFile(), equalTo("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem"));
-        assertThat(connectorConfig.ssl().caCertificate(), isEmptyString());
+        assertEquals("Connector must use Athenz truststore in a non-public system.",
+                "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem",
+                connectorConfig.ssl().caCertificateFile());
+        assertTrue(connectorConfig.ssl().caCertificate().isEmpty());
     }
 
     @Test

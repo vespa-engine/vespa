@@ -12,8 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -37,7 +36,7 @@ public class MockServiceTest {
     @Test
     public void testNoHandlerFound() throws InterruptedException, IOException {
         HttpResponse response = runHandler(com.yahoo.jdisc.http.HttpRequest.Method.DELETE, "/foo/bar");
-        assertThat(response.getStatus(), is(404));
+        assertEquals(404, response.getStatus());
         assertResponseContents(response, "DELETE:/foo/bar was not found");
     }
 
@@ -52,19 +51,14 @@ public class MockServiceTest {
     }
 
     private void assertResponse(HttpResponse response, int expectedCode, String expectedMessage) throws IOException {
-        assertThat(response.getStatus(), is(expectedCode));
+        assertEquals(expectedCode, response.getStatus());
         assertResponseContents(response, expectedMessage);
     }
 
     private void assertResponseContents(HttpResponse response, String expected) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        assertThat(baos.toString(), is(expected));
-    }
-
-    private void assertResponseOk(HttpResponse response) {
-        assertThat(response.getStatus(), is(200));
-        assertThat(response.getContentType(), is("text/plain"));
+        assertEquals(expected, baos.toString());
     }
 
     private HttpResponse runHandler(com.yahoo.jdisc.http.HttpRequest.Method method, String path) throws InterruptedException, IOException {

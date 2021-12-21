@@ -38,9 +38,7 @@ import com.yahoo.vespa.model.routing.DocumentProtocol;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,9 +59,6 @@ import static org.junit.Assert.fail;
 public class ContentClusterTest extends ContentBaseTest {
 
     private final static String HOSTS = "<admin version='2.0'><adminserver hostalias='mockhost' /></admin>";
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     ContentCluster parse(String xml) {
         xml = HOSTS + xml;
@@ -868,9 +863,6 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void reserved_document_name_throws_exception() {
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("The following document types conflict with reserved keyword names: 'true'.");
-
         String xml = "<content version=\"1.0\" id=\"storage\">" +
               "  <redundancy>1</redundancy>" +
               "  <documents>" +
@@ -882,7 +874,12 @@ public class ContentClusterTest extends ContentBaseTest {
               "</content>";
 
         List<String> sds = ApplicationPackageUtils.generateSchemas("true");
-        new VespaModelCreatorWithMockPkg(null, xml, sds).create();
+        try {
+            new VespaModelCreatorWithMockPkg(null, xml, sds).create();
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().startsWith("The following document types conflict with reserved keyword names: 'true'."));
+        }
     }
 
     private void assertClusterHasBucketSpaceMappings(AllClustersBucketSpacesConfig config, String clusterId,

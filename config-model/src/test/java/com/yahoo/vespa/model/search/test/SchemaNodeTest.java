@@ -13,8 +13,6 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.TransactionLogServer;
-import org.hamcrest.CoreMatchers;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -92,8 +90,7 @@ public class SchemaNodeTest {
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.deployLogger());
         assertTrue(node.getPreShutdownCommand().isPresent());
-        Assert.assertThat(node.getPreShutdownCommand().get(),
-                CoreMatchers.containsString("vespa-proton-cmd " + node.getRpcPort() + " prepareRestart"));
+        assertTrue(node.getPreShutdownCommand().get().contains("vespa-proton-cmd " + node.getRpcPort() + " prepareRestart"));
     }
 
     private MockRoot createRoot(ModelContext.Properties properties) {

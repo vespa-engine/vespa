@@ -6,9 +6,9 @@ import org.junit.Test;
 import java.util.Optional;
 
 import static com.yahoo.text.StringUtilities.quote;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
 import static com.yahoo.reflection.Casting.cast;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 public class CastingTest {
     @Test
@@ -16,7 +16,7 @@ public class CastingTest {
         Object objectToCast = 12;
         Optional<Integer> value = cast(Integer.class, objectToCast);
         assertTrue("Value is not present", value.isPresent());
-        assertThat(value.get(), is(objectToCast));
+        assertSame(objectToCast, value.get());
     }
 
     @Test

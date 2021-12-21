@@ -15,11 +15,10 @@ import java.util.Optional;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createCluster;
 import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createClusterXml;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for hierarchic distribution in an indexed content cluster.
@@ -178,9 +177,9 @@ public class IndexedHierarchicDistributionTest {
     public void requireThatWeMustHaveOnlyOneGroupLevel() {
         try {
             getIllegalMultipleGroupsLevelCluster();
-            assertFalse("Did not get expected Exception", true);
+            fail("Did not get expected Exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("sub group 'group0' contains 2 sub groups."));
+            assertTrue(e.getMessage().contains("sub group 'group0' contains 2 sub groups."));
         }
     }
 
@@ -188,9 +187,9 @@ public class IndexedHierarchicDistributionTest {
     public void requireThatLeafGroupsMustHaveEqualNumberOfNodes() {
         try {
             getIllegalGroupsCluster();
-            assertFalse("Did not get expected Exception", true);
+            fail("Did not get expected Exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("leaf group 'group0' contains 1 node(s) while leaf group 'group1' contains 2 node(s)"));
+            assertTrue(e.getMessage().contains("leaf group 'group0' contains 1 node(s) while leaf group 'group1' contains 2 node(s)"));
         }
     }
 
@@ -200,7 +199,7 @@ public class IndexedHierarchicDistributionTest {
         DispatchGroup dg = c.getSearch().getIndexed().getRootDispatch();
         assertEquals(8, dg.getRowBits());
         assertEquals(3, dg.getNumPartitions());
-        assertEquals(true, dg.useFixedRowInDispatch());
+        assertTrue(dg.useFixedRowInDispatch());
         ArrayList<SearchInterface> list = new ArrayList<>();
         for(SearchInterface si : dg.getSearchersIterable()) {
             list.add(si);
@@ -222,9 +221,9 @@ public class IndexedHierarchicDistributionTest {
     public void requireThatLeafGroupsCountMustBeAFactorOfRedundancy() {
         try {
             getTwoGroupsCluster(3, 3, "2|*");
-            assertFalse("Did not get expected Exception", true);
+            fail("Did not get expected Exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Expected number of leaf groups (2) to be a factor of redundancy (3)"));
+            assertTrue(e.getMessage().contains("Expected number of leaf groups (2) to be a factor of redundancy (3)"));
         }
     }
 
@@ -232,9 +231,9 @@ public class IndexedHierarchicDistributionTest {
     public void requireThatRedundancyPerGroupMustBeIsEqual() {
         try {
             getTwoGroupsCluster(4, 4, "1|*");
-            assertFalse("Did not get expected Exception", true);
+            fail("Did not get expected Exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Expected distribution partitions should be '2|*'"));
+            assertTrue(e.getMessage().contains("Expected distribution partitions should be '2|*'"));
         }
     }
 
@@ -242,9 +241,9 @@ public class IndexedHierarchicDistributionTest {
     public void requireThatReadyCopiesMustBeEqualToRedundancy() {
         try {
             getTwoGroupsCluster(4, 3, "2|*");
-            assertFalse("Did not get expected Exception", true);
+            fail("Did not get expected Exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Expected equal amount of ready copies per group"));
+            assertTrue(e.getMessage().contains("Expected equal amount of ready copies per group"));
         }
     }
 

@@ -29,12 +29,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -93,30 +89,30 @@ public class ConfigserverClusterTest {
     @Test
     public void testStatisticsConfig() {
         StatisticsConfig config = getConfig(StatisticsConfig.class);
-        assertThat((int) config.collectionintervalsec(), is(60));
-        assertThat((int) config.loggingintervalsec(), is(60));
+        assertEquals(60, (int) config.collectionintervalsec());
+        assertEquals(60, (int) config.loggingintervalsec());
     }
 
     @Test
     public void testHealthMonitorConfig() {
         HealthMonitorConfig config = getConfig(HealthMonitorConfig.class);
-        assertThat(((int) config.snapshot_interval()), is(60));
+        assertEquals(60, (int) config.snapshot_interval());
     }
 
     @Test
     public void testConfigserverConfig() {
         ConfigserverConfig config = getConfig(ConfigserverConfig.class);
-        assertThat(config.configModelPluginDir().size(), is(1));
-        assertThat(config.configModelPluginDir().get(0), is(Defaults.getDefaults().underVespaHome("lib/jars/config-models")));
-        assertThat(config.rpcport(), is(12345));
-        assertThat(config.httpport(), is(1337));
-        assertThat(config.serverId(), is(HostName.getLocalhost()));
+        assertEquals(1, config.configModelPluginDir().size());
+        assertEquals(Defaults.getDefaults().underVespaHome("lib/jars/config-models"), config.configModelPluginDir().get(0));
+        assertEquals(12345, config.rpcport());
+        assertEquals(1337, config.httpport());
+        assertEquals(HostName.getLocalhost(), config.serverId());
         assertTrue(config.useVespaVersionInRequest());
-        assertThat(config.numParallelTenantLoaders(), is(4));
+        assertEquals(4, config.numParallelTenantLoaders());
         assertFalse(config.multitenant());
         assertTrue(config.hostedVespa());
-        assertThat(config.environment(), is("test"));
-        assertThat(config.region(), is("bar"));
+        assertEquals("test", config.environment());
+        assertEquals("bar", config.region());
     }
 
     @Test
@@ -132,8 +128,8 @@ public class ConfigserverClusterTest {
     public void model_evaluation_bundles_are_not_installed_via_config() {
         // These bundles must be pre-installed because they are used by config-model.
         PlatformBundlesConfig config = getConfig(PlatformBundlesConfig.class);
-        assertThat(config.bundlePaths(), not(hasItem(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE.toString())));
-        assertThat(config.bundlePaths(), not(hasItem(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE.toString())));
+        assertFalse(config.bundlePaths().contains(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE.toString()));
+        assertFalse(config.bundlePaths().contains(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE.toString()));
     }
 
     @SuppressWarnings("varargs")

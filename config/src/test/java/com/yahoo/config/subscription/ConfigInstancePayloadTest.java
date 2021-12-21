@@ -15,9 +15,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.foo.FunctionTestConfig.*;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -131,8 +130,8 @@ public class ConfigInstancePayloadTest {
         try {
             System.out.println(payload.toString(false));
             FunctionTestConfig config2 = new FunctionTestConfig((FunctionTestConfig.Builder)new ConfigTransformer<>(FunctionTestConfig.class).toConfigBuilder(payload));
-            assertThat(config2, is(expected));
-            assertThat(ConfigInstance.serialize(config2), is(ConfigInstance.serialize(expected)));
+            assertEquals(expected, config2);
+            assertEquals(ConfigInstance.serialize(expected), ConfigInstance.serialize(config2));
         } catch (Exception e) {
             e.printStackTrace();
             fail();
@@ -156,14 +155,14 @@ public class ConfigInstancePayloadTest {
         System.out.println(payload.toString());
         MaptypesConfig config = ConfigInstanceUtil.getNewInstance(MaptypesConfig.class, "foo", payload);
         System.out.println(config);
-        assertThat(config.intmap().size(), is(1));
-        assertThat(config.intmap("foo"), is(1337));
+        assertEquals(1, config.intmap().size());
+        assertEquals(1337, config.intmap("foo"));
         assertNotNull(config.innermap("bar"));
-        assertThat(config.innermap("bar").foo(), is(93));
-        assertThat(config.nestedmap().size(), is(1));
+        assertEquals(93, config.innermap("bar").foo());
+        assertEquals(1, config.nestedmap().size());
         assertNotNull(config.nestedmap("baz"));
-        assertThat(config.nestedmap("baz").inner("foo"), is(1));
-        assertThat(config.nestedmap("baz").inner("bar"), is(2));
+        assertEquals(1, config.nestedmap("baz").inner("foo"));
+        assertEquals(2, config.nestedmap("baz").inner("bar"));
     }
 
     private MaptypesConfig createMapTypesConfig() {

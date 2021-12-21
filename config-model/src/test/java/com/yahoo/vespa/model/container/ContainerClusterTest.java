@@ -31,7 +31,6 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -50,10 +49,8 @@ import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.applic
 import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.global;
 import static com.yahoo.config.provision.SystemName.cd;
 import static com.yahoo.config.provision.SystemName.main;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -482,7 +479,7 @@ public class ContainerClusterTest {
         cluster.getConfig(bundleBuilder);
         List<String> installedBundles = bundleBuilder.build().bundlePaths();
 
-        expectedBundleNames.forEach(b -> assertThat(installedBundles, hasItem(CoreMatchers.endsWith(b))));
+        expectedBundleNames.forEach(b -> assertTrue(installedBundles.stream().filter(p -> p.endsWith(b)).count() > 0));
     }
 
 

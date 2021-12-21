@@ -14,6 +14,7 @@ import org.w3c.dom.Element;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
@@ -27,7 +28,7 @@ public class LegacyConfigModelBuilderTest {
         ModelBuilder builder = new ModelBuilder();
         Model model = builder.build(DeployState.createTestState(new MockApplicationPackage.Builder().withServices(services).build()),
                                     null, null, new MockRoot(), XML.getDocument(services).getDocumentElement());
-        assertThat(model.getContext().getParentProducer().getUserConfigs().size(), is(1));
+        assertEquals(1, model.getContext().getParentProducer().getUserConfigs().size());
     }
 
     public static class Model extends ConfigModel {

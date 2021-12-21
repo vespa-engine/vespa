@@ -14,8 +14,8 @@ import org.w3c.dom.Element;
 
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Einar M R Rosenvinge
@@ -59,8 +59,8 @@ public class StandaloneDocprocContainerTest extends DomBuilderTest {
             if (componentId.stringValue().contains("MbusClient")) foundAtLeastOneClient = true;
             if (componentId.stringValue().contains("MbusServer")) foundAtLeastOneServer = true;
         }
-        assertThat(foundAtLeastOneClient, is(true));
-        assertThat(foundAtLeastOneServer, is(true));
+        assertTrue(foundAtLeastOneClient);
+        assertTrue(foundAtLeastOneServer);
 
     }
 
@@ -76,7 +76,7 @@ public class StandaloneDocprocContainerTest extends DomBuilderTest {
             if (componentId.stringValue().contains("MbusClient")) foundAtLeastOneClient = true;
             if (componentId.stringValue().contains("MbusServer")) foundAtLeastOneServer = true;
         }
-        assertThat(foundAtLeastOneClient, is(false));
-        assertThat(foundAtLeastOneServer, is(false));
+        assertFalse(foundAtLeastOneClient);
+        assertFalse(foundAtLeastOneServer);
     }
 }

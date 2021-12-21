@@ -10,9 +10,8 @@ import org.junit.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.collections.CollectionUtil.first;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author gjoranv
@@ -55,7 +54,7 @@ public class FilterChainsTest extends DomBuilderTest {
     public void filters_in_chains_are_built() {
         Filter filter = first(getChain("myChain").getInnerComponents());
         assertNotNull(filter);
-        assertThat(filter.getComponentId().getName(), is("inner"));
+        assertEquals("inner", filter.getComponentId().getName());
     }
 
     private Chain<Filter> getChain(String chainName) {

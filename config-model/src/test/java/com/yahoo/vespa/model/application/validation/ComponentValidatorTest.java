@@ -11,9 +11,8 @@ import java.io.IOException;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ComponentValidatorTest {
     private static final String JARS_DIR = "src/test/cfg/application/validation/testjars/";
@@ -36,7 +35,7 @@ public class ComponentValidatorTest {
             componentValidator.validateAll(new BaseDeployLogger());
             assert (false);
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is(exceptionMessage));
+            assertEquals(e.getMessage(), exceptionMessage);
         }
     }
 
@@ -52,6 +51,6 @@ public class ComponentValidatorTest {
         };
         
         new ComponentValidator(new JarFile(JARS_DIR + "snapshot_bundle.jar")).validateAll(logger);
-        assertThat(buffer.toString(), containsString("Deploying snapshot bundle"));
+        assertTrue(buffer.toString().contains("Deploying snapshot bundle"));
     }
 }

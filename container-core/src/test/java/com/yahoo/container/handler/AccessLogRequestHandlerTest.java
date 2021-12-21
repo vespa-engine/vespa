@@ -9,8 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class AccessLogRequestHandlerTest {
@@ -25,14 +24,14 @@ public class AccessLogRequestHandlerTest {
         keeper.addUri("foo");
         HttpResponse response = handler.handle(null);
         response.render(out);
-        assertThat(out.toString(), is("{\"entries\":[{\"url\":\"foo\"}]}"));
+        assertEquals("{\"entries\":[{\"url\":\"foo\"}]}", out.toString());
     }
 
     @Test
     public void testEmpty() throws IOException {
         HttpResponse response = handler.handle(null);
         response.render(out);
-        assertThat(out.toString(), is("{\"entries\":[]}"));
+        assertEquals("{\"entries\":[]}", out.toString());
     }
 
     @Test
@@ -41,7 +40,7 @@ public class AccessLogRequestHandlerTest {
         keeper.addUri("foo");
         HttpResponse response = handler.handle(null);
         response.render(out);
-        assertThat(out.toString(), is("{\"entries\":[{\"url\":\"foo\"},{\"url\":\"foo\"}]}"));
+        assertEquals("{\"entries\":[{\"url\":\"foo\"},{\"url\":\"foo\"}]}", out.toString());
     }
 
 }

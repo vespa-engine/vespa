@@ -39,18 +39,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -258,13 +255,13 @@ public class VespaModelTestCase {
                         "</services>")
                 .create();
         Admin admin = model.getAdmin();
-        assertThat(admin.getSlobroks().size(), is(1));
-        assertThat(admin.getConfigservers().size(), is(1));
+        assertEquals(1, admin.getSlobroks().size());
+        assertEquals(1, admin.getConfigservers().size());
         Set<HostInfo> hosts = model.getHosts();
-        assertThat(hosts.size(), is(1));
+        assertEquals(1, hosts.size());
         //logd, config proxy, sentinel, config server, slobrok, log server
         HostInfo host = hosts.iterator().next();
-        assertThat(host.getServices().size(), is(7));
+        assertEquals(7, host.getServices().size());
         new LogdConfig((LogdConfig.Builder) model.getConfig(new LogdConfig.Builder(), "admin/model"));
 
     }
@@ -278,7 +275,7 @@ public class VespaModelTestCase {
                 .applicationPackage(applicationPackage)
                 .modelHostProvisioner(new InMemoryProvisioner(true, false, "host1.yahoo.com"))
                 .properties(new TestProperties()
-                        .setConfigServerSpecs(Arrays.asList(new TestProperties.Spec("cfghost", 1234, 1236)))
+                        .setConfigServerSpecs(List.of(new TestProperties.Spec("cfghost", 1234, 1236)))
                         .setMultitenant(true))
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
@@ -291,8 +288,8 @@ public class VespaModelTestCase {
         VespaModel model = new VespaModel(new MockApplicationPackage.Builder()
                                                   .withServices("<services version='1.0'><container version='1.0'><search /></container></services>")
                                                   .build());
-        assertThat(model.hostSystem().getHosts().size(), is(1));
-        assertThat(model.getContainerClusters().size(), is(1));
+        assertEquals(1, model.hostSystem().getHosts().size());
+        assertEquals(1, model.getContainerClusters().size());
     }
 
     @Test
@@ -300,9 +297,9 @@ public class VespaModelTestCase {
         ApplicationPackage app = MockApplicationPackage.createEmpty();
         DeployState.Builder builder = new DeployState.Builder().applicationPackage(app);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), builder.build());
-        assertThat(model.getContainerClusters().size(), is(0));
+        assertTrue(model.getContainerClusters().isEmpty());
         model = new VespaModel(new NullConfigModelRegistry(), builder.permanentApplicationPackage(Optional.of(FilesApplicationPackage.fromFile(new File(TESTDIR, "app_permanent")))).build());
-        assertThat(model.getContainerClusters().size(), is(1));
+        assertEquals(1, model.getContainerClusters().size());
     }
 
     @Test

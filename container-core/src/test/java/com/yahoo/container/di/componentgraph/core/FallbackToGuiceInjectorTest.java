@@ -10,23 +10,19 @@ import com.google.inject.name.Names;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.container.di.componentgraph.core.ComponentGraph;
-import com.yahoo.container.di.componentgraph.core.ComponentNode;
-import com.yahoo.container.di.componentgraph.core.Node;
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Tony Vaagenes
@@ -37,11 +33,8 @@ public class FallbackToGuiceInjectorTest {
 
     private ComponentGraph componentGraph;
     private Injector injector;
-    private Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs =
-            new HashMap<>();
+    private final Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs = new HashMap<>();
 
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
 
     @Before
     public void createGraph() {
@@ -91,7 +84,7 @@ public class FallbackToGuiceInjectorTest {
         complete();
 
         MyComponent component = getInstance(MyComponent.class);
-        assertThat(component.url, is("http://yahoo.com"));
+        assertEquals("http://yahoo.com", component.url);
         assertNotNull(component.executor);
     }
 
@@ -102,17 +95,19 @@ public class FallbackToGuiceInjectorTest {
         complete();
 
         ComponentTakingDefaultString component = getInstance(ComponentTakingDefaultString.class);
-        assertThat(component.injectedString, is(""));
+        assertTrue(component.injectedString.isEmpty());
     }
 
     @Test
     public void guice_injector_fails_when_no_explicit_binding_exists_and_class_has_no_default_ctor() {
         setInjector(emptyGuiceInjector());
         register(ComponentThatCannotBeConstructed.class);
-
-        exception.expect(RuntimeException.class);
-        exception.expectMessage("When resolving dependencies of 'com.yahoo.container.di.componentgraph.core.FallbackToGuiceInjectorTest$ComponentThatCannotBeConstructed'");
-        complete();
+        try {
+            complete();
+            fail();
+        } catch (RuntimeException e) {
+            assertEquals("When resolving dependencies of 'com.yahoo.container.di.componentgraph.core.FallbackToGuiceInjectorTest$ComponentThatCannotBeConstructed'", e.getMessage());
+        }
     }
 
     public void register(Class<?> componentClass) {
@@ -123,9 +118,8 @@ public class FallbackToGuiceInjectorTest {
         return ComponentId.fromString(componentClass.getName());
     }
 
-    @SuppressWarnings("unchecked")
     private Node mockComponentNode(Class<?> componentClass) {
-        return new ComponentNode(toId(componentClass), toId(componentClass).toString(), (Class<Object>)componentClass, null);
+        return new ComponentNode(toId(componentClass), toId(componentClass).toString(), componentClass, null);
     }
 
     public <T> T getInstance(Class<T> componentClass) {

@@ -21,11 +21,9 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author gjoranv
@@ -47,7 +45,7 @@ public class ReuseComponentsTest {
         newGraph.reuseNodes(graph);
         T instance2 = getComponent(newGraph, classToLookup);
 
-        assertThat(instance2, sameInstance(instance));
+        assertSame(instance2, instance);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -59,7 +57,7 @@ public class ReuseComponentsTest {
         newGraph.reuseNodes(graph);
         SimpleComponent2 instance2 = getComponent(newGraph, SimpleComponent2.class);
 
-        assertThat(instance2.getId(), is(instance.getId()));
+        assertEquals(instance2.getId(),instance.getId());
         @SuppressWarnings("unused")
         SimpleComponent throwsException = getComponent(newGraph, SimpleComponent.class);
     }
@@ -79,7 +77,7 @@ public class ReuseComponentsTest {
         newGraph.reuseNodes(graph);
         ComponentTakingConfig instance2 = getComponent(newGraph, componentClass);
 
-        assertThat(instance2, not(sameInstance(instance)));
+        assertNotSame(instance2, instance);
     }
 
     @Test
@@ -111,7 +109,7 @@ public class ReuseComponentsTest {
         newGraph.reuseNodes(oldGraph);
         ComponentTakingComponent newInstance = getComponent(newGraph, ComponentTakingComponent.class);
 
-        assertThat(newInstance, not(sameInstance(oldInstance)));
+        assertNotSame(newInstance, oldInstance);
     }
 
     @Test
@@ -143,7 +141,7 @@ public class ReuseComponentsTest {
         newGraph.reuseNodes(oldGraph);
         ComponentRegistry<SimpleComponent> newSimpleComponentRegistry = getComponent(newGraph, ComponentTakingAllSimpleComponents.class).simpleComponents;
 
-        assertThat(newSimpleComponentRegistry, not(sameInstance(oldSimpleComponentRegistry)));
+        assertNotSame(newSimpleComponentRegistry, oldSimpleComponentRegistry);
     }
 
     @Test
@@ -177,8 +175,8 @@ public class ReuseComponentsTest {
         SimpleComponent newInjectedComponent = getComponent(newGraph, SimpleComponent.class);
         ComponentTakingConfigAndComponent newDependentComponent = getComponent(newGraph, ComponentTakingConfigAndComponent.class);
 
-        assertThat(newDependentComponent, not(sameInstance(oldDependentComponent)));
-        assertThat(newInjectedComponent, sameInstance(oldInjectedComponent));
+        assertNotSame(newDependentComponent, oldDependentComponent);
+        assertSame(newInjectedComponent, oldInjectedComponent);
     }
 
     @Test
@@ -197,7 +195,7 @@ public class ReuseComponentsTest {
         componentRetriever.apply(oldGraph);  // Ensure creation of GuiceNode
         ComponentGraph newGraph = makeGraph.get();
         newGraph.reuseNodes(oldGraph);
-        assertThat(componentRetriever.apply(oldGraph), sameInstance(componentRetriever.apply(newGraph)));
+        assertSame(componentRetriever.apply(oldGraph), componentRetriever.apply(newGraph));
     }
 
     @Test
@@ -218,7 +216,7 @@ public class ReuseComponentsTest {
 
         Node targetNode1 = createNodeWithInjectedNodeWithInjectedNode.apply("indirectlyInjected_1");
         Node targetNode2 = createNodeWithInjectedNodeWithInjectedNode.apply("indirectlyInjected_2");
-        assertThat(targetNode1, equalTo(targetNode2));
+        assertEquals(targetNode1, targetNode2);
     }
 
     private void completeNode(ComponentNode node) {

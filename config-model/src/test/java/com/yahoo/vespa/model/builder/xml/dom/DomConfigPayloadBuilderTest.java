@@ -23,8 +23,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.io.StringReader;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -37,7 +36,7 @@ public class DomConfigPayloadBuilderTest {
 
     @Test
     public void testFunctionTest_DefaultValues() throws FileNotFoundException {
-        Element configRoot = getDocument(new FileReader(new File("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml")));
+        Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml"));
         ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         String expected = ""
                 + "{"
@@ -65,7 +64,7 @@ public class DomConfigPayloadBuilderTest {
         try {
             ByteArrayOutputStream a = new ByteArrayOutputStream();
             new JsonFormat(true).encode(a, payload.getSlime());
-            assertThat(a.toString(), is(expected));
+            assertEquals(expected, a.toString());
         } catch (Exception e) {
             fail("Exception thrown when encoding slime: " + e.getMessage());
         }
@@ -74,7 +73,7 @@ public class DomConfigPayloadBuilderTest {
     // Multi line strings are not tested in 'DefaultValues', so here it is.
     @Test
     public void verifyThatWhitespaceIsPreservedForStrings() throws Exception {
-        Element configRoot = getDocument(new FileReader(new File("src/test/cfg/admin/userconfigs/whitespace-test.xml")));
+        Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/whitespace-test.xml"));
         ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"stringVal\":\" This is a string\\n  that contains different kinds of whitespace \"}", config);
     }
@@ -164,8 +163,7 @@ public class DomConfigPayloadBuilderTest {
             new DomConfigPayloadBuilder(null).build(configRoot);
             fail("Expected exception for wrong tag name.");
         } catch (ConfigurationRuntimeException e) {
-            assertThat(e.getMessage(),
-                    is("The root element must be 'config', but was 'configs'."));
+            assertEquals("The root element must be 'config', but was 'configs'.", e.getMessage());
         }
     }
 
@@ -177,8 +175,7 @@ public class DomConfigPayloadBuilderTest {
             new DomConfigPayloadBuilder(null).build(configRoot);
             fail("Expected exception for mismatch between def-name and xml name attribute.");
         } catch (ConfigurationRuntimeException e) {
-            assertThat(e.getMessage(),
-                    is("The 'config' element must have a 'name' attribute that matches the name of the config definition."));
+            assertEquals("The 'config' element must have a 'name' attribute that matches the name of the config definition.", e.getMessage());
         }
     }
 
@@ -188,8 +185,8 @@ public class DomConfigPayloadBuilderTest {
                 "<int_val>1</int_val> +" +
                 "</config>"));
         ConfigDefinitionKey key = DomConfigPayloadBuilder.parseConfigName(configRoot);
-        assertThat(key.getName(), is("function-test"));
-        assertThat(key.getNamespace(), is("test"));
+        assertEquals("function-test", key.getName());
+        assertEquals("test", key.getNamespace());
     }
 
     @Test(expected = ConfigurationRuntimeException.class)
@@ -273,7 +270,7 @@ public class DomConfigPayloadBuilderTest {
                 new FileReader(new File("src/test/resources/configdefinitions/test.simpletypes.def")));
         ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
         ConfigPayloadBuilder builder =  new DomConfigPayloadBuilder(def).build(configRoot);
-        //assertThat(builder.warnings().size(), is(1));
+        //assertEquals(1, builder.warnings().size());
     }
 
     private Element getDocument(Reader xmlReader) {

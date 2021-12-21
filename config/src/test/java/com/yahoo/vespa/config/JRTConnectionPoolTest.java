@@ -11,12 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -100,7 +97,7 @@ public class JRTConnectionPoolTest {
 
         // Update to the same set, should be equal
         sourcePool.updateSources(twoSources);
-        assertThat(sourcesBefore, is(sourcePool.getSourceSet()));
+        assertEquals(sourcePool.getSourceSet(), sourcesBefore);
 
         // Update to new set
         List<String> newSources = new ArrayList<>();
@@ -109,8 +106,8 @@ public class JRTConnectionPoolTest {
         sourcePool.updateSources(newSources);
         ConfigSourceSet newSourceSet = sourcePool.getSourceSet();
         assertNotNull(newSourceSet);
-        assertThat(newSourceSet.getSources().size(), is(2));
-        assertThat(newSourceSet, is(not(sourcesBefore)));
+        assertEquals(2, newSourceSet.getSources().size());
+        assertNotEquals(sourcesBefore, newSourceSet);
         assertTrue(newSourceSet.getSources().contains("host2"));
         assertTrue(newSourceSet.getSources().contains("host3"));
 
@@ -120,8 +117,8 @@ public class JRTConnectionPoolTest {
         sourcePool.updateSources(newSources2);
         ConfigSourceSet newSourceSet2 = sourcePool.getSourceSet();
         assertNotNull(newSourceSet2);
-        assertThat(newSourceSet2.getSources().size(), is(1));
-        assertThat(newSourceSet2, is(not(newSourceSet)));
+        assertEquals(1, newSourceSet2.getSources().size());
+        assertNotEquals(newSourceSet, newSourceSet2);
         assertTrue(newSourceSet2.getSources().contains("host4"));
 
         sourcePool.close();

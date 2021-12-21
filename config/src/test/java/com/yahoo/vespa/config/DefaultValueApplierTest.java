@@ -10,8 +10,7 @@ import org.junit.Test;
 
 import java.io.StringReader;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -43,9 +42,9 @@ public class DefaultValueApplierTest {
     public void require_that_simple_defaults_are_applied() {
         Slime slime = apply("strdef string default=\"foo\"");
         assertTrue(slime.get().field("str").valid());
-        assertThat(slime.get().field("str").asString(), is("myvalue"));
+        assertEquals("myvalue", slime.get().field("str").asString());
         assertTrue(slime.get().field("strdef").valid());
-        assertThat(slime.get().field("strdef").asString(), is("foo"));
+        assertEquals("foo", slime.get().field("strdef").asString());
 
     }
 
@@ -54,7 +53,7 @@ public class DefaultValueApplierTest {
         Slime slime = apply("nested.str string default=\"bar\"");
         assertTrue(slime.get().field("nested").valid());
         assertTrue(slime.get().field("nested").field("str").valid());
-        assertThat(slime.get().field("nested").field("str").asString(), is("bar"));
+        assertEquals("bar", slime.get().field("nested").field("str").asString());
     }
 
     @Test
@@ -65,11 +64,11 @@ public class DefaultValueApplierTest {
         Slime slime = apply(payload, "nestedarr[].foo string", "nestedarr[].bar string default=\"bim\"");
 
         assertTrue(slime.get().field("nestedarr").valid());
-        assertThat(slime.get().field("nestedarr").entries(), is(1));
+        assertEquals(1, slime.get().field("nestedarr").entries());
         assertTrue(slime.get().field("nestedarr").entry(0).field("foo").valid());
-        assertThat(slime.get().field("nestedarr").entry(0).field("foo").asString(), is("myfoo"));
+        assertEquals("myfoo", slime.get().field("nestedarr").entry(0).field("foo").asString());
         assertTrue(slime.get().field("nestedarr").entry(0).field("bar").valid());
-        assertThat(slime.get().field("nestedarr").entry(0).field("bar").asString(), is("bim"));
+        assertEquals("bim", slime.get().field("nestedarr").entry(0).field("bar").asString());
     }
 
     @Test
@@ -79,8 +78,8 @@ public class DefaultValueApplierTest {
         Slime slime = apply(payload, "nestedarr[].foo string", "nestedarr[].bar string default=\"bim\"");
 
         assertTrue(slime.get().field("nestedarr").valid());
-        assertThat(slime.get().field("nestedarr").entries(), is(0));
-        assertThat(slime.get().field("nestedarr").type(), is(Type.ARRAY));
+        assertEquals(0, slime.get().field("nestedarr").entries());
+        assertEquals(Type.ARRAY, slime.get().field("nestedarr").type());
     }
 
     @Test
@@ -91,10 +90,10 @@ public class DefaultValueApplierTest {
         Slime slime = apply(payload, "nestedmap{}.foo string", "nestedmap{}.bar string default=\"bim\"");
 
         assertTrue(slime.get().field("nestedmap").valid());
-        assertThat(slime.get().field("nestedmap").fields(), is(1));
+        assertEquals(1, slime.get().field("nestedmap").fields());
         assertTrue(slime.get().field("nestedmap").field("mykey").field("foo").valid());
-        assertThat(slime.get().field("nestedmap").field("mykey").field("foo").asString(), is("myfoo"));
+        assertEquals("myfoo", slime.get().field("nestedmap").field("mykey").field("foo").asString());
         assertTrue(slime.get().field("nestedmap").field("mykey").field("bar").valid());
-        assertThat(slime.get().field("nestedmap").field("mykey").field("bar").asString(), is("bim"));
+        assertEquals("bim", slime.get().field("nestedmap").field("mykey").field("bar").asString());
     }
 }

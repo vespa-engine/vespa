@@ -11,9 +11,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -34,12 +33,12 @@ public class JsonSecurityRequestFilterBaseTest {
         filter.filter(request, responseHandler);
 
         Response response = responseHandler.getResponse();
-        assertThat(response, notNullValue());
-        assertThat(response.getStatus(), equalTo(statusCode));
+        assertNotNull(response);
+        assertEquals(statusCode, response.getStatus());
 
         JsonNode jsonNode = mapper.readTree(responseHandler.readAll());
-        assertThat(jsonNode.get("message").asText(), equalTo(message));
-        assertThat(jsonNode.get("code").asInt(), equalTo(statusCode));
+        assertEquals(message, jsonNode.get("message").asText());
+        assertEquals(statusCode, jsonNode.get("code").asInt());
     }
 
     private static class SimpleSecurityRequestFilter extends JsonSecurityRequestFilterBase {

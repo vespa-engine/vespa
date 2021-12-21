@@ -8,10 +8,8 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests storage model
@@ -50,7 +48,7 @@ public class StorageModelTestCase {
         MetricsmanagerConfig.Builder builder = new MetricsmanagerConfig.Builder();
         contentCluster.getConfig(builder);
         MetricsmanagerConfig config = new MetricsmanagerConfig(builder);
-        assertThat(config.snapshot().periods(0), is(60));
+        assertEquals(60, config.snapshot().periods(0));
     }
 
 }

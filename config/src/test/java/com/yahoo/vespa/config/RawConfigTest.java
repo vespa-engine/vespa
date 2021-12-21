@@ -16,11 +16,11 @@ import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static com.yahoo.vespa.config.PayloadChecksum.Type.XXHASH64;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author hmusum

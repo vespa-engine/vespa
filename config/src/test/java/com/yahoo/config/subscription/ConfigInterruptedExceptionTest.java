@@ -3,8 +3,7 @@ package com.yahoo.config.subscription;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -14,6 +13,6 @@ public class ConfigInterruptedExceptionTest {
     @Test
     public void require_that_throwable_is_preserved() {
         ConfigInterruptedException e = new ConfigInterruptedException(new RuntimeException("foo"));
-        assertThat(e.getCause().getMessage(), is("foo"));
+        assertEquals("foo", e.getCause().getMessage());
     }
 }

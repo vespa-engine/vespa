@@ -4,8 +4,7 @@ package com.yahoo.config.subscription;
 import com.yahoo.myproject.config.NamespaceConfig;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -15,6 +14,6 @@ public class NamespaceTest {
     @Test
     public void verifyConfigClassWithExplicitNamespace() {
         NamespaceConfig config = new ConfigGetter<>(NamespaceConfig.class).getConfig("raw: a 0\n");
-        assertThat(config.a(), is(0));
+        assertEquals(0, config.a());
     }
 }

@@ -3,10 +3,8 @@ package com.yahoo.tensor;
 
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -117,7 +115,7 @@ public class TensorTypeTestCase {
             TensorType.fromSpec(typeSpec);
             fail("Expected exception to be thrown with message: '" + messageSubstring + "'");
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), containsString(messageSubstring));
+            assertTrue(e.getMessage().contains(messageSubstring));
         }
     }
 

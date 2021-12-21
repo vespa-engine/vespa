@@ -3,7 +3,6 @@ package com.yahoo.collections;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 public class HashletTestCase {
@@ -12,14 +11,14 @@ public class HashletTestCase {
     public void testCopyEmptyHashlet() {
         Hashlet<String, Integer> hash = new Hashlet<>();
         Hashlet<String, Integer> hash2 = new Hashlet<>(hash);
-        assertThat(hash.size(), is(0));
-        assertThat(hash2.size(), is(0));
+        assertEquals(0, hash.size());
+        assertEquals(0, hash2.size());
         hash.put("foo", 5);
         hash2.put("bar", 7);
-        assertThat(hash.get("foo"), is(5));
-        assertThat(hash.get("bar"), nullValue());
-        assertThat(hash2.get("foo"), nullValue());
-        assertThat(hash2.get("bar"), is(7));
+        assertEquals(5, hash.get("foo").intValue());
+        assertNull(hash.get("bar"));
+        assertNull(hash2.get("foo"));
+        assertEquals(7, hash2.get("bar").intValue());
     }
 
     private void verifyEquals(Object a, Object b) {
@@ -112,17 +111,17 @@ public class HashletTestCase {
         hash.put("foo", 5);
         hash.put("bar", 7);
         Hashlet<String, Integer> hash2 = new Hashlet<>(hash);
-        assertThat(hash2.size(), is(2));
-        assertThat(hash2.get("foo"), is(5));
-        assertThat(hash2.get("bar"), is(7));
-        assertThat(hash2.key(0), is("foo"));
-        assertThat(hash2.key(1), is("bar"));
-        assertThat(hash2.value(0), is(5));
-        assertThat(hash2.value(1), is(7));
-        assertThat(hash2.key(0), sameInstance(hash.key(0)));
-        assertThat(hash2.key(1), sameInstance(hash.key(1)));
-        assertThat(hash2.value(0), sameInstance(hash.value(0)));
-        assertThat(hash2.value(1), sameInstance(hash.value(1)));
+        assertEquals(2, hash2.size());
+        assertEquals(5, hash2.get("foo").intValue());
+        assertEquals(7, hash2.get("bar").intValue());
+        assertEquals("foo", hash2.key(0));
+        assertEquals("bar", hash2.key(1));
+        assertEquals(5, hash2.value(0).intValue());
+        assertEquals(7, hash2.value(1).intValue());
+        assertSame(hash2.key(0), hash.key(0));
+        assertSame(hash2.key(1), hash.key(1));
+        assertSame(hash2.value(0), hash.value(0));
+        assertSame(hash2.value(1), hash.value(1));
     }
 
     @Test
@@ -130,21 +129,21 @@ public class HashletTestCase {
         Hashlet<String, Integer> hash = new Hashlet<>();
         hash.put("foo", 5);
         hash.put("bar", 7);
-        assertThat(hash.size(), is(2));
-        assertThat(hash.get("foo"), is(5));
-        assertThat(hash.get("bar"), is(7));
-        assertThat(hash.key(0), is("foo"));
-        assertThat(hash.key(1), is("bar"));
-        assertThat(hash.value(0), is(5));
-        assertThat(hash.value(1), is(7));
+        assertEquals(2, hash.size());
+        assertEquals(5, hash.get("foo").intValue());
+        assertEquals(7, hash.get("bar").intValue());
+        assertEquals("foo", hash.key(0));
+        assertEquals("bar", hash.key(1));
+        assertEquals(5, hash.value(0).intValue());
+        assertEquals(7, hash.value(1).intValue());
         hash.put("foo", null);
-        assertThat(hash.size(), is(2));
-        assertThat(hash.get("foo"), nullValue());
-        assertThat(hash.get("bar"), is(7));
-        assertThat(hash.key(0), is("foo"));
-        assertThat(hash.key(1), is("bar"));
-        assertThat(hash.value(0), nullValue());
-        assertThat(hash.value(1), is(7));
+        assertEquals(2, hash.size());
+        assertNull(hash.get("foo"));
+        assertEquals(7, hash.get("bar").intValue());
+        assertEquals("foo", hash.key(0));
+        assertEquals("bar", hash.key(1));
+        assertNull(hash.value(0));
+        assertEquals(7, hash.value(1).intValue());
     }
 
     @Test
@@ -155,11 +154,11 @@ public class HashletTestCase {
             String str = ("" + i + "_str_" + i);
             hash.put(str, i);
         }
-        assertThat(hash.size(), is(n));
+        assertEquals(n, hash.size());
         for (int i = 0; i < n; i++) {
             String str = ("" + i + "_str_" + i);
-            assertThat(hash.key(i), is(str));
-            assertThat(hash.value(i), is(i));
+            assertEquals(str, hash.key(i));
+            assertEquals(i, hash.value(i).intValue());
         }
     }
 
@@ -169,17 +168,17 @@ public class HashletTestCase {
         Hashlet<String, Integer> hash = new Hashlet<>();
         for (int i = 0; i < n; i++) {
             String str = ("" + i + "_str_" + i);
-            assertThat(hash.get(str), nullValue());
+            assertNull(hash.get(str));
             switch (i % 2) {
-            case 1: assertThat(hash.put(str, i), nullValue());
+            case 1: assertNull(hash.put(str, i));
             }
         }
-        assertThat(hash.size(), is(n / 2));
+        assertEquals(n / 2, hash.size());
         for (int i = 0; i < n; i++) {
             String str = ("" + i + "_str_" + i);
             switch (i % 2) {
-            case 0: assertThat(hash.get(str), nullValue()); break;
-            case 1: assertThat(hash.get(str), is(i)); break;
+            case 0: assertNull(hash.get(str)); break;
+            case 1: assertEquals(i, hash.get(str).intValue()); break;
             }
         }
     }

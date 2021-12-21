@@ -6,24 +6,20 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.ReferenceDataType;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author vekterli
  * @since 6.65
  */
 public class ReferenceFieldValueTestCase {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     private static DocumentType createDocumentType(String name) {
         DocumentType type = new DocumentType(name);
@@ -126,10 +122,13 @@ public class ReferenceFieldValueTestCase {
     public void assigning_reference_field_with_different_type_to_existing_reference_throws_exception() {
         ReferenceFieldValue existing = new ReferenceFieldValue(referenceTypeFoo());
         ReferenceFieldValue newValue = new ReferenceFieldValue(referenceTypeBar());
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("Can't assign reference of type Reference<bar> " +
-                "to reference of type Reference<foo>");
-        existing.assign(newValue);
+        try {
+            existing.assign(newValue);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Can't assign reference of type Reference<bar> to reference of type Reference<foo>",
+                    e.getMessage());
+        }
     }
 
     @Test

@@ -6,8 +6,9 @@ import org.junit.After;
 
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="gv@yahoo-inc.com">G. Voldengen</a>
@@ -54,7 +55,7 @@ public class ConfigSourceSetTest {
         // TODO: Unable to set environment, so only able to test property usage for now
         System.setProperty("configsources", "foo:123,bar:345,tcp/baz:333,quux");
         ConfigSourceSet set = ConfigSourceSet.createDefault();
-        assertThat(set.getSources().size(), is(4));
+        assertEquals(4, set.getSources().size());
         assertTrue(set.getSources().contains("tcp/foo:123"));
         assertTrue(set.getSources().contains("tcp/bar:345"));
         assertTrue(set.getSources().contains("tcp/baz:333"));

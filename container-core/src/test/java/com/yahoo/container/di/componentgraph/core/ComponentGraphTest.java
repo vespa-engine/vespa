@@ -30,16 +30,11 @@ import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
 import static com.yahoo.container.di.componentgraph.core.ComponentGraph.isBindingAnnotation;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -80,7 +75,7 @@ public class ComponentGraphTest {
 
         ComponentTakingConfig instance = componentGraph.getInstance(ComponentTakingConfig.class);
         assertNotNull(instance);
-        assertThat(instance.config.stringVal(), is("test-value"));
+        assertEquals("test-value", instance.config.stringVal());
     }
 
     @Test
@@ -154,7 +149,7 @@ public class ComponentGraphTest {
         componentGraph.complete();
 
         ComponentTakingAllSimpleComponents instance = componentGraph.getInstance(ComponentTakingAllSimpleComponents.class);
-        assertThat(instance.simpleComponents.allComponents().size(), is(3));
+        assertEquals(3, instance.simpleComponents.allComponents().size());
     }
 
     @Test
@@ -164,7 +159,7 @@ public class ComponentGraphTest {
         componentGraph.complete();
 
         ComponentTakingAllSimpleComponents instance = componentGraph.getInstance(ComponentTakingAllSimpleComponents.class);
-        assertThat(instance.simpleComponents.allComponents().size(), is(0));
+        assertTrue(instance.simpleComponents.allComponents().isEmpty());
     }
 
     @Test
@@ -177,7 +172,7 @@ public class ComponentGraphTest {
 
         ComponentTakingAllSimpleComponentsUpperBound instance = componentGraph
                 .getInstance(ComponentTakingAllSimpleComponentsUpperBound.class);
-        assertThat(instance.simpleComponents.allComponents().size(), is(2));
+        assertEquals(2, instance.simpleComponents.allComponents().size());
     }
 
     @Test(expected = RuntimeException.class)
@@ -202,7 +197,7 @@ public class ComponentGraphTest {
 
         SimpleComponent instance1 = componentGraph.getInstance(SimpleComponent.class);
         SimpleComponent instance2 = componentGraph.getInstance(SimpleComponent.class);
-        assertThat(instance1, sameInstance(instance2));
+        assertSame(instance1, instance2);
     }
 
     @Test
@@ -218,7 +213,7 @@ public class ComponentGraphTest {
 
         ComponentTakingComponent instance = componentGraph.getInstance(ComponentTakingComponent.class);
         ComponentTakingConfig injected = (ComponentTakingConfig) instance.injectedComponent;
-        assertThat(injected.config.stringVal(), is("test-value"));
+        assertEquals("test-value", injected.config.stringVal());
     }
 
     @Test(expected = RuntimeException.class)
@@ -248,11 +243,11 @@ public class ComponentGraphTest {
         componentGraph.complete();
 
         Set<ConfigKey<? extends ConfigInstance>> configKeys = componentGraph.configKeys();
-        assertThat(configKeys.size(), is(2));
+        assertEquals(2, configKeys.size());
 
         configKeys.forEach(key -> {
-            assertThat(key.getConfigClass(), equalTo(TestConfig.class));
-            assertThat(key.getConfigId(), containsString("component"));
+            assertEquals(key.getConfigClass(), TestConfig.class);
+            assertTrue(key.getConfigId().contains("component"));
         });
     }
 
@@ -362,8 +357,8 @@ public class ComponentGraphTest {
             componentGraph.complete();
             fail("Cycle exception expected.");
         } catch (Throwable e) {
-            assertThat(e.getMessage(), containsString("cycle"));
-            assertThat(e.getMessage(), containsString("ComponentCausingCycle"));
+            assertTrue(e.getMessage().contains("cycle"));
+            assertTrue(e.getMessage().contains("ComponentCausingCycle"));
         }
     }
 
@@ -411,8 +406,8 @@ public class ComponentGraphTest {
         Executor executorA = graph.getSecond().getFirst();
         Executor executorB = graph.getSecond().getSecond();
 
-        assertThat(graphSize, is(4));
-        assertThat(executorA, not(sameInstance(executorB)));
+        assertEquals(4, graphSize);
+        assertNotSame(executorA, executorB);
     }
 
     @Test
@@ -423,8 +418,8 @@ public class ComponentGraphTest {
         Executor executorA = graph.getSecond().getFirst();
         Executor executorB = graph.getSecond().getSecond();
 
-        assertThat(graphSize, is(3));
-        assertThat(executorA, sameInstance(executorB));
+        assertEquals(3, graphSize);
+        assertSame(executorA, executorB);
     }
 
     private Pair<Integer, Pair<Executor, Executor>> buildGraphWithChildInjector(Supplier<Executor> executorProvider) {
@@ -459,7 +454,7 @@ public class ComponentGraphTest {
         newGraph.reuseNodes(oldGraph);
 
         Executor newExecutor = newGraph.getInstance(Executor.class);
-        assertThat(executor, sameInstance(newExecutor));
+        assertSame(executor, newExecutor);
     }
 
     private ComponentGraph createReusingGraph() {
@@ -478,7 +473,7 @@ public class ComponentGraphTest {
         componentGraph.add(mockComponentNodeWithId(ComponentTakingComponentId.class, componentId));
         componentGraph.complete();
 
-        assertThat(componentGraph.getInstance(ComponentTakingComponentId.class).componentId, is(ComponentId.fromString(componentId)));
+        assertEquals(ComponentId.fromString(componentId), componentGraph.getInstance(ComponentTakingComponentId.class).componentId);
     }
 
 
@@ -512,7 +507,7 @@ public class ComponentGraphTest {
         private final TestConfig config;
 
         public ComponentTakingConfig(TestConfig config) {
-            assertThat(config, notNullValue());
+            assertNotNull(config);
             this.config = config;
         }
     }
@@ -521,7 +516,7 @@ public class ComponentGraphTest {
         private final SimpleComponent injectedComponent;
 
         public ComponentTakingComponent(SimpleComponent injectedComponent) {
-            assertThat(injectedComponent, notNullValue());
+            assertNotNull(injectedComponent);
             this.injectedComponent = injectedComponent;
         }
     }
@@ -530,7 +525,7 @@ public class ComponentGraphTest {
         private final ComponentTakingComponent injectedComponent;
 
         public ComponentTakingComponentTakingComponent(ComponentTakingComponent injectedComponent) {
-            assertThat(injectedComponent, notNullValue());
+            assertNotNull(injectedComponent);
             this.injectedComponent = injectedComponent;
         }
     }
@@ -541,8 +536,8 @@ public class ComponentGraphTest {
         private final SimpleComponent simpleComponent;
 
         public ComponentTakingConfigAndComponent(TestConfig config, SimpleComponent injectedComponent) {
-            assertThat(config, notNullValue());
-            assertThat(injectedComponent, notNullValue());
+            assertNotNull(config);
+            assertNotNull(injectedComponent);
             this.config = config;
             this.simpleComponent = injectedComponent;
         }
@@ -552,7 +547,7 @@ public class ComponentGraphTest {
         public final ComponentRegistry<SimpleComponent> simpleComponents;
 
         public ComponentTakingAllSimpleComponents(ComponentRegistry<SimpleComponent> simpleComponents) {
-            assertThat(simpleComponents, notNullValue());
+            assertNotNull(simpleComponents);
             this.simpleComponents = simpleComponents;
         }
     }
@@ -561,20 +556,20 @@ public class ComponentGraphTest {
         private final ComponentRegistry<? extends SimpleComponent> simpleComponents;
 
         public ComponentTakingAllSimpleComponentsUpperBound(ComponentRegistry<? extends SimpleComponent> simpleComponents) {
-            assertThat(simpleComponents, notNullValue());
+            assertNotNull(simpleComponents);
             this.simpleComponents = simpleComponents;
         }
     }
 
     public static class ComponentTakingAllComponentsWithTypeVariable<COMPONENT extends AbstractComponent> extends AbstractComponent {
         public ComponentTakingAllComponentsWithTypeVariable(ComponentRegistry<COMPONENT> simpleComponents) {
-            assertThat(simpleComponents, notNullValue());
+            assertNotNull(simpleComponents);
         }
     }
 
     public static class ComponentTakingNamedComponent extends AbstractComponent {
         public ComponentTakingNamedComponent(@Named("named-test") SimpleComponent injectedComponent) {
-            assertThat(injectedComponent, notNullValue());
+            assertNotNull(injectedComponent);
         }
     }
 
@@ -633,7 +628,7 @@ public class ComponentGraphTest {
         private final Executor executor;
 
         public ComponentTakingExecutor(Executor executor) {
-            assertThat(executor, notNullValue());
+            assertNotNull(executor);
             this.executor = executor;
         }
     }

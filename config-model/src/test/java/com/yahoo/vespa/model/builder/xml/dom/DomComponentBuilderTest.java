@@ -8,9 +8,8 @@ import com.yahoo.vespa.model.container.component.Component;
 import org.junit.Test;
 
 import static com.yahoo.collections.CollectionUtil.first;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author gjoranv
@@ -23,9 +22,9 @@ public class DomComponentBuilderTest extends DomBuilderTest {
                 "<handler id='theId' class='theClass' bundle='theBundle' />"));
 
         BundleInstantiationSpecification instantiationSpecification = handler.model.bundleInstantiationSpec;
-        assertThat(instantiationSpecification.id.stringValue(), is("theId"));
-        assertThat(instantiationSpecification.classId.stringValue(), is("theClass"));
-        assertThat(instantiationSpecification.bundle.stringValue(), is("theBundle"));
+        assertEquals("theId", instantiationSpecification.id.stringValue());
+        assertEquals("theClass", instantiationSpecification.classId.stringValue());
+        assertEquals("theBundle", instantiationSpecification.bundle.stringValue());
     }
 
     @Test
@@ -36,10 +35,10 @@ public class DomComponentBuilderTest extends DomBuilderTest {
                 "  <component id='child' />",
                 "</component>"));
 
-        assertThat(parent.getGlobalComponentId(), is(ComponentId.fromString("parent")));
+        assertEquals(ComponentId.fromString("parent"), parent.getGlobalComponentId());
         Component<?, ?> child = first(parent.getChildren().values());
         assertNotNull(child);
 
-        assertThat(child.getGlobalComponentId(), is(ComponentId.fromString("child@parent")));
+        assertEquals(ComponentId.fromString("child@parent"), child.getGlobalComponentId());
     }
 }

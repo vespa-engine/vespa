@@ -25,11 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 
@@ -85,45 +82,45 @@ public class DocprocBuilderTest extends DomBuilderTest {
     // TODO: re-enable assertions when the appropriate attributes are handled by the builder
     @Test
     public void testDocprocCluster() {
-        assertThat(cluster.getName(), is("banan"));
-        assertThat(cluster.getDocproc().isCompressDocuments(), is(true));
-        //assertThat(cluster.getContainerDocproc().isPreferLocalNode(), is(true));
-        //assertThat(cluster.getContainerDocproc().getNumNodesPerClient(), is(2));
+        assertEquals("banan", cluster.getName());
+        assertTrue(cluster.getDocproc().isCompressDocuments());
+        //assertTrue(cluster.getContainerDocproc().isPreferLocalNode());
+        //assertEquals(2, cluster.getContainerDocproc().getNumNodesPerClient());
         List<ApplicationContainer> services = cluster.getContainers();
-        assertThat(services.size(), is(1));
+        assertEquals(1, services.size());
         ApplicationContainer service = services.get(0);
-        assertThat(service, notNullValue());
+        assertNotNull(service);
 
         Map<String, DocprocChain> chains = new HashMap<>();
         for (DocprocChain chain : cluster.getDocprocChains().allChains().allComponents()) {
             chains.put(chain.getId().stringValue(), chain);
         }
-        assertThat(chains.size(), is(1));
+        assertEquals(1, chains.size());
 
         DocprocChain chain = chains.get("chein");
-        assertThat(chain.getId().stringValue(), is("chein"));
-        assertThat(chain.getInnerComponents().size(), is(1));
+        assertEquals("chein", chain.getId().stringValue());
+        assertEquals(1, chain.getInnerComponents().size());
         DocumentProcessor processor = chain.getInnerComponents().iterator().next();
-        assertThat(processor.getComponentId().stringValue(), is("docproc2"));
+        assertEquals("docproc2", processor.getComponentId().stringValue());
     }
 
     @Test
     public void testDocumentManagerConfig() {
-        assertThat(documentmanagerConfig.enablecompression(), is(true));
+        assertTrue(documentmanagerConfig.enablecompression());
     }
 
     @Test
     public void testDocprocConfig() {
-        assertThat(docprocConfig.maxqueuetimems(), is(200000));
+        assertEquals(200000, docprocConfig.maxqueuetimems());
 
     }
 
     @Test
     public void testContainerMbusConfig() {
-        assertThat(containerMbusConfig.enabled(), is(true));
+        assertTrue(containerMbusConfig.enabled());
         assertTrue(containerMbusConfig.port() >= HostPorts.BASE_PORT);
-        assertThat(containerMbusConfig.maxpendingcount(), is(300));
-        assertThat(containerMbusConfig.maxpendingsize(), is(100));
+        assertEquals(300, containerMbusConfig.maxpendingcount());
+        assertEquals(100, containerMbusConfig.maxpendingsize());
     }
 
     @Test
@@ -135,37 +132,37 @@ public class DocprocBuilderTest extends DomBuilderTest {
         }
 
         ComponentsConfig.Components docprocHandler = components.get("com.yahoo.docproc.jdisc.DocumentProcessingHandler");
-        assertThat(docprocHandler.id(), is("com.yahoo.docproc.jdisc.DocumentProcessingHandler"));
-        assertThat(docprocHandler.configId(), is("banan/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler"));
-        assertThat(docprocHandler.classId(), is("com.yahoo.docproc.jdisc.DocumentProcessingHandler"));
-        assertThat(docprocHandler.bundle(), is("container-search-and-docproc"));
+        assertEquals("com.yahoo.docproc.jdisc.DocumentProcessingHandler", docprocHandler.id());
+        assertEquals("banan/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler", docprocHandler.configId());
+        assertEquals("com.yahoo.docproc.jdisc.DocumentProcessingHandler", docprocHandler.classId());
+        assertEquals("container-search-and-docproc", docprocHandler.bundle());
 
         ComponentsConfig.Components docproc1 = components.get("docproc1");
-        assertThat(docproc1.id(), is("docproc1"));
-        assertThat(docproc1.configId(), is("banan/docprocchains/component/docproc1"));
-        assertThat(docproc1.classId(), is("com.yahoo.Docproc1"));
-        assertThat(docproc1.bundle(), is("docproc1bundle"));
+        assertEquals("docproc1", docproc1.id());
+        assertEquals("banan/docprocchains/component/docproc1", docproc1.configId());
+        assertEquals("com.yahoo.Docproc1", docproc1.classId());
+        assertEquals("docproc1bundle", docproc1.bundle());
 
         ComponentsConfig.Components docproc2 = components.get("docproc2@chein");
-        assertThat(docproc2.id(), is("docproc2@chein"));
-        assertThat(docproc2.configId(), is("banan/docprocchains/chain/chein/component/docproc2"));
-        assertThat(docproc2.classId(), is("docproc2"));
-        assertThat(docproc2.bundle(), is("docproc2"));
+        assertEquals("docproc2@chein", docproc2.id());
+        assertEquals("banan/docprocchains/chain/chein/component/docproc2", docproc2.configId());
+        assertEquals("docproc2", docproc2.classId());
+        assertEquals("docproc2", docproc2.bundle());
 /*
         ComponentsConfig.Components health = components.get("com.yahoo.container.jdisc.state.StateHandler");
-        assertThat(health.id(), is("com.yahoo.container.jdisc.state.StateHandler"));
-        assertThat(health.classId(), is("com.yahoo.container.jdisc.state.StateHandler"));
-        assertThat(health.bundle(), is("com.yahoo.container.jdisc.state.StateHandler"));
+        assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.id()));
+        assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.classId());
+        assertEquals("com.yahoo.container.jdisc.state.StateHandler", health.bundle()));
 */
         ComponentsConfig.Components sourceClient = components.get("source@MbusClient");
         assertNotNull(sourceClient);
-        assertThat(sourceClient.classId(), is("com.yahoo.container.jdisc.messagebus.MbusClientProvider"));
-        assertThat(sourceClient.bundle(),  is("com.yahoo.container.jdisc.messagebus.MbusClientProvider"));
+        assertEquals("com.yahoo.container.jdisc.messagebus.MbusClientProvider", sourceClient.classId());
+        assertEquals("com.yahoo.container.jdisc.messagebus.MbusClientProvider", sourceClient.bundle());
 
         ComponentsConfig.Components intermediateClient = components.get("chain.chein@MbusClient");
         assertNotNull(intermediateClient);
-        assertThat(intermediateClient.classId(), is("com.yahoo.container.jdisc.messagebus.MbusClientProvider"));
-        assertThat(intermediateClient.bundle(),  is("com.yahoo.container.jdisc.messagebus.MbusClientProvider"));
+        assertEquals("com.yahoo.container.jdisc.messagebus.MbusClientProvider", intermediateClient.classId());
+        assertEquals("com.yahoo.container.jdisc.messagebus.MbusClientProvider", intermediateClient.bundle());
     }
 
     @Test
@@ -175,32 +172,32 @@ public class DocprocBuilderTest extends DomBuilderTest {
             components.put(component.id(), component);
         }
 
-        assertThat(components.size(), is(2));
+        assertEquals(2, components.size());
 
         ChainsConfig.Components docproc1 = components.get("docproc1");
-        assertThat(docproc1.id(), is("docproc1"));
-        assertThat(docproc1.dependencies().provides().size(), is(0));
-        assertThat(docproc1.dependencies().before().size(), is(0));
-        assertThat(docproc1.dependencies().after().size(), is(0));
+        assertEquals("docproc1", docproc1.id());
+        assertTrue(docproc1.dependencies().provides().isEmpty());
+        assertTrue(docproc1.dependencies().before().isEmpty());
+        assertTrue(docproc1.dependencies().after().isEmpty());
 
         ChainsConfig.Components docproc2 = components.get("docproc2@chein");
-        assertThat(docproc2.id(), is("docproc2@chein"));
-        assertThat(docproc2.dependencies().provides().size(), is(0));
-        assertThat(docproc2.dependencies().before().size(), is(0));
-        assertThat(docproc2.dependencies().after().size(), is(0));
+        assertEquals("docproc2@chein", docproc2.id());
+        assertTrue(docproc2.dependencies().provides().isEmpty());
+        assertTrue(docproc2.dependencies().before().isEmpty());
+        assertTrue(docproc2.dependencies().after().isEmpty());
 
         Map<String, ChainsConfig.Chains> chainsMap = new HashMap<>();
         for (ChainsConfig.Chains chain : chainsConfig.chains()) {
             chainsMap.put(chain.id(), chain);
         }
 
-        assertThat(chainsMap.size(), is(1));
-        assertThat(chainsMap.get("chein").id(), is("chein"));
-        assertThat(chainsMap.get("chein").components().size(), is(1));
-        assertThat(chainsMap.get("chein").components(0), is("docproc2@chein"));
-        assertThat(chainsMap.get("chein").inherits().size(), is(0));
-        assertThat(chainsMap.get("chein").excludes().size(), is(0));
-        assertThat(chainsMap.get("chein").phases().size(), is(0));
+        assertEquals(1, chainsMap.size());
+        assertEquals("chein", chainsMap.get("chein").id());
+        assertEquals(1, chainsMap.get("chein").components().size());
+        assertEquals("docproc2@chein", chainsMap.get("chein").components(0));
+        assertTrue(chainsMap.get("chein").inherits().isEmpty());
+        assertTrue(chainsMap.get("chein").excludes().isEmpty());
+        assertTrue(chainsMap.get("chein").phases().isEmpty());
     }
 
     @Test

@@ -6,9 +6,7 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
@@ -26,6 +24,7 @@ import static com.yahoo.vespa.model.admin.monitoring.VespaMetricSet.vespaMetricS
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests for {@link MetricsProxyContainerCluster} related to metrics consumers.
@@ -34,15 +33,12 @@ import static org.junit.Assert.assertTrue;
  */
 public class MetricsConsumersTest {
 
-    private static int numPublicDefaultMetrics = defaultMetricSet.getMetrics().size();
-    private static int numDefaultVespaMetrics = defaultVespaMetricSet.getMetrics().size();
-    private static int numVespaMetrics = vespaMetricSet.getMetrics().size();
-    private static int numSystemMetrics = systemMetricSet.getMetrics().size();
-    private static int numNetworkMetrics = networkMetricSet.getMetrics().size();
-    private static int numMetricsForVespaConsumer = numVespaMetrics + numSystemMetrics + numNetworkMetrics;
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
+    private static final int numPublicDefaultMetrics = defaultMetricSet.getMetrics().size();
+    private static final int numDefaultVespaMetrics = defaultVespaMetricSet.getMetrics().size();
+    private static final int numVespaMetrics = vespaMetricSet.getMetrics().size();
+    private static final int numSystemMetrics = systemMetricSet.getMetrics().size();
+    private static final int numNetworkMetrics = networkMetricSet.getMetrics().size();
+    private static final int numMetricsForVespaConsumer = numVespaMetrics + numSystemMetrics + numNetworkMetrics;
 
     @Test
     public void default_public_consumer_is_set_up_for_self_hosted() {
@@ -103,9 +99,12 @@ public class MetricsConsumersTest {
                                       "    </admin>",
                                       "</services>"
         );
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("'" + consumerId + "' is not allowed as metrics consumer id");
-        consumersConfigFromXml(services, self_hosted);
+        try {
+            consumersConfigFromXml(services, self_hosted);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("'" + consumerId + "' is not allowed as metrics consumer id (case is ignored.)", e.getMessage());
+        }
     }
 
     @Test
@@ -147,9 +146,13 @@ public class MetricsConsumersTest {
                                       "    </admin>",
                                       "</services>"
         );
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("'a' is used as id for two metrics consumers");
-        consumersConfigFromXml(services, self_hosted);
+
+        try {
+            consumersConfigFromXml(services, self_hosted);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("'a' is used as id for two metrics consumers (case is ignored.)", e.getMessage());
+        }
     }
 
     @Test
@@ -166,9 +169,12 @@ public class MetricsConsumersTest {
                                       "    </admin>",
                                       "</services>"
         );
-        thrown.expect(IllegalArgumentException.class);
-        thrown.expectMessage("No such metric-set: non-existent");
-        consumersConfigFromXml(services, self_hosted);
+        try {
+            consumersConfigFromXml(services, self_hosted);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("No such metric-set: non-existent", e.getMessage());
+        }
     }
 
     @Test

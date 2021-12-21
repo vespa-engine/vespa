@@ -19,15 +19,15 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
  */
 public class ConfigFileFormatterTest {
 
-    private String expected_simpletypes = "stringval \"foo\"\n" +
+    private final String expected_simpletypes = "stringval \"foo\"\n" +
             "intval 324234\n"  +
             "longval 324\n"  +
             "doubleval 3.455\n" +
@@ -66,7 +66,7 @@ public class ConfigFileFormatterTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(), is(expected_simpletypes));
+        assertEquals(expected_simpletypes, baos.toString());
     }
 
     @Test
@@ -77,7 +77,7 @@ public class ConfigFileFormatterTest {
         InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(), is(""));
+        assertTrue(baos.toString().isEmpty());
     }
 
     // TODO: Reenable this when we can reenable typechecking.
@@ -121,7 +121,7 @@ public class ConfigFileFormatterTest {
         InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(), is("boolval false\n"));
+        assertEquals("boolval false\n", baos.toString());
     }
 
     // TODO: Remove this when we can reenable typechecking.
@@ -137,7 +137,8 @@ public class ConfigFileFormatterTest {
         InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(StandardCharsets.UTF_8), is("enumval null\nintval null\nlongval null\nboolval false\ndoubleval null\n"));
+        assertEquals("enumval null\nintval null\nlongval null\nboolval false\ndoubleval null\n",
+                baos.toString(StandardCharsets.UTF_8));
     }
 
     // TODO: Reenable this when we can reenable typechecking.
@@ -160,7 +161,7 @@ public class ConfigFileFormatterTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(StandardCharsets.UTF_8), is("stringval \"" + value + "\"\n"));
+        assertEquals("stringval \"" + value + "\"\n", baos.toString(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -189,7 +190,7 @@ public class ConfigFileFormatterTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InnerCNode def = new DefParser("arraytypes", new StringReader(StringUtilities.implode(ArraytypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(), is(
+        assertEquals(
                 "boolarr[0] true\n" +
                 "boolarr[1] false\n" +
                 "doublearr[0] 3.14\n" +
@@ -201,7 +202,8 @@ public class ConfigFileFormatterTest {
                 "longarr[0] 55\n" +
                 "longarr[1] 66\n" +
                 "stringarr[0] \"foo\"\n" +
-                "stringarr[1] \"bar\"\n"));
+                "stringarr[1] \"bar\"\n",
+                baos.toString());
     }
 
     @Test
@@ -221,7 +223,7 @@ public class ConfigFileFormatterTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InnerCNode def = new DefParser("maptypes", new StringReader(StringUtilities.implode(MaptypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(), is(
+        assertEquals(
                 "boolmap{\"foo\"} true\n" +
                 "boolmap{\"bar\"} false\n" +
                 "intmap{\"foo\"} 1234\n" +
@@ -229,7 +231,8 @@ public class ConfigFileFormatterTest {
                 "doublemap{\"foo\"} 3.14\n" +
                 "stringmap{\"foo\"} \"bar\"\n" +
                 "innermap{\"bar\"}.foo 1234\n" +
-                "nestedmap{\"baz\"}.inner{\"foo\"} 1234\n"));
+                "nestedmap{\"baz\"}.inner{\"foo\"} 1234\n",
+                baos.toString());
     }
 
     @Test
@@ -246,12 +249,12 @@ public class ConfigFileFormatterTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InnerCNode def = new DefParser("structtypes", new StringReader(StringUtilities.implode(StructtypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(), is(
+        assertEquals(
                 "simple.name \"myname\"\n" +
                 "simple.gender FEMALE\n" +
                 "simple.emails[0] \"foo@bar.com\"\n" +
-                "simple.emails[1] \"bar@baz.net\"\n"
-        ));
+                "simple.emails[1] \"bar@baz.net\"\n",
+                baos.toString());
     }
 
     @Test
@@ -286,8 +289,7 @@ public class ConfigFileFormatterTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         InnerCNode def = new DefParser("structtypes", new StringReader(StringUtilities.implode(StructtypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(), is(
-                        "nested.inner.name \"baz\"\n" +
+        assertEquals("nested.inner.name \"baz\"\n" +
                         "nested.inner.gender FEMALE\n" +
                         "nested.inner.emails[0] \"foo\"\n" +
                         "nested.inner.emails[1] \"bar\"\n" +
@@ -296,8 +298,8 @@ public class ConfigFileFormatterTest {
                         "nestedarr[0].inner.emails[0] \"foo@bar\"\n" +
                         "nestedarr[0].inner.emails[1] \"bar@foo\"\n" +
                         "complexarr[0].innerarr[0].name \"bar\"\n" +
-                        "complexarr[0].innerarr[0].gender MALE\n"
-        ));
+                        "complexarr[0].innerarr[0].gender MALE\n",
+                baos.toString());
     }
 
     @Test
@@ -308,7 +310,7 @@ public class ConfigFileFormatterTest {
         InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
-        assertThat(baos.toString(), is("stringval \"some\\\"quotes\\\\\\\"instring\"\n"));
+        assertEquals("stringval \"some\\\"quotes\\\\\\\"instring\"\n", baos.toString());
     }
 
     @Test
@@ -323,7 +325,7 @@ public class ConfigFileFormatterTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
         System.out.println(bytesToHexString(baos.toByteArray()));
-        assertThat(Utf8.toString(baos.toByteArray()), is("stringval \"" + input + "\"\n"));
+        assertEquals(Utf8.toString(baos.toByteArray()), "stringval \"" + input + "\"\n");
     }
 
     private static String bytesToHexString(byte[] bytes){

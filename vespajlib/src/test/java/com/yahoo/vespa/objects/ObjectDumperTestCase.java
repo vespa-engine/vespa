@@ -3,13 +3,9 @@ package com.yahoo.vespa.objects;
 
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author arnej27959
@@ -37,7 +33,7 @@ public class ObjectDumperTestCase {
 
         oneOD.visit("biggie", b);
 
-        assertThat(oneOD.toString(), equalTo(
+        assertEquals(
 "biggie: BigIdClass {\n"+
 " classId: 42\n"+
 " : <NULL>\n"+
@@ -69,11 +65,11 @@ public class ObjectDumperTestCase {
 "  [3]: 4\n"+
 "  [4]: 5\n"+
 " }\n"+
-"}\n"));
+"}\n", oneOD.toString());
 
         ObjectDumper defOD = new ObjectDumper();
         defOD.visit("", b);
-        assertThat(b.toString(), equalTo(b.toString()));
+        assertEquals(b.toString(), b.toString());
     }
 
     @Test
@@ -100,7 +96,7 @@ public class ObjectDumperTestCase {
         defOD.visit("s5", s5);
         oneOD.visit("s6", s5);
 
-        assertThat(defOD.toString(), is("s5: FooBarIdClass {\n"+
+        assertEquals("s5: FooBarIdClass {\n"+
                      "    classId: 17\n"+
                      "    foo: 'def-foo'\n"+
                      "    bar: 42\n"+
@@ -109,8 +105,8 @@ public class ObjectDumperTestCase {
                      "        [1]: 42\n"+
                      "        [2]: 666\n"+    
                      "    }\n"+
-                     "}\n"));
-        assertThat(oneOD.toString(), is("s6: FooBarIdClass {\n"+
+                     "}\n", defOD.toString());
+        assertEquals("s6: FooBarIdClass {\n"+
                      " classId: 17\n"+
                      " foo: 'def-foo'\n"+
                      " bar: 42\n"+
@@ -119,31 +115,29 @@ public class ObjectDumperTestCase {
                      "  [1]: 42\n"+
                      "  [2]: 666\n"+    
                      " }\n"+
-                     "}\n"));
+                     "}\n", oneOD.toString());
 
     }
 
     @Test
     public void testRegistry() {
-        assertThat(FooBarIdClass.classId, is(17));
+        assertEquals(17, FooBarIdClass.classId);
         int x = Identifiable.registerClass(17, FooBarIdClass.class);
-        assertThat(x, is(17));
-        boolean caught = false;
+        assertEquals(17, x);
         try {
-                x = Identifiable.registerClass(17, SomeIdClass.class);
+            x = Identifiable.registerClass(17, SomeIdClass.class);
+            fail();
         } catch (IllegalArgumentException e) {
-                caught = true;
-                assertThat(e.getMessage(), is(
+            assertEquals(e.getMessage(),
 "Can not register class 'class com.yahoo.vespa.objects.SomeIdClass' with id 17,"+
-" because it already maps to class 'class com.yahoo.vespa.objects.FooBarIdClass'."));
+" because it already maps to class 'class com.yahoo.vespa.objects.FooBarIdClass'.");
         }
-        assertThat(x, is(17));
-        assertThat(caught, is(true));
+        assertEquals(17, x);
 
         Identifiable s7 = Identifiable.createFromId(17);
         ObjectDumper defOD = new ObjectDumper();
         defOD.visit("s7", s7);
-        assertThat(defOD.toString(), is("s7: FooBarIdClass {\n"+
+        assertEquals("s7: FooBarIdClass {\n"+
                      "    classId: 17\n"+
                      "    foo: 'def-foo'\n"+
                      "    bar: 42\n"+
@@ -152,10 +146,9 @@ public class ObjectDumperTestCase {
                      "        [1]: 42\n"+
                      "        [2]: 666\n"+
                      "    }\n"+
-                     "}\n"));
+                     "}\n", defOD.toString());
 
-        Identifiable nsi = Identifiable.createFromId(717273);
-        assertThat(nsi, is((Identifiable)null));
+        assertNull(Identifiable.createFromId(717273));
     }
 
 }

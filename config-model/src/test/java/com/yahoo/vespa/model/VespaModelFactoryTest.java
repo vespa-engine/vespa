@@ -26,9 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -122,10 +121,10 @@ public class VespaModelFactoryTest {
         Model model = new VespaModelFactory(new NullConfigModelRegistry()).createModel(modelContext);
 
         List<HostInfo> allocatedHosts = new ArrayList<>(model.getHosts());
-        assertThat(allocatedHosts.size(), is(1));
+        assertEquals(1, allocatedHosts.size());
         HostInfo hostInfo = allocatedHosts.get(0);
 
-        assertThat(hostInfo.getHostname(), is(hostName));
+        assertEquals(hostName, hostInfo.getHostname());
         assertTrue("Routing service should run on host " + hostName,
                    hostInfo.getServices().stream()
                            .map(ServiceInfo::getConfigId)

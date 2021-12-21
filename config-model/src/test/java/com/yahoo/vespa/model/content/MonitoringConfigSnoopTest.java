@@ -6,8 +6,7 @@ import com.yahoo.config.model.test.TestRoot;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 
 /**
@@ -45,11 +44,11 @@ public class MonitoringConfigSnoopTest {
     }
 
     @Test
-    public void correct_config_is_snooped() throws Exception {
+    public void correct_config_is_snooped() {
         initRoot(60);
-        assertThat(getConfig().snapshot().periods().size(), is(2));
-        assertThat(getConfig().snapshot().periods(0), is(60));
-        assertThat(getConfig().snapshot().periods(1), is(300));
+        assertEquals(2, getConfig().snapshot().periods().size());
+        assertEquals(60, getConfig().snapshot().periods(0));
+        assertEquals(300, getConfig().snapshot().periods(1));
     }
 
     @Test
@@ -60,13 +59,13 @@ public class MonitoringConfigSnoopTest {
 
         TestDriver tester = new TestDriver();
         root = tester.buildModel(getAdminXmlIntervalNotSpecified + getContent());
-        assertThat(getConfig().snapshot().periods().size(), is(2));
-        assertThat(getConfig().snapshot().periods(0), is(60));
-        assertThat(getConfig().snapshot().periods(1), is(300));
+        assertEquals(2, getConfig().snapshot().periods().size());
+        assertEquals(60, getConfig().snapshot().periods(0));
+        assertEquals(300, getConfig().snapshot().periods(1));
     }
 
     @Test(expected = Exception.class)
-    public void invalid_model_1() throws Exception {
+    public void invalid_model_1() {
         initRoot(120);
     }
 }

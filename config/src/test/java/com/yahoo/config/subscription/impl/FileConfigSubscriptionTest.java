@@ -14,11 +14,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -45,11 +44,11 @@ public class FileConfigSubscriptionTest {
                 new ConfigKey<>(SimpletypesConfig.class, ""),
                 TEST_TYPES_FILE);
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.getConfigState().getConfig().intval(), is(23));
+        assertEquals(23, sub.getConfigState().getConfig().intval());
         Thread.sleep(1000);
         writeConfig("intval", "33");
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.getConfigState().getConfig().intval(), is(33));
+        assertEquals(33, sub.getConfigState().getConfig().intval());
     }
 
     @Test
@@ -59,12 +58,12 @@ public class FileConfigSubscriptionTest {
                 new ConfigKey<>(SimpletypesConfig.class, ""),
                 TEST_TYPES_FILE);
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.getConfigState().getConfig().intval(), is(23));
+        assertEquals(23, sub.getConfigState().getConfig().intval());
         writeConfig("intval", "33");
         sub.reload(1);
         assertTrue(sub.nextConfig(1000));
         ConfigSubscription.ConfigState<SimpletypesConfig> configState = sub.getConfigState();
-        assertThat(configState.getConfig().intval(), is(33));
+        assertEquals(33, configState.getConfig().intval());
         assertTrue(configState.isConfigChanged());
         assertTrue(configState.isGenerationChanged());
 
@@ -81,7 +80,7 @@ public class FileConfigSubscriptionTest {
         sub.reload(2);
         assertTrue(sub.nextConfig(1000));
         configState = sub.getConfigState();
-        assertThat(configState.getConfig().intval(), is(33));
+        assertEquals(33, configState.getConfig().intval());
         assertFalse(configState.isConfigChanged());
         assertTrue(configState.isGenerationChanged());
 
@@ -102,7 +101,7 @@ public class FileConfigSubscriptionTest {
                                                                              new DirSource(new File(cfgDir)),
                                                                              new TimingValues());
         assertTrue(sub.nextConfig(1000));
-        assertThat(sub.getConfigState().getConfig().configId(), is(cfgId));
+        assertEquals(cfgId, sub.getConfigState().getConfig().configId());
     }
 
     @Test(expected = IllegalArgumentException.class)
