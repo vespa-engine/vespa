@@ -32,6 +32,7 @@ import static org.junit.Assert.assertTrue;
 
 public class VespaFeederTestCase {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException exception = ExpectedException.none();
 

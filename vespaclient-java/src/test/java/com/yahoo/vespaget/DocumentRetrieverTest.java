@@ -62,6 +62,7 @@ public class DocumentRetrieverTest {
     private PrintStream oldOut;
     private PrintStream oldErr;
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 

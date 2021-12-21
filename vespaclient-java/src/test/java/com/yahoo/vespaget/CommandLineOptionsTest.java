@@ -36,6 +36,7 @@ public class CommandLineOptionsTest {
         }
     };
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
