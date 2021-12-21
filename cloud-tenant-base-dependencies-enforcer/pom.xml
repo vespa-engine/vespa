@@ -235,7 +235,7 @@
                                         <include>io.prometheus:simpleclient:0.6.0:jar:test</include>
                                         <include>io.prometheus:simpleclient_common:0.6.0:jar:test</include>
                                         <include>joda-time:joda-time:2.8.1:jar:test</include>
-                                        <include>junit:junit:4.13:jar:test</include>
+                                        <include>junit:junit:4.13.2:jar:test</include>
                                         <include>net.arnx:jsonic:1.2.11:jar:test</include>
                                         <include>net.java.dev.jna:jna:4.5.2:jar:test</include>
                                         <include>org.abego.treelayout:org.abego.treelayout.core:1.0.1:jar:test</include>
