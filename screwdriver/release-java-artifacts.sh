@@ -40,6 +40,14 @@ find . -name "pom.xml" -exec sed -i'' -e "s,<version>.*SNAPSHOT.*</version>,<ver
      -e "s,<test-framework.version>.*project.version.*</test-framework.version>,<test-framework.version>$VESPA_RELEASE</test-framework.version>," \
      {} \;
 
+# We disable javadoc for all modules not marked as public API
+for MODULE in $(comm -2 -3 \
+                <(find . -name "*.java" | awk -F/ '{print $2}' | sort -u)
+                <(find . -name "package-info.java" -exec grep -HnE "@(com.yahoo.api.annotations.)?PublicApi.*" {} \; | awk -F/ '{print $2}' | sort -u)); do
+    mkdir -p $MODULE/src/main/javadoc
+    echo "No javadoc available for module" > $MODULE/src/main/javadoc/README
+done
+
 ./bootstrap.sh
 
 COMMON_MAVEN_OPTS="--batch-mode --no-snapshot-updates --settings $(pwd)/screwdriver/settings-publish.xml --activate-profiles ossrh-deploy-vespa -DskipTests"
