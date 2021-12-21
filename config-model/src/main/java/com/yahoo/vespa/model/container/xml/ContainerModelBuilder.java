@@ -1132,6 +1132,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                 .sorted()
                                                 .collect(Collectors.toList());
 
+            if (invalidOptions.isEmpty()) return;
+
             String message = "Invalid JVM options in services.xml: " + String.join(",", invalidOptions);
             if (failDeploymentWithInvalidJvmOptions)
                 throw new IllegalArgumentException(message);
