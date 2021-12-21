@@ -15,9 +15,8 @@ import org.junit.Test;
 
 import java.nio.charset.CharacterCodingException;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Einar M R Rosenvinge
@@ -44,7 +43,7 @@ public class ContainerRequestTest {
 
         try (JDisc container = JDisc.fromServicesXml(getXML(EchoRequestHandler.class.getCanonicalName(), "http://*/echo"), Networking.disable)) {
             Response response = container.handleRequest(req);
-            assertThat(response.getBodyAsString(), equalTo(DATA));
+            assertEquals(DATA, response.getBodyAsString());
             req.toString();
             response.toString();
         }
@@ -57,7 +56,7 @@ public class ContainerRequestTest {
 
         try (JDisc container = JDisc.fromServicesXml(getXML(HeaderEchoRequestHandler.class.getCanonicalName(), "http://*/echo"), Networking.disable)) {
             Response response = container.handleRequest(req);
-            assertThat(response.getHeaders().contains("X-Foo", "Bar"), is(true));
+            assertTrue(response.getHeaders().contains("X-Foo", "Bar"));
             req.toString();
             response.toString();
         }

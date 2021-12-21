@@ -64,6 +64,7 @@ public class TenantRepositoryTest {
     private Curator curator;
     private ConfigserverConfig configserverConfig;
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 

@@ -22,13 +22,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -61,13 +60,13 @@ public class SuperModelRequestHandlerTest {
         long gen = counter.get();
         controller.reloadConfig(createApp(foo, 3L));
         assertNotNull(controller.getHandler());
-        assertThat(controller.getHandler().getGeneration(), is(gen + 1));
+        assertEquals(gen + 1, controller.getHandler().getGeneration());
         controller.reloadConfig(createApp(foo, 4L));
-        assertThat(controller.getHandler().getGeneration(), is(gen + 2));
+        assertEquals(gen + 2, controller.getHandler().getGeneration());
         // Test that a new app is used when there already exist an application with the same id
-        assertThat(controller.getHandler().getSuperModel().applicationModels().get(foo).getGeneration(), is(4L));
+        assertEquals(4, controller.getHandler().getSuperModel().applicationModels().get(foo).getGeneration());
         controller.reloadConfig(createApp(bar, 2L));
-        assertThat(controller.getHandler().getGeneration(), is(gen + 3));
+        assertEquals(gen + 3, controller.getHandler().getGeneration());
     }
 
     @Test
@@ -80,17 +79,17 @@ public class SuperModelRequestHandlerTest {
         controller.reloadConfig(createApp(foo, 3L));
         controller.reloadConfig(createApp(bar, 30L));
         controller.reloadConfig(createApp(baz, 9L));
-        assertThat(controller.getHandler().getGeneration(), is(gen + 3));
-        assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(3));
-        assertEquals(Arrays.asList(foo, bar, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));
+        assertEquals(gen + 3, controller.getHandler().getGeneration());
+        assertEquals(3, controller.getHandler().getSuperModel().applicationModels().size());
+        assertTrue(controller.getHandler().getSuperModel().applicationModels().keySet().containsAll(List.of(foo, bar, baz)));
         controller.removeApplication(new ApplicationId.Builder().tenant("a").applicationName("unknown").build());
-        assertThat(controller.getHandler().getGeneration(), is(gen + 4));
-        assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(3));
-        assertEquals(Arrays.asList(foo, bar, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));
+        assertEquals(gen + 4, controller.getHandler().getGeneration());
+        assertEquals(3, controller.getHandler().getSuperModel().applicationModels().size());
+        assertTrue(controller.getHandler().getSuperModel().applicationModels().keySet().containsAll(List.of(foo, bar, baz)));
         controller.removeApplication(bar);
-        assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(2));
+        assertEquals(2, controller.getHandler().getSuperModel().applicationModels().size());
         assertEquals(Arrays.asList(foo, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));
-        assertThat(controller.getHandler().getGeneration(), is(gen + 5));
+        assertEquals(gen + 5, controller.getHandler().getGeneration());
     }
 
     @Test
@@ -103,7 +102,7 @@ public class SuperModelRequestHandlerTest {
 
         long gen = counter.get();
         controller.reloadConfig(createApp(foo, 3L));
-        assertThat(controller.getHandler().getGeneration(), is(masterGen + gen + 1));
+        assertEquals(masterGen + gen + 1, controller.getHandler().getGeneration());
     }
 
     @Test

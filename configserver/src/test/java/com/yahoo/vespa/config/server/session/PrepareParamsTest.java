@@ -2,55 +2,36 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
-import com.yahoo.config.model.api.ApplicationRoles;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.security.KeyAlgorithm;
-import com.yahoo.security.KeyUtils;
-import com.yahoo.security.SignatureAlgorithm;
-import com.yahoo.security.X509CertificateBuilder;
+
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.X509CertificateWithKey;
-import com.yahoo.slime.ArrayInserter;
+
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Injector;
-import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectInserter;
-import com.yahoo.slime.ObjectSymbolInserter;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeInserter;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
 import org.junit.Test;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.OptionalLong;
-import java.util.stream.Collectors;
+;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -79,13 +60,13 @@ public class PrepareParamsTest {
     public void testCorrectParsing() {
         PrepareParams prepareParams = createParams("http://foo:19071/application/v2/", TenantName.defaultName());
 
-        assertThat(prepareParams.getApplicationId(), is(ApplicationId.defaultId()));
+        assertEquals(ApplicationId.defaultId(), prepareParams.getApplicationId());
         assertFalse(prepareParams.isDryRun());
         assertFalse(prepareParams.isVerbose());
         assertFalse(prepareParams.ignoreValidationErrors());
-        assertThat(prepareParams.vespaVersion(), is(Optional.<String>empty()));
+        assertTrue(prepareParams.vespaVersion().isEmpty());
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
-        assertThat(prepareParams.containerEndpoints().size(), is(0));
+        assertTrue(prepareParams.containerEndpoints().isEmpty());
     }
 
     @Test

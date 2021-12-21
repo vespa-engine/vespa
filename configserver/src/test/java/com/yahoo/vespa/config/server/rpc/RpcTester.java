@@ -38,10 +38,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -163,7 +161,7 @@ public class RpcTester implements AutoCloseable {
         }
         assertFalse(req.isError());
         assertTrue(req.returnValues().size() > 0);
-        assertThat(req.returnValues().get(0).asInt32(), is(0));
+        assertEquals(0, req.returnValues().get(0).asInt32());
     }
 
     void performRequest(Request req) {

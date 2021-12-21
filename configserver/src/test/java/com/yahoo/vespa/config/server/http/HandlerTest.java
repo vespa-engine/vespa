@@ -5,9 +5,9 @@ import com.yahoo.container.jdisc.HttpResponse;
 
 import java.io.IOException;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Base class for handler tests
@@ -27,14 +27,14 @@ public class HandlerTest {
         if (renderedString == null) {
             renderedString = "assert failed";
         }
-        assertThat(renderedString, response.getStatus(), is(statusCode));
+        assertEquals(renderedString, statusCode, response.getStatus());
         if (errorCode != null) {
-            assertThat(renderedString, containsString(errorCode.name()));
+            assertTrue(renderedString.contains(errorCode.name()));
         }
         if (contentType != null) {
-            assertThat(renderedString, response.getContentType(), is(contentType));
+            assertEquals(renderedString, contentType, response.getContentType());
         }
-        assertThat(renderedString, containsString(message));
+        assertTrue(renderedString.contains(message));
     }
 
     public static void assertHttpStatusCodeErrorCodeAndMessage(HttpResponse response, int statusCode, HttpErrorResponse.ErrorCode errorCode, String message) throws IOException {

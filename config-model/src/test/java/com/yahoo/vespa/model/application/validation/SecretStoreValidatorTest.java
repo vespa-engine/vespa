@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
  * @author gjoranv
  */
 public class SecretStoreValidatorTest {
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

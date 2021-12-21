@@ -25,9 +25,8 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 
-import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
@@ -108,13 +107,13 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
         Tenant tenant1 = applicationRepository.getTenant(appId1);
         Session session = applicationRepository.getActiveLocalSession(tenant1, appId1);
         assertContent("/test.txt", "foo\n");
-        assertThat(session.getStatus(), is(Session.Status.ACTIVATE));
+        assertEquals(Session.Status.ACTIVATE, session.getStatus());
     }
 
     private void assertNotFound(HttpRequest request) {
         HttpResponse response = handler.handle(request);
         assertNotNull(response);
-        assertThat(response.getStatus(), is(Response.Status.NOT_FOUND));
+        assertEquals(Response.Status.NOT_FOUND, response.getStatus());
     }
 
     @Override

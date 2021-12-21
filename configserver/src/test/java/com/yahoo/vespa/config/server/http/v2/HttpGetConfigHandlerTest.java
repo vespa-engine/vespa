@@ -31,9 +31,7 @@ import java.util.Collections;
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -97,9 +95,9 @@ public class HttpGetConfigHandlerTest {
         String uriLongAppId = "http://foo.com:8080/config/v2/tenant/bill/application/sookie/environment/dev/region/bellefleur/instance/sam/foo.bar/myid";
         HttpRequest r = HttpRequest.createTestRequest(uriLongAppId, GET);
         HttpConfigRequest req = HttpConfigRequest.createFromRequestV2(r);
-        assertThat(req.getApplicationId().tenant().value(), is("bill"));
-        assertThat(req.getApplicationId().application().value(), is("sookie"));
-        assertThat(req.getApplicationId().instance().value(), is("sam"));
+        assertEquals("bill", req.getApplicationId().tenant().value());
+        assertEquals("sookie", req.getApplicationId().application().value());
+        assertEquals("sam", req.getApplicationId().instance().value());
     }
 
     @Test
@@ -107,9 +105,9 @@ public class HttpGetConfigHandlerTest {
         String uriShortAppId = "http://foo.com:8080/config/v2/tenant/jason/application/alcide/foo.bar/myid";
         HttpRequest r = HttpRequest.createTestRequest(uriShortAppId, GET);
         HttpConfigRequest req = HttpConfigRequest.createFromRequestV2(r);
-        assertThat(req.getApplicationId().tenant().value(), is("jason"));
-        assertThat(req.getApplicationId().application().value(), is("alcide"));
-        assertThat(req.getApplicationId().instance().value(), is("default"));
+        assertEquals("jason", req.getApplicationId().tenant().value());
+        assertEquals("alcide", req.getApplicationId().application().value());
+        assertEquals("default", req.getApplicationId().instance().value());
     }
 
     @Test

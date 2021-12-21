@@ -16,8 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -44,10 +43,10 @@ public class ModelFactoryRegistryTest {
             List<ModelFactory> randomOrder = Arrays.asList(a, b, c, d);
             Collections.shuffle(randomOrder);
             ModelFactoryRegistry registry = new ModelFactoryRegistry(randomOrder);
-            assertThat(registry.getFactory(versionA), is(a));
-            assertThat(registry.getFactory(versionB), is(b));
-            assertThat(registry.getFactory(versionC), is(c));
-            assertThat(registry.getFactory(versionD), is(d));
+            assertEquals(a, registry.getFactory(versionA));
+            assertEquals(b, registry.getFactory(versionB));
+            assertEquals(c, registry.getFactory(versionC));
+            assertEquals(d, registry.getFactory(versionD));
         }
     }
 
@@ -58,7 +57,7 @@ public class ModelFactoryRegistryTest {
         TestFactory c = new TestFactory(new Version(5, 48, 44));
         TestFactory d = new TestFactory(new Version(5, 18, 44));
         ModelFactoryRegistry registry = new ModelFactoryRegistry(Arrays.asList(a, b, c, d));
-        assertThat(registry.getFactories().size(), is(4));
+        assertEquals(4, registry.getFactories().size());
         assertTrue(registry.getFactories().contains(a));
         assertTrue(registry.getFactories().contains(b));
         assertTrue(registry.getFactories().contains(c));

@@ -14,6 +14,7 @@ import org.junit.rules.ExpectedException;
  */
 public class FastAccessValidatorTest {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

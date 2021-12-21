@@ -24,7 +24,6 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.model.VespaModelFactory;
-import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,10 +42,7 @@ import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.Cmd;
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.createTestRequest;
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class SessionActiveHandlerTest {
@@ -150,21 +146,21 @@ public class SessionActiveHandlerTest {
         activateRequest.invoke();
         HttpResponse actResponse = activateRequest.getActResponse();
         String message = getRenderedString(actResponse);
-        assertThat(message, actResponse.getStatus(), Is.is(OK));
+        assertEquals(message, OK, actResponse.getStatus());
         assertActivationMessageOK(activateRequest, message);
     }
 
     private void assertActivationMessageOK(ActivateRequest activateRequest, String message) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         new JsonFormat(true).encode(byteArrayOutputStream, activateRequest.getMetaData().getSlime());
-        assertThat(message, containsString("\"tenant\":\"" + tenantName + "\",\"message\":\"Session " + activateRequest.getSessionId() + activatedMessage));
-        assertThat(message, containsString("/application/v2/tenant/" + tenantName +
+        assertTrue(message.contains("\"tenant\":\"" + tenantName + "\",\"message\":\"Session " + activateRequest.getSessionId() + activatedMessage));
+        assertTrue(message.contains("/application/v2/tenant/" + tenantName +
                 "/application/" + appName +
                 "/environment/" + "prod" +
                 "/region/" + "default" +
                 "/instance/" + "default"));
         assertTrue(provisioner.activated());
-        assertThat(provisioner.lastHosts().size(), is(1));
+        assertEquals(1, provisioner.lastHosts().size());
     }
 
     private SessionActiveHandler createHandler() {

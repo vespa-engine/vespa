@@ -69,10 +69,8 @@ import java.util.logging.Level;
 
 import static com.yahoo.vespa.config.server.session.SessionPreparer.PrepareResult;
 import static com.yahoo.vespa.config.server.session.SessionZooKeeperClient.APPLICATION_PACKAGE_REFERENCE_PATH;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -97,6 +95,7 @@ public class SessionPreparerTest {
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -216,7 +215,7 @@ public class SessionPreparerTest {
         PrepareParams params = new PrepareParams.Builder().applicationId(applicationId()).build();
         int sessionId = 1;
         prepare(testApp, params);
-        assertThat(createSessionZooKeeperClient(sessionId).readApplicationId().get(), is(applicationId()));
+        assertEquals(applicationId(), createSessionZooKeeperClient(sessionId).readApplicationId().get());
     }
 
     @Test

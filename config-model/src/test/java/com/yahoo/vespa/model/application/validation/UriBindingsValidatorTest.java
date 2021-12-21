@@ -19,6 +19,7 @@ import java.io.IOException;
  */
 public class UriBindingsValidatorTest {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
 

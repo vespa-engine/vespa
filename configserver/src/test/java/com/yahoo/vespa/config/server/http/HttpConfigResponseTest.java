@@ -10,8 +10,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -26,6 +25,6 @@ public class HttpConfigResponseTest {
                                                                               false,
                                                                               PayloadChecksums.from("", "595f44fec1e92a71d"));
         HttpConfigResponse response = HttpConfigResponse.createFromConfig(configResponse);
-        assertThat(SessionHandlerTest.getRenderedString(response), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}"));
+        assertEquals(SessionHandlerTest.getRenderedString(response), "{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}");
     }
 }

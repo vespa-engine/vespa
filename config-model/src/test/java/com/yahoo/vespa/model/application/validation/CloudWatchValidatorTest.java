@@ -11,9 +11,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -21,15 +19,13 @@ import java.io.IOException;
 import static com.yahoo.config.provision.Environment.prod;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 /**
  * @author gjoranv
  */
 public class CloudWatchValidatorTest {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void cloudwatch_in_public_zones_passes_validation() throws IOException, SAXException {
@@ -49,14 +45,16 @@ public class CloudWatchValidatorTest {
 
     @Test
     public void cloudwatch_in_non_public_zones_fails_validation() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(
-                "CloudWatch cannot be set up for non-public hosted Vespa and must be removed for consumers: [cloudwatch-consumer]");
-
         DeployState deployState = deployState(servicesWithCloudwatch(), true, false);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
-        new CloudWatchValidator().validate(model, deployState);
+        try {
+            new CloudWatchValidator().validate(model, deployState);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("CloudWatch cannot be set up for non-public hosted Vespa and must be removed for consumers: [cloudwatch-consumer]",
+                    e.getMessage());
+        }
     }
 
     private static DeployState deployState(String servicesXml, boolean isHosted, boolean isPublic) {

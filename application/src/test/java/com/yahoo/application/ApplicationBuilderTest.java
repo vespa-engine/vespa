@@ -8,7 +8,6 @@ import org.junit.rules.ExpectedException;
 
 import java.nio.file.Files;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -49,6 +48,7 @@ public class ApplicationBuilderTest {
         });
     }
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -56,7 +56,7 @@ public class ApplicationBuilderTest {
     @SuppressWarnings("try") // application unreferenced inside try
     public void builder_cannot_be_reused() throws Exception {
         expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage(containsString("build method"));
+        expectedException.expectMessage("build method");
 
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.servicesXml("<container version=\"1.0\" />");

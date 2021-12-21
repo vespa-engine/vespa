@@ -22,16 +22,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -106,7 +98,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
 
         Set<String> actualBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
-        assertThat(actualBindings, containsInAnyOrder(
+        assertTrue(actualBindings.containsAll(List.of(
                 "http://*:4443/ApplicationStatus",
                 "http://*:4443/status.html",
                 "http://*:4443/state/v1",
@@ -115,7 +107,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "http://*:4443/prometheus/v1/*",
                 "http://*:4443/metrics/v2",
                 "http://*:4443/metrics/v2/*",
-                "http://*:4443/"));
+                "http://*:4443/")));
     }
 
     @Test
@@ -131,7 +123,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         Set<String> excludedBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
 
         for (String binding : bindings) {
-            assertThat(excludedBindings, not(hasItem(binding)));
+            assertFalse(excludedBindings.contains(binding));
         }
     }
 
@@ -154,7 +146,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
 
         Set<String> actualBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
-        assertThat(actualBindings, hasItems("http://*:4443/custom-handler/*", "http://*:4443/search/*", "http://*:4443/status.html"));
+        assertTrue(actualBindings.containsAll(List.of("http://*:4443/custom-handler/*", "http://*:4443/search/*", "http://*:4443/status.html")));
     }
 
     @Test
@@ -167,7 +159,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
 
         Set<String> actualBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_CHAIN_ID);
-        assertThat(actualBindings, empty());
+        assertTrue(actualBindings.isEmpty());
 
         HostedSslConnectorFactory hostedConnectorFactory = (HostedSslConnectorFactory)http.getHttpServer().get().getConnectorFactories().stream()
                 .filter(connectorFactory -> connectorFactory instanceof HostedSslConnectorFactory)
@@ -182,12 +174,12 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     public void access_control_is_implicitly_added_for_hosted_apps() {
         Http http = createModelAndGetHttp("<container version='1.0'/>");
         Optional<AccessControl> maybeAccessControl = http.getAccessControl();
-        assertThat(maybeAccessControl.isPresent(), is(true));
+        assertTrue(maybeAccessControl.isPresent());
         AccessControl accessControl = maybeAccessControl.get();
-        assertThat(accessControl.writeEnabled, is(false));
-        assertThat(accessControl.readEnabled, is(false));
-        assertThat(accessControl.clientAuthentication, is(AccessControl.ClientAuthentication.need));
-        assertThat(accessControl.domain, equalTo("my-tenant-domain"));
+        assertFalse(accessControl.writeEnabled);
+        assertFalse(accessControl.readEnabled);
+        assertEquals(AccessControl.ClientAuthentication.need, accessControl.clientAuthentication);
+        assertEquals("my-tenant-domain", accessControl.domain);
     }
 
     @Test
@@ -202,9 +194,9 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "      </request-chain>",
                 "    </filtering>",
                 "  </http>");
-        assertThat(http.getAccessControl().isPresent(), is(true));
-        assertThat(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID), is(true));
-        assertThat(http.getFilterChains().hasChain(ComponentId.fromString("myChain")), is(true));
+        assertTrue(http.getAccessControl().isPresent());
+        assertTrue(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
+        assertTrue(http.getFilterChains().hasChain(ComponentId.fromString("myChain")));
     }
 
     @Test
@@ -226,7 +218,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
 
         Set<String> actualExcludeBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
-        assertThat(actualExcludeBindings, containsInAnyOrder(
+        assertTrue(actualExcludeBindings.containsAll(List.of(
                 "http://*:4443/ApplicationStatus",
                 "http://*:4443/status.html",
                 "http://*:4443/state/v1",
@@ -234,10 +226,10 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "http://*:4443/prometheus/v1",
                 "http://*:4443/prometheus/v1/*",
                 "http://*:4443/metrics/v2",
-                "http://*:4443/metrics/v2/*"));
+                "http://*:4443/metrics/v2/*")));
 
         Set<String> actualCustomChainBindings = getFilterBindings(http, ComponentId.fromString("my-custom-request-chain"));
-        assertThat(actualCustomChainBindings, containsInAnyOrder("http://*/custom-handler/*", "http://*/"));
+        assertTrue(actualCustomChainBindings.containsAll(List.of("http://*/custom-handler/*", "http://*/")));
     }
 
     @Test
@@ -261,7 +253,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
 
         Set<String> actualExcludeBindings = getFilterBindings(http, AccessControl.ACCESS_CONTROL_EXCLUDED_CHAIN_ID);
-        assertThat(actualExcludeBindings, containsInAnyOrder(
+        assertTrue(actualExcludeBindings.containsAll(List.of(
                 "http://*:4443/ApplicationStatus",
                 "http://*:4443/status.html",
                 "http://*:4443/state/v1",
@@ -271,10 +263,10 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "http://*:4443/metrics/v2",
                 "http://*:4443/metrics/v2/*",
                 "http://*:4443/",
-                "http://*:4443/custom-handler/*"));
+                "http://*:4443/custom-handler/*")));
 
         Set<String> actualCustomChainBindings = getFilterBindings(http, ComponentId.fromString("my-custom-response-chain"));
-        assertThat(actualCustomChainBindings, containsInAnyOrder("http://*/custom-handler/*"));
+        assertTrue(actualCustomChainBindings.contains("http://*/custom-handler/*"));
     }
 
     @Test
@@ -341,7 +333,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "  </http>");
 
         Set<String> actualBindings = getFilterBindings(http, AccessControl.DEFAULT_CONNECTOR_HOSTED_REQUEST_CHAIN_ID);
-        assertThat(actualBindings, empty());
+        assertTrue(actualBindings.isEmpty());
 
         ConnectorFactory connectorFactory = http.getHttpServer().get().getConnectorFactories().stream()
                 .filter(cf -> cf.getListenPort() == Defaults.getDefaults().vespaWebServicePort())

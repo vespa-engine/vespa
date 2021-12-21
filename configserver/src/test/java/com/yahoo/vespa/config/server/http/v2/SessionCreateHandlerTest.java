@@ -43,10 +43,8 @@ import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeErrorCodeAndMessage;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -128,11 +126,11 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         Map<String, String> parameters = Collections.singletonMap("name", "foo");
         HttpResponse response = createHandler().handle(post(outFile, postHeaders, parameters));
         assertNotNull(response);
-        assertThat(response.getStatus(), is(OK));
-        assertThat(SessionHandlerTest.getRenderedString(response),
-                   is("{\"log\":[]" + tenantMessage + ",\"session-id\":\"2\",\"prepared\":\"http://" +
+        assertEquals(OK, response.getStatus());
+        assertEquals(SessionHandlerTest.getRenderedString(response),
+                   "{\"log\":[]" + tenantMessage + ",\"session-id\":\"2\",\"prepared\":\"http://" +
                               hostname + ":" + port + pathPrefix + "2/prepared\",\"content\":\"http://" +
-                              hostname + ":" + port + pathPrefix + "2/content/\",\"message\":\"Session 2" + createdMessage + "}"));
+                              hostname + ":" + port + pathPrefix + "2/content/\",\"message\":\"Session 2" + createdMessage + "}");
     }
 
     @Test

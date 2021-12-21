@@ -10,7 +10,6 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.TestIds;
@@ -51,11 +50,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsCollectionContaining.hasItem;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -108,14 +106,13 @@ public class ZkStatusServiceTest {
     }
 
     @Test
-    public void host_state_for_unknown_hosts_is_no_remarks() throws Exception {
-        assertThat(
-                statusService.getHostInfo(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1).status(),
-                is(HostStatus.NO_REMARKS));
+    public void host_state_for_unknown_hosts_is_no_remarks() {
+        assertEquals(HostStatus.NO_REMARKS,
+                statusService.getHostInfo(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1).status());
     }
 
     @Test
-    public void setting_host_state_is_idempotent() throws Exception {
+    public void setting_host_state_is_idempotent() {
         when(timer.currentTime()).thenReturn(
                 Instant.ofEpochMilli((1)),
                 Instant.ofEpochMilli((3)),
@@ -128,8 +125,7 @@ public class ZkStatusServiceTest {
                 for (int i = 0; i < 2; i++) {
                     lock.setHostState(TestIds.HOST_NAME1, hostStatus);
 
-                    assertThat(lock.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1).status(),
-                               is(hostStatus));
+                    assertEquals(hostStatus, lock.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1).status());
                 }
             }
         }
@@ -238,13 +234,11 @@ public class ZkStatusServiceTest {
     }
 
     @Test
-    public void suspend_and_resume_application_works_and_is_symmetric() throws Exception {
+    public void suspend_and_resume_application_works_and_is_symmetric() {
 
         // Initial state is NO_REMARK
-        assertThat(
-                statusService
-                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
-                is(ApplicationInstanceStatus.NO_REMARKS));
+        assertEquals(ApplicationInstanceStatus.NO_REMARKS,
+                statusService.getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE));
 
         // Suspend
         try (ApplicationLock lock = statusService
@@ -252,10 +246,8 @@ public class ZkStatusServiceTest {
             lock.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
-        assertThat(
-                statusService
-                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
-                is(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN));
+        assertEquals(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN,
+                statusService.getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE));
 
         // Resume
         try (ApplicationLock lock = statusService
@@ -263,16 +255,14 @@ public class ZkStatusServiceTest {
             lock.setApplicationInstanceStatus(ApplicationInstanceStatus.NO_REMARKS);
         }
 
-        assertThat(
-                statusService
-                        .getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE),
-                is(ApplicationInstanceStatus.NO_REMARKS));
+        assertEquals(ApplicationInstanceStatus.NO_REMARKS,
+                statusService.getApplicationInstanceStatus(TestIds.APPLICATION_INSTANCE_REFERENCE));
     }
 
     @Test
-    public void suspending_two_applications_returns_two_applications() throws Exception {
+    public void suspending_two_applications_returns_two_applications() {
         Set<ApplicationInstanceReference> suspendedApps = statusService.getAllSuspendedApplications();
-        assertThat(suspendedApps.size(), is(0));
+        assertEquals(0, suspendedApps.size());
 
         try (ApplicationLock statusRegistry = statusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
@@ -285,13 +275,13 @@ public class ZkStatusServiceTest {
         }
 
         suspendedApps = statusService.getAllSuspendedApplications();
-        assertThat(suspendedApps.size(), is(2));
-        assertThat(suspendedApps, hasItem(TestIds.APPLICATION_INSTANCE_REFERENCE));
-        assertThat(suspendedApps, hasItem(TestIds.APPLICATION_INSTANCE_REFERENCE2));
+        assertEquals(2, suspendedApps.size());
+        assertTrue(suspendedApps.contains(TestIds.APPLICATION_INSTANCE_REFERENCE));
+        assertTrue(suspendedApps.contains(TestIds.APPLICATION_INSTANCE_REFERENCE2));
     }
 
     @Test
-    public void zookeeper_cleanup() throws Exception {
+    public void zookeeper_cleanup() {
         HostName strayHostname = new HostName("stray1.com");
 
         verify(antiServiceMonitor, times(0)).disallowDuperModelLockAcquisition(any());

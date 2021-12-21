@@ -8,9 +8,6 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.application.container.handlers.TestHandler;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.container.Container;
-import com.yahoo.jdisc.http.server.jetty.JettyHttpServer;
-import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import org.junit.Ignore;
@@ -20,11 +17,9 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.file.FileSystems;
 
 import static com.yahoo.application.container.JDisc.fromServicesXml;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -73,7 +68,7 @@ public class ContainerTest {
                 "</services>", Networking.disable)) {
             fail("expected exception");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("container id='id1', container id='', jdisc id=''"));
+            assertTrue(e.getMessage().contains("container id='id1', container id='', jdisc id=''"));
         }
     }
 
@@ -87,7 +82,7 @@ public class ContainerTest {
                 "</container>", Networking.disable)) {
             Response response = container.handleRequest(new Request("http://foo/TestHandler"));
             try {
-                assertThat(response.getBodyAsString(), is(TestHandler.RESPONSE));
+                assertEquals(TestHandler.RESPONSE, response.getBodyAsString());
             } catch (CharacterCodingException e) {
                 throw new RuntimeException(e);
             }
@@ -100,7 +95,7 @@ public class ContainerTest {
                 Networking.disable)) {
             Result result = container.search().process(ComponentSpecification.fromString("default"),
                     new Query("?query=ignored"));
-            assertThat(result.hits().get(0).getField("title").toString(), is("Heal the World!"));
+            assertEquals("Heal the World!", result.hits().get(0).getField("title").toString());
         }
     }
 
@@ -110,7 +105,7 @@ public class ContainerTest {
                 .servicesXml(CONTAINER_WITH_DOCUMENT_PROCESSING).build()) {
             JDisc container = application.getJDisc("container");
             DocumentProcessing processing = container.documentProcessing();
-            assertThat(processing.getDocumentTypes().keySet(), hasItem("example"));
+            assertTrue(processing.getDocumentTypes().containsKey("example"));
         }
     }
 
@@ -123,7 +118,7 @@ public class ContainerTest {
                 servicesXml(CONTAINER_WITH_DOCUMENT_PROCESSING).build()) {
             JDisc container = application.getJDisc("container");
             DocumentProcessing processing = container.documentProcessing();
-            assertThat(processing.getAnnotationTypes().keySet(), hasItem("exampleAnnotation"));
+            assertTrue(processing.getAnnotationTypes().containsKey("exampleAnnotation"));
         }
     }
 
@@ -138,7 +133,7 @@ public class ContainerTest {
 
     private void sendRequest(JDisc jdisc) throws CharacterCodingException {
         Response response = jdisc.handleRequest(new Request("http://foo/TestHandler"));
-        assertThat(response.getBodyAsString(), is(TestHandler.RESPONSE));
+        assertEquals(TestHandler.RESPONSE, response.getBodyAsString());
     }
 
     public static final String CONTAINER_WITH_DOCUMENT_PROCESSING = //
@@ -167,15 +162,6 @@ public class ContainerTest {
                         "<accesslog type=\"disabled\" />" +
                         "</container>";
         return JDisc.fromServicesXml(xml, Networking.disable);
-    }
-
-    public static int getListenPort() {
-        for (ServerProvider server : Container.get().getServerProviderRegistry().allComponents()) {
-            if (null != server && server instanceof JettyHttpServer) {
-                return ((JettyHttpServer) server).getListenPort();
-            }
-        }
-        throw new RuntimeException("No http server found");
     }
 
 }

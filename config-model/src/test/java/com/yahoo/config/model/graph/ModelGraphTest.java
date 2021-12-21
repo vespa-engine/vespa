@@ -9,8 +9,10 @@ import org.junit.rules.ExpectedException;
 
 import java.util.List;
 
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -24,7 +26,7 @@ public class ModelGraphTest {
         for (ModelNode<?> node : sortedEntries) {
             sb.append(node.builder.getModelClass().getSimpleName());
         }
-        assertThat(sb.toString(), is(expectedOrdering));
+        assertEquals(expectedOrdering, sb.toString());
     }
 
     @Test
@@ -33,7 +35,7 @@ public class ModelGraphTest {
         builder.addBuilder(new GraphMock.BC()).addBuilder(new GraphMock.BB()).addBuilder(new GraphMock.BA());
         ModelGraph graph = builder.build();
         List<ModelNode> nodes = graph.getNodes();
-        assertThat(graph.getNodes().size(), is(3));
+        assertEquals(3, graph.getNodes().size());
         assertTrue(nodes.get(0).hasDependencies());
         assertTrue(nodes.get(1).hasDependencies());
         assertFalse(nodes.get(2).hasDependencies());
@@ -51,7 +53,7 @@ public class ModelGraphTest {
     @Test(expected = IllegalArgumentException.class)
     public void require_that_cycles_are_detected() {
         ModelGraph graph = new ModelGraphBuilder().addBuilder(new GraphMock.BD()).addBuilder(new GraphMock.BE()).build();
-        assertThat(graph.getNodes().size(), is(2));
+        assertEquals(2, graph.getNodes().size());
         assertTrue(graph.getNodes().get(0).dependsOn(graph.getNodes().get(1)));
         assertTrue(graph.getNodes().get(1).dependsOn(graph.getNodes().get(0)));
         graph.topologicalSort();
@@ -70,17 +72,18 @@ public class ModelGraphTest {
         assertNotNull(b);
         assertNotNull(b2);
         assertNotNull(c);
-        assertThat(a.getId(), is("first"));
-        assertThat(b.getId(), is("second"));
-        assertThat(b2.getId(), is("second2"));
-        assertThat(c.getId(), is("third"));
-        assertThat(b.a, is(a));
+        assertEquals("first", a.getId());
+        assertEquals("second", b.getId());
+        assertEquals("second2", b2.getId());
+        assertEquals("third", c.getId());
+        assertEquals(a, b.a);
         assertNotNull(c.b);
-        assertThat(c.b.size(), is(2));
+        assertEquals(2, c.b.size());
         assertTrue(c.b.contains(b));
         assertTrue(c.b.contains(b2));
     }
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedEx = ExpectedException.none();
 
@@ -109,7 +112,7 @@ public class ModelGraphTest {
         MockRoot root = new MockRoot();
         GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "first"));
         GraphMock.C c = (GraphMock.C) nodes.get(1).createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "second"));
-        assertThat(c.a, is(a));
+        assertEquals(a, c.a);
         assertTrue(c.b.isEmpty());
     }
 

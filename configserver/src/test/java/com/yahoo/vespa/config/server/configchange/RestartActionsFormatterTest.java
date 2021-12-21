@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.configchange;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static com.yahoo.vespa.config.server.configchange.Utils.*;
 

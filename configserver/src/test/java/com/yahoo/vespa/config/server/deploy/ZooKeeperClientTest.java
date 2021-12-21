@@ -36,9 +36,7 @@ import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.DEFCONFIGS_Z
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.META_ZK_PATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_SUBPATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USER_DEFCONFIGS_ZK_SUBPATH;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -92,11 +90,11 @@ public class ZooKeeperClientTest {
         ZooKeeperClient zooKeeperClient = new ZooKeeperClient(zk, logger, Path.fromString("/1"));
         zooKeeperClient.initialize();
         Path appPath = Path.fromString("/");
-        assertThat(zk.getChildren(appPath).size(), is(1));
+        assertEquals(1, zk.getChildren(appPath).size());
         Path currentAppPath = appPath.append(String.valueOf(generation));
         assertTrue(zk.exists(currentAppPath));
         assertTrue(zk.exists(currentAppPath.append(DEFCONFIGS_ZK_SUBPATH.replaceFirst("/", ""))));
-        assertThat(zk.getChildren(currentAppPath).size(), is(4));
+        assertEquals(4, zk.getChildren(currentAppPath).size());
     }
 
     @Test
@@ -106,14 +104,14 @@ public class ZooKeeperClientTest {
         List<String> children = zk.getChildren(defsPath);
         assertEquals(defsPath + " children", 1, children.size());
         Collections.sort(children);
-        assertThat(children.get(0), is("a.b.test2"));
+        assertEquals("a.b.test2", children.get(0));
 
         assertTrue(zk.exists(appPath.append(USER_DEFCONFIGS_ZK_SUBPATH.replaceFirst("/", ""))));
         Path userDefsPath = appPath.append(USER_DEFCONFIGS_ZK_SUBPATH);
         children = zk.getChildren(userDefsPath);
-        assertThat(children.size(), is(1));
+        assertEquals(1, children.size());
         Collections.sort(children);
-        assertThat(children.get(0), is("a.b.test2"));
+        assertEquals("a.b.test2", children.get(0));
     }
 
     @Test
@@ -123,11 +121,11 @@ public class ZooKeeperClientTest {
                 Utf8.toString(zk.getData(appPath.append(META_ZK_PATH)).get()));
         assertTrue(metaData.getChecksum().length() > 0);
         assertTrue(metaData.isInternalRedeploy());
-        assertThat(metaData.getDeployedByUser(), is("foo"));
-        assertThat(metaData.getDeployPath(), is("/bar/baz"));
-        assertThat(metaData.getDeployTimestamp(), is(1345L));
-        assertThat(metaData.getGeneration(), is(3L));
-        assertThat(metaData.getPreviousActiveGeneration(), is(2L));
+        assertEquals("foo", metaData.getDeployedByUser());
+        assertEquals("/bar/baz", metaData.getDeployPath());
+        assertEquals(1345, metaData.getDeployTimestamp().longValue());
+        assertEquals(3, metaData.getGeneration().longValue());
+        assertEquals(2, metaData.getPreviousActiveGeneration());
     }
 
     @Test

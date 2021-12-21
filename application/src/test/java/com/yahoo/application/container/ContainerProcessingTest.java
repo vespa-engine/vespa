@@ -10,10 +10,10 @@ import com.yahoo.processing.Response;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Einar M R Rosenvinge
@@ -50,7 +50,7 @@ public class ContainerProcessingTest {
             req.properties().set("title", "Good day!");
             Response response = processing.process(ComponentSpecification.fromString("foo"), req);
 
-            assertThat(response.data().get(0).toString(), equalTo("Tbbq qnl!"));
+            assertEquals("Tbbq qnl!", response.data().get(0).toString());
         }
     }
 
@@ -69,7 +69,7 @@ public class ContainerProcessingTest {
                         container.handleRequest(
                                 new com.yahoo.application.container.handler.Request("http://foo/processing/?chain=foo&title=" + foo.toString()));
 
-                assertThat(response.getBody().length, is(SIZE+26));
+                assertEquals(SIZE+26, response.getBody().length);
             }
         }
     }
@@ -84,9 +84,9 @@ public class ContainerProcessingTest {
 
             byte[] rendered = processing.processAndRender(ComponentSpecification.fromString("foo"),
                     ComponentSpecification.fromString("default"), req);
-            String renderedAsString = new String(rendered, "utf-8");
+            String renderedAsString = new String(rendered, StandardCharsets.UTF_8);
 
-            assertThat(renderedAsString, containsString("Tbbq qnl!"));
+            assertTrue(renderedAsString.contains("Tbbq qnl!"));
         }
     }
 

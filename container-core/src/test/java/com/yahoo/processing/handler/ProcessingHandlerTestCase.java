@@ -686,6 +686,7 @@ public class ProcessingHandlerTestCase {
             this.stringDataPrefix = stringDataPrefix;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public com.yahoo.processing.Response process(com.yahoo.processing.Request request, Execution execution) {
             try {

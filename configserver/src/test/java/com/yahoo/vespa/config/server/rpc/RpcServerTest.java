@@ -37,11 +37,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -74,7 +72,7 @@ public class RpcServerTest {
         JRTClientConfigRequest clientReq = createSimpleRequest();
         tester.performRequest(clientReq.getRequest());
         assertFalse(clientReq.validateResponse());
-        assertThat(clientReq.errorCode(), is(ErrorCode.APPLICATION_NOT_LOADED));
+        assertEquals(ErrorCode.APPLICATION_NOT_LOADED, clientReq.errorCode());
     }
 
     @Test
@@ -127,7 +125,7 @@ public class RpcServerTest {
         assertTrue(clientReq.validateParameters());
         tester.performRequest(clientReq.getRequest());
         assertFalse(clientReq.validateResponse());
-        assertThat(clientReq.errorCode(), is(ErrorCode.APPLICATION_NOT_LOADED));
+        assertEquals(ErrorCode.APPLICATION_NOT_LOADED, clientReq.errorCode());
 
         tester.rpcServer().onTenantsLoaded();
         clientReq = createRequest(new RawConfig(key, LbServicesConfig.getDefMd5()));
@@ -135,7 +133,7 @@ public class RpcServerTest {
         tester.performRequest(clientReq.getRequest());
         boolean validResponse = clientReq.validateResponse();
         assertTrue(clientReq.errorMessage(), validResponse);
-        assertThat(clientReq.errorCode(), is(0));
+        assertEquals(0, clientReq.errorCode());
     }
 
     private void testGetConfig(RpcTester tester) {
@@ -143,20 +141,20 @@ public class RpcServerTest {
         JRTClientConfigRequest req = createRequest(new RawConfig(key, SimpletypesConfig.getDefMd5()));
         assertTrue(req.validateParameters());
         tester.performRequest(req.getRequest());
-        assertThat(req.errorCode(), is(0));
+        assertEquals(0, req.errorCode());
         assertTrue(req.validateResponse());
         ConfigPayload payload = ConfigPayload.fromUtf8Array(req.getNewPayload().getData());
         assertNotNull(payload);
         SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
         new ConfigPayloadApplier<>(builder).applyPayload(payload);
         SimpletypesConfig config = new SimpletypesConfig(builder);
-        assertThat(config.intval(), is(0));
+        assertEquals(0, config.intval());
     }
 
     private void testPrintStatistics(RpcTester tester) {
         Request req = new Request("printStatistics");
         tester.performRequest(req);
-        assertThat(req.returnValues().get(0).asString(), is("Delayed responses queue size: 0"));
+        assertEquals("Delayed responses queue size: 0", req.returnValues().get(0).asString());
     }
 
     private JRTClientConfigRequest createRequest(RawConfig config) {

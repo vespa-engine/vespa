@@ -3,10 +3,8 @@ package com.yahoo.application.container.handler;
 
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Einar M R Rosenvinge
@@ -15,16 +13,16 @@ public class ResponseTestCase {
 
     @Test
     public void requireThatCharsetParsingWorks() {
-        assertThat(Response.charset("text/foobar").toString().toLowerCase(), equalTo("utf-8"));
-        assertThat(Response.charset("adsf").toString().toLowerCase(), equalTo("utf-8"));
-        assertThat(Response.charset("").toString().toLowerCase(), equalTo("utf-8"));
-        assertThat(Response.charset(null).toString().toLowerCase(), equalTo("utf-8"));
+        assertEquals("utf-8", Response.charset("text/foobar").toString().toLowerCase());
+        assertEquals("utf-8", Response.charset("adsf").toString().toLowerCase());
+        assertEquals("utf-8", Response.charset("").toString().toLowerCase());
+        assertEquals("utf-8", Response.charset(null).toString().toLowerCase());
 
-        assertThat(Response.charset("something; charset=US-ASCII").toString().toLowerCase(), equalTo("us-ascii"));
-        assertThat(Response.charset("something; charset=iso-8859-1").toString().toLowerCase(), equalTo("iso-8859-1"));
+        assertEquals("us-ascii", Response.charset("something; charset=US-ASCII").toString().toLowerCase());
+        assertEquals("iso-8859-1", Response.charset("something; charset=iso-8859-1").toString().toLowerCase());
 
-        assertThat(Response.charset("something; charset=").toString().toLowerCase(), equalTo("utf-8"));
-        assertThat(Response.charset("something; charset=bananarama").toString().toLowerCase(), equalTo("utf-8"));
+        assertEquals("utf-8", Response.charset("something; charset=").toString().toLowerCase());
+        assertEquals("utf-8", Response.charset("something; charset=bananarama").toString().toLowerCase());
     }
 
     @Test
@@ -32,9 +30,9 @@ public class ResponseTestCase {
         Response res1 = new Response();
         Response res2 = new Response(new byte[0]);
 
-        assertThat(res1.getBody(), notNullValue());
-        assertThat(res1.getBody().length, is(0));
-        assertThat(res2.getBody(), notNullValue());
-        assertThat(res2.getBody().length, is(0));
+        assertNotNull(res1.getBody());
+        assertEquals(0, res1.getBody().length);
+        assertNotNull(res2.getBody());
+        assertEquals(0, res2.getBody().length);
     }
 }

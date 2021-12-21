@@ -59,6 +59,7 @@ public class MultiTenantRpcAuthorizerTest {
     private static final HostName HOSTNAME = HostName.from("myhostname");
     private static final FileReference FILE_REFERENCE = new FileReference("myfilereference");
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -269,7 +270,7 @@ public class MultiTenantRpcAuthorizerTest {
         request.setString("clientHostname", hostname);
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             new JsonFormat(false).encode(out, data);
-            return new String(out.toByteArray());
+            return out.toString();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

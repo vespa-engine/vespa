@@ -31,9 +31,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
 
-import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
@@ -92,14 +91,14 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     public void require_that_mkdir_with_body_is_illegal(){
         HttpResponse response = put("/foobio/", "foo");
         assertNotNull(response);
-        assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST));
+        assertEquals(Response.Status.BAD_REQUEST, response.getStatus());
     }
 
     @Test
     public void require_that_nonexistent_session_returns_not_found() {
         HttpResponse response = doRequest(HttpRequest.Method.GET, "/test.txt", 9999);
         assertNotNull(response);
-        assertThat(response.getStatus(), is(Response.Status.NOT_FOUND));
+        assertEquals(Response.Status.NOT_FOUND, response.getStatus());
     }
 
     protected HttpResponse put(String path, String content) {
@@ -111,7 +110,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     public void require_that_file_write_without_body_is_illegal() {
         HttpResponse response = doRequest(HttpRequest.Method.PUT, "/foobio.txt");
         assertNotNull(response);
-        assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST));
+        assertEquals(Response.Status.BAD_REQUEST, response.getStatus());
     }
 
     @Test
@@ -146,10 +145,9 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     private void assertWriteFile(String path, String content) throws IOException {
         HttpResponse response = put(path, content);
         assertNotNull(response);
-        assertThat(response.getStatus(), is(Response.Status.OK));
+        assertEquals(Response.Status.OK, response.getStatus());
         assertContent(path, content);
-        assertThat(SessionHandlerTest.getRenderedString(response),
-                   is("{\"prepared\":\"http://foo:1337" + pathPrefix + sessionId + "/prepared\"}"));
+        assertEquals("{\"prepared\":\"http://foo:1337" + pathPrefix + sessionId + "/prepared\"}", SessionHandlerTest.getRenderedString(response));
     }
 
     private void assertDeleteFile(int statusCode, String filePath) throws IOException {
@@ -159,16 +157,16 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     private void assertDeleteFile(int statusCode, String filePath, String expectedResponse) throws IOException {
         HttpResponse response = doRequest(HttpRequest.Method.DELETE, filePath);
         assertNotNull(response);
-        assertThat(response.getStatus(), is(statusCode));
-        assertThat(SessionHandlerTest.getRenderedString(response), is(expectedResponse));
+        assertEquals(statusCode, response.getStatus());
+        assertEquals(expectedResponse, SessionHandlerTest.getRenderedString(response));
     }
 
     private void assertMkdir(String path) throws IOException {
         HttpResponse response = doRequest(HttpRequest.Method.PUT, path);
         assertNotNull(response);
-        assertThat(response.getStatus(), is(Response.Status.OK));
-        assertThat(SessionHandlerTest.getRenderedString(response),
-                   is("{\"prepared\":\"http://foo:1337" + pathPrefix + sessionId + "/prepared\"}"));
+        assertEquals(Response.Status.OK, response.getStatus());
+        assertEquals("{\"prepared\":\"http://foo:1337" + pathPrefix + sessionId + "/prepared\"}",
+                SessionHandlerTest.getRenderedString(response));
     }
 
     protected HttpResponse doRequest(HttpRequest.Method method, String path) {

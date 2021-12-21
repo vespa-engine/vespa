@@ -32,8 +32,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -101,8 +100,8 @@ public class OrchestratorTest {
             orchestrator.acquirePermissionToRemove(toApplicationModelHostName(cfg2));
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertThat(e.getMessage(), containsString("Changing the state of cfg2 would violate enough-services-up"));
-            assertThat(e.getMessage(), containsString("[cfg1] are suspended."));
+            assertTrue(e.getMessage().contains("Changing the state of cfg2 would violate enough-services-up"));
+            assertTrue(e.getMessage().contains("[cfg1] are suspended."));
         }
 
         // cfg1 is removed from the application
@@ -113,8 +112,8 @@ public class OrchestratorTest {
             orchestrator.acquirePermissionToRemove(toApplicationModelHostName(cfg2));
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertThat(e.getMessage(), containsString("Changing the state of cfg2 would violate enough-services-up"));
-            assertThat(e.getMessage(), containsString("[1 missing config server] are down."));
+            assertTrue(e.getMessage().contains("Changing the state of cfg2 would violate enough-services-up"));
+            assertTrue(e.getMessage().contains("[1 missing config server] are down."));
         }
 
         // cfg1 is reprovisioned, added to the node repo, and activated
@@ -128,8 +127,8 @@ public class OrchestratorTest {
             orchestrator.acquirePermissionToRemove(toApplicationModelHostName(cfg1));
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertThat(e.getMessage(), containsString("Changing the state of cfg1 would violate enough-services-up"));
-            assertThat(e.getMessage(), containsString("[cfg2] are suspended"));
+            assertTrue(e.getMessage().contains("Changing the state of cfg1 would violate enough-services-up"));
+            assertTrue(e.getMessage().contains("[cfg2] are suspended"));
         }
 
         // etc (should be the same as for cfg1)

@@ -31,6 +31,7 @@ public class ValidateFieldTypesTest {
     private static final String IMPORTED_FIELD_NAME = "imported_myfield";
     private static final String DOCUMENT_NAME = "my_doc";
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

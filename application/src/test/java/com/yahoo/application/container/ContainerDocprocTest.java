@@ -16,10 +16,8 @@ import com.yahoo.processing.execution.chain.ChainRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -75,13 +73,13 @@ public class ContainerDocprocTest {
 
             processing = com.yahoo.docproc.Processing.of(put);
             progress = docProc.process(ComponentSpecification.fromString(CHAIN_NAME), processing);
-            assertThat(progress, sameInstance(DocumentProcessor.Progress.DONE));
-            assertThat(doc.getFieldValue("title").toString(), equalTo("Terng Nyohz!"));
+            assertSame(progress, DocumentProcessor.Progress.DONE);
+            assertEquals("Terng Nyohz!", doc.getFieldValue("title").toString());
 
             processing = com.yahoo.docproc.Processing.of(put);
             progress = docProc.process(ComponentSpecification.fromString(CHAIN_NAME), processing);
-            assertThat(progress, sameInstance(DocumentProcessor.Progress.DONE));
-            assertThat(doc.getFieldValue("title").toString(), equalTo("Great Album!"));
+            assertSame(progress, DocumentProcessor.Progress.DONE);
+            assertEquals("Great Album!", doc.getFieldValue("title").toString());
         }
     }
 
@@ -107,16 +105,16 @@ public class ContainerDocprocTest {
             processing = com.yahoo.docproc.Processing.of(put);
 
             progress = docProc.processOnce(ComponentSpecification.fromString(CHAIN_NAME), processing);
-            assertThat(progress, instanceOf(DocumentProcessor.LaterProgress.class));
-            assertThat(doc.getFieldValue("title").toString(), equalTo("Great Album!"));
+            assertTrue(progress instanceof  DocumentProcessor.LaterProgress);
+            assertEquals("Great Album!", doc.getFieldValue("title").toString());
 
             progress = docProc.processOnce(ComponentSpecification.fromString(CHAIN_NAME), processing);
-            assertThat(progress, instanceOf(DocumentProcessor.LaterProgress.class));
-            assertThat(doc.getFieldValue("title").toString(), equalTo("Great Album!"));
+            assertTrue(progress instanceof DocumentProcessor.LaterProgress);
+            assertEquals("Great Album!", doc.getFieldValue("title").toString());
 
             progress = docProc.processOnce(ComponentSpecification.fromString(CHAIN_NAME), processing);
-            assertThat(progress, sameInstance(DocumentProcessor.Progress.DONE));
-            assertThat(doc.getFieldValue("title").toString(), equalTo("Terng Nyohz!"));
+            assertSame(progress, DocumentProcessor.Progress.DONE);
+            assertEquals("Terng Nyohz!", doc.getFieldValue("title").toString());
         }
     }
 

@@ -13,9 +13,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
@@ -27,12 +25,12 @@ public class HttpHandlerTest {
         final String message = "failed";
         HttpHandler httpHandler = new HttpTestHandler(new InvalidApplicationException(message));
         HttpResponse response = httpHandler.handle(HttpRequest.createTestRequest("foo", com.yahoo.jdisc.http.HttpRequest.Method.GET));
-        assertThat(response.getStatus(), is(Response.Status.BAD_REQUEST));
+        assertEquals(Response.Status.BAD_REQUEST, response.getStatus());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
         Slime data = SlimeUtils.jsonToSlime(baos.toByteArray());
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.INVALID_APPLICATION_PACKAGE.name()));
-        assertThat(data.get().field("message").asString(), is(message));
+        assertEquals(HttpErrorResponse.ErrorCode.INVALID_APPLICATION_PACKAGE.name(), data.get().field("error-code").asString());
+        assertEquals(message, data.get().field("message").asString());
     }
 
     @Test

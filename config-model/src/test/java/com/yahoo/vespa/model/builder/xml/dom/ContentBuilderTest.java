@@ -35,13 +35,11 @@ import java.util.List;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.config.search.core.ProtonConfig.Feeding.Shared_field_writer_executor;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -50,6 +48,7 @@ import static org.junit.Assert.fail;
  */
 public class ContentBuilderTest extends DomBuilderTest {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -328,7 +327,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertTrue(b.getRootGroup().getMmapNoCoreLimit().isPresent());
         assertEquals(200000, b.getRootGroup().getMmapNoCoreLimit().get().longValue());
 
-        assertThat(s.getSearchNodes().size(), is(2));
+        assertEquals(2, s.getSearchNodes().size());
         assertEquals(200000, s.getSearchNodes().get(0).getMMapNoCoreLimit());
         assertEquals(200000, s.getSearchNodes().get(1).getMMapNoCoreLimit());
         assertEquals("VESPA_MMAP_NOCORE_LIMIT=200000 ", s.getSearchNodes().get(0).getMMapNoCoreEnvVariable());
@@ -357,7 +356,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertTrue(b.getRootGroup().getCoreOnOOM().isPresent());
         assertTrue(b.getRootGroup().getCoreOnOOM().get());
 
-        assertThat(s.getSearchNodes().size(), is(2));
+        assertEquals(2, s.getSearchNodes().size());
         assertTrue(s.getSearchNodes().get(0).getCoreOnOOM());
         assertTrue(s.getSearchNodes().get(1).getCoreOnOOM());
         assertEquals("", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
@@ -383,7 +382,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
-        assertThat(s.getSearchNodes().size(), is(2));
+        assertEquals(2, s.getSearchNodes().size());
         assertFalse(s.getSearchNodes().get(0).getCoreOnOOM());
         assertFalse(s.getSearchNodes().get(1).getCoreOnOOM());
         assertEquals("VESPA_SILENCE_CORE_ON_OOM=true ", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
@@ -409,7 +408,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getMmapNoCoreLimit().isPresent());
 
-        assertThat(s.getSearchNodes().size(), is(2));
+        assertEquals(2, s.getSearchNodes().size());
         assertEquals(200000, s.getSearchNodes().get(0).getMMapNoCoreLimit());
         assertEquals(-1, s.getSearchNodes().get(1).getMMapNoCoreLimit());
         assertEquals("VESPA_MMAP_NOCORE_LIMIT=200000 ", s.getSearchNodes().get(0).getMMapNoCoreEnvVariable());
@@ -435,7 +434,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertFalse(b.getRootGroup().getCoreOnOOM().isPresent());
 
-        assertThat(s.getSearchNodes().size(), is(2));
+        assertEquals(2, s.getSearchNodes().size());
         assertTrue(s.getSearchNodes().get(0).getCoreOnOOM());
         assertFalse(s.getSearchNodes().get(1).getCoreOnOOM());
         assertEquals("", s.getSearchNodes().get(0).getCoreOnOOMEnvVariable());
@@ -470,7 +469,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertTrue(b.getRootGroup().getVespaMallocDebugStackTrace().isPresent());
         assertEquals("all", b.getRootGroup().getVespaMallocDebugStackTrace().get());
 
-        assertThat(s.getSearchNodes().size(), is(4));
+        assertEquals(4, s.getSearchNodes().size());
         for (SearchNode n : s.getSearchNodes()) {
             assertEquals("proton", n.getNoVespaMalloc());
             assertEquals("VESPA_USE_NO_VESPAMALLOC=\"proton\" ", n.getNoVespaMallocEnvVariable());
@@ -508,7 +507,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getRootGroup().getVespaMallocDebug().isPresent());
         assertFalse(b.getRootGroup().getVespaMallocDebugStackTrace().isPresent());
 
-        assertThat(s.getSearchNodes().size(), is(4));
+        assertEquals(4, s.getSearchNodes().size());
         assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_NO_VESPAMALLOC=\"proton\" ", s.getSearchNodes().get(0).getEnvVariables());
         assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC_D=\"distributord\" ", s.getSearchNodes().get(1).getEnvVariables());
         assertEquals("VESPA_SILENCE_CORE_ON_OOM=true OMP_NUM_THREADS=1 VESPA_USE_VESPAMALLOC_DST=\"all\" ", s.getSearchNodes().get(2).getEnvVariables());
@@ -535,15 +534,15 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertNotNull(s.getIndexed());
         assertEquals(2, b.getStorageCluster().getChildren().size());
         assertTrue(b.getStorageCluster().getChildren().get("0").getAffinity().isPresent());
-        assertThat(b.getStorageCluster().getChildren().get("0").getAffinity().get().cpuSocket(), is(0));
+        assertEquals(0, b.getStorageCluster().getChildren().get("0").getAffinity().get().cpuSocket());
         assertTrue(b.getStorageCluster().getChildren().get("1").getAffinity().isPresent());
-        assertThat(b.getStorageCluster().getChildren().get("1").getAffinity().get().cpuSocket(), is(1));
+        assertEquals(1, b.getStorageCluster().getChildren().get("1").getAffinity().get().cpuSocket());
 
-        assertThat(s.getSearchNodes().size(), is(2));
+        assertEquals(2, s.getSearchNodes().size());
         assertTrue(s.getSearchNodes().get(0).getAffinity().isPresent());
-        assertThat(s.getSearchNodes().get(0).getAffinity().get().cpuSocket(), is(0));
+        assertEquals(0, s.getSearchNodes().get(0).getAffinity().get().cpuSocket());
         assertTrue(s.getSearchNodes().get(1).getAffinity().isPresent());
-        assertThat(s.getSearchNodes().get(1).getAffinity().get().cpuSocket(), is(1));
+        assertEquals(1, s.getSearchNodes().get(1).getAffinity().get().cpuSocket());
     }
 
     @Test
@@ -571,19 +570,19 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(6, b.getStorageCluster().getChildren().size());
         assertTrue(b.getRootGroup().useCpuSocketAffinity());
 
-        assertThat(s.getSearchNodes().size(), is(6));
+        assertEquals(6, s.getSearchNodes().size());
         assertTrue(s.getSearchNodes().get(0).getAffinity().isPresent());
         assertTrue(s.getSearchNodes().get(1).getAffinity().isPresent());
         assertTrue(s.getSearchNodes().get(2).getAffinity().isPresent());
         assertTrue(s.getSearchNodes().get(3).getAffinity().isPresent());
         assertTrue(s.getSearchNodes().get(4).getAffinity().isPresent());
         assertTrue(s.getSearchNodes().get(5).getAffinity().isPresent());
-        assertThat(s.getSearchNodes().get(0).getAffinity().get().cpuSocket(),is (0));
-        assertThat(s.getSearchNodes().get(1).getAffinity().get().cpuSocket(),is (1));
-        assertThat(s.getSearchNodes().get(2).getAffinity().get().cpuSocket(),is (2));
-        assertThat(s.getSearchNodes().get(3).getAffinity().get().cpuSocket(),is (0));
-        assertThat(s.getSearchNodes().get(4).getAffinity().get().cpuSocket(),is (1));
-        assertThat(s.getSearchNodes().get(5).getAffinity().get().cpuSocket(),is (0));
+        assertEquals(0, s.getSearchNodes().get(0).getAffinity().get().cpuSocket());
+        assertEquals(1, s.getSearchNodes().get(1).getAffinity().get().cpuSocket());
+        assertEquals(2, s.getSearchNodes().get(2).getAffinity().get().cpuSocket());
+        assertEquals(0, s.getSearchNodes().get(3).getAffinity().get().cpuSocket());
+        assertEquals(1, s.getSearchNodes().get(4).getAffinity().get().cpuSocket());
+        assertEquals(0, s.getSearchNodes().get(5).getAffinity().get().cpuSocket());
 
         // TODO: Only needed for the search nodes anyway?
         assertFalse(b.getStorageCluster().getChildren().get("0").getAffinity().isPresent());
@@ -592,12 +591,12 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertFalse(b.getStorageCluster().getChildren().get("3").getAffinity().isPresent());
         assertFalse(b.getStorageCluster().getChildren().get("4").getAffinity().isPresent());
         assertFalse(b.getStorageCluster().getChildren().get("5").getAffinity().isPresent());
-        //assertThat(b.getStorageNodes().getChildren().get("0").getAffinity().get().cpuSocket(), is(0));
-        //assertThat(b.getStorageNodes().getChildren().get("1").getAffinity().get().cpuSocket(), is(1));
-        //assertThat(b.getStorageNodes().getChildren().get("2").getAffinity().get().cpuSocket(), is(2));
-        //assertThat(b.getStorageNodes().getChildren().get("3").getAffinity().get().cpuSocket(), is(0));
-        //assertThat(b.getStorageNodes().getChildren().get("4").getAffinity().get().cpuSocket(), is(1));
-        //assertThat(b.getStorageNodes().getChildren().get("5").getAffinity().get().cpuSocket(), is(0));
+        //assertEquals(0, b.getStorageNodes().getChildren().get("0").getAffinity().get().cpuSocket());
+        //assertEquals(1, b.getStorageNodes().getChildren().get("1").getAffinity().get().cpuSocket());
+        //assertEquals(2, b.getStorageNodes().getChildren().get("2").getAffinity().get().cpuSocket());
+        //assertEquals(0, b.getStorageNodes().getChildren().get("3").getAffinity().get().cpuSocket());
+        //assertEquals(1, b.getStorageNodes().getChildren().get("4").getAffinity().get().cpuSocket());
+        //assertEquals(0, b.getStorageNodes().getChildren().get("5").getAffinity().get().cpuSocket());
 
     }
 
@@ -666,10 +665,10 @@ public class ContentBuilderTest extends DomBuilderTest {
         a.getSearch().getConfig(pb);
         List<String> serialize = ConfigInstance.serialize(new ProtonConfig(pb));
         String cfg = StringUtilities.implode(serialize.toArray(new String[serialize.size()]), "\n");
-        assertThat(cfg, containsString("summary.cache.maxbytes 8192"));
-        assertThat(cfg, containsString("summary.cache.compression.level 8"));
-        assertThat(cfg, containsString("summary.cache.compression.type LZ4"));
-        assertThat(cfg, containsString("summary.read.io DIRECTIO"));
+        assertTrue(cfg.contains("summary.cache.maxbytes 8192"));
+        assertTrue(cfg.contains("summary.cache.compression.level 8"));
+        assertTrue(cfg.contains("summary.cache.compression.type LZ4"));
+        assertTrue(cfg.contains("summary.read.io DIRECTIO"));
     }
 
     @Test
@@ -716,8 +715,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         content.getSearch().getIndexed().getSearchNode(0).cascadeConfig(builder);
         content.getSearch().getIndexed().getSearchNode(0).addUserConfig(builder);
         ProtonConfig config = new ProtonConfig(builder);
-        assertThat(config.search().mmap().options().size(), is(1));
-        assertThat(config.search().mmap().options(0), is(ProtonConfig.Search.Mmap.Options.POPULATE));
+        assertEquals(1, config.search().mmap().options().size());
+        assertEquals(ProtonConfig.Search.Mmap.Options.POPULATE, config.search().mmap().options(0));
     }
 
     private String singleNodeContentXml() {
