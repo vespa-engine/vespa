@@ -83,7 +83,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                 "select * from sources * where [{grammar: \"segment\"}]userInput(\"nal le\")");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains ([{origin: {original: \"nal le\", 'offset': 0, length: 6}}]phrase(\"nal\", \"le\"));", query.yqlRepresentation());
+        assertEquals("select * from sources * where default contains ([{origin: {original: \"nal le\", offset: 0, length: 6}}]phrase(\"nal\", \"le\"));", query.yqlRepresentation());
     }
 
     @Test

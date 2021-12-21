@@ -314,7 +314,7 @@ public class YqlParserTestCase {
                                 "([ {ranked: false} ]\"colors\")").isRanked());
 
         Substring origin = getRootWord("select foo from bar where baz contains " +
-                                       "([ {origin: {original: \"abc\", 'offset': 1, length: 2}} ]" +
+                                       "([ {origin: {original: \"abc\", offset: 1, length: 2}} ]" +
                                        "\"colors\")").getOrigin();
         assertEquals("abc", origin.string);
         assertEquals(1, origin.start);
@@ -350,7 +350,7 @@ public class YqlParserTestCase {
     @Test
     public void testNestedPhraseSegment() {
         assertParse("select foo from bar where baz contains " +
-                    "phrase(\"a\", \"b\", [ {origin: {original: \"c d\", 'offset': 0, length: 3}} ]" +
+                    "phrase(\"a\", \"b\", [ {origin: {original: \"c d\", offset: 0, length: 3}} ]" +
                     "phrase(\"c\", \"d\"));",
                     "baz:\"a b 'c d'\"");
     }
@@ -969,7 +969,7 @@ public class YqlParserTestCase {
     @Test
     public void testWordAlternativesWithOrigin() {
         QueryTree q = parse("select * from sources * where foo contains" +
-                            " ([{origin: {original: \" trees \", 'offset': 1, length: 5}}]" +
+                            " ([{origin: {original: \" trees \", offset: 1, length: 5}}]" +
                             "alternatives({trees: 1.0, tree: 0.7}))");
         Item root = q.getRoot();
         assertSame(WordAlternativesItem.class, root.getClass());
@@ -1071,7 +1071,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testAndSegmenting() {
-        parse("select * from sources * where (default contains ([{stem: false}]\"m\") AND default contains ([{origin: {original: \"m\'s\", 'offset': 0, length: 3}, andSegmenting: true}]phrase(\"m\", \"s\"))) timeout 472");
+        parse("select * from sources * where (default contains ([{stem: false}]\"m\") AND default contains ([{origin: {original: \"m\'s\", offset: 0, length: 3}, andSegmenting: true}]phrase(\"m\", \"s\"))) timeout 472");
     }
 
     private void assertUrlQuery(String field, Query query, boolean startAnchor, boolean endAnchor, boolean endAnchorIsDefault) {

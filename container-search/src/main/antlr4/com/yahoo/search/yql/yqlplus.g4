@@ -270,7 +270,7 @@ sequence_source
 	;
 
 namespaced_name
-    :   (ident (DOT ident)* (DOT STAR)?)
+    :   (dotted_idents (DOT STAR)?)
     ;
 
 orderby
@@ -450,12 +450,12 @@ propertyNameAndValue
 	;
 
 propertyName
-	: dottedIdentifiers
+	: dotted_idents
 	| STRING
 	;
 
-dottedIdentifiers
-    :   IDENTIFIER (DOT IDENTIFIER)*
+dotted_idents
+    :   ident (DOT ident)*
     ;
 
 constantExpression
