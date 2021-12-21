@@ -34,6 +34,7 @@ import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.DocumentResponse;
 import com.yahoo.documentapi.ProgressToken;
+import com.yahoo.documentapi.Response.Outcome;
 import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorDataHandler;
@@ -65,6 +66,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
+import com.yahoo.vespa.http.server.MetricNames;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.Exceptions.RunnableThrowingIOException;
 
@@ -93,8 +95,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -450,7 +450,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
                             outstanding.decrementAndGet();
-                            handle(path, handler, response);
+                            updatePutMetrics(response.outcome());
+                            handleFeedOperation(path, handler, response);
                         });
                 return () -> dispatchOperation(() -> asyncSession.put(put, parameters));
             });
@@ -467,7 +468,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
                             outstanding.decrementAndGet();
-                            handle(path, handler, response);
+                            updateUpdateMetrics(response.outcome());
+                            handleFeedOperation(path, handler, response);
                         });
                 return () -> dispatchOperation(() -> asyncSession.update(update, parameters));
             });
@@ -482,7 +484,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                     .withResponseHandler(response -> {
                         outstanding.decrementAndGet();
-                        handle(path, handler, response);
+                        updateRemoveMetrics(response.outcome());
+                        handleFeedOperation(path, handler, response);
                     });
             return () -> dispatchOperation(() -> asyncSession.remove(remove, parameters));
         });
@@ -1032,8 +1035,33 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
-    private static void handle(DocumentPath path, ResponseHandler handler, com.yahoo.documentapi.Response response) {
+    private static void handleFeedOperation(DocumentPath path, ResponseHandler handler, com.yahoo.documentapi.Response response) {
         handle(path, handler, response, (document, jsonResponse) -> jsonResponse.commit(Response.Status.OK));
+    }
+
+    private void updatePutMetrics(Outcome outcome) {
+        switch (outcome) {
+            case SUCCESS: metric.add(MetricNames.SUCCEEDED, 1, null); break;
+            case CONDITION_FAILED: metric.add(MetricNames.CONDITION_NOT_MET, 1, null); break;
+            default: metric.add(MetricNames.FAILED, 1, null); break;
+        }
+    }
+
+    private void updateUpdateMetrics(Outcome outcome) {
+        switch (outcome) {
+            case SUCCESS: metric.add(MetricNames.SUCCEEDED, 1, null); break;
+            case NOT_FOUND: metric.add(MetricNames.NOT_FOUND, 1, null); break;
+            case CONDITION_FAILED: metric.add(MetricNames.CONDITION_NOT_MET, 1, null); break;
+            default: metric.add(MetricNames.FAILED, 1, null); break;
+        }
+    }
+
+    private void updateRemoveMetrics(Outcome outcome) {
+        switch (outcome) {
+            case SUCCESS: metric.add(MetricNames.SUCCEEDED, 1, null); break;
+            case CONDITION_FAILED: metric.add(MetricNames.CONDITION_NOT_MET, 1, null); break;
+            default: metric.add(MetricNames.FAILED, 1, null); break;
+        }
     }
 
     // ------------------------------------------------- Visits ------------------------------------------------

@@ -3,7 +3,6 @@ package com.yahoo.document.restapi.resource;
 
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
-import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
@@ -44,6 +43,7 @@ import com.yahoo.documentapi.VisitorResponse;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.TraceNode;
@@ -126,7 +126,7 @@ public class DocumentV1ApiTest {
                                                                                       Map.of("music", "default")));
     ManualClock clock;
     MockDocumentAccess access;
-    Metric metric;
+    MockMetric metric;
     MetricReceiver metrics;
     DocumentV1ApiHandler handler;
 
@@ -134,7 +134,7 @@ public class DocumentV1ApiTest {
     public void setUp() {
         clock = new ManualClock();
         access = new MockDocumentAccess(docConfig);
-        metric = new NullMetric();
+        metric = new MockMetric();
         metrics = new MetricReceiver.MockReceiver();
         handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
                                            executorConfig, clusterConfig, bucketConfig);
@@ -614,6 +614,23 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
+        // PUT on document which is not found is a 200
+        access.session.expect((update, parameters) -> {
+            parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
+            return new Result(Result.ResultType.SUCCESS, null);
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/sonny", PUT,
+                                      "{" +
+                                      "  \"fields\": {" +
+                                      "    \"artist\": { \"assign\": \"The Shivers\" }" +
+                                      "  }" +
+                                      "}");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/docid/sonny\"," +
+                       "  \"id\": \"id:space:music::sonny\"" +
+                       "}", response.readAll());
+        assertEquals(200, response.getStatus());
+
         // DELETE with full document ID is a document remove operation.
         access.session.expect((remove, parameters) -> {
             DocumentRemove expectedRemove = new DocumentRemove(doc2.getId());
@@ -667,7 +684,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new Response(0, "disk full", Response.Outcome.INSUFFICIENT_STORAGE));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two");
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", DELETE);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
                        "  \"id\": \"id:space:music:n=1:two\"," +
@@ -680,7 +697,7 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new Response(0, "no dice", Response.Outcome.CONDITION_FAILED));
             return new Result(Result.ResultType.SUCCESS, null);
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two");
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", DELETE);
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
                        "  \"id\": \"id:space:music:n=1:two\"," +
@@ -746,6 +763,10 @@ public class DocumentV1ApiTest {
                 handler.get().handleResponse(new Response(0));  // response may eventually arrive, but too late.
         }
 
+        assertEquals(3, metric.metrics().get("httpapi_succeeded").get(Map.of()), 0);
+        assertEquals(1, metric.metrics().get("httpapi_condition_not_met").get(Map.of()), 0);
+        assertEquals(1, metric.metrics().get("httpapi_not_found").get(Map.of()), 0);
+        assertEquals(1, metric.metrics().get("httpapi_failed").get(Map.of()), 0);
         driver.close();
     }
 
