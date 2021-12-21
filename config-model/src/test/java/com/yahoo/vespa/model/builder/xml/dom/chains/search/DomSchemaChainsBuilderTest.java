@@ -27,9 +27,9 @@ import java.util.List;
 import static com.yahoo.container.core.ChainsConfig.Chains;
 import static com.yahoo.container.core.ChainsConfig.Components;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -112,7 +112,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     }
 
     private Matcher<ChainedComponent<?>> searcherWithId(final String componentId) {
-        return new BaseMatcher<ChainedComponent<?>>() {
+        return new BaseMatcher<>() {
             @Override
             public boolean matches(Object o) {
                 return o instanceof ChainedComponent &&
@@ -130,7 +130,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     public void checkProviderFederationOptions() {
         FederationOptions options = getProvider().federationOptions();
 
-        assertEquals(true, options.getOptional());
+        assertTrue(options.getOptional());
         assertEquals(2300, options.getTimeoutInMilliseconds());
     }
 
@@ -138,7 +138,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     public void checkSourceFederationOptions() {
         FederationOptions options = getSource().federationOptions();
 
-        assertEquals(true, options.getOptional()); //inherited
+        assertTrue(options.getOptional()); //inherited
         assertEquals(12, options.getTimeoutInMilliseconds());
     }
 

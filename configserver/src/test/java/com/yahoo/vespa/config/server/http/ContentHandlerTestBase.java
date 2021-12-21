@@ -14,9 +14,8 @@ import java.util.Collection;
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
-import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     protected String baseUrl = "http://foo:1337/application/v2/tenant/default/session/1/content/";
@@ -39,7 +38,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     public void require_that_nonexistant_file_returns_not_found() {
         HttpResponse response = doRequest(HttpRequest.Method.GET, "/test2.txt");
         assertNotNull(response);
-        assertThat(response.getStatus(), is(NOT_FOUND));
+        assertEquals(NOT_FOUND, response.getStatus());
     }
 
     @Test
@@ -50,7 +49,7 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
     @Test
     public void require_that_illegal_return_property_fails() {
         HttpResponse response = doRequest(HttpRequest.Method.GET, "/test.txt?return=foo");
-        assertThat(response.getStatus(), is(BAD_REQUEST));
+        assertEquals(BAD_REQUEST, response.getStatus());
     }
 
     @Test
@@ -77,17 +76,17 @@ public abstract class ContentHandlerTestBase extends SessionHandlerTest {
         HttpResponse response = doRequest(HttpRequest.Method.GET, path);
         assertNotNull(response);
         final String renderedString = SessionHandlerTest.getRenderedString(response);
-        assertThat(renderedString, response.getStatus(), is(OK));
-        assertThat(renderedString, is(expectedContent));
-        assertThat(response.getContentType(), is(expectedContentType));
+        assertEquals(renderedString, OK, response.getStatus());
+        assertEquals(expectedContent, renderedString);
+        assertEquals(expectedContentType, response.getContentType());
     }
 
     protected void assertStatus(String path, String expectedContent) throws IOException {
         HttpResponse response = doRequest(HttpRequest.Method.GET, path);
         assertNotNull(response);
         final String renderedString = SessionHandlerTest.getRenderedString(response);
-        assertThat(renderedString, response.getStatus(), is(OK));
-        assertThat(renderedString, is(expectedContent));
+        assertEquals(renderedString, OK, response.getStatus());
+        assertEquals(expectedContent, renderedString);
     }
 
     protected abstract HttpResponse doRequest(HttpRequest.Method method, String path);

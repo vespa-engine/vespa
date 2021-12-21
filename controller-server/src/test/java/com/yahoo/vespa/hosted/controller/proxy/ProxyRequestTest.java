@@ -17,17 +17,18 @@ import static org.junit.Assert.assertEquals;
  */
 public class ProxyRequestTest {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void testBadUri() throws Exception {
+    public void testBadUri() {
         exception.expectMessage("Request path '/path' does not end with proxy path '/zone/v2/'");
         testRequest("http://domain.tld/path", "/zone/v2/");
     }
 
     @Test
-    public void testUris() throws Exception {
+    public void testUris() {
         {
             // Root request
             ProxyRequest request = testRequest("http://controller.domain.tld/my/path", "");

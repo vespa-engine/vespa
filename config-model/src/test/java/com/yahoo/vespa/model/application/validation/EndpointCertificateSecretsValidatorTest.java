@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
  * @author andreer
  */
 public class EndpointCertificateSecretsValidatorTest {
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

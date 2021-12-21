@@ -7,8 +7,7 @@ import org.junit.Test;
 import java.io.File;
 import java.util.List;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -22,38 +21,38 @@ public class ConfigModelUtilsTest {
     @Test
     public void all_def_files_in_correct_directory_are_handled_and_files_outside_are_ignored() {
         List<Bundle> bundles = Bundle.getBundles(new File(VALID_TEST_BUNDLE));
-        assertThat(bundles.size(), is(1));
-        assertThat(bundles.get(0).getDefEntries().size(), is(5));
+        assertEquals(1, bundles.size());
+        assertEquals(5, bundles.get(0).getDefEntries().size());
     }
 
     @Test
     public void def_file_with_namespace_is_handled() {
         Bundle.DefEntry defEntry = getDefEntry("test-namespace");
-        assertThat(defEntry.defNamespace, is("config"));
+        assertEquals("config", defEntry.defNamespace);
     }
 
     @Test
     public void def_file_with_namespace_and_namespace_in_filename_is_handled() {
         Bundle.DefEntry defEntry = getDefEntry("namespace-in-filename");
-        assertThat(defEntry.defNamespace, is("a.b"));
+        assertEquals("a.b", defEntry.defNamespace);
     }
 
     @Test
     public void def_file_with_package_is_handled() {
         Bundle.DefEntry defEntry = getDefEntry("test-package");
-        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
+        assertEquals("com.mydomain.mypackage", defEntry.defNamespace);
     }
 
     @Test
     public void def_file_with_package_and_pacakage_in_filename_is_handled() {
         Bundle.DefEntry defEntry = getDefEntry("package-in-filename");
-        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
+        assertEquals("com.mydomain.mypackage", defEntry.defNamespace);
     }
 
     @Test
     public void def_file_with_both_package_and_namespace_gets_package_as_namespace() {
         Bundle.DefEntry defEntry = getDefEntry("namespace-and-package");
-        assertThat(defEntry.defNamespace, is("com.mydomain.mypackage"));
+        assertEquals("com.mydomain.mypackage", defEntry.defNamespace);
     }
 
     private static Bundle.DefEntry getDefEntry(String defName) {
@@ -72,7 +71,7 @@ public class ConfigModelUtilsTest {
             Bundle.getBundles(new File(INVALID_TEST_BUNDLE));
             fail();
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file"));
+            assertEquals("Error opening jar file 'invalid.jar'. Please check that this is a valid jar file", e.getMessage());
         }
     }
 

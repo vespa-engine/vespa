@@ -25,10 +25,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -42,7 +40,7 @@ public class DeployStateTest {
         HostProvisioner provisioner = new InMemoryProvisioner(true, false, "foo.yahoo.com");
         builder.modelHostProvisioner(provisioner);
         DeployState state = builder.build();
-        assertThat(state.getProvisioner(), is(provisioner));
+        assertEquals(provisioner, state.getProvisioner());
     }
 
     @Test
@@ -51,28 +49,28 @@ public class DeployStateTest {
         ApplicationPackage app = MockApplicationPackage.createEmpty();
         builder.permanentApplicationPackage(Optional.of(app));
         DeployState state = builder.build();
-        assertThat(state.getPermanentApplicationPackage().get(), is(app));
+        assertEquals(app, state.getPermanentApplicationPackage().get());
     }
 
     @Test
     public void testPreviousModelIsProvided() throws IOException, SAXException {
         VespaModel prevModel = new VespaModel(MockApplicationPackage.createEmpty());
         DeployState.Builder builder = new DeployState.Builder();
-        assertThat(builder.previousModel(prevModel).build().getPreviousModel().get(), is(prevModel));
+        assertEquals(prevModel, builder.previousModel(prevModel).build().getPreviousModel().get());
     }
 
     @Test
     public void testProperties() {
         DeployState.Builder builder = new DeployState.Builder();
         DeployState state = builder.build();
-        assertThat(state.getProperties().applicationId(), is(ApplicationId.defaultId()));
+        assertEquals(ApplicationId.defaultId(), state.getProperties().applicationId());
         ApplicationId customId = new ApplicationId.Builder()
                                  .tenant("bar")
                                  .applicationName("foo").instanceName("quux").build();
         ModelContext.Properties properties = new TestProperties().setApplicationId(customId);
         builder.properties(properties);
         state = builder.build();
-        assertThat(state.getProperties().applicationId(), is(customId));
+        assertEquals(customId, state.getProperties().applicationId());
     }
 
     @Test
@@ -89,7 +87,7 @@ public class DeployStateTest {
         assertNotNull(overridden);
         Double defaultValue = overridden.getDoubleDefs().get("doubleVal").getDefVal();
         assertNotNull(defaultValue);
-        assertThat(defaultValue.intValue(), is(0));
+        assertEquals(0, defaultValue.intValue());
     }
 
     @Test
@@ -105,8 +103,8 @@ public class DeployStateTest {
 
         ConfigDefinition test1 = state.getConfigDefinition(new ConfigDefinitionKey("test2", "a.b")).get();
         assertNotNull(test1);
-        assertThat(test1.getName(), is("test2"));
-        assertThat(test1.getNamespace(), is("a.b"));
+        assertEquals("test2", test1.getName());
+        assertEquals("a.b", test1.getNamespace());
     }
 
     @Test

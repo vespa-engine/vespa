@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import static org.junit.Assert.*;
-
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import org.junit.Rule;
 import org.junit.Test;
@@ -10,6 +8,11 @@ import org.junit.rules.ExpectedException;
 
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.parser.ParseException;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Lester Solbakken
@@ -49,6 +52,7 @@ public class PredicateDataTypeTestCase {
         return "upper-bound: " + bound + "\n";
     }
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException exception = ExpectedException.none();
 

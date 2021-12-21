@@ -50,11 +50,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.config.server.application.TenantApplications.RemoveApplicationWaiter;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -99,11 +97,11 @@ public class TenantApplicationsTest {
         writeApplicationData(createApplicationId("bar"), 4L);
         TenantApplications repo = createZKAppRepo();
         List<ApplicationId> applications = repo.activeApplications();
-        assertThat(applications.size(), is(2));
-        assertThat(applications.get(0).application().value(), is("bar"));
-        assertThat(applications.get(1).application().value(), is("foo"));
-        assertThat(repo.requireActiveSessionOf(applications.get(0)), is(4L));
-        assertThat(repo.requireActiveSessionOf(applications.get(1)), is(3L));
+        assertEquals(2, applications.size());
+        assertEquals("bar", applications.get(0).application().value());
+        assertEquals("foo", applications.get(1).application().value());
+        assertEquals(4, repo.requireActiveSessionOf(applications.get(0)));
+        assertEquals(3, repo.requireActiveSessionOf(applications.get(1)));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -130,10 +128,10 @@ public class TenantApplicationsTest {
         repo.createPutTransaction(myapp, 3).commit();
         String path = TenantRepository.getApplicationsPath(tenantName).append(myapp.serializedForm()).getAbsolute();
         assertNotNull(curatorFramework.checkExists().forPath(path));
-        assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("3"));
+        assertEquals("3", Utf8.toString(curatorFramework.getData().forPath(path)));
         repo.createPutTransaction(myapp, 5).commit();
         assertNotNull(curatorFramework.checkExists().forPath(path));
-        assertThat(Utf8.toString(curatorFramework.getData().forPath(path)), is("5"));
+        assertEquals("5", Utf8.toString(curatorFramework.getData().forPath(path)));
     }
 
     @Test
@@ -145,11 +143,11 @@ public class TenantApplicationsTest {
         repo.createApplication(id2);
         repo.createPutTransaction(id1, 1).commit();
         repo.createPutTransaction(id2, 1).commit();
-        assertThat(repo.activeApplications().size(), is(2));
+        assertEquals(2, repo.activeApplications().size());
         repo.createDeleteTransaction(id1).commit();
-        assertThat(repo.activeApplications().size(), is(1));
+        assertEquals(1, repo.activeApplications().size());
         repo.createDeleteTransaction(id2).commit();
-        assertThat(repo.activeApplications().size(), is(0));
+        assertEquals(0, repo.activeApplications().size());
     }
 
     public static class MockReloadListener implements ReloadListener {

@@ -2,12 +2,10 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
-import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.config.VespaVersion;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.xml.sax.InputSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +41,7 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 

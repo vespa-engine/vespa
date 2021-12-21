@@ -56,6 +56,7 @@ public class SystemFlagsDataArchiveTest {
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException expectedException = ExpectedException.none();
 

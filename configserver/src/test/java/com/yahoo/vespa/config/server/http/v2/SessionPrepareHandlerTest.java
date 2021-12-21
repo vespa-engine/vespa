@@ -42,12 +42,10 @@ import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeErrorCodeAndMessage;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author hmusum
@@ -128,7 +126,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertNotNull(response);
-        assertThat(response.getStatus(), is(OK));
+        assertEquals(OK, response.getStatus());
         assertResponseContains(response, "\"activate\":\"http://foo:1337" + pathPrefix + sessionId +
                                          "/active\",\"message\":\"Session " + sessionId + preparedMessage);
     }
@@ -137,8 +135,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_debug() throws Exception {
         HttpResponse response = createHandler().handle(
                 createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, 9999L, "?debug=true"));
-        assertThat(response.getStatus(), is(NOT_FOUND));
-        assertThat(SessionHandlerTest.getRenderedString(response), containsString("NotFoundException"));
+        assertEquals(NOT_FOUND, response.getStatus());
+        assertTrue(SessionHandlerTest.getRenderedString(response).contains("NotFoundException"));
     }
 
     @Test
@@ -147,8 +145,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         HttpResponse response = createHandler().handle(
                 createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId, "?verbose=true"));
         System.out.println(getRenderedString(response));
-        assertThat(response.getStatus(), is(OK));
-        assertThat(getRenderedString(response), containsString("Created application "));
+        assertEquals(OK, response.getStatus());
+        assertTrue(getRenderedString(response).contains("Created application "));
     }
 
     @Test
@@ -191,7 +189,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertNotNull(response);
-        assertThat(response.getStatus(), is(OK));
+        assertEquals(OK, response.getStatus());
         assertResponseContains(response, tenantMessage);
     }
 
@@ -207,7 +205,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         pathPrefix = "/application/v2/tenant/" + defaultTenant + "/session/";
         HttpResponse response = request(HttpRequest.Method.PUT, sessionId);
         assertNotNull(response);
-        assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
+        assertEquals(SessionHandlerTest.getRenderedString(response), OK, response.getStatus());
 
         String applicationName = "myapp";
         ApplicationId applicationId2 = ApplicationId.from(tenant.value(), applicationName, "default");
@@ -218,7 +216,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 "/prepared?applicationName=" + applicationName;
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
         assertNotNull(response);
-        assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
+        assertEquals(SessionHandlerTest.getRenderedString(response), OK, response.getStatus());
 
         ApplicationId applicationId3 = ApplicationId.from(tenant.value(), applicationName, "quux");
         long sessionId3 = applicationRepository.createSession(applicationId3, timeoutBudget, app);
@@ -226,7 +224,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
                 "/prepared?applicationName=" + applicationName + "&instance=quux";
         response = handler.handle(SessionHandlerTest.createTestRequest(pathPrefix));
         assertNotNull(response);
-        assertThat(SessionHandlerTest.getRenderedString(response), response.getStatus(), is(OK));
+        assertEquals(SessionHandlerTest.getRenderedString(response), OK, response.getStatus());
     }
 
     @Test
@@ -256,8 +254,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(400, response.getStatus());
         Slime data = getData(response);
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.OUT_OF_CAPACITY.name()));
-        assertThat(data.get().field("message").asString(), is(exceptionMessage));
+        assertEquals(HttpErrorResponse.ErrorCode.OUT_OF_CAPACITY.name(), data.get().field("error-code").asString());
+        assertEquals(exceptionMessage, data.get().field("message").asString());
     }
 
     @Test
@@ -271,8 +269,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(500, response.getStatus());
         Slime data = getData(response);
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR.name()));
-        assertThat(data.get().field("message").asString(), is(exceptionMessage));
+        assertEquals(HttpErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR.name(), data.get().field("error-code").asString());
+        assertEquals(exceptionMessage, data.get().field("message").asString());
     }
 
     @Test
@@ -286,8 +284,8 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(500, response.getStatus());
         Slime data = getData(response);
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.APPLICATION_LOCK_FAILURE.name()));
-        assertThat(data.get().field("message").asString(), is(exceptionMessage));
+        assertEquals(HttpErrorResponse.ErrorCode.APPLICATION_LOCK_FAILURE.name(), data.get().field("error-code").asString());
+        assertEquals(exceptionMessage, data.get().field("message").asString());
     }
 
     @Test
@@ -308,11 +306,11 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private static void assertResponseContains(HttpResponse response, String string) throws IOException {
-        assertThat(SessionHandlerTest.getRenderedString(response), containsString(string));
+        assertTrue(SessionHandlerTest.getRenderedString(response).contains(string));
     }
 
     private static void assertResponseNotContains(HttpResponse response, String string) throws IOException {
-        assertThat(SessionHandlerTest.getRenderedString(response), not(containsString(string)));
+        assertFalse(SessionHandlerTest.getRenderedString(response).contains(string));
     }
 
     private SessionHandler createHandler() {

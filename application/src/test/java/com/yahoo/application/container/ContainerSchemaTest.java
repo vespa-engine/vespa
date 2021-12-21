@@ -10,9 +10,8 @@ import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
@@ -28,7 +27,7 @@ public class ContainerSchemaTest {
             byte[] rendered = container.search().processAndRender(ComponentSpecification.fromString("mychain"),
                     ComponentSpecification.fromString("XmlRenderer"), new Query(""));
             String renderedAsString = new String(rendered, StandardCharsets.UTF_8);
-            assertThat(renderedAsString, containsString(searcherId));
+            assertTrue(renderedAsString.contains(searcherId));
         }
     }
 
@@ -40,7 +39,7 @@ public class ContainerSchemaTest {
             Search searching = container.search();
             Result result = searching.process(ComponentSpecification.fromString("mychain"), new Query(""));
             String hitTitle = result.hits().get(0).getField("title").toString();
-            assertThat(hitTitle, is(searcherId));
+            assertEquals(searcherId, hitTitle);
         }
     }
 

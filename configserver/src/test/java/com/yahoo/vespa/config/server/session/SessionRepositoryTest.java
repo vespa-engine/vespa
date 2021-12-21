@@ -52,12 +52,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.LongPredicate;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -79,6 +77,7 @@ public class SessionRepositoryTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -193,7 +192,7 @@ public class SessionRepositoryTest {
         expectedException.expectMessage("Could not load remote session " + sessionIdString);
         expectedException.expect(RuntimeException.class);
         sessionRepository.loadSessions(new InThreadExecutorService());
-        assertThat(sessionRepository.getRemoteSessionsFromZooKeeper().size(), is(0));
+        assertTrue(sessionRepository.getRemoteSessionsFromZooKeeper().isEmpty());
     }
 
     @Test(expected = InvalidApplicationException.class)
@@ -302,11 +301,6 @@ public class SessionRepositoryTest {
         assertRemoteSessionStatus(sessionId, status);
     }
 
-    private void assertSessionRemoved(long sessionId) {
-        waitFor(p -> sessionRepository.getRemoteSession(sessionId) == null, sessionId);
-        assertNull(sessionRepository.getRemoteSession(sessionId));
-    }
-
     private void assertRemoteSessionExists(long sessionId) {
         assertRemoteSessionStatus(sessionId, Session.Status.NEW);
     }
@@ -315,7 +309,7 @@ public class SessionRepositoryTest {
         waitFor(p -> sessionRepository.getRemoteSession(sessionId) != null &&
                      sessionRepository.getRemoteSession(sessionId).getStatus() == status, sessionId);
         assertNotNull(sessionRepository.getRemoteSession(sessionId));
-        assertThat(sessionRepository.getRemoteSession(sessionId).getStatus(), is(status));
+        assertEquals(status, sessionRepository.getRemoteSession(sessionId).getStatus());
     }
 
     private void waitFor(LongPredicate predicate, long sessionId) {

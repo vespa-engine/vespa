@@ -8,7 +8,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static com.yahoo.vespa.config.server.configchange.Utils.*;

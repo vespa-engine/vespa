@@ -13,9 +13,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -32,32 +31,32 @@ public class VersionStateTest {
         Version unknownVersion = new Version(0, 0, 0);
 
         VersionState state = createVersionState();
-        assertThat(state.storedVersion(), is(unknownVersion));
+        assertEquals(unknownVersion, state.storedVersion());
         assertTrue(state.isUpgraded());
         state.saveNewVersion();
         assertFalse(state.isUpgraded());
 
         state.saveNewVersion("badversion");
-        assertThat(state.storedVersion(), is(unknownVersion));
+        assertEquals(unknownVersion, state.storedVersion());
         assertTrue(state.isUpgraded());
 
         state.saveNewVersion("5.0.0");
-        assertThat(state.storedVersion(), is(new Version(5, 0, 0)));
+        assertEquals(new Version(5, 0, 0), state.storedVersion());
         assertTrue(state.isUpgraded());
 
         // Remove zk node, should find version in ZooKeeper
         curator.delete(VersionState.versionPath);
-        assertThat(state.storedVersion(), is(new Version(5, 0, 0)));
+        assertEquals(new Version(5, 0, 0), state.storedVersion());
         assertTrue(state.isUpgraded());
 
         // Save new version, remove version in file, should find version in ZooKeeper
         state.saveNewVersion("6.0.0");
         Files.delete(state.versionFile().toPath());
-        assertThat(state.storedVersion(), is(new Version(6, 0, 0)));
+        assertEquals(new Version(6, 0, 0), state.storedVersion());
         assertTrue(state.isUpgraded());
 
         state.saveNewVersion();
-        assertThat(state.currentVersion(), is(state.storedVersion()));
+        assertEquals(state.currentVersion(), state.storedVersion());
         assertFalse(state.isUpgraded());
     }
 
@@ -69,7 +68,7 @@ public class VersionStateTest {
         File versionFile = new File(dbDir, "vespa_version");
         assertTrue(versionFile.exists());
         Version stored = Version.fromString(IOUtils.readFile(versionFile));
-        assertThat(stored, is(state.currentVersion()));
+        assertEquals(stored, state.currentVersion());
     }
 
     private VersionState createVersionState() throws IOException {

@@ -6,11 +6,8 @@ import com.yahoo.vespa.config.ConfigKey;
 
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -23,7 +20,7 @@ public class HttpConfigRequestTest {
 
         HttpConfigRequest request = HttpConfigRequest.createFromRequestV1(HttpRequest.createTestRequest("http://example.yahoo.com:8080/config/v1/" +
                 configKey.getNamespace() + "." + configKey.getName() + "/" + configKey.getConfigId(), GET));
-        assertThat(request.getConfigKey(), is(configKey));
+        assertEquals(configKey, request.getConfigKey());
         assertTrue(request.getDefContent().isEmpty());
     }
 

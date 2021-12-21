@@ -21,9 +21,9 @@ public class DataTypeTestCase {
     public void testWeightedSetTypes() {
         DataType stringDefault = DataType.getWeightedSet(DataType.STRING);
         DataType stringTag=DataType.getWeightedSet(DataType.STRING,true,true);
-        assertTrue(stringDefault.equals(stringDefault));
-        assertTrue(stringTag.equals(stringTag));
-        assertFalse(stringDefault.equals(stringTag));
+        assertEquals(stringDefault, stringDefault);
+        assertEquals(stringTag, stringTag);
+        assertNotEquals(stringDefault, stringTag);
         assertEquals("WeightedSet<string>",stringDefault.getName());
         assertEquals(18, stringTag.getCode());
         //assertEquals("WeightedSet<string>;Add;Remove",stringTag.getName());
@@ -55,6 +55,7 @@ public class DataTypeTestCase {
         assertEquals(PredicateFieldValue.class, DataType.PREDICATE.createFieldValue().getClass());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testCreateFieldValueWithArg() {
         {

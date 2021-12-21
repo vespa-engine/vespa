@@ -23,12 +23,8 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -54,8 +50,8 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         );
         createModel(root, clusterElem);
         ConnectorConfig cfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/bananarama");
-        assertThat(cfg.requestHeaderSize(), is(300000));
-        assertThat(cfg.headerCacheSize(), is(300000));
+        assertEquals(300000, cfg.requestHeaderSize());
+        assertEquals(300000, cfg.headerCacheSize());
     }
 
     @Test
@@ -92,15 +88,15 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         final ComponentsConfig.Components jettyHttpServerComponent = extractComponentByClassName(
                 containerComponentsConfig(), com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName());
-        assertThat(jettyHttpServerComponent, is(not(nullValue())));
+        assertNotNull(jettyHttpServerComponent);
 
         final ComponentsConfig.Components filterBindingsProviderComponent = extractComponentByClassName(
                 containerComponentsConfig(), FilterBindingsProvider.class.getName());
-        assertThat(filterBindingsProviderComponent, is(not(nullValue())));
+        assertNotNull(filterBindingsProviderComponent);
 
         final ComponentsConfig.Components.Inject filterBindingsProviderInjection = extractInjectionById(
                 jettyHttpServerComponent, filterBindingsProviderComponent.id());
-        assertThat(filterBindingsProviderInjection, is(not(nullValue())));
+        assertNotNull(filterBindingsProviderInjection);
     }
 
     @Test
@@ -116,15 +112,15 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         final ComponentsConfig.Components jettyHttpServerComponent = extractComponentByClassName(
                 clusterComponentsConfig(), com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName());
-        assertThat(jettyHttpServerComponent, is(not(nullValue())));
+        assertNotNull(jettyHttpServerComponent);
 
         final ComponentsConfig.Components filterBindingsProviderComponent = extractComponentByClassName(
                 clusterComponentsConfig(), FilterBindingsProvider.class.getName());
-        assertThat(filterBindingsProviderComponent, is(not(nullValue())));
+        assertNotNull(filterBindingsProviderComponent);
 
         final ComponentsConfig.Components.Inject filterBindingsProviderInjection = extractInjectionById(
                 jettyHttpServerComponent, filterBindingsProviderComponent.id());
-        assertThat(filterBindingsProviderInjection, is(not(nullValue())));
+        assertNotNull(filterBindingsProviderInjection);
     }
 
     @Test
@@ -168,31 +164,31 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         createModel(root, clusterElem);
         ConnectorConfig minimalCfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/minimal/configured-ssl-provider@minimal");
         assertTrue(minimalCfg.ssl().enabled());
-        assertThat(minimalCfg.ssl().privateKeyFile(), is(equalTo("/foo/key")));
-        assertThat(minimalCfg.ssl().certificateFile(), is(equalTo("/foo/cert")));
-        assertThat(minimalCfg.ssl().caCertificateFile(), is(equalTo("")));
-        assertThat(minimalCfg.ssl().clientAuth(), is(equalTo(ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED)));
+        assertEquals("/foo/key", minimalCfg.ssl().privateKeyFile());
+        assertEquals("/foo/cert", minimalCfg.ssl().certificateFile());
+        assertTrue(minimalCfg.ssl().caCertificateFile().isEmpty());
+        assertEquals(ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED, minimalCfg.ssl().clientAuth());
 
         ConnectorConfig withCaCerts = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/with-cacerts/configured-ssl-provider@with-cacerts");
         assertTrue(withCaCerts.ssl().enabled());
-        assertThat(withCaCerts.ssl().privateKeyFile(), is(equalTo("/foo/key")));
-        assertThat(withCaCerts.ssl().certificateFile(), is(equalTo("/foo/cert")));
-        assertThat(withCaCerts.ssl().caCertificateFile(), is(equalTo("/foo/cacerts")));
-        assertThat(withCaCerts.ssl().clientAuth(), is(equalTo(ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED)));
+        assertEquals("/foo/key", withCaCerts.ssl().privateKeyFile());
+        assertEquals("/foo/cert", withCaCerts.ssl().certificateFile());
+        assertEquals("/foo/cacerts", withCaCerts.ssl().caCertificateFile());
+        assertEquals(ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED, withCaCerts.ssl().clientAuth());
 
         ConnectorConfig needClientAuth = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/need-client-auth/configured-ssl-provider@need-client-auth");
         assertTrue(needClientAuth.ssl().enabled());
-        assertThat(needClientAuth.ssl().privateKeyFile(), is(equalTo("/foo/key")));
-        assertThat(needClientAuth.ssl().certificateFile(), is(equalTo("/foo/cert")));
-        assertThat(needClientAuth.ssl().caCertificateFile(), is(equalTo("")));
-        assertThat(needClientAuth.ssl().clientAuth(), is(equalTo(ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH)));
+        assertEquals("/foo/key", needClientAuth.ssl().privateKeyFile());
+        assertEquals("/foo/cert", needClientAuth.ssl().certificateFile());
+        assertTrue(needClientAuth.ssl().caCertificateFile().isEmpty());
+        assertEquals(ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH, needClientAuth.ssl().clientAuth());
 
         ConnectorConfig withCiphersAndProtocols = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/with-ciphers-and-protocols/configured-ssl-provider@with-ciphers-and-protocols");
         assertTrue(withCiphersAndProtocols.ssl().enabled());
-        assertThat(withCiphersAndProtocols.ssl().privateKeyFile(), is(equalTo("/foo/key")));
-        assertThat(withCiphersAndProtocols.ssl().certificateFile(), is(equalTo("/foo/cert")));
-        assertThat(withCiphersAndProtocols.ssl().enabledCipherSuites(), is(equalTo(List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"))));
-        assertThat(withCiphersAndProtocols.ssl().enabledProtocols(), is(equalTo(List.of("TLSv1.3"))));
+        assertEquals("/foo/key", withCiphersAndProtocols.ssl().privateKeyFile());
+        assertEquals("/foo/cert", withCiphersAndProtocols.ssl().certificateFile());
+        assertEquals(List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"), withCiphersAndProtocols.ssl().enabledCipherSuites());
+        assertEquals(List.of("TLSv1.3"), withCiphersAndProtocols.ssl().enabledProtocols());
 
         ContainerCluster<?> cluster = (ContainerCluster<?>) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
@@ -303,20 +299,18 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         ContainerCluster<?> cluster = (ContainerCluster<?>) root.getChildren().get("default");
         List<JettyHttpServer> jettyServers = cluster.getChildrenByTypeRecursive(JettyHttpServer.class);
 
-        assertThat(jettyServers.size(), is(1));
+        assertEquals(1, jettyServers.size());
 
         JettyHttpServer server = jettyServers.get(0);
-        assertThat(server.model.bundleInstantiationSpec.classId.toString(),
-                is(com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()));
-        assertThat(server.model.bundleInstantiationSpec.bundle.toString(),
-                   is(com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()));
-        assertThat(server.getConnectorFactories().size(), is(1));
+        assertEquals(com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(),
+                server.model.bundleInstantiationSpec.classId.toString());
+        assertEquals(com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(),
+                server.model.bundleInstantiationSpec.bundle.toString());
+        assertEquals(1, server.getConnectorFactories().size());
 
-        assertThat(
-                extractComponentByClassName(
-                        containerComponentsConfig(),
-                        com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()),
-                is(not(nullValue())));
+        assertNotNull(extractComponentByClassName(
+                containerComponentsConfig(),
+                com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()));
     }
 
     private static ComponentsConfig.Components extractComponentByClassName(

@@ -10,15 +10,16 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.util.Optional;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Attribute settings
@@ -27,9 +28,6 @@ import static org.junit.Assert.*;
  */
 public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
-
     @Test
     public void testAttributeSettings() throws IOException, ParseException {
         Schema schema = SchemaBuilder.buildFromFile("src/test/examples/attributesettings.sd");
@@ -37,8 +35,8 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         SDField f1=(SDField) schema.getDocument().getField("f1");
         assertEquals(1, f1.getAttributes().size());
         Attribute a1 = f1.getAttributes().get(f1.getName());
-        assertThat(a1.getType(), is(Attribute.Type.LONG));
-        assertThat(a1.getCollectionType(), is(Attribute.CollectionType.SINGLE));
+        assertEquals(Attribute.Type.LONG, a1.getType());
+        assertEquals(Attribute.CollectionType.SINGLE, a1.getCollectionType());
         assertTrue(a1.isHuge());
         assertFalse(a1.isFastSearch());
         assertFalse(a1.isFastAccess());
@@ -48,21 +46,21 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         SDField f2=(SDField) schema.getDocument().getField("f2");
         assertEquals(1, f2.getAttributes().size());
         Attribute a2 = f2.getAttributes().get(f2.getName());
-        assertThat(a2.getType(), is(Attribute.Type.LONG));
-        assertThat(a2.getCollectionType(), is(Attribute.CollectionType.SINGLE));
+        assertEquals(Attribute.Type.LONG, a2.getType());
+        assertEquals(Attribute.CollectionType.SINGLE, a2.getCollectionType());
         assertFalse(a2.isHuge());
         assertTrue(a2.isFastSearch());
         assertFalse(a2.isFastAccess());
         assertFalse(a2.isRemoveIfZero());
         assertFalse(a2.isCreateIfNonExistent());
-        assertThat(f2.getAliasToName().get("f2alias"), is("f2"));
+        assertEquals("f2", f2.getAliasToName().get("f2alias"));
         SDField f3=(SDField) schema.getDocument().getField("f3");
         assertEquals(1, f3.getAttributes().size());
-        assertThat(f3.getAliasToName().get("f3alias"), is("f3"));
+        assertEquals("f3", f3.getAliasToName().get("f3alias"));
 
         Attribute a3 = f3.getAttributes().get(f3.getName());
-        assertThat(a3.getType(), is(Attribute.Type.LONG));
-        assertThat(a3.getCollectionType(), is(Attribute.CollectionType.SINGLE));
+        assertEquals(Attribute.Type.LONG, a3.getType());
+        assertEquals(Attribute.CollectionType.SINGLE, a3.getCollectionType());
         assertFalse(a3.isHuge());
         assertFalse(a3.isFastSearch());
         assertFalse(a3.isFastAccess());
@@ -82,13 +80,13 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         SDField f4 = (SDField) schema.getDocument().getField(name);
         assertEquals(1, f4.getAttributes().size());
         Attribute a4 = f4.getAttributes().get(f4.getName());
-        assertThat(a4.getType(), is(Attribute.Type.STRING));
-        assertThat(a4.getCollectionType(), is(Attribute.CollectionType.WEIGHTEDSET));
+        assertEquals(Attribute.Type.STRING, a4.getType());
+        assertEquals(Attribute.CollectionType.WEIGHTEDSET, a4.getCollectionType());
         assertFalse(a4.isHuge());
         assertFalse(a4.isFastSearch());
         assertFalse(a4.isFastAccess());
-        assertThat(removeIfZero, is(a4.isRemoveIfZero()));
-        assertThat(createIfNonExistent, is(a4.isCreateIfNonExistent()));
+        assertEquals(a4.isRemoveIfZero(), removeIfZero);
+        assertEquals(a4.isCreateIfNonExistent(), createIfNonExistent);
     }
 
     @Test
@@ -154,9 +152,8 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void requireThatMutableCanNotbeSetInDocument() throws ParseException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.");
-        getSearch("search test {\n" +
+        try {
+            getSearch("search test {\n" +
                     "  document test {\n" +
                     "    field f type int {\n" +
                     "      indexing: attribute\n" +
@@ -164,6 +161,10 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
                     "    }\n" +
                     "  }\n" +
                     "}\n");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.", e.getMessage());
+        }
     }
 
     @Test

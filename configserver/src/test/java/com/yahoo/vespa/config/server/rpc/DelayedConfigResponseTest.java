@@ -22,9 +22,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.config.protocol.JRTClientConfigRequestV3.createWithParams;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -40,17 +39,17 @@ public class DelayedConfigResponseTest {
 
         MockRpcServer rpc = new MockRpcServer(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
-        assertThat(responses.size(), is(0));
+        assertEquals(0, responses.size());
         JRTServerConfigRequest req = createRequest("foo", "myid", 3, 1000000, "bar");
         req.setDelayedResponse(true);
         GetConfigContext context = GetConfigContext.testContext(ApplicationId.defaultId());
         responses.delayResponse(req, context);
-        assertThat(responses.size(), is(0));
+        assertEquals(0, responses.size());
 
         req.setDelayedResponse(false);
         responses.delayResponse(req, context);
         responses.delayResponse(createRequest("foolio", "myid", 3, 100000, "bar"), context);
-        assertThat(responses.size(), is(2));
+        assertEquals(2, responses.size());
         assertTrue(req.isDelayedResponse());
         List<DelayedConfigResponses.DelayedConfigResponse> it = responses.allDelayedResponses();
         assertFalse(it.isEmpty());
@@ -62,21 +61,21 @@ public class DelayedConfigResponseTest {
         MockRpcServer rpc = new MockRpcServer(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
         responses.delayResponse(createRequest("foolio", "myid", 3, 100000, "bar"), context);
-        assertThat(responses.size(), is(1));
+        assertEquals(1, responses.size());
         responses.allDelayedResponses().get(0).cancelAndRemove();
-        assertThat(responses.size(), is(0));
+        assertEquals(0, responses.size());
     }
 
     @Test
     public void testDelayedConfigResponse() throws IOException {
         MockRpcServer rpc = new MockRpcServer(13337, temporaryFolder.newFolder());
         DelayedConfigResponses responses = new DelayedConfigResponses(rpc, 1, false);
-        assertThat(responses.size(), is(0));
-        assertThat(responses.toString(), is("DelayedConfigResponses. Average Size=0"));
+        assertEquals(0, responses.size());
+        assertEquals("DelayedConfigResponses. Average Size=0", responses.toString());
         JRTServerConfigRequest req = createRequest("foo", "myid", 3, 100, "bar");
         responses.delayResponse(req, GetConfigContext.testContext(ApplicationId.defaultId()));
         rpc.waitUntilSet(Duration.ofSeconds(5));
-        assertThat(rpc.latestRequest, is(req));
+        assertEquals(req, rpc.latestRequest);
     }
 
     private JRTServerConfigRequest createRequest(String configName, String configId, long generation, long timeout, String namespace) {

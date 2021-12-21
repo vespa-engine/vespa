@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class MatchedElementsOnlyResolverTestCase {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

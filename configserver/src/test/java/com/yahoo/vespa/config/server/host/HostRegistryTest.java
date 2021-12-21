@@ -8,11 +8,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -30,16 +29,16 @@ public class HostRegistryTest {
         assertGetKey(reg, "foo.com", foo);
         assertGetKey(reg, "bar.com", foo);
         assertGetKey(reg, "baz.com", foo);
-        assertThat(reg.getAllHosts().size(), is(3));
+        assertEquals(3, reg.getAllHosts().size());
         reg.update(foo, List.of("bar.com", "baz.com"));
         assertNull(reg.getKeyForHost("foo.com"));
         assertGetKey(reg, "bar.com", foo);
         assertGetKey(reg, "baz.com", foo);
 
-        assertThat(reg.getAllHosts().size(), is(2));
-        assertThat(reg.getAllHosts(), contains("bar.com", "baz.com"));
+        assertEquals(2, reg.getAllHosts().size());
+        assertTrue(reg.getAllHosts().containsAll(List.of("bar.com", "baz.com")));
         reg.removeHostsForKey(foo);
-        assertThat(reg.getAllHosts().size(), is(0));
+        assertTrue(reg.getAllHosts().isEmpty());
         assertNull(reg.getKeyForHost("foo.com"));
         assertNull(reg.getKeyForHost("bar.com"));
     }
@@ -67,7 +66,7 @@ public class HostRegistryTest {
         HostRegistry reg = new HostRegistry();
         reg.update(foo, List.of("foo.com", "bar.com"));
         reg.update(bar, List.of("baz.com", "quux.com"));
-        assertThat(reg.getAllHosts().size(), is(4));
+        assertEquals(4, reg.getAllHosts().size());
     }
 
     @Test
@@ -75,9 +74,9 @@ public class HostRegistryTest {
         HostRegistry reg = new HostRegistry();
         List<String> hosts = new ArrayList<>(List.of("foo.com", "bar.com", "baz.com"));
         reg.update(foo, hosts);
-        assertThat(reg.getHostsForKey(foo).size(), is(3));
+        assertEquals(3, reg.getHostsForKey(foo).size());
         hosts.remove(2);
-        assertThat(reg.getHostsForKey(foo).size(), is(3));
+        assertEquals(3, reg.getHostsForKey(foo).size());
     }
 
     @Test
@@ -85,14 +84,14 @@ public class HostRegistryTest {
         HostRegistry reg = new HostRegistry();
         reg.update(foo, List.of("foo.com", "bar.com", "baz.com"));
         Collection<String> hosts = reg.getAllHosts();
-        assertThat(hosts.size(), is(3));
+        assertEquals(3, hosts.size());
         reg.update(foo, List.of("foo.com"));
-        assertThat(hosts.size(), is(3));
+        assertEquals(3, hosts.size());
     }
 
     private void assertGetKey(HostRegistry reg, String host, ApplicationId expectedKey) {
         assertNotNull(reg.getKeyForHost(host));
-        assertThat(reg.getKeyForHost(host), is(expectedKey));
+        assertEquals(expectedKey, reg.getKeyForHost(host));
     }
 
 }

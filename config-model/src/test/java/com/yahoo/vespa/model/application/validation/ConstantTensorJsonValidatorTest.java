@@ -22,6 +22,7 @@ public class ConstantTensorJsonValidatorTest {
         new ConstantTensorJsonValidator().validate("dummy.json", tensorType, jsonTensorReader);
     }
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 

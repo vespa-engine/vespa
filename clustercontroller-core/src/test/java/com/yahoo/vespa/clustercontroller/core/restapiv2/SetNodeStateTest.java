@@ -44,6 +44,7 @@ import static org.mockito.Mockito.when;
 
 public class SetNodeStateTest extends StateRestApiTest {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 

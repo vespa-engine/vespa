@@ -38,6 +38,7 @@ public class ImportedFieldsTestCase {
         assertSearchContainsImportedField("my_name", "person_ref", "person", "name", schema);
     }
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException exception = ExpectedException.none();
 

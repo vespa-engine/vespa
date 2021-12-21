@@ -26,12 +26,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -88,13 +85,13 @@ public class ModelContextImplTest {
         assertFalse(context.previousModel().isPresent());
         assertTrue(context.getFileRegistry() instanceof MockFileRegistry);
         assertTrue(context.configDefinitionRepo() instanceof StaticConfigDefinitionRepo);
-        assertThat(context.properties().applicationId(), is(ApplicationId.defaultId()));
+        assertEquals(ApplicationId.defaultId(), context.properties().applicationId());
         assertTrue(context.properties().configServerSpecs().isEmpty());
         assertTrue(context.properties().multitenant());
         assertNotNull(context.properties().zone());
         assertFalse(context.properties().hostedVespa());
-        assertThat(context.properties().endpoints(), equalTo(endpoints));
-        assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
+        assertEquals(endpoints, context.properties().endpoints());
+        assertFalse(context.properties().isFirstTimeDeployment());
 
         assertEquals(Optional.empty(), context.wantedDockerImageRepo());
         assertEquals(new Version(7), context.modelVespaVersion());

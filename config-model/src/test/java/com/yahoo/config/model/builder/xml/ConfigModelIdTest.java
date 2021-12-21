@@ -4,8 +4,10 @@ package com.yahoo.config.model.builder.xml;
 import com.yahoo.component.Version;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -16,21 +18,21 @@ public class ConfigModelIdTest {
     @Test
     public void require_that_element_gets_correct_name() {
         ConfigModelId id = ConfigModelId.fromName("foo");
-        assertThat(id.getName(), is("foo"));
-        assertThat(id.getVersion(), is(Version.fromString("1")));
+        assertEquals("foo", id.getName());
+        assertEquals(Version.fromString("1"), id.getVersion());
         id = ConfigModelId.fromNameAndVersion("bar", "2.2");
-        assertThat(id.getName(), is("bar"));
-        assertThat(id.getVersion(), is(Version.fromString("2.2")));
+        assertEquals("bar", id.getName());
+        assertEquals(Version.fromString("2.2"), id.getVersion());
     }
 
     @Test
     public void test_toString() {
         ConfigModelId id = ConfigModelId.fromNameAndVersion("bar", "1.0");
-        assertThat(id.toString(), is("bar.1"));
+        assertEquals("bar.1", id.toString());
         id = ConfigModelId.fromNameAndVersion("foo", "1.1.3");
-        assertThat(id.toString(), is("foo.1.1.3"));
+        assertEquals("foo.1.1.3", id.toString());
         id = ConfigModelId.fromNameAndVersion("bar", "1");
-        assertThat(id.toString(), is("bar.1"));
+        assertEquals("bar.1", id.toString());
     }
 
     @Test
@@ -38,15 +40,15 @@ public class ConfigModelIdTest {
         ConfigModelId a1 = ConfigModelId.fromName("a");
         ConfigModelId a2 = ConfigModelId.fromName("a");
         ConfigModelId b = ConfigModelId.fromName("b");
-        assertTrue(a1.equals(a2));
-        assertTrue(a2.equals(a1));
-        assertFalse(a1.equals(b));
-        assertFalse(a2.equals(b));
-        assertFalse(b.equals(a1));
-        assertFalse(b.equals(a2));
-        assertTrue(a1.equals(a1));
-        assertTrue(a2.equals(a2));
-        assertTrue(b.equals(b));
+        assertEquals(a1, a2);
+        assertEquals(a2, a1);
+        assertNotEquals(a1, b);
+        assertNotEquals(a2, b);
+        assertNotEquals(b, a1);
+        assertNotEquals(b, a2);
+        assertEquals(a1, a1);
+        assertEquals(a2, a2);
+        assertEquals(b, b);
     }
 
     @Test

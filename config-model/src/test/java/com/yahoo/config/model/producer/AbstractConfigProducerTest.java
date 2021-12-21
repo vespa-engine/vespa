@@ -4,9 +4,8 @@ package com.yahoo.config.model.producer;
 import com.yahoo.cloud.config.log.LogdConfig;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Verifies some of the logic in the abstract config producer that is not tested in other classes.
@@ -25,8 +24,8 @@ public class AbstractConfigProducerTest {
         LogdConfig.Builder builder = (LogdConfig.Builder) clazz.getDeclaredConstructor().newInstance();
         producer.getConfig(builder);
         LogdConfig config = new LogdConfig(builder);
-        assertThat(config.logserver().host(), is("bar"));
-        assertThat(config.logserver().port(), is(1338));
+        assertEquals("bar", config.logserver().host());
+        assertEquals(1338, config.logserver().port());
     }
 
     @Test
@@ -38,8 +37,8 @@ public class AbstractConfigProducerTest {
         LogdConfig.Builder builder = (LogdConfig.Builder) clazz.getDeclaredConstructor().newInstance();
         producer.getConfig(builder);
         LogdConfig config = new LogdConfig(builder);
-        assertThat(config.logserver().host(), is("foo"));
-        assertThat(config.logserver().port(), is(1337));
+        assertEquals("foo", config.logserver().host());
+        assertEquals(1337, config.logserver().port());
     }
 
     private static class MockLogdProducer extends AbstractConfigProducer implements LogdConfig.Producer {

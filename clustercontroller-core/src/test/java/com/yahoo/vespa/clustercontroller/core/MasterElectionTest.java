@@ -25,10 +25,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class MasterElectionTest extends FleetControllerTest {
@@ -504,7 +502,7 @@ public class MasterElectionTest extends FleetControllerTest {
 
         final long postElectionVersionNumber = fleetControllers.get(1).getSystemState().getVersion();
 
-        assertThat(postElectionVersionNumber, greaterThan(preElectionVersionNumber));
+        assertTrue(postElectionVersionNumber > preElectionVersionNumber);
     }
 
     @Test

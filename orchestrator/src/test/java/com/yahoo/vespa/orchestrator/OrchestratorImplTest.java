@@ -51,12 +51,8 @@ import java.util.Set;
 
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
 import static com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus.NO_REMARKS;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -123,44 +119,44 @@ public class OrchestratorImplTest {
 
     @Test
     public void application_has_initially_no_remarks() throws Exception {
-        assertThat(orchestrator.getApplicationInstanceStatus(app1), is(NO_REMARKS));
+        assertEquals(NO_REMARKS, orchestrator.getApplicationInstanceStatus(app1));
     }
 
     @Test
     public void application_can_be_set_in_suspend() throws Exception {
         orchestrator.suspend(app1);
-        assertThat(orchestrator.getApplicationInstanceStatus(app1), is(ALLOWED_TO_BE_DOWN));
+        assertEquals(ALLOWED_TO_BE_DOWN, orchestrator.getApplicationInstanceStatus(app1));
     }
 
     @Test
     public void application_can_be_removed_from_suspend() throws Exception {
         orchestrator.suspend(app1);
         orchestrator.resume(app1);
-        assertThat(orchestrator.getApplicationInstanceStatus(app1), is(NO_REMARKS));
+        assertEquals(NO_REMARKS, orchestrator.getApplicationInstanceStatus(app1));
     }
 
     @Test
     public void appliations_list_returns_empty_initially() {
-        assertThat(orchestrator.getAllSuspendedApplications(), is(empty()));
+        assertTrue(orchestrator.getAllSuspendedApplications().isEmpty());
     }
 
     @Test
     public void appliations_list_returns_suspended_apps() throws Exception {
         // One suspended app
         orchestrator.suspend(app1);
-        assertThat(orchestrator.getAllSuspendedApplications().size(), is(1));
-        assertThat(orchestrator.getAllSuspendedApplications(), hasItem(app1));
+        assertEquals(1, orchestrator.getAllSuspendedApplications().size());
+        assertTrue(orchestrator.getAllSuspendedApplications().contains(app1));
 
         // Two suspended apps
         orchestrator.suspend(app2);
-        assertThat(orchestrator.getAllSuspendedApplications().size(), is(2));
-        assertThat(orchestrator.getAllSuspendedApplications(), hasItem(app1));
-        assertThat(orchestrator.getAllSuspendedApplications(), hasItem(app2));
+        assertEquals(2, orchestrator.getAllSuspendedApplications().size());
+        assertTrue(orchestrator.getAllSuspendedApplications().contains(app1));
+        assertTrue(orchestrator.getAllSuspendedApplications().contains(app2));
 
         // Back to one when resetting one app to no_remarks
         orchestrator.resume(app1);
-        assertThat(orchestrator.getAllSuspendedApplications().size(), is(1));
-        assertThat(orchestrator.getAllSuspendedApplications(), hasItem(app2));
+        assertEquals(1, orchestrator.getAllSuspendedApplications().size());
+        assertTrue(orchestrator.getAllSuspendedApplications().contains(app2));
     }
 
 
@@ -169,23 +165,23 @@ public class OrchestratorImplTest {
         // Two suspends
         orchestrator.suspend(app1);
         orchestrator.suspend(app1);
-        assertThat(orchestrator.getApplicationInstanceStatus(app1), is(ALLOWED_TO_BE_DOWN));
-        assertThat(orchestrator.getApplicationInstanceStatus(app2), is(NO_REMARKS));
+        assertEquals(ALLOWED_TO_BE_DOWN, orchestrator.getApplicationInstanceStatus(app1));
+        assertEquals(NO_REMARKS, orchestrator.getApplicationInstanceStatus(app2));
 
         // Three no_remarks
         orchestrator.resume(app1);
         orchestrator.resume(app1);
         orchestrator.resume(app1);
-        assertThat(orchestrator.getApplicationInstanceStatus(app1), is(NO_REMARKS));
-        assertThat(orchestrator.getApplicationInstanceStatus(app2), is(NO_REMARKS));
+        assertEquals(NO_REMARKS, orchestrator.getApplicationInstanceStatus(app1));
+        assertEquals(NO_REMARKS, orchestrator.getApplicationInstanceStatus(app2));
 
         // Two suspends and two on two applications interleaved
         orchestrator.suspend(app2);
         orchestrator.resume(app1);
         orchestrator.suspend(app2);
         orchestrator.resume(app1);
-        assertThat(orchestrator.getApplicationInstanceStatus(app1), is(NO_REMARKS));
-        assertThat(orchestrator.getApplicationInstanceStatus(app2), is(ALLOWED_TO_BE_DOWN));
+        assertEquals(NO_REMARKS, orchestrator.getApplicationInstanceStatus(app1));
+        assertEquals(ALLOWED_TO_BE_DOWN, orchestrator.getApplicationInstanceStatus(app2));
     }
 
     @Test
@@ -274,7 +270,7 @@ public class OrchestratorImplTest {
     }
 
     @Test
-    public void suspendAllWorks() throws Exception {
+    public void suspendAllWorks() {
         // A spy is preferential because suspendAll() relies on delegating the hard work to suspend() and resume().
         OrchestratorImpl orchestrator = spy(this.orchestrator);
 
@@ -307,7 +303,7 @@ public class OrchestratorImplTest {
     }
 
     @Test
-    public void whenSuspendAllFails() throws Exception {
+    public void whenSuspendAllFails() {
         // A spy is preferential because suspendAll() relies on delegating the hard work to suspend() and resume().
         OrchestratorImpl orchestrator = spy(this.orchestrator);
 
@@ -340,7 +336,7 @@ public class OrchestratorImplTest {
     }
 
     @Test
-    public void testLargeLocks() throws Exception {
+    public void testLargeLocks() {
         var tenantId = new TenantId("tenant");
         var applicationInstanceId = new ApplicationInstanceId("app:dev:us-east-1:default");
         var applicationInstanceReference = new ApplicationInstanceReference(tenantId, applicationInstanceId);
@@ -480,7 +476,7 @@ public class OrchestratorImplTest {
     }
 
     @Test
-    public void testGetHost() throws Exception {
+    public void testGetHost() {
         ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
         StatusService statusService = new ZkStatusService(
                 new MockCurator(),

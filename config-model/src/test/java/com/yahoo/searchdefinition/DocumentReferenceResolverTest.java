@@ -25,6 +25,7 @@ public class DocumentReferenceResolverTest {
 
     private static final String BAR = "bar";
     private static final String FOO = "foo";
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

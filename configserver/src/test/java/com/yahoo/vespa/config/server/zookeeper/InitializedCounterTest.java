@@ -6,8 +6,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -22,7 +21,7 @@ public class InitializedCounterTest {
         curator.create(Path.fromString("/sessions/2"));
 
         InitializedCounter counter = new InitializedCounter(curator, Path.fromString("/counter"), Path.fromString("/sessions"));
-        assertThat(counter.counter.get(), is(2L));
+        assertEquals(2, counter.counter.get());
     }
 
 }

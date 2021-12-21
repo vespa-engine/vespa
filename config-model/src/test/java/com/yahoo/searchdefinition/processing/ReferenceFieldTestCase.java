@@ -13,16 +13,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
  */
 public class ReferenceFieldTestCase {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 
@@ -83,7 +83,7 @@ public class ReferenceFieldTestCase {
         Field field = documentType.getDocumentType().getField(expectedFieldname);
         assertNotNull("Field does not exist in document type: " + expectedFieldname, field);
         DataType dataType = field.getDataType();
-        assertThat(dataType, instanceOf(ReferenceDataType.class));
+        assertTrue(dataType instanceof ReferenceDataType);
         ReferenceDataType refField = (ReferenceDataType) dataType;
         assertEquals(referencedDocType, refField.getTargetType().getName());
     }

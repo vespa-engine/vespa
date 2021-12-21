@@ -10,6 +10,7 @@ import org.junit.rules.ExpectedException;
  * @author bjorncs
  */
 public class StreamingValidatorTest {
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

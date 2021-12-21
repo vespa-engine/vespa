@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.application;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -19,10 +18,8 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -60,8 +57,8 @@ public class CompressedApplicationInputStreamTest {
     private void assertTestApp(File outApp) {
         String [] files = outApp.list();
         assertNotNull(files);
-        assertThat(files.length, is(3));
-        assertThat(Arrays.asList(files), containsInAnyOrder(ImmutableList.of(is("hosts.xml"), is("services.xml"), is("deployment.xml"))));
+        assertEquals(3, files.length);
+        assertTrue(List.of(files).containsAll(List.of("hosts.xml", "services.xml", "deployment.xml")));
     }
 
     @Test
@@ -96,7 +93,7 @@ public class CompressedApplicationInputStreamTest {
 
         CompressedApplicationInputStream unpacked = CompressedApplicationInputStream.createFromCompressedStream(new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(outFile))));
         File outApp = unpacked.decompress();
-        assertThat(outApp.getName(), is("application")); // gets the name of the subdir
+        assertEquals("application", outApp.getName()); // gets the name of the subdir
         assertTestApp(outApp);
     }
 
@@ -137,7 +134,7 @@ public class CompressedApplicationInputStreamTest {
                 new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(gzFile))));
         File outApp = unpacked.decompress();
         List<File> files = Arrays.asList(outApp.listFiles());
-        assertThat(files.size(), is(5));
+        assertEquals(5, files.size());
         assertTrue(files.contains(new File(outApp, "services.xml")));
         assertTrue(files.contains(new File(outApp, "hosts.xml")));
         assertTrue(files.contains(new File(outApp, "deployment.xml")));
@@ -145,26 +142,26 @@ public class CompressedApplicationInputStreamTest {
         assertTrue(files.contains(new File(outApp, "external")));
         File sd = files.get(files.indexOf(new File(outApp, "schemas")));
         assertTrue(sd.isDirectory());
-        assertThat(sd.listFiles().length, is(1));
-        assertThat(sd.listFiles()[0].getAbsolutePath(), is(new File(sd, "keyvalue.sd").getAbsolutePath()));
+        assertEquals(1, sd.listFiles().length);
+        assertEquals(new File(sd, "keyvalue.sd").getAbsolutePath(), sd.listFiles()[0].getAbsolutePath());
 
         File ext = files.get(files.indexOf(new File(outApp, "external")));
         assertTrue(ext.isDirectory());
-        assertThat(ext.listFiles().length, is(1));
-        assertThat(ext.listFiles()[0].getAbsolutePath(), is(new File(ext, "foo").getAbsolutePath()));
+        assertEquals(1, ext.listFiles().length);
+        assertEquals(new File(ext, "foo").getAbsolutePath(), ext.listFiles()[0].getAbsolutePath());
 
         files = Arrays.asList(ext.listFiles());
         File foo = files.get(files.indexOf(new File(ext, "foo")));
         assertTrue(foo.isDirectory());
-        assertThat(foo.listFiles().length, is(1));
-        assertThat(foo.listFiles()[0].getAbsolutePath(), is(new File(foo, "bar").getAbsolutePath()));
+        assertEquals(1, foo.listFiles().length);
+        assertEquals(new File(foo, "bar").getAbsolutePath(), foo.listFiles()[0].getAbsolutePath());
 
         files = Arrays.asList(foo.listFiles());
         File bar = files.get(files.indexOf(new File(foo, "bar")));
         assertTrue(bar.isDirectory());
-        assertThat(bar.listFiles().length, is(1));
+        assertEquals(1, bar.listFiles().length);
         assertTrue(bar.listFiles()[0].isFile());
-        assertThat(bar.listFiles()[0].getAbsolutePath(), is(new File(bar, "lol").getAbsolutePath()));
+        assertEquals(new File(bar, "lol").getAbsolutePath(), bar.listFiles()[0].getAbsolutePath());
     }
 
 

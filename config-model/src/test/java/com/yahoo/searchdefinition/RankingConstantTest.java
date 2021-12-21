@@ -18,6 +18,7 @@ import static org.junit.Assert.fail;
  */
 public class RankingConstantTest {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 

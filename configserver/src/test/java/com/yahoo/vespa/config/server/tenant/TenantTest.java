@@ -11,9 +11,8 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -60,9 +59,9 @@ public class TenantTest {
 
     @Test
     public void hashcode() {
-        assertThat(t1.hashCode(), is(t2.hashCode()));
-        assertThat(t1.hashCode(), is(not(t3.hashCode())));
-        assertThat(t1.hashCode(), is(not(t4.hashCode())));
+        assertEquals(t1.hashCode(), t2.hashCode());
+        assertNotEquals(t1.hashCode(), t3.hashCode());
+        assertNotEquals(t1.hashCode(), t4.hashCode());
     }
 
 }

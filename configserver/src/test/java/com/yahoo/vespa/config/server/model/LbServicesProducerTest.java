@@ -44,14 +44,9 @@ import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpo
 import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.global;
 import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.Scope.Enum.zone;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
@@ -101,12 +96,12 @@ public class LbServicesProducerTest {
         LbServicesConfig conf = getLbServicesConfig(Zone.defaultZone(), testModel);
         LbServicesConfig.Tenants.Applications.Hosts.Services services =
                 conf.tenants("foo").applications("foo:prod:default:default").hosts("foo.foo.yahoo.com").services(QRSERVER.serviceName);
-        assertThat(services.servicealiases().size(), is(1));
-        assertThat(services.endpointaliases().size(), is(2));
+        assertEquals(1, services.servicealiases().size());
+        assertEquals(2, services.endpointaliases().size());
 
-        assertThat(services.servicealiases(0), is("service1"));
-        assertThat(services.endpointaliases(0), is("foo1.bar1.com"));
-        assertThat(services.endpointaliases(1), is("foo2.bar2.com"));
+        assertEquals("service1", services.servicealiases(0));
+        assertEquals("foo1.bar1.com", services.endpointaliases(0));
+        assertEquals("foo2.bar2.com", services.endpointaliases(1));
     }
 
     @Test
@@ -164,30 +159,30 @@ public class LbServicesProducerTest {
                 .hosts("foo.foo.yahoo.com")
                 .services(QRSERVER.serviceName);
 
-        assertThat(services.servicealiases(), contains("service1"));
-        assertThat("Missing endpoints in list: " + services.endpointaliases(), services.endpointaliases(), containsInAnyOrder("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2));
+        assertTrue(services.servicealiases().contains("service1"));
+        assertTrue("Missing endpoints in list: " + services.endpointaliases(), services.endpointaliases().containsAll(List.of("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2)));
 
         List<Endpoints> endpointList = config.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").endpoints();
         // Expect 4 zone endpoints (2 suffixes), 2 global endpoints and 1 application endpoint
         assertEquals(7, endpointList.size());
         List<Endpoints> zoneEndpoints = endpointList.stream().filter(e -> e.scope() == zone).collect(Collectors.toList());
         assertEquals(4, zoneEndpoints.size());
-        assertThat(zoneEndpoints.stream()
+        assertTrue(zoneEndpoints.stream()
                            .filter(e -> e.routingMethod() == sharedLayer4)
-                           .map(Endpoints::dnsName).collect(Collectors.toList()),
-                   containsInAnyOrder("mydisc.foo.foo.endpoint1.suffix", "mydisc.foo.foo.endpoint2.suffix"));
+                           .map(Endpoints::dnsName).collect(Collectors.toList())
+                .containsAll(List.of("mydisc.foo.foo.endpoint1.suffix", "mydisc.foo.foo.endpoint2.suffix")));
         assertContainsEndpoint(zoneEndpoints, "mydisc.foo.foo.endpoint1.suffix", "mydisc", zone, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
         assertContainsEndpoint(zoneEndpoints, "mydisc.foo.foo.endpoint2.suffix", "mydisc", zone, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
 
         List<Endpoints> globalEndpoints = endpointList.stream().filter(e -> e.scope() == global).collect(Collectors.toList());
         assertEquals(2, globalEndpoints.size());
-        assertThat(globalEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()), containsInAnyOrder("rotation-1", "rotation-2"));
+        assertTrue(globalEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()).containsAll(List.of("rotation-1", "rotation-2")));
         assertContainsEndpoint(globalEndpoints, "rotation-1", "mydisc", global, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
         assertContainsEndpoint(globalEndpoints, "rotation-2", "mydisc", global, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
 
         List<Endpoints> applicationEndpoints = endpointList.stream().filter(e -> e.scope() == application).collect(Collectors.toList());
         assertEquals(1, applicationEndpoints.size());
-        assertThat(applicationEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()), containsInAnyOrder("app-endpoint"));
+        assertTrue(applicationEndpoints.stream().map(Endpoints::dnsName).collect(Collectors.toList()).contains("app-endpoint"));
         assertContainsEndpoint(applicationEndpoints, "app-endpoint", "mydisc", application, sharedLayer4, 1, List.of("foo.foo.yahoo.com"));
     }
 
@@ -199,8 +194,8 @@ public class LbServicesProducerTest {
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
         LbServicesConfig conf = getLbServicesConfig(Zone.defaultZone(), testModel);
         LbServicesConfig.Tenants.Applications.Hosts.Services services = conf.tenants("foo").applications("foo:prod:default:default").hosts("foo.foo.yahoo.com").services(QRSERVER.serviceName);
-        assertThat(services.servicealiases().size(), is(1));
-        assertThat(services.endpointaliases().size(), is(2));
+        assertEquals(1, services.servicealiases().size());
+        assertEquals(2, services.endpointaliases().size());
 
         // No config for tester application
         assertNull(getLbServicesConfig(Zone.defaultZone(), testModel)
@@ -209,7 +204,7 @@ public class LbServicesProducerTest {
     }
 
     private void assertContainsEndpoint(List<Endpoints> endpoints, String dnsName, String clusterId, Endpoints.Scope.Enum scope, Endpoints.RoutingMethod.Enum routingMethod, int weight, List<String> hosts) {
-        assertThat(endpoints, hasItem(new Endpoints.Builder()
+        assertTrue(endpoints.contains(new Endpoints.Builder()
                                               .dnsName(dnsName)
                                               .clusterId(clusterId)
                                               .scope(scope)
@@ -316,8 +311,8 @@ public class LbServicesProducerTest {
     private void assertConfig(LbServicesConfig expected, LbServicesConfig actual) {
         assertFalse(expected.toString().isEmpty());
         assertFalse(actual.toString().isEmpty());
-        assertThat(expected.toString(), is(actual.toString()));
-        assertThat(ConfigPayload.fromInstance(expected).toString(true), is(ConfigPayload.fromInstance(actual).toString(true)));
+        assertEquals(actual.toString(), expected.toString());
+        assertEquals(ConfigPayload.fromInstance(expected).toString(true), ConfigPayload.fromInstance(actual).toString(true));
     }
 
     private TestProperties getTestproperties(ApplicationId applicationId) {

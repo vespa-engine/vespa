@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.SESSIONSTATE_ZK_SUBPATH;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -36,6 +34,7 @@ public class SessionZooKeeperClientTest {
 
     private Curator curator;
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -49,16 +48,16 @@ public class SessionZooKeeperClientTest {
     public void require_that_status_can_be_updated() {
         SessionZooKeeperClient zkc = createSessionZKClient(1);
         zkc.writeStatus(Session.Status.NEW);
-        assertThat(zkc.readStatus(), is(Session.Status.NEW));
+        assertEquals(Session.Status.NEW, zkc.readStatus());
 
         zkc.writeStatus(Session.Status.PREPARE);
-        assertThat(zkc.readStatus(), is(Session.Status.PREPARE));
+        assertEquals(Session.Status.PREPARE, zkc.readStatus());
 
         zkc.writeStatus(Session.Status.ACTIVATE);
-        assertThat(zkc.readStatus(), is(Session.Status.ACTIVATE));
+        assertEquals(Session.Status.ACTIVATE, zkc.readStatus());
 
         zkc.writeStatus(Session.Status.DEACTIVATE);
-        assertThat(zkc.readStatus(), is(Session.Status.DEACTIVATE));
+        assertEquals(Session.Status.DEACTIVATE, zkc.readStatus());
     }
 
     @Test
@@ -68,7 +67,7 @@ public class SessionZooKeeperClientTest {
         zkc.writeStatus(Session.Status.NEW);
         Path path = sessionPath(sessionId).append(SESSIONSTATE_ZK_SUBPATH);
         assertTrue(curator.exists(path));
-        assertThat(Utf8.toString(curator.getData(path).get()), is("NEW"));
+        assertEquals("NEW", Utf8.toString(curator.getData(path).get()));
     }
 
     @Test
@@ -76,7 +75,7 @@ public class SessionZooKeeperClientTest {
         int sessionId = 3;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         curator.set(sessionPath(sessionId).append(SESSIONSTATE_ZK_SUBPATH), Utf8.toBytes("PREPARE"));
-        assertThat(zkc.readStatus(), is(Session.Status.PREPARE));
+        assertEquals(Session.Status.PREPARE, zkc.readStatus());
     }
 
     @Test
@@ -91,7 +90,7 @@ public class SessionZooKeeperClientTest {
         zkc.writeApplicationId(id);
         Path path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH);
         assertTrue(curator.exists(path));
-        assertThat(Utf8.toString(curator.getData(path).get()), is(id.serializedForm()));
+        assertEquals(id.serializedForm(), Utf8.toString(curator.getData(path).get()));
     }
 
     @Test
@@ -125,11 +124,11 @@ public class SessionZooKeeperClientTest {
         int sessionId = 3;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
         curator.delete(sessionPath(sessionId));
-        assertThat(zkc.readCreateTime(), is(Instant.EPOCH));
+        assertEquals(Instant.EPOCH, zkc.readCreateTime());
         Instant now = Instant.now();
         zkc.createNewSession(now);
         // resolution is in seconds, so need to go back use that when comparing
-        assertThat(zkc.readCreateTime(), is(Instant.ofEpochSecond(now.getEpochSecond())));
+        assertEquals(Instant.ofEpochSecond(now.getEpochSecond()), zkc.readCreateTime());
     }
 
     @Test
@@ -137,7 +136,7 @@ public class SessionZooKeeperClientTest {
         final FileReference testRef = new FileReference("test-ref");
         SessionZooKeeperClient zkc = createSessionZKClient(3);
         zkc.writeApplicationPackageReference(Optional.of(testRef));
-        assertThat(zkc.readApplicationPackageReference(), is(testRef));
+        assertEquals(testRef, zkc.readApplicationPackageReference());
     }
 
     @Test
@@ -164,7 +163,7 @@ public class SessionZooKeeperClientTest {
         Path path = sessionPath(sessionId).append(SessionZooKeeperClient.APPLICATION_ID_PATH);
         curator.set(path, Utf8.toBytes(idString));
         ApplicationId applicationId = zkc.readApplicationId().get();
-        assertThat(applicationId.serializedForm(), is(expectedIdString));
+        assertEquals(expectedIdString, applicationId.serializedForm());
     }
 
     private SessionZooKeeperClient createSessionZKClient(long sessionId) {

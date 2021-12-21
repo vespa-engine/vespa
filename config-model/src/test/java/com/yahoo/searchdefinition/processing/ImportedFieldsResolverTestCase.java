@@ -25,6 +25,7 @@ import static org.junit.Assert.assertSame;
  */
 public class ImportedFieldsResolverTestCase {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

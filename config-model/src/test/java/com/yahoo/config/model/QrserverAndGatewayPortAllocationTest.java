@@ -9,8 +9,7 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests that qrserver is assigned port Defaults.getDefaults().vespaWebServicePort() even if there is a HTTP gateway configured earlier in
@@ -26,8 +25,8 @@ public class QrserverAndGatewayPortAllocationTest {
         VespaModelCreatorWithFilePkg creator = new VespaModelCreatorWithFilePkg(appDir);
         VespaModel vespaModel = creator.create();
         List<ApplicationContainer> qrservers = vespaModel.getContainerClusters().get("container").getContainers();
-        assertThat(qrservers.size(), is(1));
-        assertThat(qrservers.get(0).getSearchPort(), is(Container.BASEPORT));
+        assertEquals(1, qrservers.size());
+        assertEquals(Container.BASEPORT, qrservers.get(0).getSearchPort());
     }
 
 }

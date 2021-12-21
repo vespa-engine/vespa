@@ -36,10 +36,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -180,9 +178,8 @@ public class ClusterApiImplTest {
             policy.verifyGroupGoingDownIsFine(clusterApi);
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertThat(e.getMessage(),
-                    containsString("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
-                                   "servers are down or suspended already: [1 missing config server] are down."));
+            assertTrue(e.getMessage().contains("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
+                    "servers are down or suspended already: [1 missing config server] are down."));
         }
     }
 
@@ -200,9 +197,8 @@ public class ClusterApiImplTest {
             policy.verifyGroupGoingDownIsFine(clusterApi);
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertThat(e.getMessage(),
-                    containsString("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
-                                   "server hosts are down or suspended already: [1 missing config server host] are down."));
+            assertTrue(e.getMessage().contains("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
+                    "server hosts are down or suspended already: [1 missing config server host] are down."));
         }
     }
 
@@ -216,9 +212,8 @@ public class ClusterApiImplTest {
             policy.verifyGroupGoingDownIsFine(clusterApi);
             fail();
         } catch (HostStateChangeDeniedException e) {
-            assertThat(e.getMessage(),
-                       containsString("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
-                                      "servers are down or suspended already: [1 missing config server] are down."));
+            assertTrue(e.getMessage().contains("Changing the state of cfg1 would violate enough-services-up: 33% of the config " +
+                    "servers are down or suspended already: [1 missing config server] are down."));
         }
     }
 

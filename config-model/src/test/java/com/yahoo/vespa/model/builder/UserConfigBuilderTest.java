@@ -21,10 +21,9 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.Optional;
 
-import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
@@ -46,8 +45,8 @@ public class UserConfigBuilderTest {
         ConfigDefinitionKey key = new ConfigDefinitionKey("simpletypes", "test");
         assertNotNull(map.get(key));
         SimpletypesConfig config = createConfig(SimpletypesConfig.class, map.get(key));
-        assertThat(config.intval(), is(13));
-        assertThat(config.stringval(), is("foolio"));
+        assertEquals(13, config.intval());
+        assertEquals("foolio", config.stringval());
     }
 
     private static <ConfigType extends ConfigInstance> ConfigType createConfig(Class<ConfigType> clazz, ConfigPayloadBuilder builder) {
@@ -66,10 +65,10 @@ public class UserConfigBuilderTest {
         ConfigDefinitionKey key = new ConfigDefinitionKey("arraytypes", "test");
         assertNotNull(map.get(key));
         ArraytypesConfig config = createConfig(ArraytypesConfig.class, map.get(key));
-        assertThat(config.intarr().size(), is(3));
-        assertThat(config.intarr(0), is(13));
-        assertThat(config.intarr(1), is(10));
-        assertThat(config.intarr(2), is(1337));
+        assertEquals(3, config.intarr().size());
+        assertEquals(13, config.intarr(0));
+        assertEquals(10, config.intarr(1));
+        assertEquals(1337, config.intarr(2));
     }
 
     @Test
@@ -93,10 +92,10 @@ public class UserConfigBuilderTest {
         ConfigDefinitionKey key = new ConfigDefinitionKey(SpecialtokensConfig.CONFIG_DEF_NAME, SpecialtokensConfig.CONFIG_DEF_NAMESPACE);
         assertNotNull(map.get(key));
         SpecialtokensConfig config = createConfig(SpecialtokensConfig.class, map.get(key));
-        assertThat(config.tokenlist().size(), is(1));
-        assertThat(config.tokenlist().get(0).name(), is("default"));
-        assertThat(config.tokenlist().get(0).tokens().size(), is(1));
-        assertThat(config.tokenlist().get(0).tokens().get(0).token(), is("dvd+-r"));
+        assertEquals(1, config.tokenlist().size());
+        assertEquals("default", config.tokenlist().get(0).name());
+        assertEquals(1, config.tokenlist().get(0).tokens().size());
+        assertEquals("dvd+-r", config.tokenlist().get(0).tokens().get(0).token());
     }
 
     @Test

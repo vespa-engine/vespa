@@ -49,7 +49,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModelFactory;
-import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -73,14 +72,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -111,6 +107,7 @@ public class ApplicationRepositoryTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -553,13 +550,13 @@ public class ApplicationRepositoryTest {
 
         AllocatedHosts info = session.getAllocatedHosts();
         assertNotNull(info);
-        assertThat(info.getHosts().size(), is(1));
+        assertEquals(1, info.getHosts().size());
         assertTrue(info.getHosts().contains(new HostSpec("mytesthost2",
                                                          Collections.emptyList(),
                                                          Optional.empty())));
         Optional<NetworkPorts> portsCopy = info.getHosts().iterator().next().networkPorts();
         assertTrue(portsCopy.isPresent());
-        assertThat(portsCopy.get().allocations(), is(list));
+        assertEquals(list, portsCopy.get().allocations());
     }
 
     @Test
@@ -571,7 +568,7 @@ public class ApplicationRepositoryTest {
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(containsString("tenant:test1 Session 3 is not prepared"));
+        exceptionRule.expectMessage("tenant:test1 Session 3 is not prepared");
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
 
         Session activeSession = applicationRepository.getActiveSession(applicationId());
@@ -588,7 +585,7 @@ public class ApplicationRepositoryTest {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         applicationRepository.prepare(sessionId, prepareParams());
         exceptionRule.expect(RuntimeException.class);
-        exceptionRule.expectMessage(containsString("Timeout exceeded when trying to activate 'test1.testapp'"));
+        exceptionRule.expectMessage("Timeout exceeded when trying to activate 'test1.testapp'");
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
 
         Session activeSession = applicationRepository.getActiveSession(applicationId());
@@ -610,7 +607,7 @@ public class ApplicationRepositoryTest {
 
         applicationRepository.prepare(sessionId2, prepareParams());
         exceptionRule.expect(ActivationConflictException.class);
-        exceptionRule.expectMessage(containsString("app:test1.testapp.default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)"));
+        exceptionRule.expectMessage("app:test1.testapp.default Cannot activate session 3 because the currently active session (4) has changed since session 3 was created (was 2 at creation time)");
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId2, timeoutBudget, false);
     }
 
@@ -620,11 +617,11 @@ public class ApplicationRepositoryTest {
         long sessionId = result.sessionId();
 
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(containsString("Session is active: 2"));
+        exceptionRule.expectMessage("Session is active: 2");
         applicationRepository.prepare(sessionId, prepareParams());
 
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(containsString("app:test1.testapp.default Session 2 is already active"));
+        exceptionRule.expectMessage("app:test1.testapp.default Session 2 is already active");
         applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, timeoutBudget, false);
     }
 
@@ -679,9 +676,8 @@ public class ApplicationRepositoryTest {
 
         assertTrue(requestHandler.hasApplication(applicationId(), Optional.of(vespaVersion)));
         assertNull(requestHandler.resolveApplicationId("doesnotexist"));
-        assertThat(requestHandler.resolveApplicationId("mytesthost"), Is.is(new ApplicationId.Builder()
-                                                                                  .tenant(tenant1)
-                                                                                  .applicationName("testapp").build())); // Host set in application package.
+        assertEquals(new ApplicationId.Builder().tenant(tenant1).applicationName("testapp").build(),
+                requestHandler.resolveApplicationId("mytesthost")); // Host set in application package.
     }
 
     @Test
@@ -698,7 +694,7 @@ public class ApplicationRepositoryTest {
 
         // TODO: Revisit this test, I cannot see that we create a model for version 3.2.1
         config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), new Version(3, 2, 1));
-        assertThat(config.intval(), Is.is(1337));
+        assertEquals(1337, config.intval());
     }
 
     @Test
@@ -716,7 +712,7 @@ public class ApplicationRepositoryTest {
         applicationRepository.delete(applicationId());
 
         exceptionRule.expect(com.yahoo.vespa.config.server.NotFoundException.class);
-        exceptionRule.expectMessage(containsString("No such application id: test1.testapp"));
+        exceptionRule.expectMessage("No such application id: test1.testapp");
         resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
     }
 

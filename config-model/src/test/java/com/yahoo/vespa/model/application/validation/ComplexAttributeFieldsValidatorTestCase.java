@@ -24,6 +24,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
  */
 public class ComplexAttributeFieldsValidatorTestCase {
 
+    @SuppressWarnings("deprecation")
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
 

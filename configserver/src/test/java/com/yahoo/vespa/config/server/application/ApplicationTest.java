@@ -41,10 +41,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -59,12 +58,12 @@ public class ApplicationTest {
         ServerCache cache = new ServerCache();
         Version vespaVersion = new Version(1, 2, 3);
         Application app = new Application(new ModelStub(), cache, 1337L, vespaVersion, MetricUpdater.createTestUpdater(), appId);
-        assertThat(app.getApplicationGeneration(), is(1337L));
+        assertEquals(1337L, app.getApplicationGeneration().longValue());
         assertNotNull(app.getModel());
-        assertThat(app.getCache(), is(cache));
-        assertThat(app.getId().application().value(), is("foobar"));
-        assertThat(app.getVespaVersion(), is(vespaVersion));
-        assertThat(app.toString(), is("application 'foobar', generation 1337, vespa version 1.2.3"));
+        assertEquals(cache, app.getCache());
+        assertEquals("foobar", app.getId().application().value());
+        assertEquals(vespaVersion, app.getVespaVersion());
+        assertEquals("application 'foobar', generation 1337, vespa version 1.2.3", app.toString());
     }
 
     private static final String[] emptySchema = new String[0];
@@ -145,7 +144,7 @@ public class ApplicationTest {
         assertNotNull(response);
         ConfigResponse cached_response = handler.resolveConfig(createRequest(ModelConfig.CONFIG_DEF_NAME, ModelConfig.CONFIG_DEF_NAMESPACE, ModelConfig.CONFIG_DEF_SCHEMA));
         assertNotNull(cached_response);
-        assertTrue(response == cached_response);
+        assertSame(response, cached_response);
     }
 
     private static GetConfigRequest createRequest(String name, String namespace, String[] schema) {
