@@ -101,7 +101,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -1071,18 +1070,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static class JvmOptions {
 
+        private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:]+");
+
         private final ContainerCluster<?> cluster;
         private final Element nodesElement;
         private final DeployLogger logger;
-        private final boolean isHosted;
         private final boolean legacyOptions;
+        private final boolean failDeploymentWithInvalidJvmOptions;
 
         public JvmOptions(ContainerCluster<?> cluster, Element nodesElement, DeployState deployState, boolean legacyOptions) {
             this.cluster = cluster;
             this.nodesElement = nodesElement;
             this.logger = deployState.getDeployLogger();
-            this.isHosted = deployState.isHosted();
             this.legacyOptions = legacyOptions;
+            this.failDeploymentWithInvalidJvmOptions = deployState.featureFlags().failDeploymentWithInvalidJvmOptions();
         }
 
         String build() {
@@ -1093,7 +1094,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (jvmElement == null) return "";
             String jvmOptions = jvmElement.getAttribute(VespaDomBuilder.OPTIONS);
             if (jvmOptions == null) return "";
-            log(jvmOptions);
+            validateJvmOptions(jvmOptions);
             return jvmOptions;
         }
 
@@ -1101,7 +1102,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             String jvmOptions;
             if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
-                log(jvmOptions);
+                validateJvmOptions(jvmOptions);
                 if (nodesElement.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) {
                     String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
                     throw new IllegalArgumentException("You have specified both jvm-options='" + jvmOptions + "'" +
@@ -1111,7 +1112,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 }
             } else {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-                log(jvmOptions);
+                validateJvmOptions(jvmOptions);
                 if (incompatibleGCOptions(jvmOptions)) {
                     logger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs' to 'gc-options' in 'jvm' element." +
                             " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
@@ -1121,9 +1122,21 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return jvmOptions;
         }
 
-        private void log(String jvmOptions) {
-            if (isHosted && jvmOptions != null && !jvmOptions.isEmpty())
-                logger.logApplicationPackage(Level.INFO, "JVM options from services.xml: " + jvmOptions);
+        private void validateJvmOptions(String jvmOptions) {
+            if (jvmOptions == null || jvmOptions.isEmpty()) return;
+
+            String[] optionList = jvmOptions.split(" ");
+            List<String> invalidOptions = Arrays.stream(optionList)
+                                                .filter(option -> !option.isEmpty())
+                                                .filter(option -> !Pattern.matches(validPattern.pattern(), option))
+                                                .sorted()
+                                                .collect(Collectors.toList());
+
+            String message = "Invalid JVM options in services.xml: " + String.join(",", invalidOptions);
+            if (failDeploymentWithInvalidJvmOptions)
+                throw new IllegalArgumentException(message);
+            else
+                logger.logApplicationPackage(WARNING, message);
         }
     }
 
@@ -1182,7 +1195,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (options.isEmpty()) return;
 
             Collections.sort(options);
-            String message = "Invalid JVM GC options from services.xml: " + String.join(",", options);
+            String message = "Invalid JVM GC options in services.xml: " + String.join(",", options);
             if (failDeploymentWithInvalidJvmOptions)
                 throw new IllegalArgumentException(message);
             else
