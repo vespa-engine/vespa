@@ -19,6 +19,7 @@ public final class MetricNames {
     public static final String LATENCY = PREFIX + "latency";
     public static final String FAILED = PREFIX + "failed";
     public static final String CONDITION_NOT_MET = PREFIX + "condition_not_met";
+    public static final String NOT_FOUND = PREFIX + "not_found";
     public static final String PARSE_ERROR = PREFIX + "parse_error";
     public static final String SUCCEEDED = PREFIX + "succeeded";
     public static final String PENDING = PREFIX + "pending";

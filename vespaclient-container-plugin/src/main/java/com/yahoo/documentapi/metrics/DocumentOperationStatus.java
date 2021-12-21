@@ -19,15 +19,6 @@ public enum DocumentOperationStatus {
 
     OK, REQUEST_ERROR, SERVER_ERROR;
 
-    public static DocumentOperationStatus fromHttpStatusCode(int httpStatus) {
-        switch (httpStatus / 100) {
-            case 2: return OK;
-            case 4: return REQUEST_ERROR;
-            case 5: return SERVER_ERROR;
-            default: return null;
-        }
-    }
-
     public static DocumentOperationStatus fromMessageBusErrorCodes(Set<Integer> errorCodes) {
         if (errorCodes.size() == 1 && errorCodes.contains(DocumentProtocol.ERROR_NO_SPACE))
             return SERVER_ERROR;

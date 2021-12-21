@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.documentapi.metrics.DocumentOperationType;
@@ -54,14 +55,20 @@ public class FeedReplyReader implements ReplyHandler {
         } else {
             metricsHelper.reportSuccessful(type, latencyInSeconds);
             metric.add(MetricNames.SUCCEEDED, 1, null);
-            if (!conditionMet)
+            if ( ! conditionMet)
                 metric.add(MetricNames.CONDITION_NOT_MET, 1, testAndSetMetricCtx);
+            if ( ! updateNotFound(reply))
+                metric.add(MetricNames.NOT_FOUND, 1, null);
             enqueue(context, "Document processed.", ErrorCode.OK, !conditionMet, reply.getTrace());
         }
     }
 
     private static boolean conditionMet(Reply reply) {
-        return !reply.hasErrors() || reply.getError(0).getCode() != DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED;
+        return ! reply.hasErrors() || reply.getError(0).getCode() != DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED;
+    }
+
+    private static boolean updateNotFound(Reply reply) {
+        return reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound();
     }
 
     private void enqueue(ReplyContext context, String message, ErrorCode status, boolean isConditionNotMet, Trace trace) {
