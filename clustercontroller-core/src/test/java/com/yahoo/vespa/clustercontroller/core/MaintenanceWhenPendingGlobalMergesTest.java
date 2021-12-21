@@ -10,7 +10,7 @@ import java.util.Arrays;
 import static com.yahoo.vespa.clustercontroller.core.NodeStateReason.MAY_HAVE_MERGES_PENDING;
 import static com.yahoo.vespa.clustercontroller.core.NodeStateReason.NODE_TOO_UNSTABLE;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;

@@ -8,8 +8,7 @@ import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListen
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 import org.junit.Test;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -90,7 +89,7 @@ public class DatabaseHandlerTest {
         when(f.mockDatabase.retrieveLastPublishedStateBundle()).thenReturn(f.dummyBundle);
 
         ClusterStateBundle retrievedBundle = handler.getLatestClusterStateBundle();
-        assertThat(retrievedBundle, equalTo(f.dummyBundle));
+        assertEquals(f.dummyBundle, retrievedBundle);
     }
 
     // FIXME I don't like the semantics of this, but it mirrors the legacy behavior for the
@@ -102,7 +101,7 @@ public class DatabaseHandlerTest {
         // Note: no DB setup step
 
         ClusterStateBundle retrievedBundle = handler.getLatestClusterStateBundle();
-        assertThat(retrievedBundle, equalTo(ClusterStateBundle.empty()));
+        assertEquals(ClusterStateBundle.empty(), retrievedBundle);
     }
 
 }

@@ -20,12 +20,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -130,7 +127,7 @@ public class NodeStateChangeCheckerTest {
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("Master cluster controller is bootstrapping and in moratorium"));
+        assertEquals("Master cluster controller is bootstrapping and in moratorium", result.getReason());
     }
 
     @Test
@@ -143,7 +140,7 @@ public class NodeStateChangeCheckerTest {
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("Unknown node storage.10"));
+        assertEquals("Unknown node storage.10", result.getReason());
     }
 
     @Test
@@ -162,8 +159,8 @@ public class NodeStateChangeCheckerTest {
                 SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("At most one node can have a wanted state when #groups = 1: " +
-                "Other storage node 0 has wanted state Maintenance"));
+        assertEquals("At most one node can have a wanted state when #groups = 1: Other storage node 0 has wanted state Maintenance",
+                result.getReason());
     }
 
     @Test
@@ -183,8 +180,8 @@ public class NodeStateChangeCheckerTest {
                 SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("At most one node can have a wanted state when #groups = 1: " +
-                "Other distributor 0 has wanted state Down"));
+        assertEquals("At most one node can have a wanted state when #groups = 1: Other distributor 0 has wanted state Down",
+                result.getReason());
     }
 
     @Test
@@ -208,8 +205,7 @@ public class NodeStateChangeCheckerTest {
                     SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
             assertFalse(result.settingWantedStateIsAllowed());
             assertFalse(result.wantedStateAlreadySet());
-            assertThat(result.getReason(), is("At most one group can have wanted state: " +
-                    "Other distributor 0 in group 0 has wanted state Down"));
+            assertEquals("At most one group can have wanted state: Other distributor 0 in group 0 has wanted state Down", result.getReason());
         }
 
         {
@@ -243,8 +239,8 @@ public class NodeStateChangeCheckerTest {
                     SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
             assertFalse(result.settingWantedStateIsAllowed());
             assertFalse(result.wantedStateAlreadySet());
-            assertThat(result.getReason(), is("At most one group can have wanted state: " +
-                    "Other storage node 0 in group 0 has wanted state Maintenance"));
+            assertEquals("At most one group can have wanted state: Other storage node 0 in group 0 has wanted state Maintenance",
+                    result.getReason());
         }
 
         {
@@ -306,7 +302,7 @@ public class NodeStateChangeCheckerTest {
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), containsString("Safe-set of node state is only supported for storage nodes"));
+        assertTrue(result.getReason().contains("Safe-set of node state is only supported for storage nodes"));
     }
 
     @Test
@@ -327,7 +323,7 @@ public class NodeStateChangeCheckerTest {
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("Another storage node has state DOWN: 3"));
+        assertEquals("Another storage node has state DOWN: 3", result.getReason());
     }
 
     @Test
@@ -394,8 +390,8 @@ public class NodeStateChangeCheckerTest {
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("Distributor 0 says storage node 1 " +
-                "has buckets with redundancy as low as 3, but we require at least 4"));
+        assertEquals("Distributor 0 says storage node 1 has buckets with redundancy as low as 3, but we require at least 4",
+                result.getReason());
     }
 
     @Test
@@ -445,7 +441,7 @@ public class NodeStateChangeCheckerTest {
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("Distributor node 0 has not reported any cluster state version yet."));
+        assertEquals("Distributor node 0 has not reported any cluster state version yet.", result.getReason());
     }
 
     private NodeStateChangeChecker.Result transitionToSameState(State state, String oldDescription, String newDescription) {
@@ -559,7 +555,7 @@ public class NodeStateChangeCheckerTest {
         NodeStateChangeChecker.Result result = transitionToMaintenanceWithOneStorageNodeDown(otherIndex);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), containsString("Another storage node has state DOWN: 2"));
+        assertTrue(result.getReason().contains("Another storage node has state DOWN: 2"));
     }
 
     @Test
