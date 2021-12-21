@@ -76,6 +76,7 @@ public class ImportPackageTest {
         assertTrue(new Import("foo", Optional.empty()).importVersionRange().isEmpty());
     }
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
