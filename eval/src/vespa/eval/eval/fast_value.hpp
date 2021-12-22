@@ -234,7 +234,16 @@ struct FastValue final : Value, ValueBuilder<T> {
     ~FastValue() override;
     const ValueType &type() const override { return my_type; }
     const Value::Index &index() const override { return my_index; }
-    TypedCells cells() const override { return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size); }
+    TypedCells cells() const override {
+        if constexpr (std::is_same_v<T, uint32_t>) {
+            // allow use of FastValue templated on types that do not
+            // have a corresponding cell type as long as cells() is
+            // not called
+            abort();
+        } else {
+            return TypedCells(my_cells.memory, get_cell_type<T>(), my_cells.size);
+        }
+    }
     void add_mapping(ConstArrayRef<vespalib::stringref> addr) {
         if constexpr (transient) {
             (void) addr;
