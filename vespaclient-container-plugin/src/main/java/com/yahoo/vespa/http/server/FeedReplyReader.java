@@ -15,8 +15,12 @@ import com.yahoo.vespa.http.client.core.ErrorCode;
 import com.yahoo.vespa.http.client.core.OperationStatus;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.function.Predicate.not;
 
 /**
  * Catch message bus replies and make the available to a given session.
@@ -71,6 +75,8 @@ public class FeedReplyReader implements ReplyHandler {
     private static boolean updateNotFound(Reply reply) {
         return       reply instanceof UpdateDocumentReply
                 && ! ((UpdateDocumentReply) reply).wasFound()
+                &&   reply.getMessage() instanceof UpdateDocumentMessage
+                &&   ((UpdateDocumentMessage) reply.getMessage()).getDocumentUpdate() != null
                 && ! ((UpdateDocumentMessage) reply.getMessage()).getDocumentUpdate().getCreateIfNonExistent();
     }
 
