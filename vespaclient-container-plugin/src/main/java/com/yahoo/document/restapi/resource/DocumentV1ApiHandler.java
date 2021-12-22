@@ -468,7 +468,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 DocumentOperationParameters parameters = parametersFromRequest(request, ROUTE)
                         .withResponseHandler(response -> {
                             outstanding.decrementAndGet();
-                            updateUpdateMetrics(response.outcome(), update.getCreateIfNonExistent());
+                            updateUpdateMetrics(response.outcome());
                             handleFeedOperation(path, handler, response);
                         });
                 return () -> dispatchOperation(() -> asyncSession.update(update, parameters));
@@ -1047,8 +1047,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
     }
 
-    private void updateUpdateMetrics(Outcome outcome, boolean create) {
-        if (create && outcome == Outcome.NOT_FOUND) outcome = Outcome.SUCCESS; // >_<
+    private void updateUpdateMetrics(Outcome outcome) {
         switch (outcome) {
             case SUCCESS: metric.add(MetricNames.SUCCEEDED, 1, null); break;
             case NOT_FOUND: metric.add(MetricNames.NOT_FOUND, 1, null); break;
