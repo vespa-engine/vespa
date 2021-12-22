@@ -49,7 +49,7 @@ TEST(Sparse112DotProduct, expression_can_be_optimized)
     verify_optimized_cell_types("reduce(x5_2*y4_2*x5_1y4_1,sum)");
 }
 
-TEST(Sparse112DotProduct, different_input_placement_is_handeled)
+TEST(Sparse112DotProduct, different_input_placement_is_handled)
 {
     std::array<vespalib::string,3> params = {"x3_1", "y3_1", "x3_1y3_1"};
     for (size_t p1 = 0; p1 < params.size(); ++p1) {
