@@ -113,14 +113,14 @@ public class YqlParserTestCase {
     @Test
     public void testGroupingContinuation() {
         assertParse("select foo from bar where baz contains 'cox' " +
-                    "| [{ 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(a) each(output(count())))",
+                    "| { 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }all(group(a) each(output(count())))",
                     "baz:cox");
         assertEquals("[[BCBCBCBEBG, BCBKCBACBKCCK]all(group(a) each(output(count())))]",
                      toString(parser.getGroupingSteps()));
 
         assertParse("select foo from bar where baz contains 'cox' " +
-                    "| [{ 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(a) each(output(count()))) " +
-                    "| [{ 'continuations': ['BCBBBBBDBF', 'BCBJBPCBJCCJ'] }]all(group(b) each(output(count())))",
+                    "| { 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }all(group(a) each(output(count()))) " +
+                    "| { 'continuations': ['BCBBBBBDBF', 'BCBJBPCBJCCJ'] }all(group(b) each(output(count())))",
                     "baz:cox");
         assertEquals("[[BCBCBCBEBG, BCBKCBACBKCCK]all(group(a) each(output(count())))," +
                      " [BCBBBBBDBF, BCBJBPCBJCCJ]all(group(b) each(output(count())))]",
@@ -129,7 +129,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testHitLimit() {
-        assertParse("select artist_name, track_name, track_uri from sources * where (myField contains ([{prefix:true}]\"m\") and ([{hitLimit: 5000, descending: true}]range(static_score,0,Infinity))) limit 30 offset 0",
+        assertParse("select artist_name, track_name, track_uri from sources * where (myField contains ({prefix:true}\"m\") and ({hitLimit: 5000, descending: true}range(static_score,0,Infinity))) limit 30 offset 0",
                     "AND myField:m* static_score:[0;;-5000]");
     }
 
@@ -147,7 +147,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testComplexExpression() {
-        String queryTreeYql = "rank((((filter contains ([{origin: {original: \"filter:VideoAdsCappingTestCPM\", \"offset\": 7, length: 22}, normalizeCase: false, id: 1}]\"videoadscappingtestcpm\") AND hasRankRestriction contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 2}]\"0\") AND ((objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 3}]\"install_app\") AND availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 4}]\"cpiparams\")) OR (availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 5}]\"appinstallinfo\") AND availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 6}]\"appmetroplexinfo\")) OR (dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 7}]\"default\")) AND !(objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 8}]\"install_app\"))) AND advt_age = ([{\"id\": 9}]2147483647) AND advt_gender contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 10}]\"all\") AND advt_all_segments = ([{\"id\": 11}]2147483647) AND advt_keywords contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 12}]\"all\") AND advMobilePlatform = ([{\"id\": 13}]2147483647) AND advMobileDeviceType = ([{\"id\": 14}]2147483647) AND advMobileCon = ([{\"id\": 15}]2147483647) AND advMobileOSVersions = ([{\"id\": 16}]2147483647) AND advCarrier = ([{\"id\": 17}]2147483647) AND ([{\"id\": 18}]weightedSet(advt_supply, {\"all\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) AND (advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 19, \"weight\": 1}]\"adv_tuesday\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 20, \"weight\": 1}]\"adv_tuesday_17\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 21, \"weight\": 1}]\"adv_tuesday_17_forty_five\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 22}]\"all\")) AND isAppReengagementAd = ([{\"id\": 23}]0) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 24}]\"default\") AND serveWithPromotionOnly = ([{\"id\": 26}]0) AND budgetAdvertiserThrottleRateFilter = ([{\"id\": 27}]0) AND budgetResellerThrottleRateFilter = ([{\"id\": 28}]0) AND (isMystiqueRequired = ([{\"id\": 29}]0) OR (isMystiqueRequired = ([{\"id\": 30}]1) AND useBcFactorFilter = ([{\"id\": 31}]1))) AND (((budgetCampaignThrottleRateBits = ([{\"id\": 32}]55) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 33}]\"default\"))) AND !(useBcFactorFilter = ([{\"id\": 34}]1)) OR ((useBcFactorFilter = ([{\"id\": 35}]1) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 36}]\"default\") AND (bcFactorTiers = ([{\"id\": 38}]127) OR bcFactorTiers = ([{\"id\": 39}]0)) AND ((firstPriceEnforced = ([{\"id\": 40}]0) AND (secondPriceEnforced = ([{\"id\": 41}]1) OR isPrivateDeal = ([{\"id\": 42}]0) OR (dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 43}]\"default\")) AND !(bcActiveTier = ([{\"id\": 44}]0)))) OR mystiqueCampaignThrottleRateBits = ([{\"id\": 45}]18)))) AND !(isOutOfDailyBudget = ([{\"id\": 37}]1))) AND testCreative = ([{\"id\": 46}]0) AND advt_geo = ([{\"id\": 47}]2147483647) AND ((adType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 48}]\"strm_video\") AND isPortraitVideo = ([{\"id\": 49}]0)) OR adType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 50}]\"stream_ad\")) AND ((isCPM = ([{\"id\": 51}]0) AND isOCPC = ([{\"id\": 52}]0) AND isECPC = ([{\"id\": 53}]0) AND ((priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 54}]\"cpcv\") AND bid >= ([{\"id\": 55}]0.005)) OR (priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 56}]\"cpv\") AND bid >= ([{\"id\": 57}]0.01)) OR (priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 58}]\"cpc\") AND bid >= ([{\"id\": 59}]0.05)) OR (objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 60}]\"promote_content\") AND bid >= ([{\"id\": 61}]0.01)) OR hasFloorPriceUsd = ([{\"id\": 62}]1))) OR isECPC = ([{\"id\": 63}]1) OR (isCPM = ([{\"id\": 64}]1) AND isOCPM = ([{\"id\": 65}]0) AND (([{\"id\": 66}]range(bid, 0.25, Infinity)) OR hasFloorPriceUsd = ([{\"id\": 67}]1)))) AND start_date <= ([{\"id\": 68}]1572976776299L) AND end_date >= ([{\"id\": 69}]1572976776299L))) AND !(isHoldoutAd = ([{\"id\": 25}]1))) AND !((disclaimerExtensionsTypes contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 70}]\"pharma\") OR ([{\"id\": 71}]weightedSet(exclusion_advt_supply, {\"extsite223\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) OR isPersonalized = ([{\"id\": 72}]1) OR blocked_section_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 73}]\"223\") OR blocked_publisher_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 74}]\"223\") OR blocked_site_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 75}]\"223\"))), [{\"id\": 76, \"label\": \"ad_ocpc_max_cpc\"}]dotProduct(ocpc_max_cpc, {\"0\": 1}), [{\"id\": 77, \"label\": \"ad_ocpc_min_cpc\"}]dotProduct(ocpc_min_cpc, {\"0\": 1}), [{\"id\": 78, \"label\": \"ad_ocpc_max_alpha\"}]dotProduct(ocpc_max_alpha, {\"0\": 1}), [{\"id\": 79, \"label\": \"ad_ocpc_min_alpha\"}]dotProduct(ocpc_min_alpha, {\"0\": 1}), [{\"id\": 80, \"label\": \"ad_ocpc_alpha_0\"}]dotProduct(ocpc_alpha_0, {\"0\": 1}), [{\"id\": 81, \"label\": \"ad_ocpc_alpha_1\"}]dotProduct(ocpc_alpha_1, {\"0\": 1}), (bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 82, \"weight\": 1}]\"adv_tuesday\") OR bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 83, \"weight\": 1}]\"adv_tuesday_17\") OR bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 84, \"weight\": 1}]\"adv_tuesday_17_forty_five\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 85, \"weight\": 1}]\"adv_tuesday\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 86, \"weight\": 1}]\"adv_tuesday_17\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 87, \"weight\": 1}]\"adv_tuesday_17_forty_five\")), bidAdjustmentForCpi = ([{\"id\": 88, \"weight\": 1}]223), [{\"id\": 89, \"label\": \"boostingForBackfill\"}]dotProduct(boostingForBackfill, {\"priority\": 1000})) limit 0 timeout 3980 | all(group(adTypeForGrouping) each(group(advertiser_id) max(11) output(count() as(groupingCounter)) each(max(1) each(output(summary())))))";
+        String queryTreeYql = "rank((((filter contains ({origin: {original: \"filter:VideoAdsCappingTestCPM\", \"offset\": 7, length: 22}, normalizeCase: false, id: 1}\"videoadscappingtestcpm\") AND hasRankRestriction contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 2}]\"0\") AND ((objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 3}]\"install_app\") AND availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 4}]\"cpiparams\")) OR (availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 5}]\"appinstallinfo\") AND availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 6}]\"appmetroplexinfo\")) OR (dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 7}]\"default\")) AND !(objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 8}]\"install_app\"))) AND advt_age = ([{\"id\": 9}]2147483647) AND advt_gender contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 10}]\"all\") AND advt_all_segments = ([{\"id\": 11}]2147483647) AND advt_keywords contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 12}]\"all\") AND advMobilePlatform = ([{\"id\": 13}]2147483647) AND advMobileDeviceType = ([{\"id\": 14}]2147483647) AND advMobileCon = ([{\"id\": 15}]2147483647) AND advMobileOSVersions = ([{\"id\": 16}]2147483647) AND advCarrier = ([{\"id\": 17}]2147483647) AND ([{\"id\": 18}]weightedSet(advt_supply, {\"all\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) AND (advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 19, \"weight\": 1}]\"adv_tuesday\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 20, \"weight\": 1}]\"adv_tuesday_17\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 21, \"weight\": 1}]\"adv_tuesday_17_forty_five\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 22}]\"all\")) AND isAppReengagementAd = ([{\"id\": 23}]0) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 24}]\"default\") AND serveWithPromotionOnly = ([{\"id\": 26}]0) AND budgetAdvertiserThrottleRateFilter = ([{\"id\": 27}]0) AND budgetResellerThrottleRateFilter = ([{\"id\": 28}]0) AND (isMystiqueRequired = ([{\"id\": 29}]0) OR (isMystiqueRequired = ([{\"id\": 30}]1) AND useBcFactorFilter = ([{\"id\": 31}]1))) AND (((budgetCampaignThrottleRateBits = ([{\"id\": 32}]55) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 33}]\"default\"))) AND !(useBcFactorFilter = ([{\"id\": 34}]1)) OR ((useBcFactorFilter = ([{\"id\": 35}]1) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 36}]\"default\") AND (bcFactorTiers = ([{\"id\": 38}]127) OR bcFactorTiers = ([{\"id\": 39}]0)) AND ((firstPriceEnforced = ([{\"id\": 40}]0) AND (secondPriceEnforced = ([{\"id\": 41}]1) OR isPrivateDeal = ([{\"id\": 42}]0) OR (dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 43}]\"default\")) AND !(bcActiveTier = ([{\"id\": 44}]0)))) OR mystiqueCampaignThrottleRateBits = ([{\"id\": 45}]18)))) AND !(isOutOfDailyBudget = ([{\"id\": 37}]1))) AND testCreative = ([{\"id\": 46}]0) AND advt_geo = ([{\"id\": 47}]2147483647) AND ((adType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 48}]\"strm_video\") AND isPortraitVideo = ([{\"id\": 49}]0)) OR adType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 50}]\"stream_ad\")) AND ((isCPM = ([{\"id\": 51}]0) AND isOCPC = ([{\"id\": 52}]0) AND isECPC = ([{\"id\": 53}]0) AND ((priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 54}]\"cpcv\") AND bid >= ([{\"id\": 55}]0.005)) OR (priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 56}]\"cpv\") AND bid >= ([{\"id\": 57}]0.01)) OR (priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 58}]\"cpc\") AND bid >= ([{\"id\": 59}]0.05)) OR (objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 60}]\"promote_content\") AND bid >= ([{\"id\": 61}]0.01)) OR hasFloorPriceUsd = ([{\"id\": 62}]1))) OR isECPC = ([{\"id\": 63}]1) OR (isCPM = ([{\"id\": 64}]1) AND isOCPM = ([{\"id\": 65}]0) AND (([{\"id\": 66}]range(bid, 0.25, Infinity)) OR hasFloorPriceUsd = ([{\"id\": 67}]1)))) AND start_date <= ([{\"id\": 68}]1572976776299L) AND end_date >= ([{\"id\": 69}]1572976776299L))) AND !(isHoldoutAd = ([{\"id\": 25}]1))) AND !((disclaimerExtensionsTypes contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 70}]\"pharma\") OR ([{\"id\": 71}]weightedSet(exclusion_advt_supply, {\"extsite223\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) OR isPersonalized = ([{\"id\": 72}]1) OR blocked_section_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 73}]\"223\") OR blocked_publisher_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 74}]\"223\") OR blocked_site_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 75}]\"223\"))), [{\"id\": 76, \"label\": \"ad_ocpc_max_cpc\"}]dotProduct(ocpc_max_cpc, {\"0\": 1}), [{\"id\": 77, \"label\": \"ad_ocpc_min_cpc\"}]dotProduct(ocpc_min_cpc, {\"0\": 1}), [{\"id\": 78, \"label\": \"ad_ocpc_max_alpha\"}]dotProduct(ocpc_max_alpha, {\"0\": 1}), [{\"id\": 79, \"label\": \"ad_ocpc_min_alpha\"}]dotProduct(ocpc_min_alpha, {\"0\": 1}), [{\"id\": 80, \"label\": \"ad_ocpc_alpha_0\"}]dotProduct(ocpc_alpha_0, {\"0\": 1}), [{\"id\": 81, \"label\": \"ad_ocpc_alpha_1\"}]dotProduct(ocpc_alpha_1, {\"0\": 1}), (bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 82, \"weight\": 1}]\"adv_tuesday\") OR bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 83, \"weight\": 1}]\"adv_tuesday_17\") OR bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 84, \"weight\": 1}]\"adv_tuesday_17_forty_five\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 85, \"weight\": 1}]\"adv_tuesday\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 86, \"weight\": 1}]\"adv_tuesday_17\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 87, \"weight\": 1}]\"adv_tuesday_17_forty_five\")), bidAdjustmentForCpi = ([{\"id\": 88, \"weight\": 1}]223), [{\"id\": 89, \"label\": \"boostingForBackfill\"}]dotProduct(boostingForBackfill, {\"priority\": 1000})) limit 0 timeout 3980 | all(group(adTypeForGrouping) each(group(advertiser_id) max(11) output(count() as(groupingCounter)) each(max(1) each(output(summary())))))";
         QueryTree parsed = assertParse("select * from sources * where " + queryTreeYql + ";",
                                        "RANK (+(+(AND filter:VideoAdsCappingTestCPM hasRankRestriction:0 (OR (AND objective:install_app availableExtendedFields:cpiparams) (AND availableExtendedFields:appinstallinfo availableExtendedFields:appmetroplexinfo) (+dummyField:default -objective:install_app)) advt_age:2147483647 advt_gender:all advt_all_segments:2147483647 advt_keywords:all advMobilePlatform:2147483647 advMobileDeviceType:2147483647 advMobileCon:2147483647 advMobileOSVersions:2147483647 advCarrier:2147483647 WEIGHTEDSET advt_supply{[1]:\"site223\",[1]:\"pub223\",[1]:\"all\",[1]:\"sec223\"} (OR advt_day_parting:adv_tuesday!1 advt_day_parting:adv_tuesday_17!1 advt_day_parting:adv_tuesday_17_forty_five!1 advt_day_parting:all) isAppReengagementAd:0 dummyField:default serveWithPromotionOnly:0 budgetAdvertiserThrottleRateFilter:0 budgetResellerThrottleRateFilter:0 (OR isMystiqueRequired:0 (AND isMystiqueRequired:1 useBcFactorFilter:1)) (OR (+(AND budgetCampaignThrottleRateBits:55 dummyField:default) -useBcFactorFilter:1) (+(AND useBcFactorFilter:1 dummyField:default (OR bcFactorTiers:127 bcFactorTiers:0) (OR (AND firstPriceEnforced:0 (OR secondPriceEnforced:1 isPrivateDeal:0 (+dummyField:default -bcActiveTier:0))) mystiqueCampaignThrottleRateBits:18)) -isOutOfDailyBudget:1)) testCreative:0 advt_geo:2147483647 (OR (AND adType:strm_video isPortraitVideo:0) adType:stream_ad) (OR (AND isCPM:0 isOCPC:0 isECPC:0 (OR (AND priceType:cpcv bid:[0.005;]) (AND priceType:cpv bid:[0.01;]) (AND priceType:cpc bid:[0.05;]) (AND objective:promote_content bid:[0.01;]) hasFloorPriceUsd:1)) isECPC:1 (AND isCPM:1 isOCPM:0 (OR bid:[0.25;] hasFloorPriceUsd:1))) start_date:[;1572976776299] end_date:[1572976776299;]) -isHoldoutAd:1) -(OR disclaimerExtensionsTypes:pharma WEIGHTEDSET exclusion_advt_supply{[1]:\"extsite223\",[1]:\"site223\",[1]:\"pub223\",[1]:\"sec223\"} isPersonalized:1 blocked_section_ids:223 blocked_publisher_ids:223 blocked_site_ids:223)) DOTPRODUCT ocpc_max_cpc{[1]:\"0\"} DOTPRODUCT ocpc_min_cpc{[1]:\"0\"} DOTPRODUCT ocpc_max_alpha{[1]:\"0\"} DOTPRODUCT ocpc_min_alpha{[1]:\"0\"} DOTPRODUCT ocpc_alpha_0{[1]:\"0\"} DOTPRODUCT ocpc_alpha_1{[1]:\"0\"} (OR bidAdjustmentDayParting:adv_tuesday!1 bidAdjustmentDayParting:adv_tuesday_17!1 bidAdjustmentDayParting:adv_tuesday_17_forty_five!1 bidAdjustmentDayPartingForCostCap:adv_tuesday!1 bidAdjustmentDayPartingForCostCap:adv_tuesday_17!1 bidAdjustmentDayPartingForCostCap:adv_tuesday_17_forty_five!1) bidAdjustmentForCpi:223!1 DOTPRODUCT boostingForBackfill{[1000]:\"priority\"}");
         String serializedQueryTreeYql = VespaSerializer.serialize(parsed);
@@ -254,32 +254,32 @@ public class YqlParserTestCase {
 
     @Test
     public void testAnnotatedLessThan() {
-        assertParse("select foo from bar where price < ([{filter: true}](-500))", "|price:<-500");
-        assertParse("select foo from bar where ([{filter: true}]500) < price", "|price:>500");
+        assertParse("select foo from bar where price < ({filter: true}(-500))", "|price:<-500");
+        assertParse("select foo from bar where ({filter: true}500) < price", "|price:>500");
     }
 
     @Test
     public void testAnnotatedGreaterThan() {
-        assertParse("select foo from bar where price > ([{filter: true}]500)", "|price:>500");
-        assertParse("select foo from bar where ([{filter: true}](-500)) > price", "|price:<-500");
+        assertParse("select foo from bar where price > ({filter: true}500)", "|price:>500");
+        assertParse("select foo from bar where ({filter: true}(-500)) > price", "|price:<-500");
     }
 
     @Test
     public void testAnnotatedLessThanOrEqual() {
-        assertParse("select foo from bar where price <= ([{filter: true}](-500))", "|price:[;-500]");
-        assertParse("select foo from bar where ([{filter: true}]500) <= price", "|price:[500;]");
+        assertParse("select foo from bar where price <= ({filter: true}(-500))", "|price:[;-500]");
+        assertParse("select foo from bar where ({filter: true}500) <= price", "|price:[500;]");
     }
 
     @Test
     public void testAnnotatedGreaterThanOrEqual() {
         assertParse("select foo from bar where price >= ([{filter: true}]500)", "|price:[500;]");
-        assertParse("select foo from bar where ([{filter: true}](-500)) >= price", "|price:[;-500]");
+        assertParse("select foo from bar where ({filter: true}(-500)) >= price", "|price:[;-500]");
     }
 
     @Test
     public void testAnnotatedEquality() {
         assertParse("select foo from bar where price = ([{filter: true}](-500))", "|price:-500");
-        assertParse("select foo from bar where ([{filter: true}]500) = price", "|price:500");
+        assertParse("select foo from bar where ({filter: true}500) = price", "|price:500");
     }
 
     @Test
@@ -296,29 +296,36 @@ public class YqlParserTestCase {
     public void testTermAnnotations() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {label: \"merkelapp\"} ]\"colors\");").getLabel());
+                                 "({label: \"merkelapp\"}\"colors\");").getLabel());
         assertEquals("another",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {annotations: {cox: \"another\"}} ]\"colors\")").getAnnotation("cox"));
+                                 "({annotations: {cox: \"another\"}}\"colors\")").getAnnotation("cox"));
         assertEquals(23.0, getRootWord("select foo from bar where baz contains " +
-                                       "([ {significance: 23.0} ]\"colors\")").getSignificance(), 1E-6);
+                                       "({significance: 23.0}\"colors\")").getSignificance(), 1E-6);
         assertEquals(23, getRootWord("select foo from bar where baz contains " +
-                                     "([ {id: 23} ]\"colors\")").getUniqueID());
+                                     "({id: 23}\"colors\")").getUniqueID());
         assertEquals(150, getRootWord("select foo from bar where baz contains " +
-                                      "([ {weight: 150} ]\"colors\")").getWeight());
+                                      "({weight: 150}\"colors\")").getWeight());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {usePositionData: false} ]\"colors\")").usePositionData());
+                                "({usePositionData: false}\"colors\")").usePositionData());
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                               "([ {filter: true} ]\"colors\")").isFilter());
+                               "({filter: true}\"colors\")").isFilter());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {ranked: false} ]\"colors\")").isRanked());
+                                "({ranked: false}\"colors\")").isRanked());
 
         Substring origin = getRootWord("select foo from bar where baz contains " +
-                                       "([ {origin: {original: \"abc\", offset: 1, length: 2}} ]" +
+                                       "({origin: {original: \"abc\", offset: 1, length: 2}}" +
                                        "\"colors\")").getOrigin();
         assertEquals("abc", origin.string);
         assertEquals(1, origin.start);
         assertEquals(3, origin.end);
+    }
+
+    @Test
+    public void testAnnotationsCanBeInBrackets() {
+        assertEquals("merkelapp",
+                     getRootWord("select foo from bar where baz contains " +
+                                 "([ {label: \"merkelapp\"} ]\"colors\");").getLabel());
     }
 
     @Test
@@ -464,8 +471,8 @@ public class YqlParserTestCase {
 
         assertParseFail("select foo from bar where " +
                         "title contains ([{id: 1, connectivity: {id: 4, weight: 7.0}}]\"madonna\") " +
-                        "and title contains ([{id: 2}]\"saint\") " +
-                        "and title contains ([{id: 3}]\"angel\")",
+                        "and title contains ({id: 2}\"saint\") " +
+                        "and title contains ({id: 3}\"angel\")",
                         new IllegalArgumentException("Item 'title:madonna' was specified to connect to item with ID 4, " +
                                                      "which does not exist in the query."));
     }
@@ -473,7 +480,7 @@ public class YqlParserTestCase {
     @Test
     public void testAnnotatedPhrase() {
         QueryTree parsed =
-                parse("select foo from bar where baz contains ([{label: \"hello world\"}]phrase(\"a\", \"b\"))");
+                parse("select foo from bar where baz contains ({label: \"hello world\"}phrase(\"a\", \"b\"))");
         assertEquals("baz:\"a b\"", parsed.toString());
         PhraseItem phrase = (PhraseItem)parsed.getRoot();
         assertEquals("hello world", phrase.getLabel());
@@ -513,7 +520,7 @@ public class YqlParserTestCase {
     public void testNear() {
         assertParse("select foo from bar where description contains near(\"a\", \"b\")",
                     "NEAR(2) description:a description:b");
-        assertParse("select foo from bar where description contains ([ {distance: 100} ]near(\"a\", \"b\"))",
+        assertParse("select foo from bar where description contains ({distance: 100} near(\"a\", \"b\"))",
                     "NEAR(100) description:a description:b");
     }
 
@@ -521,7 +528,7 @@ public class YqlParserTestCase {
     public void testOrderedNear() {
         assertParse("select foo from bar where description contains onear(\"a\", \"b\");",
                     "ONEAR(2) description:a description:b");
-        assertParse("select foo from bar where description contains ([ {distance: 100} ]onear(\"a\", \"b\"))",
+        assertParse("select foo from bar where description contains ({distance: 100} onear(\"a\", \"b\"))",
                     "ONEAR(100) description:a description:b");
     }
 
@@ -529,15 +536,15 @@ public class YqlParserTestCase {
     public void testWand() {
         assertParse("select foo from bar where wand(description, {\"a\":1, \"b\":2});",
                 "WAND(10,0.0,1.0) description{[1]:\"a\",[2]:\"b\"}");
-        assertParse("select foo from bar where [ {scoreThreshold : 13.3, targetHits: 7, " +
-                    "thresholdBoostFactor: 2.3} ]wand(description, {\"a\":1, \"b\":2})",
+        assertParse("select foo from bar where {scoreThreshold : 13.3, targetHits: 7, " +
+                    "thresholdBoostFactor: 2.3} wand(description, {\"a\":1, \"b\":2})",
                     "WAND(7,13.3,2.3) description{[1]:\"a\",[2]:\"b\"}");
     }
 
     @Test
     public void testQuotedAnnotations() {
-        assertParse("select foo from bar where [ {\"scoreThreshold\": 13.3, \"targetHits\": 7, " +
-                    "'thresholdBoostFactor': 2.3} ]wand(description, {\"a\":1})",
+        assertParse("select foo from bar where {\"scoreThreshold\": 13.3, \"targetHits\": 7, " +
+                    "'thresholdBoostFactor': 2.3} wand(description, {\"a\":1})",
                     "WAND(7,13.3,2.3) description{[1]:\"a\"}");
     }
 
@@ -593,12 +600,12 @@ public class YqlParserTestCase {
     public void testNearestNeighbor() {
         assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=0}");
-        assertParse("select foo from bar where [{targetHits: 37}]nearestNeighbor(semantic_embedding, my_vector)",
+        assertParse("select foo from bar where {targetHits: 37} nearestNeighbor(semantic_embedding, my_vector)",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=Infinity,approximate=true,targetHits=37}");
-        assertParse("select foo from bar where [{\"approximate\": false, \"hnsw.exploreAdditionalHits\": 8, targetHits: 3}]nearestNeighbor(semantic_embedding, my_vector)",
+        assertParse("select foo from bar where {approximate: false, hnsw.exploreAdditionalHits: 8, targetHits: 3} nearestNeighbor(semantic_embedding, my_vector)",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=8,distanceThreshold=Infinity,approximate=false,targetHits=3}");
 
-        assertParse("select foo from bar where [{targetHits: 7, \"distanceThreshold\": 100100.25}]nearestNeighbor(semantic_embedding, my_vector)",
+        assertParse("select foo from bar where {targetHits: 7, distanceThreshold: 100100.25} nearestNeighbor(semantic_embedding, my_vector)",
                     "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,hnsw.exploreAdditionalHits=0,distanceThreshold=100100.25,approximate=true,targetHits=7}");
 
     }
@@ -652,11 +659,11 @@ public class YqlParserTestCase {
     public void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\")",
                     "WEAKAND(100) a:A b:B");
-        assertParse("select foo from bar where [{\"targetHits\": 37}]weakAnd(a contains \"A\", " +
+        assertParse("select foo from bar where {targetHits: 37}weakAnd(a contains \"A\", " +
                     "b contains \"B\")",
                     "WEAKAND(37) a:A b:B");
 
-        QueryTree tree = parse("select foo from bar where [{\"scoreThreshold\": 41}]weakAnd(a " +
+        QueryTree tree = parse("select foo from bar where {scoreThreshold: 41}weakAnd(a " +
                                "contains \"A\", b contains \"B\")");
         assertEquals("WEAKAND(100) a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
@@ -680,17 +687,17 @@ public class YqlParserTestCase {
 
     @Test
     public void testAffixItems() {
-        assertRootClass("select foo from bar where baz contains ([ {suffix: true} ]\"colors\")",
+        assertRootClass("select foo from bar where baz contains ({suffix: true}\"colors\")",
                         SuffixItem.class);
-        assertRootClass("select foo from bar where baz contains ([ {\"prefix\": true} ]\"colors\")",
+        assertRootClass("select foo from bar where baz contains ({prefix: true}\"colors\")",
                         PrefixItem.class);
-        assertRootClass("select foo from bar where baz contains ([ {substring: true} ]\"colors\")",
+        assertRootClass("select foo from bar where baz contains ({substring: true}\"colors\")",
                         SubstringItem.class);
-        assertParseFail("select foo from bar where description contains ([ {suffix: true, " +
-                        "prefix: true} ]\"colors\")",
+        assertParseFail("select foo from bar where description contains ({suffix: true, " +
+                        "prefix: true}\"colors\")",
                         new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
-        assertParseFail("select foo from bar where description contains ([ {suffix: true, " +
-                        "substring: true} ]\"colors\")",
+        assertParseFail("select foo from bar where description contains ({suffix: true, " +
+                        "substring: true}\"colors\")",
                         new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
     }
 
@@ -844,26 +851,26 @@ public class YqlParserTestCase {
 
     @Test
     public void testNegativeHitLimit() {
-        assertParse("select * from sources * where [{hitLimit: -38}]range(foo, 0, 1)", "foo:[0;1;-38]");
+        assertParse("select * from sources * where {hitLimit: -38}range(foo, 0, 1)", "foo:[0;1;-38]");
     }
 
     @Test
     public void testRangeSearchHitPopulationOrdering() {
-        assertParse("select * from sources * where [{hitLimit: 38, \"ascending\": true}]range(foo, 0, 1)",
+        assertParse("select * from sources * where {hitLimit: 38, ascending: true}range(foo, 0, 1)",
                     "foo:[0;1;38]");
-        assertParse("select * from sources * where [{hitLimit: 38, \"ascending\": false}]range(foo, 0, 1)",
+        assertParse("select * from sources * where {hitLimit: 38, ascending: false}range(foo, 0, 1)",
                     "foo:[0;1;-38]");
-        assertParse("select * from sources * where [{hitLimit: 38, \"descending\": true}]range(foo, 0, 1)",
+        assertParse("select * from sources * where {hitLimit: 38, descending: true}range(foo, 0, 1)",
                     "foo:[0;1;-38]");
-        assertParse("select * from sources * where [{hitLimit: 38, \"descending\": false}]range(foo, 0, 1)",
+        assertParse("select * from sources * where {hitLimit: 38, descending: false}range(foo, 0, 1)",
                     "foo:[0;1;38]");
 
         boolean gotExceptionFromParse = false;
         try {
-            parse("select * from sources * where [{hitLimit: 38, ascending: true, descending: false}]range(foo, 0, 1)");
+            parse("select * from sources * where {hitLimit: 38, ascending: true, descending: false}range(foo, 0, 1)");
         } catch (IllegalArgumentException e) {
             assertTrue("Expected information about abuse of settings.",
-                    e.getMessage().contains("both ascending and descending ordering set"));
+                       e.getMessage().contains("both ascending and descending ordering set"));
             gotExceptionFromParse = true;
         }
         assertTrue(gotExceptionFromParse);
@@ -874,20 +881,20 @@ public class YqlParserTestCase {
         assertParse("select * from sources * where range(title, 0.0, 500.0)",
                 "title:[0.0;500.0]");
         assertParse(
-                "select * from sources * where [{bounds: \"open\"}]range(title, 0.0, 500.0)",
+                "select * from sources * where {bounds: \"open\"}range(title, 0.0, 500.0)",
                 "title:<0.0;500.0>");
         assertParse(
-                "select * from sources * where [{bounds: \"leftOpen\"}]range(title, 0.0, 500.0)",
+                "select * from sources * where {bounds: \"leftOpen\"}range(title, 0.0, 500.0)",
                 "title:<0.0;500.0]");
         assertParse(
-                "select * from sources * where [{bounds: \"rightOpen\"}]range(title, 0.0, 500.0)",
+                "select * from sources * where {bounds: \"rightOpen\"}range(title, 0.0, 500.0)",
                 "title:[0.0;500.0>");
     }
 
     @Test
     public void testInheritedAnnotations() {
         {
-            QueryTree x = parse("select * from sources * where ([{ranked: false}](foo contains \"a\" and bar contains \"b\")) or foor contains ([{ranked: false}]\"c\")");
+            QueryTree x = parse("select * from sources * where ({ranked: false}(foo contains \"a\" and bar contains \"b\")) or foor contains ({ranked: false}\"c\")");
             List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
             assertEquals(3, terms.size());
             for (IndexedItem term : terms) {
@@ -895,7 +902,7 @@ public class YqlParserTestCase {
             }
         }
         {
-            QueryTree x = parse("select * from sources * where [{ranked: false}](foo contains \"a\" and bar contains \"b\")");
+            QueryTree x = parse("select * from sources * where {ranked: false}(foo contains \"a\" and bar contains \"b\")");
             List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
             assertEquals(2, terms.size());
             for (IndexedItem term : terms) {
@@ -908,9 +915,9 @@ public class YqlParserTestCase {
     public void testMoreInheritedAnnotations() {
         String yqlQuery = "select * from sources * where " +
                           "([{ranked: false}](foo contains \"a\" " +
-                          "and ([{ranked: true}](bar contains \"b\" " +
-                          "or ([{ranked: false}](foo contains \"c\" " +
-                          "and foo contains ([{ranked: true}]\"d\")))))))";
+                          "and ({ranked: true}(bar contains \"b\" " +
+                          "or ({ranked: false}(foo contains \"c\" " +
+                          "and foo contains ({ranked: true}\"d\")))))))";
         QueryTree x = parse(yqlQuery);
         List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
         assertEquals(4, terms.size());
@@ -969,7 +976,7 @@ public class YqlParserTestCase {
     @Test
     public void testWordAlternativesWithOrigin() {
         QueryTree q = parse("select * from sources * where foo contains" +
-                            " ([{origin: {original: \" trees \", offset: 1, length: 5}}]" +
+                            " ({origin: {original: \" trees \", offset: 1, length: 5}}" +
                             "alternatives({trees: 1.0, tree: 0.7}))");
         Item root = q.getRoot();
         assertSame(WordAlternativesItem.class, root.getClass());
@@ -1071,7 +1078,7 @@ public class YqlParserTestCase {
 
     @Test
     public void testAndSegmenting() {
-        parse("select * from sources * where (default contains ([{stem: false}]\"m\") AND default contains ([{origin: {original: \"m\'s\", offset: 0, length: 3}, andSegmenting: true}]phrase(\"m\", \"s\"))) timeout 472");
+        parse("select * from sources * where (default contains ({stem: false}\"m\") AND default contains ({origin: {original: \"m\'s\", offset: 0, length: 3}, andSegmenting: true}phrase(\"m\", \"s\"))) timeout 472");
     }
 
     private void assertUrlQuery(String field, Query query, boolean startAnchor, boolean endAnchor, boolean endAnchorIsDefault) {

@@ -96,7 +96,7 @@ public class MinimalQueryInserterTestCase {
         assertGrouping("[]", query);
 
         builder.setParameter("yql", "select foo from bar where baz contains 'cox' " +
-                                    "| [{ continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]" +
+                                    "| { continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }" +
                                     "all(group(a) each(output(count())))");
         query = new Query(builder.toString());
         execution.search(query);
@@ -104,9 +104,9 @@ public class MinimalQueryInserterTestCase {
         assertGrouping("[[BCBCBCBEBG, BCBKCBACBKCCK]all(group(a) each(output(count())))]", query);
 
         builder.setParameter("yql", "select foo from bar where baz contains 'cox' " +
-                                    "| [{ continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]" +
+                                    "| { continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }" +
                                     "all(group(a) each(output(count()))) " +
-                                    "| [{ continuations:['BCBBBBBDBF', 'BCBJBPCBJCCJ'] }]" +
+                                    "| { continuations:['BCBBBBBDBF', 'BCBJBPCBJCCJ'] }" +
                                     "all(group(b) each(output(count())))");
         query = new Query(builder.toString());
         execution.search(query);
