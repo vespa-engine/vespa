@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
@@ -68,7 +69,9 @@ public class FeedReplyReader implements ReplyHandler {
     }
 
     private static boolean updateNotFound(Reply reply) {
-        return reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound();
+        return       reply instanceof UpdateDocumentReply
+                && ! ((UpdateDocumentReply) reply).wasFound()
+                && ! ((UpdateDocumentMessage) reply.getMessage()).getDocumentUpdate().getCreateIfNonExistent();
     }
 
     private void enqueue(ReplyContext context, String message, ErrorCode status, boolean isConditionNotMet, Trace trace) {
