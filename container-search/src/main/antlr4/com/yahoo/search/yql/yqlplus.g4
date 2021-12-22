@@ -340,6 +340,7 @@ annotate_expression
 
 annotation
     : LBRACKET map_expression RBRACKET
+    | map_expression
     ;
 
 logical_OR_expression

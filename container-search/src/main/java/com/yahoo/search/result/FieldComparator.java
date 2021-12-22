@@ -9,9 +9,7 @@ import java.util.Comparator;
 
 /**
  * Comparator used for ordering hits using the field values and a sorting specification.
- * <p>
- * <b>Note:</b> this comparator imposes orderings that are inconsistent with equals.
- * <p>
+ * Note: This comparator imposes orderings that are inconsistent with equals.
  *
  * @author Steinar Knutsen
  */
