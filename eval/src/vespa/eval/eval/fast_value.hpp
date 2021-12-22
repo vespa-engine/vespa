@@ -273,6 +273,12 @@ struct FastValue final : Value, ValueBuilder<T> {
         add_mapping(addr);
         return my_cells.add_cells(my_subspace_size);        
     }
+    ArrayRef<T> get_subspace(size_t subspace) {
+        return {my_cells.get(subspace * my_subspace_size), my_subspace_size};
+    }
+    ConstArrayRef<T> get_raw_cells() const {
+        return {my_cells.get(0), my_cells.size};
+    }
     std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>> self) override {
         if (my_index.map.addr_size() == 0) {
             assert(my_index.map.size() == 1);

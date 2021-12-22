@@ -20,6 +20,10 @@ template <> constexpr CellType get_cell_type<float>() { return CellType::FLOAT; 
 template <> constexpr CellType get_cell_type<BFloat16>() { return CellType::BFLOAT16; }
 template <> constexpr CellType get_cell_type<Int8Float>() { return CellType::INT8; }
 
+// NOTE: this was added in order to allow using FastValue that is
+// templated on values that are not supported cell types.
+template <typename CT> constexpr CellType get_cell_type() { abort(); }
+
 // check if the given CellType enum value and actual cell type match
 template <typename CT> constexpr bool check_cell_type(CellType type) {
     return (type == get_cell_type<CT>());
