@@ -9,8 +9,6 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".application.link");
 
-using std::shared_ptr;
-using std::ostringstream;
 using namespace storage::api;
 
 namespace storage {
@@ -46,14 +44,16 @@ void StorageLink::open()
             assert(false);
         }
         link->_state = OPENED;
-        if (link->_down.get() == 0) break;
+        if (!link->_down) {
+            break;
+        }
         link = link->_down.get();
     }
     // When give all links an onOpen call, bottoms up. Do it bottoms up, as
     // links are more likely to send messages down in their onOpen() call
     // than up. Thus, chances are best that the component is ready to
     // receive messages sent during onOpen().
-    while (link != 0) {
+    while (link != nullptr) {
         link->onOpen();
         link = link->_up;
     }
@@ -64,7 +64,9 @@ void StorageLink::doneInit()
     StorageLink* link = this;
     while (true) {
         link->onDoneInit();
-        if (link->_down.get() == 0) break;
+        if (!link->_down) {
+            break;
+        }
         link = link->_down.get();
     }
 }
@@ -79,7 +81,7 @@ void StorageLink::close()
 }
 
 void StorageLink::closeNextLink() {
-    _down.reset(0);
+    _down.reset();
 }
 
 void StorageLink::flush()
@@ -114,7 +116,7 @@ void StorageLink::flush()
 
 void StorageLink::sendDown(const StorageMessage::SP& msg)
 {
-        // Verify acceptable state to send messages down
+    // Verify acceptable state to send messages down
     switch(getState()) {
         case OPENED:
         case CLOSING:
@@ -129,20 +131,20 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
     LOG(spam, "Storage Link %s to handle %s", toString().c_str(), msg->toString().c_str());
     if (isBottom()) {
         LOG(spam, "Storage link %s at bottom of chain got message %s.", toString().c_str(), msg->toString().c_str());
-        ostringstream ost;
+        std::ostringstream ost;
         ost << "Unhandled message at bottom of chain " << *msg << " (message type "
             << msg->getType().getName() << "). " << vespalib::getStackTrace(0);
         if (!msg->getType().isReply()) {
             LOGBP(warning, "%s", ost.str().c_str());
-            StorageCommand& cmd = static_cast<StorageCommand&>(*msg);
-            shared_ptr<StorageReply> reply(cmd.makeReply().release());
+            auto& cmd = dynamic_cast<StorageCommand&>(*msg);
+            std::shared_ptr<StorageReply> reply(cmd.makeReply());
 
-            if (reply.get()) {
+            if (reply) {
                 reply->setResult(ReturnCode(ReturnCode::NOT_IMPLEMENTED, msg->getType().getName()));
                 sendUp(reply);
             }
         } else {
-            ost << " Return code: " << static_cast<const StorageReply&>(*msg).getResult();
+            ost << " Return code: " << dynamic_cast<const StorageReply&>(*msg).getResult();
             LOGBP(warning, "%s", ost.str().c_str());
         }
     } else if (!_down->onDown(msg)) {
@@ -153,7 +155,7 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
     }
 }
 
-void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
+void StorageLink::sendUp(const std::shared_ptr<StorageMessage> & msg)
 {
     // Verify acceptable state to send messages up
     switch(getState()) {
@@ -169,20 +171,20 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
     }
     assert(msg);
     if (isTop()) {
-        ostringstream ost;
+        std::ostringstream ost;
         ost << "Unhandled message at top of chain " << *msg << ".";
         ost << vespalib::getStackTrace(0);
         if (!msg->getType().isReply()) {
             LOGBP(warning, "%s", ost.str().c_str());
-            auto& cmd = static_cast<StorageCommand&>(*msg);
-            shared_ptr<StorageReply> reply(cmd.makeReply().release());
+            auto& cmd = dynamic_cast<StorageCommand&>(*msg);
+            std::shared_ptr<StorageReply> reply(cmd.makeReply());
 
             if (reply.get()) {
                 reply->setResult(ReturnCode(ReturnCode::NOT_IMPLEMENTED, msg->getType().getName()));
                 sendDown(reply);
             }
         } else {
-            ost << " Return code: " << static_cast<const StorageReply&>(*msg).getResult();
+            ost << " Return code: " << dynamic_cast<const StorageReply&>(*msg).getResult();
             LOGBP(warning, "%s", ost.str().c_str());
         }
     } else if (!_up->onUp(msg)) {
@@ -195,7 +197,7 @@ void StorageLink::printChain(std::ostream& out, std::string indent) const {
     if (!isTop()) out << ", not top";
     out << ")";
     const StorageLink* lastlink = _up;
-    for (const StorageLink* link = this; link != 0; link = link->_down.get()) {
+    for (const StorageLink* link = this; link != nullptr; link = link->_down.get()) {
         out << "\n";
         link->print(out, false, indent + "  ");
         if (link->_up != lastlink) out << ", broken linkage";
@@ -203,12 +205,12 @@ void StorageLink::printChain(std::ostream& out, std::string indent) const {
     }
 }
 
-bool StorageLink::onDown(const shared_ptr<StorageMessage> & msg)
+bool StorageLink::onDown(const std::shared_ptr<StorageMessage> & msg)
 {
     return msg->callHandler(*this, msg);
 }
 
-bool StorageLink::onUp(const shared_ptr<StorageMessage> & msg)
+bool StorageLink::onUp(const std::shared_ptr<StorageMessage> & msg)
 {
     return msg->callHandler(*this, msg);
 }
@@ -236,8 +238,7 @@ StorageLink::stateToString(State state)
     case CLOSED:
         return "CLOSED";
     default:
-        assert(false);
-        return 0;
+        abort();
     }
 }
 

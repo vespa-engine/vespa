@@ -6,6 +6,7 @@
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
+#include <vespa/storage/persistence/messages.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
@@ -329,6 +330,13 @@ TEST_F(CommunicationManagerTest, unmapped_bucket_space_for_get_documentapi_reque
     ASSERT_TRUE(reply.hasErrors());
     EXPECT_EQ(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
     EXPECT_EQ(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
+}
+
+TEST_F(CommunicationManagerTest, communication_manager_swallows_internal_replies) {
+    CommunicationManagerFixture f;
+    auto msg = std::make_unique<RecheckBucketInfoCommand>(makeDocumentBucket({16, 1}));
+    auto reply = std::shared_ptr<api::StorageReply>(msg->makeReply());
+    EXPECT_TRUE(f.comm_mgr->onUp(reply)); // true == handled by storage link
 }
 
 } // storage
