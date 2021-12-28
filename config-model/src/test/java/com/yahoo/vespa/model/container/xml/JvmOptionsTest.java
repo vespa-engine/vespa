@@ -246,6 +246,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         // Valid options, should not log anything
         verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
         verifyLoggingOfJvmOptions(true, "options", "-verbose:gc");
+        verifyLoggingOfJvmOptions(true, "options", "-Dvespa.freezedetector.disable=true");
         verifyLoggingOfJvmOptions(false, "options", "-Xms2G");
     }
 
