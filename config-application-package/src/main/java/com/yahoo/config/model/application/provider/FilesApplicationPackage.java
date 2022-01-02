@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +61,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -602,25 +600,17 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
-        try {
-            IOUtils.recursiveDeleteDir(preprocessedDir);
-            IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> !name.equals(preprocessed) &&
-                    !name.equals(SERVICES) &&
-                    !name.equals(HOSTS) &&
-                    !name.equals(CONFIG_DEFINITIONS_DIR));
-            File servicesFile = validateServicesFile();
-            preprocessXML(new File(preprocessedDir, SERVICES), servicesFile, zone);
-            preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
-            FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
-            preprocessed.copyUserDefsIntoApplication();
-            return preprocessed;
-        } catch (FileNotFoundException e) {
-            // TODO: Temporary logging for debugging purposes
-            log.log(Level.INFO, "File not found. Files in application package dir: " + Files.list(appDir.toPath())
-                                                                                            .map(java.nio.file.Path::toString)
-                                                                                            .collect(Collectors.joining(",")));
-            throw e;
-        }
+        IOUtils.recursiveDeleteDir(preprocessedDir);
+        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(preprocessed) &&
+                                                                                         ! name.equals(SERVICES) &&
+                                                                                         ! name.equals(HOSTS) &&
+                                                                                         ! name.equals(CONFIG_DEFINITIONS_DIR));
+        File servicesFile = validateServicesFile();
+        preprocessXML(new File(preprocessedDir, SERVICES), servicesFile, zone);
+        preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
+        FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
+        preprocessed.copyUserDefsIntoApplication();
+        return preprocessed;
     }
 
     private File validateServicesFile() throws IOException {
