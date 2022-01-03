@@ -187,7 +187,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
 
-        addServlets(deployState, spec, cluster);
         addModelEvaluation(spec, cluster, context);
         addModelEvaluationBundles(cluster);
 
@@ -525,12 +524,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             http.removeAllServers();
 
         return http;
-    }
-
-    // TODO Vespa 8: Remove
-    private void addServlets(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        if (XML.getChildren(spec, "servlet").size() > 0)
-            throw new IllegalArgumentException("The 'servlet' tag is no longer supported in services.xml. Please use a handler instead.");
     }
 
     private void addDocumentApi(Element spec, ApplicationContainerCluster cluster) {
