@@ -29,6 +29,10 @@ char printable_char(char c)
     return c;
 }
 
+constexpr ucs4_t il_ann_anchor = 0xfff9;
+constexpr ucs4_t il_ann_separator = 0xfffa;
+constexpr ucs4_t il_ann_terminator = 0xfffb;
+
 bool wordchar(const unsigned char* s)
 {
     unsigned char c = *s;
@@ -38,6 +42,28 @@ bool wordchar(const unsigned char* s)
     } else {
         return isalnum(c);
     }
+}
+
+bool wordchar_or_il_ann_char(const unsigned char* s, ucs4_t annotation_char)
+{
+    unsigned char c = *s;
+    if (c & 0x80) {
+        ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
+        return Fast_UnicodeUtil::IsWordChar(u) ||
+            u == annotation_char;
+    } else {
+        return isalnum(c);
+    }
+}
+
+bool wordchar_or_il_ann_anchor(const unsigned char* s)
+{
+    return wordchar_or_il_ann_char(s, il_ann_anchor);
+}
+
+bool wordchar_or_il_ann_terminator(const unsigned char* s)
+{
+    return wordchar_or_il_ann_char(s, il_ann_terminator);
 }
 
 bool nonwordchar(const unsigned char* s)
@@ -51,6 +77,35 @@ bool nonwordchar(const unsigned char* s)
     }
 }
 
+bool
+il_ann_char(const unsigned char* s, ucs4_t annotation_char)
+{
+    unsigned char c = *s;
+    if (c & 0x80) {
+        ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(s);
+        return u == annotation_char;
+    } else {
+        return false;
+    }
+}
+
+bool
+il_ann_anchor_char(const unsigned char* s)
+{
+    return il_ann_char(s, il_ann_anchor);
+}
+
+bool
+il_ann_separator_char(const unsigned char* s)
+{
+    return il_ann_char(s, il_ann_separator);
+}
+
+bool
+il_ann_terminator_char(const unsigned char* s)
+{
+    return il_ann_char(s, il_ann_terminator);
+}
 
 /* Move backwards/forwards from ptr (no longer than to start) in an
  * UTF8 text until the beginning of the word or (if space, until
@@ -75,12 +130,24 @@ int complete_word(unsigned char* start, ssize_t length,
     }
 
     // Figure out if a word needs completion or if we are just going
-    // to eliminate whitespace
+    // to eliminate whitespace. Consider sequence from interlinear
+    // annotation anchor to interlinear annotation terminator to be a
+    // word.
     if (!wordchar(ptr)) {
-        whitespace_elim = true;
-        // Change direction of scan
-        increment = -increment;
-        chartest = wordchar;
+        if (increment > 0 && il_ann_anchor_char(ptr)) {
+            chartest = il_ann_terminator_char;
+        } else if (increment < 0 && il_ann_terminator_char(ptr)) {
+            chartest = il_ann_anchor_char;
+        } else {
+            whitespace_elim = true;
+            // Change direction of scan
+            increment = -increment;
+            if (increment > 0) {
+                chartest = wordchar_or_il_ann_anchor;
+            } else {
+                chartest = wordchar_or_il_ann_terminator;
+            }
+        }
     } else {
         // Found a wordchar at pointer
         // If moving forwards, we need to check the previous character
@@ -89,12 +156,16 @@ int complete_word(unsigned char* start, ssize_t length,
             const unsigned char* pre_ptr = ptr;
             int cur_move = Fast_UnicodeUtil::UTF8move(start, length,
                     pre_ptr, -1);
-            if (!wordchar(pre_ptr)) // Points at start of new word
+            if (!wordchar(pre_ptr) && !il_ann_terminator_char(pre_ptr)) // Points at start of new word
             {
                 whitespace_elim = true;
                 // Change direction of scan
                 increment = -increment;
-                chartest = wordchar;
+                if (increment > 0) {
+                    chartest = wordchar_or_il_ann_anchor;
+                } else {
+                    chartest = wordchar_or_il_ann_terminator;
+                }
                 ptr = pre_ptr;
                 moved += cur_move;
             } else {
@@ -129,6 +200,34 @@ int complete_word(unsigned char* start, ssize_t length,
             break;
         }
         if (chartest(ptr)) {
+            if (chartest == nonwordchar) {
+                if (il_ann_separator_char(ptr)) {
+                    if (increment > 0) {
+                        chartest = il_ann_terminator_char;
+                    } else {
+                        chartest = il_ann_anchor_char;
+                    }
+                    moved += cur_move;
+                    continue;
+                } else if (il_ann_terminator_char(ptr)) {
+                    if (increment < 0) {
+                        chartest = il_ann_anchor_char;
+                    }
+                    moved += cur_move;
+                    continue;
+                } else if (il_ann_anchor_char(ptr)) {
+                    if (increment > 0) {
+                        chartest = il_ann_terminator_char;
+                    }
+                    moved += cur_move;
+                    continue;
+                }
+            } else if ((chartest == il_ann_anchor_char) ||
+                       (chartest == il_ann_terminator_char)) {
+                chartest = nonwordchar;
+                moved += cur_move;
+                continue;
+            }
                LOG(spam, "complete_word: Breaking at char %c/0x%x (%d)", printable_char(*ptr),
                    *ptr, cur_move);
             // count this character (it is the first blank/wordchar)
@@ -141,7 +240,9 @@ int complete_word(unsigned char* start, ssize_t length,
             break; // Found first blank/word char..
         }
         moved += cur_move;
-        if (moved >= MAX_SCAN_WORD) {
+        if (moved >= MAX_SCAN_WORD &&
+            (chartest != il_ann_anchor_char) &&
+            (chartest != il_ann_terminator_char)) {
             LOG(spam, "Word length extended max word length %d, "
                 "breaking at char 0x%x", MAX_SCAN_WORD, *ptr);
             break;
@@ -486,8 +587,11 @@ int SummaryDesc::complete_extended_token(unsigned char* start, ssize_t length,
         // Only a single connector character that connects word
         // characters should lead us to include more words in the
         // normal sense:
-        if (!wordchar(preptr))
+        if (!wordchar(preptr) &&
+            !(increment > 0 && il_ann_anchor_char(preptr)) &&
+            !(increment < 0 && il_ann_terminator_char(preptr))) {
             return moved;
+        }
 
 	// If a block of chinese data does not contain any spaces we have to return
 	// here in order to avoid searching all the way to the start/end.
