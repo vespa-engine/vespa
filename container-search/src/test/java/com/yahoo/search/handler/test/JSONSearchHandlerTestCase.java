@@ -31,13 +31,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -102,9 +99,9 @@ public class JSONSearchHandlerTestCase {
         String json = "Not a valid JSON-string";
         RequestHandlerTestDriver.MockResponseHandler responseHandler = driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json, JSON_CONTENT_TYPE);
         String response = responseHandler.readAll();
-        assertThat(responseHandler.getStatus(), is(400));
-        assertThat(response, containsString("errors"));
-        assertThat(response, containsString("\"code\":" + Error.ILLEGAL_QUERY.code));
+        assertEquals(400, responseHandler.getStatus());
+        assertTrue(response.contains("errors"));
+        assertTrue(response.contains("\"code\":" + Error.ILLEGAL_QUERY.code));
     }
 
     @Test
@@ -158,7 +155,7 @@ public class JSONSearchHandlerTestCase {
             json.put("yql", "selectz * from foo where bar > 1453501295");
             RequestHandlerTestDriver.MockResponseHandler responseHandler = newDriver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
             responseHandler.readAll();
-            assertThat(responseHandler.getStatus(), is(400));
+            assertEquals(400, responseHandler.getStatus());
         }
     }
 
@@ -178,9 +175,9 @@ public class JSONSearchHandlerTestCase {
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
                 testDriver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
         String response = responseHandler.readAll();
-        assertThat(responseHandler.getStatus(), is(400));
-        assertThat(response, containsString("offset"));
-        assertThat(response, containsString("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
+        assertEquals(400, responseHandler.getStatus());
+        assertTrue(response.contains("offset"));
+        assertTrue(response.contains("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
     }
 
     @Test
@@ -212,8 +209,8 @@ public class JSONSearchHandlerTestCase {
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
                 driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE);
         String response = responseHandler.readAll();
-        assertThat(responseHandler.getStatus(), is(406));
-        assertThat(response, containsString("\"code\":" + 406));
+        assertEquals(406, responseHandler.getStatus());
+        assertTrue(response.contains("\"code\":" + 406));
     }
 
     @Test

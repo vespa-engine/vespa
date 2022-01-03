@@ -329,6 +329,13 @@ public class YqlParserTestCase {
     }
 
     @Test
+    public void testValuesCanBeQuoted() {
+        assertEquals("merkelapp",
+                     getRootWord("select foo from bar where baz contains " +
+                                 "( {label: \"merkelapp\"} \"colors\");").getLabel());
+    }
+
+    @Test
     public void testSameElement() {
         assertParse("select foo from bar where baz contains sameElement(f1 contains \"a\", f2 contains \"b\")",
                 "baz:{f1:a f2:b}");

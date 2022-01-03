@@ -16,11 +16,9 @@ import java.util.Optional;
 import java.util.Random;
 
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ollivir
@@ -37,7 +35,7 @@ public class LoadBalancerTest {
         Group group = grp.orElseGet(() -> {
             throw new AssertionFailedError("Expected a SearchCluster.Group");
         });
-        assertThat(group.nodes().size(), equalTo(1));
+        assertEquals(1, group.nodes().size());
     }
 
     @Test
@@ -51,7 +49,7 @@ public class LoadBalancerTest {
         Group group = grp.orElseGet(() -> {
             throw new AssertionFailedError("Expected a SearchCluster.Group");
         });
-        assertThat(group.nodes().size(), equalTo(1));
+        assertEquals(1, group.nodes().size());
     }
 
     @Test
@@ -64,7 +62,7 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
         Optional<Group> grp = lb.takeGroup(null);
-        assertThat(grp.isPresent(), is(true));
+        assertTrue(grp.isPresent());
     }
 
     @Test
@@ -84,36 +82,36 @@ public class LoadBalancerTest {
         // get second group
         grp = lb.takeGroup(null);
         group = grp.get();
-        assertThat(group.id(), not(equalTo(id1)));
+        assertNotEquals(id1, group.id());
     }
 
     @Test
     public void requireCorrectAverageSearchTimeDecay() {
-        final double SMALL = 0.00001;
+        final double delta = 0.00001;
 
         GroupStatus gs = newGroupStatus(1);
         gs.setQueryStatistics(0, 1.0);
         updateSearchTime(gs, 1.0);
-        assertThat(gs.averageSearchTime(), equalTo(1.0));
+        assertEquals(1.0, gs.averageSearchTime(), delta);
         updateSearchTime(gs, 2.0);
-        assertThat(gs.averageSearchTime(), closeTo(1.02326, SMALL));
+        assertEquals(1.02326, gs.averageSearchTime(), delta);
         updateSearchTime(gs, 2.0);
-        assertThat(gs.averageSearchTime(), closeTo(1.04545, SMALL));
+        assertEquals(1.04545, gs.averageSearchTime(), delta);
         updateSearchTime(gs, 0.1);
         updateSearchTime(gs, 0.1);
         updateSearchTime(gs, 0.1);
         updateSearchTime(gs, 0.1);
-        assertThat(gs.averageSearchTime(), closeTo(0.966667, SMALL));
+        assertEquals(0.966667, gs.averageSearchTime(), delta);
         for (int i = 0; i < 10000; i++) {
             updateSearchTime(gs, 1.0);
         }
-        assertThat(gs.averageSearchTime(), closeTo(1.0, SMALL));
+        assertEquals(1.0, gs.averageSearchTime(), delta);
         updateSearchTime(gs, 0.1);
-        assertThat(gs.averageSearchTime(), closeTo(0.9991, SMALL));
+        assertEquals(0.9991, gs.averageSearchTime(), delta);
         for (int i = 0; i < 10000; i++) {
             updateSearchTime(gs, 0.0);
         }
-        assertThat(gs.averageSearchTime(), closeTo(0.001045, SMALL));
+        assertEquals(0.001045, gs.averageSearchTime(), delta);
     }
 
     @Test
@@ -125,14 +123,14 @@ public class LoadBalancerTest {
         Random seq = sequence(0.0, 0.1, 0.2, 0.39, 0.4, 0.6, 0.8, 0.99999);
         AdaptiveScheduler sched = new AdaptiveScheduler(seq, scoreboard);
 
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(0));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(0));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(1));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(1));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(2));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(3));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(4));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(4));
+        assertEquals(0, sched.takeNextGroup(null).get().groupId());
+        assertEquals(0, sched.takeNextGroup(null).get().groupId());
+        assertEquals(1, sched.takeNextGroup(null).get().groupId());
+        assertEquals(1, sched.takeNextGroup(null).get().groupId());
+        assertEquals(2, sched.takeNextGroup(null).get().groupId());
+        assertEquals(3, sched.takeNextGroup(null).get().groupId());
+        assertEquals(4, sched.takeNextGroup(null).get().groupId());
+        assertEquals(4, sched.takeNextGroup(null).get().groupId());
     }
 
     @Test
@@ -146,15 +144,15 @@ public class LoadBalancerTest {
         Random seq = sequence(0.0, 0.4379, 0.4380, 0.6569, 0.6570, 0.8029, 0.8030, 0.9124, 0.9125);
         AdaptiveScheduler sched = new AdaptiveScheduler(seq, scoreboard);
 
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(0));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(0));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(1));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(1));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(2));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(2));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(3));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(3));
-        assertThat(sched.takeNextGroup(null).get().groupId(), equalTo(4));
+        assertEquals(0, sched.takeNextGroup(null).get().groupId());
+        assertEquals(0, sched.takeNextGroup(null).get().groupId());
+        assertEquals(1, sched.takeNextGroup(null).get().groupId());
+        assertEquals(1, sched.takeNextGroup(null).get().groupId());
+        assertEquals(2, sched.takeNextGroup(null).get().groupId());
+        assertEquals(2, sched.takeNextGroup(null).get().groupId());
+        assertEquals(3, sched.takeNextGroup(null).get().groupId());
+        assertEquals(3, sched.takeNextGroup(null).get().groupId());
+        assertEquals(4, sched.takeNextGroup(null).get().groupId());
     }
 
     private static void updateSearchTime(GroupStatus gs, double time) {
@@ -187,4 +185,5 @@ public class LoadBalancerTest {
             }
         };
     }
+
 }

@@ -3,9 +3,7 @@ package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.search.dispatch.searchcluster.Node;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Collection;
 import java.util.Set;
@@ -14,6 +12,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ollivir
@@ -52,28 +51,40 @@ public class SearchPathTest {
         assertFalse(SearchPath.fromString("//").isPresent());
     }
 
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
-
     @Test
     public void invalidRangeMustThrowException() {
-        exception.expect(InvalidSearchPathException.class);
-        SearchPath.fromString("[p,0>/0");
+        try {
+            SearchPath.fromString("[p,0>/0");
+            fail("Expected exception");
+        }
+        catch (InvalidSearchPathException e) {
+            // success
+        }
     }
 
     @Test
     public void invalidPartMustThrowException() {
-        exception.expect(InvalidSearchPathException.class);
-        SearchPath.fromString("p/0");
+        try {
+            SearchPath.fromString("p/0");
+            fail("Expected exception");
+        }
+        catch (InvalidSearchPathException e) {
+            // success
+        }
     }
 
     @Test
     public void invalidRowMustThrowException() {
-        exception.expect(InvalidSearchPathException.class);
-        SearchPath.fromString("1,2,3/r");
+        try {
+            SearchPath.fromString("1,2,3/r");
+            fail("Expected exception");
+        }
+        catch (InvalidSearchPathException e) {
+            // success
+        }
     }
 
-    private void verifyRandomGroup(MockSearchCluster cluster, String searchPath, Set possibleSolutions) {
+    private void verifyRandomGroup(MockSearchCluster cluster, String searchPath, Set<?> possibleSolutions) {
         for (int i=0; i < 100; i++) {
             String nodes = distKeysAsString(SearchPath.selectNodes(searchPath, cluster));
             assertTrue(possibleSolutions.contains(nodes));

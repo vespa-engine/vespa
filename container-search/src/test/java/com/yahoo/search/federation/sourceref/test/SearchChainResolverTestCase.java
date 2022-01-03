@@ -16,9 +16,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.SortedSet;
 
-import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -55,11 +54,11 @@ public class SearchChainResolverTestCase {
 
     @Test
     public void check_default_search_chains() {
-        assertThat(searchChainResolver.defaultTargets().size(), is(2));
+        assertEquals(2, searchChainResolver.defaultTargets().size());
 
         Iterator<Target> iterator = searchChainResolver.defaultTargets().iterator();
-        assertThat(iterator.next().searchRefDescription(), is(searchChainId.toString()));
-        assertThat(iterator.next().searchRefDescription(), is(sourceChainInProviderId.toString()));
+        assertEquals(searchChainId.toString(), iterator.next().searchRefDescription());
+        assertEquals(sourceChainInProviderId.toString(), iterator.next().searchRefDescription());
     }
 
     @Test
@@ -68,22 +67,22 @@ public class SearchChainResolverTestCase {
             resolve("no-such-source");
             fail("Expected exception.");
         } catch (UnresolvedSearchChainException e) {
-            assertThat(e.getMessage(), is("Could not resolve source ref 'no-such-source'."));
+            assertEquals("Could not resolve source ref 'no-such-source'.", e.getMessage());
         }
     }
 
     @Test
     public void lookup_search_chain() throws Exception {
         SearchChainInvocationSpec res = resolve(searchChainId.getName());
-        assertThat(res.searchChainId, is(searchChainId));
+        assertEquals(searchChainId, res.searchChainId);
     }
 
     //TODO: TVT: @Test()
     public void lookup_provider() throws Exception {
         SearchChainInvocationSpec res = resolve(providerId.getName());
-        assertThat(res.provider, is(providerId));
+        assertEquals(providerId, res.provider);
         assertNull(res.source);
-        assertThat(res.searchChainId, is(providerId));
+        assertEquals(providerId, res.searchChainId);
     }
 
     @Test
@@ -99,23 +98,23 @@ public class SearchChainResolverTestCase {
     }
 
     private void assertIsSourceInProvider(SearchChainInvocationSpec res) {
-        assertThat(res.provider, is(providerId));
-        assertThat(res.source, is(sourceId));
-        assertThat(res.searchChainId, is(sourceChainInProviderId));
+        assertEquals(providerId, res.provider);
+        assertEquals(sourceId, res.source);
+        assertEquals(sourceChainInProviderId, res.searchChainId);
     }
 
     @Test
     public void lookup_source_for_provider2() throws Exception {
         SearchChainInvocationSpec res = resolve(sourceId.getName(), provider2Id.getName());
-        assertThat(res.provider, is(provider2Id));
-        assertThat(res.source, is(sourceId));
-        assertThat(res.searchChainId, is(sourceChainInProvider2Id));
+        assertEquals(provider2Id, res.provider);
+        assertEquals(sourceId, res.source);
+        assertEquals(sourceChainInProvider2Id, res.searchChainId);
     }
 
     @Test
     public void lists_source_ref_description_for_top_level_targets() {
         SortedSet<Target> topLevelTargets = searchChainResolver.allTopLevelTargets();
-        assertThat(topLevelTargets.size(), is(3));
+        assertEquals(3, topLevelTargets.size());
 
         Iterator<Target> i = topLevelTargets.iterator();
         assertSearchRefDescriptionIs(i.next(), providerId.toString());
@@ -124,7 +123,7 @@ public class SearchChainResolverTestCase {
     }
 
     private void assertSearchRefDescriptionIs(Target target, String expected) {
-        assertThat(target.searchRefDescription(), is(expected));
+        assertEquals(expected, target.searchRefDescription());
     }
 
     static Properties emptySourceToProviderMap() {
@@ -146,7 +145,7 @@ public class SearchChainResolverTestCase {
             throws UnresolvedSearchChainException {
         SearchChainInvocationSpec res = searchChainResolver.resolve(
                 ComponentSpecification.fromString(sourceSpecification), sourceToProviderMap);
-        assertThat(res.federationOptions, is(federationOptions));
+        assertEquals(federationOptions, res.federationOptions);
         return res;
     }
 

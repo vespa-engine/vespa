@@ -14,14 +14,10 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.Exceptions;
-import org.hamcrest.Matcher;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
-
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.anyOf;
 
 import static org.junit.Assert.*;
 
@@ -158,21 +154,21 @@ public class QueryTestCase {
     public void testInvalidSortFunction() {
         assertQueryError(
                 "?query=test&sortspec=-ucca(name,en_US)",
-                containsString("Could not set 'ranking.sorting' to '-ucca(name,en_US)': Unknown sort function 'ucca'"));
+                "Could not set 'ranking.sorting' to '-ucca(name,en_US)': Unknown sort function 'ucca'");
     }
 
     @Test
     public void testMissingSortFunction() {
         assertQueryError(
                 "?query=test&sortspec=-(name)",
-                containsString("Could not set 'ranking.sorting' to '-(name)': No sort function specified"));
+                "Could not set 'ranking.sorting' to '-(name)': No sort function specified");
     }
 
     @Test
     public void testInvalidUcaStrength() {
         assertQueryError(
                 "?query=test&sortspec=-uca(name,en_US,tertary)",
-                containsString("Could not set 'ranking.sorting' to '-uca(name,en_US,tertary)': Unknown collation strength: 'tertary'"));
+                "Could not set 'ranking.sorting' to '-uca(name,en_US,tertary)': Unknown collation strength: 'tertary'");
     }
 
     public void checkSortSpecUcaUSOptional(String spec) {
@@ -224,60 +220,56 @@ public class QueryTestCase {
     public void testNegativeHitValue() {
         assertQueryError(
                 "?query=test&hits=-1",
-                containsString("Could not set 'hits' to '-1': Must be a positive number"));
+                "Could not set 'hits' to '-1': Must be a positive number");
     }
 
     @Test
     public void testNaNHitValue() {
         assertQueryError(
                 "?query=test&hits=NaN",
-                containsString("Could not set 'hits' to 'NaN': 'NaN' is not a valid integer"));
+                "Could not set 'hits' to 'NaN': 'NaN' is not a valid integer");
     }
 
     @Test
     public void testNoneHitValue() {
         assertQueryError(
                 "?query=test&hits=(none)",
-                containsString("Could not set 'hits' to '(none)': '(none)' is not a valid integer"));
+                "Could not set 'hits' to '(none)': '(none)' is not a valid integer");
     }
 
     @Test
     public void testNegativeOffsetValue() {
         assertQueryError(
                 "?query=test&offset=-1",
-                containsString("Could not set 'offset' to '-1': Must be a positive number"));
+                "Could not set 'offset' to '-1': Must be a positive number");
     }
 
     @Test
     public void testNaNOffsetValue() {
         assertQueryError(
                 "?query=test&offset=NaN",
-                containsString("Could not set 'offset' to 'NaN': 'NaN' is not a valid integer"));
+                "Could not set 'offset' to 'NaN': 'NaN' is not a valid integer");
     }
 
     @Test
     public void testNoneOffsetValue() {
         assertQueryError(
                 "?query=test&offset=(none)",
-                containsString("Could not set 'offset' to '(none)': '(none)' is not a valid integer"));
+                "Could not set 'offset' to '(none)': '(none)' is not a valid integer");
     }
 
     @Test
     public void testNoneHitsNegativeOffsetValue() {
         assertQueryError(
                 "?query=test&hits=(none)&offset=-10",
-                anyOf(
-                        containsString("Could not set 'offset' to '-10': Must be a positive number"),
-                        containsString("Could not set 'hits' to '(none)': '(none)' is not a valid integer")));
+                "Could not set 'hits' to '(none)': '(none)' is not a valid integer");
     }
 
     @Test
     public void testFeedbackIsTransferredToResult() {
         assertQueryError(
                 "?query=test&hits=(none)&offset=-10",
-                anyOf(
-                        containsString("Could not set 'hits' to '(none)': '(none)' is not a valid integer"),
-                        containsString("Could not set 'offset' to '-10': Must be a positive number")));
+                "Could not set 'hits' to '(none)': '(none)' is not a valid integer");
     }
 
     @Test
@@ -300,7 +292,7 @@ public class QueryTestCase {
     @Test
     @Ignore
     public void testPrivateUseCharacterParsing() {
-        Query query=newQuery("?query=%EF%89%AB");
+        Query query = newQuery("?query=%EF%89%AB");
         assertEquals(Character.UnicodeBlock.PRIVATE_USE_AREA,
                      Character.UnicodeBlock.of(query.getModel().getQueryTree().getRoot().toString().charAt(0)));
     }
@@ -309,7 +301,7 @@ public class QueryTestCase {
     @Test
     @Ignore
     public void testOtherCharactersParsing() {
-        Query query=newQuery(com.yahoo.search.test.QueryTestCase.httpEncode("?query=\u3007\u2e80\u2eff\u2ed0"));
+        Query query = newQuery(com.yahoo.search.test.QueryTestCase.httpEncode("?query=\u3007\u2e80\u2eff\u2ed0"));
         assertEquals(Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION,
                      Character.UnicodeBlock.of(query.getModel().getQueryTree().getRoot().toString().charAt(0)));
         assertEquals(Character.UnicodeBlock.CJK_RADICALS_SUPPLEMENT,
@@ -374,13 +366,13 @@ public class QueryTestCase {
         return query;
     }
 
-    private void assertQueryError(final String queryString, final Matcher<String> expectedErrorMessage) {
+    private void assertQueryError(String queryString, String expectedErrorMessage) {
         try {
             newQuery(queryString);
             fail("Above statement should throw");
         } catch (IllegalArgumentException e) {
             // As expected.
-            assertThat(Exceptions.toMessageString(e), expectedErrorMessage);
+            assertEquals(expectedErrorMessage, Exceptions.toMessageString(e));
         }
     }
 

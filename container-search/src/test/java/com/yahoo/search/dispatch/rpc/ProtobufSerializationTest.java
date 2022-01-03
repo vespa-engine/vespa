@@ -16,10 +16,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -37,7 +35,7 @@ public class ProtobufSerializationTest {
         hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId());
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, Collections.singletonList(hit));
 
-        assertThat(bytes.length, equalTo(41));
+        assertEquals(41, bytes.length);
     }
 
     SearchProtocol.SearchReply createSearchReply(int numHits, boolean useSorting) {

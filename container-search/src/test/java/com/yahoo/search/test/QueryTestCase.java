@@ -45,6 +45,7 @@ import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -76,7 +77,6 @@ public class QueryTestCase {
         assertEquals("", q.properties().get("aParameter"));
         assertNull(q.properties().get("notSetParameter"));
 
-        Query query = q;
         String body = "a bb. ccc??!";
         Linguistics linguistics = new SimpleLinguistics();
 
@@ -85,7 +85,7 @@ public class QueryTestCase {
             if (token.isIndexable())
                 and.addItem(new WordItem(token.getTokenString(), "body"));
         }
-        query.getModel().getQueryTree().setRoot(and);
+        q.getModel().getQueryTree().setRoot(and);
     }
 
     // TODO: YQL work in progress (jon)
@@ -142,15 +142,11 @@ public class QueryTestCase {
 
     @Test
     public void testCloneWithConnectivity() {
-        List<String> l = new ArrayList();
-        l.add("a");
-        l.add("b");
-        l.add("c");
-        l.add("a");
+        List<String> l = List.of("a", "b", "c", "a");
         printIt(l.stream().filter(i -> isA(i)).collect(Collectors.toList()));
         printIt(l.stream().filter(i -> ! isA(i)).collect(Collectors.toList()));
 
-                Query q = new Query();
+        Query q = new Query();
         WordItem a = new WordItem("a");
         WordItem b = new WordItem("b");
         WordItem c = new WordItem("c");
@@ -497,7 +493,7 @@ public class QueryTestCase {
         assertTrue(q.getGroupingSessionCache());
     }
 
-    public class TestClass {
+    public static class TestClass {
 
         private int testInt = 0;
 
@@ -1157,17 +1153,12 @@ public class QueryTestCase {
      * be written as a single string.
      */
     public static String httpEncode(String s) {
-        try {
-            if (s == null) return null;
-            String encoded = URLEncoder.encode(s, "utf-8");
-            encoded = encoded.replaceAll("%3F", "?");
-            encoded = encoded.replaceAll("%3D", "=");
-            encoded = encoded.replaceAll("%26", "&");
-            return encoded;
-        }
-        catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        if (s == null) return null;
+        String encoded = URLEncoder.encode(s, StandardCharsets.UTF_8);
+        encoded = encoded.replaceAll("%3F", "?");
+        encoded = encoded.replaceAll("%3D", "=");
+        encoded = encoded.replaceAll("%26", "&");
+        return encoded;
     }
 
 }
