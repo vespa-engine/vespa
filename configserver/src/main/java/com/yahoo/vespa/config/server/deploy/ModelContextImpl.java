@@ -205,6 +205,7 @@ public class ModelContextImpl implements ModelContext {
         private final int maxCompactBuffers;
         private final boolean failDeploymentWithInvalidJvmOptions;
         private final double tlsSizeFraction;
+        private final List<String> ignoredHttpUserAgents;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -248,6 +249,7 @@ public class ModelContextImpl implements ModelContext {
             this.maxCompactBuffers = flagValue(source, appId, Flags.MAX_COMPACT_BUFFERS);
             this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
             this.tlsSizeFraction = flagValue(source, appId, Flags.TLS_SIZE_FRACTION);
+            this.ignoredHttpUserAgents = flagValue(source, appId, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -293,6 +295,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public double tlsSizeFraction() { return tlsSizeFraction; }
+        @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
