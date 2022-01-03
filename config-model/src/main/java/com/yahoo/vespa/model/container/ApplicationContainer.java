@@ -80,7 +80,7 @@ public final class ApplicationContainer extends Container implements
         }
         String jvmArgs = super.getJvmOptions();
         if (!jvmArgs.isBlank()) {
-             b.append(jvmArgs.trim()).append(' ');
+             b.append(jvmArgs.trim());
         }
         return b.toString().trim();
     }
