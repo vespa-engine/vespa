@@ -2,6 +2,7 @@
 package ai.vespa.feed.client;
 
 import java.io.Closeable;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -36,6 +37,24 @@ public interface FeedClient extends Closeable {
      * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
      */
     CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params);
+
+    /**
+     * Waits for all feed operations to complete, either successfully or with exception.
+     * @throws MultiFeedException if any operation fails
+     * @return list of results with the same ordering as the {@code promises} parameter
+     * */
+    static List<Result> await(List<CompletableFuture<Result>> promises) throws MultiFeedException {
+        return Helper.await(promises);
+    }
+
+    /**
+     * Same as {@link #await(List)} except {@code promises} parameter is a vararg
+     * @see #await(List)
+     */
+    @SafeVarargs
+    static List<Result> await(CompletableFuture<Result>... promises) throws MultiFeedException {
+        return Helper.await(promises);
+    }
 
     /** Returns a snapshot of the stats for this feed client, such as requests made, and responses by status. */
     OperationStats stats();
