@@ -90,6 +90,10 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
         return _distributor->getBucketSpacesStats();
     }
 
+    std::unordered_map<uint16_t, uint32_t> distributor_min_replica_stats() {
+        return _distributor->getMinReplica();
+    }
+
     uint64_t db_sample_interval_sec() const noexcept {
         // Sampling interval is equal across stripes, so just grab the first one and go with it.
         return std::chrono::duration_cast<std::chrono::seconds>(
@@ -471,7 +475,7 @@ TEST_F(TopLevelDistributorTest, host_info_reporter_config_is_propagated_to_repor
 
 namespace {
 
-void assert_invalid_stats_for_all_spaces(
+void assert_invalid_bucket_stats_for_all_spaces(
         const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& stats,
         uint16_t node_index)
 {
@@ -486,9 +490,15 @@ void assert_invalid_stats_for_all_spaces(
     ASSERT_FALSE(space_iter->second.valid());
 }
 
+void assert_min_replica_stats_zeroed(const std::unordered_map<uint16_t, uint32_t>& stats, uint16_t node_index) {
+    auto iter = stats.find(node_index);
+    ASSERT_TRUE(iter != stats.cend());
+    EXPECT_EQ(iter->second, 0);
 }
 
-TEST_F(TopLevelDistributorTest, entering_recovery_mode_resets_bucket_space_stats_across_all_stripes) {
+}
+
+TEST_F(TopLevelDistributorTest, entering_recovery_mode_resets_bucket_space_and_min_replica_stats_across_all_stripes) {
     // Set up a cluster state + DB contents which implies merge maintenance ops
     setup_distributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 1), "0=1/1/1/t/a");
@@ -503,10 +513,18 @@ TEST_F(TopLevelDistributorTest, entering_recovery_mode_resets_bucket_space_stats
     // from state version 2. Exposing stats from version 1 risks reporting stale
     // information back to the cluster controller.
     const auto stats = distributor_bucket_spaces_stats();
-    ASSERT_EQ(2, stats.size());
+    ASSERT_EQ(stats.size(), 2);
 
-    assert_invalid_stats_for_all_spaces(stats, 0);
-    assert_invalid_stats_for_all_spaces(stats, 2);
+    assert_invalid_bucket_stats_for_all_spaces(stats, 0);
+    assert_invalid_bucket_stats_for_all_spaces(stats, 2);
+
+    auto min_replica_stats = distributor_min_replica_stats();
+    ASSERT_EQ(min_replica_stats.size(), 2);
+    assert_min_replica_stats_zeroed(min_replica_stats, 0);
+    // Even though we don't have any replicas on node 2 in the DB, we don't know this until
+    // we've completed a full DB scan and updated the stats. Until that point in time we
+    // have to assume we _do_ have replicas with an unknown replication factor.
+    assert_min_replica_stats_zeroed(min_replica_stats, 2);
 }
 
 TEST_F(TopLevelDistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_replies) {

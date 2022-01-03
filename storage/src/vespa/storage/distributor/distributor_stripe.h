@@ -259,7 +259,9 @@ private:
     BucketSpacesStatsProvider::BucketSpacesStats make_invalid_stats_per_configured_space() const;
     template <typename NodeFunctor>
     void for_each_available_content_node_in(const lib::ClusterState&, NodeFunctor&&);
-    void invalidate_bucket_spaces_stats();
+    void invalidate_internal_db_dependent_stats();
+    void invalidate_bucket_spaces_stats(std::lock_guard<std::mutex>& held_metric_lock);
+    void invalidate_min_replica_stats(std::lock_guard<std::mutex>& held_metric_lock);
     void send_updated_host_info_if_required();
     void propagate_config_snapshot_to_internal_components();
 

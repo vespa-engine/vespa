@@ -316,9 +316,12 @@ DistributorStripe::enterRecoveryMode()
     LOG(debug, "Entering recovery mode");
     _schedulingMode = MaintenanceScheduler::RECOVERY_SCHEDULING_MODE;
     _scanner->reset();
-    _bucketDBMetricUpdater.reset();
-    // TODO reset _bucketDbStats?
-    invalidate_bucket_spaces_stats();
+    // We enter recovery mode due to cluster state or distribution config changes.
+    // Until we have completed a new DB scan round, we don't know the state of our
+    // newly owned buckets and must not report stats for these out to the cluster
+    // controller as they will be stale (valid only for the _previous_ state/config).
+    // As a consequence, we must explicitly invalidate all such statistics in this edge.
+    invalidate_internal_db_dependent_stats();
 
     _recoveryTimeStarted = framework::MilliSecTimer(_component.getClock());
 }
@@ -335,6 +338,17 @@ DistributorStripe::leaveRecoveryMode()
         }
     }
     _schedulingMode = MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
+}
+
+void
+DistributorStripe::invalidate_internal_db_dependent_stats()
+{
+    _bucketDBMetricUpdater.reset();
+    {
+        std::lock_guard guard(_metricLock);
+        invalidate_bucket_spaces_stats(guard);
+        invalidate_min_replica_stats(guard);
+    }
 }
 
 template <typename NodeFunctor>
@@ -357,14 +371,26 @@ BucketSpacesStatsProvider::BucketSpacesStats DistributorStripe::make_invalid_sta
     return invalid_space_stats;
 }
 
-void DistributorStripe::invalidate_bucket_spaces_stats() {
-    std::lock_guard guard(_metricLock);
+void
+DistributorStripe::invalidate_bucket_spaces_stats([[maybe_unused]] std::lock_guard<std::mutex>& held_metric_lock)
+{
     _bucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats();
     auto invalid_space_stats = make_invalid_stats_per_configured_space();
 
     const auto& baseline = *_clusterStateBundle.getBaselineClusterState();
     for_each_available_content_node_in(baseline, [this, &invalid_space_stats](const lib::Node& node) {
         _bucketSpacesStats[node.getIndex()] = invalid_space_stats;
+    });
+}
+
+void
+DistributorStripe::invalidate_min_replica_stats([[maybe_unused]] std::lock_guard<std::mutex>& held_metric_lock)
+{
+    _bucketDbStats._minBucketReplica.clear();
+    // Insert an explicit zero value for all nodes that are up in the pending/current cluster state
+    const auto& baseline = *_clusterStateBundle.getBaselineClusterState();
+    for_each_available_content_node_in(baseline, [this](const lib::Node& node) {
+        _bucketDbStats._minBucketReplica[node.getIndex()] = 0;
     });
 }
 

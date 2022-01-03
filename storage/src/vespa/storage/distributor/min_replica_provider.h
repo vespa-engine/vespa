@@ -9,7 +9,7 @@ namespace storage::distributor {
 class MinReplicaProvider
 {
 public:
-    virtual ~MinReplicaProvider() {}
+    virtual ~MinReplicaProvider() = default;
 
     /**
      * Get a snapshot of the minimum bucket replica for each of the nodes.
