@@ -4,6 +4,7 @@ package com.yahoo.config.subscription.impl;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.jrt.Request;
+import com.yahoo.jrt.RequestWaiter;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.ErrorCode;
@@ -209,10 +210,10 @@ public class JRTConfigRequesterTest {
         }
 
         @Override
-        public void run() {
+        public void handle(Request request, RequestWaiter requestWaiter) {
             System.out.println("Running error response handler");
-            request().setError(errorCode, "error");
-            requestWaiter().handleRequestDone(request());
+            request.setError(errorCode, "error");
+            requestWaiter.handleRequestDone(request);
         }
     }
 
@@ -224,16 +225,15 @@ public class JRTConfigRequesterTest {
         }
 
         @Override
-        public void run() {
-            System.out.println("Running delayed response handler (waiting " + waitTimeMilliSeconds +
-            ") before responding");
+        public void handle(Request request, RequestWaiter requestWaiter) {
+            System.out.println("Running delayed response handler (waiting " + waitTimeMilliSeconds + ") before responding");
             try {
                 Thread.sleep(waitTimeMilliSeconds);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            request().setError(com.yahoo.jrt.ErrorCode.TIMEOUT, "error");
-            requestWaiter().handleRequestDone(request());
+            request.setError(com.yahoo.jrt.ErrorCode.TIMEOUT, "error");
+            requestWaiter.handleRequestDone(request);
         }
     }
 
