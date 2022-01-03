@@ -25,7 +25,7 @@ struct ChangeBase {
         DIV,
         CLEARDOC
     };
-    enum {UNSET_ENTRY_REF = 0xffffffffu};
+    enum {UNSET_ENTRY_REF = 0};
 
     ChangeBase() :
         _type(NOOP),
