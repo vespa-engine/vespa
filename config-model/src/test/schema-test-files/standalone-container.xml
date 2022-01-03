@@ -2,20 +2,6 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <container id='qrsCluster_1' version='1.0'>
 
-  <servlet id="my-servlet" class="com.yahoo.MyServlet" bundle="my-bundle">
-    <path>p/a/t/h</path>
-  </servlet>
-
-  <servlet id="my-servlet" class="com.yahoo.MyServlet" bundle="my-bundle">
-    <path>Apps/app_1.3-4/*</path>
-    <config name="foo">
-      <intVal>0</intVal>
-    </config>
-    <servlet-config>
-      <foo>bar</foo>
-    </servlet-config>
-  </servlet>
-
   <http>
     <filtering>
       <filter id="com.yahoo.YcaFilter" bundle="mybundle">
