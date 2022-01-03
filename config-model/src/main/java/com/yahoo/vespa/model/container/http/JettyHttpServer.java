@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.http;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
@@ -25,13 +26,16 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
     private final List<String> ignoredUserAgentsList = new ArrayList<>();
 
-    public JettyHttpServer(String componentId, ContainerCluster<?> cluster, boolean isHostedVespa) {
+    public JettyHttpServer(String componentId, ContainerCluster<?> cluster, DeployState deployState) {
         super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(), null));
-        this.isHostedVespa = isHostedVespa;
+        this.isHostedVespa = deployState.isHosted();
         this.cluster = cluster;
         final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
         addChild(filterBindingsProviderComponent);
         inject(filterBindingsProviderComponent);
+        for (String agent : deployState.featureFlags().ignoredHttpUserAgents()) {
+            addIgnoredUserAgent(agent);
+        }
     }
 
     public void setHostedVespa(boolean isHostedVespa) { this.isHostedVespa = isHostedVespa; }

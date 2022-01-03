@@ -226,6 +226,12 @@ public class PermanentFlags {
             "Takes effect on next redeployment",
             APPLICATION_ID);
 
+    public static final UnboundListFlag<String> IGNORED_HTTP_USER_AGENTS = defineListFlag(
+            "ignored-http-user-agents", List.of(), String.class,
+            "List of user agents to ignore (crawlers etc)",
+            "Takes effect immediately.",
+            ZONE_ID, APPLICATION_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

@@ -426,7 +426,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
         if (isHostedTenantApplication(context)) {
-            addHostedImplicitHttpIfNotPresent(cluster);
+            addHostedImplicitHttpIfNotPresent(deployState, cluster);
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addDefaultConnectorHostedFilterBinding(cluster);
             addAdditionalHostedConnector(deployState, cluster, context);
@@ -488,13 +488,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
     }
 
-    private static void addHostedImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
+    private static void addHostedImplicitHttpIfNotPresent(DeployState deployState, ApplicationContainerCluster cluster) {
         if (cluster.getHttp() == null) {
             cluster.setHttp(new Http(new FilterChains(cluster)));
         }
         JettyHttpServer httpServer = cluster.getHttp().getHttpServer().orElse(null);
         if (httpServer == null) {
-            httpServer = new JettyHttpServer("DefaultHttpServer", cluster, cluster.isHostedVespa());
+            httpServer = new JettyHttpServer("DefaultHttpServer", cluster, deployState);
             cluster.getHttp().setHttpServer(httpServer);
         }
         int defaultPort = Defaults.getDefaults().vespaWebServicePort();
