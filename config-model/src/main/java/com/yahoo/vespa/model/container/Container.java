@@ -94,7 +94,7 @@ public abstract class Container extends AbstractService implements
         this.index = index;
         dumpHeapOnShutdownTimeout = deployState.featureFlags().containerDumpHeapOnShutdownTimeout();
         shutdownTimeoutS = deployState.featureFlags().containerShutdownTimeout();
-        this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), deployState.isHosted());
+        this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), deployState);
         if (getHttp() == null) {
             addChild(defaultHttpServer);
         }
