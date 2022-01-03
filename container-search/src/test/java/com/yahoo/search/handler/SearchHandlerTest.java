@@ -37,14 +37,11 @@ import java.net.URI;
 import java.util.concurrent.Executors;
 
 import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -222,9 +219,9 @@ public class SearchHandlerTest {
         RequestHandlerTestDriver.MockResponseHandler responseHandler =
                 testDriver.sendRequest("http://localhost/search/?query=status_code%3A0&hits=20&offset=-20");
         String response = responseHandler.readAll();
-        assertThat(responseHandler.getStatus(), is(400));
-        assertThat(response, containsString("offset"));
-        assertThat(response, containsString("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
+        assertEquals(400, responseHandler.getStatus());
+        assertTrue(response.contains("offset"));
+        assertTrue(response.contains("\"code\":" + com.yahoo.container.protect.Error.ILLEGAL_QUERY.code));
     }
 
     @Test
@@ -246,7 +243,7 @@ public class SearchHandlerTest {
                 driver.sendRequest("http://localhost/search/?query=web_service_status_code");
         String response = responseHandler.readAll();
         assertEquals(406, responseHandler.getStatus());
-        assertThat(response, containsString("\"code\":" + 406));
+        assertTrue(response.contains("\"code\":" + 406));
     }
 
     @Test

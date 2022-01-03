@@ -15,44 +15,43 @@ import org.junit.Test;
 
 import static com.yahoo.search.query.textserialize.item.test.ParseItemTestCase.parse;
 import static com.yahoo.search.query.textserialize.item.test.ParseItemTestCase.getWord;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Tony Vaagenes
  */
 public class SerializeItemTestCase {
+
     @Test
     public void serialize_word_item() {
         WordItem item = new WordItem("test that \" and \\ works");
         item.setIndexName("index\"Name");
 
         WordItem deSerialized = serializeThenParse(item);
-        assertThat(deSerialized.getWord(), is(item.getWord()));
-        assertThat(deSerialized.getIndexName(), is(item.getIndexName()));
+        assertEquals(item.getWord(), deSerialized.getWord());
+        assertEquals(item.getIndexName(), deSerialized.getIndexName());
     }
 
     @Test
-    public void serialize_and_item() throws ParseException {
+    public void serialize_and_item() {
         AndItem andItem = new AndItem();
         andItem.addItem(new WordItem("first"));
         andItem.addItem(new WordItem("second"));
 
         AndItem deSerialized = serializeThenParse(andItem);
-        assertThat(getWord(deSerialized.getItem(0)), is("first"));
-        assertThat(getWord(deSerialized.getItem(1)), is("second"));
-        assertThat(deSerialized.getItemCount(), is(2));
+        assertEquals("first", getWord(deSerialized.getItem(0)));
+        assertEquals("second", getWord(deSerialized.getItem(1)));
+        assertEquals(2, deSerialized.getItemCount());
     }
 
     @Test
-    public void serialize_or_item() throws ParseException {
-        assertThat(serializeThenParse(new OrItem()),
-                instanceOf(OrItem.class));
+    public void serialize_or_item() {
+        assertTrue(serializeThenParse(new OrItem()) instanceof OrItem);
     }
 
     @Test
-    public void serialize_not_item() throws ParseException {
+    public void serialize_not_item() {
         NotItem notItem = new NotItem();
         {
             notItem.addItem(new WordItem("first"));
@@ -63,7 +62,7 @@ public class SerializeItemTestCase {
     }
 
     @Test
-    public void serialize_near_item() throws ParseException {
+    public void serialize_near_item() {
         int distance = 23;
         NearItem nearItem = new NearItem(distance);
         {
@@ -73,8 +72,8 @@ public class SerializeItemTestCase {
 
         NearItem deSerialized = serializeThenParse(nearItem);
 
-        assertThat(deSerialized.getDistance(), is(distance));
-        assertThat(deSerialized.getItemCount(), is(2));
+        assertEquals(distance, deSerialized.getDistance());
+        assertEquals(2, deSerialized.getItemCount());
     }
 
     @Test
@@ -83,22 +82,22 @@ public class SerializeItemTestCase {
         phraseItem.setIndexName("indexName");
 
         PhraseItem deSerialized = serializeThenParse(phraseItem);
-        assertThat(deSerialized.getItem(0), is(phraseItem.getItem(0)));
-        assertThat(deSerialized.getItem(1), is(phraseItem.getItem(1)));
-        assertThat(deSerialized.getIndexName(), is(phraseItem.getIndexName()));
+        assertEquals(phraseItem.getItem(0), deSerialized.getItem(0));
+        assertEquals(phraseItem.getItem(1), deSerialized.getItem(1));
+        assertEquals(phraseItem.getIndexName(), deSerialized.getIndexName());
     }
 
     @Test
-    public void serialize_equiv_item() throws ParseException {
+    public void serialize_equiv_item() {
         EquivItem equivItem = new EquivItem();
         equivItem.addItem(new WordItem("first"));
 
         EquivItem deSerialized = serializeThenParse(equivItem);
-        assertThat(deSerialized.getItemCount(), is(1));
+        assertEquals(1, deSerialized.getItemCount());
     }
 
     @Test
-    public void serialize_connectivity() throws ParseException {
+    public void serialize_connectivity() {
         OrItem orItem = new OrItem();
         {
             WordItem first = new WordItem("first");
@@ -113,35 +112,35 @@ public class SerializeItemTestCase {
         WordItem first = (WordItem) deSerialized.getItem(0);
         Item second = deSerialized.getItem(1);
 
-        assertThat(first.getConnectedItem(), is(second));
-        assertThat(first.getConnectivity(), is(3.14));
+        assertEquals(second, first.getConnectedItem());
+        assertEquals(3.14, first.getConnectivity(), 0.0000001);
     }
 
     @Test
-    public void serialize_significance() throws ParseException {
+    public void serialize_significance() {
         EquivItem equivItem = new EquivItem();
         equivItem.setSignificance(24.2);
 
         EquivItem deSerialized = serializeThenParse(equivItem);
-        assertThat(deSerialized.getSignificance(), is(24.2));
+        assertEquals(24.2, deSerialized.getSignificance(), 0.00000001);
     }
 
     @Test
-    public void serialize_unique_id() throws ParseException {
+    public void serialize_unique_id() {
         EquivItem equivItem = new EquivItem();
         equivItem.setUniqueID(42);
 
         EquivItem deSerialized = serializeThenParse(equivItem);
-        assertThat(deSerialized.getUniqueID(), is(42));
+        assertEquals(42, deSerialized.getUniqueID());
     }
 
     @Test
-    public void serialize_weight() throws ParseException {
+    public void serialize_weight() {
         EquivItem equivItem = new EquivItem();
         equivItem.setWeight(42);
 
         EquivItem deSerialized = serializeThenParse(equivItem);
-        assertThat(deSerialized.getWeight(), is(42));
+        assertEquals(42, deSerialized.getWeight());
     }
 
     private static String serialize(Item item) {
@@ -156,4 +155,5 @@ public class SerializeItemTestCase {
             throw new RuntimeException(e);
         }
     }
+
 }

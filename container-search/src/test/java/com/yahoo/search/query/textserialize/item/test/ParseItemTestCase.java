@@ -1,7 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.textserialize.item.test;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.ExactStringItem;
+import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.ONearItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PrefixItem;
+import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.SubstringItem;
+import com.yahoo.prelude.query.SuffixItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.textserialize.item.ItemContext;
 import com.yahoo.search.query.textserialize.item.ItemFormHandler;
 import com.yahoo.search.query.textserialize.parser.ParseException;
@@ -10,10 +22,9 @@ import org.junit.Test;
 
 import java.io.StringReader;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -29,50 +40,50 @@ public class ParseItemTestCase {
 
     @Test
     public void parse_and() throws ParseException {
-        assertThat(parse("(AND)"), instanceOf(AndItem.class));
+        assertTrue(parse("(AND)") instanceof AndItem);
     }
 
     @Test
     public void parse_and_with_children() throws ParseException {
         AndItem andItem = (AndItem) parse("(AND (WORD 'first') (WORD 'second'))");
 
-        assertThat(andItem.getItemCount(), is(2));
-        assertThat(getWord(andItem.getItem(0)), is("first"));
+        assertEquals(2, andItem.getItemCount());
+        assertEquals("first", getWord(andItem.getItem(0)));
     }
 
     @Test
     public void parse_or() throws ParseException {
-        assertThat(parse("(OR)"), instanceOf(OrItem.class));
+        assertTrue(parse("(OR)") instanceof OrItem);
     }
 
     @Test
     public void parse_and_not_rest() throws ParseException {
-        assertThat(parse("(AND-NOT-REST)"), instanceOf(NotItem.class));
+        assertTrue(parse("(AND-NOT-REST)") instanceof NotItem);
     }
 
     @Test
     public void parse_and_not_rest_with_children() throws ParseException {
         NotItem notItem = (NotItem) parse("(AND-NOT-REST (WORD 'positive') (WORD 'negative'))");
-        assertThat(getWord(notItem.getPositiveItem()), is("positive"));
-        assertThat(getWord(notItem.getItem(1)), is("negative"));
+        assertEquals("positive", getWord(notItem.getPositiveItem()));
+        assertEquals("negative", getWord(notItem.getItem(1)));
     }
 
     @Test
     public void parse_and_not_rest_with_only_negated_children() throws ParseException {
         NotItem notItem = (NotItem) parse("(AND-NOT-REST null (WORD 'negated-item'))");
         assertNull(notItem.getPositiveItem());
-        assertThat(notItem.getItem(1), instanceOf(WordItem.class));
+        assertTrue(notItem.getItem(1) instanceof WordItem);
     }
 
     @Test
     public void parse_rank() throws ParseException {
-        assertThat(parse("(RANK (WORD 'first'))"), instanceOf(RankItem.class));
+        assertTrue(parse("(RANK (WORD 'first'))") instanceof RankItem);
     }
 
     @Test
     public void parse_word() throws ParseException {
         WordItem wordItem = (WordItem) parse("(WORD 'text')");
-        assertThat(wordItem.getWord(), is("text"));
+        assertEquals("text", wordItem.getWord());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -88,65 +99,65 @@ public class ParseItemTestCase {
     @Test
     public void parse_int() throws ParseException {
         IntItem intItem = (IntItem) parse("(INT '[42;]')");
-        assertThat(intItem.getNumber(), is("[42;]"));
+        assertEquals("[42;]", intItem.getNumber());
     }
 
     @Test
     public void parse_range() throws ParseException {
         IntItem intItem = (IntItem) parse("(INT '[42;73]')");
-        assertThat(intItem.getNumber(), is("[42;73]"));
+        assertEquals("[42;73]", intItem.getNumber());
     }
 
     @Test
     public void parse_range_withlimit() throws ParseException {
         IntItem intItem = (IntItem) parse("(INT '[42;73;32]')");
-        assertThat(intItem.getNumber(), is("[42;73;32]"));
+        assertEquals("[42;73;32]", intItem.getNumber());
     }
 
     @Test
     public void parse_prefix() throws ParseException {
         PrefixItem prefixItem = (PrefixItem) parse("(PREFIX 'word')");
-        assertThat(prefixItem.getWord(), is("word"));
+        assertEquals("word", prefixItem.getWord());
     }
 
     @Test
     public void parse_subString() throws ParseException {
         SubstringItem subStringItem = (SubstringItem) parse("(SUBSTRING 'word')");
-        assertThat(subStringItem.getWord(), is("word"));
+        assertEquals("word", subStringItem.getWord());
     }
 
     @Test
     public void parse_exactString() throws ParseException {
         ExactStringItem subStringItem = (ExactStringItem) parse("(EXACT 'word')");
-        assertThat(subStringItem.getWord(), is("word"));
+        assertEquals("word", subStringItem.getWord());
     }
 
     @Test
     public void parse_suffix() throws ParseException {
         SuffixItem suffixItem = (SuffixItem) parse("(SUFFIX 'word')");
-        assertThat(suffixItem.getWord(), is("word"));
+        assertEquals("word", suffixItem.getWord());
     }
 
     @Test
     public void parse_phrase() throws ParseException {
         PhraseItem phraseItem = (PhraseItem) parse("(PHRASE (WORD 'word'))");
-        assertThat(phraseItem.getItem(0), instanceOf(WordItem.class));
+        assertTrue(phraseItem.getItem(0) instanceof WordItem);
     }
 
     @Test
     public void parse_near() throws ParseException {
-        assertThat(parse("(NEAR)"), instanceOf(NearItem.class));
+        assertTrue(parse("(NEAR)") instanceof NearItem);
     }
 
     @Test
     public void parse_onear() throws ParseException {
-        assertThat(parse("(ONEAR)"), instanceOf(ONearItem.class));
+        assertTrue(parse("(ONEAR)") instanceof ONearItem);
     }
 
     @Test
     public void parse_near_with_distance() throws ParseException {
         NearItem nearItem = (NearItem) parse("(NEAR {'distance' 42} (WORD 'first'))");
-        assertThat(nearItem.getDistance(), is(42));
+        assertEquals(42, nearItem.getDistance());
     }
 
     @Test
@@ -154,23 +165,24 @@ public class ParseItemTestCase {
         AndItem andItem = (AndItem) parse("(AND (WORD {'id' '1'} 'first') (WORD {'connectivity' ['1' 23.5]} 'second'))");
         WordItem secondItem = (WordItem) andItem.getItem(1);
 
-        assertThat(secondItem.getConnectedItem(), is(andItem.getItem(0)));
-        assertThat(secondItem.getConnectivity(), is(23.5));
+        assertEquals(andItem.getItem(0), secondItem.getConnectedItem());
+        assertEquals(23.5, secondItem.getConnectivity(), 0.000001);
     }
 
     @Test
     public void parse_word_with_index() throws ParseException {
         WordItem wordItem = (WordItem) parse("(WORD {'index' 'someIndex'} 'text')");
-        assertThat(wordItem.getIndexName(), is("someIndex"));
+        assertEquals("someIndex", wordItem.getIndexName());
     }
 
     @Test
     public void parse_unicode_word() throws ParseException {
         WordItem wordItem = (WordItem) parse("(WORD 'trăm')");
-        assertThat(wordItem.getWord(), is("trăm"));
+        assertEquals("trăm", wordItem.getWord());
     }
 
     public static String getWord(Object item) {
         return ((WordItem)item).getWord();
     }
+
 }
