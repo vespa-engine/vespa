@@ -10,15 +10,17 @@ import java.util.Objects;
  */
 // TODO: Remove this and use ApplicationName/InstanceName instead (if you need it for the JSON stuff move it to that layer and don't let it leak)
 public class ApplicationInstanceId {
-    public static final ApplicationInstanceId CONFIG_SERVER = new ApplicationInstanceId("zone-config-servers");
-    public static final ApplicationInstanceId CONTROLLER = new ApplicationInstanceId("controller");
+
+    public static final ApplicationInstanceId CONFIG_SERVER = new ApplicationInstanceId(InfrastructureApplication.CONFIG_SERVER.applicationName());
+    public static final ApplicationInstanceId CONTROLLER = new ApplicationInstanceId(InfrastructureApplication.CONTROLLER.applicationName());
     // Unfortunately, for config server host the ApplicationInstanceId is: configserver-host:prod:cd-us-central-1:default
-    public boolean isConfigServerHost() { return id.startsWith("configserver-host:"); }
-    public static final ApplicationInstanceId CONTROLLER_HOST = new ApplicationInstanceId("controller-host:prod:default:default");
-    public boolean isTenantHost() { return id.startsWith("tenant-host:"); }
-    public boolean isProxyHost() { return id.startsWith("proxy-host:"); }
+    public boolean isConfigServerHost() { return id.startsWith(InfrastructureApplication.CONFIG_SERVER_HOST.applicationName() + ":"); }
+    public static final ApplicationInstanceId CONTROLLER_HOST = new ApplicationInstanceId(InfrastructureApplication.CONTROLLER_HOST.applicationName() +
+                                                                                          ":prod:default:default");
+    public boolean isTenantHost() { return id.startsWith(InfrastructureApplication.TENANT_HOST.applicationName() + ":"); }
+    public boolean isProxyHost() { return id.startsWith(InfrastructureApplication.PROXY_HOST.applicationName() + ":"); }
     // Routing application instance ID is of the form: routing:prod:eu-west-1:default
-    public boolean isProxy() { return id.startsWith("routing:"); }
+    public boolean isProxy() { return id.startsWith(InfrastructureApplication.PROXY.applicationName() + ":"); }
 
     private final String id;
 
@@ -34,8 +36,7 @@ public class ApplicationInstanceId {
         return id;
     }
 
-    // For compatibility with original Scala case class
-    public String s() {
+    public String value() {
         return id;
     }
 

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.service.duper;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
@@ -12,11 +12,10 @@ public abstract class HostAdminApplication extends InfraApplication {
 
     public static final int HOST_ADMIN_HEALT_PORT = 8080;
 
-    protected HostAdminApplication(String applicationName, NodeType nodeType) {
-        super(applicationName,
-              nodeType,
+    protected HostAdminApplication(InfrastructureApplication application) {
+        super(application,
               ClusterSpec.Type.container,
-              ClusterSpec.Id.from(applicationName),
+              ClusterSpec.Id.from(application.applicationName()),
               ServiceType.HOST_ADMIN,
               HOST_ADMIN_HEALT_PORT);
     }
