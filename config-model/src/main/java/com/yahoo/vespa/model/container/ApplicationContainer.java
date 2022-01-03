@@ -23,6 +23,7 @@ public final class ApplicationContainer extends Container implements
     private static final String defaultHostedJVMArgs = "-XX:+SuppressFatalErrorMessage";
 
     private final boolean isHostedVespa;
+    private final boolean enableServerOcspStapling;
 
     public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
@@ -31,6 +32,7 @@ public final class ApplicationContainer extends Container implements
     public ApplicationContainer(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
+        this.enableServerOcspStapling = deployState.featureFlags().enableServerOcspStapling();
 
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerHolder"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider"));
@@ -64,10 +66,23 @@ public final class ApplicationContainer extends Container implements
     /** Returns the jvm arguments this should start with */
     @Override
     public String getJvmOptions() {
+        StringBuilder b = new StringBuilder();
+        if (isHostedVespa) {
+            if (hasDocproc()) {
+                b.append(ApplicationContainer.defaultHostedJVMArgs).append(' ');
+            }
+            if (enableServerOcspStapling) {
+                b.append("-Djdk.tls.server.enableStatusRequestExtension=true ")
+                        .append("-Djdk.tls.stapling.responseTimeout=2000 ")
+                        .append("-Djdk.tls.stapling.cacheSize=256 ")
+                        .append("-Djdk.tls.stapling.cacheLifetime=3600 ");
+            }
+        }
         String jvmArgs = super.getJvmOptions();
-        return isHostedVespa && hasDocproc()
-                ? ("".equals(jvmArgs) ? defaultHostedJVMArgs : defaultHostedJVMArgs + " " + jvmArgs)
-                : jvmArgs;
+        if (!jvmArgs.isBlank()) {
+             b.append(jvmArgs.trim());
+        }
+        return b.toString().trim();
     }
 
     private boolean hasDocproc() {

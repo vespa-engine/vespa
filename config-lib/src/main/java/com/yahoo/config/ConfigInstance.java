@@ -110,11 +110,20 @@ public abstract class ConfigInstance extends InnerNode {
         }
     }
 
-
+    /**
+     * @deprecated do not use
+     */
+    @Deprecated
+    // TODO: Remove in Vespa 8
     public String getConfigMd5() {
         return configMd5;
     }
 
+    /**
+     * @deprecated do not use
+     */
+    @Deprecated
+    // TODO: Remove in Vespa 8
     public void setConfigMd5(String configMd5) {
         this.configMd5 = configMd5;
     }

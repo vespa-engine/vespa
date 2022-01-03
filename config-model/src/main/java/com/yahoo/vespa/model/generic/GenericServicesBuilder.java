@@ -13,6 +13,8 @@ import java.util.List;
 /**
  * @author Ulf Lilleengen
  * @since 5.1
+ *
+ * TODO: remove in Vespa 8
  */
 public class GenericServicesBuilder extends ConfigModelBuilder<GenericServicesModel> {
 
@@ -22,7 +24,7 @@ public class GenericServicesBuilder extends ConfigModelBuilder<GenericServicesMo
 
     @Override
     public List<ConfigModelId> handlesElements() {
-        return Arrays.asList(ConfigModelId.fromName("service"));
+        return List.of(ConfigModelId.fromName("service"));
     }
 
     @Override

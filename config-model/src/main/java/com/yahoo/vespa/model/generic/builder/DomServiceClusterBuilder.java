@@ -8,10 +8,13 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.generic.service.ServiceCluster;
 import org.w3c.dom.Element;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
-* @author Ulf Lilleengen
-*/
+ * @author Ulf Lilleengen
+ *
+ * TODO: remove in Vespa 8
+ */
 public class DomServiceClusterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ServiceCluster> {
 
     private final String name;
@@ -22,6 +25,9 @@ public class DomServiceClusterBuilder extends VespaDomBuilder.DomConfigProducerB
 
     @Override
     protected ServiceCluster doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
+        deployState.getDeployLogger().logApplicationPackage(
+                Level.WARNING, "The 'service' element is deprecated and will be removed in Vespa 8, without replacement.");
+
         ServiceCluster cluster = new ServiceCluster(ancestor, name, spec.getAttribute("command"));
         int nodeIndex = 0;
         for (Element nodeSpec : XML.getChildren(spec, "node")) {
