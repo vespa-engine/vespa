@@ -392,7 +392,7 @@ DynamicTeaserDFW::makeDynamicTeaser(uint32_t docid, vespalib::stringref input, G
                 std::ostringstream hexDump;
                 hexDump << vespalib::HexDump(input.data(), input.length());
                 LOG(spam, "makeDynamicTeaser: docid=%d, input='%s', hexdump:\n%s",
-                        docid, input.data(), hexDump.str().c_str());
+                        docid, std::string(input.data(), input.length()).c_str(), hexDump.str().c_str());
             }
 
             auto langid = static_cast<uint32_t>(-1);
