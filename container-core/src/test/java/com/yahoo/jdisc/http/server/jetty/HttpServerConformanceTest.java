@@ -7,7 +7,6 @@ import com.google.inject.util.Modules;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.server.jetty.testutils.ConnectorFactoryRegistryModule;
 import com.yahoo.jdisc.test.ServerProviderConformanceTest;
 import org.apache.http.HttpResponse;
@@ -773,8 +772,6 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
                                     .toInstance(new FilterBindings.Builder().build());
                             bind(ServerConfig.class)
                                     .toInstance(new ServerConfig(new ServerConfig.Builder()));
-                            bind(ServletPathsConfig.class)
-                                    .toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
                             bind(ConnectionLog.class)
                                     .toInstance(new VoidConnectionLog());
                             bind(RequestLog.class)
