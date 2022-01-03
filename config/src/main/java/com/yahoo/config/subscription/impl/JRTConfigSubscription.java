@@ -124,6 +124,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
      * @param jrtRequest a config request
      * @return an instance of a config class (subclass of ConfigInstance)
      */
+    @SuppressWarnings("deprecation")
     private T toConfigInstance(JRTClientConfigRequest jrtRequest) {
         Payload payload = jrtRequest.getNewPayload();
         ConfigPayload configPayload = ConfigPayload.fromUtf8Array(payload.withCompression(CompressionType.UNCOMPRESSED).getData());
