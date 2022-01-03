@@ -434,8 +434,8 @@ public class ConfigSubscriber implements AutoCloseable {
     }
 
     /**
-     * Use this convenience method if you only want to subscribe on <em>one</em> config, and want generic error handling.
-     * Implement {@link SingleSubscriber} and pass to this method.
+     * Convenience method that can be used if you only want to subscribe to <em>one</em> config, and want generic error handling.
+     * Implement {@link SingleSubscriber} and pass it to this method.
      * You will get initial config, and a config thread will be started. The method will throw in your thread if initial
      * configuration fails, and the config thread will print a generic error message (but continue) if it fails thereafter. The config
      * thread will stop if you {@link #close()} this {@link ConfigSubscriber}.

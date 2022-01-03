@@ -49,12 +49,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
 
     @Override
     public boolean nextConfig(long timeoutMillis) {
-        // Note: since the JRT callback thread will clear the queue first when it inserts a brand new element,
-        // (see #updateConfig()) there is a race here. However: the caller will handle it no matter what it gets
-        // from the queue here, the important part is that local state on the subscription objects is preserved.
-
-        // Poll the queue for a next config until timeout
-        JRTClientConfigRequest jrtReq = pollQueue(timeoutMillis);
+        JRTClientConfigRequest jrtReq = pollForNewConfig(timeoutMillis);
         if (jrtReq == null) return newConfigOrException();
 
         log.log(FINE, () -> "Polled queue and found config " + jrtReq);
@@ -72,6 +67,20 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         }
 
         return newConfigOrException();
+    }
+
+    private JRTClientConfigRequest pollForNewConfig(long timeoutMillis) {
+        JRTClientConfigRequest request = pollQueue(timeoutMillis);
+        // There might be more than one request on the queue, so empty queue by polling with
+        // 0 timeout until queue is empty (returned value is null)
+        JRTClientConfigRequest temp;
+        do {
+            temp = pollQueue(0);
+            if (temp != null)
+                request = temp;
+        } while (temp != null);
+
+        return request;
     }
 
     private boolean newConfigOrException() {
@@ -133,10 +142,8 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         return configInstance;
     }
 
-    // Will be called by JRTConfigRequester when there is a config with new generation for this subscription
+    // Called by JRTConfigRequester when there is a config with new generation for this subscription
     void updateConfig(JRTClientConfigRequest jrtReq) {
-        // We only want this latest generation to be in the queue, we do not preserve history in this system
-        reqQueue.clear();
         if ( ! reqQueue.offer(jrtReq))
             setException(new ConfigurationRuntimeException("Failed offering returned request to queue of subscription " + this));
     }
