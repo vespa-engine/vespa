@@ -18,6 +18,17 @@ LOG_SETUP(".juniper.sumdesc");
 
 namespace {
 
+static constexpr char replacement_char = '.';
+
+char printable_char(char c)
+{
+    unsigned char uc = (unsigned char) c;
+    if (uc >= 0x80 || uc < (unsigned char) ' ') {
+        return replacement_char;
+    }
+    return c;
+}
+
 bool wordchar(const unsigned char* s)
 {
     unsigned char c = *s;
@@ -98,7 +109,7 @@ int complete_word(unsigned char* start, ssize_t length,
     // the read:
     for (;;) {
         LOG(spam, "[%s%d%s%c]", (whitespace_elim ? "^" : ""),
-            moved, (increment > 0 ? "+" : "-"), *ptr);
+            moved, (increment > 0 ? "+" : "-"), printable_char(*ptr));
         int cur_move = Fast_UnicodeUtil::UTF8move(start, length,
                 ptr, increment);
 
@@ -114,11 +125,11 @@ int complete_word(unsigned char* start, ssize_t length,
         // Give up if we found a split of a word
         if (cur_move <= 0)  // == 0 to avoid UTF8move bug in fastlib 1.3.3..
         {
-            LOG(spam, "complete_word: Failing at char %c/0x%x", *ptr, *ptr);
+            LOG(spam, "complete_word: Failing at char %c/0x%x", printable_char(*ptr), *ptr);
             break;
         }
         if (chartest(ptr)) {
-               LOG(spam, "complete_word: Breaking at char %c/0x%x (%d)", *ptr,
+               LOG(spam, "complete_word: Breaking at char %c/0x%x (%d)", printable_char(*ptr),
                    *ptr, cur_move);
             // count this character (it is the first blank/wordchar)
             // only if we are going forward and it is a word character
@@ -459,12 +470,12 @@ int SummaryDesc::complete_extended_token(unsigned char* start, ssize_t length,
 
         // Handle default case ("ordinary" space)
         if (!word_connector(preptr)) {
-            LOG(spam, "Not a word connector case (%c)", *preptr);
+            LOG(spam, "Not a word connector case (%c)", printable_char(*preptr));
             return moved;
         }
         char wconn = *preptr;
         (void) wconn;
-        LOG(spam, "Found word connector case candidate (%c)", wconn);
+        LOG(spam, "Found word connector case candidate (%c)", printable_char(wconn));
 
         // Read the character before/after the connector character:
         int addlen = Fast_UnicodeUtil::UTF8move(start, length,
@@ -498,7 +509,7 @@ int SummaryDesc::complete_extended_token(unsigned char* start, ssize_t length,
         ptr = preptr;
 
         LOG(spam, "Found proper word connector case (%c,%c) yet moved %d",
-            wconn, *preptr, moved);
+            printable_char(wconn), printable_char(*preptr), moved);
     }
 }
 
@@ -590,7 +601,7 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes,
         } else if (!d._highlight) {
             LOG(spam, "Not completing word at "
                 "char %c/0x%x, prev_end %" PRId64 ", pos %" PRId64,
-                *ptr, *ptr, static_cast<int64_t>(prev_end), static_cast<int64_t>(pos));
+                printable_char(*ptr), *ptr, static_cast<int64_t>(prev_end), static_cast<int64_t>(pos));
         }
 
         /* Point to "current" endpos to check for split word/ending
@@ -616,7 +627,7 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes,
         } else if (!d._highlight) {
             LOG(spam, "Not completing word at "
                 "char %c/0x%x, next_pos %" PRId64,
-                *ptr, *ptr, static_cast<int64_t>(next_pos));
+                printable_char(*ptr), *ptr, static_cast<int64_t>(next_pos));
         }
 
         JD_INVAR(JD_DESC, len >= 0, len = 0,
