@@ -4,14 +4,12 @@ package com.yahoo.search.dispatch;
 import com.yahoo.document.GlobalId;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.prelude.fastsearch.FastHit;
-import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Coverage;
-import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
@@ -34,8 +32,6 @@ import java.util.stream.StreamSupport;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -80,7 +76,7 @@ public class InterleavedSearchInvokerTest {
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
         assertNull("Result is not marked as an error", result.hits().getErrorHit());
         var message = findTrace(result, "Backend communication timeout");
-        assertThat("Timeout should be reported in a trace message", message.isPresent());
+        assertTrue("Timeout should be reported in a trace message", message.isPresent());
         assertTrue("Degradation reason is a normal timeout", result.getCoverage(false).isDegradedByTimeout());
     }
 
@@ -99,7 +95,7 @@ public class InterleavedSearchInvokerTest {
         assertTrue("All test scenario events processed", expectedEvents.isEmpty());
         assertNull("Result is not marked as an error", result.hits().getErrorHit());
         var message = findTrace(result, "Backend communication timeout");
-        assertThat("Timeout should be reported in a trace message", message.isPresent());
+        assertTrue("Timeout should be reported in a trace message", message.isPresent());
         assertTrue("Degradataion reason is an adaptive timeout", result.getCoverage(false).isDegradedByAdapativeTimeout());
     }
 
@@ -116,12 +112,12 @@ public class InterleavedSearchInvokerTest {
         Result result = invoker.search(query, null);
 
         Coverage cov = result.getCoverage(true);
-        assertThat(cov.getDocs(), is(100000L));
-        assertThat(cov.getNodes(), is(2));
-        assertThat(cov.getFull(), is(true));
-        assertThat(cov.getResultPercentage(), is(100));
-        assertThat(cov.getResultSets(), is(1));
-        assertThat(cov.getFullResultSets(), is(1));
+        assertEquals(100000L, cov.getDocs());
+        assertEquals(2, cov.getNodes());
+        assertTrue(cov.getFull());
+        assertEquals(100, cov.getResultPercentage());
+        assertEquals(1, cov.getResultSets());
+        assertEquals(1, cov.getFullResultSets());
     }
 
     @Test
@@ -137,13 +133,13 @@ public class InterleavedSearchInvokerTest {
         Result result = invoker.search(query, null);
 
         Coverage cov = result.getCoverage(true);
-        assertThat(cov.getDocs(), is(23420L));
-        assertThat(cov.getNodes(), is(2));
-        assertThat(cov.getFull(), is(false));
-        assertThat(cov.getResultPercentage(), is(23));
-        assertThat(cov.getResultSets(), is(1));
-        assertThat(cov.getFullResultSets(), is(0));
-        assertThat(cov.isDegradedByMatchPhase(), is(true));
+        assertEquals(23420L, cov.getDocs());
+        assertEquals(2, cov.getNodes());
+        assertFalse(cov.getFull());
+        assertEquals(23, cov.getResultPercentage());
+        assertEquals(1, cov.getResultSets());
+        assertEquals(0, cov.getFullResultSets());
+        assertTrue(cov.isDegradedByMatchPhase());
     }
 
     @Test
@@ -159,13 +155,13 @@ public class InterleavedSearchInvokerTest {
         Result result = invoker.search(query, null);
 
         Coverage cov = result.getCoverage(true);
-        assertThat(cov.getDocs(), is(9900L));
-        assertThat(cov.getNodes(), is(2));
-        assertThat(cov.getFull(), is(false));
-        assertThat(cov.getResultPercentage(), is(10));
-        assertThat(cov.getResultSets(), is(1));
-        assertThat(cov.getFullResultSets(), is(0));
-        assertThat(cov.isDegradedByTimeout(), is(true));
+        assertEquals(9900L, cov.getDocs());
+        assertEquals(2, cov.getNodes());
+        assertFalse(cov.getFull());
+        assertEquals(10, cov.getResultPercentage());
+        assertEquals(1, cov.getResultSets());
+        assertEquals(0, cov.getFullResultSets());
+        assertTrue(cov.isDegradedByTimeout());
     }
 
     @Test
@@ -181,14 +177,14 @@ public class InterleavedSearchInvokerTest {
         Result result = invoker.search(query, null);
 
         Coverage cov = result.getCoverage(true);
-        assertThat(cov.getDocs(), is(50155L));
-        assertThat(cov.getNodes(), is(1));
-        assertThat(cov.getNodesTried(), is(2));
-        assertThat(cov.getFull(), is(false));
-        assertThat(cov.getResultPercentage(), is(50));
-        assertThat(cov.getResultSets(), is(1));
-        assertThat(cov.getFullResultSets(), is(0));
-        assertThat(cov.isDegradedByTimeout(), is(true));
+        assertEquals(50155L, cov.getDocs());
+        assertEquals(1, cov.getNodes());
+        assertEquals(2, cov.getNodesTried());
+        assertFalse(cov.getFull());
+        assertEquals(50, cov.getResultPercentage());
+        assertEquals(1, cov.getResultSets());
+        assertEquals(0, cov.getFullResultSets());
+        assertTrue(cov.isDegradedByTimeout());
     }
 
     static class MetaHit extends Hit {
@@ -365,14 +361,14 @@ public class InterleavedSearchInvokerTest {
         Result result = invoker.search(query, null);
 
         Coverage cov = result.getCoverage(true);
-        assertThat(cov.getDocs(), is(50155L));
-        assertThat(cov.getNodes(), is(1));
-        assertThat(cov.getNodesTried(), is(2));
-        assertThat(cov.getFull(), is(false));
-        assertThat(cov.getResultPercentage(), is(50));
-        assertThat(cov.getResultSets(), is(1));
-        assertThat(cov.getFullResultSets(), is(0));
-        assertThat(cov.isDegradedByTimeout(), is(true));
+        assertEquals(50155L, cov.getDocs());
+        assertEquals(1, cov.getNodes());
+        assertEquals(2, cov.getNodesTried());
+        assertFalse(cov.getFull());
+        assertEquals(50, cov.getResultPercentage());
+        assertEquals(1, cov.getResultSets());
+        assertEquals(0, cov.getFullResultSets());
+        assertTrue(cov.isDegradedByTimeout());
     }
 
     private InterleavedSearchInvoker createInterleavedInvoker(SearchCluster searchCluster, Group group, int numInvokers) {
@@ -389,9 +385,9 @@ public class InterleavedSearchInvokerTest {
 
             @Override
             protected LinkedBlockingQueue<SearchInvoker> newQueue() {
-                return new LinkedBlockingQueue<SearchInvoker>() {
+                return new LinkedBlockingQueue<>() {
                     @Override
-                    public SearchInvoker poll(long timeout, TimeUnit timeUnit) throws InterruptedException {
+                    public SearchInvoker poll(long timeout, TimeUnit timeUnit) {
                         assertFalse(expectedEvents.isEmpty());
                         Event ev = expectedEvents.removeFirst();
                         if (ev == null) {
@@ -448,7 +444,7 @@ public class InterleavedSearchInvokerTest {
     }
 
     public class TestQuery extends Query {
-        private long start = clock.millis();
+        private final long start = clock.millis();
 
         public TestQuery() {
             super();
