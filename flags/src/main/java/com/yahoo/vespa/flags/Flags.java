@@ -400,6 +400,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_SERVER_OCSP_STAPLING = defineFeatureFlag(
+            "enable-server-ocsp-stapling", false,
+            List.of("bjorncs"), "2021-12-17", "2022-06-01",
+            "Enable server OCSP stapling for jdisc containers",
+            "Takes effect on redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
