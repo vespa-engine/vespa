@@ -39,6 +39,7 @@ StateManager::StateManager(StorageComponentRegister& compReg,
       _nextNodeState(),
       _systemState(std::make_shared<const ClusterStateBundle>(lib::ClusterState())),
       _nextSystemState(),
+      _reported_host_info_cluster_state_version(0),
       _stateListeners(),
       _queuedStateRequests(),
       _threadLock(),
@@ -94,58 +95,11 @@ StateManager::print(std::ostream& out, bool verbose,
     out << "StateManager()";
 }
 
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-namespace {
-
-vespalib::string
-escapeHtml(vespalib::stringref str)
-{
-    vespalib::asciistream ss;
-    for (size_t i = 0; i < str.size(); ++i) {
-        switch (str[i]) {
-        case '<':
-            ss << "&lt;";
-            break;
-        case '>':
-            ss << "&gt;";
-            break;
-        case '&':
-            ss << "&amp;";
-            break;
-        default:
-            ss << str[i];
-        }
-    }
-    return ss.str();
-}
-
-}
-#endif
-
 void
 StateManager::reportHtmlStatus(std::ostream& out,
                                const framework::HttpUrlPath& path) const
 {
     (void) path;
-#ifdef ENABLE_BUCKET_OPERATION_LOGGING
-    if (path.hasAttribute("history")) {
-        std::istringstream iss(path.getAttribute("history"), std::istringstream::in);
-        uint64_t rawId;
-        iss >> std::hex >> rawId;
-        document::BucketId bid(rawId);
-        out << "<h3>History for " << bid << "</h3>\n";
-        vespalib::string history(
-                debug::BucketOperationLogger::getInstance().getHistory(bid));
-        out << "<pre>" << escapeHtml(history) << "</pre>\n";
-        return;
-    } else if (path.hasAttribute("search")) {
-        vespalib::string substr(path.getAttribute("search"));
-        out << debug::BucketOperationLogger::getInstance()
-            .searchBucketHistories(substr, "/systemstate?history=");
-        return;
-    }
-#endif
-
     {
         std::lock_guard lock(_stateLock);
         const auto &baseLineClusterState = _systemState->getBaselineClusterState();
@@ -342,6 +296,9 @@ StateManager::enableNextClusterState()
     // overwritten by a non-null pending cluster state afterwards.
     logNodeClusterStateTransition(*_systemState, *_nextSystemState);
     _systemState = _nextSystemState;
+    if (!_nextSystemState->deferredActivation()) {
+        _reported_host_info_cluster_state_version = _systemState->getVersion();
+    } // else: reported version updated upon explicit activation edge
     _nextSystemState.reset();
     _systemStateHistory.emplace_back(_component.getClock().getTimeInMillis(), _systemState);
 }
@@ -511,7 +468,10 @@ StateManager::onActivateClusterStateVersion(
     auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(*cmd);
     {
         std::lock_guard lock(_stateLock);
-        reply->setActualVersion(_systemState ? _systemState->getVersion() : 0);
+        reply->setActualVersion(_systemState->getVersion());
+        if (cmd->version() == _systemState->getVersion()) {
+            _reported_host_info_cluster_state_version = _systemState->getVersion();
+        }
     }
     sendUp(reply);
     return true;
@@ -610,7 +570,7 @@ StateManager::getNodeInfo() const
     //   _systemLock.
     // - getNodeInfo() (this function) always acquires the same lock.
     std::lock_guard guard(_stateLock);
-    stream << "cluster-state-version" << _systemState->getVersion();
+    stream << "cluster-state-version" << _reported_host_info_cluster_state_version;
 
     _hostInfo->printReport(stream);
     stream << End();
