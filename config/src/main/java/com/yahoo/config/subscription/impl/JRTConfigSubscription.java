@@ -158,7 +158,6 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
     }
 
     @Override
-    @SuppressWarnings("serial")
     public void close() {
         super.close();
         reqQueue = new LinkedBlockingQueue<>() {

@@ -203,7 +203,7 @@ public class JRTConfigRequestV3Test {
     public void created_from_existing_subscription() {
         MockConnection connection = new MockConnection(new MockConnection.AbstractResponseHandler() {
             @Override
-            public void createResponse() {
+            public void createResponse(Request request) {
                 JRTServerConfigRequest serverRequest = createReq(request);
                 serverRequest.addOkResponse(createPayload(), currentGeneration, false, payloadChecksums);
             }
