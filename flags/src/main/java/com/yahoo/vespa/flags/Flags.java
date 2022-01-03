@@ -303,7 +303,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag ENABLE_ROUTING_REUSE_PORT = defineFeatureFlag(
-            "enable-routing-reuse-port", false,
+            "enable-routing-reuse-port", true,
             List.of("mortent"), "2021-09-29", "2022-02-01",
             "Enable reuse port in routing configuration",
             "Takes effect on container restart",
