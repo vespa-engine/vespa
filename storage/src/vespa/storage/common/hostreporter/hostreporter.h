@@ -11,7 +11,7 @@ namespace storage {
 class HostReporter {
 public:
 	virtual void report(vespalib::JsonStream& jsonreport) = 0;
-	virtual ~HostReporter() {}
+	virtual ~HostReporter() = default;
 };
 }
 

@@ -51,6 +51,7 @@ class StateManager : public NodeStateUpdater,
     using ClusterStateBundle = lib::ClusterStateBundle;
     std::shared_ptr<const ClusterStateBundle> _systemState;
     std::shared_ptr<const ClusterStateBundle> _nextSystemState;
+    uint32_t _reported_host_info_cluster_state_version;
     std::list<StateListener*> _stateListeners;
     typedef std::pair<framework::MilliSecTime, api::GetNodeStateCommand::SP> TimeStatePair;
     std::list<TimeStatePair> _queuedStateRequests;

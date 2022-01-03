@@ -9,8 +9,7 @@ HostInfo::HostInfo() {
     registerReporter(&versionReporter);
 }
 
-HostInfo::~HostInfo() {
-}
+HostInfo::~HostInfo() = default;
 
 void HostInfo::printReport(vespalib::JsonStream& report) {
     for (HostReporter* reporter : customReporters) {

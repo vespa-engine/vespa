@@ -43,6 +43,8 @@ struct StateManagerTest : Test {
     std::string get_node_info() const {
         return _manager->getNodeInfo();
     }
+
+    void extract_cluster_state_version_from_host_info(uint32_t& version_out);
 };
 
 StateManagerTest::StateManagerTest()
@@ -54,8 +56,8 @@ StateManagerTest::StateManagerTest()
 }
 
 void
-StateManagerTest::SetUp() {
-    vdstestlib::DirConfig config(getStandardConfig(true));
+StateManagerTest::SetUp()
+{
     _node = std::make_unique<TestServiceLayerApp>(NodeIndex(2));
     // Clock will increase 1 sec per call.
     _node->getClock().setAbsoluteTimeInSeconds(1);
@@ -85,10 +87,37 @@ StateManagerTest::TearDown() {
     _metricManager.reset();
 }
 
-void StateManagerTest::force_current_cluster_state_version(uint32_t version) {
+void
+StateManagerTest::force_current_cluster_state_version(uint32_t version)
+{
     ClusterState state(*_manager->getClusterStateBundle()->getBaselineClusterState());
     state.setVersion(version);
     _manager->setClusterStateBundle(lib::ClusterStateBundle(state));
+}
+
+void
+StateManagerTest::extract_cluster_state_version_from_host_info(uint32_t& version_out)
+{
+    std::string nodeInfoString = get_node_info();
+    vespalib::Slime nodeInfo;
+    vespalib::slime::JsonFormat::decode(nodeInfoString, nodeInfo);
+
+    vespalib::slime::Symbol lookupSymbol = nodeInfo.lookup("cluster-state-version");
+    if (lookupSymbol.undefined()) {
+        FAIL() << "No cluster-state-version was found in the node info";
+    }
+
+    auto& cursor = nodeInfo.get();
+    auto& clusterStateVersionCursor = cursor["cluster-state-version"];
+    if (!clusterStateVersionCursor.valid()) {
+        FAIL() << "No cluster-state-version was found in the node info";
+    }
+
+    if (clusterStateVersionCursor.type().getId() != vespalib::slime::LONG::ID) {
+        FAIL() << "No cluster-state-version was found in the node info";
+    }
+
+    version_out = clusterStateVersionCursor.asLong();
 }
 
 #define GET_ONLY_OK_REPLY(varname) \
@@ -214,29 +243,9 @@ TEST_F(StateManagerTest, reported_node_state) {
 
 TEST_F(StateManagerTest, current_cluster_state_version_is_included_in_host_info_json) {
     force_current_cluster_state_version(123);
-
-    std::string nodeInfoString = get_node_info();
-    vespalib::Memory goldenMemory(nodeInfoString);
-    vespalib::Slime nodeInfo;
-    vespalib::slime::JsonFormat::decode(nodeInfoString, nodeInfo);
-    
-    vespalib::slime::Symbol lookupSymbol = nodeInfo.lookup("cluster-state-version");
-    if (lookupSymbol.undefined()) {
-        FAIL() << "No cluster-state-version was found in the node info";
-    }
-
-    auto& cursor = nodeInfo.get();
-    auto& clusterStateVersionCursor = cursor["cluster-state-version"];
-    if (!clusterStateVersionCursor.valid()) {
-        FAIL() << "No cluster-state-version was found in the node info";
-    }
-
-    if (clusterStateVersionCursor.type().getId() != vespalib::slime::LONG::ID) {
-        FAIL() << "No cluster-state-version was found in the node info";
-    }
-
-    int version = clusterStateVersionCursor.asLong();
-    EXPECT_EQ(123, version);
+    uint32_t version;
+    ASSERT_NO_FATAL_FAILURE(extract_cluster_state_version_from_host_info(version));
+    EXPECT_EQ(version, 123);
 }
 
 void StateManagerTest::mark_reported_node_state_up() {
@@ -347,6 +356,44 @@ TEST_F(StateManagerTest, activation_command_is_bounced_with_current_cluster_stat
     auto& activate_reply = dynamic_cast<api::ActivateClusterStateVersionReply&>(*reply);
     EXPECT_EQ(12340, activate_reply.activateVersion());
     EXPECT_EQ(12345, activate_reply.actualVersion());
+}
+
+TEST_F(StateManagerTest, non_deferred_cluster_state_sets_reported_cluster_state_version) {
+    auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState("version:1234 distributor:1 storage:1"));
+    cmd->setTimeout(1000s);
+    cmd->setSourceIndex(0);
+    _upper->sendDown(cmd);
+    std::shared_ptr<api::StorageReply> reply;
+    GET_ONLY_OK_REPLY(reply);
+
+    uint32_t version;
+    ASSERT_NO_FATAL_FAILURE(extract_cluster_state_version_from_host_info(version));
+    EXPECT_EQ(version, 1234);
+}
+
+TEST_F(StateManagerTest, deferred_cluster_state_does_not_update_state_until_activation_edge) {
+    force_current_cluster_state_version(100);
+
+    lib::ClusterStateBundle deferred_bundle(lib::ClusterState("version:101 distributor:1 storage:1"), {}, true);
+    auto state_cmd = std::make_shared<api::SetSystemStateCommand>(deferred_bundle);
+    state_cmd->setTimeout(1000s);
+    state_cmd->setSourceIndex(0);
+    _upper->sendDown(state_cmd);
+    std::shared_ptr<api::StorageReply> reply;
+    GET_ONLY_OK_REPLY(reply);
+
+    uint32_t version;
+    ASSERT_NO_FATAL_FAILURE(extract_cluster_state_version_from_host_info(version));
+    EXPECT_EQ(version, 100); // Not yet updated to version 101
+
+    auto activation_cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(101);
+    activation_cmd->setTimeout(1000s);
+    activation_cmd->setSourceIndex(0);
+    _upper->sendDown(activation_cmd);
+    GET_ONLY_OK_REPLY(reply);
+
+    ASSERT_NO_FATAL_FAILURE(extract_cluster_state_version_from_host_info(version));
+    EXPECT_EQ(version, 101);
 }
 
 } // storage
