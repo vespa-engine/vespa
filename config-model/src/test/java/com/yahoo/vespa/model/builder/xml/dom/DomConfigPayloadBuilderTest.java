@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.slime.JsonFormat;
@@ -17,11 +18,11 @@ import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -33,6 +34,10 @@ import static org.junit.Assert.fail;
  * @author Ulf Lilleengen
  */
 public class DomConfigPayloadBuilderTest {
+
+    private static final DeployLogger logger = (level, message) ->  {
+        if (level.intValue() > Level.INFO.intValue()) System.err.println(message);
+    };
 
     @Test
     public void testFunctionTest_DefaultValues() throws FileNotFoundException {
@@ -143,7 +148,7 @@ public class DomConfigPayloadBuilderTest {
     public void testFailWrongTagName() {
         Element configRoot = getDocument(new StringReader("<configs name=\"foo\"/>"));
         try {
-            new DomConfigPayloadBuilder(null).build(configRoot);
+            new DomConfigPayloadBuilder(null, logger).build(configRoot);
             fail("Expected exception for wrong tag name.");
         } catch (ConfigurationRuntimeException e) {
             assertEquals("The root element must be 'config', but was 'configs'.", e.getMessage());
@@ -155,7 +160,7 @@ public class DomConfigPayloadBuilderTest {
     public void testFailNoNameAttribute() {
         Element configRoot = getDocument(new StringReader("<config/>"));
         try {
-            new DomConfigPayloadBuilder(null).build(configRoot);
+            new DomConfigPayloadBuilder(null, logger).build(configRoot);
             fail("Expected exception for mismatch between def-name and xml name attribute.");
         } catch (ConfigurationRuntimeException e) {
             assertEquals("The 'config' element must have a 'name' attribute that matches the name of the config definition.", e.getMessage());
@@ -237,7 +242,7 @@ public class DomConfigPayloadBuilderTest {
                 "<config name=\"test.arraytypes\" version=\"1\">" +
                 "    <item>13</item>" +
                 "</config>");
-        new DomConfigPayloadBuilder(null).build(configRoot);
+        new DomConfigPayloadBuilder(null, logger).build(configRoot);
     }
 
     @Test(expected=ConfigurationRuntimeException.class)
@@ -249,12 +254,13 @@ public class DomConfigPayloadBuilderTest {
         DefParser defParser = new DefParser("simpletypes",
                 new FileReader("src/test/resources/configdefinitions/test.simpletypes.def"));
         ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
-        ConfigPayloadBuilder unused =  new DomConfigPayloadBuilder(def).build(configRoot);
+        ConfigPayloadBuilder unused =  new DomConfigPayloadBuilder(def, logger).build(configRoot);
     }
 
 
     private void assertPayload(String expected, Element configRoot) {
-        ConfigPayload payload = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
+        ConfigPayload payload = ConfigPayload.fromBuilder(
+                new DomConfigPayloadBuilder(null, logger).build(configRoot));
         try {
             ByteArrayOutputStream a = new ByteArrayOutputStream();
             new JsonFormat(true).encode(a, payload.getSlime());
