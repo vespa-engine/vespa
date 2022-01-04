@@ -12,7 +12,6 @@ ContainerCluster = element container | jdisc {
 }
 
 ContainerServices =
-    Servlet* &
     SearchInContainer? &
     DocprocInContainer? &
     ProcessingInContainer? &
@@ -134,18 +133,6 @@ Threadpool = element threadpool {
     element max-threads { xsd:nonNegativeInteger } &
     element min-threads { xsd:nonNegativeInteger } &
     element queue-size { xsd:nonNegativeInteger }
-}
-
-# Servlet:
-
-Servlet = element servlet {
-    ComponentDefinition &
-    ServletConfig? &
-    element path { xsd:string { pattern = "\w[\w_/\-\.]*(\*)?" } }
-}
-
-ServletConfig = element servlet-config {
-    anyElement+
 }
 
 # SEARCH:

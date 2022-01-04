@@ -22,7 +22,6 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.filter.ResponseHeaderFilter;
@@ -585,7 +584,6 @@ public class FilterTestCase {
                         bind(FilterBindings.class).toInstance(filterBindings);
                         bind(ServerConfig.class).toInstance(new ServerConfig(new ServerConfig.Builder().strictFiltering(strictFiltering)));
                         bind(ConnectorConfig.class).toInstance(new ConnectorConfig(new ConnectorConfig.Builder()));
-                        bind(ServletPathsConfig.class).toInstance(new ServletPathsConfig(new ServletPathsConfig.Builder()));
                         bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
                         bind(RequestLog.class).toInstance(new VoidRequestLog());
                     }

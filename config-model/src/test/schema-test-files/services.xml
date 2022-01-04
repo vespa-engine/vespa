@@ -58,20 +58,6 @@
       <group name="foo" environment="aws_stage" />
     </secret-store>
 
-    <servlet id="my-servlet" class="com.yahoo.MyServlet" bundle="my-bundle">
-      <path>p/a/t/h</path>
-    </servlet>
-
-    <servlet id="my-servlet" class="com.yahoo.MyServlet" bundle="my-bundle">
-      <path>Apps/app_1.3-4/*</path>
-      <config name="foo">
-        <intVal>0</intVal>
-      </config>
-      <servlet-config>
-        <foo>bar</foo>
-      </servlet-config>
-    </servlet>
-
     <http>
       <filtering strict-mode="true">
         <access-control domain="my.athens-domain" read="true">
