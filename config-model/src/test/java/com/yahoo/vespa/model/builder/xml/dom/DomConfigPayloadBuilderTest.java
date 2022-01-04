@@ -37,7 +37,6 @@ public class DomConfigPayloadBuilderTest {
     @Test
     public void testFunctionTest_DefaultValues() throws FileNotFoundException {
         Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/functiontest-defaultvalues.xml"));
-        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         String expected = ""
                 + "{"
                 + "\"bool_val\":\"false\","
@@ -57,25 +56,14 @@ public class DomConfigPayloadBuilderTest {
                 + "\"enumarr\":[\"VALUES\"],"
                 + "\"myarray\":[{\"refval\":\":parent:\",\"fileVal\":\"command.com\",\"myStruct\":{\"a\":\"1\"},\"stringval\":[\"baah\",\"yikes\"],\"anotherarray\":[{\"foo\":\"7\"}]},{\"refval\":\":parent:\",\"fileVal\":\"display.sys\",\"myStruct\":{\"a\":\"-1\"},\"anotherarray\":[{\"foo\":\"1\"},{\"foo\":\"2\"}]}]"
                 + "}";
-        assertPayload(expected, config);
+        assertPayload(expected, configRoot);
     }
 
-    private void assertPayload(String expected, ConfigPayload payload) {
-        try {
-            ByteArrayOutputStream a = new ByteArrayOutputStream();
-            new JsonFormat(true).encode(a, payload.getSlime());
-            assertEquals(expected, a.toString());
-        } catch (Exception e) {
-            fail("Exception thrown when encoding slime: " + e.getMessage());
-        }
-
-    }
     // Multi line strings are not tested in 'DefaultValues', so here it is.
     @Test
     public void verifyThatWhitespaceIsPreservedForStrings() throws Exception {
         Element configRoot = getDocument(new FileReader("src/test/cfg/admin/userconfigs/whitespace-test.xml"));
-        ConfigPayload config = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
-        assertPayload("{\"stringVal\":\" This is a string\\n  that contains different kinds of whitespace \"}", config);
+        assertPayload("{\"stringVal\":\" This is a string\\n  that contains different kinds of whitespace \"}", configRoot);
     }
 
     @Test
@@ -87,8 +75,7 @@ public class DomConfigPayloadBuilderTest {
                 "    <item key=\"foo\">1337</item>" +
                 "  </intmap>" +
                 "</config>");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
-        assertPayload("{\"intmap\":{\"bar\":\"1338\",\"foo\":\"1337\"}}", userConfig);
+        assertPayload("{\"intmap\":{\"bar\":\"1338\",\"foo\":\"1337\"}}", getDocument(xmlConfig));
     }
 
     @Test
@@ -104,8 +91,7 @@ public class DomConfigPayloadBuilderTest {
                 "    </item>" +
                 "  </innermap>" +
                 "</config>");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
-        assertPayload("{\"innermap\":{\"bar\":{\"foo\":\"baz\"},\"foo\":{\"foo\":\"bar\"}}}", userConfig);
+        assertPayload("{\"innermap\":{\"bar\":{\"foo\":\"baz\"},\"foo\":{\"foo\":\"bar\"}}}", getDocument(xmlConfig));
     }
 
     @Test
@@ -127,10 +113,9 @@ public class DomConfigPayloadBuilderTest {
                 "    </item>" +
                 "  </nestedmap>" +
                 "</config>");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
         assertPayload("{\"nestedmap\":{" +
                 "\"bar\":{\"inner\":{\"bar1\":\"30\",\"bar2\":\"40\"}}," +
-                "\"foo\":{\"inner\":{\"foo1\":\"10\",\"foo2\":\"20\"}}}}", userConfig);
+                "\"foo\":{\"inner\":{\"foo1\":\"10\",\"foo2\":\"20\"}}}}", getDocument(xmlConfig));
     }
 
     @Test
@@ -141,8 +126,7 @@ public class DomConfigPayloadBuilderTest {
                 "  <intarr operation=\"append\">1</intarr>" +
                 "  <intarr operation=\"append\">2</intarr>" +
                 "</config> ");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
-        assertPayload("{\"intarr\":[\"1\",\"2\"]}", userConfig);
+        assertPayload("{\"intarr\":[\"1\",\"2\"]}", getDocument(xmlConfig));
     }
 
     @Test
@@ -151,8 +135,7 @@ public class DomConfigPayloadBuilderTest {
                 "<config name=\"test.function-test\">" +
                 "  <some-struct> <any-value>17</any-value> </some-struct>" +
                 "</config> ");
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(getDocument(xmlConfig)));
-        assertPayload("{\"someStruct\":{\"anyValue\":\"17\"}}", userConfig);
+        assertPayload("{\"someStruct\":{\"anyValue\":\"17\"}}", getDocument(xmlConfig));
     }
 
     // Verifies that an exception is thrown when the root element is not 'config'.
@@ -216,8 +199,7 @@ public class DomConfigPayloadBuilderTest {
                 "    </intarr>" +
                 "</config>");
 
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
-        assertPayload("{\"intarr\":[\"13\",\"10\",\"1337\"]}", userConfig);
+        assertPayload("{\"intarr\":[\"13\",\"10\",\"1337\"]}", configRoot);
     }
 
     @Test
@@ -231,9 +213,8 @@ public class DomConfigPayloadBuilderTest {
                         "    </lolarray>" +
                         "</config>");
 
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
         assertPayload("{\"lolarray\":[{\"foo\":\"hei\",\"bar\":\"hei2\"},{\"foo\":\"hoo\",\"bar\":\"hoo2\"},{\"foo\":\"happ\",\"bar\":\"happ2\"}]}",
-                      userConfig);
+                      configRoot);
     }
 
     @Test
@@ -247,8 +228,7 @@ public class DomConfigPayloadBuilderTest {
                 "    </lolarray>" +
                 "</config>");
 
-        ConfigPayload userConfig = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
-        assertPayload("{\"lolarray\":[{\"fooarray\":[\"13\"]},{\"fooarray\":[\"10\"]},{\"fooarray\":[\"1337\"]}]}", userConfig);
+        assertPayload("{\"lolarray\":[{\"fooarray\":[\"13\"]},{\"fooarray\":[\"10\"]},{\"fooarray\":[\"1337\"]}]}", configRoot);
     }
 
     @Test(expected = ConfigurationRuntimeException.class)
@@ -267,10 +247,21 @@ public class DomConfigPayloadBuilderTest {
                 "<longval>invalid</longval>" +
                 "</config>");
         DefParser defParser = new DefParser("simpletypes",
-                new FileReader(new File("src/test/resources/configdefinitions/test.simpletypes.def")));
+                new FileReader("src/test/resources/configdefinitions/test.simpletypes.def"));
         ConfigDefinition def = ConfigDefinitionBuilder.createConfigDefinition(defParser.getTree());
-        ConfigPayloadBuilder builder =  new DomConfigPayloadBuilder(def).build(configRoot);
-        //assertEquals(1, builder.warnings().size());
+        ConfigPayloadBuilder unused =  new DomConfigPayloadBuilder(def).build(configRoot);
+    }
+
+
+    private void assertPayload(String expected, Element configRoot) {
+        ConfigPayload payload = ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(configRoot));
+        try {
+            ByteArrayOutputStream a = new ByteArrayOutputStream();
+            new JsonFormat(true).encode(a, payload.getSlime());
+            assertEquals(expected, a.toString());
+        } catch (Exception e) {
+            fail("Exception thrown when encoding slime: " + e.getMessage());
+        }
     }
 
     private Element getDocument(Reader xmlReader) {
