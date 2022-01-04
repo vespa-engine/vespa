@@ -33,7 +33,7 @@ public class GenericConfigSubscriberTest {
     public void testSubscribeGeneric() throws InterruptedException {
         JRTConfigRequester requester = new JRTConfigRequester(new MockConnection(), tv);
         GenericConfigSubscriber sub = new GenericConfigSubscriber(requester);
-        final List<String> defContent = List.of("myVal int");
+        List<String> defContent = List.of("myVal int");
         GenericConfigHandle handle = sub.subscribe(new ConfigKey<>("simpletypes", "id", "config"),
                                                    defContent,
                                                    tv);
@@ -46,9 +46,9 @@ public class GenericConfigSubscriberTest {
         assertFalse(handle.isChanged());
 
         // Wait some time, config should be the same, but generation should be higher
-        Thread.sleep(tv.getFixedDelay() * 2);
+        Thread.sleep(tv.getFixedDelay() * 3);
         assertEquals("{}", getConfig(handle));
-        assertTrue(handle.getRawConfig().getGeneration() > 1);
+        assertTrue("Unexpected generation (not > 1): " + handle.getRawConfig().getGeneration(), handle.getRawConfig().getGeneration() > 1);
         assertFalse(sub.nextConfig(false));
         assertFalse(handle.isChanged());
     }
