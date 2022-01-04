@@ -223,6 +223,9 @@ public class DomConfigPayloadBuilder {
     }
 
     private void verifyLegalOperation(Element currElem) {
+        logger.ifPresent(log -> log.logApplicationPackage(
+                Level.WARNING, "The 'operation' attribute is deprecated for removal in Vespa 8. Use 'item' instead."));
+
         String operation = currElem.getAttribute("operation");
         if (! operation.equalsIgnoreCase("append"))
             throw new ConfigurationRuntimeException("The only supported array operation is 'append', got '"
