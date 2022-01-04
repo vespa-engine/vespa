@@ -14,7 +14,7 @@ import com.yahoo.document.PositionDataType;
  */
 public class VespaDocumentType {
 
-    public static NewDocumentType INSTANCE = newInstance();
+    public static final NewDocumentType INSTANCE = newInstance();
 
     public static final DataTypeName NAME = new DataTypeName("document");
 

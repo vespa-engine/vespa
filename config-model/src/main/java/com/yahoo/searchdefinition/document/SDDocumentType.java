@@ -31,8 +31,8 @@ import java.util.Set;
  * implicitly acquiring their fields as it's own. If a document is not set to inherit
  * any document, it will always inherit the document "document.0".
  *
- * @author  Thomas Gundersen
- * @author  bratseth
+ * @author Thomas Gundersen
+ * @author bratseth
  */
 public class SDDocumentType implements Cloneable, Serializable {
 
@@ -42,7 +42,8 @@ public class SDDocumentType implements Cloneable, Serializable {
     private final AnnotationTypeRegistry annotationTypes = new AnnotationTypeRegistry();
     private DocumentType docType;    
     private DataType structType;
-    // The field sets here are set from the processing step in SD, to ensure that the full Search and this SDDocumentType is built first.
+    // The field sets here are set from the processing step in SD,
+    // to ensure that the full Search and this SDDocumentType is built first.
     private FieldSets fieldSets;
     // Document references
     private Optional<DocumentReferences> documentReferences = Optional.empty();

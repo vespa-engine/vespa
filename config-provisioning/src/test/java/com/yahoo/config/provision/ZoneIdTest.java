@@ -2,11 +2,10 @@
 package com.yahoo.config.provision;
 
 import com.yahoo.config.provision.zone.ZoneId;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author hmusum
@@ -15,11 +14,6 @@ public class ZoneIdTest {
 
     private static final Environment environment = Environment.prod;
     private static final RegionName region = RegionName.from("moon-dark-side-1");
-    private static final CloudName cloud = CloudName.from("aws");
-    private static final SystemName system = SystemName.Public;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void testCreatingZoneId() {
@@ -35,9 +29,13 @@ public class ZoneIdTest {
         assertEquals(ZoneId.from(zoneId.value()), zoneId);
 
         String serializedZoneId = "some.illegal.value";
-        expectedException.expect(IllegalArgumentException.class);
-        expectedException.expectMessage("Cannot deserialize zone id '" + serializedZoneId + "'");
-        ZoneId.from(serializedZoneId);
+        try {
+            ZoneId.from(serializedZoneId);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Cannot deserialize zone id '" + serializedZoneId + "'", e.getMessage());
+        }
     }
 
 }
