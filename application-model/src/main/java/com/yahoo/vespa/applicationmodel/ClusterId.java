@@ -10,13 +10,13 @@ import java.util.Objects;
  */
 public class ClusterId {
 
-    public static final ClusterId CONFIG_SERVER = new ClusterId("zone-config-servers");
-    public static final ClusterId CONTROLLER = new ClusterId("controller");
-    public static final ClusterId CONFIG_SERVER_HOST = new ClusterId("configserver-host");
-    public static final ClusterId CONTROLLER_HOST = new ClusterId("controller-host");
-    public static final ClusterId PROXY_HOST = new ClusterId("proxy-host");
-    public static final ClusterId ROUTING = new ClusterId("routing");
-    public static final ClusterId TENANT_HOST = new ClusterId("tenant-host");
+    public static final ClusterId CONFIG_SERVER = new ClusterId(InfrastructureApplication.CONFIG_SERVER.applicationName());
+    public static final ClusterId CONTROLLER = new ClusterId(InfrastructureApplication.CONTROLLER.applicationName());
+    public static final ClusterId CONFIG_SERVER_HOST = new ClusterId(InfrastructureApplication.CONFIG_SERVER_HOST.applicationName());
+    public static final ClusterId CONTROLLER_HOST = new ClusterId(InfrastructureApplication.CONTROLLER_HOST.applicationName());
+    public static final ClusterId PROXY_HOST = new ClusterId(InfrastructureApplication.PROXY_HOST.applicationName());
+    public static final ClusterId ROUTING = new ClusterId(InfrastructureApplication.PROXY.applicationName());
+    public static final ClusterId TENANT_HOST = new ClusterId(InfrastructureApplication.TENANT_HOST.applicationName());
 
     private final String id;
 

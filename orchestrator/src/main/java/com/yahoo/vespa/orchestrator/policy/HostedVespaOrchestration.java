@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
@@ -19,7 +19,7 @@ public class HostedVespaOrchestration {
         return new OrchestrationParams.Builder()
 
                 // Controller host
-                .addApplicationParams(ApplicationId.fromSerializedForm("hosted-vespa:controller-host:default"),
+                .addApplicationParams(InfrastructureApplication.CONTROLLER_HOST,
                                       new ApplicationParams
                                               .Builder()
                                               .add(ClusterId.CONTROLLER,
@@ -31,7 +31,7 @@ public class HostedVespaOrchestration {
                                               .build())
 
                 // Controller
-                .addApplicationParams(ApplicationId.fromSerializedForm("hosted-vespa:controller:default"),
+                .addApplicationParams(InfrastructureApplication.CONTROLLER,
                                       new ApplicationParams
                                               .Builder()
                                               .add(ClusterId.CONTROLLER,
@@ -43,7 +43,7 @@ public class HostedVespaOrchestration {
                                               .build())
 
                 // Config server host
-                .addApplicationParams(ApplicationId.fromSerializedForm("hosted-vespa:configserver-host:default"),
+                .addApplicationParams(InfrastructureApplication.CONFIG_SERVER_HOST,
                                       new ApplicationParams
                                               .Builder()
                                               .add(ClusterId.CONFIG_SERVER_HOST,
@@ -55,7 +55,7 @@ public class HostedVespaOrchestration {
                                               .build())
 
                 // Config server
-                .addApplicationParams(ApplicationId.fromSerializedForm("hosted-vespa:zone-config-servers:default"),
+                .addApplicationParams(InfrastructureApplication.CONFIG_SERVER,
                                       new ApplicationParams
                                               .Builder()
                                               .add(ClusterId.CONFIG_SERVER,
@@ -67,7 +67,7 @@ public class HostedVespaOrchestration {
                                               .build())
 
                 // Proxy host
-                .addApplicationParams(ApplicationId.fromSerializedForm("hosted-vespa:proxy-host:default"),
+                .addApplicationParams(InfrastructureApplication.PROXY_HOST,
                                       new ApplicationParams
                                               .Builder()
                                               .add(ClusterId.PROXY_HOST,
@@ -79,7 +79,7 @@ public class HostedVespaOrchestration {
                                               .build())
 
                 // Proxy
-                .addApplicationParams(ApplicationId.fromSerializedForm("hosted-vespa:routing:default"),
+                .addApplicationParams(InfrastructureApplication.PROXY,
                                       new ApplicationParams
                                               .Builder()
                                               .add(ClusterId.ROUTING,

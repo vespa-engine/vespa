@@ -2,6 +2,7 @@
 package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,8 +21,8 @@ public class OrchestrationParams {
 
         public Builder() {}
 
-        public Builder addApplicationParams(ApplicationId applicationId, ApplicationParams params) {
-            this.applicationParams.put(applicationId, params);
+        public Builder addApplicationParams(InfrastructureApplication application, ApplicationParams params) {
+            this.applicationParams.put(application.id(), params);
             return this;
         }
 

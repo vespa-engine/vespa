@@ -10,12 +10,11 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.service.health.StateV1HealthModel;
@@ -35,30 +34,20 @@ import java.util.stream.Collectors;
  */
 public abstract class InfraApplication implements InfraApplicationApi {
 
-    static final TenantName TENANT_NAME = TenantName.from("hosted-vespa");
-
-    private final ApplicationId applicationId;
+    private final InfrastructureApplication application;
     private final Capacity capacity;
     private final ClusterSpec.Type clusterSpecType;
     private final ClusterSpec.Id clusterSpecId;
     private final ServiceType serviceType;
     private final int healthPort;
 
-    public static ApplicationId createHostedVespaApplicationId(String applicationName) {
-        return new ApplicationId.Builder()
-                .tenant(TENANT_NAME)
-                .applicationName(applicationName)
-                .build();
-    }
-
-    protected InfraApplication(String applicationName,
-                               NodeType nodeType,
+    protected InfraApplication(InfrastructureApplication application,
                                ClusterSpec.Type clusterSpecType,
                                ClusterSpec.Id clusterSpecId,
                                ServiceType serviceType,
                                int healthPort) {
-        this.applicationId = createHostedVespaApplicationId(applicationName);
-        this.capacity = Capacity.fromRequiredNodeType(nodeType);
+        this.application = application;
+        this.capacity = Capacity.fromRequiredNodeType(application.nodeType());
         this.clusterSpecType = clusterSpecType;
         this.clusterSpecId = clusterSpecId;
         this.serviceType = serviceType;
@@ -67,7 +56,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
 
     @Override
     public ApplicationId getApplicationId() {
-        return applicationId;
+        return application.id();
     }
 
     @Override
@@ -97,16 +86,16 @@ public abstract class InfraApplication implements InfraApplicationApi {
     }
 
     public ApplicationInstanceId getApplicationInstanceId(Zone zone) {
-        return ApplicationInstanceGenerator.toApplicationInstanceId(applicationId, zone);
+        return ApplicationInstanceGenerator.toApplicationInstanceId(application.id(), zone);
     }
 
     public TenantId getTenantId() {
-        return new TenantId(applicationId.tenant().value());
+        return new TenantId(application.id().tenant().value());
     }
 
     public ApplicationInfo makeApplicationInfo(List<HostName> hostnames) {
         List<HostInfo> hostInfos = hostnames.stream().map(this::makeHostInfo).collect(Collectors.toList());
-        return new ApplicationInfo(applicationId, 0, new HostsModel(hostInfos));
+        return new ApplicationInfo(application.id(), 0, new HostsModel(hostInfos));
     }
 
     private HostInfo makeHostInfo(HostName hostname) {
@@ -147,7 +136,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
         if (o == null || getClass() != o.getClass()) return false;
         InfraApplication that = (InfraApplication) o;
         return healthPort == that.healthPort &&
-                Objects.equals(applicationId, that.applicationId) &&
+                Objects.equals(application, that.application) &&
                 Objects.equals(capacity, that.capacity) &&
                 clusterSpecType == that.clusterSpecType &&
                 Objects.equals(clusterSpecId, that.clusterSpecId) &&
@@ -156,13 +145,13 @@ public abstract class InfraApplication implements InfraApplicationApi {
 
     @Override
     public int hashCode() {
-        return Objects.hash(applicationId, capacity, clusterSpecType, clusterSpecId, serviceType, healthPort);
+        return Objects.hash(application, capacity, clusterSpecType, clusterSpecId, serviceType, healthPort);
     }
 
     @Override
     public String toString() {
         return "InfraApplication{" +
-                "applicationId=" + applicationId +
+                "application=" + application +
                 ", capacity=" + capacity +
                 ", clusterSpecType=" + clusterSpecType +
                 ", clusterSpecId=" + clusterSpecId +

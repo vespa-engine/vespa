@@ -2,7 +2,7 @@
 package com.yahoo.vespa.service.duper;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
@@ -13,7 +13,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 public class ControllerApplication extends ConfigServerLikeApplication {
 
     public ControllerApplication() {
-        super("controller", NodeType.controller, ClusterSpec.Type.container, ServiceType.CONTROLLER);
+        super(InfrastructureApplication.CONTROLLER, ClusterSpec.Type.container, ServiceType.CONTROLLER);
     }
 
 }

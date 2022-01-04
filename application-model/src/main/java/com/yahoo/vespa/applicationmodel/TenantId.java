@@ -2,6 +2,7 @@
 package com.yahoo.vespa.applicationmodel;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.yahoo.config.provision.TenantName;
 
 import java.util.Objects;
 
@@ -26,10 +27,11 @@ public class TenantId {
         return id;
     }
 
-    // For compatibility with original Scala case class
-    public String s() {
+    public String value() {
         return id;
     }
+
+    public TenantName toName() { return TenantName.from(id); }
 
     @Override
     public boolean equals(Object o) {

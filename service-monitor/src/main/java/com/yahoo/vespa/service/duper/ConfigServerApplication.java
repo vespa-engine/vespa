@@ -2,9 +2,9 @@
 package com.yahoo.vespa.service.duper;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
@@ -15,7 +15,7 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 public class ConfigServerApplication extends ConfigServerLikeApplication {
 
     public ConfigServerApplication() {
-        super("zone-config-servers", NodeType.config, ClusterSpec.Type.admin, ServiceType.CONFIG_SERVER);
+        super(InfrastructureApplication.CONFIG_SERVER, ClusterSpec.Type.admin, ServiceType.CONFIG_SERVER);
     }
 
     /**

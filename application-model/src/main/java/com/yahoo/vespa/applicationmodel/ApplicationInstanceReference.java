@@ -39,7 +39,7 @@ public class ApplicationInstanceReference implements Comparable<ApplicationInsta
     }
 
     public String asString() {
-        return tenantId.s() + ":" + applicationInstanceId.s();
+        return tenantId.value() + ":" + applicationInstanceId.value();
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -234,14 +235,13 @@ public class LoadBalancerProvisionerTest {
 
     @Test
     public void provision_load_balancer_config_server_cluster() {
-        ApplicationId configServerApp = ApplicationId.from("hosted-vespa", "zone-config-servers", "default");
-        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers().list(configServerApp).asList();
+        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers().list(InfrastructureApplication.CONFIG_SERVER.id()).asList();
         var cluster = ClusterSpec.Id.from("zone-config-servers");
-        var nodes = prepare(configServerApp, Capacity.fromRequiredNodeType(NodeType.config),
+        var nodes = prepare(InfrastructureApplication.CONFIG_SERVER.id(), Capacity.fromRequiredNodeType(NodeType.config),
                             clusterRequest(ClusterSpec.Type.admin, cluster));
         assertEquals(1, lbs.get().size());
         assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().get().reals().size());
-        tester.activate(configServerApp, nodes);
+        tester.activate(InfrastructureApplication.CONFIG_SERVER.id(), nodes);
         assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
         assertEquals(cluster, lbs.get().get(0).id().cluster());
     }

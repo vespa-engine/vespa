@@ -3,7 +3,7 @@ package com.yahoo.vespa.service.duper;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
@@ -12,8 +12,8 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
  * @author hakonhall
  */
 public abstract class ConfigServerLikeApplication extends InfraApplication {
-    protected ConfigServerLikeApplication(String applicationName, NodeType nodeType, ClusterSpec.Type clusterType, ServiceType serviceType) {
-        super(applicationName, nodeType, clusterType, ClusterSpec.Id.from(applicationName), serviceType, 19071);
+    protected ConfigServerLikeApplication(InfrastructureApplication application, ClusterSpec.Type clusterType, ServiceType serviceType) {
+        super(application, clusterType, ClusterSpec.Id.from(application.applicationName()), serviceType, 19071);
     }
 
     @Override
