@@ -43,7 +43,7 @@ public class UserConfigBuilder {
             logger.logApplicationPackage(Level.WARNING, "Unable to find config definition '" + key.asFileName() +
                                          "'. Please ensure that the name is spelled correctly, and that the def file is included in a bundle.");
         }
-        ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null)).build(element);
+        ConfigPayloadBuilder payloadBuilder = new DomConfigPayloadBuilder(def.orElse(null), logger).build(element);
         ConfigPayloadBuilder old = builderMap.get(key);
         if (old != null) {
             logger.logApplicationPackage(Level.WARNING, "Multiple overrides for " + key + " found. Applying in the order they are discovered");

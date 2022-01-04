@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.config.ConfigurationRuntimeException;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
@@ -13,6 +14,8 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import org.w3c.dom.Element;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,9 +34,11 @@ public class DomConfigPayloadBuilder {
 
     /** The config definition, not null if not found */
     private final ConfigDefinition configDefinition;
+    private final Optional<DeployLogger> logger;
 
-    public DomConfigPayloadBuilder(ConfigDefinition configDefinition) {
+    public DomConfigPayloadBuilder(ConfigDefinition configDefinition, DeployLogger logger) {
         this.configDefinition = configDefinition;
+        this.logger = Optional.ofNullable(logger);
     }
 
     /**
@@ -218,6 +223,9 @@ public class DomConfigPayloadBuilder {
     }
 
     private void verifyLegalOperation(Element currElem) {
+        logger.ifPresent(log -> log.logApplicationPackage(
+                Level.WARNING, "The 'operation' attribute is deprecated for removal in Vespa 8. Use 'item' instead."));
+
         String operation = currElem.getAttribute("operation");
         if (! operation.equalsIgnoreCase("append"))
             throw new ConfigurationRuntimeException("The only supported array operation is 'append', got '"
