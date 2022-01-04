@@ -27,11 +27,12 @@ public interface FeedClientBuilder {
 
     /** Creates a builder for multiple container endpoints **/
     static FeedClientBuilder create(List<URI> endpoints) {
-        return Helper.getFeedClientBuilder().setEndpointUris(endpoints);
+        return Helper.getFeedClientBuilderSupplier().get().setEndpointUris(endpoints);
     }
 
+    /** Override FeedClientBuilder. This will be preferred in {@link #create} */
     static void setFeedClientBuilderSupplier(Supplier<FeedClientBuilder> supplier) {
-        Helper.setFeedClientBuilderReference(supplier);
+        Helper.setFeedClientBuilderSupplier(supplier);
     }
     /**
      * Sets the number of connections this client will use per endpoint.

@@ -21,38 +21,38 @@ import static ai.vespa.feed.client.FeedClientBuilder.PREFERRED_IMPLEMENTATION_PR
  */
 class Helper {
 
-    static final AtomicReference<Supplier<FeedClientBuilder>> feedClientBuilderSupplier = new AtomicReference<>();
+    private static final AtomicReference<Supplier<FeedClientBuilder>> feedClientBuilderSupplier = new AtomicReference<>(Helper::getFeedClientBuilder);
 
-    static final void setFeedClientBuilderReference(Supplier<FeedClientBuilder> supplier) {
+    static final void setFeedClientBuilderSupplier(Supplier<FeedClientBuilder> supplier) {
         feedClientBuilderSupplier.set(supplier);
     }
 
+    static Supplier<FeedClientBuilder> getFeedClientBuilderSupplier() {
+        return feedClientBuilderSupplier.get();
+    }
+
     static FeedClientBuilder getFeedClientBuilder() {
-        if (Helper.feedClientBuilderSupplier.get()!=null) {
-            return Helper.feedClientBuilderSupplier.get().get();
+        String defaultImplementation = "ai.vespa.feed.client.impl.FeedClientBuilderImpl";
+        String preferredImplementation = System.getProperty(PREFERRED_IMPLEMENTATION_PROPERTY, defaultImplementation);
+        Iterator<FeedClientBuilder> iterator = ServiceLoader.load(FeedClientBuilder.class).iterator();
+        if (iterator.hasNext()) {
+            List<FeedClientBuilder> builders = new ArrayList<>();
+            iterator.forEachRemaining(builders::add);
+            return builders.stream()
+                    .filter(builder -> preferredImplementation.equals(builder.getClass().getName()))
+                    .findFirst()
+                    .orElse(builders.get(0));
         } else {
-            String defaultImplementation = "ai.vespa.feed.client.impl.FeedClientBuilderImpl";
-            String preferredImplementation = System.getProperty(PREFERRED_IMPLEMENTATION_PROPERTY, defaultImplementation);
-            Iterator<FeedClientBuilder> iterator = ServiceLoader.load(FeedClientBuilder.class).iterator();
-            if (iterator.hasNext()) {
-                List<FeedClientBuilder> builders = new ArrayList<>();
-                iterator.forEachRemaining(builders::add);
-                return builders.stream()
-                        .filter(builder -> preferredImplementation.equals(builder.getClass().getName()))
-                        .findFirst()
-                        .orElse(builders.get(0));
-            } else {
-                try {
-                    Class<?> aClass = Class.forName(preferredImplementation);
-                    for (Constructor<?> constructor : aClass.getConstructors()) {
-                        if (constructor.getParameterTypes().length == 0) {
-                            return ((FeedClientBuilder) constructor.newInstance());
-                        }
+            try {
+                Class<?> aClass = Class.forName(preferredImplementation);
+                for (Constructor<?> constructor : aClass.getConstructors()) {
+                    if (constructor.getParameterTypes().length == 0) {
+                        return ((FeedClientBuilder) constructor.newInstance());
                     }
-                    throw new RuntimeException("Could not find Feed client builder implementation");
-                } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
                 }
+                throw new RuntimeException("Could not find Feed client builder implementation");
+            } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
         }
     }
