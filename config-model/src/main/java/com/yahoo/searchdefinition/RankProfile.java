@@ -517,7 +517,7 @@ public class RankProfile implements Cloneable {
     public void setInheritedSummaryFeatures(String parentProfile) {
         if ( ! parentProfile.equals(inheritedName))
             throw new IllegalArgumentException("This can only inherit the summary features of its parent, '" +
-                                               inheritedName + ", but attemtping to inherit '" + parentProfile);
+                                               inheritedName + ", but attempting to inherit '" + parentProfile);
         this.inheritedSummaryFeatures = parentProfile;
     }
 
