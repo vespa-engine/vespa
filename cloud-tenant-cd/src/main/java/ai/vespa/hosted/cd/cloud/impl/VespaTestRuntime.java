@@ -43,7 +43,7 @@ public class VespaTestRuntime implements TestRuntime {
         DefaultEndpointAuthenticator authenticator = new DefaultEndpointAuthenticator(config.system());
         this.deploymentToTest = new HttpDeployment(config.deployments().get(config.zone()), authenticator);
         FeedClientBuilder.setEndpointAuthenticator(authenticator);
-        System.setProperty(ai.vespa.feed.client.FeedClientBuilder.PREFERRED_IMPLEMENTATION_PROPERTY, FeedClientBuilder.class.getName());
+        ai.vespa.feed.client.FeedClientBuilder.setFeedClientBuilderSupplier(FeedClientBuilder::new);
     }
 
     @Override
