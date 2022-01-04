@@ -2,45 +2,68 @@
 package com.yahoo.config.provision.zone;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
- * This class declares the order to use when upgrading zones in a system.
+ * This class declares the steps (zones) to follow when upgrading a system. If a step contains multiple zones, those
+ * will be upgraded in parallel.
  *
  * @author mpolden
  */
 public class UpgradePolicy {
 
-    private final List<List<ZoneApi>> zones;
+    private final List<Set<ZoneApi>> steps;
 
-    private UpgradePolicy(List<List<ZoneApi>> zones) {
-        this.zones = zones;
+    private UpgradePolicy(List<Set<ZoneApi>> steps) {
+        for (int i = 0; i < steps.size(); i++) {
+            for (int j = 0; j < i; j++) {
+                if (!Collections.disjoint(steps.get(i), steps.get(j))) {
+                    throw new IllegalArgumentException("One or more zones are declared in multiple steps");
+                }
+            }
+        }
+        this.steps = List.copyOf(steps);
     }
 
-    public List<List<ZoneApi>> asList() {
-        return List.copyOf(zones);
+    /** Returns the steps in this */
+    public List<Set<ZoneApi>> steps() {
+        return steps;
     }
 
-    private UpgradePolicy with(ZoneApi... zone) {
-        List<List<ZoneApi>> zones = new ArrayList<>(this.zones);
-        zones.add(Arrays.asList(zone));
-        return new UpgradePolicy(zones);
+    /** Returns a copy of this with the step order inverted */
+    public UpgradePolicy inverted() {
+        List<Set<ZoneApi>> copy = new ArrayList<>(steps);
+        Collections.reverse(copy);
+        return new UpgradePolicy(copy);
     }
 
-    /** Upgrade given zone as the next step */
-    public UpgradePolicy upgrade(ZoneApi zone) {
-        return with(zone);
+    public static UpgradePolicy.Builder builder() {
+        return new UpgradePolicy.Builder();
     }
 
-    /** Upgrade given zones in parallel as the next step */
-    public UpgradePolicy upgradeInParallel(ZoneApi... zone) {
-        return with(zone);
-    }
+    public static class Builder {
 
-    public static UpgradePolicy create() {
-        return new UpgradePolicy(Collections.emptyList());
+        private final List<Set<ZoneApi>> steps = new ArrayList<>();
+
+        private Builder() {}
+
+        /** Upgrade given zone as the next step */
+        public Builder upgrade(ZoneApi zone) {
+            return upgradeInParallel(zone);
+        }
+
+        /** Upgrade given zones in parallel as the next step */
+        public Builder upgradeInParallel(ZoneApi... zone) {
+            this.steps.add(Set.of(zone));
+            return this;
+        }
+
+        public UpgradePolicy build() {
+            return new UpgradePolicy(steps);
+        }
+
     }
 
 }

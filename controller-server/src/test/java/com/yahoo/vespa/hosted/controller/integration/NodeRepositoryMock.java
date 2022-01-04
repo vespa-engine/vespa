@@ -125,10 +125,16 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void upgrade(ZoneId zone, NodeType type, Version version) {
+    public void upgrade(ZoneId zone, NodeType type, Version version, boolean allowDowngrade) {
         this.targetVersions.compute(zone, (ignored, targetVersions) -> {
             if (targetVersions == null) {
                 targetVersions = TargetVersions.EMPTY;
+            }
+            Optional<Version> current = targetVersions.vespaVersion(type);
+            if (current.isPresent() && version.isBefore(current.get()) && !allowDowngrade) {
+                throw new IllegalArgumentException("Changing wanted version for " + type + " in " + zone + " from " +
+                                                   current.get() + " to " + version +
+                                                   ", but downgrade is not allowed");
             }
             return targetVersions.withVespaVersion(type, version);
         });

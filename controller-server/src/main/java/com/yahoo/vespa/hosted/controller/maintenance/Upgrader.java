@@ -174,6 +174,11 @@ public class Upgrader extends ControllerMaintainer {
 
     /** Override confidence for given version. This will cause the computed confidence to be ignored */
     public void overrideConfidence(Version version, Confidence confidence) {
+        if (confidence == Confidence.aborted && !version.isAfter(controller().readSystemVersion())) {
+            throw new IllegalArgumentException("Cannot override confidence to " + confidence +
+                                               " for version " + version.toFullString() +
+                                               ": Version may be in use by applications");
+        }
         try (Lock lock = curator.lockConfidenceOverrides()) {
             Map<Version, Confidence> overrides = new LinkedHashMap<>(curator.readConfidenceOverrides());
             overrides.put(version, confidence);

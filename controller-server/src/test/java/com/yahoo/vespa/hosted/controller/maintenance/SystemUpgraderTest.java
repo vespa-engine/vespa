@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mpolden
@@ -37,10 +38,11 @@ public class SystemUpgraderTest {
     @Test
     public void upgrade_system() {
         SystemUpgrader systemUpgrader = systemUpgrader(
-                UpgradePolicy.create()
+                UpgradePolicy.builder()
                              .upgrade(zone1)
                              .upgradeInParallel(zone2, zone3)
                              .upgrade(zone4)
+                             .build()
         );
 
         Version version1 = Version.fromString("6.5");
@@ -137,7 +139,7 @@ public class SystemUpgraderTest {
 
     @Test
     public void upgrade_controller_with_non_converging_application() {
-        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
+        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.builder().upgrade(zone1).build());
 
         // Bootstrap system
         tester.configServer().bootstrap(List.of(zone1.getId()), SystemApplication.configServer,
@@ -173,10 +175,11 @@ public class SystemUpgraderTest {
     @Test
     public void upgrade_system_containing_host_applications() {
         SystemUpgrader systemUpgrader = systemUpgrader(
-                UpgradePolicy.create()
+                UpgradePolicy.builder()
                              .upgrade(zone1)
                              .upgradeInParallel(zone2, zone3)
                              .upgrade(zone4)
+                             .build()
         );
 
         Version version1 = Version.fromString("6.5");
@@ -223,7 +226,7 @@ public class SystemUpgraderTest {
 
     @Test
     public void downgrading_controller_never_downgrades_system() {
-        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
+        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.builder().upgrade(zone1).build());
 
         Version version = Version.fromString("6.5");
         tester.upgradeSystem(version);
@@ -242,7 +245,7 @@ public class SystemUpgraderTest {
 
     @Test
     public void upgrade_halts_on_broken_version() {
-        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1).upgrade(zone2));
+        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.builder().upgrade(zone1).upgrade(zone2).build());
 
         // Initial system version
         Version version1 = Version.fromString("6.5");
@@ -267,9 +270,7 @@ public class SystemUpgraderTest {
         convergeServices(SystemApplication.proxy, zone1);
 
         // Confidence is reduced to broken and next zone is not scheduled for upgrade
-        new Upgrader(tester.controller(), Duration.ofDays(1))
-                .overrideConfidence(version2, VespaVersion.Confidence.broken);
-        tester.computeVersionStatus();
+        overrideConfidence(version2, VespaVersion.Confidence.broken);
         systemUpgrader.maintain();
         assertWantedVersion(List.of(SystemApplication.configServerHost, SystemApplication.proxyHost,
                                     SystemApplication.configServer, SystemApplication.proxy), version1, zone2);
@@ -282,7 +283,7 @@ public class SystemUpgraderTest {
         tester.configServer().bootstrap(List.of(zone1.getId()), applications);
         tester.configServer().disallowConvergenceCheck(SystemApplication.proxy.id());
         tester.zoneRegistry().exclusiveRoutingIn(zone1);
-        var systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
+        var systemUpgrader = systemUpgrader(UpgradePolicy.builder().upgrade(zone1).build());
 
         // System begins upgrade
         var version1 = Version.fromString("6.5");
@@ -297,6 +298,75 @@ public class SystemUpgraderTest {
         assertWantedVersion(SystemApplication.proxy, Version.emptyVersion, zone1);
         tester.computeVersionStatus();
         assertEquals(version1, tester.controller().readSystemVersion());
+    }
+
+    @Test
+    public void downgrade_from_aborted_version() {
+        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.builder().upgrade(zone1).upgrade(zone2).upgrade(zone3).build());
+
+        Version version1 = Version.fromString("6.5");
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId()), SystemApplication.notController());
+        tester.upgradeSystem(version1);
+        systemUpgrader.maintain();
+        assertCurrentVersion(SystemApplication.notController(), version1, zone1, zone2, zone3);
+
+        // Controller upgrades
+        Version version2 = Version.fromString("6.6");
+        tester.upgradeController(version2);
+        assertControllerVersion(version2);
+
+        // 2/3 zones upgrade
+        for (var zone : List.of(zone1, zone2)) {
+            systemUpgrader.maintain();
+            completeUpgrade(List.of(SystemApplication.tenantHost,
+                                    SystemApplication.proxyHost,
+                                    SystemApplication.configServerHost),
+                            version2, zone);
+            completeUpgrade(SystemApplication.configServer, version2, zone);
+            systemUpgrader.maintain();
+            completeUpgrade(SystemApplication.proxy, version2, zone);
+            convergeServices(SystemApplication.proxy, zone);
+        }
+
+        // Upgrade is aborted
+        overrideConfidence(version2, VespaVersion.Confidence.aborted);
+
+        // Dependency graph is inverted and applications without dependencies downgrade first. Upgrade policy is
+        // also followed in inverted order
+        for (var zone : List.of(zone2, zone1)) {
+            systemUpgrader.maintain();
+            completeUpgrade(List.of(SystemApplication.tenantHost,
+                                    SystemApplication.configServerHost,
+                                    SystemApplication.proxy),
+                            version1, zone);
+            convergeServices(SystemApplication.proxy, zone);
+            List<SystemApplication> lastToDowngrade = List.of(SystemApplication.configServer,
+                                                              SystemApplication.proxyHost);
+            assertWantedVersion(lastToDowngrade, version2, zone);
+
+            // ... and then configserver and proxyhost
+            systemUpgrader.maintain();
+            completeUpgrade(lastToDowngrade, version1, zone);
+        }
+        assertSystemVersion(version1);
+
+        // Another version is released and system upgrades
+        Version version3 = Version.fromString("6.7");
+        tester.upgradeSystem(version3);
+        assertEquals(version3, tester.controller().readSystemVersion());
+
+        // Attempt to abort current system version is rejected
+        try {
+            overrideConfidence(version3, VespaVersion.Confidence.aborted);
+            fail("Expected exception");
+        } catch (IllegalArgumentException ignored) {}
+        systemUpgrader.maintain();
+        assertWantedVersion(SystemApplication.notController(), version3, zone1, zone2, zone3);
+    }
+
+    private void overrideConfidence(Version version, VespaVersion.Confidence confidence) {
+        new Upgrader(tester.controller(), Duration.ofDays(1)).overrideConfidence(version, confidence);
+        tester.computeVersionStatus();
     }
 
     /** Simulate upgrade of nodes allocated to given application. In a real system this is done by the node itself */

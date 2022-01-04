@@ -251,7 +251,7 @@ public final class ControllerTester {
         for (ZoneApi zone : zoneRegistry().zones().all().zones()) {
             for (SystemApplication application : systemApplications) {
                 if (!application.hasApplicationPackage()) {
-                    configServer().nodeRepository().upgrade(zone.getId(), application.nodeType(), version);
+                    configServer().nodeRepository().upgrade(zone.getId(), application.nodeType(), version, false);
                 }
                 configServer().setVersion(version, application.id(), zone.getId());
                 configServer().convergeServices(application.id(), zone.getId());

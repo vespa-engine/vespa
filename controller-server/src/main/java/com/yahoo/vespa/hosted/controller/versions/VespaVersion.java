@@ -130,6 +130,9 @@ public class VespaVersion implements Comparable<VespaVersion> {
     /** The confidence of a version. */
     public enum Confidence {
 
+        /** Rollout was aborted. The system infrastructure should stay on, or roll back to, its current version */
+        aborted,
+
         /** This version has been proven defective */
         broken,
         

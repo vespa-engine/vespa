@@ -55,7 +55,7 @@ public interface NodeRepository {
     void removeArchiveUri(ZoneId zone, TenantName tenantName);
 
     /** Upgrade all nodes of given type to a new version */
-    void upgrade(ZoneId zone, NodeType type, Version version);
+    void upgrade(ZoneId zone, NodeType type, Version version, boolean allowDowngrade);
 
     /** Upgrade OS for all nodes of given type to a new version */
     void upgradeOs(ZoneId zone, NodeType type, Version version, Duration upgradeBudget);

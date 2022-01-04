@@ -66,7 +66,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     }
 
     @Override
-    protected Optional<OsVersionTarget> targetVersion() {
+    protected Optional<OsVersionTarget> target() {
         // Return target if we have nodes in this cloud on a lower version
         return controller().osVersionTarget(cloud)
                            .filter(target -> controller().osVersionStatus().nodesIn(cloud).stream()
@@ -90,7 +90,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     /** Returns the available upgrade budget for given zone */
     private Duration zoneBudgetOf(Duration totalBudget, ZoneApi zone) {
         if (!spendBudgetOn(zone)) return Duration.ZERO;
-        long consecutiveZones = upgradePolicy.asList().stream()
+        long consecutiveZones = upgradePolicy.steps().stream()
                                              .filter(parallelZones -> parallelZones.stream().anyMatch(this::spendBudgetOn))
                                              .count();
         return totalBudget.dividedBy(consecutiveZones);

@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.log.LogLevel;
@@ -54,7 +53,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
 
     @Inject
     public EndpointCertificateMaintainer(Controller controller, Duration interval) {
-        super(controller, interval, null, SystemName.all());
+        super(controller, interval);
         this.deploymentTrigger = controller.applications().deploymentTrigger();
         this.clock = controller.clock();
         this.secretStore = controller.secretStore();

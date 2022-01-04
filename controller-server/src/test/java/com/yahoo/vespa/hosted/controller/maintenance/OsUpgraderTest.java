@@ -42,12 +42,13 @@ public class OsUpgraderTest {
         ZoneApi zone3 = zone("prod.us-central-1", cloud1);
         ZoneApi zone4 = zone("prod.us-east-3", cloud1);
         ZoneApi zone5 = zone("prod.us-north-1", cloud2);
-        UpgradePolicy upgradePolicy = UpgradePolicy.create()
+        UpgradePolicy upgradePolicy = UpgradePolicy.builder()
                                                    .upgrade(zone0)
                                                    .upgrade(zone1)
                                                    .upgradeInParallel(zone2, zone3)
                                                    .upgrade(zone5) // Belongs to a different cloud and is ignored by this upgrader
-                                                   .upgrade(zone4);
+                                                   .upgrade(zone4)
+                                                   .build();
         OsUpgrader osUpgrader = osUpgrader(upgradePolicy, cloud1, false);
 
         // Bootstrap system
@@ -125,11 +126,12 @@ public class OsUpgraderTest {
         ZoneApi zone2 = zone("prod.us-west-1", cloud);
         ZoneApi zone3 = zone("prod.us-central-1", cloud);
         ZoneApi zone4 = zone("prod.eu-west-1", cloud);
-        UpgradePolicy upgradePolicy = UpgradePolicy.create()
+        UpgradePolicy upgradePolicy = UpgradePolicy.builder()
                                                    .upgrade(zone0)
                                                    .upgrade(zone1)
                                                    .upgradeInParallel(zone2, zone3)
-                                                   .upgrade(zone4);
+                                                   .upgrade(zone4)
+                                                   .build();
         OsUpgrader osUpgrader = osUpgrader(upgradePolicy, cloud, true);
 
         // Bootstrap system
@@ -189,9 +191,10 @@ public class OsUpgraderTest {
         CloudName cloud = CloudName.from("cloud");
         ZoneApi zone1 = zone("dev.us-east-1", cloud);
         ZoneApi zone2 = zone("prod.us-west-1", cloud);
-        UpgradePolicy upgradePolicy = UpgradePolicy.create()
+        UpgradePolicy upgradePolicy = UpgradePolicy.builder()
                                                    .upgrade(zone1)
-                                                   .upgrade(zone2);
+                                                   .upgrade(zone2)
+                                                   .build();
         OsUpgrader osUpgrader = osUpgrader(upgradePolicy, cloud, false);
 
         // Bootstrap system
@@ -299,7 +302,7 @@ public class OsUpgraderTest {
     }
 
     private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, CloudName cloud, boolean reprovisionToUpgradeOs) {
-        var zones = upgradePolicy.asList().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        var zones = upgradePolicy.steps().stream().flatMap(Collection::stream).collect(Collectors.toList());
         tester.zoneRegistry()
               .setZones(zones)
               .setOsUpgradePolicy(cloud, upgradePolicy);

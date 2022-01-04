@@ -449,12 +449,12 @@ public class ApplicationController {
     }
 
     /** Deploy a system application to given zone */
-    public void deploy(SystemApplication application, ZoneId zone, Version version) {
+    public void deploy(SystemApplication application, ZoneId zone, Version version, boolean allowDowngrade) {
         if (application.hasApplicationPackage()) {
             deploySystemApplicationPackage(application, zone, version);
         } else {
             // Deploy by calling node repository directly
-            configServer.nodeRepository().upgrade(zone, application.nodeType(), version);
+            configServer.nodeRepository().upgrade(zone, application.nodeType(), version, allowDowngrade);
         }
     }
 

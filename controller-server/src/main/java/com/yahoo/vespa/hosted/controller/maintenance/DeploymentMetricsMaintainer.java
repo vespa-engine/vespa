@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -40,7 +39,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
     private final ApplicationController applications;
 
     public DeploymentMetricsMaintainer(Controller controller, Duration duration) {
-        super(controller, duration, DeploymentMetricsMaintainer.class.getSimpleName(), SystemName.all());
+        super(controller, duration);
         this.applications = controller.applications();
     }
 
