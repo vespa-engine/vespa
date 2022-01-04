@@ -35,6 +35,7 @@ import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
+import com.yahoo.vespa.config.server.modelfactory.LegacyFlags;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -195,7 +196,7 @@ public class SessionPreparer {
                                                               Set.copyOf(containerEndpoints),
                                                               params.isBootstrap(),
                                                               currentActiveApplicationSet.isEmpty(),
-                                                              flagSource,
+                                                              LegacyFlags.from(applicationPackage, flagSource),
                                                               endpointCertificateSecrets,
                                                               athenzDomain,
                                                               params.quota(),

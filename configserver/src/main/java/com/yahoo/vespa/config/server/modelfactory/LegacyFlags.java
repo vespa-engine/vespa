@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class LegacyFlags {
 
-    public static final String GEO_POSITIONS = "geo-positions";
+    public static final String GEO_POSITIONS = "v7-geo-positions";
     public static final String FOO_BAR = "foo-bar"; // for testing
 
     private static FlagSource buildFrom(Map<String, String> legacyOverrides) {
