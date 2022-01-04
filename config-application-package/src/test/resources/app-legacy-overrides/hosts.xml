@@ -1,0 +1,10 @@
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<hosts xmlns:deploy="vespa" xmlns:preprocess="properties">
+    <preprocess:properties>
+        <node1.hostname>foo.yahoo.com</node1.hostname>
+        <node1.hostname deploy:environment="dev">bar.yahoo.com</node1.hostname>
+    </preprocess:properties>
+    <host name="${node1.hostname}">
+        <alias>node1</alias>
+    </host>
+</hosts>

@@ -18,6 +18,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -72,7 +73,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author Vegard Havdal
  */
-public class FilesApplicationPackage implements ApplicationPackage {
+public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     /**
      * The name of the subdirectory (below the original application package root)
