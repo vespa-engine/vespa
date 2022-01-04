@@ -127,6 +127,7 @@
       "public void writeMetaData()",
       "public java.util.Optional getAllocatedHosts()",
       "public java.util.Map getFileRegistries()",
+      "public java.util.Map legacyOverrides()",
       "public java.util.Collection getSearchDefinitions()",
       "public abstract java.util.Collection getSchemas()",
       "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.Zone, com.yahoo.config.application.api.DeployLogger)"
