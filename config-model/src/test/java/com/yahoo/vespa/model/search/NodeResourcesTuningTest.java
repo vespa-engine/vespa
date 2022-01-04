@@ -125,10 +125,10 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_flush_strategy_memory_limits_are_set_based_on_available_memory() {
-        assertFlushStrategyMemory(512 * MB, 4);
-        assertFlushStrategyMemory(1 * GB, 8);
-        assertFlushStrategyMemory(3 * GB, 24);
-        assertFlushStrategyMemory(8 * GB, 64);
+        assertFlushStrategyMemory((long)(4 * GB * 0.10), 4);
+        assertFlushStrategyMemory((long)(8 * GB * 0.10), 8);
+        assertFlushStrategyMemory((long)(24 * GB * 0.10), 24);
+        assertFlushStrategyMemory((long)(64 * GB * 0.10), 64);
     }
 
     @Test
