@@ -123,6 +123,7 @@
     "methods": [
       "public static ai.vespa.feed.client.FeedClientBuilder create(java.net.URI)",
       "public static ai.vespa.feed.client.FeedClientBuilder create(java.util.List)",
+      "public static void setFeedClientBuilderSupplier(java.util.function.Supplier)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setConnectionsPerEndpoint(int)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setMaxStreamPerConnection(int)",
       "public abstract ai.vespa.feed.client.FeedClientBuilder setSslContext(javax.net.ssl.SSLContext)",

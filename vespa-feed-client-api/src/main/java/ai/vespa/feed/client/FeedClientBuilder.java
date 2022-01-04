@@ -3,18 +3,13 @@ package ai.vespa.feed.client;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
 /**
@@ -32,31 +27,13 @@ public interface FeedClientBuilder {
 
     /** Creates a builder for multiple container endpoints **/
     static FeedClientBuilder create(List<URI> endpoints) {
-        String defaultImplementation = "ai.vespa.feed.client.impl.FeedClientBuilderImpl";
-        String preferredImplementation = System.getProperty(PREFERRED_IMPLEMENTATION_PROPERTY, defaultImplementation);
-        Iterator<FeedClientBuilder> iterator = ServiceLoader.load(FeedClientBuilder.class).iterator();
-        if (iterator.hasNext()) {
-            List<FeedClientBuilder> builders = new ArrayList<>();
-            iterator.forEachRemaining(builders::add);
-            return builders.stream()
-                    .filter(builder -> preferredImplementation.equals(builder.getClass().getName()))
-                    .findFirst()
-                    .orElse(builders.get(0));
-        } else {
-            try {
-                Class<?> aClass = Class.forName(preferredImplementation);
-                for (Constructor<?> constructor : aClass.getConstructors()) {
-                    if (constructor.getParameterTypes().length==0) {
-                        return ((FeedClientBuilder)constructor.newInstance()).setEndpointUris(endpoints);
-                    }
-                }
-                throw new RuntimeException("Could not find Feed client builder implementation");
-            } catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        return Helper.getFeedClientBuilderSupplier().get().setEndpointUris(endpoints);
     }
 
+    /** Override FeedClientBuilder. This will be preferred in {@link #create} */
+    static void setFeedClientBuilderSupplier(Supplier<FeedClientBuilder> supplier) {
+        Helper.setFeedClientBuilderSupplier(supplier);
+    }
     /**
      * Sets the number of connections this client will use per endpoint.
      *
