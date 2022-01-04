@@ -113,14 +113,14 @@ public class NodeResourcesTuningTest {
         assertDocumentStoreMaxFileSize(256 * MB, 6);
         assertDocumentStoreMaxFileSize(256 * MB, 8);
         assertDocumentStoreMaxFileSize(256 * MB, 12);
-        assertDocumentStoreMaxFileSize(512 * MB, 16);
-        assertDocumentStoreMaxFileSize(1 * GB, 24);
-        assertDocumentStoreMaxFileSize(1 * GB, 32);
-        assertDocumentStoreMaxFileSize(1 * GB, 48);
-        assertDocumentStoreMaxFileSize(1 * GB, 64);
-        assertDocumentStoreMaxFileSize(4 * GB, 128);
-        assertDocumentStoreMaxFileSize(4 * GB, 256);
-        assertDocumentStoreMaxFileSize(4 * GB, 512);
+        assertDocumentStoreMaxFileSize((long)(16*GB*0.02), 16);
+        assertDocumentStoreMaxFileSize((long)(24*GB*0.02), 24);
+        assertDocumentStoreMaxFileSize((long)(32*GB*0.02), 32);
+        assertDocumentStoreMaxFileSize((long)(48*GB*0.02), 48);
+        assertDocumentStoreMaxFileSize((long)(64*GB*0.02), 64);
+        assertDocumentStoreMaxFileSize((long)(128*GB*0.02), 128);
+        assertDocumentStoreMaxFileSize((long)(256*GB*0.02), 256);
+        assertDocumentStoreMaxFileSize((long)(512*GB*0.02), 512);
     }
 
     @Test
