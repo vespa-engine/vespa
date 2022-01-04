@@ -361,7 +361,7 @@ public class DeploymentSpecXmlReader {
      */
     private long longAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
-        if (value == null || value.isEmpty()) return 0;
+        if (value.isEmpty()) return 0;
         try {
             return Long.parseLong(value);
         }
@@ -376,7 +376,7 @@ public class DeploymentSpecXmlReader {
      */
     private Optional<Integer> optionalIntegerAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
-        if (value == null || value.isEmpty()) return Optional.empty();
+        if (value.isEmpty()) return Optional.empty();
         try {
             return Optional.of(Integer.parseInt(value));
         }
@@ -389,7 +389,7 @@ public class DeploymentSpecXmlReader {
     /** Returns the given non-blank attribute of tag as a string, if any */
     private static Optional<String> stringAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
-        return Optional.ofNullable(value).filter(s -> !s.isBlank());
+        return Optional.of(value).filter(s -> !s.isBlank());
     }
 
     /** Returns the given non-blank attribute of tag or throw */
@@ -407,7 +407,7 @@ public class DeploymentSpecXmlReader {
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
         String globalServiceId = environmentTag.getAttribute("global-service-id");
-        if (globalServiceId == null || globalServiceId.isEmpty()) return Optional.empty();
+        if (globalServiceId.isEmpty()) return Optional.empty();
         deprecate(environmentTag, List.of("global-service-id"), "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
         return Optional.of(globalServiceId);
     }
