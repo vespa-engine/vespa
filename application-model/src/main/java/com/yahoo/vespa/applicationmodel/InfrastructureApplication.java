@@ -4,6 +4,8 @@ package com.yahoo.vespa.applicationmodel;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -23,6 +25,13 @@ public enum InfrastructureApplication {
 
     private final ApplicationId id;
     private final NodeType nodeType;
+
+    /** Returns all applications that MAY be encountered in hosted Vespa, e.g. not DEV_HOST. */
+    public static List<InfrastructureApplication> inHosted() {
+        return Stream.of(values())
+                     .filter(application -> application != DEV_HOST)
+                     .collect(Collectors.toList());
+    }
 
     public static InfrastructureApplication withNodeType(NodeType nodeType) {
         return Stream.of(values())
