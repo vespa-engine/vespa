@@ -65,6 +65,8 @@ Packet::Packet(const void * buf, size_t sz) :
     }
 }
 
+Packet::~Packet() = default;
+
 void
 Packet::merge(const Packet & packet)
 {

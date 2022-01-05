@@ -17,10 +17,9 @@ class Domain : public Writer
 {
 public:
     using SP = std::shared_ptr<Domain>;
-    using Executor = vespalib::SyncableThreadExecutor;
     using DomainPartSP = std::shared_ptr<DomainPart>;
     using FileHeaderContext = common::FileHeaderContext;
-    Domain(const vespalib::string &name, const vespalib::string &baseDir, Executor & executor,
+    Domain(const vespalib::string &name, const vespalib::string &baseDir, vespalib::Executor & executor,
            const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext);
 
     ~Domain() override;
@@ -85,8 +84,8 @@ private:
     DomainConfig                 _config;
     std::unique_ptr<CommitChunk> _currentChunk;
     SerialNum                    _lastSerial;
-    std::unique_ptr<Executor>    _singleCommitter;
-    Executor                    &_executor;
+    std::unique_ptr<vespalib::SyncableThreadExecutor> _singleCommitter;
+    vespalib::Executor          &_executor;
     std::atomic<int>             _sessionId;
     std::mutex                   _syncMonitor;
     std::condition_variable      _syncCond;

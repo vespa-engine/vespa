@@ -15,7 +15,6 @@
 #include "shared_threading_service.h"
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
-#include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
@@ -29,11 +28,12 @@
 #include <mutex>
 #include <shared_mutex>
 
-namespace vespalib {
-    class StateServer;
-}
+namespace vespalib { class StateServer; }
 namespace search::transactionlog { class TransLogServerApp; }
-namespace metrics { class MetricLockGuard; }
+namespace metrics {
+    class MetricLockGuard;
+    class MetricManager;
+}
 namespace storage::spi { struct PersistenceProvider; }
 
 namespace proton {
@@ -46,6 +46,7 @@ class SummaryEngine;
 class FlushEngine;
 class MatchEngine;
 class PersistenceEngine;
+class MetricsEngine;
 
 class Proton : public IProtonConfigurerOwner,
                public search::engine::MonitorServer,
@@ -179,7 +180,7 @@ public:
     addDocumentDB(const document::DocumentType &docType, BucketSpace bucketSpace, const BootstrapConfig::SP &configSnapshot,
                   const std::shared_ptr<DocumentDBConfig> &documentDBConfig, InitializeThreads initializeThreads);
 
-    metrics::MetricManager & getMetricManager() { return _metricsEngine->getManager(); }
+    metrics::MetricManager & getMetricManager();
     FastOS_ThreadPool & getThreadPool() { return _threadPool; }
 
     bool triggerFlush();

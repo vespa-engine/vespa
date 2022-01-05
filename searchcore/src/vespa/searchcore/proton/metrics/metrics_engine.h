@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "content_proton_metrics.h"
 #include "metricswireservice.h"
 #include <vespa/metrics/state_api_adapter.h>
 
@@ -18,11 +17,12 @@ namespace proton {
 
 class AttributeMetrics;
 struct DocumentDBTaggedMetrics;
+struct ContentProtonMetrics;
 
 class MetricsEngine : public MetricsWireService
 {
 private:
-    ContentProtonMetrics                      _root;
+    std::unique_ptr<ContentProtonMetrics>     _root;
     std::unique_ptr<metrics::MetricManager>   _manager;
     metrics::StateApiAdapter                  _metrics_producer;
 
@@ -30,8 +30,8 @@ public:
     typedef std::unique_ptr<MetricsEngine> UP;
 
     MetricsEngine();
-    virtual ~MetricsEngine();
-    ContentProtonMetrics &root() { return _root; }
+    ~MetricsEngine() override;
+    ContentProtonMetrics &root() { return *_root; }
     void start(const config::ConfigUri & configUri);
     void addMetricsHook(metrics::UpdateHook &hook);
     void removeMetricsHook(metrics::UpdateHook &hook);

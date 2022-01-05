@@ -26,6 +26,8 @@
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
+#include <vespa/searchcore/proton/metrics/metrics_engine.h>
+#include <vespa/searchcore/proton/metrics/content_proton_metrics.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
@@ -964,6 +966,11 @@ storage::spi::PersistenceProvider &
 Proton::getPersistence()
 {
     return *_persistenceEngine;
+}
+
+metrics::MetricManager &
+Proton::getMetricManager() {
+    return _metricsEngine->getManager();
 }
 
 } // namespace proton

@@ -3,6 +3,7 @@
 #include "attribute_metrics.h"
 #include "documentdb_tagged_metrics.h"
 #include "metrics_engine.h"
+#include "content_proton_metrics.h"
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 
@@ -12,7 +13,7 @@ LOG_SETUP(".proton.server.metricsengine");
 namespace proton {
 
 MetricsEngine::MetricsEngine()
-    : _root(),
+    : _root(std::make_unique<ContentProtonMetrics>()),
       _manager(std::make_unique<metrics::MetricManager>()),
       _metrics_producer(*_manager)
 { }
@@ -24,7 +25,7 @@ MetricsEngine::start(const config::ConfigUri &)
 {
     {
         metrics::MetricLockGuard guard(_manager->getMetricLock());
-        _manager->registerMetric(guard, _root);
+        _manager->registerMetric(guard, *_root);
     }
 
     // Storage doesnt snapshot unset metrics to save memory. Currently
@@ -54,28 +55,28 @@ void
 MetricsEngine::addExternalMetrics(metrics::Metric &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    _root.registerMetric(child);
+    _root->registerMetric(child);
 }
 
 void
 MetricsEngine::removeExternalMetrics(metrics::Metric &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    _root.unregisterMetric(child);
+    _root->unregisterMetric(child);
 }
 
 void
 MetricsEngine::addDocumentDBMetrics(DocumentDBTaggedMetrics &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    _root.registerMetric(child);
+    _root->registerMetric(child);
 }
 
 void
 MetricsEngine::removeDocumentDBMetrics(DocumentDBTaggedMetrics &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    _root.unregisterMetric(child);
+    _root->unregisterMetric(child);
 }
 
 namespace {

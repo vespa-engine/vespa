@@ -70,6 +70,11 @@ public:
 public:
     explicit Packet(size_t reserved) : _count(0), _range(), _buf(reserved) { }
     Packet(const void * buf, size_t sz);
+    Packet(const Packet &) = delete;
+    Packet & operator =(const Packet &) = delete;
+    Packet(Packet &&) noexcept = default;
+    Packet & operator =(Packet &&) noexcept = default;
+    ~Packet();
     void add(const Entry & data);
     void clear() { _buf.clear(); _count = 0; _range.from(0); _range.to(0); }
     const SerialNumRange & range() const { return _range; }
@@ -133,6 +138,7 @@ public:
     void add(const Packet & packet, Writer::DoneCallback onDone);
     size_t sizeBytes() const { return _data.sizeBytes(); }
     const Packet & getPacket() const { return _data; }
+    Packet stealPacket() { return std::move(_data); }
     size_t getNumCallBacks() const { return _callBacks->size(); }
     Writer::CommitResult createCommitResult() const;
     void setCommitDoneCallback(Writer::DoneCallback onDone) { _onCommitDone = std::move(onDone); }
