@@ -1063,7 +1063,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private static class JvmOptions {
 
-        private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:.]+");
+        private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./]+");
 
         private final ContainerCluster<?> cluster;
         private final Element nodesElement;
