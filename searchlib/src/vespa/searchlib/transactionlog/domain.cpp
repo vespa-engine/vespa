@@ -396,6 +396,7 @@ void
 Domain::commitChunk(std::unique_ptr<CommitChunk> chunk, const UniqueLock & chunkOrderGuard) {
     assert(chunkOrderGuard.mutex() == &_currentChunkMonitor && chunkOrderGuard.owns_lock());
     if (chunk->getPacket().empty()) return;
+    chunk->shrinkPayloadToFit();
     std::promise<SerializedChunk> promise;
     std::future<SerializedChunk> future = promise.get_future();
     _executor.execute(makeLambdaTask([promise=std::move(promise), chunk = std::move(chunk),
