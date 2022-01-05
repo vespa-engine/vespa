@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -148,11 +149,10 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     }
 
     private boolean hasNoDeployments(ApplicationId applicationId) {
-        var deployments = curator.readApplication(TenantAndApplicationId.from(applicationId))
-                .flatMap(app -> app.get(applicationId.instance()))
-                .map(Instance::deployments);
-
-        return deployments.isEmpty() || deployments.get().size() == 0;
+        return controller().applications().getInstance(applicationId)
+                           .map(Instance::deployments)
+                           .orElseGet(Map::of)
+                           .isEmpty();
     }
 
     private void deleteOrReportUnmanagedCertificates() {
@@ -171,7 +171,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                         endpointCertificateProvider.deleteCertificate(ApplicationId.fromSerializedForm("applicationid:is:unknown"), providerCertificateMetadata.requestId());
                     }
                 } else {
-                    log.log(Level.INFO, String.format("Found unmaintained certificate with request_id %s and SANs %s",
+                    log.log(Level.FINE, () -> String.format("Found unmaintained certificate with request_id %s and SANs %s",
                             providerCertificateMetadata.requestId(),
                             providerCertificateMetadata.dnsNames().stream().map(d -> d.dnsName).collect(Collectors.joining(", "))));
                 }
