@@ -18,16 +18,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static ai.vespa.feed.client.FeedClient.OperationType.PUT;
 import static ai.vespa.feed.client.FeedClient.OperationType.REMOVE;
 import static ai.vespa.feed.client.FeedClient.OperationType.UPDATE;
-import static com.fasterxml.jackson.core.JsonToken.END_ARRAY;
-import static com.fasterxml.jackson.core.JsonToken.START_ARRAY;
 import static com.fasterxml.jackson.core.JsonToken.START_OBJECT;
-import static com.fasterxml.jackson.core.JsonToken.VALUE_FALSE;
-import static com.fasterxml.jackson.core.JsonToken.VALUE_STRING;
-import static com.fasterxml.jackson.core.JsonToken.VALUE_TRUE;
 import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -37,6 +35,8 @@ import static java.util.Objects.requireNonNull;
  * @author bjorncs
  */
 public class JsonFeeder implements Closeable {
+
+    private static final Logger log = Logger.getLogger(JsonFeeder.class.getName());
 
     private final ExecutorService resultExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "json-feeder-result-executor");
@@ -149,17 +149,17 @@ public class JsonFeeder implements Closeable {
                 pending.incrementAndGet();
                 result.whenCompleteAsync((r, t) -> {
                     if (!finalCallbackInvoked.get()) {
-                        resultCallback.onNextResult(r, (FeedException) t);
+                        invokeCallback(resultCallback, c -> c.onNextResult(r, (FeedException) t));
                     }
                     if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
-                        resultCallback.onComplete();
+                        invokeCallback(resultCallback, ResultCallback::onComplete);
                         overallResult.complete(null);
                     }
                 }, resultExecutor);
             }
             if (pending.decrementAndGet() == 0 && finalCallbackInvoked.compareAndSet(false, true)) {
                 resultExecutor.execute(() -> {
-                    resultCallback.onComplete();
+                    invokeCallback(resultCallback, ResultCallback::onComplete);
                     overallResult.complete(null);
                 });
             }
@@ -167,12 +167,21 @@ public class JsonFeeder implements Closeable {
             if (finalCallbackInvoked.compareAndSet(false, true)) {
                 resultExecutor.execute(() -> {
                     FeedException wrapped = wrapException(e);
-                    resultCallback.onError(wrapped);
+                    invokeCallback(resultCallback, c -> c.onError(wrapped));
                     overallResult.completeExceptionally(wrapped);
                 });
             }
         }
         return overallResult;
+    }
+
+    private static void invokeCallback(ResultCallback callback, Consumer<ResultCallback> invocation) {
+        try {
+            invocation.accept(callback);
+        } catch (Throwable t) {
+            // Just log the exception/error and keep result executor alive (don't rethrow)
+            log.log(Level.WARNING, "Got exception during invocation on ResultCallback: " + t, t);
+        }
     }
 
     private static final JsonFactory factory = new JsonFactory();
