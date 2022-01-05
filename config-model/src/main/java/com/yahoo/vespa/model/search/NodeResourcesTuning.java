@@ -14,6 +14,8 @@ import static java.lang.Long.max;
  */
 public class NodeResourcesTuning implements ProtonConfig.Producer {
 
+    private final static double SUMMARY_CACHE_SIZE_FRACTION_OF_MEMORY = 0.05;
+    private final static double MEMORY_GAIN_FRACTION_OF_MEMORY = 0.10;
     final static long MB = 1024 * 1024;
     public final static long GB = MB * 1024;
     // This is an approximate number base on observation of a node using 33G memory with 765M docs
@@ -61,7 +63,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
-        long memoryLimitBytes = (long) ((usableMemoryGb() * 0.05) * GB);
+        long memoryLimitBytes = (long) ((usableMemoryGb() * SUMMARY_CACHE_SIZE_FRACTION_OF_MEMORY) * GB);
         builder.maxbytes(memoryLimitBytes);
     }
 
@@ -92,7 +94,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneFlushStrategyMemoryLimits(ProtonConfig.Flush.Memory.Builder builder) {
-        long memoryLimitBytes = (long) ((usableMemoryGb() / 8) * GB);
+        long memoryLimitBytes = (long) ((usableMemoryGb() * MEMORY_GAIN_FRACTION_OF_MEMORY) * GB);
         builder.maxmemory(memoryLimitBytes);
         builder.each.maxmemory(memoryLimitBytes);
     }
