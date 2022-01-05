@@ -10,6 +10,8 @@
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+#include <vespa/persistence/spi/docentry.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchvisitor_test");

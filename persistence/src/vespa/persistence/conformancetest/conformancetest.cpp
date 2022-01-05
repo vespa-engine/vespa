@@ -5,6 +5,7 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/catchresult.h>
 #include <vespa/persistence/spi/resource_usage_listener.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -25,6 +26,7 @@ using document::BucketId;
 using document::BucketSpace;
 using document::test::makeBucketSpace;
 using storage::spi::test::makeSpiBucket;
+using storage::spi::test::cloneDocEntry;
 
 namespace storage::spi {
 
@@ -183,7 +185,7 @@ getEntriesFromChunks(const std::vector<Chunk>& chunks)
     std::vector<spi::DocEntry::UP> ret;
     for (size_t chunk = 0; chunk < chunks.size(); ++chunk) {
         for (size_t i = 0; i < chunks[chunk]._entries.size(); ++i) {
-            ret.push_back(DocEntry::UP(chunks[chunk]._entries[i]->clone()));
+            ret.push_back(cloneDocEntry(*chunks[chunk]._entries[i]));
         }
     }
     std::sort(ret.begin(),
@@ -238,8 +240,7 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
            const std::vector<Chunk>& chunks,
            const std::set<string>& removes = std::set<string>())
 {
-    std::vector<DocEntry::UP> retrieved(
-            getEntriesFromChunks(chunks));
+    std::vector<DocEntry::UP> retrieved = getEntriesFromChunks(chunks);
     size_t removeCount = getRemoveEntryCount(retrieved);
     // Ensure that we've got the correct number of puts and removes
     EXPECT_EQ(removes.size(), removeCount);

@@ -9,6 +9,7 @@
 #include <vespa/persistence/spi/i_resource_usage_listener.h>
 #include <vespa/persistence/spi/resource_usage.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
+#include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/util/crc.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -24,6 +25,8 @@ using vespalib::make_string;
 using std::binary_search;
 using std::lower_bound;
 using document::FixedBucketSpaces;
+using storage::spi::test::cloneDocEntry;
+using storage::spi::test::equal;
 
 namespace storage::spi::dummy {
 
@@ -162,7 +165,7 @@ BucketContent::insert(DocEntry::SP e) {
         auto it = lower_bound(_entries.begin(), _entries.end(), e->getTimestamp(), TimestampLess());
         if (it != _entries.end()) {
             if (it->entry->getTimestamp() == e->getTimestamp()) {
-                if (*it->entry.get() == *e) {
+                if (equal(*it->entry, *e)) {
                     LOG(debug, "Ignoring duplicate put entry %s", e->toString().c_str());
                     return;
                 } else {
@@ -664,7 +667,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
                 entries.push_back(std::move(ret));
             } else {
                 // Use entry as-is.
-                entries.push_back(DocEntry::UP(entry->clone()));
+                entries.push_back(cloneDocEntry(*entry));
                 ++fastPath;
             }
         }

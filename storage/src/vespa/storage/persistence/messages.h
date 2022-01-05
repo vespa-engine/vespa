@@ -2,13 +2,14 @@
 #pragma once
 
 #include <vespa/storageapi/message/internal.h>
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/read_consistency.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
 
 namespace storage {
+
+namespace spi { class DocEntry; }
 
 class GetIterCommand : public api::InternalCommand {
 private:
@@ -44,9 +45,10 @@ private:
 
 class GetIterReply : public api::InternalReply {
 private:
+    using List = std::vector<std::unique_ptr<spi::DocEntry>>;
     document::Bucket _bucket;
-    std::vector<spi::DocEntry::UP> _entries;
-    bool _completed;
+    List             _entries;
+    bool             _completed;
 
 public:
     typedef std::unique_ptr<GetIterReply> UP;
@@ -58,13 +60,9 @@ public:
 
     document::Bucket getBucket() const override { return _bucket; }
 
-    const std::vector<spi::DocEntry::UP>& getEntries() const {
-        return _entries;
-    }
+    const List & getEntries() const { return _entries; }
 
-    std::vector<spi::DocEntry::UP>& getEntries() {
-        return _entries;
-    }
+    List & getEntries() { return _entries; }
 
     void setCompleted(bool completed = true) { _completed = completed; }
     bool isCompleted() const { return _completed; }

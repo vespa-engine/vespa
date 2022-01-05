@@ -49,6 +49,7 @@ using storage::spi::IterateResult;
 using storage::spi::Selection;
 using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
+using storage::spi::test::equal;
 
 using namespace proton;
 
@@ -390,7 +391,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp
 {
     ASSERT_LESS(idx, res.getEntries().size());
     DocEntry expect(timestamp, flags);
-    EXPECT_EQUAL(expect, *res.getEntries()[idx]);
+    EXPECT_TRUE(equal(expect, *res.getEntries()[idx]));
     EXPECT_EQUAL(getSize(), res.getEntries()[idx]->getSize());
 }
 
@@ -398,7 +399,7 @@ void checkEntry(const IterateResult &res, size_t idx, const DocumentId &id, cons
 {
     ASSERT_LESS(idx, res.getEntries().size());
     DocEntry expect(timestamp, storage::spi::REMOVE_ENTRY, id);
-    EXPECT_EQUAL(expect, *res.getEntries()[idx]);
+    EXPECT_TRUE(equal(expect, *res.getEntries()[idx]));
     EXPECT_EQUAL(getSize(id), res.getEntries()[idx]->getSize());
     EXPECT_GREATER(getSize(id), 0u);
 }
@@ -407,7 +408,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const
 {
     ASSERT_LESS(idx, res.getEntries().size());
     DocEntry expect(timestamp, storage::spi::NONE, Document::UP(doc.clone()));
-    EXPECT_EQUAL(expect, *res.getEntries()[idx]);
+    EXPECT_TRUE(equal(expect, *res.getEntries()[idx]));
     EXPECT_EQUAL(getSize(doc), res.getEntries()[idx]->getSize());
     EXPECT_GREATER(getSize(doc), 0u);
 }

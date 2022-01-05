@@ -10,6 +10,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <functional>
 
 using std::unique_ptr;

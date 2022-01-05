@@ -16,6 +16,7 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/storageserver/testvisitormessagesession.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <thread>

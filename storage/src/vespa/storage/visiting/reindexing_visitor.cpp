@@ -3,6 +3,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/storage/common/reindexing_constants.h>
+#include <vespa/persistence/spi/docentry.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.reindexing_visitor");
@@ -14,7 +15,7 @@ ReindexingVisitor::ReindexingVisitor(StorageComponent& component)
 {
 }
 
-void ReindexingVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
+void ReindexingVisitor::handleDocuments(const document::BucketId& ,
                                         std::vector<spi::DocEntry::UP>& entries,
                                         HitCounter& hitCounter)
 {

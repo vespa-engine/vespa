@@ -2,6 +2,7 @@
 
 #include "visitor.h"
 #include "visitormetrics.h"
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/persistence/messages.h>

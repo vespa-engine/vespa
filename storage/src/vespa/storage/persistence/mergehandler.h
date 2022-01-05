@@ -16,7 +16,6 @@
 #include "types.h"
 #include "merge_bucket_info_syncer.h"
 #include <vespa/persistence/spi/bucket.h>
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
@@ -30,9 +29,9 @@ namespace storage {
 namespace spi {
     struct PersistenceProvider;
     class Context;
+    class DocEntry;
 }
 class PersistenceUtil;
-class ApplyBucketDiffEntryResult;
 class ApplyBucketDiffState;
 class MergeStatus;
 
@@ -117,7 +116,7 @@ private:
      */
     void populateMetaData(const spi::Bucket&,
                           Timestamp maxTimestamp,
-                          std::vector<spi::DocEntry::UP>& entries,
+                          std::vector<std::unique_ptr<spi::DocEntry>> & entries,
                           spi::Context& context) const;
 
     Document::UP deserializeDiffDocument(

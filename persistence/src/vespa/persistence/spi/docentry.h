@@ -26,12 +26,12 @@ class DocEntry {
 public:
     typedef uint32_t SizeType;
 private:
-    Timestamp _timestamp;
-    int _metaFlags;
-    SizeType _persistedDocumentSize;
-    SizeType _size;
+    Timestamp    _timestamp;
+    int          _metaFlags;
+    SizeType     _persistedDocumentSize;
+    SizeType     _size;
     DocumentIdUP _documentId;
-    DocumentUP _document;
+    DocumentUP   _document;
 public:
     using UP = std::unique_ptr<DocEntry>;
     using SP = std::shared_ptr<DocEntry>;
@@ -47,15 +47,17 @@ public:
     DocEntry(Timestamp t, int metaFlags, const DocumentId& docId);
 
     DocEntry(Timestamp t, int metaFlags);
+    DocEntry(const DocEntry &) = delete;
+    DocEntry & operator=(const DocEntry &) = delete;
+    DocEntry(DocEntry &&) = delete;
+    DocEntry & operator=(DocEntry &&) = delete;
     ~DocEntry();
-    DocEntry* clone() const;
     const Document* getDocument() const { return _document.get(); }
     const DocumentId* getDocumentId() const;
     DocumentUP releaseDocument();
     bool isRemove() const { return (_metaFlags & REMOVE_ENTRY); }
     Timestamp getTimestamp() const { return _timestamp; }
     int getFlags() const { return _metaFlags; }
-    void setFlags(int flags) { _metaFlags = flags; }
     /**
      * @return In-memory size of this doc entry, including document instance.
      *     In essence: serialized size of document + sizeof(DocEntry).
@@ -87,7 +89,6 @@ public:
     }
 
     vespalib::string toString() const;
-    bool operator==(const DocEntry& entry) const;
 };
 
 std::ostream & operator << (std::ostream & os, const DocEntry & r);

@@ -31,7 +31,7 @@ DocEntry::DocEntry(Timestamp t, int metaFlags, const DocumentId& docId)
       _metaFlags(metaFlags),
       _persistedDocumentSize(docId.getSerializedSize()),
       _size(_persistedDocumentSize + sizeof(DocEntry)),
-      _documentId(new DocumentId(docId)),
+      _documentId(std::make_unique<DocumentId>(docId)),
       _document()
 { }
 
@@ -45,23 +45,6 @@ DocEntry::DocEntry(Timestamp t, int metaFlags)
 { }
 
 DocEntry::~DocEntry() = default;
-
-DocEntry* 
-DocEntry::clone() const {
-    DocEntry* ret;
-    if (_documentId) {
-        ret = new DocEntry(_timestamp, _metaFlags, *_documentId);
-        ret->setPersistedDocumentSize(_persistedDocumentSize);
-    } else if (_document) {
-        ret = new DocEntry(_timestamp, _metaFlags,
-                           std::make_unique<Document>(*_document),
-                           _persistedDocumentSize);
-    } else {
-        ret = new DocEntry(_timestamp, _metaFlags);
-        ret->setPersistedDocumentSize(_persistedDocumentSize);
-    }
-    return ret;
-}
 
 const DocumentId*
 DocEntry::getDocumentId() const {
@@ -99,50 +82,6 @@ DocEntry::toString() const
 std::ostream &
 operator << (std::ostream & os, const DocEntry & r) {
     return os << r.toString();
-}
-
-bool
-DocEntry::operator==(const DocEntry& entry) const {
-    if (_timestamp != entry._timestamp) {
-        return false;
-    }
-
-    if (_metaFlags != entry._metaFlags) {
-        return false;
-    }
-
-    if (_documentId) {
-        if (!entry._documentId) {
-            return false;
-        }
-
-        if (*_documentId != *entry._documentId) {
-            return false;
-        }
-    } else {
-        if (entry._documentId) {
-            return false;
-        }
-    }
-
-    if (_document) {
-        if (!entry._document) {
-            return false;
-        }
-
-        if (*_document != *entry._document) {
-            return false;
-        }
-    } else {
-        if (entry._document) {
-            return false;
-        }
-    }
-    if (_persistedDocumentSize != entry._persistedDocumentSize) {
-        return false;
-    }
-
-    return true;
 }
 
 }

@@ -5,6 +5,7 @@
 #include "persistenceutil.h"
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>

@@ -6,7 +6,7 @@
 #include "apply_bucket_diff_state.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/persistence/spi/catchresult.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/objects/nbostream.h>

@@ -18,11 +18,11 @@ public:
     CountVisitor(StorageComponent&,
                  const vdslib::Parameters& params);
 
-    virtual void completedVisiting(HitCounter&) override;
+    void completedVisiting(HitCounter&) override;
 
 private:
     void handleDocuments(const document::BucketId& bucketId,
-                         std::vector<spi::DocEntry::UP>& entries,
+                         DocEntryList & entries,
                          HitCounter& hitCounter) override;
 
     bool _doScheme;

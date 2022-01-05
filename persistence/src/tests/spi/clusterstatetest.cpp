@@ -5,6 +5,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/document/base/testdocman.h>
 #include <gtest/gtest.h>
 
 using storage::spi::test::makeSpiBucket;
@@ -258,6 +259,65 @@ TEST(ClusterStateTest, node_maintenance_state_is_set_independent_of_bucket_space
     EXPECT_TRUE(node_marked_as_maintenance_in_state("distributor:3 storage:3", d, 0, true));
     EXPECT_TRUE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:d", d, 0, true));
     EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:m", d, 0, false));
+}
+
+TEST(DocEntryTest, test_basics) {
+    EXPECT_EQ(40u, sizeof(DocEntry));
+}
+
+TEST(DocEntryTest, test_meta_only) {
+    DocEntry e(Timestamp(9), 0);
+    EXPECT_EQ(9, e.getTimestamp());
+    EXPECT_FALSE(e.isRemove());
+    EXPECT_EQ(40, e.getSize());
+    EXPECT_EQ(0, e.getDocumentSize());
+    EXPECT_EQ(0, e.getPersistedDocumentSize());
+    EXPECT_EQ(nullptr, e.getDocument());
+    EXPECT_EQ(nullptr, e.getDocumentId());
+
+    e.setPersistedDocumentSize(7);
+    EXPECT_EQ(40, e.getSize());
+    EXPECT_EQ(0, e.getDocumentSize());
+    EXPECT_EQ(7, e.getPersistedDocumentSize());
+
+    DocEntry r(Timestamp(666), 1);
+    EXPECT_EQ(666, r.getTimestamp());
+    EXPECT_TRUE(r.isRemove());
+}
+
+TEST(DocEntryTest, test_docid_only) {
+    DocEntry e(Timestamp(9), 0, DocumentId("id:test:test::1"));
+    EXPECT_EQ(9, e.getTimestamp());
+    EXPECT_FALSE(e.isRemove());
+    EXPECT_EQ(56, e.getSize());
+    EXPECT_EQ(16, e.getDocumentSize());
+    EXPECT_EQ(16, e.getPersistedDocumentSize());
+    EXPECT_EQ(nullptr, e.getDocument());
+    EXPECT_NE(nullptr, e.getDocumentId());
+
+    e.setPersistedDocumentSize(7);
+    EXPECT_EQ(56, e.getSize());
+    EXPECT_EQ(16, e.getDocumentSize());
+    EXPECT_EQ(7, e.getPersistedDocumentSize());
+
+}
+
+TEST(DocEntryTest, test_document_only) {
+    document::TestDocMan testDocMan;
+    DocEntry e(Timestamp(9), 0, testDocMan.createRandomDocument(0, 1000));
+    EXPECT_EQ(9, e.getTimestamp());
+    EXPECT_FALSE(e.isRemove());
+    EXPECT_EQ(672, e.getSize());
+    EXPECT_EQ(632, e.getDocumentSize());
+    EXPECT_EQ(632, e.getPersistedDocumentSize());
+    EXPECT_NE(nullptr, e.getDocument());
+    EXPECT_NE(nullptr, e.getDocumentId());
+
+    e.setPersistedDocumentSize(7);
+    EXPECT_EQ(672, e.getSize());
+    EXPECT_EQ(632, e.getDocumentSize());
+    EXPECT_EQ(7, e.getPersistedDocumentSize());
+
 }
 
 }
