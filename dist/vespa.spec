@@ -874,6 +874,7 @@ fi
 %dir %{_prefix}/lib/jars
 %{_prefix}/lib/jars/asm-*.jar
 %{_prefix}/lib/jars/aopalliance-repackaged-*.jar
+%{_prefix}/lib/jars/application-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/bcpkix-jdk15on-*.jar
 %{_prefix}/lib/jars/bcprov-jdk15on-*.jar
 %{_prefix}/lib/jars/config-bundle-jar-with-dependencies.jar
