@@ -480,22 +480,20 @@ public class ApplicationRepositoryTest {
         // so will be candidate for expiry)
         Session session = sessionRepository.createRemoteSession(7);
         sessionRepository.createSetStatusTransaction(session, Session.Status.UNKNOWN);
+        assertEquals(2, sessionRepository.getLocalSessions().size());  // Still 2, no new local session
 
-        sessionRepository.addLocalSession(localSession2);
-        assertEquals(2, sessionRepository.getLocalSessions().size());
+        // Check that trying to expire local session when there exists a local session without any data in zookeeper
+        // should not delete session if this is a new file ...
+        deleteExpiredLocalSessionsAndAssertNumberOfSessions(2, tester, sessionRepository);
 
-        // Check that trying to expire local session when there exists a local session with no zookeeper data works
+        // ... but it should be deleted if some time has passed
+        clock.advance(Duration.ofSeconds(60));
         tester.applicationRepository().deleteExpiredLocalSessions();
-        assertEquals(2, sessionRepository.getLocalSessions().size());
-
-        // Check that trying to expire when there are no active sessions works
-        tester.applicationRepository().deleteExpiredLocalSessions();
-        assertEquals(2, sessionRepository.getLocalSessions().size());
+        assertEquals(1, sessionRepository.getLocalSessions().size());
 
         // Set older created timestamp for session dir for local session without any data in zookeeper, should be deleted
         setCreatedTime(dir, Instant.now().minus(Duration.ofDays(31)));
-        tester.applicationRepository().deleteExpiredLocalSessions();
-        assertEquals(1, sessionRepository.getLocalSessions().size());
+        deleteExpiredLocalSessionsAndAssertNumberOfSessions(0, tester, sessionRepository);
     }
 
     @Test
@@ -834,6 +832,13 @@ public class ApplicationRepositoryTest {
 
     private RequestHandler getRequestHandler(ApplicationId applicationId) {
         return tenantRepository.getTenant(applicationId.tenant()).getRequestHandler();
+    }
+
+    private static void deleteExpiredLocalSessionsAndAssertNumberOfSessions(int expectedNumberOfSessions,
+                                                                            DeployTester tester,
+                                                                            SessionRepository sessionRepository) {
+        tester.applicationRepository().deleteExpiredLocalSessions();
+        assertEquals(expectedNumberOfSessions, sessionRepository.getLocalSessions().size());
     }
 
 }
