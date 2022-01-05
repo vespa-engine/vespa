@@ -1740,7 +1740,7 @@
       "public java.lang.Integer addToken(long, int)",
       "public java.lang.Integer addToken(java.lang.String, int)",
       "public java.lang.Integer addToken(java.lang.String)",
-      "public java.lang.Integer getTokenWeight(java.lang.String)",
+      "public java.lang.Integer getTokenWeight(java.lang.Object)",
       "public java.lang.Integer removeToken(java.lang.String)",
       "public int getNumTokens()",
       "public java.util.Iterator getTokens()",
