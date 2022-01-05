@@ -47,7 +47,7 @@ public:
     vespalib::ConstBufferRef getData() const;
     SerialNumRange range() const { return _range; }
     size_t getNumEntries() const { return _numEntries; }
-    const CommitChunk & commitChunk() const { return *_commitChunk; }
+    size_t getNumCallBacks() const { return _commitChunk->getNumCallBacks(); }
 private:
     // CommitChunk is required to ensure we do not reply until committed to the TLS.
     std::unique_ptr<CommitChunk> _commitChunk;

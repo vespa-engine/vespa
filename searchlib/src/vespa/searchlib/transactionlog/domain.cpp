@@ -35,7 +35,7 @@ createCommitChunk(const DomainConfig &cfg) {
 
 }
 
-Domain::Domain(const string &domainName, const string & baseDir, Executor & executor,
+Domain::Domain(const string &domainName, const string & baseDir, vespalib::Executor & executor,
                const DomainConfig & cfg, const FileHeaderContext &fileHeaderContext)
     : _config(cfg),
       _currentChunk(createCommitChunk(cfg)),
@@ -420,7 +420,7 @@ Domain::doCommit(const SerializedChunk & serialized) {
     }
     cleanSessions();
     LOG(debug, "Releasing %zu acks and %zu entries and %zu bytes.",
-        serialized.commitChunk().getNumCallBacks(), serialized.getNumEntries(), serialized.getData().size());
+        serialized.getNumCallBacks(), serialized.getNumEntries(), serialized.getData().size());
 }
 
 bool

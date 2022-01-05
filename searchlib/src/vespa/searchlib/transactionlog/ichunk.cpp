@@ -141,7 +141,7 @@ SerializedChunk::SerializedChunk(std::unique_ptr<CommitChunk> commitChunk, Encod
      _range(_commitChunk->getPacket().range()),
      _numEntries(_commitChunk->getPacket().size())
 {
-    const Packet & packet = _commitChunk->getPacket();
+    Packet packet = _commitChunk->stealPacket();
     nbostream_longlivedbuf h(packet.getHandle().data(), packet.getHandle().size());
 
     IChunk::UP chunk = IChunk::create(encoding, compressionLevel);
