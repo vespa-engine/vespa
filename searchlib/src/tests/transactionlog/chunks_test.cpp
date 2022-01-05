@@ -115,4 +115,25 @@ TEST("test multi element commitchunk") {
     }
     EXPECT_EQUAL(0u, counter);
 }
+
+TEST("shrinkToFit if difference is larger than 8x") {
+    Packet p(16000);
+    p.add(Packet::Entry(1, 3, ConstBufferRef(TEXT, strlen(TEXT))));
+    EXPECT_EQUAL(150u, p.sizeBytes());
+    EXPECT_EQUAL(16384u, p.getHandle().capacity());
+    p.shrinkToFit();
+    EXPECT_EQUAL(150u, p.sizeBytes());
+    EXPECT_EQUAL(150u, p.getHandle().capacity());
+}
+
+TEST("not shrinkToFit if difference is less than 8x") {
+    Packet p(1000);
+    p.add(Packet::Entry(1, 3, ConstBufferRef(TEXT, strlen(TEXT))));
+    EXPECT_EQUAL(150u, p.sizeBytes());
+    EXPECT_EQUAL(1024u, p.getHandle().capacity());
+    p.shrinkToFit();
+    EXPECT_EQUAL(150u, p.sizeBytes());
+    EXPECT_EQUAL(1024u, p.getHandle().capacity());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

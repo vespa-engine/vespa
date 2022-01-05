@@ -83,6 +83,7 @@ public:
     bool                   empty() const { return _count == 0; }
     size_t             sizeBytes() const { return _buf.size(); }
     void merge(const Packet & packet);
+    void shrinkToFit();
 private:
     size_t                            _count;
     SerialNumRange                    _range;
@@ -143,6 +144,7 @@ public:
     Writer::CommitResult createCommitResult() const;
     void setCommitDoneCallback(Writer::DoneCallback onDone) { _onCommitDone = std::move(onDone); }
     Writer::CommitPayload stealCallbacks() { return std::move(_callBacks); }
+    void shrinkPayloadToFit();
 private:
     Packet                 _data;
     Writer::CommitPayload  _callBacks;

@@ -116,6 +116,14 @@ Packet::add(const Packet::Entry & e)
     _range.to(e.serial());
 }
 
+void
+Packet::shrinkToFit() {
+    if (_buf.size() * 8 < _buf.capacity()) {
+        nbostream::Buffer shrunkToFit(_buf.data(), _buf.data() + _buf.size());
+        _buf.swap(shrunkToFit);
+    }
+}
+
 Writer::CommitResult::CommitResult()
     : _callBacks()
 {}
@@ -149,6 +157,11 @@ CommitChunk::add(const Packet &packet, Writer::DoneCallback onDone) {
 Writer::CommitResult
 CommitChunk::createCommitResult() const {
     return Writer::CommitResult(_callBacks);
+}
+
+void
+CommitChunk::shrinkPayloadToFit() {
+    _data.shrinkToFit();
 }
 
 }
