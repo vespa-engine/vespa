@@ -5,6 +5,7 @@
 #include "memoryindexwrapper.h"
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/diskindex/fusion.h>
+#include <vespa/searchlib/index/schemautil.h>
 
 using search::diskindex::Fusion;
 using search::common::FileHeaderContext;

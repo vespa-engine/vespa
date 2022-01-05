@@ -9,6 +9,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
