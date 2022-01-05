@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
@@ -482,7 +481,7 @@ public class JobController {
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);
             if (last.flatMap(run -> active(run.id())).isPresent())
-                throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
+                throw new IllegalArgumentException("Cannot start " + type + " for " + id + "; it is already running!");
 
             RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
             curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile));
