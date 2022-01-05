@@ -98,7 +98,7 @@ public class JobRunnerTest {
             jobs.start(id, systemTest, versions);
             fail("Job is already running, so this should not be allowed!");
         }
-        catch (IllegalStateException ignored) { }
+        catch (IllegalArgumentException ignored) { }
         jobs.start(id, stagingTest, versions);
 
         assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
