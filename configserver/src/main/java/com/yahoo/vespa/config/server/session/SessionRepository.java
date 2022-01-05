@@ -572,8 +572,16 @@ public class SessionRepository {
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         Set<LocalSession> toDelete = new HashSet<>();
+        Set<Long> newSessions = findNewSessionsInFileSystem();
         try {
             for (LocalSession candidate : getLocalSessionsFromFileSystem()) {
+                // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
+                // we don't want to touch any of them)
+                if (newSessions.contains(candidate.getSessionId())) {
+                    log.log(Level.INFO, () -> "Skipping session " + candidate.getSessionId() + ", newly created: ");
+                    continue;
+                }
+
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 
@@ -616,6 +624,23 @@ public class SessionRepository {
         return sessionDir.exists()
                 && session.getStatus() == Session.Status.UNKNOWN
                 && created(sessionDir).plus(Duration.ofDays(30)).isBefore(clock.instant());
+    }
+
+    private Set<Long> findNewSessionsInFileSystem() {
+        File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
+        Set<Long> newSessions = new HashSet<>();
+        if (sessions != null) {
+            for (File session : sessions) {
+                try {
+                    if (Files.getLastModifiedTime(session.toPath()).toInstant()
+                             .isAfter(clock.instant().minus(Duration.ofSeconds(30))))
+                        newSessions.add(Long.parseLong(session.getName()));
+                } catch (IOException e) {
+                    log.log(Level.INFO, "Unable to find last modified time for " + session.toPath());
+                };
+            }
+        }
+        return newSessions;
     }
 
     private Instant created(File file) {

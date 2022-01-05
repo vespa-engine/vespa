@@ -482,12 +482,18 @@ public class ApplicationRepositoryTest {
         sessionRepository.createSetStatusTransaction(session, Session.Status.UNKNOWN);
         assertEquals(2, sessionRepository.getLocalSessions().size());  // Still 2, no new local session
 
-        // Check that trying to expire local session when there exists a local session without any data in zookeeper should not delete session
+        // Check that trying to expire local session when there exists a local session without any data in zookeeper
+        // should not delete session if this is a new file ...
         deleteExpiredLocalSessionsAndAssertNumberOfSessions(2, tester, sessionRepository);
+
+        // ... but it should be deleted if some time has passed
+        clock.advance(Duration.ofSeconds(60));
+        tester.applicationRepository().deleteExpiredLocalSessions();
+        assertEquals(1, sessionRepository.getLocalSessions().size());
 
         // Set older created timestamp for session dir for local session without any data in zookeeper, should be deleted
         setCreatedTime(dir, Instant.now().minus(Duration.ofDays(31)));
-        deleteExpiredLocalSessionsAndAssertNumberOfSessions(1, tester, sessionRepository);
+        deleteExpiredLocalSessionsAndAssertNumberOfSessions(0, tester, sessionRepository);
     }
 
     @Test
