@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.Index;
@@ -58,6 +59,13 @@ public abstract class Processor {
      *                      of aspects not relating to document definitions (e.g rank profiles)
      */
     public abstract void process(boolean validate, boolean documentsOnly);
+
+    /**
+     * As above, possibly with properties from a context.  Override if needed.
+     **/
+    public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
+        process(validate, documentsOnly);
+    }
 
     /**
      * Convenience method for adding a no-strings-attached implementation field for a regular field

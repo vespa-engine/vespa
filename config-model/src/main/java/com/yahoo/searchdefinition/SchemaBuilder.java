@@ -101,6 +101,7 @@ public class SchemaBuilder {
     public SchemaBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
         this(rankProfileRegistry, queryProfileRegistry, new TestProperties());
     }
+
     public SchemaBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry, ModelContext.Properties properties) {
         this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), properties, rankProfileRegistry, queryProfileRegistry);
     }
@@ -113,6 +114,7 @@ public class SchemaBuilder {
                          QueryProfileRegistry queryProfileRegistry) {
         this(app, fileRegistry, deployLogger, properties, rankProfileRegistry, queryProfileRegistry, false);
     }
+
     private SchemaBuilder(ApplicationPackage applicationPackage,
                           FileRegistry fileRegistry,
                           DeployLogger deployLogger,
@@ -265,8 +267,10 @@ public class SchemaBuilder {
      * #build()} method so that subclasses can choose not to build anything.
      */
     private void process(Schema schema, QueryProfiles queryProfiles, boolean validate) {
-        new Processing().process(schema, deployLogger, rankProfileRegistry, queryProfiles, validate,
-                                 documentsOnly, processorsToSkip);
+        new Processing(properties).process(schema, deployLogger,
+                                           rankProfileRegistry, queryProfiles,
+                                           validate, documentsOnly,
+                                           processorsToSkip);
     }
 
     /**
@@ -541,7 +545,9 @@ public class SchemaBuilder {
     public QueryProfileRegistry getQueryProfileRegistry() {
         return queryProfileRegistry;
     }
+
     public ModelContext.Properties getProperties() { return properties; }
+
     public DeployLogger getDeployLogger() { return deployLogger; }
 
 }
