@@ -67,7 +67,7 @@ SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint3
         for (uint32_t id = 0; id < threads; ++id) {
             if (optimize == OptimizeFor::THROUGHPUT) {
                 uint32_t watermark = (kindOfWatermark == 0) ? taskLimit / 10 : kindOfWatermark;
-                executors.push_back(std::make_unique<SingleExecutor>(func, taskLimit, watermark, 100ms));
+                executors.push_back(std::make_unique<SingleExecutor>(func, taskLimit, true, watermark, 100ms));
             } else {
                 executors.push_back(std::make_unique<BlockingThreadStackExecutor>(1, stackSize, taskLimit, func));
             }

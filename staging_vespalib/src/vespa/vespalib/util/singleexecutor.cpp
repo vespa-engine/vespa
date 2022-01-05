@@ -7,12 +7,12 @@
 namespace vespalib {
 
 SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit)
-    : SingleExecutor(func, taskLimit, taskLimit/10, 100ms)
+    : SingleExecutor(func, taskLimit, true, taskLimit/10, 100ms)
 { } 
 
-SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t watermark, duration reactionTime)
-    : _watermarkRatio(watermark < taskLimit ? double(watermark) / taskLimit : 1.0),
-      _taskLimit(vespalib::roundUp2inN(taskLimit)),
+SingleExecutor::SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool isQueueSizeHard, uint32_t watermark, duration reactionTime)
+    : _watermarkRatio(watermark < reservedQueueSize ? double(watermark) / reservedQueueSize : 1.0),
+      _taskLimit(vespalib::roundUp2inN(reservedQueueSize)),
       _wantedTaskLimit(_taskLimit.load()),
       _rp(0),
       _tasks(std::make_unique<Task::UP[]>(_taskLimit)),
@@ -30,9 +30,13 @@ SingleExecutor::SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t wat
       _wp(0),
       _watermark(_taskLimit.load()*_watermarkRatio),
       _reactionTime(reactionTime),
-      _closed(false)
+      _closed(false),
+      _overflow()
 {
-    assert(taskLimit >= watermark);
+    assert(reservedQueueSize >= watermark);
+    if ( ! isQueueSizeHard) {
+        _overflow = std::make_unique<ArrayQueue<Task::UP>>();
+    }
     _thread.start();
 }
 
@@ -56,21 +60,29 @@ SingleExecutor::sleepProducer(Lock & lock, duration maxWaitTime, uint64_t wakeup
 
 Executor::Task::UP
 SingleExecutor::execute(Task::UP task) {
-    uint64_t wp;
+    uint64_t wp(0);
     {
         Lock guard(_mutex);
         if (_closed) {
             return task;
         }
-        wait_for_room(guard);
-        wp = _wp.load(std::memory_order_relaxed);
-        _tasks[index(wp)] = std::move(task);
-        _wp.store(wp + 1, std::memory_order_release);
+        task = wait_for_room_or_put_in_overflow_Q(guard, std::move(task));
+        if (task) {
+            wp = move_to_main_q(guard, std::move(task));
+        }
     }
     if (wp == _wakeupConsumerAt.load(std::memory_order_relaxed)) {
         _consumerCondition.notify_one();
     }
     return task;
+}
+
+uint64_t
+SingleExecutor::move_to_main_q(Lock &, Task::UP task) {
+    uint64_t wp = _wp.load(std::memory_order_relaxed);
+    _tasks[index(wp)] = std::move(task);
+    _wp.store(wp + 1, std::memory_order_release);
+    return wp;
 }
 
 void
@@ -97,7 +109,7 @@ SingleExecutor::wakeup() {
 SingleExecutor &
 SingleExecutor::sync() {
     Lock lock(_mutex);
-    uint64_t wp = _wp.load(std::memory_order_relaxed);
+    uint64_t wp = _wp.load(std::memory_order_relaxed) + num_tasks_in_overflow_q();
     while (wp > _rp.load(std::memory_order_acquire)) {
         _consumerCondition.notify_one();
         sleepProducer(lock, 100us, wp);
@@ -134,6 +146,22 @@ void
 SingleExecutor::drain_tasks() {
     while (numTasks() > 0) {
         run_tasks_till(_wp.load(std::memory_order_acquire));
+        move_overflow_to_main_q();
+    }
+}
+
+void
+SingleExecutor::move_overflow_to_main_q()
+{
+    if ( ! _overflow) return;
+    Lock guard(_mutex);
+    move_overflow_to_main_q(guard);
+}
+void
+SingleExecutor::move_overflow_to_main_q(Lock & guard) {
+    while ( !_overflow->empty() && num_task_in_main_q() < _taskLimit.load(std::memory_order_relaxed)) {
+        move_to_main_q(guard, std::move(_overflow->front()));
+        _overflow->pop();
     }
 }
 
@@ -151,26 +179,42 @@ SingleExecutor::run_tasks_till(uint64_t available) {
     }
 }
 
-void
-SingleExecutor::wait_for_room(Lock & lock) {
+Executor::Task::UP
+SingleExecutor::wait_for_room_or_put_in_overflow_Q(Lock & guard, Task::UP task) {
     uint64_t wp = _wp.load(std::memory_order_relaxed);
     uint64_t taskLimit = _taskLimit.load(std::memory_order_relaxed);
     if (taskLimit != _wantedTaskLimit.load(std::memory_order_relaxed)) {
-        drain(lock);
+        drain(guard);
         _tasks = std::make_unique<Task::UP[]>(_wantedTaskLimit);
         _taskLimit = _wantedTaskLimit.load();
         _watermark = _taskLimit * _watermarkRatio;
     }
-    _queueSize.add(numTasks());
-    while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
-        sleepProducer(lock, _reactionTime, wp - get_watermark());
+    uint64_t numTaskInQ = numTasks();
+    _queueSize.add(numTaskInQ);
+    if (numTaskInQ >= _taskLimit.load(std::memory_order_relaxed)) {
+        if (_overflow) {
+            _overflow->push(std::move(task));
+        } else {
+            while (numTasks() >= _taskLimit.load(std::memory_order_relaxed)) {
+                sleepProducer(guard, _reactionTime, wp - get_watermark());
+            }
+        }
+    } else {
+        if (_overflow && !_overflow->empty()) {
+            _overflow->push(std::move(task));
+        }
     }
+    if (_overflow && !_overflow->empty()) {
+        assert(!task);
+        move_overflow_to_main_q(guard);
+    }
+    return task;
 }
 
 ExecutorStats
 SingleExecutor::getStats() {
     Lock lock(_mutex);
-    uint64_t accepted = _wp.load(std::memory_order_relaxed);
+    uint64_t accepted = _wp.load(std::memory_order_relaxed) + (_overflow ? _overflow->size() : 0);
     steady_time now = steady_clock::now();
     _idleTracker.was_idle(_threadIdleTracker.reset(now));
     ExecutorStats stats(_queueSize, (accepted - _lastAccepted), 0, _wakeupCount);
