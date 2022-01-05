@@ -58,39 +58,8 @@ public class Upgrader extends ControllerMaintainer {
         Collection<Version> defaultTargets = targetVersions(Confidence.normal, versionStatus);
         Collection<Version> conservativeTargets = targetVersions(Confidence.high, versionStatus);
 
-        // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
-        for (VespaVersion version : versionStatus.versions()) {
-            if (version.confidence() == Confidence.broken)
-                cancelUpgradesOf(instances().upgradingTo(version.versionNumber())
-                                            .not().with(UpgradePolicy.canary),
-                                 version.versionNumber() + " is broken");
-        }
-
-        // Canaries should always try the canary target
-        cancelUpgradesOf(instances().upgrading()
-                                    .not().upgradingTo(canaryTarget)
-                                    .with(UpgradePolicy.canary),
-                         "Outdated target version for Canaries");
-
-        // Cancel *failed* upgrades to earlier versions, as the new version may fix it
-        String reason = "Failing on outdated version";
-        cancelUpgradesOf(instances().upgrading()
-                                    .failing()
-                                    .not().upgradingTo(defaultTargets)
-                                    .with(UpgradePolicy.defaultPolicy),
-                         reason);
-        cancelUpgradesOf(instances().upgrading()
-                                    .failing()
-                                    .not().upgradingTo(conservativeTargets)
-                                    .with(UpgradePolicy.conservative),
-                         reason);
-
-        // Schedule the right upgrades
-        InstanceList instances = instances();
-        Optional<Integer> targetMajorVersion = targetMajorVersion();
-        upgrade(instances.with(UpgradePolicy.canary), canaryTarget, targetMajorVersion, instances.size());
-        defaultTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.defaultPolicy), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
-        conservativeTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.conservative), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
+        cancelUpgrades(versionStatus, canaryTarget, defaultTargets, conservativeTargets);
+        upgrade(versionStatus, canaryTarget, defaultTargets, conservativeTargets);
         return 1.0;
     }
 
@@ -108,22 +77,62 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     /** Returns a list of all production application instances, except those which are pinned, which we should not manipulate here. */
-    private InstanceList instances() {
-        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())))
+    private InstanceList instances(Version systemVersion) {
+        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable()), systemVersion))
                            .withDeclaredJobs()
                            .unpinned();
     }
 
+    private void cancelUpgrades(VersionStatus versionStatus, Version canaryTarget, Collection<Version> defaultTargets, Collection<Version> conservativeTargets) {
+        InstanceList instances = instances(controller().systemVersion(versionStatus));
+        // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
+        for (VespaVersion version : versionStatus.versions()) {
+            if (version.confidence() == Confidence.broken)
+                cancelUpgradesOf(instances.upgradingTo(version.versionNumber())
+                                          .not().with(UpgradePolicy.canary),
+                                 version.versionNumber() + " is broken");
+        }
+
+        // Canaries should always try the canary target
+        cancelUpgradesOf(instances.upgrading()
+                                  .not().upgradingTo(canaryTarget)
+                                  .with(UpgradePolicy.canary),
+                         "Outdated target version for Canaries");
+
+        // Cancel *failed* upgrades to earlier versions, as the new version may fix it
+        String reason = "Failing on outdated version";
+        cancelUpgradesOf(instances.upgrading()
+                                  .failing()
+                                  .not().upgradingTo(defaultTargets)
+                                  .with(UpgradePolicy.defaultPolicy),
+                         reason);
+        cancelUpgradesOf(instances.upgrading()
+                                  .failing()
+                                  .not().upgradingTo(conservativeTargets)
+                                  .with(UpgradePolicy.conservative),
+                         reason);
+    }
+
+    private void upgrade(VersionStatus versionStatus, Version canaryTarget, Collection<Version> defaultTargets, Collection<Version> conservativeTargets) {
+        InstanceList instances = instances(controller().systemVersion(versionStatus));
+        Optional<Integer> targetMajorVersion = targetMajorVersion();
+        upgrade(instances.with(UpgradePolicy.canary), canaryTarget, targetMajorVersion, instances.size());
+        defaultTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.defaultPolicy), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
+        conservativeTargets.forEach(target -> upgrade(instances.with(UpgradePolicy.conservative), target, targetMajorVersion, numberOfApplicationsToUpgrade()));
+    }
+
     private void upgrade(InstanceList instances, Version version, Optional<Integer> targetMajorVersion, int numberToUpgrade) {
+        Change change = Change.of(version);
         instances.not().failingOn(version)
                  .allowMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
                  .not().deploying()
+                 .not().hasCompleted(change) // Avoid rescheduling change for instances without production steps
                  .onLowerVersionThan(version)
                  .canUpgradeAt(version, controller().clock().instant())
                  .shuffle(random) // Shuffle so we do not always upgrade instances in the same order
                  .byIncreasingDeployedVersion()
-                 .first(numberToUpgrade).asList()
-                 .forEach(instance -> controller().applications().deploymentTrigger().triggerChange(instance, Change.of(version)));
+                 .first(numberToUpgrade)
+                 .forEach(instance -> controller().applications().deploymentTrigger().triggerChange(instance, change));
     }
 
     private void cancelUpgradesOf(InstanceList instances, String reason) {
