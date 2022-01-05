@@ -72,4 +72,5 @@ public abstract class SimpleTaggableItem extends Item implements TaggableItem {
     public boolean hasUniqueID() {
         return super.hasUniqueID();
     }
+
 }

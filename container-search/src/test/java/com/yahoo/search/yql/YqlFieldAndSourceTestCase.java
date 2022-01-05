@@ -27,7 +27,7 @@ import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import static com.yahoo.search.searchchain.testutil.DocumentSourceSearcher.DEFAULT_SUMMARY_CLASS;;
 
 /**
- * Test translation of fields and sources in YQL+ to the associated concepts in Vespa.
+ * Test translation of fields and sources in YQL to the associated concepts in Vespa.
  */
 public class YqlFieldAndSourceTestCase {
 
@@ -39,7 +39,6 @@ public class YqlFieldAndSourceTestCase {
     private Chain<Searcher> searchChain;
     private Execution.Context context;
     private Execution execution;
-
 
     @Before
     public void setUp() throws Exception {
@@ -137,6 +136,7 @@ public class YqlFieldAndSourceTestCase {
         assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
         assertFalse(result.hits().get(0).isFilled(Execution.ATTRIBUTEPREFETCH));
     }
+
     @Test
     public final void testTrivialCaseWithOnlyDiskfieldWrongClassRequested() {
         final Query query = new Query("?query=test&presentation.summaryFields=" + FIELD1);

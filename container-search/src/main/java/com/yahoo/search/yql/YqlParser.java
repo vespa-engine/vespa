@@ -1663,13 +1663,17 @@ public class YqlParser implements Parser {
                 "Expected operator READ_FIELD or PRPPREF, got %s.", ast.getOperator());
     }
 
-    private static void addItems(OperatorNode<ExpressionOperator> ast, WeightedSetItem out) {
+    private void addItems(OperatorNode<ExpressionOperator> ast, WeightedSetItem out) {
         switch (ast.getOperator()) {
             case MAP:
                 addStringItems(ast, out);
                 break;
             case ARRAY:
                 addLongItems(ast, out);
+                break;
+            case VARREF:
+                Preconditions.checkState(userQuery != null, "Query properties are not available");
+                ParameterListParser.addItemsFromString(userQuery.properties().getString(ast.getArgument(0, String.class)), out);
                 break;
             default:
                 throw newUnexpectedArgumentException(ast.getOperator(),
@@ -1698,10 +1702,8 @@ public class YqlParser implements Parser {
             OperatorNode<ExpressionOperator> tokenValueNode = args.get(0);
             assertHasOperator(tokenValueNode, ExpressionOperator.LITERAL);
             Number tokenValue = tokenValueNode.getArgument(0, Number.class);
-            Preconditions.checkArgument(tokenValue instanceof Integer
-                    || tokenValue instanceof Long,
-                    "Expected Integer or Long, got %s.", tokenValue.getClass()
-                            .getName());
+            Preconditions.checkArgument(tokenValue instanceof Integer || tokenValue instanceof Long,
+                    "Expected Integer or Long, got %s.", tokenValue.getClass().getName());
 
             OperatorNode<ExpressionOperator> tokenWeightNode = args.get(1);
             assertHasOperator(tokenWeightNode, ExpressionOperator.LITERAL);
