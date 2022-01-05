@@ -122,15 +122,17 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     private void upgrade(InstanceList instances, Version version, Optional<Integer> targetMajorVersion, int numberToUpgrade) {
+        Change change = Change.of(version);
         instances.not().failingOn(version)
                  .allowMajorVersion(version.getMajor(), targetMajorVersion.orElse(version.getMajor()))
                  .not().deploying()
+                 .not().hasCompleted(change) // Avoid rescheduling change for instances without production steps
                  .onLowerVersionThan(version)
                  .canUpgradeAt(version, controller().clock().instant())
                  .shuffle(random) // Shuffle so we do not always upgrade instances in the same order
                  .byIncreasingDeployedVersion()
-                 .first(numberToUpgrade).asList()
-                 .forEach(instance -> controller().applications().deploymentTrigger().triggerChange(instance, Change.of(version)));
+                 .first(numberToUpgrade)
+                 .forEach(instance -> controller().applications().deploymentTrigger().triggerChange(instance, change));
     }
 
     private void cancelUpgradesOf(InstanceList instances, String reason) {

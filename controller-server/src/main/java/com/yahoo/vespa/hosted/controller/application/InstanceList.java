@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -14,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,16 +31,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     private InstanceList(Collection<? extends ApplicationId> items, boolean negate, Map<ApplicationId, DeploymentStatus> instances) {
         super(items, negate, (i, n) -> new InstanceList(i, n, instances));
-        this.instances = instances;
-    }
-
-    public static InstanceList from(DeploymentStatusList statuses) {
-        ImmutableMap.Builder<ApplicationId, DeploymentStatus> builder = ImmutableMap.builder();
-        for (DeploymentStatus status : statuses.asList())
-            for (InstanceName instance : status.application().deploymentSpec().instanceNames())
-                builder.put(status.application().id().instance(instance), status);
-        Map<ApplicationId, DeploymentStatus> map = builder.build();
-        return new InstanceList(map.keySet(), false, map);
+        this.instances = Map.copyOf(instances);
     }
 
     /**
@@ -62,7 +53,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
                                        .map(readyAt -> ! readyAt.isAfter(instant)).orElse(false));
     }
 
-    /** Returns the subset of instances which have at least one productiog deployment */
+    /** Returns the subset of instances which have at least one production deployment */
     public InstanceList withProductionDeployment() {
         return matching(id -> instance(id).productionDeployments().size() > 0);
     }
@@ -80,9 +71,9 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
                                              .anyMatch(deployment -> deployment.version().isBefore(version)));
     }
 
-    /** Returns the subset of instances which have changes left to deploy; blocked, or deploying */
-    public InstanceList withChanges() {
-        return matching(id -> instance(id).change().hasTargets() || instances.get(id).outstandingChange(id.instance()).hasTargets());
+    /** Returns the subset of instances that has completed deployment of given change */
+    public InstanceList hasCompleted(Change change) {
+        return matching(id -> instances.get(id).jobsToRun(Map.of(id.instance(), change)).isEmpty());
     }
 
     /** Returns the subset of instances which are currently deploying a change */
@@ -151,6 +142,14 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     private Instance instance(ApplicationId id) {
         return application(id).require(id.instance());
+    }
+
+    public static InstanceList from(DeploymentStatusList statuses) {
+        Map<ApplicationId, DeploymentStatus> instances = new HashMap<>();
+        for (DeploymentStatus status : statuses.asList())
+            for (InstanceName instance : status.application().deploymentSpec().instanceNames())
+                instances.put(status.application().id().instance(instance), status);
+        return new InstanceList(instances.keySet(), false, instances);
     }
 
 }
