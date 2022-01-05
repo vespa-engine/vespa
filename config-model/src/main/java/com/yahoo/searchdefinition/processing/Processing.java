@@ -6,6 +6,8 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.processing.multifieldresolver.RankProfileTypeSettingsProcessor;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.deploy.TestProperties;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,6 +20,12 @@ import java.util.Set;
  * @author bjorncs
  */
 public class Processing {
+
+    private final ModelContext.Properties properties;
+
+    public Processing() { this.properties = new TestProperties(); }
+
+    public Processing(ModelContext.Properties properties) { this.properties = properties; }
 
     private Collection<ProcessorFactory> processors() {
         return Arrays.asList(
@@ -95,6 +103,10 @@ public class Processing {
                 RankingExpressionTypeResolver::new);
     }
 
+    private void runProcessor(Processor processor, boolean validate, boolean documentsOnly) {
+        processor.process(validate, documentsOnly, properties);
+    }
+
     /**
      * Runs all search processors on the given {@link Schema} object. These will modify the search object, <b>possibly
      * exchanging it with another</b>, as well as its document types.
@@ -107,12 +119,13 @@ public class Processing {
      */
     public void process(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
                         QueryProfiles queryProfiles, boolean validate, boolean documentsOnly,
-                        Set<Class<? extends Processor>> processorsToSkip) {
+                        Set<Class<? extends Processor>> processorsToSkip)
+    {
         Collection<ProcessorFactory> factories = processors();
         factories.stream()
                 .map(factory -> factory.create(schema, deployLogger, rankProfileRegistry, queryProfiles))
                 .filter(processor -> ! processorsToSkip.contains(processor.getClass()))
-                .forEach(processor -> processor.process(validate, documentsOnly));
+                .forEach(processor -> runProcessor(processor, validate, documentsOnly));
     }
 
     /**
@@ -127,7 +140,7 @@ public class Processing {
         Collection<ProcessorFactory> factories = rankProfileProcessors();
         factories.stream()
                  .map(factory -> factory.create(null, deployLogger, rankProfileRegistry, queryProfiles))
-                 .forEach(processor -> processor.process(validate, documentsOnly));
+                 .forEach(processor -> runProcessor(processor, validate, documentsOnly));
     }
 
     @FunctionalInterface
