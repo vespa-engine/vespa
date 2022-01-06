@@ -53,7 +53,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -63,7 +62,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -425,7 +423,7 @@ public class CuratorDb {
                               old != null && old.getFirst() == stat.getVersion()
                               ? old
                               : new Pair<>(stat.getVersion(), runSerializer.runsFromSlime(readSlime(path).get()))).getSecond())
-                      .orElse(new TreeMap<>(comparing(RunId::number)));
+                      .orElseGet(Collections::emptyNavigableMap);
     }
 
     public void deleteRunData(ApplicationId id, JobType type) {
@@ -546,7 +544,7 @@ public class CuratorDb {
 
     public ZoneRoutingPolicy readZoneRoutingPolicy(ZoneId zone) {
         return readSlime(zoneRoutingPolicyPath(zone)).map(data -> zoneRoutingPolicySerializer.fromSlime(zone, data))
-                                                     .orElse(new ZoneRoutingPolicy(zone, RoutingStatus.DEFAULT));
+                                                     .orElseGet(() -> new ZoneRoutingPolicy(zone, RoutingStatus.DEFAULT));
     }
 
     // -------------- Application endpoint certificates ----------------------------
@@ -590,7 +588,7 @@ public class CuratorDb {
 
     public Set<ArchiveBucket> readArchiveBuckets(ZoneId zoneId) {
         return curator.getData(archiveBucketsPath(zoneId)).map(String::new).map(ArchiveBucketsSerializer::fromJsonString)
-                .orElse(Set.of());
+                .orElseGet(Set::of);
     }
 
     public void writeArchiveBuckets(ZoneId zoneid, Set<ArchiveBucket> archiveBuckets) {
@@ -655,7 +653,7 @@ public class CuratorDb {
     // -------------- Job Retrigger entries -----------------------------------
 
     public List<RetriggerEntry> readRetriggerEntries() {
-        return readSlime(deploymentRetriggerPath()).map(RetriggerEntrySerializer::fromSlime).orElse(List.of());
+        return readSlime(deploymentRetriggerPath()).map(RetriggerEntrySerializer::fromSlime).orElseGet(List::of);
     }
 
     public void writeRetriggerEntries(List<RetriggerEntry> retriggerEntries) {

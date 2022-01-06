@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Versions;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -113,7 +114,7 @@ class RunSerializer {
             Run run = runFromSlime(runObject);
             runs.put(run.id(), run);
         });
-        return runs;
+        return Collections.unmodifiableNavigableMap(runs);
     }
 
     private Run runFromSlime(Inspector runObject) {

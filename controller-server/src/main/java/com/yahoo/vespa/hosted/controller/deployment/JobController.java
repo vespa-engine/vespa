@@ -41,6 +41,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -603,7 +604,7 @@ public class JobController {
     /** Locks all runs and modifies the list of historic runs for the given application and job type. */
     private void locked(ApplicationId id, JobType type, Consumer<SortedMap<RunId, Run>> modifications) {
         try (Lock __ = curator.lock(id, type)) {
-            SortedMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
+            SortedMap<RunId, Run> runs = new TreeMap<>(curator.readHistoricRuns(id, type));
             modifications.accept(runs);
             curator.writeHistoricRuns(id, type, runs.values());
         }
