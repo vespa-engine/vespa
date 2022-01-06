@@ -86,8 +86,8 @@ Fusion::mergeFields(vespalib::ThreadExecutor & executor, std::shared_ptr<IFlushT
     for (SchemaUtil::IndexIterator iter(schema); iter.isValid(); ++iter) {
         concurrent.wait();
         executor.execute(vespalib::makeLambdaTask([this, index=iter.getIndex(), &failed, &done, &concurrent, flush_token]() {
-            FieldMerger merger(index, _fusion_out_index);
-            if (!merger.merge_field(flush_token)) {
+            FieldMerger merger(index, _fusion_out_index, flush_token);
+            if (!merger.merge_field()) {
                 failed++;
             }
             concurrent.post();
