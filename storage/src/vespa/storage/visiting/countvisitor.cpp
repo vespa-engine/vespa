@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "countvisitor.h"
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -23,7 +22,7 @@ CountVisitor::CountVisitor(StorageComponent& component,
 
 void
 CountVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
-                              DocEntryList& entries,
+                              std::vector<spi::DocEntry::UP>& entries,
                               HitCounter& hitCounter)
 {
     for (size_t i = 0; i < entries.size(); ++i) {

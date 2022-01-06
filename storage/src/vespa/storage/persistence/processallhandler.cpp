@@ -5,7 +5,6 @@
 #include "persistenceutil.h"
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -32,7 +31,7 @@ public:
         if (e.getDocument() != nullptr) {
             ost << "Doc(" << e.getDocument()->getId() << ")"
                 << ", " << e.getDocument()->getId().getGlobalId().toString()
-                << ", size: " << e.getSize();
+                << ", size: " << e.getPersistedDocumentSize();
         } else if (e.getDocumentId() != nullptr) {
             ost << *e.getDocumentId()
                 << ", " << e.getDocumentId()->getGlobalId().toString();

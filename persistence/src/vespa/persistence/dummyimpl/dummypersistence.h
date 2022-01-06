@@ -9,7 +9,6 @@
 #pragma once
 
 #include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/stllike/hash_map.h>

@@ -37,7 +37,7 @@ class OffsetContinuation extends EncodableContinuation {
         return offset;
     }
 
-    public int getMetaEnum() {
+    public int getFlags() {
         return flags;
     }
 

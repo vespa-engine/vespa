@@ -6,7 +6,7 @@
 #include "apply_bucket_diff_state.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/persistence/spi/docentry.h>
+#include <vespa/persistence/spi/catchresult.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -130,8 +130,11 @@ void update_op_metrics(FileStorThreadMetrics& metrics, const api::StorageReply &
 } // anonymous namespace
 
 void
-MergeHandler::populateMetaData(const spi::Bucket& bucket, Timestamp maxTimestamp,
-                               DocEntryList& entries, spi::Context& context) const
+MergeHandler::populateMetaData(
+        const spi::Bucket& bucket,
+        Timestamp maxTimestamp,
+        std::vector<spi::DocEntry::UP>& entries,
+        spi::Context& context) const
 {
     spi::DocumentSelection docSel("");
 
@@ -147,7 +150,9 @@ MergeHandler::populateMetaData(const spi::Bucket& bucket, Timestamp maxTimestamp
     if (createIterResult.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to create iterator for "
-               << bucket << ": " << createIterResult.getErrorMessage();
+               << bucket
+               << ": "
+               << createIterResult.getErrorMessage();
         throw std::runtime_error(ss.str());
     }
     spi::IteratorId iteratorId(createIterResult.getIteratorId());
@@ -158,7 +163,9 @@ MergeHandler::populateMetaData(const spi::Bucket& bucket, Timestamp maxTimestamp
         if (result.getErrorCode() != spi::Result::ErrorType::NONE) {
             std::ostringstream ss;
             ss << "Failed to iterate for "
-               << bucket << ": " << result.getErrorMessage();
+               << bucket
+               << ": "
+               << result.getErrorMessage();
             throw std::runtime_error(ss.str());
         }
         auto list = result.steal_entries();
@@ -234,7 +241,7 @@ MergeHandler::buildBucketInfoList(
         }
     }
 
-    DocEntryList entries;
+    std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, maxTimestamp, entries, context);
 
     for (const auto& entry : entries) {
@@ -395,7 +402,7 @@ MergeHandler::fetchLocalData(
     IteratorGuard iteratorGuard(_spi, iteratorId, context);
 
     // Fetch all entries
-    DocEntryList entries;
+    std::vector<spi::DocEntry::UP> entries;
     entries.reserve(slots.size());
     bool fetchedAllLocalData = false;
     bool chunkLimitReached = false;
@@ -550,7 +557,7 @@ MergeHandler::applyDiffLocally(
     uint32_t notNeededByteCount = 0;
 
     async_results->mark_stale_bucket_info();
-    DocEntryList entries;
+    std::vector<spi::DocEntry::UP> entries;
     populateMetaData(bucket, MAX_TIMESTAMP, entries, context);
 
     const document::DocumentTypeRepo & repo = _env.getDocumentTypeRepo();

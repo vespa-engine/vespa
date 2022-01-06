@@ -10,8 +10,6 @@
 #include <vespa/searchvisitor/searchvisitor.h>
 #include <vespa/storage/frameworkimpl/component/storagecomponentregisterimpl.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
-#include <vespa/persistence/spi/docentry.h>
-
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchvisitor_test");
@@ -55,13 +53,14 @@ SearchVisitorTest::SearchVisitorTest() :
 
 SearchVisitorTest::~SearchVisitorTest() = default;
 
-Visitor::DocEntryList
+std::vector<spi::DocEntry::UP>
 createDocuments(const vespalib::string & dir)
 {
     (void) dir;
-    Visitor::DocEntryList documents;
+    std::vector<spi::DocEntry::UP> documents;
     spi::Timestamp ts;
-    auto e = spi::DocEntry::create(ts, std::make_unique<Document>());
+    document::Document::UP doc(new document::Document());
+    spi::DocEntry::UP e(new spi::DocEntry(ts, 0, std::move(doc)));
     documents.push_back(std::move(e));
     return documents;
 }
@@ -73,7 +72,7 @@ SearchVisitorTest::testCreateSearchVisitor(const vespalib::string & dir, const v
     VisitorFactory & factory(sFactory);
     std::unique_ptr<Visitor> sv(static_cast<SearchVisitor *>(factory.makeVisitor(*_component, _env, params)));
     document::BucketId bucketId;
-    Visitor::DocEntryList documents(createDocuments(dir));
+    std::vector<spi::DocEntry::UP> documents(createDocuments(dir));
     Visitor::HitCounter hitCounter;
     sv->handleDocuments(bucketId, documents, hitCounter);
 }

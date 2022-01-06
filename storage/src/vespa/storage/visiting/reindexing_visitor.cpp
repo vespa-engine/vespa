@@ -3,7 +3,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/storage/common/reindexing_constants.h>
-#include <vespa/persistence/spi/docentry.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.reindexing_visitor");
@@ -15,8 +14,8 @@ ReindexingVisitor::ReindexingVisitor(StorageComponent& component)
 {
 }
 
-void ReindexingVisitor::handleDocuments(const document::BucketId& ,
-                                        DocEntryList & entries,
+void ReindexingVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
+                                        std::vector<spi::DocEntry::UP>& entries,
                                         HitCounter& hitCounter)
 {
     auto lock_token = make_lock_access_token();
@@ -27,7 +26,7 @@ void ReindexingVisitor::handleDocuments(const document::BucketId& ,
             // We don't reindex removed documents, as that would be very silly.
             continue;
         }
-        const uint32_t doc_size = entry->getSize();
+        const uint32_t doc_size = entry->getDocumentSize();
         hitCounter.addHit(*entry->getDocumentId(), doc_size);
         auto msg = std::make_unique<documentapi::PutDocumentMessage>(entry->releaseDocument());
         msg->setApproxSize(doc_size);

@@ -33,7 +33,7 @@ public class OffsetContinuationTestCase {
         assertEquals(ResultId.valueOf(5), cnt.getResultId());
         assertEquals(6, cnt.getTag());
         assertEquals(7, cnt.getOffset());
-        assertEquals(8, cnt.getMetaEnum());
+        assertEquals(8, cnt.getFlags());
 
         for (int i = 0; i < 30; ++i) {
             cnt = new OffsetContinuation(ResultId.valueOf(1), 2, 3, (1 << i) + (1 << i + 1));
