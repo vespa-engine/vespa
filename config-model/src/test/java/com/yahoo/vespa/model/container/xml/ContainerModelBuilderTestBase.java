@@ -9,12 +9,11 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
-import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import org.junit.Before;
 import org.w3c.dom.Element;
 
@@ -61,7 +60,7 @@ public abstract class ContainerModelBuilderTestBase {
         for (Element containerElem : containerElems) {
             ContainerModel model = new ContainerModelBuilder(false, ContainerModelBuilder.Networking.enable)
                                            .build(deployState, vespaModel, null, root, containerElem);
-            ContainerCluster cluster = model.getCluster();
+            ContainerCluster<?> cluster = model.getCluster();
             generateDefaultSearchChains(cluster);
         }
         root.freezeModelTopology();
@@ -75,10 +74,10 @@ public abstract class ContainerModelBuilderTestBase {
         createModel(root, DeployState.createTestState(testLogger), null, containerElems);
     }
 
-    private static void generateDefaultSearchChains(ContainerCluster cluster) {
+    private static void generateDefaultSearchChains(ContainerCluster<?> cluster) {
         ContainerSearch search = cluster.getSearch();
         if (search != null)
-            search.initializeSearchChains(Collections.<String, AbstractSearchCluster>emptyMap());
+            search.initializeSearchChains(Collections.emptyMap());
     }
 
     @Before
