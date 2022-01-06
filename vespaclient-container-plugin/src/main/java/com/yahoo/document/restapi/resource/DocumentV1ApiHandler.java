@@ -1059,7 +1059,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private void updateRemoveMetrics(Outcome outcome) {
         switch (outcome) {
-            case SUCCESS: metric.add(MetricNames.SUCCEEDED, 1, null); break;
+            case SUCCESS:
+            case NOT_FOUND: metric.add(MetricNames.SUCCEEDED, 1, null); break;
             case CONDITION_FAILED: metric.add(MetricNames.CONDITION_NOT_MET, 1, null); break;
             default: metric.add(MetricNames.FAILED, 1, null); break;
         }
