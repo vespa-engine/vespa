@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -63,7 +64,7 @@ public final class Node implements Nodelike {
 
     /** Creates a node builder in the initial state (reserved) */
     public static Node.Builder reserve(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
-        return new Node.Builder("fake-" + hostname, hostname, new Flavor(resources), State.reserved, type)
+        return new Node.Builder(UUID.randomUUID().toString(), hostname, new Flavor(resources), State.reserved, type)
                 .ipConfig(IP.Config.ofEmptyPool(ipAddresses))
                 .parentHostname(parentHostname);
     }
@@ -140,7 +141,7 @@ public final class Node implements Nodelike {
      *
      * - OpenStack: UUID
      * - AWS: Instance ID
-     * - Linux containers: fake-[hostname]
+     * - Linux containers: UUID
      */
     public String id() { return id; }
 
