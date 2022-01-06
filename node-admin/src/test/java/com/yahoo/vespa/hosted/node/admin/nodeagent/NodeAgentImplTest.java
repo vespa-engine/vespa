@@ -699,6 +699,42 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator, never()).resume(any(String.class));
     }
 
+    @Test
+    public void uncaps_and_caps_cpu_for_services_restart() {
+        NodeSpec.Builder specBuilder = nodeBuilder(NodeState.active)
+                .wantedDockerImage(dockerImage).currentDockerImage(dockerImage)
+                .wantedVespaVersion(vespaVersion).currentVespaVersion(vespaVersion)
+                .wantedRestartGeneration(2).currentRestartGeneration(1);
+
+        NodeAgentContext context = createContext(specBuilder.build());
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true, Duration.ofSeconds(30));
+        mockGetContainer(dockerImage, ContainerResources.from(2, 2, 16), true);
+
+        InOrder inOrder = inOrder(orchestrator, containerOperations);
+
+        nodeAgent.converge(context);
+        inOrder.verify(orchestrator, times(1)).suspend(eq(hostName));
+        inOrder.verify(containerOperations, times(1)).updateContainer(eq(context), eq(containerId), eq(ContainerResources.from(0, 0, 16)));
+        inOrder.verify(containerOperations, times(1)).restartVespa(eq(context));
+
+        mockGetContainer(dockerImage, ContainerResources.from(0, 0, 16), true);
+        doNothing().when(healthChecker).verifyHealth(any());
+        try {
+            nodeAgent.doConverge(context);
+            fail("Expected to fail due to warm up period not yet done");
+        } catch (ConvergenceException e) {
+            assertEquals("Refusing to resume until warm up period ends (in PT30S)", e.getMessage());
+        }
+        inOrder.verify(orchestrator, never()).resume(any());
+        inOrder.verify(orchestrator, never()).suspend(any());
+        inOrder.verify(containerOperations, never()).updateContainer(any(), any(), any());
+
+
+        clock.advance(Duration.ofSeconds(31));
+        nodeAgent.doConverge(context);
+        inOrder.verify(orchestrator, times(1)).resume(eq(hostName));
+    }
+
     private void verifyThatContainerIsStopped(NodeState nodeState, Optional<ApplicationId> owner) {
         NodeSpec.Builder nodeBuilder = nodeBuilder(nodeState)
                 .type(NodeType.tenant)
