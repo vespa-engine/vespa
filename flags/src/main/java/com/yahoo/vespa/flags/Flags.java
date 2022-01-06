@@ -407,6 +407,13 @@ public class Flags {
             "Takes effect on redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_DATA_HIGHWAY_IN_AWS = defineFeatureFlag(
+            "enable-data-highway-in-aws", false,
+            List.of("hmusum"), "2022-01-06", "2022-04-06",
+            "Enable Data Highway in AWS",
+            "Takes effect on restart of Docker container",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
