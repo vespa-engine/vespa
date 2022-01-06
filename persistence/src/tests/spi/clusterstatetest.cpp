@@ -262,62 +262,42 @@ TEST(ClusterStateTest, node_maintenance_state_is_set_independent_of_bucket_space
 }
 
 TEST(DocEntryTest, test_basics) {
-    EXPECT_EQ(40u, sizeof(DocEntry));
+    EXPECT_EQ(24, sizeof(DocEntry));
 }
 
 TEST(DocEntryTest, test_meta_only) {
-    DocEntry e(Timestamp(9), 0);
-    EXPECT_EQ(9, e.getTimestamp());
-    EXPECT_FALSE(e.isRemove());
-    EXPECT_EQ(40, e.getSize());
-    EXPECT_EQ(0, e.getDocumentSize());
-    EXPECT_EQ(0, e.getPersistedDocumentSize());
-    EXPECT_EQ(nullptr, e.getDocument());
-    EXPECT_EQ(nullptr, e.getDocumentId());
+    DocEntry::UP e = DocEntry::create(Timestamp(9), 0);
+    EXPECT_EQ(9, e->getTimestamp());
+    EXPECT_FALSE(e->isRemove());
+    EXPECT_EQ(24, e->getSize());
+    EXPECT_EQ(0, e->getDocumentSize());
+    EXPECT_EQ(nullptr, e->getDocument());
+    EXPECT_EQ(nullptr, e->getDocumentId());
 
-    e.setPersistedDocumentSize(7);
-    EXPECT_EQ(40, e.getSize());
-    EXPECT_EQ(0, e.getDocumentSize());
-    EXPECT_EQ(7, e.getPersistedDocumentSize());
-
-    DocEntry r(Timestamp(666), 1);
-    EXPECT_EQ(666, r.getTimestamp());
-    EXPECT_TRUE(r.isRemove());
+    DocEntry::UP r = DocEntry::create(Timestamp(666), 1);
+    EXPECT_EQ(666, r->getTimestamp());
+    EXPECT_TRUE(r->isRemove());
 }
 
 TEST(DocEntryTest, test_docid_only) {
-    DocEntry e(Timestamp(9), 0, DocumentId("id:test:test::1"));
-    EXPECT_EQ(9, e.getTimestamp());
-    EXPECT_FALSE(e.isRemove());
-    EXPECT_EQ(56, e.getSize());
-    EXPECT_EQ(16, e.getDocumentSize());
-    EXPECT_EQ(16, e.getPersistedDocumentSize());
-    EXPECT_EQ(nullptr, e.getDocument());
-    EXPECT_NE(nullptr, e.getDocumentId());
-
-    e.setPersistedDocumentSize(7);
-    EXPECT_EQ(56, e.getSize());
-    EXPECT_EQ(16, e.getDocumentSize());
-    EXPECT_EQ(7, e.getPersistedDocumentSize());
-
+    DocEntry::UP e = DocEntry::create(Timestamp(9), 0, DocumentId("id:test:test::1"));
+    EXPECT_EQ(9, e->getTimestamp());
+    EXPECT_FALSE(e->isRemove());
+    EXPECT_EQ(48, e->getSize());
+    EXPECT_EQ(16, e->getDocumentSize());
+    EXPECT_EQ(nullptr, e->getDocument());
+    EXPECT_NE(nullptr, e->getDocumentId());
 }
 
 TEST(DocEntryTest, test_document_only) {
     document::TestDocMan testDocMan;
-    DocEntry e(Timestamp(9), 0, testDocMan.createRandomDocument(0, 1000));
-    EXPECT_EQ(9, e.getTimestamp());
-    EXPECT_FALSE(e.isRemove());
-    EXPECT_EQ(672, e.getSize());
-    EXPECT_EQ(632, e.getDocumentSize());
-    EXPECT_EQ(632, e.getPersistedDocumentSize());
-    EXPECT_NE(nullptr, e.getDocument());
-    EXPECT_NE(nullptr, e.getDocumentId());
-
-    e.setPersistedDocumentSize(7);
-    EXPECT_EQ(672, e.getSize());
-    EXPECT_EQ(632, e.getDocumentSize());
-    EXPECT_EQ(7, e.getPersistedDocumentSize());
-
+    DocEntry::UP e = DocEntry::create(Timestamp(9), 0, testDocMan.createRandomDocument(0, 1000));
+    EXPECT_EQ(9, e->getTimestamp());
+    EXPECT_FALSE(e->isRemove());
+    EXPECT_EQ(664, e->getSize());
+    EXPECT_EQ(632, e->getDocumentSize());
+    EXPECT_NE(nullptr, e->getDocument());
+    EXPECT_NE(nullptr, e->getDocumentId());
 }
 
 }

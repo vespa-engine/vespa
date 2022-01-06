@@ -9,7 +9,6 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config-stor-distribution.h>
 
-
 using namespace storage::spi;
 using namespace storage;
 using document::test::makeBucketSpace;
@@ -21,7 +20,7 @@ struct Fixture {
     BucketContent content;
 
     void insert(DocumentId id, Timestamp timestamp, int meta_flags) {
-        content.insert(DocEntry::UP(new DocEntry(timestamp, meta_flags, id)));
+        content.insert(DocEntry::create(timestamp, meta_flags, id));
     }
 
     Fixture() {

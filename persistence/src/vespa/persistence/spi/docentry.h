@@ -24,37 +24,16 @@ enum DocumentMetaFlags {
 
 class DocEntry {
 public:
-    typedef uint32_t SizeType;
-private:
-    Timestamp    _timestamp;
-    int          _metaFlags;
-    SizeType     _persistedDocumentSize;
-    SizeType     _size;
-    DocumentIdUP _documentId;
-    DocumentUP   _document;
-public:
+    using SizeType = uint32_t;
     using UP = std::unique_ptr<DocEntry>;
     using SP = std::shared_ptr<DocEntry>;
 
-    DocEntry(Timestamp t, int metaFlags, DocumentUP doc);
-
-    /**
-     * Constructor that can be used by providers that already know
-     * the serialized size of the document, so the potentially expensive
-     * call to getSerializedSize can be avoided.
-     */
-    DocEntry(Timestamp t, int metaFlags, DocumentUP doc, size_t serializedDocumentSize);
-    DocEntry(Timestamp t, int metaFlags, const DocumentId& docId);
-
-    DocEntry(Timestamp t, int metaFlags);
+    DocEntry(Timestamp t, int metaFlags) : DocEntry(t, metaFlags, 0) { }
     DocEntry(const DocEntry &) = delete;
     DocEntry & operator=(const DocEntry &) = delete;
     DocEntry(DocEntry &&) = delete;
     DocEntry & operator=(DocEntry &&) = delete;
-    ~DocEntry();
-    const Document* getDocument() const { return _document.get(); }
-    const DocumentId* getDocumentId() const;
-    DocumentUP releaseDocument();
+    virtual ~DocEntry();
     bool isRemove() const { return (_metaFlags & REMOVE_ENTRY); }
     Timestamp getTimestamp() const { return _timestamp; }
     int getFlags() const { return _metaFlags; }
@@ -62,33 +41,34 @@ public:
      * @return In-memory size of this doc entry, including document instance.
      *     In essence: serialized size of document + sizeof(DocEntry).
      */
-    SizeType getSize() const { return _size; }
+    SizeType getSize() const { return _size + getOwnSize() ; }
+    virtual SizeType getOwnSize() const { return sizeof(DocEntry); }
     /**
      * If entry contains a document, returns its serialized size.
      * If entry contains a document id, returns the serialized size of
      * the id alone.
      * Otherwise (i.e. metadata only), returns zero.
      */
-    SizeType getDocumentSize() const;
-    /**
-     * Return size of document as it exists in persisted form. By default
-     * this will return the serialized size of the entry's document instance,
-     * but for persistence providers that are able to provide this information
-     * efficiently, this value can be set explicitly to provide better statistical
-     * tracking for e.g. visiting operations in the service layer.
-     * If explicitly set, this value shall be the size of the document _before_
-     * any field filtering is performed.
-     */
-    SizeType getPersistedDocumentSize() const { return _persistedDocumentSize; }
-    /**
-     * Set persisted size of document. Optional.
-     * @see getPersistedDocumentSize
-     */
-    void setPersistedDocumentSize(SizeType persistedDocumentSize) {
-        _persistedDocumentSize = persistedDocumentSize;
-    }
+    SizeType getDocumentSize() const { return _size; }
 
-    vespalib::string toString() const;
+    virtual vespalib::string toString() const;
+    virtual const Document* getDocument() const { return nullptr; }
+    virtual const DocumentId* getDocumentId() const { return nullptr; }
+    virtual DocumentUP releaseDocument();
+    static UP create(Timestamp t, int metaFlags);
+    static UP create(Timestamp t, int metaFlags, const DocumentId &docId);
+    static UP create(Timestamp t, int metaFlags, DocumentUP doc);
+    static UP create(Timestamp t, int metaFlags, DocumentUP doc, SizeType serializedDocumentSize);
+protected:
+    DocEntry(Timestamp t, int metaFlags, SizeType size)
+        : _timestamp(t),
+          _metaFlags(metaFlags),
+          _size(size)
+    {}
+private:
+    Timestamp    _timestamp;
+    int          _metaFlags;
+    SizeType     _size;
 };
 
 std::ostream & operator << (std::ostream & os, const DocEntry & r);

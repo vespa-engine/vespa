@@ -275,18 +275,14 @@ struct PairDR : DocumentRetrieverBaseForTest {
     }
 };
 
-size_t getSize() {
-    return sizeof(DocEntry);
-}
-
 size_t getSize(const document::Document &doc) {
     vespalib::nbostream tmp;
     doc.serialize(tmp);
-    return tmp.size() + getSize();
+    return tmp.size();
 }
 
 size_t getSize(const document::DocumentId &id) {
-    return id.getSerializedSize() + getSize();
+    return id.getSerializedSize();
 }
 
 IDocumentRetriever::SP nil() { return std::make_unique<UnitDR>(); }
@@ -390,26 +386,26 @@ void checkDoc(const IDocumentRetriever &dr, const std::string &id,
 void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp, int flags)
 {
     ASSERT_LESS(idx, res.getEntries().size());
-    DocEntry expect(timestamp, flags);
-    EXPECT_TRUE(equal(expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(getSize(), res.getEntries()[idx]->getSize());
+    auto expect = DocEntry::create(timestamp, flags);
+    EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
+    EXPECT_EQUAL(0u, res.getEntries()[idx]->getDocumentSize());
 }
 
 void checkEntry(const IterateResult &res, size_t idx, const DocumentId &id, const Timestamp &timestamp)
 {
     ASSERT_LESS(idx, res.getEntries().size());
-    DocEntry expect(timestamp, storage::spi::REMOVE_ENTRY, id);
-    EXPECT_TRUE(equal(expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(getSize(id), res.getEntries()[idx]->getSize());
+    auto expect = DocEntry::create(timestamp, storage::spi::REMOVE_ENTRY, id);
+    EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
+    EXPECT_EQUAL(getSize(id), res.getEntries()[idx]->getDocumentSize());
     EXPECT_GREATER(getSize(id), 0u);
 }
 
 void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const Timestamp &timestamp)
 {
     ASSERT_LESS(idx, res.getEntries().size());
-    DocEntry expect(timestamp, storage::spi::NONE, Document::UP(doc.clone()));
-    EXPECT_TRUE(equal(expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(getSize(doc), res.getEntries()[idx]->getSize());
+    auto expect = DocEntry::create(timestamp, storage::spi::NONE, Document::UP(doc.clone()));
+    EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
+    EXPECT_EQUAL(getSize(doc), res.getEntries()[idx]->getDocumentSize());
     EXPECT_GREATER(getSize(doc), 0u);
 }
 
@@ -630,8 +626,8 @@ TEST("require that maxBytes splits iteration results") {
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
-    IterateResult res1 = itr.iterate(getSize(Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1"))) +
-                                     getSize(DocumentId("id:ns:document::2")));
+    IterateResult res1 = itr.iterate(getSize(Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1"))) + sizeof(DocEntry) + 8 +
+                                     getSize(DocumentId("id:ns:document::2")) + sizeof(DocEntry) + 8);
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQUAL(2u, res1.getEntries().size());
     TEST_DO(checkEntry(res1, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));
@@ -651,7 +647,7 @@ TEST("require that maxBytes splits iteration results for meta-data only iteratio
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
-    IterateResult res1 = itr.iterate(getSize() + getSize());
+    IterateResult res1 = itr.iterate(2 * sizeof(DocEntry));
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQUAL(2u, res1.getEntries().size());
     TEST_DO(checkEntry(res1, 0, Timestamp(2), storage::spi::NONE));

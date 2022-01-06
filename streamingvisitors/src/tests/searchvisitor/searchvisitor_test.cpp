@@ -62,7 +62,7 @@ createDocuments(const vespalib::string & dir)
     std::vector<spi::DocEntry::UP> documents;
     spi::Timestamp ts;
     document::Document::UP doc(new document::Document());
-    spi::DocEntry::UP e(new spi::DocEntry(ts, 0, std::move(doc)));
+    auto e = spi::DocEntry::create(ts, 0, std::move(doc));
     documents.push_back(std::move(e));
     return documents;
 }

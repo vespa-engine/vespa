@@ -25,6 +25,7 @@ using vespalib::make_string;
 using std::binary_search;
 using std::lower_bound;
 using document::FixedBucketSpaces;
+using document::FieldSet;
 using storage::spi::test::cloneDocEntry;
 using storage::spi::test::equal;
 
@@ -434,7 +435,7 @@ DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, Conte
         }
     } else {
         LOG(spam, "Inserting document %s", doc->toString(true).c_str());
-        auto entry = std::make_unique<DocEntry>(t, NONE, Document::UP(doc->clone()));
+        auto entry = DocEntry::create(t, NONE, Document::UP(doc->clone()));
         (*bc)->insert(std::move(entry));
         bc.reset();
         onComplete->onComplete(std::make_unique<Result>());
@@ -492,7 +493,7 @@ DummyPersistence::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentI
         }
         DocEntry::SP entry((*bc)->getEntry(id));
         numRemoves += (entry.get() && !entry->isRemove()) ? 1 : 0;
-        auto remEntry = std::make_unique<DocEntry>(t, REMOVE_ENTRY, id);
+        auto remEntry = DocEntry::create(t, REMOVE_ENTRY, id);
 
         if ((*bc)->hasTimestamp(t)) {
             (*bc)->eraseEntry(t);
@@ -504,7 +505,7 @@ DummyPersistence::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentI
 }
 
 GetResult
-DummyPersistence::get(const Bucket& b, const document::FieldSet& fieldSet, const DocumentId& did, Context&) const
+DummyPersistence::get(const Bucket& b, const FieldSet& fieldSet, const DocumentId& did, Context&) const
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     LOG(debug, "get(%s, %s)",
@@ -521,8 +522,8 @@ DummyPersistence::get(const Bucket& b, const document::FieldSet& fieldSet, const
             return GetResult::make_for_tombstone(entry->getTimestamp());
         } else {
             Document::UP doc(entry->getDocument()->clone());
-            if (fieldSet.getType() != document::FieldSet::Type::ALL) {
-                document::FieldSet::stripFields(*doc, fieldSet);
+            if (fieldSet.getType() != FieldSet::Type::ALL) {
+                FieldSet::stripFields(*doc, fieldSet);
             }
             return GetResult(std::move(doc), entry->getTimestamp());
         }
@@ -652,18 +653,13 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
             if (currentSize != 0 && currentSize + size > maxByteSize) break;
             currentSize += size;
             if (!entry->isRemove()
-                && it->_fieldSet->getType() != document::FieldSet::Type::ALL)
+                && it->_fieldSet->getType() != FieldSet::Type::ALL)
             {
                 assert(entry->getDocument());
                 // Create new document with only wanted fields.
-                Document::UP filtered(
-                        document::FieldSet::createDocumentSubsetCopy(
-                                *entry->getDocument(),
-                                *it->_fieldSet));
-                DocEntry::UP ret(new DocEntry(entry->getTimestamp(),
-                                              entry->getFlags(),
-                                              std::move(filtered),
-                                              entry->getPersistedDocumentSize()));
+                Document::UP filtered(FieldSet::createDocumentSubsetCopy(*entry->getDocument(), *it->_fieldSet));
+                auto ret = DocEntry::create(entry->getTimestamp(), entry->getFlags(),
+                                            std::move(filtered), entry->getDocumentSize());
                 entries.push_back(std::move(ret));
             } else {
                 // Use entry as-is.

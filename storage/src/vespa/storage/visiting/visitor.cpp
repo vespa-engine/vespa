@@ -815,12 +815,11 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
 
                 uint64_t size = 0;
                 for (const auto& entry : reply->getEntries()) {
-                    size += entry->getPersistedDocumentSize();
+                    size += entry->getDocumentSize();
                 }
 
                 _visitorStatistics.setDocumentsVisited(
-                        _visitorStatistics.getDocumentsVisited()
-                        + reply->getEntries().size());
+                        _visitorStatistics.getDocumentsVisited() + reply->getEntries().size());
                 _visitorStatistics.setBytesVisited(_visitorStatistics.getBytesVisited() + size);
             } catch (std::exception& e) {
                 LOG(warning, "handleDocuments threw exception %s", e.what());

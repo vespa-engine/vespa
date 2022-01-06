@@ -33,10 +33,10 @@ std::unique_ptr<DocEntry>
 createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ssize_t defaultSerializedSize) {
     if (doc) {
         if (removed) {
-            return std::make_unique<DocEntry>(timestamp, storage::spi::REMOVE_ENTRY, doc->getId());
+            return DocEntry::create(timestamp, storage::spi::REMOVE_ENTRY, doc->getId());
         } else {
             ssize_t serializedSize = defaultSerializedSize >= 0 ? defaultSerializedSize : doc->serialize().size();
-            return std::make_unique<DocEntry>(timestamp, storage::spi::NONE, std::move(doc), serializedSize);
+            return DocEntry::create(timestamp, storage::spi::NONE, std::move(doc), serializedSize);
         }
     } else {
         return createDocEntry(timestamp, removed);

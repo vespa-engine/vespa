@@ -32,7 +32,7 @@ public:
         if (e.getDocument() != nullptr) {
             ost << "Doc(" << e.getDocument()->getId() << ")"
                 << ", " << e.getDocument()->getId().getGlobalId().toString()
-                << ", size: " << e.getPersistedDocumentSize();
+                << ", size: " << e.getDocumentSize();
         } else if (e.getDocumentId() != nullptr) {
             ost << *e.getDocumentId()
                 << ", " << e.getDocumentId()->getGlobalId().toString();

@@ -382,11 +382,8 @@ VisitorTest::sendGetIterReply(GetIterCommand& cmd,
     assert(maxDocuments < _documents.size());
     size_t documentCount = maxDocuments != 0 ? maxDocuments : _documents.size();
     for (size_t i = 0; i < documentCount; ++i) {
-        reply->getEntries().emplace_back(
-                        std::make_unique<spi::DocEntry>(
-                                spi::Timestamp(1000 + i),
-                                spi::NONE,
-                                document::Document::UP(_documents[i]->clone())));
+        reply->getEntries().push_back(spi::DocEntry::create(spi::Timestamp(1000 + i), spi::NONE,
+                                                            document::Document::UP(_documents[i]->clone())));
     }
     if (documentCount == _documents.size() || overrideCompleted) {
         reply->setCompleted();
