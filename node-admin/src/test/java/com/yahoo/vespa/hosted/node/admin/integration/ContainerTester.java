@@ -134,7 +134,10 @@ public class ContainerTester implements AutoCloseable {
     }
 
     <T> T inOrder(T t) {
-        return inOrder.verify(t, timeout(10000));
+        // Should probably wait for one NodeAdminStateUpdater tick & one node agent tick
+        // instead of waiting up to a timeout, but there are currently no guarantees on the node
+        // agent ticks.
+        return inOrder.verify(t, timeout(60000));
     }
 
     public static NodeAgentContext containerMatcher(ContainerName containerName) {
