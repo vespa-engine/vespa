@@ -2,33 +2,6 @@
 <!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <services version="1.0">
 
-  <service version="1.0" name="myservice" command="mycmd1.sh">
-    <config name="a.myconfig">
-      <mysetting>bar</mysetting>
-    </config>
-    <node hostalias="node1">
-      <config name="a.myconfig">
-        <mysetting>baz</mysetting>
-      </config>
-    </node>
-    <node hostalias="node2"/>
-    <node hostalias="node3"/>
-    <node hostalias="node3"/>
-  </service>
-
-  <service version="1.0" name="myotherservice" command="/home/vespa/bin/mycmd2.sh --ytest $FOO_BAR">
-    <config name="a.myconfig">
-      <mysetting>bar2</mysetting>
-    </config>
-    <node hostalias="node3">
-      <config name="a.myconfig">
-        <mysetting>baz2</mysetting>
-      </config>
-    </node>
-    <node hostalias="node4"/>
-    <node hostalias="node5"/>
-  </service>
-
   <admin version="2.0">
     <adminserver hostalias="node1"/>
     <slobroks>
