@@ -109,17 +109,17 @@ public class AttributeChangeValidator {
         for (Attribute next : nextFields.attributes()) {
             Attribute current = currentFields.getAttribute(next.getName());
             if (current != null) {
-                validateAttributeSetting(id, current, next, Attribute::isFastSearch, "fast-search", result);
-                validateAttributeSetting(id, current, next, Attribute::isFastAccess, "fast-access", result);
-                validateAttributeSetting(id, current, next, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
-                validateAttributeSetting(id, current, next, AttributeChangeValidator::extractDictionaryCase, "dictionary: cased/uncased", result);
-                validateAttributeSetting(id, current, next, Attribute::isHuge, "huge", result);
-                validateAttributeSetting(id, current, next, Attribute::isPaged, "paged", result);
+                validateAttributePredicate(id, current, next, Attribute::isFastSearch, "fast-search", result);
+                validateAttributePredicate(id, current, next, Attribute::isFastAccess, "fast-access", result);
+                validateAttributeProperty(id, current, next, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
+                validateAttributeProperty(id, current, next, AttributeChangeValidator::extractDictionaryCase, "dictionary: cased/uncased", result);
+                validateAttributePredicate(id, current, next, Attribute::isHuge, "huge", result);
+                validateAttributePredicate(id, current, next, Attribute::isPaged, "paged", result);
                 validatePagedAttributeRemoval(current, next);
-                validateAttributeSetting(id, current, next, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
-                validateAttributeSetting(id, current, next, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
-                validateAttributeSetting(id, current, next, Attribute::distanceMetric, "distance-metric", result);
-                validateAttributeSetting(id, current, next, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
+                validateAttributeProperty(id, current, next, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
+                validateAttributePredicate(id, current, next, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
+                validateAttributeProperty(id, current, next, Attribute::distanceMetric, "distance-metric", result);
+                validateAttributePredicate(id, current, next, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
                 if (hasHnswIndex(current) && hasHnswIndex(next)) {
                     validateAttributeHnswIndexSetting(id, current, next, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
                     validateAttributeHnswIndexSetting(id, current, next, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);
@@ -129,10 +129,10 @@ public class AttributeChangeValidator {
         return result;
     }
 
-    private static void validateAttributeSetting(ClusterSpec.Id id,
-                                                 Attribute currentAttr, Attribute nextAttr,
-                                                 Predicate<Attribute> predicate, String setting,
-                                                 List<VespaConfigChangeAction> result) {
+    private static void validateAttributePredicate(ClusterSpec.Id id,
+                                                   Attribute currentAttr, Attribute nextAttr,
+                                                   Predicate<Attribute> predicate, String setting,
+                                                   List<VespaConfigChangeAction> result) {
         boolean nextValue = predicate.test(nextAttr);
         if (predicate.test(currentAttr) != nextValue) {
             String change = nextValue ? "add" : "remove";
@@ -140,10 +140,10 @@ public class AttributeChangeValidator {
         }
     }
 
-    private static <T> void validateAttributeSetting(ClusterSpec.Id id,
-                                                     Attribute current, Attribute next,
-                                                     Function<Attribute, T> settingValueProvider, String setting,
-                                                     List<VespaConfigChangeAction> result) {
+    private static <T> void validateAttributeProperty(ClusterSpec.Id id,
+                                                      Attribute current, Attribute next,
+                                                      Function<Attribute, T> settingValueProvider, String setting,
+                                                      List<VespaConfigChangeAction> result) {
         T currentValue = settingValueProvider.apply(current);
         T nextValue = settingValueProvider.apply(next);
         if ( ! Objects.equals(currentValue, nextValue)) {
