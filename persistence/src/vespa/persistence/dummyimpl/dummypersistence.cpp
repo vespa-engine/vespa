@@ -658,7 +658,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
                 assert(entry->getDocument());
                 // Create new document with only wanted fields.
                 Document::UP filtered(FieldSet::createDocumentSubsetCopy(*entry->getDocument(), *it->_fieldSet));
-                auto ret = DocEntry::create(entry->getTimestamp(), std::move(filtered), entry->getDocumentSize());
+                auto ret = DocEntry::create(entry->getTimestamp(), std::move(filtered), entry->getSize());
                 entries.push_back(std::move(ret));
             } else {
                 // Use entry as-is.

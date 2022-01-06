@@ -389,7 +389,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp
     ASSERT_LESS(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, flags);
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(0u, res.getEntries()[idx]->getDocumentSize());
+    EXPECT_EQUAL(sizeof(DocEntry), res.getEntries()[idx]->getSize());
 }
 
 void checkEntry(const IterateResult &res, size_t idx, const DocumentId &id, const Timestamp &timestamp)
@@ -397,7 +397,7 @@ void checkEntry(const IterateResult &res, size_t idx, const DocumentId &id, cons
     ASSERT_LESS(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, DocumentMetaFlags::REMOVE_ENTRY, id);
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(getSize(id), res.getEntries()[idx]->getDocumentSize());
+    EXPECT_EQUAL(getSize(id), res.getEntries()[idx]->getSize());
     EXPECT_GREATER(getSize(id), 0u);
 }
 
@@ -406,7 +406,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Document &doc, const
     ASSERT_LESS(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, Document::UP(doc.clone()));
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
-    EXPECT_EQUAL(getSize(doc), res.getEntries()[idx]->getDocumentSize());
+    EXPECT_EQUAL(getSize(doc), res.getEntries()[idx]->getSize());
     EXPECT_GREATER(getSize(doc), 0u);
 }
 
@@ -627,8 +627,8 @@ TEST("require that maxBytes splits iteration results") {
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
-    IterateResult res1 = itr.iterate(getSize(Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1"))) + sizeof(DocEntry) + 8 +
-                                     getSize(DocumentId("id:ns:document::2")) + sizeof(DocEntry) + 8);
+    IterateResult res1 = itr.iterate(getSize(Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1"))) +
+                                     getSize(DocumentId("id:ns:document::2")));
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQUAL(2u, res1.getEntries().size());
     TEST_DO(checkEntry(res1, 0, Document(*DataType::DOCUMENT, DocumentId("id:ns:document::1")), Timestamp(2)));

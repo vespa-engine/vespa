@@ -14,6 +14,7 @@
 #pragma once
 
 #include <persistence/spi/types.h>
+#include <vespa/document/base/globalid.h>
 
 namespace storage::spi {
 
@@ -37,25 +38,22 @@ public:
     Timestamp getTimestamp() const { return _timestamp; }
     DocumentMetaFlags getFlags() const { return _metaFlags; }
     /**
-     * @return In-memory size of this doc entry, including document instance.
-     *     In essence: serialized size of document + sizeof(DocEntry).
-     */
-    SizeType getSize() const { return _size + getOwnSize() ; }
-    virtual SizeType getOwnSize() const { return sizeof(DocEntry); }
-    /**
      * If entry contains a document, returns its serialized size.
      * If entry contains a document id, returns the serialized size of
      * the id alone.
-     * Otherwise (i.e. metadata only), returns zero.
+     * Otherwise (i.e. metadata only), returns sizeof(DocEntry).
      */
-    SizeType getDocumentSize() const { return _size; }
+    SizeType getSize() const { return _size; }
 
     virtual vespalib::string toString() const;
     virtual const Document* getDocument() const { return nullptr; }
     virtual const DocumentId* getDocumentId() const { return nullptr; }
+    virtual vespalib::stringref getDocumentType() const { return vespalib::stringref(); }
+    virtual GlobalId getGid() const { return GlobalId(); }
     virtual DocumentUP releaseDocument();
     static UP create(Timestamp t, DocumentMetaFlags metaFlags);
     static UP create(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId);
+    static UP create(Timestamp t, DocumentMetaFlags metaFlags, vespalib::stringref docType, GlobalId gid);
     static UP create(Timestamp t, DocumentUP doc);
     static UP create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize);
 protected:
@@ -65,10 +63,10 @@ protected:
           _size(size)
     {}
 private:
-    DocEntry(Timestamp t, DocumentMetaFlags metaFlags) : DocEntry(t, metaFlags, 0) { }
-    Timestamp    _timestamp;
-    DocumentMetaFlags          _metaFlags;
-    SizeType     _size;
+    DocEntry(Timestamp t, DocumentMetaFlags metaFlags) : DocEntry(t, metaFlags, sizeof(DocEntry)) { }
+    Timestamp          _timestamp;
+    DocumentMetaFlags  _metaFlags;
+    SizeType           _size;
 };
 
 std::ostream & operator << (std::ostream & os, const DocEntry & r);

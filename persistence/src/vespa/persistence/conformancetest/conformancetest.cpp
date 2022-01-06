@@ -258,15 +258,13 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
             }
             EXPECT_EQ(wanted[wantedIdx].timestamp, entry.getTimestamp());
             size_t serSize = wanted[wantedIdx].doc->serialize().size();
-            EXPECT_EQ(serSize + entry.getOwnSize(), size_t(entry.getSize()));
-            EXPECT_EQ(serSize, size_t(entry.getDocumentSize()));
+            EXPECT_EQ(serSize, size_t(entry.getSize()));
             ++wantedIdx;
         } else {
             // Remove-entry
             EXPECT_TRUE(entry.getDocumentId() != 0);
             size_t serSize = entry.getDocumentId()->getSerializedSize();
-            EXPECT_EQ(serSize + entry.getOwnSize(), size_t(entry.getSize()));
-            EXPECT_EQ(serSize, size_t(entry.getDocumentSize()));
+            EXPECT_EQ(serSize, size_t(entry.getSize()));
             if (removes.find(entry.getDocumentId()->toString()) == removes.end()) {
                 FAIL() << "Got unexpected remove entry for document id "
                        << *entry.getDocumentId();

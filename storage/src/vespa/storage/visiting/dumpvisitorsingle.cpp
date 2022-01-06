@@ -26,7 +26,7 @@ void DumpVisitorSingle::handleDocuments(const document::BucketId&,
 
     for (size_t i = 0; i < entries.size(); ++i) {
         spi::DocEntry& entry(*entries[i]);
-        const uint32_t docSize = entry.getDocumentSize();
+        const uint32_t docSize = entry.getSize();
         if (entry.isRemove()) {
             hitCounter.addHit(*entry.getDocumentId(), docSize);
             sendMessage(std::make_unique<documentapi::RemoveDocumentMessage>(*entry.getDocumentId()));

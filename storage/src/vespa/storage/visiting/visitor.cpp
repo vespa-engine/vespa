@@ -815,7 +815,7 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
 
                 uint64_t size = 0;
                 for (const auto& entry : reply->getEntries()) {
-                    size += entry->getDocumentSize();
+                    size += entry->getSize();
                 }
 
                 _visitorStatistics.setDocumentsVisited(

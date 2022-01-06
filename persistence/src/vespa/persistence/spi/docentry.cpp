@@ -14,10 +14,23 @@ public:
     DocEntryWithId(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId);
     ~DocEntryWithId();
     vespalib::string toString() const override;
-    const DocumentId* getDocumentId() const override { return _documentId.get(); }
+    const DocumentId* getDocumentId() const override { return & _documentId; }
+    vespalib::stringref getDocumentType() const override { return _documentId.getDocType(); }
+    GlobalId getGid() const override { return _documentId.getGlobalId(); }
 private:
-    SizeType getOwnSize() const override{ return sizeof(DocEntryWithId); }
-    DocumentIdUP _documentId;
+    DocumentId _documentId;
+};
+
+class DocEntryWithTypeAndGid final : public DocEntry {
+public:
+    DocEntryWithTypeAndGid(Timestamp t, DocumentMetaFlags metaFlags, vespalib::stringref docType, GlobalId gid);
+    ~DocEntryWithTypeAndGid();
+    vespalib::string toString() const override;
+    vespalib::stringref getDocumentType() const override { return _type; }
+    GlobalId getGid() const override { return _gid; }
+private:
+    vespalib::string _type;
+    GlobalId         _gid;
 };
 
 class DocEntryWithDoc final : public DocEntry {
@@ -36,8 +49,9 @@ public:
     const Document* getDocument() const override { return _document.get(); }
     const DocumentId* getDocumentId() const override { return &_document->getId(); }
     DocumentUP releaseDocument() override { return std::move(_document); }
+    vespalib::stringref getDocumentType() const override { return _document->getId().getDocType(); }
+    GlobalId getGid() const override { return _document->getId().getGlobalId(); }
 private:
-    SizeType getOwnSize() const override { return sizeof(DocEntryWithDoc); }
     DocumentUP _document;
 };
 
@@ -53,9 +67,16 @@ DocEntryWithDoc::DocEntryWithDoc(Timestamp t, DocumentUP doc, size_t serializedD
 
 DocEntryWithId::DocEntryWithId(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId& docId)
     : DocEntry(t, metaFlags, docId.getSerializedSize()),
-      _documentId(std::make_unique<DocumentId>(docId))
+      _documentId(docId)
 { }
 
+DocEntryWithTypeAndGid::DocEntryWithTypeAndGid(Timestamp t, DocumentMetaFlags metaFlags, vespalib::stringref docType, GlobalId gid)
+    : DocEntry(t, metaFlags, docType.size() + sizeof(gid)),
+      _type(docType),
+      _gid(gid)
+{ }
+
+DocEntryWithTypeAndGid::~DocEntryWithTypeAndGid() = default;
 DocEntryWithId::~DocEntryWithId() = default;
 DocEntryWithDoc::~DocEntryWithDoc() = default;
 
@@ -63,7 +84,15 @@ vespalib::string
 DocEntryWithId::toString() const
 {
     std::ostringstream out;
-    out << "DocEntry(" << getTimestamp() << ", " << int(getFlags()) << ", " << *_documentId << ")";
+    out << "DocEntry(" << getTimestamp() << ", " << int(getFlags()) << ", " << _documentId << ")";
+    return out.str();
+}
+
+vespalib::string
+DocEntryWithTypeAndGid::toString() const
+{
+    std::ostringstream out;
+    out << "DocEntry(" << getTimestamp() << ", " << int(getFlags()) << ", " << _type << ", " << _gid << ")";
     return out.str();
 }
 
@@ -90,6 +119,10 @@ DocEntry::create(Timestamp t, DocumentMetaFlags metaFlags) {
 DocEntry::UP
 DocEntry::create(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId) {
     return std::make_unique<DocEntryWithId>(t, metaFlags, docId);
+}
+DocEntry::UP
+DocEntry::create(Timestamp t, DocumentMetaFlags metaFlags, vespalib::stringref docType, GlobalId gid) {
+    return std::make_unique<DocEntryWithTypeAndGid>(t, metaFlags, docType, gid);
 }
 DocEntry::UP
 DocEntry::create(Timestamp t, DocumentUP doc) {

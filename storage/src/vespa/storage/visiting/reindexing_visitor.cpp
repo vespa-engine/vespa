@@ -27,7 +27,7 @@ void ReindexingVisitor::handleDocuments(const document::BucketId& ,
             // We don't reindex removed documents, as that would be very silly.
             continue;
         }
-        const uint32_t doc_size = entry->getDocumentSize();
+        const uint32_t doc_size = entry->getSize();
         hitCounter.addHit(*entry->getDocumentId(), doc_size);
         auto msg = std::make_unique<documentapi::PutDocumentMessage>(entry->releaseDocument());
         msg->setApproxSize(doc_size);

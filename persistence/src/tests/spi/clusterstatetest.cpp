@@ -10,6 +10,7 @@
 
 using storage::spi::test::makeSpiBucket;
 using vespalib::Trinary;
+using document::GlobalId;
 
 namespace storage::spi {
 
@@ -270,9 +271,10 @@ TEST(DocEntryTest, test_meta_only) {
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
     EXPECT_EQ(24, e->getSize());
-    EXPECT_EQ(0, e->getDocumentSize());
     EXPECT_EQ(nullptr, e->getDocument());
     EXPECT_EQ(nullptr, e->getDocumentId());
+    EXPECT_EQ("", e->getDocumentType());
+    EXPECT_EQ(GlobalId(), e->getGid());
 
     DocEntry::UP r = DocEntry::create(Timestamp(666), DocumentMetaFlags::REMOVE_ENTRY);
     EXPECT_EQ(666, r->getTimestamp());
@@ -283,10 +285,22 @@ TEST(DocEntryTest, test_docid_only) {
     DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaFlags::NONE, DocumentId("id:test:test::1"));
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
-    EXPECT_EQ(48, e->getSize());
-    EXPECT_EQ(16, e->getDocumentSize());
+    EXPECT_EQ(16, e->getSize());
     EXPECT_EQ(nullptr, e->getDocument());
     EXPECT_NE(nullptr, e->getDocumentId());
+    EXPECT_EQ("test", e->getDocumentType());
+    EXPECT_EQ(GlobalId::parse("gid(0xc4ca4238f9f9649222750be2)"), e->getGid());
+}
+
+TEST(DocEntryTest, test_doctype_and_gid) {
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaFlags::NONE, "doc_type", GlobalId::parse("gid(0xc4cef118f9f9649222750be2)"));
+    EXPECT_EQ(9, e->getTimestamp());
+    EXPECT_FALSE(e->isRemove());
+    EXPECT_EQ(20, e->getSize());
+    EXPECT_EQ(nullptr, e->getDocument());
+    EXPECT_EQ(nullptr, e->getDocumentId());
+    EXPECT_EQ("doc_type", e->getDocumentType());
+    EXPECT_EQ(GlobalId::parse("gid(0xc4cef118f9f9649222750be2)"), e->getGid());
 }
 
 TEST(DocEntryTest, test_document_only) {
@@ -294,10 +308,11 @@ TEST(DocEntryTest, test_document_only) {
     DocEntry::UP e = DocEntry::create(Timestamp(9), testDocMan.createRandomDocument(0, 1000));
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
-    EXPECT_EQ(664, e->getSize());
-    EXPECT_EQ(632, e->getDocumentSize());
+    EXPECT_EQ(632, e->getSize());
     EXPECT_NE(nullptr, e->getDocument());
     EXPECT_NE(nullptr, e->getDocumentId());
+    EXPECT_EQ("testdoctype1", e->getDocumentType());
+    EXPECT_EQ(GlobalId::parse("gid(0x4bc7000087365609f22f1f4b)"), e->getGid());
 }
 
 }
