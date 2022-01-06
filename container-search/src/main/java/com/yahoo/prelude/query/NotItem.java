@@ -25,6 +25,7 @@ public class NotItem extends CompositeItem {
     }
 
     /** Adds an item. The first item is the positive, the rest are negative */
+    @Override
     public void addItem(Item item) {
         super.addItem(item);
     }
@@ -34,20 +35,18 @@ public class NotItem extends CompositeItem {
      * (position 0) if it is not already set.
      */
     public void addNegativeItem(Item negative) {
-        if (getItemCount() == 0) {
-            insertNullFirstItem();
-        }
+        if (getItemCount() == 0)
+            insertTrueFirstItem();
         addItem(negative);
     }
 
     /** Returns the negative items of this: All child items except the first */
     public List<Item> negativeItems() { return items().subList(1, getItemCount()); }
 
-    /** Returns the positive item (the first subitem), or null if no positive items has been added. */
+    /** Returns the positive item (the first subitem), or TrueItem if no positive items has been added. */
     public Item getPositiveItem() {
-        if (getItemCount() == 0) {
-            return null;
-        }
+        if (getItemCount() == 0)
+            return new TrueItem();
         return getItem(0);
     }
 
@@ -72,7 +71,7 @@ public class NotItem extends CompositeItem {
      * the positive item becomes an AndItem with the items added
      */
     public void addPositiveItem(Item item) {
-        if (getPositiveItem() == null) {
+        if (getPositiveItem() instanceof TrueItem) {
             setPositiveItem(item);
         } else if (getPositiveItem() instanceof AndItem) {
             ((AndItem) getPositiveItem()).addItem(item);
@@ -90,7 +89,7 @@ public class NotItem extends CompositeItem {
         boolean removed = super.removeItem(item);
 
         if (removed && removedIndex == 0) {
-            insertNullFirstItem();
+            insertTrueFirstItem();
         }
         return removed;
     }
@@ -99,9 +98,13 @@ public class NotItem extends CompositeItem {
         Item removed = super.removeItem(index);
 
         if (index == 0) { // Don't make the first negative the positive
-            insertNullFirstItem();
+            insertTrueFirstItem();
         }
         return removed;
+    }
+
+    private void insertTrueFirstItem() {
+        addItem(0, new TrueItem());
     }
 
     /** Not items uses a empty heading instead of "NOT " */

@@ -9,6 +9,7 @@ import com.yahoo.document.GlobalId;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -535,18 +536,14 @@ public class GroupingExecutorTestCase {
         Execution exc = newExecution(new GroupingExecutor());
 
         Query query = new Query();
-        NotItem notItem = new NotItem();
-
-        notItem.addNegativeItem(new WordItem("negative"));
-        query.getModel().getQueryTree().setRoot(notItem);
+        query.getModel().getQueryTree().setRoot(new NullItem());
 
         Result result = exc.search(query);
         com.yahoo.search.result.ErrorMessage message = result.hits().getError();
 
         assertNotNull("Got error", message);
         assertEquals("Illegal query", message.getMessage());
-        assertEquals("Can not search for only negative items",
-                message.getDetailedMessage());
+        assertEquals("No query", message.getDetailedMessage());
         assertEquals(3, message.getCode());
     }
 

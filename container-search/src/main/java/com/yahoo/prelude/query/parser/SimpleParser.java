@@ -121,7 +121,7 @@ abstract class SimpleParser extends StructuredParser {
                 return combineItems(topLevelItem, not.getPositiveItem());
             }
         }
-        if (not != null && not.getPositiveItem() == null) {
+        if (not != null && not.getPositiveItem() instanceof TrueItem) {
             // Incomplete not, only negatives -
 
             if (topLevelItem != null && topLevelItem != not) {
