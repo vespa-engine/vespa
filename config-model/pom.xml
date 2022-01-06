@@ -306,8 +306,6 @@
             <arg>-Xlint:-rawtypes</arg>
             <arg>-Xlint:-unchecked</arg>
             <arg>-Xlint:-serial</arg>
-            <arg>-Xlint:-cast</arg>
-            <arg>-Xlint:-overloads</arg>
             <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
