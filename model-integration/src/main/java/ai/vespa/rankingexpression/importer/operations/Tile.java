@@ -62,7 +62,7 @@ public class Tile extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if (!allInputFunctionsPresent(2)) return null;
 
         IntermediateOperation input = inputs.get(0);
@@ -85,7 +85,7 @@ public class Tile extends IntermediateOperation {
         com.yahoo.tensor.functions.Slice<Reference> sliceIndices = new com.yahoo.tensor.functions.Slice<>(inputIndices, dimensionValues);
         ExpressionNode sliceExpression = new TensorFunctionNode(sliceIndices);
 
-        TensorFunction generate = Generate.bound(type.type(), wrapScalar(sliceExpression));
+        TensorFunction<Reference> generate = Generate.bound(type.type(), wrapScalar(sliceExpression));
         return generate;
     }
 

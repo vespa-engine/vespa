@@ -5,6 +5,7 @@ import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import ai.vespa.rankingexpression.importer.operations.Constant;
 import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
@@ -703,7 +704,7 @@ public class OnnxOperationsTestCase {
         return builder.build();
     }
 
-    private TensorFunction optimizeAndRename(String opName, IntermediateOperation op) {
+    private TensorFunction<Reference> optimizeAndRename(String opName, IntermediateOperation op) {
         IntermediateGraph graph = new IntermediateGraph(modelName);
         graph.put(opName, op);
         graph.outputs(graph.defaultSignature()).put(opName, opName);
@@ -717,7 +718,7 @@ public class OnnxOperationsTestCase {
         if ( ! operationType.equals(standardNamingType)) {
             List<String> renameFrom = operationType.dimensionNames();
             List<String> renameTo = standardNamingType.dimensionNames();
-            TensorFunction func = new Rename(new ConstantTensor(tensor), renameFrom, renameTo);
+            TensorFunction<Reference> func = new Rename<>(new ConstantTensor<Reference>(tensor), renameFrom, renameTo);
             return func.evaluate();
         }
         return tensor;

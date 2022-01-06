@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
@@ -36,7 +37,7 @@ public class Transpose extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if (!allInputFunctionsPresent(1))
             return null;
         return inputs.get(0).function().orElse(null);

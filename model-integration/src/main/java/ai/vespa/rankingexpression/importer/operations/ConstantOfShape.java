@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
@@ -60,10 +61,10 @@ public class ConstantOfShape extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputTypesPresent(1)) return null;
         ExpressionNode valueExpr = new ConstantNode(new DoubleValue(valueToFillWith));
-        TensorFunction function = Generate.bound(type.type(), wrapScalar(valueExpr));
+        TensorFunction<Reference> function = Generate.bound(type.type(), wrapScalar(valueExpr));
         return function;
     }
 

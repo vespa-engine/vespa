@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class Merge extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         for (IntermediateOperation operation : inputs) {
             if (operation.function().isPresent()) {
                 return operation.function().get();

@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
 
@@ -25,15 +26,15 @@ public class ConcatReduce extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputFunctionsPresent(inputs.size())) return null;
 
-        TensorFunction result = inputs.get(0).function().get();
+        TensorFunction<Reference> result = inputs.get(0).function().get();
         for (int i = 1; i < inputs.size(); ++i) {
-            TensorFunction b = inputs.get(i).function().get();
-            result = new com.yahoo.tensor.functions.Concat(result, b, tmpDimensionName);
+            TensorFunction<Reference> b = inputs.get(i).function().get();
+            result = new com.yahoo.tensor.functions.Concat<>(result, b, tmpDimensionName);
         }
-        return new com.yahoo.tensor.functions.Reduce(result, aggregator, tmpDimensionName);
+        return new com.yahoo.tensor.functions.Reduce<>(result, aggregator, tmpDimensionName);
     }
 
     @Override

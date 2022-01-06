@@ -170,7 +170,7 @@ void input() :
 void function() :
 {
     String name, expression, parameter;
-    List parameters = new ArrayList();
+    List< String > parameters = new ArrayList< String >();
 }
 {
     (  <FUNCTION> name = identifier()

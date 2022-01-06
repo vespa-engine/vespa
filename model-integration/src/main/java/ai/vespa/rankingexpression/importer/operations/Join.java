@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.ScalarFunctions;
@@ -53,7 +54,7 @@ public class Join extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputTypesPresent(2)) return null;
         if ( ! allInputFunctionsPresent(2)) return null;
 
@@ -63,7 +64,7 @@ public class Join extends IntermediateOperation {
             if (mapOperator.isPresent()) {
                 IntermediateOperation input = inputs.get(0);
                 input.removeDuplicateOutputsTo(this);  // avoids unnecessary function export
-                return new com.yahoo.tensor.functions.Map(input.function().get(), mapOperator.get());
+                return new com.yahoo.tensor.functions.Map<Reference>(input.function().get(), mapOperator.get());
             }
         }
 
@@ -86,23 +87,23 @@ public class Join extends IntermediateOperation {
             }
         }
 
-        TensorFunction aReducedFunction = a.function().get();
+        TensorFunction<Reference> aReducedFunction = a.function().get();
         if (aDimensionsToReduce.size() > 0) {
-            aReducedFunction = new Reduce(a.function().get(), Reduce.Aggregator.sum, aDimensionsToReduce);
+            aReducedFunction = new Reduce<Reference>(a.function().get(), Reduce.Aggregator.sum, aDimensionsToReduce);
         }
-        TensorFunction bReducedFunction = b.function().get();
+        TensorFunction<Reference> bReducedFunction = b.function().get();
         if (bDimensionsToReduce.size() > 0) {
-            bReducedFunction = new Reduce(b.function().get(), Reduce.Aggregator.sum, bDimensionsToReduce);
+            bReducedFunction = new Reduce<Reference>(b.function().get(), Reduce.Aggregator.sum, bDimensionsToReduce);
         }
 
         // retain order of inputs
         if (a == inputs.get(1)) {
-            TensorFunction temp = bReducedFunction;
+            TensorFunction<Reference> temp = bReducedFunction;
             bReducedFunction = aReducedFunction;
             aReducedFunction = temp;
         }
 
-        return new com.yahoo.tensor.functions.Join(aReducedFunction, bReducedFunction, operator);
+        return new com.yahoo.tensor.functions.Join<Reference>(aReducedFunction, bReducedFunction, operator);
     }
 
     @Override

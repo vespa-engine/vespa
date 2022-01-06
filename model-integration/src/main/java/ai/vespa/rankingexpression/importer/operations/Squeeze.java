@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Reduce;
@@ -52,11 +53,11 @@ public class Squeeze extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputFunctionsPresent(1)) return null;
 
-        TensorFunction inputFunction = inputs.get(0).function().get();
-        return new Reduce(inputFunction, Reduce.Aggregator.sum, squeezeDimensions);
+        TensorFunction<Reference> inputFunction = inputs.get(0).function().get();
+        return new Reduce<>(inputFunction, Reduce.Aggregator.sum, squeezeDimensions);
     }
 
     @Override

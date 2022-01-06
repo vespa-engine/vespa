@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
@@ -28,7 +29,7 @@ public class Shape extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         return null; // will be added by function() since this is constant.
     }
 

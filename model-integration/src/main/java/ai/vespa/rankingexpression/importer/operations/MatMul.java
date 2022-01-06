@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
@@ -58,24 +59,24 @@ public class MatMul extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputTypesPresent(2)) return null;
         if ( ! allInputFunctionsPresent(2)) return null;
 
         OrderedTensorType typeA = inputs.get(0).type().get();
         OrderedTensorType typeB = inputs.get(1).type().get();
 
-        TensorFunction functionA = handleBroadcasting(inputs.get(0).function().get(), typeA, typeB);
-        TensorFunction functionB = handleBroadcasting(inputs.get(1).function().get(), typeB, typeA);
+        TensorFunction<Reference> functionA = handleBroadcasting(inputs.get(0).function().get(), typeA, typeB);
+        TensorFunction<Reference> functionB = handleBroadcasting(inputs.get(1).function().get(), typeB, typeA);
 
-        return new com.yahoo.tensor.functions.Reduce(
-                    new Join(functionA, functionB, ScalarFunctions.multiply()),
+        return new com.yahoo.tensor.functions.Reduce<Reference>(
+                    new Join<Reference>(functionA, functionB, ScalarFunctions.multiply()),
                     Reduce.Aggregator.sum,
                     typeA.dimensions().get(typeA.rank() - 1).name());
     }
 
-    private TensorFunction handleBroadcasting(TensorFunction tensorFunction, OrderedTensorType typeA, OrderedTensorType typeB) {
-        List<Slice.DimensionValue> slices = new ArrayList<>();
+    private TensorFunction<Reference> handleBroadcasting(TensorFunction<Reference> tensorFunction, OrderedTensorType typeA, OrderedTensorType typeB) {
+        List<Slice.DimensionValue<Reference>> slices = new ArrayList<>();
         for (int i = 0; i < typeA.rank() - 2; ++i) {
             long dimSizeA = typeA.dimensions().get(i).size().get();
             String dimNameA = typeA.dimensionNames().get(i);
@@ -84,11 +85,11 @@ public class MatMul extends IntermediateOperation {
                 long dimSizeB = typeB.dimensions().get(j).size().get();
                 if (dimSizeB > dimSizeA && dimSizeA == 1) {
                     ExpressionNode dimensionExpression = new EmbracedNode(new ConstantNode(DoubleValue.zero));
-                    slices.add(new Slice.DimensionValue(Optional.of(dimNameA), wrapScalar(dimensionExpression)));
+                    slices.add(new Slice.DimensionValue<>(Optional.of(dimNameA), wrapScalar(dimensionExpression)));
                 }
             }
         }
-        return slices.size() == 0 ? tensorFunction : new Slice(tensorFunction, slices);
+        return slices.size() == 0 ? tensorFunction : new Slice<>(tensorFunction, slices);
     }
 
     @Override

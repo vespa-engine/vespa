@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -100,7 +101,7 @@ public abstract class ModelImporter implements MlModelImporter {
         for (ImportedModel.Signature signature : model.signatures().values()) {
             for (String outputName : signature.outputs().values()) {
                 try {
-                    Optional<TensorFunction> function = importExpression(graph.get(outputName), model);
+                    Optional<TensorFunction<Reference>> function = importExpression(graph.get(outputName), model);
                     if (function.isEmpty()) {
                         signature.skippedOutput(outputName, "No valid output function could be found.");
                     }
@@ -112,7 +113,7 @@ public abstract class ModelImporter implements MlModelImporter {
         }
     }
 
-    private static Optional<TensorFunction> importExpression(IntermediateOperation operation, ImportedModel model) {
+    private static Optional<TensorFunction<Reference>> importExpression(IntermediateOperation operation, ImportedModel model) {
         if (model.expressions().containsKey(operation.name())) {
             return operation.function();
         }
@@ -134,7 +135,7 @@ public abstract class ModelImporter implements MlModelImporter {
         operation.inputs().forEach(input -> importExpression(input, model));
     }
 
-    private static Optional<TensorFunction> importConstant(IntermediateOperation operation, ImportedModel model) {
+    private static Optional<TensorFunction<Reference>> importConstant(IntermediateOperation operation, ImportedModel model) {
         String name = operation.vespaName();
         if (model.hasLargeConstant(name) || model.hasSmallConstant(name)) {
             return operation.function();
@@ -160,7 +161,7 @@ public abstract class ModelImporter implements MlModelImporter {
         if (operation.function().isPresent()) {
             String name = operation.name();
             if ( ! model.expressions().containsKey(name)) {
-                TensorFunction function = operation.function().get();
+                TensorFunction<Reference> function = operation.function().get();
 
                 if (isSignatureOutput(model, operation)) {
                     OrderedTensorType operationType = operation.type().get();
@@ -168,7 +169,7 @@ public abstract class ModelImporter implements MlModelImporter {
                     if ( ! operationType.equals(standardNamingType)) {
                         List<String> renameFrom = operationType.dimensionNames();
                         List<String> renameTo = standardNamingType.dimensionNames();
-                        function = new Rename(function, renameFrom, renameTo);
+                        function = new Rename<Reference>(function, renameFrom, renameTo);
                     }
                 }
 
@@ -196,7 +197,7 @@ public abstract class ModelImporter implements MlModelImporter {
 
     private static void importFunctionExpression(IntermediateOperation operation, ImportedModel model) {
         if (operation.rankingExpressionFunction().isPresent()) {
-            TensorFunction function = operation.rankingExpressionFunction().get();
+            TensorFunction<Reference> function = operation.rankingExpressionFunction().get();
             try {
                 model.function(operation.rankingExpressionFunctionName(),
                                new RankingExpression(operation.rankingExpressionFunctionName(), function.toString()));

@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.Collections;
@@ -19,7 +20,7 @@ public class NoOp extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         return null;
     }
 

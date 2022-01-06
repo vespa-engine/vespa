@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
@@ -58,7 +59,7 @@ public class Range extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputTypesPresent(3)) return null;
         String dimensionName = type().get().dimensionNames().get(0);
         ExpressionNode startExpr = new ConstantNode(new DoubleValue(start));
@@ -66,7 +67,7 @@ public class Range extends IntermediateOperation {
         ExpressionNode dimExpr = new EmbracedNode(new ReferenceNode(dimensionName));
         ExpressionNode stepExpr = new ArithmeticNode(deltaExpr, ArithmeticOperator.MULTIPLY, dimExpr);
         ExpressionNode addExpr = new ArithmeticNode(startExpr, ArithmeticOperator.PLUS, stepExpr);
-        TensorFunction function = Generate.bound(type.type(), wrapScalar(addExpr));
+        TensorFunction<Reference> function = Generate.bound(type.type(), wrapScalar(addExpr));
         return function;
     }
 

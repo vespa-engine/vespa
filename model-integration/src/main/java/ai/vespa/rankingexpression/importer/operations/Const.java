@@ -35,7 +35,7 @@ public class Const extends IntermediateOperation {
     }
 
     @Override
-    public Optional<TensorFunction> function() {
+    public Optional<TensorFunction<Reference>> function() {
         if (function == null) {
             function = lazyGetFunction();
         }
@@ -43,7 +43,7 @@ public class Const extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         ExpressionNode expressionNode;
         if (type.type().rank() == 0 && getConstantValue().isPresent()) {
             expressionNode = new ConstantNode(getConstantValue().get().asDoubleValue());

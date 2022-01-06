@@ -2,6 +2,7 @@
 
 package ai.vespa.rankingexpression.importer;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.TensorTypeParser;
 
