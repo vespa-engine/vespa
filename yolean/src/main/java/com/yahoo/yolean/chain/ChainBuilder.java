@@ -24,6 +24,7 @@ public final class ChainBuilder<T> {
     }
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public final ChainBuilder<T> add(T component, Dependencies<? extends T>... dependenciesList) {
         if (dependencies.containsKey(component)) {
             throw new IllegalArgumentException("The same component cannot be added twice: " + component);
