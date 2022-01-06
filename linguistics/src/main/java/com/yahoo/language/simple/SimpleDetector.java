@@ -133,6 +133,7 @@ public class SimpleDetector implements Detector {
         return guessEncoding(input, 0, input.length);
     }
 
+    @SuppressWarnings("fallthrough")
     public String guessEncoding(byte[] input, int offset, int length) {
         boolean isUtf8 = true;
         boolean hasHighs = false;
