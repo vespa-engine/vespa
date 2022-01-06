@@ -295,7 +295,7 @@ public class QueryCanonicalizerTestCase {
         NotItem root = new NotItem();
 
         root.addNegativeItem(new WordItem("negative"));
-        assertCanonicalized("+TRUE -negative",null, root);
+        assertCanonicalized("-negative",null, root);
     }
 
     @Test
@@ -306,7 +306,7 @@ public class QueryCanonicalizerTestCase {
         root.addItem(not);
         root.addItem(new WordItem("word"));
         not.addNegativeItem(new WordItem("negative"));
-        assertCanonicalized("AND (+TRUE -negative) word",null, root);
+        assertCanonicalized("AND (-negative) word",null, root);
     }
 
     @Test

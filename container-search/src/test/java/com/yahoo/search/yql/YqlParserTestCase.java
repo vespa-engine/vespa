@@ -195,13 +195,13 @@ public class YqlParserTestCase {
     @Test
     public void testSingleNot() {
         assertParse("select foo from bar where !(title contains \"saint\")",
-                    "+TRUE -title:saint");
+                    "-title:saint");
     }
 
     @Test
     public void testMultipleNot() {
         assertParse("select foo from bar where !(title contains \"saint\") AND !(title contains \"etienne\")",
-                    "+TRUE -title:saint -title:etienne");
+                    "-title:saint -title:etienne");
     }
 
     @Test
