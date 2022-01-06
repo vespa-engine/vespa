@@ -23,6 +23,7 @@ public abstract class OrderTester<T extends Comparable<T>> {
     abstract protected void equalTest(T a, T b);
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     private final OrderTester<T> addGroup(T... group) {
         groups.add(Arrays.asList(group));
         return this;
