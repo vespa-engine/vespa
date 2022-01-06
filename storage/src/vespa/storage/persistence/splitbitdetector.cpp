@@ -3,6 +3,7 @@
 #include "splitbitdetector.h"
 #include "bucketprocessor.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/fieldset/fieldsets.h>

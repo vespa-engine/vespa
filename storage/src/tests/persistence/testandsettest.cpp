@@ -10,6 +10,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <functional>
 
 using std::unique_ptr;
@@ -73,7 +74,7 @@ struct TestAndSetTest : PersistenceTestUtils {
     static std::string expectedDocEntryString(
         api::Timestamp timestamp,
         const document::DocumentId & testDocId,
-        spi::DocumentMetaFlags removeFlag = spi::NONE);
+        spi::DocumentMetaEnum removeFlag = spi::DocumentMetaEnum::NONE);
 };
 
 TEST_F(TestAndSetTest, conditional_put_not_executed_on_condition_mismatch) {
@@ -150,7 +151,7 @@ TEST_F(TestAndSetTest, conditional_remove_executed_on_condition_match) {
 
     ASSERT_EQ(fetchResult(asyncHandler->handleRemove(*remove, createTracker(remove, BUCKET))).getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId) +
-              expectedDocEntryString(timestampTwo, testDocId, spi::REMOVE_ENTRY),
+              expectedDocEntryString(timestampTwo, testDocId, spi::DocumentMetaEnum::REMOVE_ENTRY),
               dumpBucket(BUCKET_ID));
 }
 
@@ -291,12 +292,12 @@ void TestAndSetTest::assertTestDocumentFoundAndMatchesContent(const document::Fi
 std::string TestAndSetTest::expectedDocEntryString(
     api::Timestamp timestamp,
     const document::DocumentId & docId,
-    spi::DocumentMetaFlags removeFlag)
+    spi::DocumentMetaEnum removeFlag)
 {
     std::stringstream ss;
 
-    ss << "DocEntry(" << timestamp << ", " << removeFlag << ", ";
-    if (removeFlag == spi::REMOVE_ENTRY) {
+    ss << "DocEntry(" << timestamp << ", " << int(removeFlag) << ", ";
+    if (removeFlag == spi::DocumentMetaEnum::REMOVE_ENTRY) {
         ss << docId << ")\n";
     } else {
        ss << "Doc(" << docId << "))\n";

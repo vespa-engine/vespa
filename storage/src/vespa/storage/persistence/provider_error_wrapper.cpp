@@ -2,6 +2,7 @@
 
 #include "provider_error_wrapper.h"
 #include "persistenceutil.h"
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 
 namespace storage {

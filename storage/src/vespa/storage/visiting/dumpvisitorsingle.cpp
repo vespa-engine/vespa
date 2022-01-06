@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dumpvisitorsingle.h"
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
@@ -16,8 +17,8 @@ DumpVisitorSingle::DumpVisitorSingle(StorageComponent& component, const vdslib::
 {
 }
 
-void DumpVisitorSingle::handleDocuments(const document::BucketId& /*bucketId*/,
-                                        std::vector<spi::DocEntry::UP>& entries,
+void DumpVisitorSingle::handleDocuments(const document::BucketId&,
+                                        DocEntryList& entries,
                                         HitCounter& hitCounter)
 {
     LOG(debug, "Visitor %s handling block of %zu documents.",
@@ -25,7 +26,7 @@ void DumpVisitorSingle::handleDocuments(const document::BucketId& /*bucketId*/,
 
     for (size_t i = 0; i < entries.size(); ++i) {
         spi::DocEntry& entry(*entries[i]);
-        const uint32_t docSize = entry.getDocumentSize();
+        const uint32_t docSize = entry.getSize();
         if (entry.isRemove()) {
             hitCounter.addHit(*entry.getDocumentId(), docSize);
             sendMessage(std::make_unique<documentapi::RemoveDocumentMessage>(*entry.getDocumentId()));

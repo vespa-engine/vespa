@@ -5,10 +5,12 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config-stor-distribution.h>
+#include <vespa/document/base/testdocman.h>
 #include <gtest/gtest.h>
 
 using storage::spi::test::makeSpiBucket;
 using vespalib::Trinary;
+using document::GlobalId;
 
 namespace storage::spi {
 
@@ -258,6 +260,59 @@ TEST(ClusterStateTest, node_maintenance_state_is_set_independent_of_bucket_space
     EXPECT_TRUE(node_marked_as_maintenance_in_state("distributor:3 storage:3", d, 0, true));
     EXPECT_TRUE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:d", d, 0, true));
     EXPECT_FALSE(node_marked_as_maintenance_in_state("distributor:3 storage:3 .0.s:m", d, 0, false));
+}
+
+TEST(DocEntryTest, test_basics) {
+    EXPECT_EQ(24, sizeof(DocEntry));
+}
+
+TEST(DocEntryTest, test_meta_only) {
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaEnum::NONE);
+    EXPECT_EQ(9, e->getTimestamp());
+    EXPECT_FALSE(e->isRemove());
+    EXPECT_EQ(24, e->getSize());
+    EXPECT_EQ(nullptr, e->getDocument());
+    EXPECT_EQ(nullptr, e->getDocumentId());
+    EXPECT_EQ("", e->getDocumentType());
+    EXPECT_EQ(GlobalId(), e->getGid());
+
+    DocEntry::UP r = DocEntry::create(Timestamp(666), DocumentMetaEnum::REMOVE_ENTRY);
+    EXPECT_EQ(666, r->getTimestamp());
+    EXPECT_TRUE(r->isRemove());
+}
+
+TEST(DocEntryTest, test_docid_only) {
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaEnum::NONE, DocumentId("id:test:test::1"));
+    EXPECT_EQ(9, e->getTimestamp());
+    EXPECT_FALSE(e->isRemove());
+    EXPECT_EQ(16, e->getSize());
+    EXPECT_EQ(nullptr, e->getDocument());
+    EXPECT_NE(nullptr, e->getDocumentId());
+    EXPECT_EQ("test", e->getDocumentType());
+    EXPECT_EQ(GlobalId::parse("gid(0xc4ca4238f9f9649222750be2)"), e->getGid());
+}
+
+TEST(DocEntryTest, test_doctype_and_gid) {
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaEnum::NONE, "doc_type", GlobalId::parse("gid(0xc4cef118f9f9649222750be2)"));
+    EXPECT_EQ(9, e->getTimestamp());
+    EXPECT_FALSE(e->isRemove());
+    EXPECT_EQ(20, e->getSize());
+    EXPECT_EQ(nullptr, e->getDocument());
+    EXPECT_EQ(nullptr, e->getDocumentId());
+    EXPECT_EQ("doc_type", e->getDocumentType());
+    EXPECT_EQ(GlobalId::parse("gid(0xc4cef118f9f9649222750be2)"), e->getGid());
+}
+
+TEST(DocEntryTest, test_document_only) {
+    document::TestDocMan testDocMan;
+    DocEntry::UP e = DocEntry::create(Timestamp(9), testDocMan.createRandomDocument(0, 1000));
+    EXPECT_EQ(9, e->getTimestamp());
+    EXPECT_FALSE(e->isRemove());
+    EXPECT_EQ(632, e->getSize());
+    EXPECT_NE(nullptr, e->getDocument());
+    EXPECT_NE(nullptr, e->getDocumentId());
+    EXPECT_EQ("testdoctype1", e->getDocumentType());
+    EXPECT_EQ(GlobalId::parse("gid(0x4bc7000087365609f22f1f4b)"), e->getGid());
 }
 
 }

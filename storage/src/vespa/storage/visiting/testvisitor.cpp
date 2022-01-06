@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testvisitor.h"
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <sstream>
 
@@ -39,7 +40,7 @@ TestVisitor::startingVisitor(const std::vector<document::BucketId>& buckets)
 
 void
 TestVisitor::handleDocuments(const document::BucketId& /*bucketId*/,
-                             std::vector<spi::DocEntry::UP>& entries,
+                             DocEntryList & entries,
                              HitCounter& /*hitCounter*/)
 {
     std::ostringstream ost;

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_iterator.h"
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/searchcore/proton/common/cachedselect.h>
 #include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/document/select/gid_filter.h>
@@ -8,7 +9,6 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.persistenceengine.document_iterator");
@@ -18,23 +18,25 @@ using storage::spi::DocEntry;
 using storage::spi::Timestamp;
 using document::Document;
 using document::DocumentId;
+using storage::spi::DocumentMetaEnum;
 
 namespace proton {
 
 namespace {
 
-DocEntry *createDocEntry(Timestamp timestamp, bool removed) {
-    int flags = removed ? storage::spi::REMOVE_ENTRY : storage::spi::NONE;
-    return new DocEntry(timestamp, flags);
+std::unique_ptr<DocEntry>
+createDocEntry(Timestamp timestamp, bool removed) {
+    return DocEntry::create(timestamp, removed ? DocumentMetaEnum::REMOVE_ENTRY : DocumentMetaEnum::NONE);
 }
 
-DocEntry *createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ssize_t defaultSerializedSize) {
+std::unique_ptr<DocEntry>
+createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ssize_t defaultSerializedSize) {
     if (doc) {
         if (removed) {
-            return new DocEntry(timestamp, storage::spi::REMOVE_ENTRY, doc->getId());
+            return DocEntry::create(timestamp, DocumentMetaEnum::REMOVE_ENTRY, doc->getId());
         } else {
             ssize_t serializedSize = defaultSerializedSize >= 0 ? defaultSerializedSize : doc->serialize().size();
-            return new DocEntry(timestamp, storage::spi::NONE, std::move(doc), serializedSize);
+            return DocEntry::create(timestamp, std::move(doc), serializedSize);
         }
     } else {
         return createDocEntry(timestamp, removed);
@@ -212,7 +214,7 @@ public:
             if (doc && _fields) {
                 document::FieldSet::stripFields(*doc, *_fields);
             }
-            _list.emplace_back(createDocEntry(meta.timestamp, meta.removed, std::move(doc), _defaultSerializedSize));
+            _list.push_back(createDocEntry(meta.timestamp, meta.removed, std::move(doc), _defaultSerializedSize));
         }
     }
 
@@ -262,11 +264,12 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
     }
     LOG(debug, "metadata count after filtering: %zu", lidsToFetch.size());
 
+    list.reserve(lidsToFetch.size());
     if ( _metaOnly ) {
         for (uint32_t lid : lidsToFetch) {
             const search::DocumentMetaData & meta = metaData[lidIndexMap[lid]];
             assert(lid == meta.lid);
-            list.emplace_back(createDocEntry(meta.timestamp, meta.removed));
+            list.push_back(createDocEntry(meta.timestamp, meta.removed));
         }
     } else {
         MatchVisitor visitor(matcher, metaData, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
