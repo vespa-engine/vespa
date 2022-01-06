@@ -5,7 +5,6 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/persistence/spi/catchresult.h>
 #include <vespa/persistence/spi/resource_usage_listener.h>
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
@@ -26,17 +25,15 @@ using document::BucketId;
 using document::BucketSpace;
 using document::test::makeBucketSpace;
 using storage::spi::test::makeSpiBucket;
-using storage::spi::test::cloneDocEntry;
 
 namespace storage::spi {
 
 using PersistenceProviderUP = std::unique_ptr<PersistenceProvider>;
-using DocEntryList = std::vector<DocEntry::UP>;
 
 namespace {
 
-std::unique_ptr<PersistenceProvider>
-getSpi(ConformanceTest::PersistenceFactory &factory, const document::TestDocMan &testDocMan) {
+std::unique_ptr<PersistenceProvider> getSpi(ConformanceTest::PersistenceFactory &factory,
+                               const document::TestDocMan &testDocMan) {
     PersistenceProviderUP result(factory.getPersistenceImplementation(
                 testDocMan.getTypeRepoSP(), *testDocMan.getTypeConfig()));
     EXPECT_TRUE(!result->initialize().hasError());
@@ -126,7 +123,7 @@ struct DocAndTimestamp
  */
 struct Chunk
 {
-    DocEntryList _entries;
+    std::vector<DocEntry::UP> _entries;
 };
 
 struct DocEntryIndirectTimestampComparator
@@ -169,7 +166,7 @@ doIterate(PersistenceProvider& spi,
 }
 
 size_t
-getRemoveEntryCount(const DocEntryList& entries)
+getRemoveEntryCount(const std::vector<spi::DocEntry::UP>& entries)
 {
     size_t ret = 0;
     for (size_t i = 0; i < entries.size(); ++i) {
@@ -180,13 +177,13 @@ getRemoveEntryCount(const DocEntryList& entries)
     return ret;
 }
 
-DocEntryList
+std::vector<DocEntry::UP>
 getEntriesFromChunks(const std::vector<Chunk>& chunks)
 {
-    DocEntryList ret;
+    std::vector<spi::DocEntry::UP> ret;
     for (size_t chunk = 0; chunk < chunks.size(); ++chunk) {
         for (size_t i = 0; i < chunks[chunk]._entries.size(); ++i) {
-            ret.push_back(cloneDocEntry(*chunks[chunk]._entries[i]));
+            ret.push_back(DocEntry::UP(chunks[chunk]._entries[i]->clone()));
         }
     }
     std::sort(ret.begin(),
@@ -196,12 +193,12 @@ getEntriesFromChunks(const std::vector<Chunk>& chunks)
 }
 
 
-DocEntryList
+std::vector<DocEntry::UP>
 iterateBucket(PersistenceProvider& spi,
               const Bucket& bucket,
               IncludedVersions versions)
 {
-    DocEntryList ret;
+    std::vector<DocEntry::UP> ret;
     DocumentSelection docSel("");
     Selection sel(docSel);
 
@@ -220,7 +217,7 @@ iterateBucket(PersistenceProvider& spi,
             spi.iterate(iter.getIteratorId(),
                          std::numeric_limits<int64_t>().max(), context);
         if (result.getErrorCode() != Result::ErrorType::NONE) {
-            return DocEntryList();
+            return std::vector<DocEntry::UP>();
         }
         auto list = result.steal_entries();
         std::move(list.begin(), list.end(), std::back_inserter(ret));
@@ -241,7 +238,8 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
            const std::vector<Chunk>& chunks,
            const std::set<string>& removes = std::set<string>())
 {
-    DocEntryList retrieved = getEntriesFromChunks(chunks);
+    std::vector<DocEntry::UP> retrieved(
+            getEntriesFromChunks(chunks));
     size_t removeCount = getRemoveEntryCount(retrieved);
     // Ensure that we've got the correct number of puts and removes
     EXPECT_EQ(removes.size(), removeCount);
@@ -259,13 +257,15 @@ verifyDocs(const std::vector<DocAndTimestamp>& wanted,
             }
             EXPECT_EQ(wanted[wantedIdx].timestamp, entry.getTimestamp());
             size_t serSize = wanted[wantedIdx].doc->serialize().size();
-            EXPECT_EQ(serSize, size_t(entry.getSize()));
+            EXPECT_EQ(serSize + sizeof(DocEntry), size_t(entry.getSize()));
+            EXPECT_EQ(serSize, size_t(entry.getDocumentSize()));
             ++wantedIdx;
         } else {
             // Remove-entry
             EXPECT_TRUE(entry.getDocumentId() != 0);
             size_t serSize = entry.getDocumentId()->getSerializedSize();
-            EXPECT_EQ(serSize, size_t(entry.getSize()));
+            EXPECT_EQ(serSize + sizeof(DocEntry), size_t(entry.getSize()));
+            EXPECT_EQ(serSize, size_t(entry.getDocumentSize()));
             if (removes.find(entry.getDocumentId()->toString()) == removes.end()) {
                 FAIL() << "Got unexpected remove entry for document id "
                        << *entry.getDocumentId();
@@ -697,7 +697,8 @@ TEST_F(ConformanceTest, testPutDuplicate)
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_EQ(checksum, info.getChecksum());
     }
-    DocEntryList entries = iterateBucket(*spi, bucket, ALL_VERSIONS);
+    std::vector<DocEntry::UP> entries(
+            iterateBucket(*spi, bucket, ALL_VERSIONS));
     EXPECT_EQ(size_t(1), entries.size());
 }
 
@@ -721,7 +722,8 @@ TEST_F(ConformanceTest, testRemove)
         EXPECT_EQ(1, (int)info.getDocumentCount());
         EXPECT_TRUE(info.getChecksum() != 0);
 
-        DocEntryList entries = iterateBucket(*spi, bucket, NEWEST_DOCUMENT_ONLY);
+        std::vector<DocEntry::UP> entries(
+                iterateBucket(*spi, bucket, NEWEST_DOCUMENT_ONLY));
         EXPECT_EQ(size_t(1), entries.size());
     }
 
@@ -739,11 +741,15 @@ TEST_F(ConformanceTest, testRemove)
         EXPECT_EQ(true, result2.wasFound());
     }
     {
-        DocEntryList entries = iterateBucket(*spi, bucket,NEWEST_DOCUMENT_ONLY);
+        std::vector<DocEntry::UP> entries(iterateBucket(*spi,
+                                                    bucket,
+                                                    NEWEST_DOCUMENT_ONLY));
         EXPECT_EQ(size_t(0), entries.size());
     }
     {
-        DocEntryList entries = iterateBucket(*spi, bucket,NEWEST_DOCUMENT_OR_REMOVE);
+        std::vector<DocEntry::UP> entries(iterateBucket(*spi,
+                                                    bucket,
+                                                    NEWEST_DOCUMENT_OR_REMOVE));
 
         EXPECT_EQ(size_t(1), entries.size());
     }
@@ -856,7 +862,8 @@ TEST_F(ConformanceTest, testRemoveMerge)
 
     // Remove entry should exist afterwards
     {
-        DocEntryList entries = iterateBucket(*spi, bucket, ALL_VERSIONS);
+        std::vector<DocEntry::UP> entries(iterateBucket(
+                *spi, bucket, ALL_VERSIONS));
         EXPECT_EQ(size_t(2), entries.size());
         // Timestamp-sorted by iterateBucket
         EXPECT_EQ(removeId, *entries.back()->getDocumentId());
@@ -882,7 +889,7 @@ TEST_F(ConformanceTest, testRemoveMerge)
     }
     // Must have new remove. We don't check for the presence of the old remove.
     {
-        DocEntryList entries = iterateBucket(*spi, bucket, ALL_VERSIONS);
+        std::vector<DocEntry::UP> entries(iterateBucket(*spi, bucket, ALL_VERSIONS));
         EXPECT_TRUE(entries.size() >= 2);
         EXPECT_EQ(removeId, *entries.back()->getDocumentId());
         EXPECT_EQ(Timestamp(11), entries.back()->getTimestamp());
@@ -908,7 +915,7 @@ TEST_F(ConformanceTest, testRemoveMerge)
     }
     // Must have newest remove. We don't check for the presence of the old remove.
     {
-        DocEntryList entries = iterateBucket(*spi, bucket, ALL_VERSIONS);
+        std::vector<DocEntry::UP> entries(iterateBucket(*spi, bucket, ALL_VERSIONS));
         EXPECT_TRUE(entries.size() >= 2);
         EXPECT_EQ(removeId, *entries.back()->getDocumentId());
         EXPECT_EQ(Timestamp(11), entries.back()->getTimestamp());
@@ -1344,7 +1351,7 @@ TEST_F(ConformanceTest, testIterateRemoves)
         CreateIteratorResult iter(createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
 
         std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
-        DocEntryList entries = getEntriesFromChunks(chunks);
+        std::vector<DocEntry::UP> entries = getEntriesFromChunks(chunks);
         EXPECT_EQ(docs.size(), entries.size());
         verifyDocs(nonRemovedDocs, chunks, removedDocs);
 

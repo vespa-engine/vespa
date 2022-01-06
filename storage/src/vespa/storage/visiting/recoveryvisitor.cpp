@@ -2,7 +2,6 @@
 
 
 #include "recoveryvisitor.h"
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
@@ -32,7 +31,7 @@ RecoveryVisitor::RecoveryVisitor(StorageComponent& component,
 
 void
 RecoveryVisitor::handleDocuments(const document::BucketId& bid,
-                                 DocEntryList & entries,
+                                 std::vector<spi::DocEntry::UP>& entries,
                                  HitCounter& hitCounter)
 {
     std::lock_guard guard(_mutex);

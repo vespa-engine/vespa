@@ -2,7 +2,6 @@
 
 #include "visitor.h"
 #include "visitormetrics.h"
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storage/persistence/messages.h>
@@ -815,11 +814,12 @@ Visitor::onGetIterReply(const std::shared_ptr<GetIterReply>& reply,
 
                 uint64_t size = 0;
                 for (const auto& entry : reply->getEntries()) {
-                    size += entry->getSize();
+                    size += entry->getPersistedDocumentSize();
                 }
 
                 _visitorStatistics.setDocumentsVisited(
-                        _visitorStatistics.getDocumentsVisited() + reply->getEntries().size());
+                        _visitorStatistics.getDocumentsVisited()
+                        + reply->getEntries().size());
                 _visitorStatistics.setBytesVisited(_visitorStatistics.getBytesVisited() + size);
             } catch (std::exception& e) {
                 LOG(warning, "handleDocuments threw exception %s", e.what());

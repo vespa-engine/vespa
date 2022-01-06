@@ -7,14 +7,11 @@
 #pragma once
 
 #include <vespa/persistence/spi/bucket.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/context.h>
-#include <persistence/spi/types.h>
 
 namespace document { class FieldSet; }
-namespace storage::spi {
-    struct PersistenceProvider;
-    class DocEntry;
-}
+namespace storage::spi { struct PersistenceProvider; }
 
 namespace storage {
 

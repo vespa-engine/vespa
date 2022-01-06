@@ -3,11 +3,10 @@
 
 #include "bucketinfo.h"
 #include "bucket.h"
+#include "docentry.h"
 #include <vespa/document/bucket/bucketidlist.h>
 
 namespace storage::spi {
-
-class DocEntry;
 
 class Result {
 public:
@@ -280,12 +279,15 @@ private:
 
 class IterateResult : public Result {
 public:
-    using List = std::vector<std::unique_ptr<DocEntry>>;
+    typedef std::vector<DocEntry::UP> List;
 
     /**
      * Constructor used when there was an error creating the iterator.
      */
-    IterateResult(ErrorType error, const vespalib::string& errorMessage);
+    IterateResult(ErrorType error, const vespalib::string& errorMessage)
+        : Result(error, errorMessage),
+          _completed(false)
+    { }
 
     /**
      * Constructor used when the iteration was successful.
@@ -294,21 +296,24 @@ public:
      *
      * @param completed Set to true if iteration has been completed.
      */
-    IterateResult(List entries, bool completed);
+    IterateResult(List entries, bool completed)
+        : _completed(completed),
+          _entries(std::move(entries))
+    { }
 
     IterateResult(const IterateResult &) = delete;
-    IterateResult(IterateResult &&rhs) noexcept;
-    IterateResult &operator=(IterateResult &&rhs) noexcept;
+    IterateResult(IterateResult &&rhs) noexcept = default;
+    IterateResult &operator=(IterateResult &&rhs) noexcept = default;
 
     ~IterateResult();
 
     const List& getEntries() const { return _entries; }
-    List steal_entries();
+    List steal_entries() { return std::move(_entries); }
     bool isCompleted() const { return _completed; }
 
 private:
     bool _completed;
-    List _entries;
+    std::vector<DocEntry::UP> _entries;
 };
 
 }

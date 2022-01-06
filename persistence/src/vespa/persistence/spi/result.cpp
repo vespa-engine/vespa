@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "result.h"
-#include "docentry.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <ostream>
@@ -49,24 +48,6 @@ GetResult::~GetResult() = default;
 BucketIdListResult::~BucketIdListResult() = default;
 
 IterateResult::~IterateResult() = default;
-IterateResult::IterateResult(IterateResult &&) noexcept = default;
-IterateResult & IterateResult::operator=(IterateResult &&) noexcept = default;
-
-IterateResult::IterateResult(ErrorType error, const vespalib::string& errorMessage)
-    : Result(error, errorMessage),
-      _completed(false)
-{ }
-
-
-IterateResult::IterateResult(List entries, bool completed)
-    : _completed(completed),
-      _entries(std::move(entries))
-{ }
-
-IterateResult::List
-IterateResult::steal_entries() {
-    return std::move(_entries);
-}
 
 }
 

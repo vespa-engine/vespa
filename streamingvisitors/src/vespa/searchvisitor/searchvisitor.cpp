@@ -3,7 +3,6 @@
 #include "querytermdata.h"
 #include "searchenvironment.h"
 #include "searchvisitor.h"
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
@@ -865,7 +864,7 @@ SearchVisitor::compatibleDocumentTypes(const document::DocumentType& typeA,
 
 void
 SearchVisitor::handleDocuments(const document::BucketId&,
-                               DocEntryList & entries,
+                               std::vector<storage::spi::DocEntry::UP>& entries,
                                HitCounter& hitCounter)
 {
     (void) hitCounter;

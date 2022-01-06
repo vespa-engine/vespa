@@ -18,6 +18,7 @@
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/selection.h>
 #include <vespa/persistence/spi/read_consistency.h>
 #include <list>
@@ -37,10 +38,6 @@ namespace documentapi {
 }
 
 namespace storage {
-
-namespace spi {
-    class DocEntry;
-}
 
 namespace api {
     class ReturnCode;
@@ -360,7 +357,6 @@ protected:
     // error code, false if the DocumentAPI message should be retried later.
     [[nodiscard]] virtual bool remap_docapi_message_error_code(api::ReturnCode& in_out_code);
 public:
-    using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
     Visitor(StorageComponent& component);
     virtual ~Visitor();
 
@@ -402,7 +398,7 @@ public:
      * vector of documents arrive from the persistence layer.
      */
     virtual void handleDocuments(const document::BucketId&,
-                                 DocEntryList & entries,
+                                 std::vector<spi::DocEntry::UP>& entries,
                                  HitCounter& hitCounter) = 0;
 
     /**

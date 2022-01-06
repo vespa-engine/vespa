@@ -22,7 +22,7 @@ public:
 
 private:
     void handleDocuments(const document::BucketId& bucketId,
-                         DocEntryList & entries,
+                         std::vector<spi::DocEntry::UP>& entries,
                          HitCounter& hitCounter) override;
 
     void completedBucket(const document::BucketId&, HitCounter&) override;
