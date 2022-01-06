@@ -11,7 +11,7 @@ namespace {
 
 class DocEntryWithId final : public DocEntry {
 public:
-    DocEntryWithId(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId);
+    DocEntryWithId(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId);
     ~DocEntryWithId();
     vespalib::string toString() const override;
     const DocumentId* getDocumentId() const override { return & _documentId; }
@@ -23,7 +23,7 @@ private:
 
 class DocEntryWithTypeAndGid final : public DocEntry {
 public:
-    DocEntryWithTypeAndGid(Timestamp t, DocumentMetaFlags metaFlags, vespalib::stringref docType, GlobalId gid);
+    DocEntryWithTypeAndGid(Timestamp t, DocumentMetaEnum metaEnum, vespalib::stringref docType, GlobalId gid);
     ~DocEntryWithTypeAndGid();
     vespalib::string toString() const override;
     vespalib::stringref getDocumentType() const override { return _type; }
@@ -56,22 +56,22 @@ private:
 };
 
 DocEntryWithDoc::DocEntryWithDoc(Timestamp t, DocumentUP doc)
-    : DocEntry(t, DocumentMetaFlags::NONE, doc->serialize().size()),
+    : DocEntry(t, DocumentMetaEnum::NONE, doc->serialize().size()),
       _document(std::move(doc))
 { }
 
 DocEntryWithDoc::DocEntryWithDoc(Timestamp t, DocumentUP doc, size_t serializedDocumentSize)
-    : DocEntry(t, DocumentMetaFlags::NONE, serializedDocumentSize),
+    : DocEntry(t, DocumentMetaEnum::NONE, serializedDocumentSize),
       _document(std::move(doc))
 { }
 
-DocEntryWithId::DocEntryWithId(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId& docId)
-    : DocEntry(t, metaFlags, docId.getSerializedSize()),
+DocEntryWithId::DocEntryWithId(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId& docId)
+    : DocEntry(t, metaEnum, docId.getSerializedSize()),
       _documentId(docId)
 { }
 
-DocEntryWithTypeAndGid::DocEntryWithTypeAndGid(Timestamp t, DocumentMetaFlags metaFlags, vespalib::stringref docType, GlobalId gid)
-    : DocEntry(t, metaFlags, docType.size() + sizeof(gid)),
+DocEntryWithTypeAndGid::DocEntryWithTypeAndGid(Timestamp t, DocumentMetaEnum metaEnum, vespalib::stringref docType, GlobalId gid)
+    : DocEntry(t, metaEnum, docType.size() + sizeof(gid)),
       _type(docType),
       _gid(gid)
 { }
@@ -84,7 +84,7 @@ vespalib::string
 DocEntryWithId::toString() const
 {
     std::ostringstream out;
-    out << "DocEntry(" << getTimestamp() << ", " << int(getFlags()) << ", " << _documentId << ")";
+    out << "DocEntry(" << getTimestamp() << ", " << int(getMetaEnum()) << ", " << _documentId << ")";
     return out.str();
 }
 
@@ -92,7 +92,7 @@ vespalib::string
 DocEntryWithTypeAndGid::toString() const
 {
     std::ostringstream out;
-    out << "DocEntry(" << getTimestamp() << ", " << int(getFlags()) << ", " << _type << ", " << _gid << ")";
+    out << "DocEntry(" << getTimestamp() << ", " << int(getMetaEnum()) << ", " << _type << ", " << _gid << ")";
     return out.str();
 }
 
@@ -100,7 +100,7 @@ vespalib::string
 DocEntryWithDoc::toString() const
 {
     std::ostringstream out;
-    out << "DocEntry(" << getTimestamp() << ", " << int(getFlags()) << ", ";
+    out << "DocEntry(" << getTimestamp() << ", " << int(getMetaEnum()) << ", ";
     if (_document.get()) {
         out << "Doc(" << _document->getId() << ")";
     } else {
@@ -113,16 +113,16 @@ DocEntryWithDoc::toString() const
 }
 
 DocEntry::UP
-DocEntry::create(Timestamp t, DocumentMetaFlags metaFlags) {
-    return UP(new DocEntry(t, metaFlags));
+DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum) {
+    return UP(new DocEntry(t, metaEnum));
 }
 DocEntry::UP
-DocEntry::create(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId) {
-    return std::make_unique<DocEntryWithId>(t, metaFlags, docId);
+DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId) {
+    return std::make_unique<DocEntryWithId>(t, metaEnum, docId);
 }
 DocEntry::UP
-DocEntry::create(Timestamp t, DocumentMetaFlags metaFlags, vespalib::stringref docType, GlobalId gid) {
-    return std::make_unique<DocEntryWithTypeAndGid>(t, metaFlags, docType, gid);
+DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum, vespalib::stringref docType, GlobalId gid) {
+    return std::make_unique<DocEntryWithTypeAndGid>(t, metaEnum, docType, gid);
 }
 DocEntry::UP
 DocEntry::create(Timestamp t, DocumentUP doc) {
@@ -144,7 +144,7 @@ vespalib::string
 DocEntry::toString() const
 {
     std::ostringstream out;
-    out << "DocEntry(" << _timestamp << ", " << int(_metaFlags) << ", metadata only)";
+    out << "DocEntry(" << _timestamp << ", " << int(_metaEnum) << ", metadata only)";
     return out.str();
 }
 

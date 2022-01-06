@@ -267,7 +267,7 @@ TEST(DocEntryTest, test_basics) {
 }
 
 TEST(DocEntryTest, test_meta_only) {
-    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaFlags::NONE);
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaEnum::NONE);
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
     EXPECT_EQ(24, e->getSize());
@@ -276,13 +276,13 @@ TEST(DocEntryTest, test_meta_only) {
     EXPECT_EQ("", e->getDocumentType());
     EXPECT_EQ(GlobalId(), e->getGid());
 
-    DocEntry::UP r = DocEntry::create(Timestamp(666), DocumentMetaFlags::REMOVE_ENTRY);
+    DocEntry::UP r = DocEntry::create(Timestamp(666), DocumentMetaEnum::REMOVE_ENTRY);
     EXPECT_EQ(666, r->getTimestamp());
     EXPECT_TRUE(r->isRemove());
 }
 
 TEST(DocEntryTest, test_docid_only) {
-    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaFlags::NONE, DocumentId("id:test:test::1"));
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaEnum::NONE, DocumentId("id:test:test::1"));
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
     EXPECT_EQ(16, e->getSize());
@@ -293,7 +293,7 @@ TEST(DocEntryTest, test_docid_only) {
 }
 
 TEST(DocEntryTest, test_doctype_and_gid) {
-    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaFlags::NONE, "doc_type", GlobalId::parse("gid(0xc4cef118f9f9649222750be2)"));
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaEnum::NONE, "doc_type", GlobalId::parse("gid(0xc4cef118f9f9649222750be2)"));
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
     EXPECT_EQ(20, e->getSize());

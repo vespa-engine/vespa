@@ -48,7 +48,7 @@ using storage::spi::IncludedVersions;
 using storage::spi::IterateResult;
 using storage::spi::Selection;
 using storage::spi::Timestamp;
-using storage::spi::DocumentMetaFlags;
+using storage::spi::DocumentMetaEnum;
 using storage::spi::test::makeSpiBucket;
 using storage::spi::test::equal;
 
@@ -384,7 +384,7 @@ void checkDoc(const IDocumentRetriever &dr, const std::string &id,
     EXPECT_TRUE(DocumentId(id) == doc->getId());
 }
 
-void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp, DocumentMetaFlags flags)
+void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp, DocumentMetaEnum flags)
 {
     ASSERT_LESS(idx, res.getEntries().size());
     auto expect = DocEntry::create(timestamp, flags);
@@ -395,7 +395,7 @@ void checkEntry(const IterateResult &res, size_t idx, const Timestamp &timestamp
 void checkEntry(const IterateResult &res, size_t idx, const DocumentId &id, const Timestamp &timestamp)
 {
     ASSERT_LESS(idx, res.getEntries().size());
-    auto expect = DocEntry::create(timestamp, DocumentMetaFlags::REMOVE_ENTRY, id);
+    auto expect = DocEntry::create(timestamp, DocumentMetaEnum::REMOVE_ENTRY, id);
     EXPECT_TRUE(equal(*expect, *res.getEntries()[idx]));
     EXPECT_EQUAL(getSize(id), res.getEntries()[idx]->getSize());
     EXPECT_GREATER(getSize(id), 0u);
@@ -606,9 +606,9 @@ TEST("require that using an empty field set returns meta-data only") {
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
     EXPECT_EQUAL(3u, res.getEntries().size());
-    TEST_DO(checkEntry(res, 0, Timestamp(2), DocumentMetaFlags::NONE));
-    TEST_DO(checkEntry(res, 1, Timestamp(3), DocumentMetaFlags::NONE));
-    TEST_DO(checkEntry(res, 2, Timestamp(4), DocumentMetaFlags::REMOVE_ENTRY));
+    TEST_DO(checkEntry(res, 0, Timestamp(2), DocumentMetaEnum::NONE));
+    TEST_DO(checkEntry(res, 1, Timestamp(3), DocumentMetaEnum::NONE));
+    TEST_DO(checkEntry(res, 2, Timestamp(4), DocumentMetaEnum::REMOVE_ENTRY));
 }
 
 TEST("require that entries in other buckets are skipped") {
@@ -651,12 +651,12 @@ TEST("require that maxBytes splits iteration results for meta-data only iteratio
     IterateResult res1 = itr.iterate(2 * sizeof(DocEntry));
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQUAL(2u, res1.getEntries().size());
-    TEST_DO(checkEntry(res1, 0, Timestamp(2), DocumentMetaFlags::NONE));
-    TEST_DO(checkEntry(res1, 1, Timestamp(3), DocumentMetaFlags::REMOVE_ENTRY));
+    TEST_DO(checkEntry(res1, 0, Timestamp(2), DocumentMetaEnum::NONE));
+    TEST_DO(checkEntry(res1, 1, Timestamp(3), DocumentMetaEnum::REMOVE_ENTRY));
 
     IterateResult res2 = itr.iterate(largeNum);
     EXPECT_TRUE(res2.isCompleted());
-    TEST_DO(checkEntry(res2, 0, Timestamp(4), DocumentMetaFlags::NONE));
+    TEST_DO(checkEntry(res2, 0, Timestamp(4), DocumentMetaEnum::NONE));
 
     IterateResult res3 = itr.iterate(largeNum);
     EXPECT_TRUE(res3.isCompleted());

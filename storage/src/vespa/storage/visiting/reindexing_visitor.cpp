@@ -16,7 +16,7 @@ ReindexingVisitor::ReindexingVisitor(StorageComponent& component)
 }
 
 void ReindexingVisitor::handleDocuments(const document::BucketId& ,
-                                        std::vector<spi::DocEntry::UP>& entries,
+                                        DocEntryList & entries,
                                         HitCounter& hitCounter)
 {
     auto lock_token = make_lock_access_token();

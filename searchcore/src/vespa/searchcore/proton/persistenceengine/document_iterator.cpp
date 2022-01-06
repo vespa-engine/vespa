@@ -18,7 +18,7 @@ using storage::spi::DocEntry;
 using storage::spi::Timestamp;
 using document::Document;
 using document::DocumentId;
-using storage::spi::DocumentMetaFlags;
+using storage::spi::DocumentMetaEnum;
 
 namespace proton {
 
@@ -26,14 +26,14 @@ namespace {
 
 std::unique_ptr<DocEntry>
 createDocEntry(Timestamp timestamp, bool removed) {
-    return DocEntry::create(timestamp, removed ? DocumentMetaFlags::REMOVE_ENTRY : DocumentMetaFlags::NONE);
+    return DocEntry::create(timestamp, removed ? DocumentMetaEnum::REMOVE_ENTRY : DocumentMetaEnum::NONE);
 }
 
 std::unique_ptr<DocEntry>
 createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ssize_t defaultSerializedSize) {
     if (doc) {
         if (removed) {
-            return DocEntry::create(timestamp, DocumentMetaFlags::REMOVE_ENTRY, doc->getId());
+            return DocEntry::create(timestamp, DocumentMetaEnum::REMOVE_ENTRY, doc->getId());
         } else {
             ssize_t serializedSize = defaultSerializedSize >= 0 ? defaultSerializedSize : doc->serialize().size();
             return DocEntry::create(timestamp, std::move(doc), serializedSize);

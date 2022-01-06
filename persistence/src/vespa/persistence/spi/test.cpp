@@ -23,9 +23,9 @@ cloneDocEntry(const DocEntry & e) {
     if (e.getDocument()) {
         ret = DocEntry::create(e.getTimestamp(), std::make_unique<Document>(*e.getDocument()), e.getSize());
     } else if (e.getDocumentId()) {
-        ret = DocEntry::create(e.getTimestamp(), e.getFlags(), *e.getDocumentId());
+        ret = DocEntry::create(e.getTimestamp(), e.getMetaEnum(), *e.getDocumentId());
     } else {
-        ret = DocEntry::create(e.getTimestamp(), e.getFlags());
+        ret = DocEntry::create(e.getTimestamp(), e.getMetaEnum());
     }
     return ret;
 }
@@ -33,7 +33,7 @@ cloneDocEntry(const DocEntry & e) {
 bool
 equal(const DocEntry & a, const DocEntry & b) {
     if (a.getTimestamp() != b.getTimestamp()) return false;
-    if (a.getFlags() != b.getFlags()) return false;
+    if (a.getMetaEnum() != b.getMetaEnum()) return false;
     if (a.getSize() != b.getSize()) return false;
 
     if (a.getDocument()) {

@@ -19,14 +19,14 @@ namespace {
 struct Fixture {
     BucketContent content;
 
-    void insert(DocumentId id, Timestamp timestamp, DocumentMetaFlags meta_flags) {
+    void insert(DocumentId id, Timestamp timestamp, DocumentMetaEnum meta_flags) {
         content.insert(DocEntry::create(timestamp, meta_flags, id));
     }
 
     Fixture() {
-        insert(DocumentId("id:ns:type::test:3"), Timestamp(3), DocumentMetaFlags::NONE);
-        insert(DocumentId("id:ns:type::test:1"), Timestamp(1), DocumentMetaFlags::NONE);
-        insert(DocumentId("id:ns:type::test:2"), Timestamp(2), DocumentMetaFlags::NONE);
+        insert(DocumentId("id:ns:type::test:3"), Timestamp(3), DocumentMetaEnum::NONE);
+        insert(DocumentId("id:ns:type::test:1"), Timestamp(1), DocumentMetaEnum::NONE);
+        insert(DocumentId("id:ns:type::test:2"), Timestamp(2), DocumentMetaEnum::NONE);
     }
 };
 
@@ -63,13 +63,13 @@ TEST_F("require that BucketContent can provide bucket info", Fixture) {
     uint32_t lastChecksum = 0;
     EXPECT_NOT_EQUAL(lastChecksum, f.content.getBucketInfo().getChecksum());
     lastChecksum = f.content.getBucketInfo().getChecksum();
-    f.insert(DocumentId("id:ns:type::test:3"), Timestamp(4), DocumentMetaFlags::NONE);
+    f.insert(DocumentId("id:ns:type::test:3"), Timestamp(4), DocumentMetaEnum::NONE);
     EXPECT_NOT_EQUAL(lastChecksum, f.content.getBucketInfo().getChecksum());
     lastChecksum = f.content.getBucketInfo().getChecksum();
-    f.insert(DocumentId("id:ns:type::test:2"), Timestamp(5), DocumentMetaFlags::REMOVE_ENTRY);
+    f.insert(DocumentId("id:ns:type::test:2"), Timestamp(5), DocumentMetaEnum::REMOVE_ENTRY);
     EXPECT_NOT_EQUAL(lastChecksum, f.content.getBucketInfo().getChecksum());
-    f.insert(DocumentId("id:ns:type::test:1"), Timestamp(6), DocumentMetaFlags::REMOVE_ENTRY);
-    f.insert(DocumentId("id:ns:type::test:3"), Timestamp(7), DocumentMetaFlags::REMOVE_ENTRY);
+    f.insert(DocumentId("id:ns:type::test:1"), Timestamp(6), DocumentMetaEnum::REMOVE_ENTRY);
+    f.insert(DocumentId("id:ns:type::test:3"), Timestamp(7), DocumentMetaEnum::REMOVE_ENTRY);
     EXPECT_EQUAL(0u, f.content.getBucketInfo().getChecksum());
 }
 

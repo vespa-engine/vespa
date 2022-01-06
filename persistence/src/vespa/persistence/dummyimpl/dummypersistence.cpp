@@ -493,7 +493,7 @@ DummyPersistence::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentI
         }
         DocEntry::SP entry((*bc)->getEntry(id));
         numRemoves += (entry.get() && !entry->isRemove()) ? 1 : 0;
-        auto remEntry = DocEntry::create(t, DocumentMetaFlags::REMOVE_ENTRY, id);
+        auto remEntry = DocEntry::create(t, DocumentMetaEnum::REMOVE_ENTRY, id);
 
         if ((*bc)->hasTimestamp(t)) {
             (*bc)->eraseEntry(t);

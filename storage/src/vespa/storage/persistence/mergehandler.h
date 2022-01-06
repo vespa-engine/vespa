@@ -81,6 +81,7 @@ public:
     void configure(bool async_apply_bucket_diff) noexcept;
 
 private:
+    using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
     const framework::Clock   &_clock;
     const ClusterContext &_cluster_context;
     PersistenceUtil          &_env;
@@ -116,7 +117,7 @@ private:
      */
     void populateMetaData(const spi::Bucket&,
                           Timestamp maxTimestamp,
-                          std::vector<std::unique_ptr<spi::DocEntry>> & entries,
+                          DocEntryList & entries,
                           spi::Context& context) const;
 
     Document::UP deserializeDiffDocument(

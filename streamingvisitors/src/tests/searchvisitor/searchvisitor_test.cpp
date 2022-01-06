@@ -55,11 +55,11 @@ SearchVisitorTest::SearchVisitorTest() :
 
 SearchVisitorTest::~SearchVisitorTest() = default;
 
-std::vector<spi::DocEntry::UP>
+Visitor::DocEntryList
 createDocuments(const vespalib::string & dir)
 {
     (void) dir;
-    std::vector<spi::DocEntry::UP> documents;
+    Visitor::DocEntryList documents;
     spi::Timestamp ts;
     auto e = spi::DocEntry::create(ts, std::make_unique<Document>());
     documents.push_back(std::move(e));
@@ -73,7 +73,7 @@ SearchVisitorTest::testCreateSearchVisitor(const vespalib::string & dir, const v
     VisitorFactory & factory(sFactory);
     std::unique_ptr<Visitor> sv(static_cast<SearchVisitor *>(factory.makeVisitor(*_component, _env, params)));
     document::BucketId bucketId;
-    std::vector<spi::DocEntry::UP> documents(createDocuments(dir));
+    Visitor::DocEntryList documents(createDocuments(dir));
     Visitor::HitCounter hitCounter;
     sv->handleDocuments(bucketId, documents, hitCounter);
 }

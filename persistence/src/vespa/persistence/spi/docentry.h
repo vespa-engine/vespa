@@ -18,7 +18,7 @@
 
 namespace storage::spi {
 
-enum class DocumentMetaFlags {
+enum class DocumentMetaEnum {
     NONE             = 0x0,
     REMOVE_ENTRY     = 0x1
 };
@@ -34,9 +34,9 @@ public:
     DocEntry(DocEntry &&) = delete;
     DocEntry & operator=(DocEntry &&) = delete;
     virtual ~DocEntry();
-    bool isRemove() const { return (_metaFlags == DocumentMetaFlags::REMOVE_ENTRY); }
+    bool isRemove() const { return (_metaEnum == DocumentMetaEnum::REMOVE_ENTRY); }
     Timestamp getTimestamp() const { return _timestamp; }
-    DocumentMetaFlags getFlags() const { return _metaFlags; }
+    DocumentMetaEnum getMetaEnum() const { return _metaEnum; }
     /**
      * If entry contains a document, returns its serialized size.
      * If entry contains a document id, returns the serialized size of
@@ -51,22 +51,22 @@ public:
     virtual vespalib::stringref getDocumentType() const { return vespalib::stringref(); }
     virtual GlobalId getGid() const { return GlobalId(); }
     virtual DocumentUP releaseDocument();
-    static UP create(Timestamp t, DocumentMetaFlags metaFlags);
-    static UP create(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId);
-    static UP create(Timestamp t, DocumentMetaFlags metaFlags, vespalib::stringref docType, GlobalId gid);
+    static UP create(Timestamp t, DocumentMetaEnum metaEnum);
+    static UP create(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId);
+    static UP create(Timestamp t, DocumentMetaEnum metaEnum, vespalib::stringref docType, GlobalId gid);
     static UP create(Timestamp t, DocumentUP doc);
     static UP create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize);
 protected:
-    DocEntry(Timestamp t, DocumentMetaFlags metaFlags, SizeType size)
+    DocEntry(Timestamp t, DocumentMetaEnum metaEnum, SizeType size)
         : _timestamp(t),
-          _metaFlags(metaFlags),
+          _metaEnum(metaEnum),
           _size(size)
     {}
 private:
-    DocEntry(Timestamp t, DocumentMetaFlags metaFlags) : DocEntry(t, metaFlags, sizeof(DocEntry)) { }
-    Timestamp          _timestamp;
-    DocumentMetaFlags  _metaFlags;
-    SizeType           _size;
+    DocEntry(Timestamp t, DocumentMetaEnum metaEnum) : DocEntry(t, metaEnum, sizeof(DocEntry)) { }
+    Timestamp         _timestamp;
+    DocumentMetaEnum  _metaEnum;
+    SizeType          _size;
 };
 
 std::ostream & operator << (std::ostream & os, const DocEntry & r);
