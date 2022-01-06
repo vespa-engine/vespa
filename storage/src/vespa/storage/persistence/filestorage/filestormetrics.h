@@ -147,6 +147,7 @@ public:
     metrics::DoubleAverageMetric averageQueueWaitingTime;
     metrics::LongAverageMetric queueSize;
     metrics::LongAverageMetric pendingMerges;
+    metrics::LongAverageMetric throttle_window_size;
     metrics::DoubleAverageMetric waitingForLockHitRate;
     metrics::DoubleAverageMetric lockWaitTime; // unused
     ActiveOperationsMetrics      active_operations;

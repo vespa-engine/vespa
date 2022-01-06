@@ -38,7 +38,7 @@ PersistenceThread::run(framework::ThreadHandle& thread)
 
         FileStorHandler::LockedMessage lock(_fileStorHandler.getNextMessage(_stripeId));
 
-        if (lock.first) {
+        if (lock.lock) {
             _persistenceHandler.processLockedMessage(std::move(lock));
         }
     }

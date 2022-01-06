@@ -3,6 +3,7 @@ vespa_add_library(storage_filestorpersistence OBJECT
     SOURCES
     active_operations_metrics.cpp
     active_operations_stats.cpp
+    filestorhandler.cpp
     filestorhandlerimpl.cpp
     filestormanager.cpp
     filestormetrics.cpp

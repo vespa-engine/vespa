@@ -158,12 +158,13 @@ PersistenceHandler::processMessage(api::StorageMessage& msg, MessageTracker::UP 
 
 void
 PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) const {
-    LOG(debug, "NodeIndex %d, ptr=%p", _env._nodeIndex, lock.second.get());
-    api::StorageMessage & msg(*lock.second);
+    LOG(debug, "NodeIndex %d, ptr=%p", _env._nodeIndex, lock.msg.get());
+    api::StorageMessage & msg(*lock.msg);
 
     // Important: we _copy_ the message shared_ptr instead of moving to ensure that `msg` remains
     // valid even if the tracker is destroyed by an exception in processMessage().
-    auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, _env._fileStorHandler, std::move(lock.first), lock.second);
+    auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, _env._fileStorHandler,
+                                                    std::move(lock.lock), lock.msg, std::move(lock.throttle_token));
     tracker = processMessage(msg, std::move(tracker));
     if (tracker) {
         tracker->sendReply();

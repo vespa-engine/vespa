@@ -16,6 +16,7 @@
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/storage/persistence/shared_operation_throttler.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 
 namespace storage {
@@ -74,7 +75,29 @@ public:
         [[nodiscard]] virtual api::LockingRequirements lockingRequirements() const noexcept = 0;
     };
 
-    using LockedMessage = std::pair<BucketLockInterface::SP, api::StorageMessage::SP>;
+    struct LockedMessage {
+        std::shared_ptr<BucketLockInterface> lock;
+        std::shared_ptr<api::StorageMessage> msg;
+        SharedOperationThrottler::Token      throttle_token;
+
+        LockedMessage() noexcept = default;
+        LockedMessage(std::shared_ptr<BucketLockInterface> lock_,
+                      std::shared_ptr<api::StorageMessage> msg_) noexcept
+            : lock(std::move(lock_)),
+              msg(std::move(msg_)),
+              throttle_token()
+        {}
+        LockedMessage(std::shared_ptr<BucketLockInterface> lock_,
+                      std::shared_ptr<api::StorageMessage> msg_,
+                      SharedOperationThrottler::Token token) noexcept
+                : lock(std::move(lock_)),
+                  msg(std::move(msg_)),
+                  throttle_token(std::move(token))
+        {}
+        LockedMessage(LockedMessage&&) noexcept = default;
+        ~LockedMessage();
+    };
+
     class ScheduleAsyncResult {
     private:
         bool _was_scheduled;
@@ -90,7 +113,7 @@ public:
             return _was_scheduled;
         }
         bool has_async_message() const {
-            return _async_message.first.get() != nullptr;
+            return _async_message.lock.get() != nullptr;
         }
         const LockedMessage& async_message() const {
             return _async_message;
@@ -250,6 +273,8 @@ public:
     virtual std::string dumpQueue() const = 0;
 
     virtual ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const = 0;
+
+    virtual SharedOperationThrottler& operation_throttler() const noexcept = 0;
 };
 
 } // storage

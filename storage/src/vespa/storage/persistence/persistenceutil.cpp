@@ -31,19 +31,22 @@ MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
                                const PersistenceUtil & env,
                                MessageSender & replySender,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
-                               api::StorageMessage::SP msg)
-    : MessageTracker(timer, env, replySender, true, std::move(bucketLock), std::move(msg))
+                               api::StorageMessage::SP msg,
+                               SharedOperationThrottler::Token throttle_token)
+    : MessageTracker(timer, env, replySender, true, std::move(bucketLock), std::move(msg), std::move(throttle_token))
 {}
 MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
                                const PersistenceUtil & env,
                                MessageSender & replySender,
                                bool updateBucketInfo,
                                FileStorHandler::BucketLockInterface::SP bucketLock,
-                               api::StorageMessage::SP msg)
+                               api::StorageMessage::SP msg,
+                               SharedOperationThrottler::Token throttle_token)
     : _sendReply(true),
       _updateBucketInfo(updateBucketInfo && hasBucketInfo(msg->getType().getId())),
       _bucketLock(std::move(bucketLock)),
       _msg(std::move(msg)),
+      _throttle_token(std::move(throttle_token)),
       _context(_msg->getPriority(), _msg->getTrace().getLevel()),
       _env(env),
       _replySender(replySender),
@@ -56,7 +59,8 @@ MessageTracker::UP
 MessageTracker::createForTesting(const framework::MilliSecTimer & timer, PersistenceUtil &env, MessageSender &replySender,
                                  FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg)
 {
-    return MessageTracker::UP(new MessageTracker(timer, env, replySender, false, std::move(bucketLock), std::move(msg)));
+    return MessageTracker::UP(new MessageTracker(timer, env, replySender, false, std::move(bucketLock),
+                                                 std::move(msg), SharedOperationThrottler::Token()));
 }
 
 void

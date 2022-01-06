@@ -91,14 +91,14 @@ TEST_F(PersistenceQueueTest, fetch_next_unlocked_message_if_bucket_locked) {
     f.filestorHandler->schedule(createPut(5432, 0));
 
     auto lock0 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_TRUE(lock0.first.get());
+    ASSERT_TRUE(lock0.lock.get());
     EXPECT_EQ(document::BucketId(16, 1234),
-              dynamic_cast<api::PutCommand&>(*lock0.second).getBucketId());
+              dynamic_cast<api::PutCommand&>(*lock0.msg).getBucketId());
 
     auto lock1 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_TRUE(lock1.first.get());
+    ASSERT_TRUE(lock1.lock.get());
     EXPECT_EQ(document::BucketId(16, 5432),
-              dynamic_cast<api::PutCommand&>(*lock1.second).getBucketId());
+              dynamic_cast<api::PutCommand&>(*lock1.msg).getBucketId());
 }
 
 TEST_F(PersistenceQueueTest, shared_locked_operations_allow_concurrent_bucket_access) {
@@ -108,14 +108,14 @@ TEST_F(PersistenceQueueTest, shared_locked_operations_allow_concurrent_bucket_ac
     f.filestorHandler->schedule(createGet(1234));
 
     auto lock0 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_TRUE(lock0.first.get());
-    EXPECT_EQ(api::LockingRequirements::Shared, lock0.first->lockingRequirements());
+    ASSERT_TRUE(lock0.lock.get());
+    EXPECT_EQ(api::LockingRequirements::Shared, lock0.lock->lockingRequirements());
 
     // Even though we already have a lock on the bucket, Gets allow shared locking and we
     // should therefore be able to get another lock.
     auto lock1 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_TRUE(lock1.first.get());
-    EXPECT_EQ(api::LockingRequirements::Shared, lock1.first->lockingRequirements());
+    ASSERT_TRUE(lock1.lock.get());
+    EXPECT_EQ(api::LockingRequirements::Shared, lock1.lock->lockingRequirements());
 }
 
 TEST_F(PersistenceQueueTest, exclusive_locked_operation_not_started_if_shared_op_active) {
@@ -125,12 +125,12 @@ TEST_F(PersistenceQueueTest, exclusive_locked_operation_not_started_if_shared_op
     f.filestorHandler->schedule(createPut(1234, 0));
 
     auto lock0 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_TRUE(lock0.first.get());
-    EXPECT_EQ(api::LockingRequirements::Shared, lock0.first->lockingRequirements());
+    ASSERT_TRUE(lock0.lock.get());
+    EXPECT_EQ(api::LockingRequirements::Shared, lock0.lock->lockingRequirements());
 
     // Expected to time out
     auto lock1 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_FALSE(lock1.first.get());
+    ASSERT_FALSE(lock1.lock.get());
 }
 
 TEST_F(PersistenceQueueTest, shared_locked_operation_not_started_if_exclusive_op_active) {
@@ -140,12 +140,12 @@ TEST_F(PersistenceQueueTest, shared_locked_operation_not_started_if_exclusive_op
     f.filestorHandler->schedule(createGet(1234));
 
     auto lock0 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_TRUE(lock0.first.get());
-    EXPECT_EQ(api::LockingRequirements::Exclusive, lock0.first->lockingRequirements());
+    ASSERT_TRUE(lock0.lock.get());
+    EXPECT_EQ(api::LockingRequirements::Exclusive, lock0.lock->lockingRequirements());
 
     // Expected to time out
     auto lock1 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_FALSE(lock1.first.get());
+    ASSERT_FALSE(lock1.lock.get());
 }
 
 TEST_F(PersistenceQueueTest, exclusive_locked_operation_not_started_if_exclusive_op_active) {
@@ -155,12 +155,12 @@ TEST_F(PersistenceQueueTest, exclusive_locked_operation_not_started_if_exclusive
     f.filestorHandler->schedule(createPut(1234, 0));
 
     auto lock0 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_TRUE(lock0.first.get());
-    EXPECT_EQ(api::LockingRequirements::Exclusive, lock0.first->lockingRequirements());
+    ASSERT_TRUE(lock0.lock.get());
+    EXPECT_EQ(api::LockingRequirements::Exclusive, lock0.lock->lockingRequirements());
 
     // Expected to time out
     auto lock1 = f.filestorHandler->getNextMessage(f.stripeId);
-    ASSERT_FALSE(lock1.first.get());
+    ASSERT_FALSE(lock1.lock.get());
 }
 
 } // namespace storage

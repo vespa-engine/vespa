@@ -2,6 +2,7 @@
 
 #include "mergehandler.h"
 #include "persistenceutil.h"
+#include "shared_operation_throttler.h"
 #include "apply_bucket_diff_entry_complete.h"
 #include "apply_bucket_diff_state.h"
 #include <vespa/storage/persistence/filestorage/mergestatus.h>
@@ -32,6 +33,7 @@ MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
       _cluster_context(cluster_context),
       _env(env),
       _spi(spi),
+      _operation_throttler(_env._fileStorHandler.operation_throttler()),
       _monitored_ref_count(std::make_unique<MonitoredRefCount>()),
       _maxChunkSize(maxChunkSize),
       _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize),
@@ -514,17 +516,22 @@ MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results
                              spi::Context& context,
                              const document::DocumentTypeRepo& repo) const
 {
+    auto throttle_token = _operation_throttler.blocking_acquire_one();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
         Document::SP doc(deserializeDiffDocument(e, repo));
         DocumentId docId = doc->getId();
-        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), std::move(docId), "put", _clock, _env._metrics.merge_handler_metrics.put_latency);
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), std::move(docId),
+                                                                       std::move(throttle_token), "put",
+                                                                       _clock, _env._metrics.merge_handler_metrics.put_latency);
         _spi.putAsync(bucket, timestamp, std::move(doc), context, std::move(complete));
     } else {
         std::vector<spi::PersistenceProvider::TimeStampAndDocumentId> ids;
         ids.emplace_back(timestamp, e._docName);
-        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), ids[0].second, "remove", _clock, _env._metrics.merge_handler_metrics.remove_latency);
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), ids[0].second,
+                                                                       std::move(throttle_token), "remove",
+                                                                       _clock, _env._metrics.merge_handler_metrics.remove_latency);
         _spi.removeAsync(bucket, std::move(ids), context, std::move(complete));
     }
 }
