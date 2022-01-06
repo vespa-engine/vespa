@@ -1534,8 +1534,9 @@ public class ModelProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("You have specified both jvm-options='xyz' and deprecated jvmargs='abc'. " +
-                                 "Merge jvmargs into 'options' in 'jvm' element. " +
+            assertEquals("You have specified both deprecated jvm-options='xyz' and deprecated jvmargs='abc'. " +
+                                 "'jvm-options' and 'jvmargs' are deprecated and will be removed in Vespa 8. " +
+                                 "Please merge 'jvmargs' into 'options' or 'gc-options' in 'jvm' element. " +
                                  "See https://docs.vespa.ai/en/reference/services-container.html#jvm",
                          e.getMessage());
         }
