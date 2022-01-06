@@ -152,4 +152,8 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
         return false;
     }
 
+    public int hashCode() {
+        // not used, only here to match equals() and avoid lint warning
+        return toString(true).hashCode();
+    }
 }
