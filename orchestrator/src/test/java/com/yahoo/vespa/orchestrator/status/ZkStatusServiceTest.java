@@ -390,6 +390,7 @@ public class ZkStatusServiceTest {
 
     //TODO: move to vespajlib
     @SafeVarargs
+    @SuppressWarnings("varargs")
     private static <T> List<T> shuffledList(T... values) {
         //new ArrayList necessary to avoid "write through" behaviour
         List<T> list = new ArrayList<>(Arrays.asList(values));
