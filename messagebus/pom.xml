@@ -61,13 +61,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <arg>-Werror</arg>
-            <arg>-Xlint:all</arg>
-            <arg>-Xlint:-serial</arg>
-          </compilerArgs>
-	</configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
