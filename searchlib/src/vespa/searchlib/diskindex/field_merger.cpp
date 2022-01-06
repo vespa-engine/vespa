@@ -13,7 +13,7 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/searchlib/util/dirtraverse.h>
-#include <vespa/searchlib/util/postingpriorityqueue.h>
+#include <vespa/searchlib/util/posting_priority_queue_merger.hpp>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -52,11 +52,13 @@ createTmpPath(const vespalib::string & base, uint32_t index) {
 
 FieldMerger::FieldMerger(uint32_t id, const FusionOutputIndex& fusion_out_index, std::shared_ptr<IFlushToken> flush_token)
     : _id(id),
-      _field_dir(fusion_out_index.get_path() + "/" + SchemaUtil::IndexIterator(fusion_out_index.get_schema(), id).getName()),
+      _field_name(SchemaUtil::IndexIterator(fusion_out_index.get_schema(), id).getName()),
+      _field_dir(fusion_out_index.get_path() + "/" + _field_name),
       _fusion_out_index(fusion_out_index),
       _flush_token(std::move(flush_token)),
       _word_readers(),
       _word_heap(),
+      _word_aggregator(),
       _word_num_mappings(),
       _num_word_ids(0),
       _readers(),
@@ -107,14 +109,14 @@ bool
 FieldMerger::open_input_word_readers()
 {
     _word_readers.reserve(_fusion_out_index.get_old_indexes().size());
-    _word_heap = std::make_unique<PostingPriorityQueue<DictionaryWordReader>>();
+    _word_heap = std::make_unique<PostingPriorityQueueMerger<DictionaryWordReader, WordAggregator>>();
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
     for (auto & oi : _fusion_out_index.get_old_indexes()) {
         auto reader(std::make_unique<DictionaryWordReader>());
         const vespalib::string &tmpindexpath = createTmpPath(_field_dir, oi.getIndex());
         const vespalib::string &oldindexpath = oi.getPath();
         vespalib::string wordMapName = tmpindexpath + "/old2new.dat";
-        vespalib::string fieldDir(oldindexpath + "/" + index.getName());
+        vespalib::string fieldDir(oldindexpath + "/" + _field_name);
         vespalib::string dictName(fieldDir + "/dictionary");
         const Schema &oldSchema = oi.getSchema();
         if (!index.hasOldFields(oldSchema)) {
@@ -163,24 +165,33 @@ FieldMerger::read_mapping_files()
 }
 
 bool
-FieldMerger::renumber_word_ids()
+FieldMerger::renumber_word_ids_start()
 {
-    SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
-    vespalib::string indexName = index.getName();
-    LOG(debug, "Renumber word IDs for field %s", indexName.c_str());
-
-    WordAggregator out;
-
+    LOG(debug, "Renumber word IDs for field %s", _field_name.c_str());
     if (!open_input_word_readers()) {
         return false;
     }
-    _word_heap->merge(out, 4, *_flush_token);
+    _word_aggregator = std::make_unique<WordAggregator>();
+    return true;
+}
+
+bool
+FieldMerger::renumber_word_ids_main()
+{
+    _word_heap->merge(*_word_aggregator, 4, *_flush_token);
     if (_flush_token->stop_requested()) {
         return false;
     }
     assert(_word_heap->empty());
+    return true;
+}
+
+bool
+FieldMerger::renumber_word_ids_finish()
+{
     _word_heap.reset();
-    _num_word_ids = out.getWordNum();
+    _num_word_ids = _word_aggregator->getWordNum();
+    _word_aggregator.reset();
 
     // Close files
     for (auto &i : _word_readers) {
@@ -193,9 +204,21 @@ FieldMerger::renumber_word_ids()
     if (!read_mapping_files()) {
         return false;
     }
-    LOG(debug, "Finished renumbering words IDs for field %s", indexName.c_str());
+    LOG(debug, "Finished renumbering words IDs for field %s", _field_name.c_str());
 
     return true;
+}
+
+bool
+FieldMerger::renumber_word_ids()
+{
+    if (!renumber_word_ids_start()) {
+        return false;
+    }
+    if (!renumber_word_ids_main()) {
+        return false;
+    }
+    return renumber_word_ids_finish();
 }
 
 std::shared_ptr<FieldLengthScanner>
@@ -226,7 +249,6 @@ FieldMerger::open_input_field_readers()
     _readers.reserve(_fusion_out_index.get_old_indexes().size());
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
     auto field_length_scanner = allocate_field_length_scanner();
-    vespalib::string indexName = index.getName();
     for (const auto &oi : _fusion_out_index.get_old_indexes()) {
         const Schema &oldSchema = oi.getSchema();
         if (!index.hasOldFields(oldSchema)) {
@@ -234,7 +256,7 @@ FieldMerger::open_input_field_readers()
         }
         auto reader = FieldReader::allocFieldReader(index, oldSchema, field_length_scanner);
         reader->setup(_word_num_mappings[oi.getIndex()], oi.getDocIdMapping());
-        if (!reader->open(oi.getPath() + "/" + indexName + "/", _fusion_out_index.get_tune_file_indexing()._read)) {
+        if (!reader->open(oi.getPath() + "/" + _field_name + "/", _fusion_out_index.get_tune_file_indexing()._read)) {
             return false;
         }
         _readers.push_back(std::move(reader));
@@ -322,7 +344,7 @@ FieldMerger::select_cooked_or_raw_features(FieldReader& reader)
 bool
 FieldMerger::setup_merge_heap()
 {
-    _heap = std::make_unique<PostingPriorityQueue<FieldReader>>();
+    _heap = std::make_unique<PostingPriorityQueueMerger<FieldReader, FieldWriter>>();
     for (auto &reader : _readers) {
         if (!select_cooked_or_raw_features(*reader)) {
             return false;
@@ -338,12 +360,10 @@ FieldMerger::setup_merge_heap()
 }
 
 bool
-FieldMerger::merge_postings()
+FieldMerger::merge_postings_start()
 {
-    SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
     /* OUTPUT */
     _writer = std::make_unique<FieldWriter>(_fusion_out_index.get_doc_id_limit(), _num_word_ids);
-    vespalib::string indexName = index.getName();
 
     if (!open_input_field_readers()) {
         return false;
@@ -351,15 +371,23 @@ FieldMerger::merge_postings()
     if (!open_field_writer()) {
         return false;
     }
-    if (!setup_merge_heap()) {
-        return false;
-    }
+    return setup_merge_heap();
+}
 
+bool
+FieldMerger::merge_postings_main()
+{
     _heap->merge(*_writer, 4, *_flush_token);
     if (_flush_token->stop_requested()) {
         return false;
     }
     assert(_heap->empty());
+    return true;
+}
+
+bool
+FieldMerger::merge_postings_finish()
+{
     _heap.reset();
 
     for (auto &reader : _readers) {
@@ -376,11 +404,22 @@ FieldMerger::merge_postings()
 }
 
 bool
+FieldMerger::merge_postings()
+{
+    if (!merge_postings_start()) {
+        return false;
+    }
+    if (!merge_postings_main()) {
+        return false;
+    }
+    return merge_postings_finish();
+}
+
+bool
 FieldMerger::merge_field()
 {
     const Schema &schema = _fusion_out_index.get_schema();
     SchemaUtil::IndexIterator index(schema, _id);
-    const vespalib::string &indexName = index.getName();
     SchemaUtil::IndexSettings settings = index.getIndexSettings();
     if (settings.hasError()) {
         return false;
@@ -391,7 +430,7 @@ FieldMerger::merge_field()
     }
     vespalib::mkdir(_field_dir, false);
 
-    LOG(debug, "merge_field for field %s dir %s", indexName.c_str(), _field_dir.c_str());
+    LOG(debug, "merge_field for field %s dir %s", _field_name.c_str(), _field_dir.c_str());
 
     make_tmp_dirs();
 
@@ -399,7 +438,7 @@ FieldMerger::merge_field()
         if (_flush_token->stop_requested()) {
             return false;
         }
-        LOG(error, "Could not renumber field word ids for field %s dir %s", indexName.c_str(), _field_dir.c_str());
+        LOG(error, "Could not renumber field word ids for field %s dir %s", _field_name.c_str(), _field_dir.c_str());
         return false;
     }
 
@@ -410,7 +449,7 @@ FieldMerger::merge_field()
             return false;
         }
         throw IllegalArgumentException(make_string("Could not merge field postings for field %s dir %s",
-                                                   indexName.c_str(), _field_dir.c_str()));
+                                                   _field_name.c_str(), _field_dir.c_str()));
     }
     if (!FileKit::createStamp(_field_dir +  "/.mergeocc_done")) {
         return false;
@@ -421,7 +460,7 @@ FieldMerger::merge_field()
         return false;
     }
 
-    LOG(debug, "Finished merge_field for field %s dir %s", indexName.c_str(), _field_dir.c_str());
+    LOG(debug, "Finished merge_field for field %s dir %s", _field_name.c_str(), _field_dir.c_str());
 
     return true;
 }
