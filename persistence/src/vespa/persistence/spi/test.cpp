@@ -21,9 +21,7 @@ std::unique_ptr<DocEntry>
 cloneDocEntry(const DocEntry & e) {
     std::unique_ptr<DocEntry> ret;
     if (e.getDocument()) {
-        ret = DocEntry::create(e.getTimestamp(), e.getFlags(),
-                           std::make_unique<Document>(*e.getDocument()),
-                           e.getDocumentSize());
+        ret = DocEntry::create(e.getTimestamp(), std::make_unique<Document>(*e.getDocument()), e.getDocumentSize());
     } else if (e.getDocumentId()) {
         ret = DocEntry::create(e.getTimestamp(), e.getFlags(), *e.getDocumentId());
     } else {

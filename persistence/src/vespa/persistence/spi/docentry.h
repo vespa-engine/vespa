@@ -17,7 +17,7 @@
 
 namespace storage::spi {
 
-enum DocumentMetaFlags {
+enum class DocumentMetaFlags {
     NONE             = 0x0,
     REMOVE_ENTRY     = 0x1
 };
@@ -28,15 +28,14 @@ public:
     using UP = std::unique_ptr<DocEntry>;
     using SP = std::shared_ptr<DocEntry>;
 
-    DocEntry(Timestamp t, int metaFlags) : DocEntry(t, metaFlags, 0) { }
     DocEntry(const DocEntry &) = delete;
     DocEntry & operator=(const DocEntry &) = delete;
     DocEntry(DocEntry &&) = delete;
     DocEntry & operator=(DocEntry &&) = delete;
     virtual ~DocEntry();
-    bool isRemove() const { return (_metaFlags & REMOVE_ENTRY); }
+    bool isRemove() const { return (_metaFlags == DocumentMetaFlags::REMOVE_ENTRY); }
     Timestamp getTimestamp() const { return _timestamp; }
-    int getFlags() const { return _metaFlags; }
+    DocumentMetaFlags getFlags() const { return _metaFlags; }
     /**
      * @return In-memory size of this doc entry, including document instance.
      *     In essence: serialized size of document + sizeof(DocEntry).
@@ -55,19 +54,20 @@ public:
     virtual const Document* getDocument() const { return nullptr; }
     virtual const DocumentId* getDocumentId() const { return nullptr; }
     virtual DocumentUP releaseDocument();
-    static UP create(Timestamp t, int metaFlags);
-    static UP create(Timestamp t, int metaFlags, const DocumentId &docId);
-    static UP create(Timestamp t, int metaFlags, DocumentUP doc);
-    static UP create(Timestamp t, int metaFlags, DocumentUP doc, SizeType serializedDocumentSize);
+    static UP create(Timestamp t, DocumentMetaFlags metaFlags);
+    static UP create(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId);
+    static UP create(Timestamp t, DocumentUP doc);
+    static UP create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize);
 protected:
-    DocEntry(Timestamp t, int metaFlags, SizeType size)
+    DocEntry(Timestamp t, DocumentMetaFlags metaFlags, SizeType size)
         : _timestamp(t),
           _metaFlags(metaFlags),
           _size(size)
     {}
 private:
+    DocEntry(Timestamp t, DocumentMetaFlags metaFlags) : DocEntry(t, metaFlags, 0) { }
     Timestamp    _timestamp;
-    int          _metaFlags;
+    DocumentMetaFlags          _metaFlags;
     SizeType     _size;
 };
 

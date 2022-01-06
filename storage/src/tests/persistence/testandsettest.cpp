@@ -74,7 +74,7 @@ struct TestAndSetTest : PersistenceTestUtils {
     static std::string expectedDocEntryString(
         api::Timestamp timestamp,
         const document::DocumentId & testDocId,
-        spi::DocumentMetaFlags removeFlag = spi::NONE);
+        spi::DocumentMetaFlags removeFlag = spi::DocumentMetaFlags::NONE);
 };
 
 TEST_F(TestAndSetTest, conditional_put_not_executed_on_condition_mismatch) {
@@ -151,7 +151,7 @@ TEST_F(TestAndSetTest, conditional_remove_executed_on_condition_match) {
 
     ASSERT_EQ(fetchResult(asyncHandler->handleRemove(*remove, createTracker(remove, BUCKET))).getResult(), api::ReturnCode::Result::OK);
     EXPECT_EQ(expectedDocEntryString(timestampOne, testDocId) +
-              expectedDocEntryString(timestampTwo, testDocId, spi::REMOVE_ENTRY),
+              expectedDocEntryString(timestampTwo, testDocId, spi::DocumentMetaFlags::REMOVE_ENTRY),
               dumpBucket(BUCKET_ID));
 }
 
@@ -296,8 +296,8 @@ std::string TestAndSetTest::expectedDocEntryString(
 {
     std::stringstream ss;
 
-    ss << "DocEntry(" << timestamp << ", " << removeFlag << ", ";
-    if (removeFlag == spi::REMOVE_ENTRY) {
+    ss << "DocEntry(" << timestamp << ", " << int(removeFlag) << ", ";
+    if (removeFlag == spi::DocumentMetaFlags::REMOVE_ENTRY) {
         ss << docId << ")\n";
     } else {
        ss << "Doc(" << docId << "))\n";

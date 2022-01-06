@@ -435,7 +435,7 @@ DummyPersistence::putAsync(const Bucket& b, Timestamp t, Document::SP doc, Conte
         }
     } else {
         LOG(spam, "Inserting document %s", doc->toString(true).c_str());
-        auto entry = DocEntry::create(t, NONE, Document::UP(doc->clone()));
+        auto entry = DocEntry::create(t, Document::UP(doc->clone()));
         (*bc)->insert(std::move(entry));
         bc.reset();
         onComplete->onComplete(std::make_unique<Result>());
@@ -493,7 +493,7 @@ DummyPersistence::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentI
         }
         DocEntry::SP entry((*bc)->getEntry(id));
         numRemoves += (entry.get() && !entry->isRemove()) ? 1 : 0;
-        auto remEntry = DocEntry::create(t, REMOVE_ENTRY, id);
+        auto remEntry = DocEntry::create(t, DocumentMetaFlags::REMOVE_ENTRY, id);
 
         if ((*bc)->hasTimestamp(t)) {
             (*bc)->eraseEntry(t);
@@ -658,8 +658,7 @@ DummyPersistence::iterate(IteratorId id, uint64_t maxByteSize, Context& ctx) con
                 assert(entry->getDocument());
                 // Create new document with only wanted fields.
                 Document::UP filtered(FieldSet::createDocumentSubsetCopy(*entry->getDocument(), *it->_fieldSet));
-                auto ret = DocEntry::create(entry->getTimestamp(), entry->getFlags(),
-                                            std::move(filtered), entry->getDocumentSize());
+                auto ret = DocEntry::create(entry->getTimestamp(), std::move(filtered), entry->getDocumentSize());
                 entries.push_back(std::move(ret));
             } else {
                 // Use entry as-is.

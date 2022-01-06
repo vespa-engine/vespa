@@ -266,7 +266,7 @@ TEST(DocEntryTest, test_basics) {
 }
 
 TEST(DocEntryTest, test_meta_only) {
-    DocEntry::UP e = DocEntry::create(Timestamp(9), 0);
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaFlags::NONE);
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
     EXPECT_EQ(24, e->getSize());
@@ -274,13 +274,13 @@ TEST(DocEntryTest, test_meta_only) {
     EXPECT_EQ(nullptr, e->getDocument());
     EXPECT_EQ(nullptr, e->getDocumentId());
 
-    DocEntry::UP r = DocEntry::create(Timestamp(666), 1);
+    DocEntry::UP r = DocEntry::create(Timestamp(666), DocumentMetaFlags::REMOVE_ENTRY);
     EXPECT_EQ(666, r->getTimestamp());
     EXPECT_TRUE(r->isRemove());
 }
 
 TEST(DocEntryTest, test_docid_only) {
-    DocEntry::UP e = DocEntry::create(Timestamp(9), 0, DocumentId("id:test:test::1"));
+    DocEntry::UP e = DocEntry::create(Timestamp(9), DocumentMetaFlags::NONE, DocumentId("id:test:test::1"));
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
     EXPECT_EQ(48, e->getSize());
@@ -291,7 +291,7 @@ TEST(DocEntryTest, test_docid_only) {
 
 TEST(DocEntryTest, test_document_only) {
     document::TestDocMan testDocMan;
-    DocEntry::UP e = DocEntry::create(Timestamp(9), 0, testDocMan.createRandomDocument(0, 1000));
+    DocEntry::UP e = DocEntry::create(Timestamp(9), testDocMan.createRandomDocument(0, 1000));
     EXPECT_EQ(9, e->getTimestamp());
     EXPECT_FALSE(e->isRemove());
     EXPECT_EQ(664, e->getSize());

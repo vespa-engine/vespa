@@ -11,7 +11,7 @@ namespace {
 
 class DocEntryWithId final : public DocEntry {
 public:
-    DocEntryWithId(Timestamp t, int metaFlags, const DocumentId &docId);
+    DocEntryWithId(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId);
     ~DocEntryWithId();
     vespalib::string toString() const override;
     const DocumentId* getDocumentId() const override { return _documentId.get(); }
@@ -22,7 +22,7 @@ private:
 
 class DocEntryWithDoc final : public DocEntry {
 public:
-    DocEntryWithDoc(Timestamp t, int metaFlags, DocumentUP doc);
+    DocEntryWithDoc(Timestamp t, DocumentUP doc);
 
     /**
      * Constructor that can be used by providers that already know
@@ -30,7 +30,7 @@ public:
      * call to getSerializedSize can be avoided. This value shall be the size of the document _before_
      * any field filtering is performed.
      */
-    DocEntryWithDoc(Timestamp t, int metaFlags, DocumentUP doc, size_t serializedDocumentSize);
+    DocEntryWithDoc(Timestamp t, DocumentUP doc, size_t serializedDocumentSize);
     ~DocEntryWithDoc();
     vespalib::string toString() const override;
     const Document* getDocument() const override { return _document.get(); }
@@ -41,17 +41,17 @@ private:
     DocumentUP _document;
 };
 
-DocEntryWithDoc::DocEntryWithDoc(Timestamp t, int metaFlags, DocumentUP doc)
-    : DocEntry(t, metaFlags, doc->serialize().size()),
+DocEntryWithDoc::DocEntryWithDoc(Timestamp t, DocumentUP doc)
+    : DocEntry(t, DocumentMetaFlags::NONE, doc->serialize().size()),
       _document(std::move(doc))
 { }
 
-DocEntryWithDoc::DocEntryWithDoc(Timestamp t, int metaFlags, DocumentUP doc, size_t serializedDocumentSize)
-    : DocEntry(t, metaFlags, serializedDocumentSize),
+DocEntryWithDoc::DocEntryWithDoc(Timestamp t, DocumentUP doc, size_t serializedDocumentSize)
+    : DocEntry(t, DocumentMetaFlags::NONE, serializedDocumentSize),
       _document(std::move(doc))
 { }
 
-DocEntryWithId::DocEntryWithId(Timestamp t, int metaFlags, const DocumentId& docId)
+DocEntryWithId::DocEntryWithId(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId& docId)
     : DocEntry(t, metaFlags, docId.getSerializedSize()),
       _documentId(std::make_unique<DocumentId>(docId))
 { }
@@ -63,7 +63,7 @@ vespalib::string
 DocEntryWithId::toString() const
 {
     std::ostringstream out;
-    out << "DocEntry(" << getTimestamp() << ", " << getFlags() << ", " << *_documentId << ")";
+    out << "DocEntry(" << getTimestamp() << ", " << int(getFlags()) << ", " << *_documentId << ")";
     return out.str();
 }
 
@@ -71,7 +71,7 @@ vespalib::string
 DocEntryWithDoc::toString() const
 {
     std::ostringstream out;
-    out << "DocEntry(" << getTimestamp() << ", " << getFlags() << ", ";
+    out << "DocEntry(" << getTimestamp() << ", " << int(getFlags()) << ", ";
     if (_document.get()) {
         out << "Doc(" << _document->getId() << ")";
     } else {
@@ -84,20 +84,20 @@ DocEntryWithDoc::toString() const
 }
 
 DocEntry::UP
-DocEntry::create(Timestamp t, int metaFlags) {
-    return std::make_unique<DocEntry>(t, metaFlags);
+DocEntry::create(Timestamp t, DocumentMetaFlags metaFlags) {
+    return UP(new DocEntry(t, metaFlags));
 }
 DocEntry::UP
-DocEntry::create(Timestamp t, int metaFlags, const DocumentId &docId) {
+DocEntry::create(Timestamp t, DocumentMetaFlags metaFlags, const DocumentId &docId) {
     return std::make_unique<DocEntryWithId>(t, metaFlags, docId);
 }
 DocEntry::UP
-DocEntry::create(Timestamp t, int metaFlags, DocumentUP doc) {
-    return std::make_unique<DocEntryWithDoc>(t, metaFlags, std::move(doc));
+DocEntry::create(Timestamp t, DocumentUP doc) {
+    return std::make_unique<DocEntryWithDoc>(t, std::move(doc));
 }
 DocEntry::UP
-DocEntry::create(Timestamp t, int metaFlags, DocumentUP doc, SizeType serializedDocumentSize) {
-    return std::make_unique<DocEntryWithDoc>(t, metaFlags, std::move(doc), serializedDocumentSize);
+DocEntry::create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize) {
+    return std::make_unique<DocEntryWithDoc>(t, std::move(doc), serializedDocumentSize);
 }
 
 DocEntry::~DocEntry() = default;
@@ -111,7 +111,7 @@ vespalib::string
 DocEntry::toString() const
 {
     std::ostringstream out;
-    out << "DocEntry(" << _timestamp << ", " << _metaFlags << ", metadata only)";
+    out << "DocEntry(" << _timestamp << ", " << int(_metaFlags) << ", metadata only)";
     return out.str();
 }
 
