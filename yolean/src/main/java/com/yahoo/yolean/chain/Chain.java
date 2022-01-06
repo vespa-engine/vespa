@@ -21,6 +21,7 @@ public final class Chain<T> implements Iterable<T> {
     private final Collection<T> components;
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public Chain(String id, T... components) {
         this(id, Arrays.asList(components));
     }

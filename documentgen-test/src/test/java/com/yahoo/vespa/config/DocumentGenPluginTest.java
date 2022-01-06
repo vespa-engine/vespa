@@ -513,9 +513,8 @@ public class DocumentGenPluginTest {
     }
 
     private static DocumentTypeManager typeManagerFromSDs(String... files) {
-        final DocumentTypeManager mgr = new DocumentTypeManager();
-        mgr.configure("raw:" + getDocumentConfig(Arrays.asList(files)));
-        return mgr;
+        var cfg = getDocumentConfig(Arrays.asList(files));
+        return new DocumentTypeManager(cfg);
     }
 
     private static DocumentTypeManager typeManagerForBookType() {
@@ -534,8 +533,8 @@ public class DocumentGenPluginTest {
         assertEquals(NUM_BOOKS, manyGenericBooks.size());
     }
 
-    private static String getDocumentConfig(List<String> sds) {
-        return new DocumentmanagerConfig(Deriver.getDocumentManagerConfig(sds)).toString();
+    private static DocumentmanagerConfig getDocumentConfig(List<String> sds) {
+        return new DocumentmanagerConfig(Deriver.getDocumentManagerConfig(sds));
     }
 
     @Test

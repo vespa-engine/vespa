@@ -3,7 +3,7 @@ package com.yahoo.vespa.clustercontroller.utils.communication.async;
 
 public class AsyncUtils {
 
-    public static void waitFor(AsyncOperation op) {
+    public static void waitFor(AsyncOperation<?> op) {
         while (!op.isDone()) {
             try{ Thread.sleep(1); } catch (InterruptedException e) {}
         }

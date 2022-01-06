@@ -26,11 +26,13 @@ public class Dependencies<T> {
     }
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public static <T> Dependencies<T> before(T... components) {
         return new Dependencies<>(new Order<>(components, null, null), Order.<T>emptyOrder(), null);
     }
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public static <T> Dependencies<T> before(Class<? extends T>... classes) {
         return new Dependencies<>(new Order<>(null, classes, null), Order.<T>emptyOrder(), null);
     }
@@ -40,11 +42,13 @@ public class Dependencies<T> {
     }
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public static <T> Dependencies<T> after(T... components) {
         return new Dependencies<>(Order.<T>emptyOrder(), new Order<>(components, null, null), null);
     }
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public static <T> Dependencies<T> after(Class<? extends T>... classes) {
         return new Dependencies<>(Order.<T>emptyOrder(), new Order<>(null, classes, null), null);
     }
@@ -103,6 +107,7 @@ public class Dependencies<T> {
     }
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     static <T> List<T> allOf(List<T> elements, T... otherElements) {
         List<T> result = new ArrayList<>(elements);
         result.addAll(Arrays.asList(otherElements));
@@ -110,6 +115,7 @@ public class Dependencies<T> {
     }
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     static <T> List<T> allOf(T[] elements, T... otherElements) {
         return allOf(Arrays.asList(elements), otherElements);
     }

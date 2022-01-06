@@ -21,6 +21,7 @@ public final class SelectInputExpression extends CompositeExpression {
     private final List<Pair<String, Expression>> cases;
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     public SelectInputExpression(Pair<String, Expression>... cases) {
         this(Arrays.asList(cases));
     }
