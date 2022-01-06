@@ -188,10 +188,10 @@ public class FSA implements Closeable {
              */
             public Item(FSA fsa, int state) {
                 this.fsa = fsa;
-                this.string = new java.util.Stack();
+                this.string = new java.util.Stack<>();
                 this.symbol = 0;
                 this.state = state;
-                this.stack = new java.util.Stack();
+                this.stack = new java.util.Stack<>();
             }
 
             /**
@@ -199,7 +199,7 @@ public class FSA implements Closeable {
              */
             public Item(Item item) {
                 this.fsa = item.fsa;
-                this.string = new java.util.Stack();
+                this.string = new java.util.Stack<>();
                 for (java.util.Iterator<Byte> itr = item.string.iterator(); itr.hasNext(); ) {
                     byte b = itr.next();
                     this.string.push(b);
@@ -415,7 +415,7 @@ public class FSA implements Closeable {
             if ((mmap == null) || !mmap.isDirect()) return;
 
             try {
-                Class unsafeClass;
+                Class<?> unsafeClass;
                 try {
                     unsafeClass = Class.forName("sun.misc.Unsafe");
                 } catch (Exception ex) {
@@ -468,8 +468,8 @@ public class FSA implements Closeable {
      * @return the loaded FSA
      * @throws RuntimeException if the class could not be loaded
      */
-    public static FSA loadFromResource(String resourceFileName,Class loadingClass) {
-        URL fsaUrl=loadingClass.getResource(resourceFileName);
+    public static FSA loadFromResource(String resourceFileName, Class<?> loadingClass) {
+        URL fsaUrl = loadingClass.getResource(resourceFileName);
         if ( ! "file".equals(fsaUrl.getProtocol())) {
             throw new RuntimeException("Could not open non-file url '" + fsaUrl + "' as a file input stream: " +
                     "The classloader of " + loadingClass + "' does not return file urls");
