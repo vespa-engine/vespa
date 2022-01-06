@@ -297,7 +297,7 @@ public final class FieldMatchMetrics implements Cloneable {
     /** Returns the closeness of the segments in the field: <code>1-segmentDistance/fieldLength</code> */
     public float getSegmentProximity() {
         if (matches==0) return 0;
-        return 1-(float)segmentDistance/source.getField().terms().size();
+        return 1-segmentDistance/source.getField().terms().size();
     }
 
     /**
