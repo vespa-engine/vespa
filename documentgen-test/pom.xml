@@ -67,6 +67,7 @@
             <arg>-Xlint:all</arg>
             <arg>-Xlint:-unchecked</arg>
             <arg>-Xlint:-serial</arg>
+            <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
       </plugin>
