@@ -3,12 +3,10 @@
 #pragma once
 
 #include "fusion_output_index.h"
-
 #include <vespa/vespalib/util/threadexecutor.h>
 
 namespace search {
 class IFlushToken;
-template <class IN> class PostingPriorityQueue;
 class TuneFileIndexing;
 }
 

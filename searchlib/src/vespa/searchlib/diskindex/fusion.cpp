@@ -3,46 +3,29 @@
 #include "fusion.h"
 #include "fusion_input_index.h"
 #include "field_merger.h"
-#include "fieldreader.h"
-#include "dictionarywordreader.h"
-#include "field_length_scanner.h"
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/searchlib/bitcompression/posocc_fields_params.h>
-#include <vespa/searchlib/common/i_flush_token.h>
-#include <vespa/searchlib/index/field_length_info.h>
-#include <vespa/searchlib/util/filekit.h>
-#include <vespa/searchlib/util/dirtraverse.h>
-#include <vespa/searchlib/util/postingpriorityqueue.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/documentsummary.h>
-#include <vespa/vespalib/util/error.h>
-#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/searchlib/common/i_flush_token.h>
+#include <vespa/searchlib/index/schemautil.h>
+#include <vespa/searchlib/util/dirtraverse.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/count_down_latch.h>
-#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/error.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/document/util/queue.h>
-#include <sstream>
 
 #include <vespa/log/log.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 LOG_SETUP(".diskindex.fusion");
 
-using search::FileKit;
-using search::PostingPriorityQueue;
 using search::common::FileHeaderContext;
-using search::diskindex::DocIdMapping;
-using search::diskindex::WordNumMapping;
 using search::docsummary::DocumentSummary;
-using search::index::FieldLengthInfo;
-using search::bitcompression::PosOccFieldParams;
-using search::bitcompression::PosOccFieldsParams;
-using search::index::PostingListParams;
 using search::index::Schema;
 using search::index::SchemaUtil;
 using search::index::schema::DataType;
 using vespalib::getLastErrorString;
 using vespalib::IllegalArgumentException;
-using vespalib::make_string;
 
 namespace search::diskindex {
 
