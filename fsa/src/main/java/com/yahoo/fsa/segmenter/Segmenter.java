@@ -60,7 +60,7 @@ public class Segmenter {
 
   public Segments segment(String[] tokens) {
     Segments segments = new Segments(tokens);
-    LinkedList detectors = new LinkedList();
+    LinkedList<Detector> detectors = new LinkedList<>();
 
     int i=0;
 
@@ -68,9 +68,9 @@ public class Segmenter {
     while(i<tokens.length){
       detectors.add(new Detector(fsa.getState(), i));
 
-      ListIterator det_it = detectors.listIterator();
+      ListIterator<Detector> det_it = detectors.listIterator();
       while(det_it.hasNext()){
-        Detector d = (Detector)det_it.next();
+        Detector d = det_it.next();
         d.state().deltaWord(tokens[i]);
         if(d.state().isFinal()){
           segments.add(new Segment(d.index(),i+1,d.state().data().getInt(0)));

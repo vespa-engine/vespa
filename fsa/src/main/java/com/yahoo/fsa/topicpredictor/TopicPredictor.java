@@ -59,7 +59,7 @@ public class TopicPredictor extends MetaData {
      * as opposed to the two-argument version.
      * @param segment   The segment string to find (all) topics for.
      * @return (Linked)List of PredictedTopic objects.  */
-    public List getPredictedTopics(String segment) {
+    public List<PredictedTopic> getPredictedTopics(String segment) {
         return getPredictedTopics(segment, 0);
     }
 
@@ -70,8 +70,8 @@ public class TopicPredictor extends MetaData {
      * @param segment   The segment string to find topics for.
      * @param maxTopics The max number of topics to return, 0 for all topics
      * @return (Linked)List of PredictedTopic objects.  */
-    public List getPredictedTopics(String segment, int maxTopics) {
-        List predictedTopics = new LinkedList();
+    public List<PredictedTopic> getPredictedTopics(String segment, int maxTopics) {
+        List<PredictedTopic> predictedTopics = new LinkedList<>();
 
         int segIdx = getSegmentIndex(segment);
         int[][] topicArr = getTopicArray(segIdx, maxTopics);

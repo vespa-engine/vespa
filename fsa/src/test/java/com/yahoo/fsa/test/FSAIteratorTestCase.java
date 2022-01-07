@@ -94,7 +94,7 @@ public class FSAIteratorTestCase {
     @Test
     public void testIteratorEmpty1() {
         state.delta("b");
-        java.util.Iterator i = fsa.iterator(state);
+        FSA.Iterator i = fsa.iterator(state);
         assertFalse(i.hasNext());
         try {
             i.next();
@@ -107,7 +107,7 @@ public class FSAIteratorTestCase {
     @Test
     public void testIteratorEmpty2() {
         state.delta("daciac");
-        java.util.Iterator i = fsa.iterator(state);
+        FSA.Iterator i = fsa.iterator(state);
         assertFalse(i.hasNext());
         try {
             i.next();
@@ -119,7 +119,7 @@ public class FSAIteratorTestCase {
 
     @Test
     public void testIteratorRemove() {
-        java.util.Iterator i = fsa.iterator(state);
+        FSA.Iterator i = fsa.iterator(state);
         try {
             i.remove();
             assertFalse(true);

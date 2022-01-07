@@ -8,7 +8,7 @@ import java.util.LinkedList;
  *
  * @author  Peter Boros
  */
-public class Segments extends LinkedList {
+public class Segments extends LinkedList<Segment> {
 
     public final static int SEGMENTATION_WEIGHTED            =  0;
     public final static int SEGMENTATION_WEIGHTED_BIAS10     =  1;
@@ -43,10 +43,12 @@ public class Segments extends LinkedList {
         }
     }
 
-    public void add(Segment s)
+    @Override
+    public boolean add(Segment s)
     {
-        super.add(s);
+        var result = super.add(s);
         _map[s.beg()][s.end()]=super.size()-1;
+        return result;
     }
 
     private void addMissingSingles()
@@ -76,8 +78,8 @@ public class Segments extends LinkedList {
         if(idx<0 || idx>=super.size()){
             return null;
         }
-        String s = new String(_tokens[((Segment)(super.get(idx))).beg()]);
-        for(int i=((Segment)(super.get(idx))).beg()+1;i<((Segment)(super.get(idx))).end();i++){
+        String s = new String(_tokens[super.get(idx).beg()]);
+        for(int i = super.get(idx).beg() + 1; i < super.get(idx).end(); i++){
             s += " " + _tokens[i];
         }
         return s;
@@ -88,7 +90,7 @@ public class Segments extends LinkedList {
         if(idx<0 || idx>=super.size()){
             return -1;
         }
-        return ((Segment)(super.get(idx))).beg();
+        return super.get(idx).beg();
     }
 
     public int end(int idx)
@@ -96,7 +98,7 @@ public class Segments extends LinkedList {
         if(idx<0 || idx>=super.size()){
             return -1;
         }
-        return ((Segment)(super.get(idx))).end();
+        return super.get(idx).end();
     }
 
     public int len(int idx)
@@ -104,7 +106,7 @@ public class Segments extends LinkedList {
         if(idx<0 || idx>=super.size()){
             return -1;
         }
-        return ((Segment)(super.get(idx))).len();
+        return super.get(idx).len();
     }
 
     public int conn(int idx)
@@ -112,9 +114,10 @@ public class Segments extends LinkedList {
         if(idx<0 || idx>=super.size()){
             return -1;
         }
-        return ((Segment)(super.get(idx))).conn();
+        return super.get(idx).conn();
     }
 
+    @SuppressWarnings("fallthrough")
     public Segments segmentation(int method)
     {
         Segments smnt = new Segments(_tokens);
@@ -170,7 +173,7 @@ public class Segments extends LinkedList {
             }
             id = bestid;
             while(id!=-1){
-                smnt.add(((Segment)(super.get(id))));
+                smnt.add(super.get(id));
                 id=nextid[id];
             }
             break;
@@ -189,7 +192,7 @@ public class Segments extends LinkedList {
                         next = i;
                     }
                 }
-                smnt.add((Segment)(super.get(bestid)));
+                smnt.add(super.get(bestid));
                 pos=next;
             }
             break;
@@ -302,7 +305,7 @@ public class Segments extends LinkedList {
         }
 
         // add segment
-        smnt.add((Segment)(super.get(bestid)));
+        smnt.add(super.get(bestid));
 
         // check right side
         if(e>end(bestid)){
