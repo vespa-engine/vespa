@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -480,10 +481,11 @@ public abstract class ControllerHttpClient {
 
     // Note: Much more data in response, only the interesting parts of response are included in InstanceInfo for now
     private static InstanceInfo toInstanceInfo(HttpResponse<byte[]> response, ApplicationId applicationId) {
-        Set<ZoneId> zones = new HashSet<>();
+        List<ZoneDeployment> zones = new ArrayList<>();
         toInspector(response).field("instances").traverse((ArrayTraverser) (___, entryObject) ->
-                zones.add(ZoneId.from(entryObject.field("environment").asString(),
-                                   entryObject.field("region").asString())));
+                zones.add(new ZoneDeployment(ZoneId.from(entryObject.field("environment").asString(),
+                                                         entryObject.field("region").asString()),
+                                             entryObject.field("url").valid() ? Optional.of(entryObject.field("url").asString()) : Optional.empty())));
         return new InstanceInfo(applicationId, zones);
     }
 
@@ -561,20 +563,32 @@ public abstract class ControllerHttpClient {
     public static class InstanceInfo {
 
         private final ApplicationId applicationId;
-        private final Set<ZoneId> zones;
+        private final List<ZoneDeployment> zones;
 
-        InstanceInfo(ApplicationId applicationId, Set<ZoneId> zones) {
+        InstanceInfo(ApplicationId applicationId, List<ZoneDeployment> zones) {
             this.applicationId = applicationId;
             this.zones = zones;
         }
 
-        public ApplicationId applicationId() {
-            return applicationId;
+        public ApplicationId applicationId() { return applicationId; }
+
+        public List<ZoneDeployment> zones() { return zones; }
+
+    }
+
+    public static class ZoneDeployment {
+
+        private final ZoneId zone;
+        private final Optional<String> uri;
+
+        public ZoneDeployment(ZoneId zone, Optional<String> uri) {
+            this.zone = zone;
+            this.uri = uri;
         }
 
-        public Set<ZoneId> zones() {
-            return zones;
-        }
+        public ZoneId zone() { return zone; }
+
+        public boolean isDeployed() { return uri.isPresent(); }
 
     }
 
