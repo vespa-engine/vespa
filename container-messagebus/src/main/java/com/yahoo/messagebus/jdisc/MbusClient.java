@@ -43,6 +43,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
         this.session = session;
         this.sessionReference = session.refer(this);
         thread = new Thread(new SenderTask(), "mbus-client-" + threadId.getAndIncrement());
+        thread.setDaemon(true);
     }
 
     @Override
@@ -79,6 +80,11 @@ public final class MbusClient extends AbstractResource implements ClientProvider
         log.log(Level.FINE, "Destroying message bus client.");
         sessionReference.close();
         done = true;
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            log.log(Level.WARNING, "Interrupted while joining thread on destroy.", e);
+        }
     }
 
     @Override
@@ -121,7 +127,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
         if (error == null) {
             return true;
         }
-        if (error.isFatal()) {
+        if (error.isFatal() || done) {
             final Reply reply = new EmptyReply();
             reply.swapState(request.getMessage());
             reply.addError(error);
