@@ -3,7 +3,6 @@
 #include "attribute_usage_sampler_functor.h"
 #include "attribute_usage_sampler_context.h"
 #include "attribute_config_inspector.h"
-#include "attribute_transient_memory_calculator.h"
 #include <vespa/searchlib/attribute/attributevector.h>
 
 using search::attribute::BasicType;
@@ -27,14 +26,7 @@ AttributeUsageSamplerFunctor::operator()(const search::attribute::IAttributeVect
     const auto & attributeVector = dynamic_cast<const search::AttributeVector &>(iAttributeVector);
     search::AddressSpaceUsage usage = attributeVector.getAddressSpaceUsage();
     vespalib::string attributeName = attributeVector.getName();
-    auto& old_config = attributeVector.getConfig();
-    auto* current_config = _samplerContext->get_attribute_config_inspector().get_config(attributeName);
-    if (current_config == nullptr) {
-        current_config = &old_config;
-    }
-    AttributeTransientMemoryCalculator get_transient_memory_usage;
-    size_t transient_memory_usage = get_transient_memory_usage(attributeVector, *current_config);
-    _samplerContext->merge(usage, transient_memory_usage, attributeName, _subDbName);
+    _samplerContext->merge(usage, attributeName, _subDbName);
 }
 
-} // namespace proton
+}

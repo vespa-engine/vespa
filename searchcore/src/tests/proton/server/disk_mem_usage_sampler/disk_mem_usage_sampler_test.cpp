@@ -45,7 +45,7 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
                 DiskMemUsageSampler::Config(0.8, 0.8,
                                             50ms, make_hw_info()))
     {
-        sampler.add_transient_usage_provider(std::make_shared<MyProvider>(99, 200));
+        sampler.add_transient_usage_provider(std::make_shared<MyProvider>(50, 200));
         sampler.add_transient_usage_provider(std::make_shared<MyProvider>(100, 199));
     }
     const DiskMemUsageFilter& filter() const { return sampler.writeFilter(); }
@@ -70,8 +70,8 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
     EXPECT_EQ(filter().getMemoryStats().getAnonymousRss(), 0);
 #endif
     EXPECT_GT(filter().getDiskUsedSize(), 0);
-    EXPECT_EQ(100, filter().get_transient_memory_usage());
-    EXPECT_EQ(100.0 / memory_size_bytes, filter().get_relative_transient_memory_usage());
+    EXPECT_EQ(150, filter().get_transient_memory_usage());
+    EXPECT_EQ(150.0 / memory_size_bytes, filter().usageState().transient_memory_usage());
     EXPECT_EQ(200, filter().get_transient_disk_usage());
     EXPECT_EQ(200.0 / disk_size_bytes, filter().get_relative_transient_disk_usage());
 }

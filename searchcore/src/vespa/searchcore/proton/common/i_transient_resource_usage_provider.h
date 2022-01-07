@@ -7,10 +7,10 @@
 namespace proton {
 
 /**
- * Interface class providing transient resource usage.
+ * Interface class providing a snapshot of transient resource usage.
  *
- * E.g. extra memory needed for loading or saving an attribute vectors or extra disk needed for running disk index fusion.
- * It provides an aggregated max view over several components (e.g. all attribute vectors for a document type).
+ * E.g. the memory used by the memory index and extra disk needed for running disk index fusion.
+ * This provides the total transient resource usage for the components this provider encapsulates.
  */
 class ITransientResourceUsageProvider {
 public:

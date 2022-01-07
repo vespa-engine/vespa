@@ -15,9 +15,9 @@
 
 namespace proton {
 
-/*
- * Class to filter write operations based on sampled disk and memory
- * usage. If resource limit is reached then further writes are denied
+/**
+ * Class to filter write operations based on sampled disk and memory usage.
+ * If resource limit is reached then further writes are denied
  * in order to prevent entering an unrecoverable state.
  */
 class DiskMemUsageFilter : public IResourceWriteFilter,
@@ -58,6 +58,7 @@ private:
     void recalcState(const Guard &guard); // called with _lock held
     double getMemoryUsedRatio(const Guard &guard) const;
     double getDiskUsedRatio(const Guard &guard) const;
+    double get_relative_transient_memory_usage(const Guard& guard) const;
     void notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state);
 
 public:
@@ -70,7 +71,6 @@ public:
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
     size_t get_transient_memory_usage() const;
-    double get_relative_transient_memory_usage() const;
     size_t get_transient_disk_usage() const;
     double get_relative_transient_disk_usage() const;
     Config getConfig() const;

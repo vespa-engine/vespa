@@ -12,17 +12,15 @@
 namespace storage::spi {struct BucketExecutor; }
 namespace proton {
 
-class AttributeConfigInspector;
-class IPruneRemovedDocumentsHandler;
-struct IDocumentMoveHandler;
-class IBucketModifiedHandler;
-class IClusterStateChangedNotifier;
-class IBucketStateChangedNotifier;
-struct IBucketStateCalculator;
-struct IAttributeManager;
 class AttributeUsageFilter;
+class IBucketModifiedHandler;
+class IBucketStateChangedNotifier;
+class IClusterStateChangedNotifier;
 class IDiskMemUsageNotifier;
-class TransientResourceUsageProvider;
+class IPruneRemovedDocumentsHandler;
+struct IAttributeManager;
+struct IBucketStateCalculator;
+struct IDocumentMoveHandler;
 namespace bucketdb { class IBucketCreateNotifier; }
 
 /**
@@ -50,8 +48,6 @@ struct MaintenanceJobsInjector
                            DocumentDBJobTrackers &jobTrackers,
                            IAttributeManagerSP readyAttributeManager,
                            IAttributeManagerSP notReadyAttributeManager,
-                           std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector,
-                           std::shared_ptr<TransientResourceUsageProvider> transient_usage_provider,
                            AttributeUsageFilter &attributeUsageFilter);
 };
 

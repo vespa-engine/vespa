@@ -94,6 +94,7 @@ void
 ResourceUsageTracker::notifyDiskMemUsage(DiskMemUsageState state)
 {
     std::lock_guard guard(_lock);
+    // TODO: Subtract transient resource (memory and disk) usage from the absolute numbers.
     _resource_usage = ResourceUsage(state.diskState().usage(), state.memoryState().usage(), _resource_usage.get_attribute_address_space_usage());
     if (_listener != nullptr) {
         _listener->update_resource_usage(_resource_usage);

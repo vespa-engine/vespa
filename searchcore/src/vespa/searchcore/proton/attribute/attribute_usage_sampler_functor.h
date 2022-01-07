@@ -9,9 +9,8 @@ namespace proton {
 
 class AttributeUsageSamplerContext;
 
-/*
- * Functor for sampling attribute usage and passing it on to sampler
- * context.
+/**
+ * Functor for sampling attribute usage and passing it on to sampler context.
  */
 class AttributeUsageSamplerFunctor : public search::attribute::IConstAttributeFunctor
 {
