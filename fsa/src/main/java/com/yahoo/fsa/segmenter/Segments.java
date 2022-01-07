@@ -43,6 +43,7 @@ public class Segments extends LinkedList<Segment> {
         }
     }
 
+    @Override
     public boolean add(Segment s)
     {
         var result = super.add(s);
