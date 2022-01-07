@@ -636,7 +636,7 @@ public class SessionRepository {
                              .isAfter(clock.instant().minus(Duration.ofSeconds(30))))
                         newSessions.add(Long.parseLong(session.getName()));
                 } catch (IOException e) {
-                    log.log(Level.INFO, "Unable to find last modified time for " + session.toPath());
+                    log.log(Level.FINE, "Unable to find last modified time for " + session.toPath());
                 };
             }
         }
