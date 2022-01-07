@@ -262,11 +262,20 @@ public class NodeAgentImpl implements NodeAgent {
                 context.log(logger, "Invoking vespa-nodectl to restart services: " + restartReason);
                 orchestratorSuspendNode(context);
 
+                ContainerResources currentResources = existingContainer.get().resources();
+                ContainerResources wantedResources = currentResources.withUnlimitedCpus();
+                if ( ! wantedResources.equals(currentResources)) {
+                    context.log(logger, "Updating container resources: %s -> %s",
+                            existingContainer.get().resources().toStringCpu(), wantedResources.toStringCpu());
+                    containerOperations.updateContainer(context, existingContainer.get().id(), wantedResources);
+                }
+
                 String output = containerOperations.restartVespa(context);
                 if (!output.isBlank()) {
                     context.log(logger, "Restart services output: " + output);
                 }
                 currentRestartGeneration = context.node().wantedRestartGeneration();
+                firstSuccessfulHealthCheckInstant = Optional.empty();
             });
         }
 
