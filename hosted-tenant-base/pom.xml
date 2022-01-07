@@ -182,6 +182,23 @@
                                     </rules>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>enforce-no-log4j</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <bannedDependencies>
+                                            <!-- Fail validation for apps with log4j deps, in any scope. -->
+                                            <excludes>
+                                                <exclude>log4j:log4j:*:jar:*</exclude>
+                                                <exclude>org.apache.logging.log4j:log4j-core:*:jar:*</exclude>
+                                            </excludes>
+                                        </bannedDependencies>
+                                    </rules>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
