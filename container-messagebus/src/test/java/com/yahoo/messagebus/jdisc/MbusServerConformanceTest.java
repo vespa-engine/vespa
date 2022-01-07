@@ -30,7 +30,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.messagebus.ErrorCode.APP_FATAL_ERROR;
-import static com.yahoo.messagebus.ErrorCode.SESSION_BUSY;
+import static com.yahoo.messagebus.ErrorCode.NETWORK_SHUTDOWN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,7 +50,7 @@ public class MbusServerConformanceTest extends ServerProviderConformanceTest {
     @Test
     public void testContainerNotReadyException() throws Throwable {
         new TestRunner().setRequestTimeout(100, TimeUnit.MILLISECONDS)
-                        .expectError(SESSION_BUSY)
+                        .expectError(NETWORK_SHUTDOWN)
                         .executeAndClose();
     }
 
