@@ -264,7 +264,7 @@ public class NodeAgentImpl implements NodeAgent {
 
                 ContainerResources currentResources = existingContainer.get().resources();
                 ContainerResources wantedResources = currentResources.withUnlimitedCpus();
-                if ( ! wantedResources.equals(currentResources)) {
+                if ( ! warmUpDuration(context).isNegative() && ! wantedResources.equals(currentResources)) {
                     context.log(logger, "Updating container resources: %s -> %s",
                             existingContainer.get().resources().toStringCpu(), wantedResources.toStringCpu());
                     containerOperations.updateContainer(context, existingContainer.get().id(), wantedResources);
