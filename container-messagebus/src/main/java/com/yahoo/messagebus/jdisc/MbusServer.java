@@ -75,9 +75,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
             return;
         }
         if (state == State.STOPPED) {
-            // We might need to detect requests originating from the same JVM, as they need to fail fast
-            // as they are holding references to the container preventing proper shutdown.
-            dispatchErrorReply(msg, ErrorCode.SESSION_BUSY, "MBusServer has been closed.");
+            dispatchErrorReply(msg, ErrorCode.NETWORK_SHUTDOWN, "MBusServer has been closed.");
             return;
         }
         if (msg.getTrace().shouldTrace(6)) {
