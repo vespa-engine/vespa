@@ -1,0 +1,4 @@
+%{list listA}body A
+%{list listB}body B
+%{end}
+%{end}
