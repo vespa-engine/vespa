@@ -196,7 +196,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         List<String> strings = Arrays.asList(invalidOptions.clone());
         // Verify that nothing is logged if there are no invalid options
         if (strings.isEmpty()) {
-            assertEquals(0, logger.msgs.size());
+            assertEquals(logger.msgs.size() > 0 ? logger.msgs.get(0).getSecond() : "", 0, logger.msgs.size());
             return;
         }
 
@@ -246,7 +246,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         // Valid options, should not log anything
         verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
         verifyLoggingOfJvmOptions(true, "options", "-verbose:gc");
-        verifyLoggingOfJvmOptions(true, "options", "-Djava.library.path=/opt/vespa/lib64:/home/y/lib64");
+        verifyLoggingOfJvmOptions(true, "options", "-Djava.library.path=/opt/vespa/lib64:/home/y/lib64 -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005");
         verifyLoggingOfJvmOptions(false, "options", "-Xms2G");
     }
 
