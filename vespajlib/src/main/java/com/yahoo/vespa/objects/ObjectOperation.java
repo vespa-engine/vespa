@@ -13,5 +13,6 @@ public interface ObjectOperation {
      *
      * @param obj The object to operate on.
      */
-    public void execute(Object obj);
+    void execute(Object obj);
+
 }

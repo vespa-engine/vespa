@@ -14,6 +14,7 @@ import java.util.Optional;
  * @author hakon
  */
 public class TimeBudget {
+
     private final Clock clock;
     private final Instant start;
     private final Optional<Duration> timeout;
@@ -90,4 +91,5 @@ public class TimeBudget {
     private static Duration makeNonNegative(Duration duration) {
         return duration.isNegative() ? Duration.ZERO : duration;
     }
+
 }

@@ -5,6 +5,7 @@ package com.yahoo.slime;
  * @author hakonhall
  */
 public class Injector {
+
     /**
      * Inject a slime sub-structure described by an Inspector into a slime
      * structure where the insertion point is described by an
@@ -17,7 +18,7 @@ public class Injector {
      *
      * @param inspector what to inject
      * @param inserter where to inject
-     **/
+     */
     public void inject(Inspector inspector, Inserter inserter) {
         if (inspector.valid()) {
             injectValue(inserter, inspector, null);
@@ -77,4 +78,5 @@ public class Injector {
             injectValue(new ObjectInserter(cursor, name), inspector, guard);
         }
     }
+
 }

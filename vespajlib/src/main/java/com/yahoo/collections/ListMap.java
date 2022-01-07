@@ -133,6 +133,7 @@ public class ListMap<K, V> {
      */
     public void freeze() {
         if (frozen) return;
+        frozen = true;
 
         for (Map.Entry<K,List<V>> entry : map.entrySet())
             entry.setValue(ImmutableList.copyOf(entry.getValue()));

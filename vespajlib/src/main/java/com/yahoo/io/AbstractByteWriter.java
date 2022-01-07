@@ -16,8 +16,7 @@ import java.nio.charset.CharsetEncoder;
  * @author Steinar Knutsen
  * @author baldersheim
  */
-public abstract class AbstractByteWriter extends GenericWriter implements
-        WritableByteTransmitter {
+public abstract class AbstractByteWriter extends GenericWriter implements WritableByteTransmitter {
 
     protected final CharsetEncoder encoder;
     protected final BufferChain buffer;

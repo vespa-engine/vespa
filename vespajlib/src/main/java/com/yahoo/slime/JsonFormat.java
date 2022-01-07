@@ -14,8 +14,8 @@ import java.io.*;
  *
  * @author Ulf Lilleengen
  */
-public final class JsonFormat implements SlimeFormat
-{
+public final class JsonFormat implements SlimeFormat {
+
     private final static byte [] HEX = Utf8.toBytes("0123456789ABCDEF");
     private final boolean compact;
     public JsonFormat(boolean compact) {

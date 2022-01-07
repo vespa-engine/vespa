@@ -11,7 +11,8 @@ import java.util.concurrent.ThreadFactory;
  * @author Einar M R Rosenvinge
  */
 public class DaemonThreadFactory implements ThreadFactory {
-    private ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
+
+    private final ThreadFactory defaultThreadFactory = Executors.defaultThreadFactory();
     private String prefix = null;
 
     /**

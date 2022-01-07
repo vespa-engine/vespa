@@ -5,6 +5,7 @@ package com.yahoo.vespa.objects;
  * @author baldersheim
  */
 public interface Deserializer {
+
     byte getByte(FieldBase field);
     short getShort(FieldBase field);
     int getInt(FieldBase field);
@@ -13,4 +14,5 @@ public interface Deserializer {
     double getDouble(FieldBase field);
     byte [] getBytes(FieldBase field, int length);
     String getString(FieldBase field);
+
 }

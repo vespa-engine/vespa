@@ -5,9 +5,8 @@ import static com.yahoo.slime.BinaryFormat.encode_double;
 import static com.yahoo.slime.BinaryFormat.encode_type_and_meta;
 import static com.yahoo.slime.BinaryFormat.encode_zigzag;
 
-final class BinaryEncoder implements
-ArrayTraverser, ObjectSymbolTraverser
-{
+final class BinaryEncoder implements ArrayTraverser, ObjectSymbolTraverser {
+
     private final BufferedOutput out;
 
     BinaryEncoder() {
@@ -143,4 +142,5 @@ ArrayTraverser, ObjectSymbolTraverser
         encode_cmpr_long(symbol);
         encodeValue(inspector);
     }
+
 }

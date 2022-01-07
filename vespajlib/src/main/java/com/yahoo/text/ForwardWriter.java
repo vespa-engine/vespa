@@ -4,10 +4,9 @@ package com.yahoo.text;
 import java.io.IOException;
 
 /**
- * Wraps another writer and also converting IOException to Exceptions.
+ * Wraps another writer and converts IOException to RuntimeExceptions.
  *
  * @author baldersheim
- * @since 5.2
  */
 public class ForwardWriter extends GenericWriter {
 

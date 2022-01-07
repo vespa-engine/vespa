@@ -6,12 +6,14 @@ package com.yahoo.slime;
  * Implement this and call Inspector.traverse()
  * and you will get one callback for each field in an object.
  **/
-public interface ObjectSymbolTraverser
-{
+public interface ObjectSymbolTraverser {
+
     /**
      * Callback function to implement.
+     *
      * @param sym symbol id for the current field.
      * @param inspector accessor for the current field's value.
-     **/
-    public void field(int sym, Inspector inspector);
+     */
+    void field(int sym, Inspector inspector);
+
 }

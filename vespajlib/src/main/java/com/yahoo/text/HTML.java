@@ -1,17 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-
 import java.util.Map;
 import java.util.HashMap;
-
 
 /**
  * Static HTML escaping stuff
  *
- * @author  <a href="mailto:borud@yahoo-inc.com">Bjorn Borud</a>
+ * @author Bjorn Borud
  */
 public class HTML {
+
     static Object[][] entities = {
         // {"#39", Integer.valueOf(39)},     // ' - apostrophe
         {"quot", 34},    // " - double-quote
@@ -121,4 +120,5 @@ public class HTML {
         }
         return buf.toString();
     }
+
 }

@@ -20,8 +20,8 @@ package com.yahoo.collections;
  * maximum load factor is 0.7 and drops slightly with increasing
  * capacity.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Havard Pettersen</a>
- **/
+ * @author Havard Pettersen
+ */
 public final class Hashlet<K, V> {
 
     private static final int[] emptyHash = new int[1];
@@ -223,4 +223,5 @@ public final class Hashlet<K, V> {
         }
         return true;
     }
+
 }

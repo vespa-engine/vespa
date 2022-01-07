@@ -6,8 +6,9 @@ import com.yahoo.compress.Compressor;
 /**
  * Class for serializing Slime data into binary format, or deserializing
  * the binary format into a Slime object.
- **/
+ */
 public class BinaryFormat {
+
     static long encode_zigzag(long x) {
         return ((x << 1) ^ (x >> 63)); // note ASR
     }
@@ -96,4 +97,5 @@ public class BinaryFormat {
         BinaryDecoder decoder = new BinaryDecoder();
         return decoder.decode(data, offset, length);
     }
+
 }

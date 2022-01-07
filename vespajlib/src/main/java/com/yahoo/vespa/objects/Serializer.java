@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
  * @author baldersheim
  */
 public interface Serializer {
+
     Serializer putByte(FieldBase field, byte value);
     Serializer putShort(FieldBase field, short value);
     Serializer putInt(FieldBase field, int value);
@@ -16,4 +17,5 @@ public interface Serializer {
     Serializer put(FieldBase field, byte[] value);
     Serializer put(FieldBase field, ByteBuffer value);
     Serializer put(FieldBase field, String value);
+
 }

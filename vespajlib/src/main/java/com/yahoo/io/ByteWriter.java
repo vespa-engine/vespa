@@ -14,6 +14,7 @@ import java.nio.charset.CharsetEncoder;
  * @author Steinar Knutsen
  */
 public class ByteWriter extends AbstractByteWriter {
+
     private final OutputStream stream;
 
     public ByteWriter(final OutputStream stream, final CharsetEncoder encoder) {

@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
  *
  * @author Tony Vaagenes
  * @author gjoranv
- * @since 5.1.8
  */
 public class CollectionUtil {
 
@@ -100,4 +99,5 @@ public class CollectionUtil {
         }
         return Optional.empty();
     }
+
 }

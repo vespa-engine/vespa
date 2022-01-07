@@ -24,7 +24,6 @@ import java.util.Map;
  * <p>Map parsers are NOT multithread safe, but are cheap to construct.</p>
  *
  * @author bratseth
- * @since 5.1.15
  */
 public abstract class MapParser<VALUETYPE> extends SimpleMapParser {
 

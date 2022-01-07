@@ -6,13 +6,14 @@ package com.yahoo.geo;
  * Utility for holding one geographical coordinate
  *
  * @author arnej27959
- **/
+ */
 public class ParsedDegree {
+
     /**
      * the parsed latitude or longitude
      * Degrees north or east if positive
      * Degrees south or west if negative
-     **/
+     */
     public final double degrees;
 
     // one of these two flag will be true:
@@ -46,6 +47,7 @@ public class ParsedDegree {
         throw new IllegalArgumentException("could not parse: "+toParse);
     }
 
+    @Override
     public String toString() {
         if (isLatitude) {
             return "Latitude: "+degrees+" degrees";

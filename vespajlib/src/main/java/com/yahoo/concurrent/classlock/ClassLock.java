@@ -7,6 +7,7 @@ package com.yahoo.concurrent.classlock;
  * @author valerijf
  */
 public class ClassLock implements AutoCloseable {
+
     private final Class<?> clazz;
     private final ClassLocking classLocking;
 
@@ -24,4 +25,5 @@ public class ClassLock implements AutoCloseable {
     public void close() {
         classLocking.unlock(clazz, this);
     }
+
 }

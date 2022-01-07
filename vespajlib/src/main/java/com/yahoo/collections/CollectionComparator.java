@@ -8,7 +8,7 @@ import java.util.Iterator;
  * Utility class which is useful when implementing <code>Comparable</code> and one needs to
  * compare Collections of Comparables as instance variables.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class CollectionComparator {
     /**
@@ -51,4 +51,5 @@ public class CollectionComparator {
         //we haven't returned yet; contents must be equal:
         return 0;
     }
+
 }

@@ -3026,7 +3026,7 @@
       "public void write(char[], int, int)",
       "public void flush()",
       "public void close()",
-      "public final java.io.Writer getWriter()"
+      "public java.io.Writer getWriter()"
     ],
     "fields": []
   },

@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
  * @author arnej27959
  * @author Steinar Knutsen
  * @author baldersheim
- *
  */
 public final class Utf8 {
 

@@ -10,7 +10,6 @@ import java.util.List;
  * Freezable lists may optionally allow new items to be added to the end of the list also after freeze.
  *
  * @author bratseth
- * @since 5.20
  */
 public class FreezableArrayList<ITEM> extends ListenableArrayList<ITEM> {
 

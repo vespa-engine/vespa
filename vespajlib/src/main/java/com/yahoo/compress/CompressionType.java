@@ -14,7 +14,7 @@ public enum CompressionType {
     LZ4((byte) 6),
     ZSTD((byte) 7);
 
-    private byte code;
+    private final byte code;
 
     CompressionType(byte code) {
         this.code = code;

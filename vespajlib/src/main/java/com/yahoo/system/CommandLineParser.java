@@ -11,23 +11,24 @@ import java.util.*;
  * progname -binaryswitch foo -unaryswitch argument1 argument2
  *
  * @author vegardh
- *
  */
 public class CommandLineParser {
-    private List<String> inputStrings = new ArrayList<>();
-    private Map<String, String> legalUnarySwitches = new HashMap<>();
-    private Map<String, String> legalBinarySwitches = new HashMap<>();
-    private List<String> unarySwitches = new ArrayList<>();
-    private Map<String, String> binarySwitches = new HashMap<>();
-    private List<String> arguments = new ArrayList<>();
-    private Map<String, String> requiredUnarySwitches = new HashMap<>();
-    private Map<String, String> requiredBinarySwitches = new HashMap<>();
+
+    private static final HashSet<String> helpSwitches = new HashSet<>();
+
+    private final List<String> inputStrings;
+    private final Map<String, String> legalUnarySwitches = new HashMap<>();
+    private final Map<String, String> legalBinarySwitches = new HashMap<>();
+    private final List<String> unarySwitches = new ArrayList<>();
+    private final Map<String, String> binarySwitches = new HashMap<>();
+    private final List<String> arguments = new ArrayList<>();
+    private final Map<String, String> requiredUnarySwitches = new HashMap<>();
+    private final Map<String, String> requiredBinarySwitches = new HashMap<>();
     private String progname = "progname";
     private String argumentExplanation;
-    private int minArguments=0;
-    private int maxArguments=Integer.MAX_VALUE;
+    private int minArguments = 0;
+    private int maxArguments = Integer.MAX_VALUE;
     private String helpText;
-    private static HashSet<String> helpSwitches = new HashSet<>();
     private boolean helpSwitchUsed = false;
 
     static {
@@ -213,4 +214,5 @@ public class CommandLineParser {
     public boolean helpSwitchUsed() {
         return helpSwitchUsed;
     }
+
 }

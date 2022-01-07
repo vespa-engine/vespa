@@ -7,6 +7,7 @@ package com.yahoo.slime;
  * and you will get one callback for each field in an object.
  */
 public interface ObjectTraverser {
+
     /**
      * Callback function to implement.
      *

@@ -27,7 +27,7 @@ public class Identifiable extends Selectable implements Cloneable {
      * Returns the class identifier of this class. This proxies the {@link #onGetClassId()} method that must be
      * implemented by every subclass.
      *
-     * @return The class identifier.
+     * @return the class identifier
      */
     public final int getClassId() {
         return onGetClassId();

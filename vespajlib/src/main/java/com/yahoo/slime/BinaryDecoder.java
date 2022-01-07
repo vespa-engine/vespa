@@ -8,6 +8,7 @@ import static com.yahoo.slime.BinaryFormat.decode_type;
 import static com.yahoo.slime.BinaryFormat.decode_zigzag;
 
 final class BinaryDecoder {
+
     BufferedInput in;
 
     private final SlimeInserter slimeInserter = new SlimeInserter(null);
@@ -160,4 +161,5 @@ final class BinaryDecoder {
             }
         }
     }
+
 }

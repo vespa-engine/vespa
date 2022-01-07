@@ -5,6 +5,7 @@ package com.yahoo.slime;
  * @author hakonhall
  */
 public final class ObjectInserter implements Inserter {
+
     private Cursor target;
     private String key;
 

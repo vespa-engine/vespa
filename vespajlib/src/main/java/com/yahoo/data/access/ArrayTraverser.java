@@ -5,12 +5,14 @@ package com.yahoo.data.access;
  * Callback interface for traversing arrays.
  * Implement this and call Inspector.traverse()
  * and you will get one callback for each array entry.
- **/
+ */
 public interface ArrayTraverser {
+
     /**
      * Callback function to implement.
      * @param idx array index for the current array entry.
      * @param inspector accessor for the current array entry's value.
-     **/
-    public void entry(int idx, Inspector inspector);
+     */
+    void entry(int idx, Inspector inspector);
+
 }

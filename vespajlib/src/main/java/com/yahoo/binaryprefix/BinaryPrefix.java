@@ -3,9 +3,11 @@ package com.yahoo.binaryprefix;
 
 /**
  * Represents binary prefixes.
+ *
  * @author Tony Vaagenes
  */
 public enum BinaryPrefix {
+
     //represents the binary prefix 2^(k*10)
     unit(0),
     kilo(1, 'K'),
@@ -42,4 +44,5 @@ public enum BinaryPrefix {
         }
         throw new RuntimeException("No such binary prefix: " + c);
     }
+
 }

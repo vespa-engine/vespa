@@ -5,12 +5,15 @@ import java.util.Optional;
 
 /**
  * Utility methods for doing casting
+ *
  * @author Tony Vaagenes
  */
 public class Casting {
+
     /**
      * Returns the casted instance if it is assignment-compatible with targetClass,
      * or empty otherwise.
+     *
      * @see Class#isInstance(Object)
      */
     public static <T> Optional<T> cast(Class<T> targetClass, Object instance) {
@@ -18,4 +21,5 @@ public class Casting {
                 Optional.of(targetClass.cast(instance)):
                 Optional.empty();
     }
+
 }
