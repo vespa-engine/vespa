@@ -14,80 +14,59 @@
 #pragma once
 
 #include <persistence/spi/types.h>
+#include <vespa/document/base/globalid.h>
 
 namespace storage::spi {
 
-enum DocumentMetaFlags {
+enum class DocumentMetaEnum {
     NONE             = 0x0,
     REMOVE_ENTRY     = 0x1
 };
 
 class DocEntry {
 public:
-    typedef uint32_t SizeType;
-private:
-    Timestamp _timestamp;
-    int _metaFlags;
-    SizeType _persistedDocumentSize;
-    SizeType _size;
-    DocumentIdUP _documentId;
-    DocumentUP _document;
-public:
+    using SizeType = uint32_t;
     using UP = std::unique_ptr<DocEntry>;
     using SP = std::shared_ptr<DocEntry>;
 
-    DocEntry(Timestamp t, int metaFlags, DocumentUP doc);
-
-    /**
-     * Constructor that can be used by providers that already know
-     * the serialized size of the document, so the potentially expensive
-     * call to getSerializedSize can be avoided.
-     */
-    DocEntry(Timestamp t, int metaFlags, DocumentUP doc, size_t serializedDocumentSize);
-    DocEntry(Timestamp t, int metaFlags, const DocumentId& docId);
-
-    DocEntry(Timestamp t, int metaFlags);
-    ~DocEntry();
-    DocEntry* clone() const;
-    const Document* getDocument() const { return _document.get(); }
-    const DocumentId* getDocumentId() const;
-    DocumentUP releaseDocument();
-    bool isRemove() const { return (_metaFlags & REMOVE_ENTRY); }
+    DocEntry(const DocEntry &) = delete;
+    DocEntry & operator=(const DocEntry &) = delete;
+    DocEntry(DocEntry &&) = delete;
+    DocEntry & operator=(DocEntry &&) = delete;
+    virtual ~DocEntry();
+    bool isRemove() const { return (_metaEnum == DocumentMetaEnum::REMOVE_ENTRY); }
     Timestamp getTimestamp() const { return _timestamp; }
-    int getFlags() const { return _metaFlags; }
-    void setFlags(int flags) { _metaFlags = flags; }
-    /**
-     * @return In-memory size of this doc entry, including document instance.
-     *     In essence: serialized size of document + sizeof(DocEntry).
-     */
-    SizeType getSize() const { return _size; }
+    DocumentMetaEnum getMetaEnum() const { return _metaEnum; }
     /**
      * If entry contains a document, returns its serialized size.
      * If entry contains a document id, returns the serialized size of
      * the id alone.
-     * Otherwise (i.e. metadata only), returns zero.
+     * Otherwise (i.e. metadata only), returns sizeof(DocEntry).
      */
-    SizeType getDocumentSize() const;
-    /**
-     * Return size of document as it exists in persisted form. By default
-     * this will return the serialized size of the entry's document instance,
-     * but for persistence providers that are able to provide this information
-     * efficiently, this value can be set explicitly to provide better statistical
-     * tracking for e.g. visiting operations in the service layer.
-     * If explicitly set, this value shall be the size of the document _before_
-     * any field filtering is performed.
-     */
-    SizeType getPersistedDocumentSize() const { return _persistedDocumentSize; }
-    /**
-     * Set persisted size of document. Optional.
-     * @see getPersistedDocumentSize
-     */
-    void setPersistedDocumentSize(SizeType persistedDocumentSize) {
-        _persistedDocumentSize = persistedDocumentSize;
-    }
+    SizeType getSize() const { return _size; }
 
-    vespalib::string toString() const;
-    bool operator==(const DocEntry& entry) const;
+    virtual vespalib::string toString() const;
+    virtual const Document* getDocument() const { return nullptr; }
+    virtual const DocumentId* getDocumentId() const { return nullptr; }
+    virtual vespalib::stringref getDocumentType() const { return vespalib::stringref(); }
+    virtual GlobalId getGid() const { return GlobalId(); }
+    virtual DocumentUP releaseDocument();
+    static UP create(Timestamp t, DocumentMetaEnum metaEnum);
+    static UP create(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId);
+    static UP create(Timestamp t, DocumentMetaEnum metaEnum, vespalib::stringref docType, GlobalId gid);
+    static UP create(Timestamp t, DocumentUP doc);
+    static UP create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize);
+protected:
+    DocEntry(Timestamp t, DocumentMetaEnum metaEnum, SizeType size)
+        : _timestamp(t),
+          _metaEnum(metaEnum),
+          _size(size)
+    {}
+private:
+    DocEntry(Timestamp t, DocumentMetaEnum metaEnum) : DocEntry(t, metaEnum, sizeof(DocEntry)) { }
+    Timestamp         _timestamp;
+    DocumentMetaEnum  _metaEnum;
+    SizeType          _size;
 };
 
 std::ostream & operator << (std::ostream & os, const DocEntry & r);

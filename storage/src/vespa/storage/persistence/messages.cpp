@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "messages.h"
+#include <vespa/persistence/spi/docentry.h>
 #include <ostream>
-#include <cassert>
 
 using document::BucketSpace;
 

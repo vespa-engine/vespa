@@ -19,7 +19,7 @@ public:
                       const vdslib::Parameters& params);
 
 private:
-    void handleDocuments(const document::BucketId&, std::vector<spi::DocEntry::UP>&, HitCounter&) override;
+    void handleDocuments(const document::BucketId&, DocEntryList&, HitCounter&) override;
 };
 
 struct DumpVisitorSingleFactory : public VisitorFactory {

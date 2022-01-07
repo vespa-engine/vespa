@@ -16,6 +16,7 @@
 #include <tests/common/teststorageapp.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/storageserver/testvisitormessagesession.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
@@ -23,6 +24,8 @@
 
 using namespace std::chrono_literals;
 using document::test::makeBucketSpace;
+using document::Document;
+using document::DocumentId;
 using namespace ::testing;
 
 namespace storage {
@@ -54,7 +57,7 @@ struct TestParams {
 
 struct VisitorTest : Test {
     static uint32_t docCount;
-    std::vector<document::Document::SP > _documents;
+    std::vector<Document::SP> _documents;
     std::unique_ptr<TestVisitorMessageSessionFactory> _messageSessionFactory;
     std::unique_ptr<TestServiceLayerApp> _node;
     std::unique_ptr<DummyStorageLink> _top;
@@ -92,11 +95,11 @@ struct VisitorTest : Test {
     void getMessagesAndReply(
             int expectedCount,
             TestVisitorMessageSession& session,
-            std::vector<document::Document::SP >& docs,
-            std::vector<document::DocumentId>& docIds,
+            std::vector<Document::SP> & docs,
+            std::vector<DocumentId>& docIds,
             std::vector<std::string>& infoMessages,
             api::ReturnCode::Result returnCode = api::ReturnCode::OK);
-    uint32_t getMatchingDocuments(std::vector<document::Document::SP >& docs);
+    uint32_t getMatchingDocuments(std::vector<Document::SP>& docs);
 
 protected:
     void doTestVisitorInstanceHasConsistencyLevel(
@@ -212,7 +215,7 @@ VisitorTest::initializeTest(const TestParams& params)
         uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/"
             << i << ".html";
 
-        _documents.push_back(document::Document::SP(
+        _documents.push_back(Document::SP(
                 _node->getTestDocMan().createDocument(content, uri.str())));
         const document::DocumentType& type(_documents.back()->getType());
         _documents.back()->setValue(type.getField("headerval"),
@@ -275,8 +278,8 @@ void
 VisitorTest::getMessagesAndReply(
         int expectedCount,
         TestVisitorMessageSession& session,
-        std::vector<document::Document::SP >& docs,
-        std::vector<document::DocumentId>& docIds,
+        std::vector<Document::SP >& docs,
+        std::vector<DocumentId>& docIds,
         std::vector<std::string>& infoMessages,
         api::ReturnCode::Result result)
 {
@@ -351,7 +354,7 @@ VisitorTest::verifyCreateVisitorReply(
 }
 
 uint32_t
-VisitorTest::getMatchingDocuments(std::vector<document::Document::SP >& docs) {
+VisitorTest::getMatchingDocuments(std::vector<Document::SP >& docs) {
     uint32_t equalCount = 0;
     for (uint32_t i=0; i<docs.size(); ++i) {
         for (uint32_t j=0; j<_documents.size(); ++j) {
@@ -381,11 +384,7 @@ VisitorTest::sendGetIterReply(GetIterCommand& cmd,
     assert(maxDocuments < _documents.size());
     size_t documentCount = maxDocuments != 0 ? maxDocuments : _documents.size();
     for (size_t i = 0; i < documentCount; ++i) {
-        reply->getEntries().emplace_back(
-                        std::make_unique<spi::DocEntry>(
-                                spi::Timestamp(1000 + i),
-                                spi::NONE,
-                                document::Document::UP(_documents[i]->clone())));
+        reply->getEntries().push_back(spi::DocEntry::create(spi::Timestamp(1000 + i), Document::UP(_documents[i]->clone())));
     }
     if (documentCount == _documents.size() || overrideCompleted) {
         reply->setCompleted();
@@ -481,8 +480,8 @@ TEST_F(VisitorTest, normal_usage) {
 
     sendGetIterReply(*getIterCmd);
 
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    std::vector<Document::SP> docs;
+    std::vector<DocumentId> docIds;
     std::vector<std::string> infoMessages;
     getMessagesAndReply(_documents.size(), getSession(0), docs, docIds, infoMessages);
     ASSERT_EQ(0, infoMessages.size());
@@ -547,8 +546,8 @@ TEST_F(VisitorTest, document_api_client_error) {
         sendGetIterReply(*getIterCmd, api::ReturnCode(api::ReturnCode::OK), 1);
     }
 
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    std::vector<Document::SP> docs;
+    std::vector<DocumentId> docIds;
     std::vector<std::string> infoMessages;
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages,
                         api::ReturnCode::INTERNAL_FAILURE);
@@ -587,8 +586,8 @@ TEST_F(VisitorTest, no_document_api_resending_for_failed_visitor) {
         sendGetIterReply(*getIterCmd, api::ReturnCode(api::ReturnCode::OK), 2, true);
     }
 
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    std::vector<Document::SP> docs;
+    std::vector<DocumentId> docIds;
     std::vector<std::string> infoMessages;
     // Use non-critical result. Visitor info message should be received
     // after we send a NOT_CONNECTED reply. Failing this message as well
@@ -690,8 +689,8 @@ TEST_F(VisitorTest, no_visitor_notification_for_transient_failures) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     ASSERT_NO_FATAL_FAILURE(sendInitialCreateVisitorAndGetIterRound());
 
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    std::vector<Document::SP> docs;
+    std::vector<DocumentId> docIds;
     std::vector<std::string> infoMessages;
     // Have to make sure time increases in visitor thread so that resend
     // times are reached.
@@ -734,8 +733,8 @@ TEST_F(VisitorTest, notification_sent_if_transient_error_retried_many_times) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     sendInitialCreateVisitorAndGetIterRound();
 
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    std::vector<Document::SP> docs;
+    std::vector<DocumentId> docIds;
     std::vector<std::string> infoMessages;
     // Have to make sure time increases in visitor thread so that resend
     // times are reached.
@@ -774,8 +773,8 @@ VisitorTest::doCompleteVisitingSession(
                      1,
                      true);
 
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    std::vector<Document::SP> docs;
+    std::vector<DocumentId> docIds;
     std::vector<std::string> infoMessages;
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages);
 
@@ -835,8 +834,8 @@ TEST_F(VisitorTest, no_more_iterators_sent_while_memory_used_above_limit) {
     std::this_thread::sleep_for(100ms);
     ASSERT_EQ(0, _bottom->getNumCommands());
 
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
+    std::vector<Document::SP> docs;
+    std::vector<DocumentId> docIds;
     std::vector<std::string> infoMessages;
     getMessagesAndReply(1, getSession(0), docs, docIds, infoMessages);
 
@@ -898,8 +897,8 @@ struct ReindexingVisitorTest : VisitorTest {
 
     void respond_to_client_put(api::ReturnCode::Result result) {
         // Reply to the Put from "client" back to the visitor
-        std::vector<document::Document::SP> docs;
-        std::vector<document::DocumentId> doc_ids;
+        std::vector<Document::SP> docs;
+        std::vector<DocumentId> doc_ids;
         std::vector<std::string> info_messages;
         getMessagesAndReply(1, getSession(0), docs, doc_ids, info_messages, result);
     }
