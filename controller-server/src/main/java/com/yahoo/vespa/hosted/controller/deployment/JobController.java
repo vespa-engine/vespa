@@ -396,22 +396,23 @@ public class JobController {
                 });
                 logs.flush(id);
                 metric.jobFinished(run.id().job(), finishedRun.status());
+
+                DeploymentId deploymentId = new DeploymentId(unlockedRun.id().application(), unlockedRun.id().job().type().zone(controller.system()));
+                (unlockedRun.versions().targetApplication().isDeployedDirectly() ?
+                 Stream.of(unlockedRun.id().type()) :
+                 JobType.allIn(controller.system()).stream().filter(jobType -> !jobType.environment().isManuallyDeployed()))
+                        .flatMap(jobType -> controller.jobController().runs(unlockedRun.id().application(), jobType).values().stream())
+                        .mapToLong(r -> r.versions().targetApplication().buildNumber().orElse(Integer.MAX_VALUE))
+                        .min()
+                        .ifPresent(oldestBuild -> {
+                            if (unlockedRun.versions().targetApplication().isDeployedDirectly())
+                                controller.applications().applicationStore().pruneDevDiffs(deploymentId, oldestBuild);
+                            else
+                                controller.applications().applicationStore().pruneDiffs(deploymentId.applicationId().tenant(), deploymentId.applicationId().application(), oldestBuild);
+                        });
+
                 return finishedRun;
             });
-
-            DeploymentId deploymentId = new DeploymentId(unlockedRun.id().application(), unlockedRun.id().job().type().zone(controller.system()));
-            (unlockedRun.versions().targetApplication().isDeployedDirectly() ?
-                            Stream.of(unlockedRun.id().type()) :
-                            JobType.allIn(controller.system()).stream().filter(jobType -> !jobType.environment().isManuallyDeployed()))
-                    .flatMap(jobType -> controller.jobController().runs(unlockedRun.id().application(), jobType).values().stream())
-                    .mapToLong(run -> run.versions().targetApplication().buildNumber().orElse(Integer.MAX_VALUE))
-                    .min()
-                    .ifPresent(oldestBuild -> {
-                        if (unlockedRun.versions().targetApplication().isDeployedDirectly())
-                            controller.applications().applicationStore().pruneDevDiffs(deploymentId, oldestBuild);
-                        else
-                            controller.applications().applicationStore().pruneDiffs(deploymentId.applicationId().tenant(), deploymentId.applicationId().application(), oldestBuild);
-                    });
         }
         finally {
             for (Lock lock : locks)
