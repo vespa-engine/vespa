@@ -15,6 +15,8 @@ using namespace ::testing;
 
 namespace storage {
 
+using DocEntryList = std::vector<spi::DocEntry::UP>;
+
 struct SplitBitDetectorTest : Test {
     document::TestDocMan testDocMan;
     spi::dummy::DummyPersistence provider;
@@ -33,7 +35,7 @@ struct SplitBitDetectorTest : Test {
 };
 
 TEST_F(SplitBitDetectorTest, two_users) {
-    std::vector<spi::DocEntry::UP> entries;
+    DocEntryList entries;
     for (uint32_t i = 0; i < 5; ++i) {
         document::Document::SP doc(
                 testDocMan.createRandomDocumentAtLocation(1, i, 1, 1));
@@ -54,7 +56,7 @@ TEST_F(SplitBitDetectorTest, two_users) {
 }
 
 TEST_F(SplitBitDetectorTest, single_user) {
-    std::vector<spi::DocEntry::UP> entries;
+    DocEntryList entries;
     for (uint32_t i = 0; i < 10; ++i) {
         document::Document::SP doc(
                 testDocMan.createRandomDocumentAtLocation(1, i, 1, 1));
@@ -71,7 +73,7 @@ TEST_F(SplitBitDetectorTest, single_user) {
 TEST_F(SplitBitDetectorTest, max_bits) {
     int minContentSize = 1, maxContentSize = 1;
 
-    std::vector<spi::DocEntry::UP> entries;
+    DocEntryList entries;
     for (uint32_t seed = 0; seed < 10; ++seed) {
         int location = 1;
         document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
@@ -92,7 +94,7 @@ TEST_F(SplitBitDetectorTest, max_bits_one_below_max) {
 
     provider.createBucket(my_bucket, context);
 
-    std::vector<spi::DocEntry::UP> entries;
+    DocEntryList entries;
     for (uint32_t seed = 0; seed < 10; ++seed) {
         int location = 1 | (seed % 2 == 0 ? 0x8000 : 0);
         document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(
@@ -114,7 +116,7 @@ TEST_F(SplitBitDetectorTest, max_bits_one_below_max) {
 }
 
 TEST_F(SplitBitDetectorTest, unsplittable) {
-    std::vector<spi::DocEntry::UP> entries;
+    DocEntryList entries;
 
     for (uint32_t i = 0; i < 10; ++i) {
         document::Document::SP doc(
@@ -130,7 +132,7 @@ TEST_F(SplitBitDetectorTest, unsplittable) {
 }
 
 TEST_F(SplitBitDetectorTest, unsplittable_min_count) {
-    std::vector<spi::DocEntry::UP> entries;
+    DocEntryList entries;
 
     for (uint32_t i = 0; i < 10; ++i) {
         document::Document::SP doc(

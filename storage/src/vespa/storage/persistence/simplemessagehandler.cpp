@@ -3,6 +3,7 @@
 #include "simplemessagehandler.h"
 #include "persistenceutil.h"
 #include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldset/fieldsetrepo.h>

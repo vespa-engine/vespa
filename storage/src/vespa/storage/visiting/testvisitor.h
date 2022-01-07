@@ -20,7 +20,7 @@ private:
     void startingVisitor(const std::vector<document::BucketId>& buckets) override;
 
     void handleDocuments(const document::BucketId& bucketId,
-                         std::vector<spi::DocEntry::UP>& entries,
+                         DocEntryList & entries,
                          HitCounter& hitCounter) override;
 
     void completedBucket(const document::BucketId& bucket, HitCounter& hitCounter) override;
