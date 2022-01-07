@@ -21,13 +21,13 @@ public class ExactMatchTrickTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testCompleteMatchWithNegative() { // Notice ordering bug
-        assertSemantics("+(AND default:primetime default:in default:time default:no) -regionexcl:us",
+        assertSemantics("+(AND default:primetime default:in default:time default:no TRUE) -regionexcl:us",
                         new Query(QueryTestCase.httpEncode("?query=primetime ANDNOT regionexcl:us&type=adv")));
     }
 
     @Test
     public void testCompleteMatchWithFilterAndNegative() {
-        assertSemantics("AND (+(AND default:primetime default:in default:time default:no) -regionexcl:us) |lang:en",
+        assertSemantics("AND (+(AND default:primetime default:in default:time default:no TRUE) -regionexcl:us) |lang:en",
                         new Query(QueryTestCase.httpEncode("?query=primetime ANDNOT regionexcl:us&type=adv&filter=+lang:en")));
     }
 

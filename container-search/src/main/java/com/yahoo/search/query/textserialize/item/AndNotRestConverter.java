@@ -13,6 +13,7 @@ import static com.yahoo.search.query.textserialize.item.ListUtil.first;
  * @author Tony Vaagenes
  */
 public class AndNotRestConverter extends CompositeConverter<NotItem> {
+
     static final String andNotRest = "AND-NOT-REST";
 
     public AndNotRestConverter() {
@@ -51,4 +52,5 @@ public class AndNotRestConverter extends CompositeConverter<NotItem> {
     protected String getFormName(Item item) {
         return andNotRest;
     }
+
 }

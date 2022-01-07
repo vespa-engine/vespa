@@ -16,17 +16,17 @@ public class StemmingTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testRewritingDueToStemmingInQuery() {
-        assertSemantics("+i:vehicle -i:s","i:cars -i:s");
+        assertSemantics("+(AND i:vehicle TRUE) -i:s","i:cars -i:s");
     }
 
     @Test
     public void testRewritingDueToStemmingInRule() {
-        assertSemantics("+i:animal -i:s","i:horse -i:s");
+        assertSemantics("+(AND i:animal TRUE) -i:s","i:horse -i:s");
     }
 
     @Test
     public void testRewritingDueToExactMatch() {
-        assertSemantics("+(AND i:arts i:sciences) -i:s","i:as -i:s");
+        assertSemantics("+(AND i:arts i:sciences TRUE) -i:s","i:as -i:s");
     }
 
     @Test

@@ -356,6 +356,8 @@ public class YqlParser implements Parser {
                     return buildFunctionCall(ast);
                 case LITERAL:
                     return buildLiteral(ast);
+                case NOT:
+                    return buildNot(ast);
                 default:
                     throw newUnexpectedArgumentException(ast.getOperator(),
                                                          ExpressionOperator.AND, ExpressionOperator.CALL,
@@ -1096,17 +1098,21 @@ public class YqlParser implements Parser {
         AndItem andItem = new AndItem();
         NotItem notItem = new NotItem();
         convertVarArgsAnd(ast, 0, andItem, notItem);
-        Preconditions
-                .checkArgument(andItem.getItemCount() > 0,
-                        "Vespa does not support AND with no logically positive branches.");
         if (notItem.getItemCount() == 0) {
             return andItem;
         }
         if (andItem.getItemCount() == 1) {
             notItem.setPositiveItem(andItem.getItem(0));
-        } else {
+        } else if (andItem.getItemCount() > 1) {
             notItem.setPositiveItem(andItem);
-        }
+        } // else no positives, which is ok
+        return notItem;
+    }
+
+    /** Build a "pure" not, without any positive terms. */
+    private CompositeItem buildNot(OperatorNode<ExpressionOperator> ast) {
+        NotItem notItem = new NotItem();
+        notItem.addNegativeItem(convertExpression(ast.getArgument(0)));
         return notItem;
     }
 

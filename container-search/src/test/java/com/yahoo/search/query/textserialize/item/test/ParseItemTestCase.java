@@ -13,6 +13,7 @@ import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
+import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.textserialize.item.ItemContext;
 import com.yahoo.search.query.textserialize.item.ItemFormHandler;
@@ -71,7 +72,7 @@ public class ParseItemTestCase {
     @Test
     public void parse_and_not_rest_with_only_negated_children() throws ParseException {
         NotItem notItem = (NotItem) parse("(AND-NOT-REST null (WORD 'negated-item'))");
-        assertNull(notItem.getPositiveItem());
+        assertTrue(notItem.getPositiveItem() instanceof TrueItem);
         assertTrue(notItem.getItem(1) instanceof WordItem);
     }
 

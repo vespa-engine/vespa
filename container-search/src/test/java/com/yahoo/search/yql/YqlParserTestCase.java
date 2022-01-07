@@ -193,6 +193,18 @@ public class YqlParserTestCase {
     }
 
     @Test
+    public void testSingleNot() {
+        assertParse("select foo from bar where !(title contains \"saint\")",
+                    "-title:saint");
+    }
+
+    @Test
+    public void testMultipleNot() {
+        assertParse("select foo from bar where !(title contains \"saint\") AND !(title contains \"etienne\")",
+                    "-title:saint -title:etienne");
+    }
+
+    @Test
     public void testLessThan() {
         assertParse("select foo from bar where price < 500", "price:<500");
         assertParse("select foo from bar where 500 < price", "price:>500");

@@ -17,13 +17,13 @@ public class NoStemmingTestCase extends RuleBaseAbstractTestCase {
     /** Should rewrite correctly */
     @Test
     public void testCorrectRewriting1() {
-        assertSemantics("+(AND i:arts i:sciences) -i:b","i:as -i:b");
+        assertSemantics("+(AND i:arts i:sciences TRUE) -i:b","i:as -i:b");
     }
 
     /** Should rewrite correctly too */
     @Test
     public void testCorrectRewriting2() {
-        assertSemantics("+(AND i:arts i:sciences i:crafts) -i:b","i:asc -i:b");
+        assertSemantics("+(AND i:arts i:sciences i:crafts TRUE) -i:b","i:asc -i:b");
     }
 
     /** Should not rewrite */

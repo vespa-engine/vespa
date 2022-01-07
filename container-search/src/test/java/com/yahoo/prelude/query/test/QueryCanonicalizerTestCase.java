@@ -291,22 +291,22 @@ public class QueryCanonicalizerTestCase {
     }
 
     @Test
-    public void testNegativeMustHavePositive() {
+    public void testNegative() {
         NotItem root = new NotItem();
 
         root.addNegativeItem(new WordItem("negative"));
-        assertCanonicalized("+(null) -negative","Can not search for only negative items", root);
+        assertCanonicalized("-negative",null, root);
     }
 
     @Test
-    public void testNegativeMustHavePositiveNested() {
+    public void testNegativeOnly() {
         CompositeItem root = new AndItem();
         NotItem not = new NotItem();
 
         root.addItem(not);
         root.addItem(new WordItem("word"));
         not.addNegativeItem(new WordItem("negative"));
-        assertCanonicalized("AND (+(null) -negative) word","Can not search for only negative items", root);
+        assertCanonicalized("AND (-negative) word",null, root);
     }
 
     @Test

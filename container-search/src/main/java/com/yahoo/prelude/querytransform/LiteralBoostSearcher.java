@@ -71,8 +71,6 @@ public class LiteralBoostSearcher extends Searcher {
     }
 
     private void addLiterals(RankItem rankTerms, Item item, IndexFacts.Session indexFacts) {
-        if (item == null) return;
-
         if (item instanceof NotItem) {
             addLiterals(rankTerms, ((NotItem) item).getPositiveItem(), indexFacts);
         }

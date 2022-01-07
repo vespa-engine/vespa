@@ -80,11 +80,6 @@ public abstract class CompositeItem extends Item {
         subitems.add(index, item);
     }
 
-    /** For NOT items, which may wish to insert nulls */
-    void insertNullFirstItem() {
-        subitems.add(0, null);
-    }
-
     /**
      * Returns a subitem
      *
@@ -109,7 +104,7 @@ public abstract class CompositeItem extends Item {
 
         adding(item);
         Item old = subitems.set(index, item);
-        if (old!=item)
+        if (old != item)
             removing(old);
         return old;
     }
@@ -188,9 +183,7 @@ public abstract class CompositeItem extends Item {
         return itemCount;
     }
 
-    /**
-     * Encodes just this item, not it's usual subitems, to the given buffer.
-     */
+    /** Encodes just this item, not its regular subitems, to the given buffer. */
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer);
         IntegerCompressor.putCompressedPositiveNumber(encodingArity(), buffer);
@@ -279,10 +272,7 @@ public abstract class CompositeItem extends Item {
         return code;
     }
 
-    /**
-     * Returns whether this item is of the same class and
-     * contains the same state as the given item
-     */
+    /** Returns whether this item is of the same class and contains the same state as the given item. */
     @Override
     public boolean equals(Object object) {
         if (!super.equals(object)) return false;
@@ -303,17 +293,12 @@ public abstract class CompositeItem extends Item {
     @Override
     public int getTermCount() {
         int terms = 0;
-        for (Item item : subitems) {
+        for (Item item : subitems)
             terms += item.getTermCount();
-        }
         return terms;
     }
 
-    /**
-     * Will return its single child if itself can safely be omitted.
-     *
-     * @return a valid Item or empty Optional if it can not be done
-     */
+    /** Returns the single child of this, if this can be omitted without changes to recall semantics. */
     public Optional<Item> extractSingleChild() {
         return getItemCount() == 1 ? Optional.of(getItem(0)) : Optional.empty();
     }

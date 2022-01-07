@@ -77,11 +77,6 @@ public class QueryCanonicalizer {
         else if (composite instanceof RankItem) {
             makeDuplicatesCheap((RankItem)composite);
         }
-        else if (composite instanceof NotItem) {
-            if (((NotItem) composite).getPositiveItem() == null)
-                return CanonicalizationResult.error("Can not search for only negative items");
-        }
-
         if (composite.getItemCount() == 0)
             parentIterator.remove();
 
