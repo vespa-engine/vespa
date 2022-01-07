@@ -194,7 +194,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
       "public com.yahoo.config.provision.InstanceName name()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout upgradeRollout()",
@@ -551,6 +551,19 @@
     ],
     "fields": []
   },
+  "com.yahoo.config.application.api.TimeWindow$LocalDateRange": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.util.Optional start()",
+      "public java.util.Optional end()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "com.yahoo.config.application.api.TimeWindow": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -561,9 +574,10 @@
       "public java.util.List days()",
       "public java.util.List hours()",
       "public java.time.ZoneId zone()",
+      "public com.yahoo.config.application.api.TimeWindow$LocalDateRange dateRange()",
       "public boolean includes(java.time.Instant)",
       "public java.lang.String toString()",
-      "public static com.yahoo.config.application.api.TimeWindow from(java.lang.String, java.lang.String, java.lang.String)"
+      "public static com.yahoo.config.application.api.TimeWindow from(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)"
     ],
     "fields": []
   },

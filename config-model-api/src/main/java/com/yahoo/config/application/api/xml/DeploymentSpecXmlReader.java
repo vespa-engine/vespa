@@ -27,7 +27,9 @@ import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -67,22 +69,28 @@ public class DeploymentSpecXmlReader {
     private static final String testerFlavorAttribute = "tester-flavor";
 
     private final boolean validate;
+    private final Clock clock;
     private final List<DeprecatedElement> deprecatedElements = new ArrayList<>();
 
-    /** Creates a validating reader */
+    /**
+     * Create a deployment spec reader
+     * @param validate  true to validate the input, false to accept any input which can be unambiguously parsed
+     * @param clock     clock to use when validating time constraints
+     */
+    public DeploymentSpecXmlReader(boolean validate, Clock clock) {
+        this.validate = validate;
+        this.clock = clock;
+    }
+
     public DeploymentSpecXmlReader() {
         this(true);
     }
 
-    /**
-     * Creates a deployment spec reader
-     *
-     * @param validate true to validate the input, false to accept any input which can be unambiguously parsed
-     */
     public DeploymentSpecXmlReader(boolean validate) {
-        this.validate = validate;
+        this(validate, Clock.systemUTC());
     }
 
+    /** Reads a deployment spec from given reader */
     public DeploymentSpec read(Reader reader) {
         try {
             return read(IOUtils.readAll(reader));
@@ -169,6 +177,7 @@ public class DeploymentSpecXmlReader {
         List<Endpoint> endpoints = readEndpoints(instanceTag, Optional.of(instanceNameString), steps);
 
         // Build and return instances with these values
+        Instant now = clock.instant();
         return Arrays.stream(instanceNameString.split(","))
                      .map(name -> name.trim())
                      .map(name -> new DeploymentInstanceSpec(InstanceName.from(name),
@@ -179,7 +188,8 @@ public class DeploymentSpecXmlReader {
                                                              globalServiceId.asOptional(),
                                                              athenzService,
                                                              notifications,
-                                                             endpoints))
+                                                             endpoints,
+                                                             now))
                      .collect(Collectors.toList());
     }
 
@@ -361,7 +371,7 @@ public class DeploymentSpecXmlReader {
      */
     private long longAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
-        if (value == null || value.isEmpty()) return 0;
+        if (value.isEmpty()) return 0;
         try {
             return Long.parseLong(value);
         }
@@ -376,7 +386,7 @@ public class DeploymentSpecXmlReader {
      */
     private Optional<Integer> optionalIntegerAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
-        if (value == null || value.isEmpty()) return Optional.empty();
+        if (value.isEmpty()) return Optional.empty();
         try {
             return Optional.of(Integer.parseInt(value));
         }
@@ -389,7 +399,7 @@ public class DeploymentSpecXmlReader {
     /** Returns the given non-blank attribute of tag as a string, if any */
     private static Optional<String> stringAttribute(String attributeName, Element tag) {
         String value = tag.getAttribute(attributeName);
-        return Optional.ofNullable(value).filter(s -> !s.isBlank());
+        return Optional.of(value).filter(s -> !s.isBlank());
     }
 
     /** Returns the given non-blank attribute of tag or throw */
@@ -407,7 +417,7 @@ public class DeploymentSpecXmlReader {
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
         String globalServiceId = environmentTag.getAttribute("global-service-id");
-        if (globalServiceId == null || globalServiceId.isEmpty()) return Optional.empty();
+        if (globalServiceId.isEmpty()) return Optional.empty();
         deprecate(environmentTag, List.of("global-service-id"), "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
         return Optional.of(globalServiceId);
     }
@@ -430,9 +440,11 @@ public class DeploymentSpecXmlReader {
         String daySpec = tag.getAttribute("days");
         String hourSpec = tag.getAttribute("hours");
         String zoneSpec = tag.getAttribute("time-zone");
-        if (zoneSpec.isEmpty()) zoneSpec = "UTC"; // default
+        String dateStart = tag.getAttribute("from-date");
+        String dateEnd = tag.getAttribute("to-date");
+
         return new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions,
-                                                TimeWindow.from(daySpec, hourSpec, zoneSpec));
+                                                TimeWindow.from(daySpec, hourSpec, zoneSpec, dateStart, dateEnd));
     }
 
     /** Returns true if the given value is "true", or if it is missing */

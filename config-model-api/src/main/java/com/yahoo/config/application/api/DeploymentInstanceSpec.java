@@ -6,13 +6,16 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The deployment spec for an application instance
@@ -20,6 +23,9 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
+
+    /** The maximum number of consecutive days Vespa upgrades are allowed to be blocked */
+    private static final int maxUpgradeBlockingDays = 21;
 
     /** The name of the instance this step deploys */
     private final InstanceName name;
@@ -40,7 +46,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Optional<String> globalServiceId,
                                   Optional<AthenzService> athenzService,
                                   Notifications notifications,
-                                  List<Endpoint> endpoints) {
+                                  List<Endpoint> endpoints,
+                                  Instant now) {
         super(steps);
         this.name = name;
         this.upgradePolicy = upgradePolicy;
@@ -52,6 +59,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.endpoints = List.copyOf(endpoints);
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(steps(), globalServiceId, this.endpoints);
+        validateChangeBlockers(changeBlockers, now);
     }
 
     public InstanceName name() { return name; }
@@ -107,6 +115,36 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                 }
             }
         }
+    }
+
+    private void validateChangeBlockers(List<DeploymentSpec.ChangeBlocker> changeBlockers, Instant now) {
+        // Find all possible dates an upgrade block window can start
+        Stream<Instant> blockingFrom = changeBlockers.stream()
+                                                     .filter(blocker -> blocker.blocksVersions())
+                                                     .map(blocker -> blocker.window())
+                                                     .map(window -> window.dateRange().start()
+                                                                          .map(date -> date.atStartOfDay(window.zone())
+                                                                                           .toInstant())
+                                                                          .orElse(now))
+                                                     .distinct();
+        if (!blockingFrom.allMatch(this::canUpgradeWithinDeadline)) {
+            throw new IllegalArgumentException("Cannot block Vespa upgrades for longer than " +
+                                               maxUpgradeBlockingDays + " consecutive days");
+        }
+    }
+
+    /** Returns whether this allows upgrade within deadline, relative to given instant */
+    private boolean canUpgradeWithinDeadline(Instant instant) {
+        instant = instant.truncatedTo(ChronoUnit.HOURS);
+        Duration step = Duration.ofHours(1);
+        Duration max = Duration.ofDays(maxUpgradeBlockingDays);
+        for (Instant current = instant; !canUpgradeAt(current); current = current.plus(step)) {
+            Duration blocked = Duration.between(instant, current);
+            if (blocked.compareTo(max) > 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */

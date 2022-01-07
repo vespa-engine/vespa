@@ -554,15 +554,6 @@ public class MetricsReporterTest {
         assertEquals("Upgrade is overdue measure relative to window 3", Duration.ofHours(34).plusMinutes(30), metric.get());
     }
 
-    @Test
-    public void overdue_upgrade_completely_blocked() {
-        ApplicationPackage pkg = new ApplicationPackageBuilder().region("us-west-1")
-                                                                .blockChange(false, true, "mon-sun", "0-23", "CET")
-                                                                .build();
-        Instant mondayNight = Instant.parse("2021-12-13T23:00:00.00Z");
-        assertEquals(Duration.ZERO, MetricsReporter.overdueUpgradeDuration(mondayNight, pkg.deploymentSpec().requireInstance("default")));
-    }
-
     private void assertNodeCount(String metric, int n, Version version) {
         long nodeCount = metrics.getMetric((dimensions) -> version.toFullString().equals(dimensions.get("currentVersion")), metric)
                                 .stream()
