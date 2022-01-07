@@ -83,7 +83,7 @@ public final class MbusClient extends AbstractResource implements ClientProvider
         try {
             thread.join();
         } catch (InterruptedException e) {
-
+            log.log(Level.WARNING, "Interrupted while joining thread on destroy.", e);
         }
     }
 
