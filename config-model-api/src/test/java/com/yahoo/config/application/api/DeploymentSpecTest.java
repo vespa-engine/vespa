@@ -2,12 +2,15 @@
 package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -771,6 +774,7 @@ public class DeploymentSpecTest {
                 "   <instance id='default'>" +
                 "      <block-change revision='false' days='mon,tue' hours='15-16'/>" +
                 "      <block-change days='sat' hours='10' time-zone='CET'/>" +
+                "      <block-change days='mon-sun' hours='0-23' time-zone='CET' from-date='2022-01-01' to-date='2022-01-15'/>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
@@ -778,7 +782,7 @@ public class DeploymentSpecTest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(2, spec.requireInstance("default").changeBlocker().size());
+        assertEquals(3, spec.requireInstance("default").changeBlocker().size());
         assertTrue(spec.requireInstance("default").changeBlocker().get(0).blocksVersions());
         assertFalse(spec.requireInstance("default").changeBlocker().get(0).blocksRevisions());
         assertEquals(ZoneId.of("UTC"), spec.requireInstance("default").changeBlocker().get(0).window().zone());
@@ -795,6 +799,8 @@ public class DeploymentSpecTest {
         assertTrue(spec.requireInstance("default").canUpgradeAt(Instant.parse("2017-09-23T09:15:30.00Z")));
         assertFalse(spec.requireInstance("default").canUpgradeAt(Instant.parse("2017-09-23T08:15:30.00Z"))); // 10 in CET
         assertTrue(spec.requireInstance("default").canUpgradeAt(Instant.parse("2017-09-23T10:15:30.00Z")));
+
+        assertFalse(spec.requireInstance("default").canUpgradeAt(Instant.parse("2022-01-15T16:00:00.00Z")));
     }
 
     @Test
@@ -812,11 +818,13 @@ public class DeploymentSpecTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
 
-        String inheritedChangeBlocker = "change blocker revision=false version=true window=time window for hour(s) [15, 16] on [monday, tuesday] in UTC";
+        String inheritedChangeBlocker = "change blocker revision=false version=true window=time window for hour(s) " +
+                                        "[15, 16] on [monday, tuesday] in time zone UTC and date range [any date, any date]";
 
         assertEquals(2, spec.requireInstance("instance1").changeBlocker().size());
         assertEquals(inheritedChangeBlocker, spec.requireInstance("instance1").changeBlocker().get(0).toString());
-        assertEquals("change blocker revision=true version=true window=time window for hour(s) [10] on [saturday] in CET",
+        assertEquals("change blocker revision=true version=true window=time window for hour(s) [10] on " +
+                     "[saturday] in time zone CET and date range [any date, any date]",
                      spec.requireInstance("instance1").changeBlocker().get(1).toString());
 
         assertEquals(1, spec.requireInstance("instance2").changeBlocker().size());
@@ -1269,10 +1277,45 @@ public class DeploymentSpecTest {
                      spec.requireInstance("main").endpoints());
     }
 
+    @Test
+    public void disallowExcessiveUpgradeBlocking() {
+        List<String> specs = List.of(
+                "<deployment>\n" +
+                "  <block-change/>\n" +
+                "</deployment>",
+
+                "<deployment>\n" +
+                "  <block-change days=\"mon-wed\"/>\n" +
+                "  <block-change days=\"tue-sun\"/>\n" +
+                "</deployment>",
+
+                "<deployment>\n" +
+                "  <block-change to-date=\"2023-01-01\"/>\n" +
+                "</deployment>",
+
+                // Convoluted example of blocking too long
+                "<deployment>\n" +
+                "  <block-change days=\"sat-sun\"/>\n" +
+                "  <block-change days=\"mon-fri\" hours=\"0-10\" from-date=\"2023-01-01\" to-date=\"2023-01-15\"/>\n" +
+                "  <block-change days=\"mon-fri\" hours=\"11-23\" from-date=\"2023-01-01\" to-date=\"2023-01-15\"/>\n" +
+                "  <block-change from-date=\"2023-01-14\" to-date=\"2023-01-31\"/>" +
+                "</deployment>"
+        );
+        ManualClock clock = new ManualClock();
+        clock.setInstant(Instant.parse("2022-01-05T15:00:00.00Z"));
+        for (var spec : specs) {
+            assertInvalid(spec, "Cannot block Vespa upgrades for longer than 21 consecutive days", clock);
+        }
+    }
+
     private static void assertInvalid(String deploymentSpec, String errorMessagePart) {
+        assertInvalid(deploymentSpec, errorMessagePart, new ManualClock());
+    }
+
+    private static void assertInvalid(String deploymentSpec, String errorMessagePart, Clock clock) {
         if (errorMessagePart.isEmpty()) throw new IllegalArgumentException("Message part must be non-empty");
         try {
-            DeploymentSpec.fromXml(deploymentSpec);
+            new DeploymentSpecXmlReader(true, clock).read(deploymentSpec);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertTrue("\"" + e.getMessage() + "\" contains \"" + errorMessagePart + "\"",
