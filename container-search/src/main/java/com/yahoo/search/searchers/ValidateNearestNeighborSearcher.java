@@ -102,7 +102,7 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             String queryFeatureName = "query(" + item.getQueryTensorName() + ")";
             Optional<Tensor> queryTensor = query.getRanking().getFeatures().getTensor(queryFeatureName);
             if (queryTensor.isEmpty())
-                return item + " requires a tensor rank feature " + queryFeatureName + " but this is not present";
+                return item + " requires a tensor rank feature named '" + queryFeatureName + "' but this is not present";
 
             if ( ! validAttributes.containsKey(item.getIndexName())) {
                 return item + " field is not an attribute";

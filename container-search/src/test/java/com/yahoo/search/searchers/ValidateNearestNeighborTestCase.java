@@ -164,7 +164,7 @@ public class ValidateNearestNeighborTestCase {
         String q = makeQuery("dvector", "foo");
         Tensor t = makeTensor(tt_dense_dvector_3);
         Result r = doSearch(searcher, q, t);
-        assertErrMsg(desc("dvector", "foo", 1, "requires a tensor rank feature query(foo) but this is not present"), r);
+        assertErrMsg(desc("dvector", "foo", 1, "requires a tensor rank feature named 'query(foo)' but this is not present"), r);
     }
 
     @Test
