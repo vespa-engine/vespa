@@ -103,6 +103,16 @@ public class FilesApplicationPackageTest {
     }
 
     @Test
+    public void testLegacyOverrides() throws IOException {
+        File appDir = new File("src/test/resources/app-legacy-overrides");
+        ApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        var overrides = app.legacyOverrides();
+        assertEquals(2, overrides.size());
+        assertEquals("something here", overrides.get("foo-bar"));
+        assertEquals("false", overrides.get("v7-geo-positions"));
+    }
+
+    @Test
     public void failOnEmptyServicesXml() throws IOException {
         File appDir = temporaryFolder.newFolder();
         IOUtils.copyDirectory(new File("src/test/resources/multienvapp"), appDir);

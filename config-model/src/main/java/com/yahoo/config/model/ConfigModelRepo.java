@@ -133,6 +133,10 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
 
         for (Element servicesElement : children) {
             String tagName = servicesElement.getTagName();
+            if (tagName.equals("legacy")) {
+                // for enabling legacy features from old vespa versions
+                continue;
+            }
             if (tagName.equals("config")) {
                 // TODO: disallow on Vespa 8
                 continue;

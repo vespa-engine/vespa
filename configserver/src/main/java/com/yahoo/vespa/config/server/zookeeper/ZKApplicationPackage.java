@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
+import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.serialization.AllocatedHostsSerializer;
@@ -44,7 +45,7 @@ import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.USERAPP_ZK_S
  *
  * @author Tony Vaagenes
  */
-public class ZKApplicationPackage implements ApplicationPackage {
+public class ZKApplicationPackage extends AbstractApplicationPackage {
 
     private final ZKApplication zkApplication;
 

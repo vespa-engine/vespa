@@ -1,0 +1,16 @@
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version='1.0'>
+    <legacy>
+      <foo-bar>something here</foo-bar>
+      <v7-geo-positions>false</v7-geo-positions>
+    </legacy>
+    <admin version='2.0'>
+        <adminserver hostalias='node0'/>
+    </admin>
+    <content version='1.0' id='foo'>
+      <redundancy>1</redundancy>
+      <documents>
+        <document type="music.sd" mode="index" />
+      </documents>
+    </content>
+</services>

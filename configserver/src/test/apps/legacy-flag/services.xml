@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+
+    <legacy>
+      <v7-geo-positions>false</v7-geo-positions>
+      <foo-bar>true</foo-bar>
+    </legacy>
+
+    <admin version="2.0">
+        <adminserver hostalias="node1"/>
+        <logserver hostalias="node1" />
+    </admin>
+
+    <content version="1.0">
+        <redundancy>1</redundancy>
+        <documents>
+            <document type="music" mode="index"/>
+        </documents>
+        <nodes>
+            <node hostalias="node1" distribution-key="0"/>
+        </nodes>
+    </content>
+
+    <container version="1.0">
+        <nodes>
+            <node hostalias="node1" />
+        </nodes>
+    </container>
+
+</services>

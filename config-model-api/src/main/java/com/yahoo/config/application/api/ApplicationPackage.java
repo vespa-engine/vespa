@@ -238,6 +238,10 @@ public interface ApplicationPackage {
         return Collections.emptyMap();
     }
 
+    default Map<String, String> legacyOverrides() {
+        return Collections.emptyMap();
+    }
+
     /**
      * @deprecated use {@link #getSchemas()} instead
      */
