@@ -22,7 +22,6 @@ import java.util.Objects;
  * contain the weights of all the matched tokens in descending
  * order. Each matched weight will be represented as a standard
  * occurrence on position 0 in element 0.
- *
  */
 public class WeightedSetItem extends SimpleTaggableItem {
 
@@ -79,7 +78,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
         return addToken(token, 1);
     }
 
-    public Integer getTokenWeight(String token) {
+    public Integer getTokenWeight(Object token) {
         return set.get(token);
     }
 

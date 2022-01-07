@@ -1253,4 +1253,5 @@ public class YqlParserTestCase {
             actual.add(step.continuations().toString() + step.getOperation());
         return actual.toString();
     }
+
 }
