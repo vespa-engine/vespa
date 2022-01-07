@@ -121,4 +121,11 @@ TEST_F(DiskMemUsageFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
               "capacity: 100, used: 90, diskUsed: 0.9, diskLimit: 0.8}}");
 }
 
+TEST_F(DiskMemUsageFilterTest, transient_memory_usage_is_tracked_in_usage_state_and_metrics)
+{
+    _filter.set_transient_resource_usage(200, 0);
+    EXPECT_EQ(0.2, _filter.usageState().transient_memory_usage());
+    EXPECT_EQ(0.2, _filter.get_metrics().get_transient_memory_usage());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -19,8 +19,8 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
+#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
-#include <vespa/searchcore/proton/common/transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -89,17 +89,21 @@ public:
     }
 };
 
-class DocumentDBResourceUsageProvider : public TransientResourceUsageProvider {
+class DocumentDBResourceUsageProvider : public ITransientResourceUsageProvider {
 private:
     const DocumentDB& _doc_db;
 
 public:
-    DocumentDBResourceUsageProvider(const DocumentDB& doc_db)
+    DocumentDBResourceUsageProvider(const DocumentDB& doc_db) noexcept
         : _doc_db(doc_db)
     {}
+    size_t get_transient_memory_usage() const override {
+        return _doc_db.getReadySubDB()->getSearchableStats().memoryUsage().allocatedBytes();
+    }
     size_t get_transient_disk_usage() const override {
         // We estimate the transient disk usage for the next disk index fusion
         // as the size of the largest disk index.
+        // TODO: Change this to actually measure the size of the fusion disk index(es).
         return _doc_db.getReadySubDB()->getSearchableStats().max_component_size_on_disk();
     }
 };
@@ -909,7 +913,7 @@ DocumentDB::hasDocument(const document::DocumentId &id)
 }
 
 void
-DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector)
+DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
 {
     // Called by executor thread
     _maintenanceController.killJobs();
@@ -931,8 +935,6 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
             _jobTrackers,
             _subDBs.getReadySubDB()->getAttributeManager(),
             _subDBs.getNotReadySubDB()->getAttributeManager(),
-            std::move(attribute_config_inspector),
-            _transient_usage_provider,
             _writeFilter);
 }
 
@@ -954,9 +956,7 @@ DocumentDB::performStartMaintenance()
         return;
     }
     auto maintenanceConfig = activeConfig->getMaintenanceConfigSP();
-    const auto &attributes_config = activeConfig->getAttributesConfig();
-    auto attribute_config_inspector = std::make_unique<AttributeConfigInspector>(attributes_config);
-    injectMaintenanceJobs(*maintenanceConfig, std::move(attribute_config_inspector));
+    injectMaintenanceJobs(*maintenanceConfig);
     _maintenanceController.start(maintenanceConfig);
 }
 
@@ -973,11 +973,9 @@ DocumentDB::forwardMaintenanceConfig()
     DocumentDBConfig::SP activeConfig = getActiveConfig();
     assert(activeConfig);
     auto maintenanceConfig(activeConfig->getMaintenanceConfigSP());
-    const auto &attributes_config = activeConfig->getAttributesConfig();
-    auto attribute_config_inspector = std::make_unique<AttributeConfigInspector>(attributes_config);
     if (!_state.getClosed()) {
         if (_maintenanceController.getPaused()) {
-            injectMaintenanceJobs(*maintenanceConfig, std::move(attribute_config_inspector));
+            injectMaintenanceJobs(*maintenanceConfig);
         }
         _maintenanceController.newConfig(maintenanceConfig);
     }

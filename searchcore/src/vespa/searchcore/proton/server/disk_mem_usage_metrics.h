@@ -16,6 +16,7 @@ class DiskMemUsageMetrics
     double _disk_utilization;
     double _memory_usage;
     double _memory_utilization;
+    double _transient_memory_usage;
 
 public:
     DiskMemUsageMetrics() noexcept;
@@ -25,6 +26,7 @@ public:
     double get_disk_utilization() const noexcept { return _disk_utilization; }
     double get_memory_usage() const noexcept { return _memory_usage; }
     double get_memory_utilization() const noexcept { return _memory_utilization; }
+    double get_transient_memory_usage() const noexcept { return _transient_memory_usage; }
 };
 
 } // namespace proton

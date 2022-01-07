@@ -52,7 +52,6 @@ class IDocumentDBOwner;
 class ISharedThreadingService;
 class ITransientResourceUsageProvider;
 class StatusReport;
-class TransientResourceUsageProvider;
 struct MetricsWireService;
 
 namespace matching { class SessionManager; }
@@ -117,7 +116,7 @@ private:
     DDBState                                        _state;
     DiskMemUsageForwarder                           _dmUsageForwarder;
     AttributeUsageFilter                            _writeFilter;
-    std::shared_ptr<TransientResourceUsageProvider> _transient_usage_provider;
+    std::shared_ptr<ITransientResourceUsageProvider> _transient_usage_provider;
     std::unique_ptr<FeedHandler>                    _feedHandler;
     DocumentSubDBCollection                         _subDBs;
     MaintenanceController                           _maintenanceController;
@@ -384,7 +383,7 @@ public:
     /**
      * Implements IFeedHandlerOwner
      **/
-    void injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector);
+    void injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config);
     void performStartMaintenance();
     void stopMaintenance();
     void forwardMaintenanceConfig();

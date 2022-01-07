@@ -125,16 +125,16 @@ DiskMemUsageSampler::sampleMemoryUsage()
 void
 DiskMemUsageSampler::sample_transient_resource_usage()
 {
-    size_t max_transient_memory_usage = 0;
+    size_t transient_memory_usage_sum = 0;
     size_t max_transient_disk_usage = 0;
     {
         std::lock_guard<std::mutex> guard(_lock);
         for (auto provider : _transient_usage_providers) {
-            max_transient_memory_usage = std::max(max_transient_memory_usage, provider->get_transient_memory_usage());
+            transient_memory_usage_sum += provider->get_transient_memory_usage();
             max_transient_disk_usage = std::max(max_transient_disk_usage, provider->get_transient_disk_usage());
         }
     }
-    _filter.set_transient_resource_usage(max_transient_memory_usage, max_transient_disk_usage);
+    _filter.set_transient_resource_usage(transient_memory_usage_sum, max_transient_disk_usage);
 }
 
 void

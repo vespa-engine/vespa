@@ -130,26 +130,32 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
         _acceptWrite = true;
     }
     DiskMemUsageState dmstate(ResourceUsageState(_config._diskLimit, diskUsed),
-                              ResourceUsageState(_config._memoryLimit, memoryUsed));
+                              ResourceUsageState(_config._memoryLimit, memoryUsed),
+                              get_relative_transient_memory_usage(guard));
     notifyDiskMemUsage(guard, dmstate);
 }
 
 double
-DiskMemUsageFilter::getMemoryUsedRatio(const Guard &guard) const
+DiskMemUsageFilter::getMemoryUsedRatio(const Guard&) const
 {
-    (void) guard;
     uint64_t unscaledMemoryUsed = _memoryStats.getAnonymousRss();
     return static_cast<double>(unscaledMemoryUsed) / _hwInfo.memory().sizeBytes();
 }
 
 double
-DiskMemUsageFilter::getDiskUsedRatio(const Guard &guard) const
+DiskMemUsageFilter::getDiskUsedRatio(const Guard&) const
 {
-    (void) guard;
     double usedDiskSpaceRatio = static_cast<double>(_diskUsedSizeBytes) /
                                 static_cast<double>(_hwInfo.disk().sizeBytes());
     return usedDiskSpaceRatio;
 }
+
+double
+DiskMemUsageFilter::get_relative_transient_memory_usage(const Guard&) const
+{
+    return  static_cast<double>(_transient_memory_usage) / _hwInfo.memory().sizeBytes();
+}
+
 
 DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
     : _lock(),
@@ -189,6 +195,7 @@ DiskMemUsageFilter::set_transient_resource_usage(size_t transient_memory_usage, 
     Guard guard(_lock);
     _transient_memory_usage = transient_memory_usage;
     _transient_disk_usage = transient_disk_usage;
+    recalcState(guard);
 }
 
 void
@@ -218,13 +225,6 @@ DiskMemUsageFilter::get_transient_memory_usage() const
 {
     Guard guard(_lock);
     return _transient_memory_usage;
-}
-
-double
-DiskMemUsageFilter::get_relative_transient_memory_usage() const
-{
-    Guard guard(_lock);
-    return  static_cast<double>(_transient_memory_usage) / _hwInfo.memory().sizeBytes();
 }
 
 size_t

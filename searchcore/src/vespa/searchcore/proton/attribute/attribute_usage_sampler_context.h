@@ -13,9 +13,8 @@ class AttributeConfigInspector;
 class TransientResourceUsageProvider;
 
 /*
- * Context for sampling attribute usage stats and transient memory usage.
- * When instance is destroyed, the aggregated stats is passed on to
- * attribute usage filter and the transient memory usage provider.
+ * Context for sampling attribute usage stats.
+ * When instance is destroyed, the aggregated stats is passed on to attribute usage filter.
  */
 class AttributeUsageSamplerContext
 {
@@ -23,23 +22,16 @@ class AttributeUsageSamplerContext
     using Guard = std::lock_guard<Mutex>;
 
     AttributeUsageStats _usage;
-    size_t _transient_memory_usage;
     Mutex _lock;
     AttributeUsageFilter &_filter;
-    std::shared_ptr<const AttributeConfigInspector> _attribute_config_inspector;
-    std::shared_ptr<TransientResourceUsageProvider> _transient_usage_provider;
+
 public:
-    AttributeUsageSamplerContext(AttributeUsageFilter& filter,
-                                 std::shared_ptr<const AttributeConfigInspector> attribute_config_inspector,
-                                 std::shared_ptr<TransientResourceUsageProvider> transient_usage_provider);
+    AttributeUsageSamplerContext(AttributeUsageFilter& filter);
     ~AttributeUsageSamplerContext();
     void merge(const search::AddressSpaceUsage &usage,
-               size_t transient_memory_usage,
                const vespalib::string &attributeName,
                const vespalib::string &subDbName);
-    const AttributeConfigInspector& get_attribute_config_inspector() const { return *_attribute_config_inspector; }
-    const AttributeUsageStats &
-    getUsage() const { return _usage; }
+    const AttributeUsageStats& getUsage() const { return _usage; }
 };
 
 } // namespace proton

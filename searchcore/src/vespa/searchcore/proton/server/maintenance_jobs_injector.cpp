@@ -9,7 +9,6 @@
 #include "prune_session_cache_job.h"
 #include "pruneremoveddocumentsjob.h"
 #include "sample_attribute_usage_job.h"
-#include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 
 using vespalib::system_clock;
 
@@ -87,8 +86,6 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     DocumentDBJobTrackers &jobTrackers,
                                     IAttributeManagerSP readyAttributeManager,
                                     IAttributeManagerSP notReadyAttributeManager,
-                                    std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector,
-                                    std::shared_ptr<TransientResourceUsageProvider> transient_usage_provider,
                                     AttributeUsageFilter &attributeUsageFilter)
 {
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
@@ -122,9 +119,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     controller.registerJobInMasterThread(
             std::make_unique<SampleAttributeUsageJob>(readyAttributeManager, notReadyAttributeManager,
                                                       attributeUsageFilter, docTypeName,
-                                                      config.getAttributeUsageSampleInterval(),
-                                                      std::move(attribute_config_inspector),
-                                                      transient_usage_provider));
+                                                      config.getAttributeUsageSampleInterval()));
 }
 
 } // namespace proton
