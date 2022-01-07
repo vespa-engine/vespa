@@ -59,7 +59,7 @@ import java.util.logging.Logger;
  */
 public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, ReplyHandler {
 
-    private static Logger log = Logger.getLogger(MessageBus.class.getName());
+    private final static Logger log = Logger.getLogger(MessageBus.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final ProtocolRepository protocolRepository = new ProtocolRepository();
     private final AtomicReference<Map<String, RoutingTable>> tablesRef = new AtomicReference<>(null);
