@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
@@ -26,12 +27,12 @@ public class Map extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if (!allInputFunctionsPresent(1)) {
             return null;
         }
-        Optional<TensorFunction> input = inputs.get(0).function();
-        return new com.yahoo.tensor.functions.Map(input.get(), operator);
+        Optional<TensorFunction<Reference>> input = inputs.get(0).function();
+        return new com.yahoo.tensor.functions.Map<>(input.get(), operator);
     }
 
     @Override

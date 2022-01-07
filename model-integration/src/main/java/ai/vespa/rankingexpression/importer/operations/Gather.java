@@ -71,7 +71,7 @@ public class Gather extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputFunctionsPresent(2)) return null;
 
         IntermediateOperation data = inputs.get(0);

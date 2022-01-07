@@ -110,12 +110,12 @@ public class Reshape extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! inputs.stream().map(IntermediateOperation::type).allMatch(Optional::isPresent) ) return null;
         if ( ! inputs.stream().map(IntermediateOperation::function).allMatch(Optional::isPresent) ) return null;
 
         OrderedTensorType inputType = inputs.get(0).type().get();
-        TensorFunction inputFunction = inputs.get(0).function().get();
+        TensorFunction<Reference> inputFunction = inputs.get(0).function().get();
         return reshape(inputFunction, inputType, type);
     }
 
@@ -129,7 +129,7 @@ public class Reshape extends IntermediateOperation {
         return new Reshape(modelName(), name(), inputs, attributeMap);
     }
 
-    public TensorFunction reshape(TensorFunction inputFunction, OrderedTensorType inputType, OrderedTensorType outputType) {
+    public TensorFunction<Reference> reshape(TensorFunction<Reference> inputFunction, OrderedTensorType inputType, OrderedTensorType outputType) {
         if ( ! OrderedTensorType.tensorSize(inputType.type()).equals(OrderedTensorType.tensorSize(outputType.type())))
             throw new IllegalArgumentException("New and old shape of tensor must have the same size when reshaping");
 

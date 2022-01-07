@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
@@ -56,12 +57,12 @@ public class Mean extends IntermediateOperation {
     // optimization: if keepDims and one reduce dimension that has size 1: same as identity.
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputTypesPresent(2)) return null;
 
 
-        TensorFunction inputFunction = inputs.get(0).function().get();
-        TensorFunction output = new Reduce(inputFunction, Reduce.Aggregator.avg, reduceDimensions);
+        TensorFunction<Reference> inputFunction = inputs.get(0).function().get();
+        TensorFunction<Reference> output = new Reduce<>(inputFunction, Reduce.Aggregator.avg, reduceDimensions);
         if (shouldKeepDimensions()) {
             // multiply with a generated tensor created from the reduced dimensions
             TensorType.Builder typeBuilder = new TensorType.Builder(resultValueType());
@@ -70,9 +71,9 @@ public class Mean extends IntermediateOperation {
             }
             TensorType generatedType = typeBuilder.build();
             ExpressionNode generatedExpression = new ConstantNode(new DoubleValue(1));
-            Generate generatedFunction = new Generate(generatedType,
+            Generate<Reference> generatedFunction = new Generate<>(generatedType,
                     new GeneratorLambdaFunctionNode(generatedType, generatedExpression).asLongListToDoubleOperator());
-            output = new com.yahoo.tensor.functions.Join(output, generatedFunction, ScalarFunctions.multiply());
+            output = new com.yahoo.tensor.functions.Join<>(output, generatedFunction, ScalarFunctions.multiply());
         }
         return output;
     }

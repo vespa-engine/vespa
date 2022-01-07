@@ -143,7 +143,7 @@ public class Slice extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if (inputs.size() < 1 || inputs.get(0).function().isEmpty()) {
             return null;
         }

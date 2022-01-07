@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
@@ -29,7 +30,7 @@ public class Switch extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         IntermediateOperation predicateOperation = inputs().get(1);
         if (!predicateOperation.getConstantValue().isPresent()) {
             throw new IllegalArgumentException("Switch in " + name + ": predicate must be a constant");

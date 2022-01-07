@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class PlaceholderWithDefault extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if (!allInputFunctionsPresent(1)) {
             return null;
         }
@@ -32,7 +33,7 @@ public class PlaceholderWithDefault extends IntermediateOperation {
     }
 
     @Override
-    public Optional<TensorFunction> rankingExpressionFunction() {
+    public Optional<TensorFunction<Reference>> rankingExpressionFunction() {
         // For now, it is much more efficient to assume we always will return
         // the default value, as we can prune away large parts of the expression
         // tree by having it calculated as a constant. If a case arises where

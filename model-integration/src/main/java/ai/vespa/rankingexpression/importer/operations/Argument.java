@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.operations;
 
+import com.yahoo.searchlib.rankingexpression.Reference;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import com.yahoo.tensor.evaluation.VariableTensor;
@@ -26,12 +27,12 @@ public class Argument extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
-        TensorFunction output = new VariableTensor(vespaName(), standardNamingType.type());
+    protected TensorFunction<Reference> lazyGetFunction() {
+        TensorFunction<Reference> output = new VariableTensor<Reference>(vespaName(), standardNamingType.type());
         if ( ! standardNamingType.equals(type)) {
             List<String> renameFrom = standardNamingType.dimensionNames();
             List<String> renameTo = type.dimensionNames();
-            output = new Rename(output, renameFrom, renameTo);
+            output = new Rename<Reference>(output, renameFrom, renameTo);
         }
         return output;
     }

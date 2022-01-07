@@ -2,6 +2,7 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.functions.TensorFunction;
 import onnx.Onnx.TensorProto.DataType;
 
@@ -30,13 +31,13 @@ public class OnnxCast extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputFunctionsPresent(1))
             return null;
-        TensorFunction input = inputs.get(0).function().get();
+        TensorFunction<Reference> input = inputs.get(0).function().get();
         switch (toType) {
             case BOOL:
-                return new com.yahoo.tensor.functions.Map(input, new AsBool());
+                return new com.yahoo.tensor.functions.Map<>(input, new AsBool());
             case INT8:
             case INT16:
             case INT32:
@@ -45,7 +46,7 @@ public class OnnxCast extends IntermediateOperation {
             case UINT16:
             case UINT32:
             case UINT64:
-                return new com.yahoo.tensor.functions.Map(input, new AsInt());
+                return new com.yahoo.tensor.functions.Map<>(input, new AsInt());
             case FLOAT:
             case DOUBLE:
             case FLOAT16:

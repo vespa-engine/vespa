@@ -84,7 +84,7 @@ public class Split extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if (!allInputFunctionsPresent(1)) return null;
 
         IntermediateOperation input = inputs.get(0);
@@ -104,7 +104,7 @@ public class Split extends IntermediateOperation {
         com.yahoo.tensor.functions.Slice<Reference> sliceIndices = new com.yahoo.tensor.functions.Slice<>(inputIndices, dimensionValues);
         ExpressionNode sliceExpression = new TensorFunctionNode(sliceIndices);
 
-        TensorFunction generate = Generate.bound(type.type(), wrapScalar(sliceExpression));
+        TensorFunction<Reference> generate = Generate.bound(type.type(), wrapScalar(sliceExpression));
         return generate;
     }
 

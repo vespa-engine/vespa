@@ -3,6 +3,7 @@ package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.ScalarFunctions;
@@ -34,13 +35,13 @@ public class Select extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if (!allInputFunctionsPresent(3)) {
             return null;
         }
         IntermediateOperation conditionOperation = inputs().get(0);
-        TensorFunction a = inputs().get(1).function().get();
-        TensorFunction b = inputs().get(2).function().get();
+        TensorFunction<Reference> a = inputs().get(1).function().get();
+        TensorFunction<Reference> b = inputs().get(2).function().get();
 
         // Shortcut: if we know during import which tensor to select, do that directly here.
         if (conditionOperation.getConstantValue().isPresent()) {
@@ -61,13 +62,13 @@ public class Select extends IntermediateOperation {
         // from 'x'. We do this by individually joining 'x' and 'y' with
         // 'condition', and then joining the resulting two tensors.
 
-        TensorFunction conditionFunction = conditionOperation.function().get();
-        TensorFunction aCond = new com.yahoo.tensor.functions.Join(a, conditionFunction, ScalarFunctions.multiply());
-        TensorFunction bCond = new com.yahoo.tensor.functions.Join(b, conditionFunction, new DoubleBinaryOperator() {
+        TensorFunction<Reference> conditionFunction = conditionOperation.function().get();
+        TensorFunction<Reference> aCond = new com.yahoo.tensor.functions.Join<>(a, conditionFunction, ScalarFunctions.multiply());
+        TensorFunction<Reference> bCond = new com.yahoo.tensor.functions.Join<>(b, conditionFunction, new DoubleBinaryOperator() {
              @Override public double applyAsDouble(double a, double b) { return a * (1.0 - b); }
              @Override public String toString() { return "f(a,b)(a * (1-b))"; }
          });
-        return new com.yahoo.tensor.functions.Join(aCond, bCond, ScalarFunctions.add());
+        return new com.yahoo.tensor.functions.Join<>(aCond, bCond, ScalarFunctions.add());
     }
 
     @Override

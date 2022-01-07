@@ -4,6 +4,7 @@ package ai.vespa.rankingexpression.importer.operations;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode;
@@ -65,7 +66,7 @@ public class ExpandDims extends IntermediateOperation {
     }
 
     @Override
-    protected TensorFunction lazyGetFunction() {
+    protected TensorFunction<Reference> lazyGetFunction() {
         if ( ! allInputFunctionsPresent(2)) return null;
 
         // multiply with a generated tensor created from the reduced dimensions
@@ -75,9 +76,9 @@ public class ExpandDims extends IntermediateOperation {
         }
         TensorType generatedType = typeBuilder.build();
         ExpressionNode generatedExpression = new ConstantNode(new DoubleValue(1));
-        Generate generatedFunction = new Generate(generatedType,
+        Generate<Reference> generatedFunction = new Generate<>(generatedType,
                 new GeneratorLambdaFunctionNode(generatedType, generatedExpression).asLongListToDoubleOperator());
-        return new com.yahoo.tensor.functions.Join(inputs().get(0).function().get(), generatedFunction, ScalarFunctions.multiply());
+        return new com.yahoo.tensor.functions.Join<>(inputs().get(0).function().get(), generatedFunction, ScalarFunctions.multiply());
     }
 
     @Override
