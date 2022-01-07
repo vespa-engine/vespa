@@ -1,6 +1,6 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/test-node-pool-102-2",
-  "id": "fake-test-node-pool-102-2",
+  "id": "(ignore)",
   "state": "active",
   "type": "tenant",
   "hostname": "test-node-pool-102-2",
