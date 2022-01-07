@@ -463,14 +463,13 @@ public class InternalStepRunner implements StepRunner {
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
-        return endpoints.get(zoneId).parallelStream().map(endpoint -> {
+        return endpoints.get(zoneId).parallelStream().allMatch(endpoint -> {
             boolean ready = controller.jobController().cloud().ready(endpoint.url());
-            if ( ! ready) {
+            if (!ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);
-                return Boolean.FALSE;
             }
-            return Boolean.TRUE;
-        }).allMatch(Boolean.TRUE::equals);
+            return ready;
+        });
     }
 
     /** Returns true iff all containers in the tester deployment give 100 consecutive 200 OK responses on /status.html. */
