@@ -117,7 +117,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
                 configserverE = XML.getChild(adminE, "adminserver");
             else
                 deployState.getDeployLogger().logApplicationPackage(Level.INFO,
-                                                                    "Specifying configserver without parent element configservers in services.xml is deprecated");
+                                                                    "Specifying configserver without parent element configservers in services.xml is deprecated and will be removed in Vespa 8");
             return List.of(new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, configserverE));
         }
         else {
