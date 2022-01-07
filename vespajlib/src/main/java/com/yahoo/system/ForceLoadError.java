@@ -3,8 +3,7 @@ package com.yahoo.system;
 
 /**
  * Special error to be propagated when force-loading a class fails.
- **/
-@SuppressWarnings("serial")
+ */
 public class ForceLoadError extends java.lang.Error {
 
     /**
@@ -12,8 +11,9 @@ public class ForceLoadError extends java.lang.Error {
      *
      * @param className full name of offending class
      * @param cause what caused the failure
-     **/
+     */
     public ForceLoadError(String className, Throwable cause) {
         super("Force loading class '" + className + "' failed", cause);
     }
+
 }

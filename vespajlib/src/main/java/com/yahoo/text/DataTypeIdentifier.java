@@ -5,6 +5,7 @@ package com.yahoo.text;
  * @author baldersheim
  */
 public class DataTypeIdentifier {
+
     private static final byte [] ARRAY = {'a', 'r', 'r', 'a', 'y'};
     private static final byte [] ANNOTATIONREFERENCE = {'a','n','n','o','t','a','t','i','o','n','r','e','f','e','r','e','n','c','e'};
     private static final byte [] MAP = { 'm', 'a', 'p'};

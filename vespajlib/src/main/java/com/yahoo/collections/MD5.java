@@ -15,9 +15,10 @@ import java.security.NoSuchAlgorithmException;
  * <p>
  * This class is not thread safe.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class MD5 {
+
     public static final ThreadLocal<MessageDigest> md5 = new MD5Factory();
 
     private static class MD5Factory extends ThreadLocal<MessageDigest> {
@@ -27,6 +28,7 @@ public class MD5 {
             return createMD5();
         }
     }
+
     private static MessageDigest createMD5() {
         try {
             return MessageDigest.getInstance("MD5");
@@ -34,7 +36,9 @@ public class MD5 {
             throw new RuntimeException(e);
         }
     }
+
     final private MessageDigest digester;
+
     public MD5() {
         try {
             digester = MessageDigest.getInstance("MD5");
@@ -64,4 +68,5 @@ public class MD5 {
     public byte[] hashFull(String s) {
         return digester.digest(Utf8.toBytes(s));
     }
+
 }

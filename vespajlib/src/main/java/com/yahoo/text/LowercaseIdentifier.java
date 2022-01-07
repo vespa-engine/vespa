@@ -5,6 +5,7 @@ package com.yahoo.text;
  * @author baldersheim
  */
 public class LowercaseIdentifier extends Identifier {
+
     public LowercaseIdentifier(String s) {
         this(Utf8.toBytes(s));
     }

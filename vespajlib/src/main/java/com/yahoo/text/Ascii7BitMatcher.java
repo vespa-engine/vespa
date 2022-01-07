@@ -7,9 +7,11 @@ import java.util.BitSet;
  * Fast replacement for regex based validators of simple expressions.
  * It can take a list of legal characters for the the first character,
  * and another list for the following. Limited to 7bit ascii.
+ *
  * @author baldersheim
  */
 public class Ascii7BitMatcher {
+
     private final BitSet legalFirst;
     private final BitSet legalRest;
     private static BitSet createBitSet(String legal) {
@@ -48,7 +50,7 @@ public class Ascii7BitMatcher {
         return true;
     }
     static public String charsAndNumbers() {
-        char [] chars = new char[26*2+10];
+        char[] chars = new char[26*2+10];
         int i = 0;
         for (char c = 'A'; c <= 'Z'; c++) {
             chars[i++] = c;
@@ -61,4 +63,5 @@ public class Ascii7BitMatcher {
         }
         return new String(chars);
     }
+
 }

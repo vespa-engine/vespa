@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.access.simple;
 
-
 import com.yahoo.data.access.*;
 import java.util.Collections;
 import java.util.Map;
@@ -10,11 +9,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
 
-
 public class Value implements Inspector {
-    private static Value empty = new EmptyValue();
-    private static Value invalid = new Value();
-    private static byte[] empty_array = new byte[0];
+
+    private static final Value empty = new EmptyValue();
+    private static final Value invalid = new Value();
+    private static final byte[] empty_array = new byte[0];
     public static Inspector empty() { return empty; }
     public static Inspector invalid() { return invalid; }
     public Inspector inspect() { return this; }

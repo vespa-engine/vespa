@@ -2,15 +2,13 @@
 package com.yahoo.collections;
 
 /**
- * A representation of a pair of values, typically of different types.
+ * A pair of values.
  *
- * <p>
  * This class is to avoid littering a class with thin wrapper objects for
  * passing around e.g. the state of an operation and the result value. Using
  * this class may be correct, but it is a symptom that you may want to redesign
  * your code. (Should you pass mutable objects to the method instead? Create a
  * new class and do the work inside that class instead? Etc.)
- * </p>
  *
  * @author Steinar Knutsen
  */

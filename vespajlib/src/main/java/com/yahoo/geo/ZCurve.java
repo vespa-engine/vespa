@@ -8,6 +8,7 @@ package com.yahoo.geo;
  * @author gjoranv
  */
 public class ZCurve {
+
     /**
      * Encode two 32 bit integers by bit-interleaving them into one 64 bit
      * integer value. The x-direction owns the least significant bit (bit
@@ -43,8 +44,8 @@ public class ZCurve {
      * @return  The bit-interleaved long containing x and y.
      */
     public static long encode(int x, int y) {
-        long xl = (long)x;
-        long yl = (long)y;
+        long xl = x;
+        long yl = y;
 
         long rx = ((xl & 0x00000000ffff0000L) << 16) | (xl & 0x000000000000ffffL);
         long ry = ((yl & 0x00000000ffff0000L) << 16) | (yl & 0x000000000000ffffL);
@@ -120,7 +121,7 @@ public class ZCurve {
      *
      * @param x  x value
      * @param y  y value
-     * @return  The bit-interleaved long containing x and y.
+     * @return the bit-interleaved long containing x and y
      */
     public static long encode_slow(int x, int y) {
         long z = 0L;

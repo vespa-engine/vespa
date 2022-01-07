@@ -15,5 +15,6 @@ public interface ObjectPredicate {
      * @param obj The object to check.
      * @return True or false.
      */
-    public boolean check(Object obj);
+    boolean check(Object obj);
+
 }

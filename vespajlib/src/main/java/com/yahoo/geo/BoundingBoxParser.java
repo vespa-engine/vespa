@@ -40,7 +40,7 @@ public class BoundingBoxParser {
     /**
      * parse the given string as a bounding box and return a parser object with parsed coordinates in member variables
      * @throws IllegalArgumentException if the input is malformed in any way
-     **/
+     */
     public BoundingBoxParser(String bb) {
         this.parseString = bb;
         this.len = bb.length();

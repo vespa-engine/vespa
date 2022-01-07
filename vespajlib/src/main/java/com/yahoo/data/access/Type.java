@@ -13,7 +13,9 @@ package com.yahoo.data.access;
  *   as an array of bytes.
  * - maps should be represented as an ARRAY of OBJECTs where each
  *   object has the fields "key" and "value".
- **/
+ */
 public enum Type {
+
     EMPTY, BOOL, LONG, DOUBLE, STRING, DATA, ARRAY, OBJECT;
+
 }

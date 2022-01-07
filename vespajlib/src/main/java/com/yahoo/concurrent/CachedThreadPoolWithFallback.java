@@ -13,9 +13,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * An executor that will first try a bounded cached thread pool before falling back to an unbounded
  * single threaded thread pool that will take over dispatching to the primary pool.
- *
  */
 public class CachedThreadPoolWithFallback implements AutoCloseable, Executor {
+
     private final ExecutorService primary;
     private final ExecutorService secondary;
 

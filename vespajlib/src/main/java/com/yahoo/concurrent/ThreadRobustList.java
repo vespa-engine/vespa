@@ -14,8 +14,7 @@ import java.util.NoSuchElementException;
  * This is useful for traced information as there may be timed out threads
  * working on the structure after it is returned upwards for consumption.
  *
- * @since 4.2
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author bratseth
  */
 public class ThreadRobustList<T> implements Iterable<T> {

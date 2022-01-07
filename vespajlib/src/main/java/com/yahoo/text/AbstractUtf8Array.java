@@ -5,45 +5,32 @@ import java.nio.ByteBuffer;
 
 /**
  * @author baldersheim
- * @since 5.2
  */
 public abstract class AbstractUtf8Array implements Comparable<AbstractUtf8Array> {
-    /**
-     * This will write the utf8 sequence to the given target.
-     */
+
+    /** Writes the utf8 sequence to the given target. */
     final public void writeTo(ByteBuffer target) {
         target.put(getBytes(), getByteOffset(), getByteLength());
     }
 
-    /**
-     * This will return the byte at the given position.
-     */
+    /** Returns the byte at the given position. */
     public byte getByte(int index) { return getBytes()[getByteOffset() + index]; }
 
-    /**
-     *
-     * @return Length in bytes of the utf8 sequence.
-     */
+    /** Returns the length in bytes of the utf8 sequence. */
     public abstract int getByteLength();
 
-    /**
-     * Wraps the utf8 sequence in a ByteBuffer
-     * @return The wrapping buffer.
+    /** Wraps the utf8 sequence in a ByteBuffer
+     *
+     * @return the wrapping buffer
      */
     public ByteBuffer wrap() { return ByteBuffer.wrap(getBytes(), getByteOffset(), getByteLength()); }
 
-    /**
-     *
-     * @return The backing byte array.
-     */
+    /** Returns the backing byte array. */
     protected abstract byte [] getBytes();
 
     public boolean isEmpty() { return getByteLength() == 0; }
 
-    /**
-     *
-     * @return The offset in the backing array where the utf8 sequence starts.
-     */
+    /** Returns the offset in the backing array where the utf8 sequence starts. */
     protected abstract int getByteOffset();
     @Override
     public int hashCode() {
@@ -57,6 +44,7 @@ public abstract class AbstractUtf8Array implements Comparable<AbstractUtf8Array>
         }
         return h;
     }
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof AbstractUtf8Array) {
@@ -68,10 +56,7 @@ public abstract class AbstractUtf8Array implements Comparable<AbstractUtf8Array>
         return false;
     }
 
-    /**
-     * Will convert the utf8 sequence to a Java string
-     * @return The converted Java String
-     */
+    /** Retuerns  the utf8 sequence as a Java string. */
     @Override
     public String toString() {
         return Utf8.toString(getBytes(), getByteOffset(), getByteLength());

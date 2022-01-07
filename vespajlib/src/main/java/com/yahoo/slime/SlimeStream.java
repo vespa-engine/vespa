@@ -11,6 +11,7 @@ import java.util.stream.Stream;
  * @author ogronnesby
  */
 public final class SlimeStream {
+
     private SlimeStream() {}
 
     /**
@@ -24,4 +25,5 @@ public final class SlimeStream {
                 .mapToObj(array::entry)
                 .map(mapper);
     }
+
 }

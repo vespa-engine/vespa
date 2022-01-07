@@ -16,7 +16,7 @@ import java.util.List;
  * is minimal.
  * </p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class ClassValidator {
 
@@ -25,10 +25,8 @@ public final class ClassValidator {
      * maskedClass is implemented in testClass. Note, this will by definition
      * blow up on final methods in maskedClass.
      *
-     * @param testClass
-     *            class which wraps or masks another class
-     * @param maskedClass
-     *            class which is masked or wrapped
+     * @param testClass class which wraps or masks another class
+     * @param maskedClass class which is masked or wrapped
      * @return the methods which seem to miss from testClass to be complete
      */
     public static List<Method> unmaskedMethods(Class<?> testClass,
@@ -53,8 +51,7 @@ public final class ClassValidator {
      * Check testClass overrides all protected, public and package private
      * methods of its immediate super class. See unmaskedMethods().
      *
-     * @param testClass
-     *            the class to check whether completely masks its super class
+     * @param testClass the class to check whether completely masks its super class
      * @return the methods missing from testClass to completely override its
      *         immediate super class
      */

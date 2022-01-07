@@ -12,6 +12,7 @@ import java.util.function.BooleanSupplier;
  * @author valerijf
  */
 public class ClassLocking {
+
     private final Map<String, ClassLock> classLocks = new HashMap<>();
     private final Object monitor = new Object();
 
@@ -71,4 +72,5 @@ public class ClassLocking {
             monitor.notifyAll();
         }
     }
+
 }

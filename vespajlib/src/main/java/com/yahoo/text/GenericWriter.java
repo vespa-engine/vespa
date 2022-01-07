@@ -9,19 +9,13 @@ import java.io.Writer;
  * java.io.Writer, but it allows for more overrides for speed.
  * This introduces additional interfaces in addition to the java.lang.Writer.
  * The purpose is to allow for optimizations.
+ *
  * @author baldersheim
- * @since 5.2
  */
-
 public abstract class GenericWriter extends Writer {
-/*
-    public abstract void write(char [] c, int offset, int bytes);
-    public abstract void flush();
-    public abstract void close();
 
-*/
     public GenericWriter write(char c) throws java.io.IOException {
-        char t[] = new char[1];
+        char[] t = new char[1];
         t[0] = c;
         try {
             write(t, 0, 1);
@@ -47,18 +41,22 @@ public abstract class GenericWriter extends Writer {
         write(String.valueOf(i));
         return this;
     }
+
     public GenericWriter write(byte i) throws java.io.IOException {
         write(String.valueOf(i));
         return this;
     }
+
     public GenericWriter write(double i) throws java.io.IOException {
         write(String.valueOf(i));
         return this;
     }
+
     public GenericWriter write(float i) throws java.io.IOException {
         write(String.valueOf(i));
         return this;
     }
+
     public GenericWriter write(boolean i) throws java.io.IOException {
         write(String.valueOf(i));
         return this;
@@ -68,4 +66,5 @@ public abstract class GenericWriter extends Writer {
         write(v.toString());
         return this;
     }
+
 }

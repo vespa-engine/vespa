@@ -11,7 +11,6 @@ import java.util.List;
  *
  * @author bratseth
  */
-@SuppressWarnings("serial")
 public class ListenableArrayList<ITEM> extends ArrayList<ITEM> {
 
     private List<Runnable> listeners = null;

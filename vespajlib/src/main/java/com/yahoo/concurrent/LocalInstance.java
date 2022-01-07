@@ -10,14 +10,12 @@ import com.yahoo.concurrent.ThreadLocalDirectory.Updater;
  * {@link ThreadLocal} in ThreadLocalDirectory if possible, but has no user
  * available methods.
  *
- * @param <AGGREGATOR>
- *            the structure to insert produced data into
- * @param <SAMPLE>
- *            type of produced data to insert from each participating thread
- *
+ * @param <AGGREGATOR> the structure to insert produced data into
+ * @param <SAMPLE> type of produced data to insert from each participating thread
  * @author Steinar Knutsen
  */
 public final class LocalInstance<AGGREGATOR, SAMPLE> {
+
     /**
      * The current generation of data produced from a single thread, where
      * generation is the period between two subsequent calls to

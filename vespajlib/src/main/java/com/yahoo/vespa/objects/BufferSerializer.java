@@ -11,6 +11,7 @@ import java.nio.ByteOrder;
  * @author baldersheim
  */
 public class BufferSerializer implements Serializer, Deserializer {
+
     protected GrowableByteBuffer buf;
 
     public BufferSerializer(GrowableByteBuffer buf) { this.buf = buf; }

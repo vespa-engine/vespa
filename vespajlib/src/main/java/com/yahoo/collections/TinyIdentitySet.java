@@ -13,17 +13,12 @@ import java.util.Set;
  * ArrayList for identity matches. In other words: Performance will only be
  * acceptable for <i>small</i> sets.
  *
- * <p>
  * The rationale for this class is the high cost of the object identifier used
  * in IdentityHashMap, where the key set is often used as an identity set.
- * </p>
  *
  * @author Steinar Knutsen
- * @since 5.1.4
  * @see java.util.IdentityHashMap
- *
- * @param <E>
- *            the type contained in the Set
+ * @param <E> the type contained in the Set
  */
 public final class TinyIdentitySet<E> implements Set<E> {
     private class ArrayIterator<T> implements Iterator<E> {

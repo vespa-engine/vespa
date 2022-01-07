@@ -7,7 +7,7 @@ package com.yahoo.slime;
  * ObjectValue data objects).
  * 
  * @author havardpe
- **/
+ */
 public final class Slime {
 
     private final SymbolTable names = new SymbolTable();

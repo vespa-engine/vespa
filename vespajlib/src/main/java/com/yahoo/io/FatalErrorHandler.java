@@ -28,8 +28,8 @@ import java.util.logging.Level;
  *
  *  @author Steinar Knutsen
  */
-
 public class FatalErrorHandler {
+
     protected static final Logger log = Logger.getLogger(FatalErrorHandler.class.getName());
 
     /**
@@ -48,4 +48,5 @@ public class FatalErrorHandler {
             Runtime.getRuntime().halt(1);
         }
     }
+
 }

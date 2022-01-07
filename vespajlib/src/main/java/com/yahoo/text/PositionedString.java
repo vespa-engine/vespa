@@ -6,11 +6,10 @@ package com.yahoo.text;
  * Useful for writing simple single-pass parsers.
  *
  * @author bratseth
- * @since 5.1.15
  */
 public class PositionedString {
 
-    private String s;
+    private final String s;
     private int p;
 
     /**

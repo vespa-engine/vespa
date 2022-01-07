@@ -15,12 +15,12 @@ import java.nio.ByteBuffer;
 public class GrowableBufferOutputStream extends OutputStream {
 
     private ByteBuffer lastBuffer;
-    private ByteBuffer directBuffer;
-    private LinkedList<ByteBuffer> bufferList = new LinkedList<>();
-    private Stack<ByteBuffer> recycledBuffers = new Stack<>();
+    private final ByteBuffer directBuffer;
+    private final LinkedList<ByteBuffer> bufferList = new LinkedList<>();
+    private final Stack<ByteBuffer> recycledBuffers = new Stack<>();
 
-    private int bufferSize;
-    private int maxBuffers;
+    private final int bufferSize;
+    private final int maxBuffers;
 
     public GrowableBufferOutputStream(int bufferSize, int maxBuffers) {
         this.bufferSize = bufferSize;

@@ -1,14 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.geo;
 
 import com.yahoo.api.annotations.Beta;
 
 /**
  * Utility for parsing a geographical distance with unit.
- **/
+ */
 @Beta
 public class DistanceParser {
+
     // according to wikipedia:
     // Earth's equatorial radius = 6378137 meter - not used
     // meters per mile = 1609.344

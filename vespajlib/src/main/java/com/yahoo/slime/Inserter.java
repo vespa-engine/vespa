@@ -6,8 +6,9 @@ package com.yahoo.slime;
  * classes (ArrayValue, ObjectValue, or Slime).  May be useful for
  * deserializers where you can use it to decouple the actual value
  * decoding from the container where the value should be inserted.
- **/
+ */
 public interface Inserter {
+
     Cursor insertNIX();
     Cursor insertBOOL(boolean value);
     Cursor insertLONG(long value);
@@ -17,4 +18,5 @@ public interface Inserter {
     Cursor insertDATA(byte[] value);
     Cursor insertARRAY();
     Cursor insertOBJECT();
+
 }

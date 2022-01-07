@@ -5,6 +5,7 @@ package com.yahoo.text;
  * @author baldersheim
  */
 public class CaseInsensitiveIdentifier extends Identifier {
+
     private final Identifier original;
 
     public CaseInsensitiveIdentifier(String s) {
@@ -18,4 +19,5 @@ public class CaseInsensitiveIdentifier extends Identifier {
         original = new Identifier(utf8);
     }
     public String toString() { return original.toString(); }
+
 }

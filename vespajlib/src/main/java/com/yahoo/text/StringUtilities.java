@@ -4,6 +4,7 @@ package com.yahoo.text;
 import com.google.common.collect.ImmutableSet;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
@@ -19,14 +20,15 @@ import java.util.Set;
 // TODO: Text utilities should which are still needed should move to Text. This should be deprecated.
 public class StringUtilities {
 
-    private static Charset UTF8 = Charset.forName("utf8");
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
 
     private static byte toHex(int val) { return (byte) (val < 10 ? '0' + val : 'a' + (val - 10)); }
 
     private static class ReplacementCharacters {
-        public byte needEscape[] = new byte[256];
-        public byte replacement1[] = new byte[256];
-        public byte replacement2[] = new byte[256];
+
+        public byte[] needEscape = new byte[256];
+        public byte[] replacement1 = new byte[256];
+        public byte[] replacement2 = new byte[256];
 
         public ReplacementCharacters() {
             for (int i=0; i<256; ++i) {
@@ -65,7 +67,7 @@ public class StringUtilities {
      * @return The escaped string
      */
     public static String escape(String source, char delimiter) {
-        byte bytes[] = source.getBytes(UTF8);
+        byte[] bytes = source.getBytes(UTF8);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         for (byte b : bytes) {
             int val = b;
@@ -90,7 +92,7 @@ public class StringUtilities {
     }
 
     public static String unescape(String source) {
-        byte bytes[] = source.getBytes(UTF8);
+        byte[] bytes = source.getBytes(UTF8);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         for (int i=0; i<bytes.length; ++i) {
             if (bytes[i] != '\\') {
@@ -212,7 +214,7 @@ public class StringUtilities {
     public static Set<String> split(String s) {
         if (s == null || s.isEmpty()) return Collections.emptySet();
         ImmutableSet.Builder<String> b = new ImmutableSet.Builder<>();
-        for (String item : s.split("[\\s\\,]"))
+        for (String item : s.split("[\\s,]"))
             if ( ! item.isEmpty())
                 b.add(item);
         return b.build();

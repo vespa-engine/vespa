@@ -27,7 +27,7 @@ import com.yahoo.collections.Tuple2;
  * there is no support for recycling it.
  * </p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class Receiver<T> {
     /**

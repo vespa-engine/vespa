@@ -18,6 +18,7 @@ import java.util.List;
  * @author Steinar Knutsen
  */
 public final class BufferChain {
+
     // refer to the revision history of ByteWriter for more information about
     // the reasons behind the sizing of BUFFERSIZE, WATERMARK and MAXBUFFERS
     static final int BUFFERSIZE = 4096;

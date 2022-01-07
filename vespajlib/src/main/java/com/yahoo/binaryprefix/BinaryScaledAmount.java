@@ -11,6 +11,7 @@ package com.yahoo.binaryprefix;
  * @author Tony Vaagenes
  */
 public final class BinaryScaledAmount {
+
     public final double amount;
     public final BinaryPrefix binaryPrefix;
 
@@ -53,4 +54,5 @@ public final class BinaryScaledAmount {
     public int hashCode() {
         return (int)BinaryPrefix.unit.convertFrom(amount, binaryPrefix);
     }
+
 }

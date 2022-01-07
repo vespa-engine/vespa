@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
  * @author baldersheim
  */
 public final class MethodCache {
+
     private final String methodName;
     private final CopyOnWriteHashMap<String, Method> cache = new CopyOnWriteHashMap<>();
 
@@ -34,4 +35,5 @@ public final class MethodCache {
             return null;
         }
     }
+
 }

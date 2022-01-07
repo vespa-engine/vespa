@@ -16,7 +16,7 @@ import java.util.Deque;
 public final class JSONWriter {
 
     /** A stack maintaining the "needs comma" state at the current level */
-    private Deque<Boolean> needsComma=new ArrayDeque<>();
+    private final Deque<Boolean> needsComma = new ArrayDeque<>();
 
     private static final char[] DIGITS = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 

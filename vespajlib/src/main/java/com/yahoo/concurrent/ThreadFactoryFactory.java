@@ -19,6 +19,7 @@ public class ThreadFactoryFactory {
         }
         return p.getFactory(false);
     }
+
     static public synchronized ThreadFactory getDaemonThreadFactory(String name) {
         PooledFactory p = factory.get(name);
         if (p == null) {
@@ -27,6 +28,7 @@ public class ThreadFactoryFactory {
         }
         return p.getFactory(true);
     }
+
     private static class PooledFactory {
         private static class Factory implements ThreadFactory {
             final ThreadGroup group;
@@ -65,6 +67,6 @@ public class ThreadFactoryFactory {
         private final String name;
         private final AtomicInteger poolId = new AtomicInteger(1);
     }
-    static private Map<String, PooledFactory> factory = new HashMap<>();
+    static private final Map<String, PooledFactory> factory = new HashMap<>();
 
 }

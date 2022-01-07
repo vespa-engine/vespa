@@ -1,18 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-
 import java.nio.ByteBuffer;
 
 /**
  * This is a primitive class that owns an array of utf8 encoded string.
  * This is a class that has speed as its primary purpose.
  * If you have a string, consider Utf8String
- * If you have a large backing array consider Utf8PartialArray
+ * If you have a large backing array consider Utf8PartialArray.
+ *
  * @author baldersheim
- * @since 5.2
  */
-
 public class Utf8Array extends AbstractUtf8Array {
 
     protected final byte[] utf8;

@@ -32,7 +32,7 @@ public final class JsonRender {
 
         private final StringBuilder out;
         private boolean head = true;
-        private boolean compact;
+        private final boolean compact;
         private int level = 0;
 
         public StringEncoder(StringBuilder out, boolean compact) {

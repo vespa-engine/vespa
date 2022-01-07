@@ -8,7 +8,6 @@ import java.io.Writer;
  * Wraps a simple java.lang.Writer. Of course you loose the possible optimizations.
  *
  * @author baldersheim
- * @since 5.2
  */
 public final class JavaWriterWriter extends GenericWriter {
 
@@ -44,6 +43,7 @@ public final class JavaWriterWriter extends GenericWriter {
             throw new RuntimeException("Caught exception in Java writer.close.", e);
         }
     }
-    public final Writer getWriter() { return out; }
+
+    public Writer getWriter() { return out; }
 
 }

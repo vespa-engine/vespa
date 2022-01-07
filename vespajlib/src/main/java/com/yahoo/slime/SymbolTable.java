@@ -5,7 +5,7 @@ package com.yahoo.slime;
  * A mapping from an arbitrary set of unique strings to a range of
  * integers.  Slime users normally won't need to use this class
  * directly.
- **/
+ */
 final class SymbolTable {
 
     public static final int INVALID = Integer.MAX_VALUE;
@@ -95,4 +95,5 @@ final class SymbolTable {
         }
         return INVALID;
     }
+
 }

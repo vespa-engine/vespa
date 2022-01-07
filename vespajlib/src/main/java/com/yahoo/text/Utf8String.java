@@ -1,18 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
-
 /**
  * String with Utf8 backing.
+ *
  * @author baldersheim
- * @since 5.2
  */
-public final class Utf8String extends Utf8Array implements CharSequence
-{
+public final class Utf8String extends Utf8Array implements CharSequence {
+
     private final String s;
 
     /**
      * This will construct a utf8 backing of the given string.
+     *
      * @param str The string that will be utf8 encoded
      */
     public Utf8String(String str) {
@@ -22,6 +22,7 @@ public final class Utf8String extends Utf8Array implements CharSequence
 
     /**
      * This will create a string based on the utf8 sequence.
+     *
      * @param utf8 The backing array
      */
     public Utf8String(AbstractUtf8Array utf8) {

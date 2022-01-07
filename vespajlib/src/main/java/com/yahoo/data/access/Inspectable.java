@@ -5,7 +5,7 @@ package com.yahoo.data.access;
  * Minimal API to implement for objects containing or exposing
  * structured, generic, schemaless data.  Use this when it's
  * impractical to implement the Inspector interface directly.
- **/
+ */
 public interface Inspectable {
 
     /** Returns an Inspector exposing this object's structured data. */

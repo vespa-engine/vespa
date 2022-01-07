@@ -8,6 +8,7 @@ package com.yahoo.collections;
  * @author hakon
  */
 public class Comparables {
+
     /**
      * Returns the least element, or {@code first} if they are equal according to
      * {@link Comparable#compareTo(Object) compareTo}.
@@ -23,4 +24,5 @@ public class Comparables {
     public static <T extends Comparable<? super T>> T max(T first, T second) {
         return first.compareTo(second) <= 0 ? second : first;
     }
+
 }

@@ -3,10 +3,11 @@ package com.yahoo.text;
 
 /**
  * This wraps a window in a backing byte array. Without doing any copying.
+ *
  * @author baldersheim
- * @since 5.2
  */
 public class Utf8PartialArray extends Utf8Array {
+
     final int offset;
     final int length;
 

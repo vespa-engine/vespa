@@ -27,7 +27,7 @@ public class ProcessExecuter {
     /**
      * Executes the given command synchronously without timeout.
      * 
-     * @return Retcode and stdout/stderr merged
+     * @return retcode and stdout/stderr merged
      */
     public Pair<Integer, String> exec(String command) throws IOException {
         StringTokenizer tok = new StringTokenizer(command);

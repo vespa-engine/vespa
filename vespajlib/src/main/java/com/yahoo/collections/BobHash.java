@@ -4,22 +4,18 @@ package com.yahoo.collections;
 import com.yahoo.text.Utf8;
 
 /**
- * <p>A Java port of Michael Susag's BobHash in FastLib. This version is
+ * A Java port of Michael Susag's BobHash in FastLib. This version is
  * specifically done to be bit compatible with the one in FastLib, as it
- * is used in decoding packets from FastServer.</p>
+ * is used in decoding packets from FastServer.
  *
- * <p>Hash function based on
- * <a href="http://burtleburtle.net/bob/hash/index.html">
- * http://burtleburtle.net/bob/hash/index.html</a>
+ * Hash function based on
+ * <a href="http://burtleburtle.net/bob/hash/index.html">http://burtleburtle.net/bob/hash/index.html</a>
  * by Bob Jenkins, 1996. bob_jenkins@burtleburtle.net. You may use this
- * code any way you wish, private, educational, or commercial. It's free.</p>
+ * code any way you wish, private, educational, or commercial. It's free.
  *
- * @author        Michael Susag
- * @author        <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- *
- *
+ * @author Michael Susag
+ * @author Steinar Knutsen
  */
-
 public class BobHash {
 
     /**

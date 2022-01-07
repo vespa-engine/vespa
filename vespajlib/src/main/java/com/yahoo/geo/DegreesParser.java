@@ -5,15 +5,13 @@ package com.yahoo.geo;
  * Utility for parsing geographical coordinates
  *
  * @author arnej27959
- **/
+ */
 public class DegreesParser {
-    /**
-     * the parsed latitude (degrees north if positive)
-     **/
+
+    /** The parsed latitude (degrees north if positive). */
     public double latitude = 0;
-    /**
-     * the parsed longitude (degrees east if positive)
-     **/
+
+    /** The parsed longitude (degrees east if positive). */
     public double longitude = 0;
 
     private boolean isDigit(char ch) {
@@ -23,8 +21,8 @@ public class DegreesParser {
         return (ch == 'N' || ch == 'S' || ch == 'E' || ch == 'W');
     }
 
-    private String parseString = null;
-    private int len = 0;
+    private final String parseString;
+    private final int len;
     private int pos = 0;
 
     private char getNextChar() throws IllegalArgumentException {
@@ -65,9 +63,9 @@ public class DegreesParser {
      * "E10o25.982;N63o25.105" → same <br>
      * "N63.418417;E10.433033" → same <br>
      * "63N25.105;10E25.982" → same <br>
-     * @param latandlong Latitude and longitude separated by semicolon.
      *
-     **/
+     * @param latandlong Latitude and longitude separated by semicolon.
+     */
     public DegreesParser(String latandlong) throws IllegalArgumentException {
         this.parseString = latandlong;
         this.len = parseString.length();
@@ -107,11 +105,7 @@ public class DegreesParser {
 
             if (isDigit(ch) || ch == '.') {
                 valid = true;
-                if (foundDigits) {
-                    throw new IllegalArgumentException("found digits after not consuming previous digits");
-                }
                 double divider = 1.0;
-                foundDot = false;
                 while (isDigit(ch)) {
                     foundDigits = true;
                     accum *= 10;
@@ -163,7 +157,6 @@ public class DegreesParser {
 
             // if we found some number, assign it into the next unset variable
             if (foundDigits) {
-                valid = true;
                 if (degSet) {
                     if (minSet) {
                         if (secSet) {
@@ -281,4 +274,5 @@ public class DegreesParser {
         }
         // everything parsed OK
     }
+
 }
