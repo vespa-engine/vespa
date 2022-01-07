@@ -29,6 +29,15 @@ class FieldMerger
 {
     using WordNumMappingList = std::vector<WordNumMapping>;
 
+    enum class State {
+        MERGE_START,
+        RENUMBER_WORD_IDS,
+        RENUMBER_WORD_IDS_FINISH,
+        MERGE_POSTINGS,
+        MERGE_POSTINGS_FINISH,
+        MERGE_DONE
+    };
+
     uint32_t                 _id;
     vespalib::string         _field_name;
     vespalib::string         _field_dir;
@@ -42,6 +51,8 @@ class FieldMerger
     std::vector<std::unique_ptr<FieldReader>> _readers;
     std::unique_ptr<PostingPriorityQueueMerger<FieldReader, FieldWriter>> _heap;
     std::unique_ptr<FieldWriter> _writer;
+    State _state;
+    bool _failed;
 
     void make_tmp_dirs();
     bool clean_tmp_dirs();
@@ -50,7 +61,7 @@ class FieldMerger
     bool renumber_word_ids_start();
     bool renumber_word_ids_main();
     bool renumber_word_ids_finish();
-    bool renumber_word_ids();
+    void renumber_word_ids_failed();
     std::shared_ptr<FieldLengthScanner> allocate_field_length_scanner();
     bool open_input_field_readers();
     bool open_field_writer();
@@ -59,10 +70,13 @@ class FieldMerger
     bool merge_postings_start();
     bool merge_postings_main();
     bool merge_postings_finish();
-    bool merge_postings();
+    void merge_postings_failed();
 public:
     FieldMerger(uint32_t id, const FusionOutputIndex& fusion_out_index, std::shared_ptr<IFlushToken> flush_token);
     ~FieldMerger();
+    void merge_field_start();
+    void merge_field_finish();
+    void process_merge_field(); // Called multiple times
     bool merge_field();
 };
 
