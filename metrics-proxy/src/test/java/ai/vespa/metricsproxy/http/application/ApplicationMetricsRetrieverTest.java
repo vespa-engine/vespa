@@ -117,7 +117,7 @@ public class ApplicationMetricsRetrieverTest {
         wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).metricsPath()))
                                      .willReturn(aResponse()
                                                          .withBody(RESPONSE)
-                                                         .withFixedDelay(10)));
+                                                         .withFixedDelay(1000)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
         retriever.setTaskTimeout(Duration.ofMillis(1));
@@ -134,7 +134,7 @@ public class ApplicationMetricsRetrieverTest {
         var delayedStub = wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).metricsPath()))
                                                        .willReturn(aResponse()
                                                                            .withBody(RESPONSE)
-                                                                           .withFixedDelay(10)));
+                                                                           .withFixedDelay(1000)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
         retriever.getMetrics();
