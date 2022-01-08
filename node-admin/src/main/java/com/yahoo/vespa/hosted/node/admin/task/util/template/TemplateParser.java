@@ -19,7 +19,7 @@ public class TemplateParser {
     private final FormEndsIn formEndsIn;
 
     public static Template parse(TemplateDescriptor descriptor, String text) {
-        return parse(descriptor, new Cursor(text), FormEndsIn.EOT).template();
+        return parse(new TemplateDescriptor(descriptor), new Cursor(text), FormEndsIn.EOT).template;
     }
 
     private static TemplateParser parse(TemplateDescriptor descriptor, Cursor start, FormEndsIn formEndsIn) {
@@ -59,7 +59,7 @@ public class TemplateParser {
         current.skip(descriptor.startDelimiter());
 
         if (current.skip('=')) {
-            parseExpression();
+            parseVariableSection();
         } else {
             var startOfType = new Cursor(current);
             String type = skipId().orElseThrow(() -> new BadTemplateException(current, "Missing section name"));
@@ -68,7 +68,7 @@ public class TemplateParser {
                 case "end":
                     if (formEndsIn == FormEndsIn.EOT)
                         throw new BadTemplateException(startOfType, "Extraneous 'end'");
-                    parseEndAttribute();
+                    parseEndDirective();
                     return false;
                 case "list":
                     parseListSection();
@@ -81,14 +81,14 @@ public class TemplateParser {
         return !current.eot();
     }
 
-    private void parseExpression() {
+    private void parseVariableSection() {
         var nameStart = new Cursor(current);
         String name = parseId();
         parseEndDelimiter(false);
         template.appendVariableSection(name, nameStart, current);
     }
 
-    private void parseEndAttribute() {
+    private void parseEndDirective() {
         parseEndDelimiter(true);
     }
 
@@ -116,11 +116,11 @@ public class TemplateParser {
 
     private Optional<String> skipId() { return Token.skipId(current); }
 
-    private void parseEndDelimiter(boolean removeFollowingNewline) {
-        if (!current.skip(descriptor.endDelimiter())) {
+    private void parseEndDelimiter(boolean newlineMayBeRemoved) {
+        if (!current.skip(descriptor.endDelimiter()))
             throw new BadTemplateException(current, "Expected section end (" + descriptor.endDelimiter() + ")");
-        }
 
-        if (removeFollowingNewline) current.skip('\n');
+        if (descriptor.removeNewlineAfterSection() && newlineMayBeRemoved)
+            current.skip('\n');
     }
 }

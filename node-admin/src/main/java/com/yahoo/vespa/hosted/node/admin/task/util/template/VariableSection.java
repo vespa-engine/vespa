@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
 import com.yahoo.vespa.hosted.node.admin.task.util.text.Cursor;
 import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
-import java.util.Objects;
-
 /**
  * Represents a template variable section
  *
@@ -16,8 +14,6 @@ class VariableSection extends Section {
     private final String name;
     private final Cursor nameOffset;
 
-    private String value = null;
-
     VariableSection(CursorRange range, String name, Cursor nameOffset) {
         super(range);
         this.name = name;
@@ -26,16 +22,10 @@ class VariableSection extends Section {
 
     String name() { return name; }
 
-    void set(String value) {
-        this.value = Objects.requireNonNull(value);
-    }
-
     @Override
     void appendTo(StringBuilder buffer) {
-        if (value == null) {
-            throw new TemplateNameNotSetException(this, name, nameOffset);
-        }
-
+        String value = form().getVariableValue(name)
+                             .orElseThrow(() -> new TemplateNameNotSetException(this, name, nameOffset));
         buffer.append(value);
     }
 }

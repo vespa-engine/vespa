@@ -15,17 +15,19 @@ import java.util.function.Consumer;
  */
 class FormBuilder {
     private final List<Section> sections = new ArrayList<>();
-    private final Map<String, VariableSection> variables = new HashMap<>();
+    private final Map<String, String> variables = new HashMap<>();
     private final Map<String, ListSection> lists = new HashMap<>();
+    private final Form parent;
     private final CursorRange range;
 
-    static Form build(CursorRange range, List<Consumer<FormBuilder>> sections) {
-        var builder = new FormBuilder(range);
+    static Form build(Form parent, CursorRange range, List<Consumer<FormBuilder>> sections) {
+        var builder = new FormBuilder(parent, range);
         sections.forEach(section -> section.accept(builder));
         return builder.build();
     }
 
-    private FormBuilder(CursorRange range) {
+    private FormBuilder(Form parent, CursorRange range) {
+        this.parent = parent;
         this.range = new CursorRange(range);
     }
 
@@ -35,10 +37,8 @@ class FormBuilder {
     }
 
     FormBuilder addVariableSection(CursorRange range, String name, Cursor nameOffset) {
-        checkNameIsAvailable(name, range);
         var section = new VariableSection(range, name, nameOffset);
         sections.add(section);
-        variables.put(section.name(), section);
         return this;
     }
 
@@ -51,12 +51,18 @@ class FormBuilder {
     }
 
     private Form build() {
-        return new Form(range, sections, variables, lists);
+        var form = new Form(parent, range, sections, variables, lists);
+        sections.forEach(section -> section.setForm(form));
+        return form;
     }
 
     private void checkNameIsAvailable(String name, CursorRange range) {
-        if (variables.containsKey(name) || lists.containsKey(name)) {
+        if (nameIsDefined(name)) {
             throw new NameAlreadyExistsTemplateException(name, range);
         }
+    }
+
+    private boolean nameIsDefined(String name) {
+        return variables.containsKey(name) || lists.containsKey(name);
     }
 }

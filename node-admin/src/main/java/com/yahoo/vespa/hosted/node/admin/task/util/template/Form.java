@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * A form is an instance of a template to be filled, e.g. values set for variable sections, etc.
@@ -13,25 +14,24 @@ import java.util.Map;
  * @author hakonhall
  */
 public class Form extends Section {
+    private final Form parent;
     private final List<Section> sections;
 
-    private final Map<String, VariableSection> variables;
+    private final Map<String, String> variables;
     private final Map<String, ListSection> lists;
 
-    Form(CursorRange range, List<Section> sections, Map<String, VariableSection> variables, Map<String, ListSection> lists) {
+    Form(Form parent, CursorRange range, List<Section> sections, Map<String, String> variables,
+         Map<String, ListSection> lists) {
         super(range);
+        this.parent = parent;
         this.sections = List.copyOf(sections);
-        this.variables = Map.copyOf(variables);
+        this.variables = variables; // Mutable and referenced by the variable sections
         this.lists = Map.copyOf(lists);
     }
 
     /** Set the value of a variable expression, e.g. %{=color}. */
     public Form set(String name, String value) {
-        var section = variables.get(name);
-        if (section == null) {
-            throw new NoSuchNameTemplateException(this, name);
-        }
-        section.set(value);
+        variables.put(name, value);
         return this;
     }
 
@@ -78,5 +78,14 @@ public class Form extends Section {
     @Override
     public void appendTo(StringBuilder buffer) {
         sections.forEach(section -> section.appendTo(buffer));
+    }
+
+    Optional<String> getVariableValue(String name) {
+        String value = variables.get(name);
+        if (value != null) return Optional.of(value);
+        if (parent != null) {
+            return parent.getVariableValue(name);
+        }
+        return Optional.empty();
     }
 }

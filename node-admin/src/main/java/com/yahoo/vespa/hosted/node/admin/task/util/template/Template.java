@@ -5,7 +5,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.text.Cursor;
 import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -25,8 +25,13 @@ import java.util.function.Consumer;
  *
  * <p>Any newline (\n) following a non-variable directive is removed.</p>
  *
- * <p><b>Instantiate</b> the template to get a form ({@link #instantiate()}), fill it
- * (e.g. {@link Form#set(String, String) Form.set()}), and render the String ({@link Form#render()}).</p>
+ * <p>To use the template, <b>Instantiate</b> it to get a form ({@link #instantiate()}), fill it (e.g.
+ * {@link Form#set(String, String) Form.set()}), and render the String ({@link Form#render()}).</p>
+ *
+ * <p>A form (like a template) has direct sections, and indirect sections in the body of direct list
+ * sections (recursively). The variables that can be set for a form, are the variables defined in
+ * either direct or indirect variable sections.  Forms can only be added to direct list section in
+ * a form ({@link Form#add(String)}).</p>
  *
  * @see Form
  * @see TemplateParser
@@ -38,15 +43,18 @@ public class Template {
     private final Cursor end;
 
     private final List<Consumer<FormBuilder>> sections = new ArrayList<>();
-    private final HashSet<String> names = new HashSet<>();
+    /** The value contains the location of the name of a sample variable section (with that name). */
+    private final HashMap<String, Cursor> names = new HashMap<>();
 
     Template(Cursor start) {
         this.start = new Cursor(start);
         this.end = new Cursor(start);
     }
 
-    public Form instantiate() {
-        return FormBuilder.build(range(), sections);
+    public Form instantiate() { return instantiate(null); }
+
+    Form instantiate(Form parent) {
+        return FormBuilder.build(parent, range(), sections);
     }
 
     void appendLiteralSection(Cursor end) {
@@ -56,13 +64,12 @@ public class Template {
 
     void appendVariableSection(String name, Cursor nameOffset, Cursor end) {
         CursorRange range = verifyAndUpdateEnd(end);
-        verifyAndAddNewName(name, nameOffset);
         sections.add(formBuilder -> formBuilder.addVariableSection(range, name, nameOffset));
     }
 
     void appendListSection(String name, Cursor nameCursor, Cursor end, Template body) {
         CursorRange range = verifyAndUpdateEnd(end);
-        verifyAndAddNewName(name, nameCursor);
+        verifyNewName(name, nameCursor);
         sections.add(formBuilder -> formBuilder.addListSection(range, name, body));
     }
 
@@ -74,12 +81,10 @@ public class Template {
         return range;
     }
 
-    private String verifyAndAddNewName(String name, Cursor nameOffset) {
-        if (!names.add(name)) {
-            throw new IllegalArgumentException("'" + name + "' at " +
-                                               nameOffset.calculateLocation().lineAndColumnText() +
-                                               " has already been defined");
+    private void verifyNewName(String name, Cursor cursor) {
+        Cursor alreadyDefinedNameCursor = names.put(name, cursor);
+        if (alreadyDefinedNameCursor != null) {
+            throw new NameAlreadyExistsTemplateException(name, alreadyDefinedNameCursor, cursor);
         }
-        return name;
     }
 }

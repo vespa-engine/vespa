@@ -50,6 +50,23 @@ class TemplateFileTest {
                      form.render());
     }
 
+    @Test
+    void verifyVariableReferences() {
+        Form form = getForm("template3.tmp");
+        form.set("varname", "varvalue")
+            .set("innerVarSetAtTop", "val2");
+        form.add("l");
+        form.add("l")
+            .set("varname", "varvalue2");
+        assertEquals("varvalue\n" +
+                     "varvalue\n" +
+                     "inner varvalue\n" +
+                     "val2\n" +
+                     "inner varvalue2\n" +
+                     "val2\n",
+                     form.render());
+    }
+
     private Form getForm(String filename) {
         return TemplateFile.read(Path.of("src/test/resources/" + filename)).instantiate();
     }

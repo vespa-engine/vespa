@@ -26,7 +26,7 @@ class ListSection extends Section {
     String name() { return name; }
 
     Form add() {
-        var form = body.instantiate();
+        var form = body.instantiate(form());
         elements.add(form);
         return form;
     }

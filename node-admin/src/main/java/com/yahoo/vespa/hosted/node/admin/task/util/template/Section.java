@@ -11,10 +11,16 @@ import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
  */
 abstract class Section {
     private final CursorRange range;
+    private Form form;
 
     protected Section(CursorRange range) {
         this.range = range;
     }
+
+    void setForm(Form form) { this.form = form; }
+
+    /** Guaranteed to return non-null after FormBuilder::build() returns. */
+    protected Form form() { return form; }
 
     protected CursorRange range() { return range; }
 
