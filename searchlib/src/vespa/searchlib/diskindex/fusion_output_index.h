@@ -22,15 +22,16 @@ class FusionOutputIndex
 private:
     const index::Schema&                 _schema;
     const vespalib::string               _path;
-    const std::vector<FusionInputIndex>  _old_indexes;
+    const std::vector<FusionInputIndex>& _old_indexes;
     const uint32_t                       _doc_id_limit;
-    const bool                           _dynamic_k_pos_index_format;
+    bool                                 _dynamic_k_pos_index_format;
     const TuneFileIndexing&              _tune_file_indexing;
     const common::FileHeaderContext&     _file_header_context;
 public:
-    FusionOutputIndex(const index::Schema& schema, const vespalib::string& path, std::vector<FusionInputIndex> old_indexes, uint32_t doc_id_limit, bool dynamic_k_pos_index_format, const TuneFileIndexing& tune_file_indexing, const common::FileHeaderContext& file_header_context);
+    FusionOutputIndex(const index::Schema& schema, const vespalib::string& path, const std::vector<FusionInputIndex>& old_indexes, uint32_t doc_id_limit, const TuneFileIndexing& tune_file_indexing, const common::FileHeaderContext& file_header_context);
     ~FusionOutputIndex();
 
+    void set_dynamic_k_pos_index_format(bool dynamic_k_pos_index_format) { _dynamic_k_pos_index_format = dynamic_k_pos_index_format; }
     const index::Schema& get_schema() const noexcept { return _schema; }
     const vespalib::string& get_path() const noexcept { return _path; }
     const std::vector<FusionInputIndex>& get_old_indexes() const noexcept { return _old_indexes; }

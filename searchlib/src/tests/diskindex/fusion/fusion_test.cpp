@@ -357,7 +357,6 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
     ib.setPrefix(dump2dir);
     uint32_t numDocs = 12 + 1;
     uint32_t numWords = fic.getNumUniqueWords();
-    bool dynamicKPosOcc = false;
     MockFieldLengthInspector mock_field_length_inspector;
     TuneFileIndexing tuneFileIndexing;
     TuneFileSearch tuneFileSearch;
@@ -392,9 +391,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump2");
-        ASSERT_TRUE(Fusion::merge(schema, prefix + "dump3", sources, selector,
-                                  dynamicKPosOcc,
-                                  tuneFileIndexing,fileHeaderContext, executor, std::make_shared<FlushToken>()));
+        Fusion fusion(schema, prefix + "dump3", sources, selector,
+                      tuneFileIndexing,fileHeaderContext);
+        ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
         DiskIndex dw3(prefix + "dump3");
@@ -405,9 +404,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        ASSERT_TRUE(Fusion::merge(schema2, prefix + "dump4", sources, selector,
-                                  dynamicKPosOcc,
-                                  tuneFileIndexing, fileHeaderContext, executor, std::make_shared<FlushToken>()));
+        Fusion fusion(schema2, prefix + "dump4", sources, selector,
+                      tuneFileIndexing, fileHeaderContext);
+        ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
         DiskIndex dw4(prefix + "dump4");
@@ -418,9 +417,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        ASSERT_TRUE(Fusion::merge(schema3, prefix + "dump5", sources, selector,
-                                  dynamicKPosOcc,
-                                  tuneFileIndexing, fileHeaderContext, executor, std::make_shared<FlushToken>()));
+        Fusion fusion(schema3, prefix + "dump5", sources, selector,
+                      tuneFileIndexing, fileHeaderContext);
+        ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
         DiskIndex dw5(prefix + "dump5");
@@ -431,9 +430,10 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        ASSERT_TRUE(Fusion::merge(schema, prefix + "dump6", sources, selector,
-                                  !dynamicKPosOcc,
-                                  tuneFileIndexing, fileHeaderContext, executor, std::make_shared<FlushToken>()));
+        Fusion fusion(schema, prefix + "dump6", sources, selector,
+                      tuneFileIndexing, fileHeaderContext);
+        fusion.set_dynamic_k_pos_index_format(true);
+        ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
         DiskIndex dw6(prefix + "dump6");
@@ -444,9 +444,9 @@ FusionTest::requireThatFusionIsWorking(const vespalib::string &prefix, bool dire
         std::vector<vespalib::string> sources;
         SelectorArray selector(numDocs, 0);
         sources.push_back(prefix + "dump2");
-        ASSERT_TRUE(Fusion::merge(schema, prefix + "dump3", sources, selector,
-                                  dynamicKPosOcc,
-                                  tuneFileIndexing, fileHeaderContext, executor, std::make_shared<FlushToken>()));
+        Fusion fusion(schema, prefix + "dump3", sources, selector,
+                      tuneFileIndexing, fileHeaderContext);
+        ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
         DiskIndex dw3(prefix + "dump3");
@@ -487,9 +487,9 @@ FusionTest::try_merge_simple_indexes(const vespalib::string &dump_dir, const std
     TuneFileIndexing tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
     SelectorArray selector(20, 0);
-    return Fusion::merge(_schema, dump_dir, sources, selector,
-                         false,
-                         tuneFileIndexing, fileHeaderContext, executor, flush_token);
+    Fusion fusion(_schema, dump_dir, sources, selector,
+                  tuneFileIndexing, fileHeaderContext);
+    return fusion.merge(executor, flush_token);
 }
 
 void

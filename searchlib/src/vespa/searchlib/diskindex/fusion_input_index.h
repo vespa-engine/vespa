@@ -14,10 +14,11 @@ namespace search::diskindex {
 class FusionInputIndex
 {
 private:
-    vespalib::string  _path;
-    uint32_t          _index;
-    index::Schema     _schema;
-    DocIdMapping      _docIdMapping;
+    vespalib::string     _path;
+    uint32_t             _index;
+    const SelectorArray* _selector;
+    index::Schema        _schema;
+    DocIdMapping         _docIdMapping;
 
 public:
     FusionInputIndex(const vespalib::string& path, uint32_t index, const SelectorArray& selector);
@@ -25,6 +26,7 @@ public:
     FusionInputIndex & operator = (FusionInputIndex&&) = default;
     ~FusionInputIndex();
 
+    void setup();
     const vespalib::string& getPath() const noexcept { return _path; }
     uint32_t getIndex() const noexcept { return _index; }
     const DocIdMapping& getDocIdMapping() const noexcept { return _docIdMapping; }
