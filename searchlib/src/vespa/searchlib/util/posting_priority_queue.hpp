@@ -32,4 +32,17 @@ PostingPriorityQueue<Reader>::adjust()
     *to = changed;   // Save changed value at right location
 }
 
+template <class Reader>
+void
+PostingPriorityQueue<Reader>::setup(uint32_t heap_limit)
+{
+    _heap_limit = heap_limit;
+    for (auto ref : _vec) {
+        assert(ref.get()->isValid());
+    }
+    if (_vec.size() >= heap_limit) {
+        std::sort(_vec.begin(), _vec.end());
+    }
+}
+
 }

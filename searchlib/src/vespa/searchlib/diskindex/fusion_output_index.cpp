@@ -11,6 +11,7 @@ FusionOutputIndex::FusionOutputIndex(const index::Schema& schema, const vespalib
       _old_indexes(std::move(old_indexes)),
       _doc_id_limit(doc_id_limit),
       _dynamic_k_pos_index_format(false),
+      _force_small_merge_chunk(false),
       _tune_file_indexing(tune_file_indexing),
       _file_header_context(file_header_context)
 {

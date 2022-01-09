@@ -363,8 +363,11 @@ FakeMemTreeOccFactory::setup(const std::vector<const FakeWord *> &fws)
         }
         ++i;
     }
-    heap.merge(_mgr, 4, flush_token);
-    assert(heap.empty());
+    heap.setup(4);
+    heap.set_merge_chunk(100000);
+    while (!heap.empty()) {
+        heap.merge(_mgr, flush_token);
+    }
     _mgr.finalize();
 }
 

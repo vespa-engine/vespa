@@ -42,6 +42,7 @@ public:
 
     ~Fusion();
     void set_dynamic_k_pos_index_format(bool dynamic_k_pos_index_format) { _fusion_out_index.set_dynamic_k_pos_index_format(dynamic_k_pos_index_format); }
+    void set_force_small_merge_chunk(bool force_small_merge_chunk) { _fusion_out_index.set_force_small_merge_chunk(force_small_merge_chunk); }
     bool merge(vespalib::ThreadExecutor& executor, std::shared_ptr<IFlushToken> flush_token);
 };
 
