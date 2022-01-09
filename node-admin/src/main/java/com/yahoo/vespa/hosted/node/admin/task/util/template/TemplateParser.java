@@ -11,15 +11,15 @@ import java.util.Optional;
  *
  * @author hakonhall
  */
-public class TemplateParser {
+class TemplateParser {
     private final TemplateDescriptor descriptor;
     private final Cursor start;
     private final Cursor current;
     private final Template template;
     private final FormEndsIn formEndsIn;
 
-    public static Template parse(TemplateDescriptor descriptor, String text) {
-        return parse(new TemplateDescriptor(descriptor), new Cursor(text), FormEndsIn.EOT).template;
+    static TemplateParser parse(String text, TemplateDescriptor descriptor) {
+        return parse(new TemplateDescriptor(descriptor), new Cursor(text), FormEndsIn.EOT);
     }
 
     private static TemplateParser parse(TemplateDescriptor descriptor, Cursor start, FormEndsIn formEndsIn) {
@@ -28,7 +28,7 @@ public class TemplateParser {
         return parser;
     }
 
-    enum FormEndsIn { EOT, END }
+    private enum FormEndsIn { EOT, END }
 
     TemplateParser(TemplateDescriptor descriptor, Cursor start, FormEndsIn formEndsIn) {
         this.descriptor = descriptor;
@@ -48,7 +48,14 @@ public class TemplateParser {
                 template.appendLiteralSection(current);
             }
 
-            if (current.eot()) return;
+            if (current.eot()) {
+                if (formEndsIn == FormEndsIn.END) {
+                    throw new BadTemplateException(current,
+                                                   "Missing end directive for section started at " +
+                                                   start.calculateLocation().lineAndColumnText());
+                }
+                return;
+            }
 
             if (!parseSection()) return;
         } while (true);
@@ -56,10 +63,13 @@ public class TemplateParser {
 
     /** Returns true if end was reached (according to formEndsIn). */
     private boolean parseSection() {
+        var startOfDirective = new Cursor(current);
         current.skip(descriptor.startDelimiter());
 
-        if (current.skip('=')) {
+        if (current.skip(descriptor.variableDirectiveChar())) {
             parseVariableSection();
+        } else if (current.skip(descriptor.commentChar())) {
+            parseCommentSection(startOfDirective);
         } else {
             var startOfType = new Cursor(current);
             String type = skipId().orElseThrow(() -> new BadTemplateException(current, "Missing section name"));
@@ -84,8 +94,18 @@ public class TemplateParser {
     private void parseVariableSection() {
         var nameStart = new Cursor(current);
         String name = parseId();
-        parseEndDelimiter(false);
+        parseEndDelimiter(true);
         template.appendVariableSection(name, nameStart, current);
+    }
+
+    private void parseCommentSection(Cursor startOfDirective) {
+        if (parseEndDelimiter(false)) {
+            current.advancePast('\n');
+        } else {
+            current.advanceTo('\n');
+        }
+
+        template.appendCommentSection(current);
     }
 
     private void parseEndDirective() {
@@ -93,7 +113,7 @@ public class TemplateParser {
     }
 
     private void parseListSection() {
-        skipWhitespace();
+        skipRequiredWhitespaces();
         var startOfName = new Cursor(current);
         String name = parseId();
         parseEndDelimiter(true);
@@ -104,8 +124,8 @@ public class TemplateParser {
         template.appendListSection(name, startOfName, current, bodyParser.template());
     }
 
-    private void skipWhitespace() {
-        if (!current.skipWhitespace()) {
+    private void skipRequiredWhitespaces() {
+        if (!current.skipWhitespaces()) {
             throw new BadTemplateException(current, "Expected whitespace");
         }
     }
@@ -116,11 +136,14 @@ public class TemplateParser {
 
     private Optional<String> skipId() { return Token.skipId(current); }
 
-    private void parseEndDelimiter(boolean newlineMayBeRemoved) {
+    private boolean parseEndDelimiter(boolean skipNewline) {
+        boolean removeNewline = current.skip(descriptor.removeNewlineChar());
         if (!current.skip(descriptor.endDelimiter()))
             throw new BadTemplateException(current, "Expected section end (" + descriptor.endDelimiter() + ")");
 
-        if (descriptor.removeNewlineAfterSection() && newlineMayBeRemoved)
+        if (skipNewline && removeNewline)
             current.skip('\n');
+
+        return removeNewline;
     }
 }

@@ -30,6 +30,7 @@ public class Cursor {
     public String toString() { return text.substring(offset); }
 
     public int offset() { return offset; }
+    public boolean bot() { return offset == 0; }
     public boolean eot() { return offset == text.length(); }
     public boolean startsWith(char c) { return offset < text.length() && text.charAt(offset) == c; }
     public boolean startsWith(String prefix) { return text.startsWith(prefix, offset); }
@@ -90,30 +91,68 @@ public class Cursor {
         }
     }
 
-    /** Returns true if at least one whitespace was skipped. */
+    public boolean skipBackwards(String substring) {
+        int newOffset = offset - substring.length();
+        if (newOffset < 0) return false;
+        if (text.startsWith(substring, newOffset)) {
+            offset = newOffset;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** If the current char is a whitespace, skip it and return true. */
     public boolean skipWhitespace() {
         if (!eot() && Character.isWhitespace(getChar())) {
-            do {
-                ++offset;
-            } while (!eot() && Character.isWhitespace(getChar()));
+            ++offset;
+            return true;
+        } else {
+            return false;
+        }
+    }
 
+    /** Returns true if at least one whitespace was skipped. */
+    public boolean skipWhitespaces() {
+        if (skipWhitespace()) {
+            while (skipWhitespace())
+                ++offset;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /** Return false if eot(), otherwise advance to the next char and return true. */
+    public boolean increment() {
+        if (eot()) return false;
+        ++offset;
+        return true;
+    }
+
+    /** Return false if bot(), otherwise retreat to the previous char and return true. */
+    public boolean decrement() {
+        if (bot()) return false;
+        --offset;
+        return true;
+    }
+
+    /**
+     * Advance {@code distance} chars until bot() or eot() is reached (distance may be negative),
+     * and return true if this cursor moved the full distance.
+     */
+    public boolean advance(int distance) {
+        int newOffset = offset + distance;
+        if (newOffset < 0) {
+            this.offset = 0;
+            return false;
+        } else if (newOffset > text.length()) {
+            this.offset = text.length();
+            return false;
+        } else {
+            this.offset = newOffset;
             return true;
         }
-
-        return false;
-    }
-
-    /** Advance to the next char (if any) and return eot(). */
-    public boolean increment() {
-        if (eot()) return true;
-        ++offset;
-        return eot();
-    }
-
-    /** Advance {@code distance} chars and return {@link #eot()}. */
-    public boolean advance(int distance) {
-        this.offset = Math.max(0, Math.min(this.offset + distance, text.length()));
-        return eot();
     }
 
     /** Advance pointer until start of needle is found (and return true), or EOT is reached (and return false). */
@@ -128,10 +167,32 @@ public class Cursor {
         }
     }
 
+    /** Advance pointer until start of needle is found (and return true), or EOT is reached (and return false). */
+    public boolean advanceTo(char needle) {
+        int index = text.indexOf(needle, offset);
+        if (index == -1) {
+            offset = text.length();
+            return false; // and eot() is true
+        } else {
+            offset = index;
+            return true; // and eot() is false
+        }
+    }
+
     /** Advance pointer past needle (and return true), or to EOT (and return false). */
     public boolean advancePast(String needle) {
         if (advanceTo(needle)) {
             offset += needle.length();
+            return true; // and eot() may or may not be true
+        } else {
+            return false; // and eot() is true
+        }
+    }
+
+    /** Advance pointer past needle (and return true), or to EOT (and return false). */
+    public boolean advancePast(char needle) {
+        if (advanceTo(needle)) {
+            ++offset;
             return true; // and eot() may or may not be true
         } else {
             return false; // and eot() is true

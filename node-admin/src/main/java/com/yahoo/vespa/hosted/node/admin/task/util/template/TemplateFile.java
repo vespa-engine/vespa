@@ -15,6 +15,6 @@ public class TemplateFile {
 
     public static Template read(Path path, TemplateDescriptor descriptor) {
         String content = new UnixPath(path).readUtf8File();
-        return TemplateParser.parse(descriptor, content);
+        return Template.from(content, descriptor);
     }
 }

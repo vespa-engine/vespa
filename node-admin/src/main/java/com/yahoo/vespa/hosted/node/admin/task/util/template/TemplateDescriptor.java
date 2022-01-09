@@ -7,16 +7,18 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
  * @author hakonhall
  */
 public class TemplateDescriptor {
+    private static final char VARIABLE_DIRECTIVE_CHAR = '=';
+    private static final char REMOVE_NEWLINE_CHAR = '|';
+    private static final char COMMENT_CHAR = '#';
+
     private String startDelimiter = "%{";
     private String endDelimiter = "}";
-    private boolean removeNewlineAfterSection = true;
 
     public TemplateDescriptor() {}
 
     public TemplateDescriptor(TemplateDescriptor that) {
         this.startDelimiter = that.startDelimiter;
         this.endDelimiter = that.endDelimiter;
-        this.removeNewlineAfterSection = that.removeNewlineAfterSection;
     }
 
     /** Use these delimiters instead of the standard "%{" and "}" to start and end a template directive. */
@@ -26,13 +28,10 @@ public class TemplateDescriptor {
         return this;
     }
 
-    /** Whether to remove a newline following each (non-variable) section, by default true. */
-    public TemplateDescriptor setRemoveNewlineAfterSection(boolean removeNewlineAfterSection) {
-        this.removeNewlineAfterSection = removeNewlineAfterSection;
-        return this;
-    }
-
     public String startDelimiter() { return startDelimiter; }
     public String endDelimiter() { return endDelimiter; }
-    public boolean removeNewlineAfterSection() { return removeNewlineAfterSection; }
+
+    char variableDirectiveChar() { return VARIABLE_DIRECTIVE_CHAR; }
+    char removeNewlineChar() { return REMOVE_NEWLINE_CHAR; }
+    char commentChar() { return COMMENT_CHAR; }
 }

@@ -14,10 +14,10 @@ class Token {
         if (cursor.eot() || !isIdStart(cursor.getChar())) return Optional.empty();
 
         Cursor start = new Cursor(cursor);
-        cursor.advance(1);
+        cursor.increment();
 
         while (!cursor.eot() && isIdPart(cursor.getChar()))
-            cursor.advance(1);
+            cursor.increment();
 
         return Optional.of(new CursorRange(start, cursor).string());
     }

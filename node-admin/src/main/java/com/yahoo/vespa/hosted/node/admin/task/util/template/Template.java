@@ -16,14 +16,17 @@ import java.util.function.Consumer;
  *
  * <pre>
  *     template: section*
- *     section: literal | variable | list
- *     literal: # plain text not containing %{
+ *     section: literal | variable | list | line-comment
+ *     literal: plain text not containing %{
  *     variable: %{=identifier}
  *     list: %{list identifier}template%{end}
- *     identifier: # a valid Java identifier
+ *     line-comment: %{#}
+ *     identifier: a valid Java identifier
  * </pre>
  *
- * <p>Any newline (\n) following a non-variable directive is removed.</p>
+ * <p>If the directive's end delimiter (}) is preceded by a "|" char, then any newline (\n)
+ * following the end delimiter is removed.  Or in the case of line-comment: the newline terminating
+ * the line comment is removed.</p>
  *
  * <p>To use the template, <b>Instantiate</b> it to get a form ({@link #instantiate()}), fill it (e.g.
  * {@link Form#set(String, String) Form.set()}), and render the String ({@link Form#render()}).</p>
@@ -45,6 +48,12 @@ public class Template {
     private final List<Consumer<FormBuilder>> sections = new ArrayList<>();
     /** The value contains the location of the name of a sample variable section (with that name). */
     private final HashMap<String, Cursor> names = new HashMap<>();
+
+    public static Template from(String text) { return from(text, new TemplateDescriptor()); }
+
+    public static Template from(String text, TemplateDescriptor descriptor) {
+        return TemplateParser.parse(text, descriptor).template();
+    }
 
     Template(Cursor start) {
         this.start = new Cursor(start);
@@ -71,6 +80,10 @@ public class Template {
         CursorRange range = verifyAndUpdateEnd(end);
         verifyNewName(name, nameCursor);
         sections.add(formBuilder -> formBuilder.addListSection(range, name, body));
+    }
+
+    void appendCommentSection(Cursor end) {
+        verifyAndUpdateEnd(end);
     }
 
     private CursorRange range() { return new CursorRange(start, end); }

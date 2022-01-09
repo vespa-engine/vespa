@@ -67,7 +67,38 @@ class TemplateFileTest {
                      form.render());
     }
 
+    @Test
+    void verifyNewlineRemoval() {
+        Form form = makeForm("a%{list a}\n" +
+                             "b%{end}\n" +
+                             "c%{list c|}\n" +
+                             "d%{end|}\n" +
+                             "e\n");
+        form.add("a");
+        form.add("c");
+
+        assertEquals("a\n" +
+                     "b\n" +
+                     "cde\n",
+                     form.render());
+    }
+
+    @Test
+    void verifyComment() {
+        assertEquals("first\n" +
+                     "second\n" +
+                     "third and still third\n",
+                     makeForm("first\n" +
+                              "second%{#} rest of line is ignored\n" +
+                              "third%{#|} this line continues on the next\n" +
+                              " and still third\n").render());
+    }
+
     private Form getForm(String filename) {
         return TemplateFile.read(Path.of("src/test/resources/" + filename)).instantiate();
+    }
+
+    private Form makeForm(String templateText) {
+        return Template.from(templateText).instantiate();
     }
 }
