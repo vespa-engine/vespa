@@ -108,7 +108,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         WEB(4,"web"),
         PROGRAMMATIC(5, "prog"),
         YQL(6, "yql"),
-        SELECT(7, "select");
+        SELECT(7, "select"),
+        WEAKAND(8, "weakAnd");
 
         private final int intValue;
         private final String stringValue;
@@ -123,7 +124,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             for (Type type : Type.values())
                 if (type.stringValue.equals(typeString))
                     return type;
-            return ALL;
+            throw new IllegalArgumentException("No query type '" + typeString + "'");
         }
 
         public int asInt() { return intValue; }

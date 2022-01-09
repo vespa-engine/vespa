@@ -29,7 +29,7 @@ public final class ParserFactory {
     public static Parser newInstance(Query.Type type, ParserEnvironment environment) {
         switch (type) {
             case ALL:
-                return new AllParser(environment);
+                return new AllParser(environment, false);
             case ANY:
                 return new AnyParser(environment);
             case PHRASE:
@@ -44,6 +44,8 @@ public final class ParserFactory {
                 return new YqlParser(environment);
             case SELECT:
                 return new SelectParser(environment);
+            case WEAKAND:
+                return new AllParser(environment, true);
             default:
                 throw new UnsupportedOperationException(type.toString());
         }

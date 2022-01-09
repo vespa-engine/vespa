@@ -54,7 +54,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
     }
 
     private static Item parseQuery(String query) {
-        AllParser parser = new AllParser(new ParserEnvironment().setLinguistics(TestLinguistics.INSTANCE));
+        AllParser parser = new AllParser(new ParserEnvironment().setLinguistics(TestLinguistics.INSTANCE), false);
         return parser.parse(new Parsable().setQuery(query).setLanguage(Language.CHINESE_SIMPLIFIED)).getRoot();
     }
 

@@ -18,6 +18,7 @@ import com.yahoo.search.query.parser.ParserFactory;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
+import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.chain.After;
 import com.yahoo.yolean.chain.Before;
 import com.yahoo.yolean.chain.Provides;
@@ -93,7 +94,9 @@ public class MinimalQueryInserter extends Searcher {
             Parsable parsable = Parsable.fromQueryModel(query.getModel()).setQuery(query.properties().getString(YQL));
             newTree = parser.parse(parsable);
         } catch (RuntimeException e) {
-            return new Result(query, ErrorMessage.createInvalidQueryParameter("Could not instantiate query from YQL", e));
+            return new Result(query, ErrorMessage.createInvalidQueryParameter("Could not create query from YQL: " +
+                                                                              Exceptions.toMessageString(e),
+                                                                              e));
         }
         if (parser.getOffset() != null) {
             int maxHits = query.properties().getInteger(MAX_HITS);

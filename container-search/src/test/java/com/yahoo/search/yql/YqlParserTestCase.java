@@ -399,7 +399,7 @@ public class YqlParserTestCase {
         assertFalse(root instanceof WordItem);
         assertTrue(root instanceof PhraseSegmentItem);
 
-        root = parse("select foo from bar where baz contains ([{grammar:\"raw\"}]\"yoni jo dima\")").getRoot();
+        root = parse("select foo from bar where baz contains ({grammar:\"raw\"}\"yoni jo dima\")").getRoot();
         assertEquals("baz:yoni jo dima", root.toString());
         assertTrue(root instanceof WordItem);
         assertFalse(root instanceof ExactStringItem);
@@ -410,7 +410,7 @@ public class YqlParserTestCase {
         AndItem andItem = (AndItem) root;
         assertEquals(3, andItem.getItemCount());
 
-        root = parse("select foo from bar where [{grammar:\"raw\"}]userInput(\"yoni jo dima\")").getRoot();
+        root = parse("select foo from bar where {grammar:\"raw\"}userInput(\"yoni jo dima\")").getRoot();
         assertTrue(root instanceof WordItem);
         assertTrue(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem)root).getWord());
@@ -419,9 +419,9 @@ public class YqlParserTestCase {
     @Test
     public void testAccentDropping() {
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {accentDrop: false} ]\"colors\")").isNormalizable());
+                                "( {accentDrop: false} \"colors\")").isNormalizable());
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                               "([ {accentDrop: true} ]\"colors\")").isNormalizable());
+                               "( {accentDrop: true} \"colors\")").isNormalizable());
         assertTrue(getRootWord("select foo from bar where baz contains " +
                                "\"colors\"").isNormalizable());
     }
@@ -429,9 +429,9 @@ public class YqlParserTestCase {
     @Test
     public void testCaseNormalization() {
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                               "([ {normalizeCase: false} ]\"colors\")").isLowercased());
+                               "( {normalizeCase: false} \"colors\")").isLowercased());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "([ {normalizeCase: true} ]\"colors\")").isLowercased());
+                                "( {normalizeCase: true} \"colors\")").isLowercased());
         assertFalse(getRootWord("select foo from bar where baz contains " +
                                 "\"colors\"").isLowercased());
     }
@@ -440,10 +440,10 @@ public class YqlParserTestCase {
     public void testSegmentingRule() {
         assertEquals(SegmentingRule.PHRASE,
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {andSegmenting: false} ]\"colors\")").getSegmentingRule());
+                                 "( {andSegmenting: false} \"colors\")").getSegmentingRule());
         assertEquals(SegmentingRule.BOOLEAN_AND,
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {andSegmenting: true} ]\"colors\")").getSegmentingRule());
+                                 "( {andSegmenting: true} \"colors\")").getSegmentingRule());
         assertEquals(SegmentingRule.LANGUAGE_DEFAULT,
                      getRootWord("select foo from bar where baz contains " +
                                  "\"colors\"").getSegmentingRule());
@@ -453,10 +453,10 @@ public class YqlParserTestCase {
     public void testNfkc() {
         assertEquals("a\u030a",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {nfkc: false} ]\"a\\u030a\")").getWord());
+                                 "( {nfkc: false} \"a\\u030a\")").getWord());
         assertEquals("\u00e5",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {nfkc: true} ]\"a\\u030a\")").getWord());
+                                 "( {nfkc: true} \"a\\u030a\")").getWord());
         assertEquals("No NKFC by default", 
                      "a\u030a",
                      getRootWord("select foo from bar where baz contains " +
@@ -465,19 +465,19 @@ public class YqlParserTestCase {
 
     @Test
     public void testImplicitTransforms() {
-        assertFalse(getRootWord("select foo from bar where baz contains ([ {implicitTransforms: " +
-                                "false} ]\"cox\")").isFromQuery());
-        assertTrue(getRootWord("select foo from bar where baz contains ([ {implicitTransforms: " +
-                               "true} ]\"cox\")").isFromQuery());
+        assertFalse(getRootWord("select foo from bar where baz contains ({implicitTransforms: " +
+                                "false} \"cox\")").isFromQuery());
+        assertTrue(getRootWord("select foo from bar where baz contains ({implicitTransforms: " +
+                               "true} \"cox\")").isFromQuery());
         assertTrue(getRootWord("select foo from bar where baz contains \"cox\"").isFromQuery());
     }
 
     @Test
     public void testConnectivity() {
         QueryTree parsed = parse("select foo from bar where " +
-                                 "title contains ([{id: 1, connectivity: {\"id\": 3, weight: 7.0}}]\"madonna\") " +
-                                 "and title contains ([{id: 2}]\"saint\") " +
-                                 "and title contains ([{id: 3}]\"angel\")");
+                                 "title contains ({id: 1, connectivity: {\"id\": 3, weight: 7.0}}\"madonna\") " +
+                                 "and title contains ({id: 2}\"saint\") " +
+                                 "and title contains ({id: 3}\"angel\")");
         assertEquals("AND title:madonna title:saint title:angel",
                      parsed.toString());
         AndItem root = (AndItem)parsed.getRoot();
@@ -489,7 +489,7 @@ public class YqlParserTestCase {
         assertNull(second.getConnectedItem());
 
         assertParseFail("select foo from bar where " +
-                        "title contains ([{id: 1, connectivity: {id: 4, weight: 7.0}}]\"madonna\") " +
+                        "title contains ({id: 1, connectivity: {id: 4, weight: 7.0}}\"madonna\") " +
                         "and title contains ({id: 2}\"saint\") " +
                         "and title contains ({id: 3}\"angel\")",
                         new IllegalArgumentException("Item 'title:madonna' was specified to connect to item with ID 4, " +
