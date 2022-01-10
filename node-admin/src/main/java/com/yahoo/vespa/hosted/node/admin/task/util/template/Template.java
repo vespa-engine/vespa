@@ -16,10 +16,10 @@ import java.util.function.Consumer;
  *
  * <pre>
  *     template: section*
- *     section: literal | variable | list
+ *     section: literal | variable | subform
  *     literal: plain text not containing %{
  *     variable: %{=identifier}
- *     list: %{list identifier}template%{end}
+ *     subform: %{form identifier}template%{end}
  *     identifier: a valid Java identifier
  * </pre>
  *
@@ -29,10 +29,9 @@ import java.util.function.Consumer;
  * <p>To use the template, <b>Instantiate</b> it to get a form ({@link #instantiate()}), fill it (e.g.
  * {@link Form#set(String, String) Form.set()}), and render the String ({@link Form#render()}).</p>
  *
- * <p>A form (like a template) has direct sections, and indirect sections in the body of direct list
+ * <p>A form (like a template) has direct sections, and indirect sections in the body of direct subforms
  * sections (recursively). The variables that can be set for a form, are the variables defined in
- * either direct or indirect variable sections.  Forms can only be added to direct list section in
- * a form ({@link Form#add(String)}).</p>
+ * either direct or indirect variable sections.</p>
  *
  * @see Form
  * @see TemplateParser
@@ -74,10 +73,10 @@ public class Template {
         sections.add(formBuilder -> formBuilder.addVariableSection(range, name, nameOffset));
     }
 
-    void appendListSection(String name, Cursor nameCursor, Cursor end, Template body) {
+    void appendSubformSection(String name, Cursor nameCursor, Cursor end, Template body) {
         CursorRange range = verifyAndUpdateEnd(end);
         verifyNewName(name, nameCursor);
-        sections.add(formBuilder -> formBuilder.addListSection(range, name, body));
+        sections.add(formBuilder -> formBuilder.addSubformSection(range, name, body));
     }
 
     private CursorRange range() { return new CursorRange(start, end); }

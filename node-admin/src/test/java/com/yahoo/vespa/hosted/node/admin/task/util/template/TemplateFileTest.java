@@ -20,10 +20,10 @@ class TemplateFileTest {
     }
 
     @Test
-    void verifySimpleListSection() {
+    void verifySimpleSubformSection() {
         Form form = getForm("template1.tmp");
         form.set("varname", "varvalue")
-            .add("listname")
+            .add("formname")
             .set("varname", "different varvalue")
             .set("varname2", "varvalue2");
         assertEquals("variable section 'varvalue'\n" +
@@ -34,14 +34,14 @@ class TemplateFileTest {
     }
 
     @Test
-    void verifyNestedListSection() {
+    void verifyNestedSubformSection() {
         Form form = getForm("template2.tmp");
-        Form A0 = form.add("listA");
-        Form A0B0 = A0.add("listB");
-        Form A0B1 = A0.add("listB");
+        Form A0 = form.add("formA");
+        Form A0B0 = A0.add("formB");
+        Form A0B1 = A0.add("formB");
 
-        Form A1 = form.add("listA");
-        Form A1B0 = A1.add("listB");
+        Form A1 = form.add("formA");
+        Form A1B0 = A1.add("formB");
         assertEquals("body A\n" +
                      "body B\n" +
                      "body B\n" +
@@ -69,9 +69,9 @@ class TemplateFileTest {
 
     @Test
     void verifyNewlineRemoval() {
-        Form form = makeForm("a%{list a}\n" +
+        Form form = makeForm("a%{form a}\n" +
                              "b%{end}\n" +
-                             "c%{list c|}\n" +
+                             "c%{form c|}\n" +
                              "d%{end|}\n" +
                              "e\n");
         form.add("a");

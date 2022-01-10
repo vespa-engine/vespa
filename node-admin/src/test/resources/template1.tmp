@@ -1,9 +1,9 @@
 variable section '%{=varname}'
-%{list listname|}
+%{form formname|}
 same variable section '%{=varname}'
 different variable section '%{=varname2}'
-%{list innerlistname|}
-inner list text
+%{form innerformname|}
+inner form text
 %{end|}
 between ends
 %{end|}

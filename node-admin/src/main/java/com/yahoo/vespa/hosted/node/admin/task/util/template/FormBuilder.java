@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 class FormBuilder {
     private final List<Section> sections = new ArrayList<>();
     private final Map<String, String> variables = new HashMap<>();
-    private final Map<String, ListSection> lists = new HashMap<>();
+    private final Map<String, SubformSection> subforms = new HashMap<>();
     private final Form parent;
     private final CursorRange range;
 
@@ -42,16 +42,16 @@ class FormBuilder {
         return this;
     }
 
-    FormBuilder addListSection(CursorRange range, String name, Template body) {
+    FormBuilder addSubformSection(CursorRange range, String name, Template body) {
         checkNameIsAvailable(name, range);
-        var section = new ListSection(range, name, body);
+        var section = new SubformSection(range, name, body);
         sections.add(section);
-        lists.put(section.name(), section);
+        subforms.put(section.name(), section);
         return this;
     }
 
     private Form build() {
-        var form = new Form(parent, range, sections, variables, lists);
+        var form = new Form(parent, range, sections, variables, subforms);
         sections.forEach(section -> section.setForm(form));
         return form;
     }
@@ -63,6 +63,6 @@ class FormBuilder {
     }
 
     private boolean nameIsDefined(String name) {
-        return variables.containsKey(name) || lists.containsKey(name);
+        return variables.containsKey(name) || subforms.containsKey(name);
     }
 }

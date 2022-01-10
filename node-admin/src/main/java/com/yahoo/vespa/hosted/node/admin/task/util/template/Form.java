@@ -18,15 +18,15 @@ public class Form extends Section {
     private final List<Section> sections;
 
     private final Map<String, String> variables;
-    private final Map<String, ListSection> lists;
+    private final Map<String, SubformSection> subforms;
 
     Form(Form parent, CursorRange range, List<Section> sections, Map<String, String> variables,
-         Map<String, ListSection> lists) {
+         Map<String, SubformSection> subforms) {
         super(range);
         this.parent = parent;
         this.sections = List.copyOf(sections);
         this.variables = variables; // Mutable and referenced by the variable sections
-        this.lists = Map.copyOf(lists);
+        this.subforms = Map.copyOf(subforms);
     }
 
     /** Set the value of a variable expression, e.g. %{=color}. */
@@ -48,21 +48,9 @@ public class Form extends Section {
         return set(name, value);
     }
 
-    /**
-     * Append a list element form.  A list section is declared as follows:
-     *
-     * <pre>
-     *     %{list name}...
-     *     %{end}
-     * </pre>
-     *
-     * <p>The body between %{list name} and %{end} is instantiated as a form, and appended after
-     * any previously added forms.</p>
-     *
-     * @return the added form
-     */
+    /** Add an instance of a subform section after any previously added (for the given name)  */
     public Form add(String name) {
-        var section = lists.get(name);
+        var section = subforms.get(name);
         if (section == null) {
             throw new NoSuchNameTemplateException(this, name);
         }

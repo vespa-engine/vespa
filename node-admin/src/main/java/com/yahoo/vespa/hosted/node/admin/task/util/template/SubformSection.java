@@ -7,17 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a template list section
+ * Represents a template subform section
  *
  * @see Template
  * @author hakonhall
  */
-class ListSection extends Section {
+class SubformSection extends Section {
     private final Template body;
     private final String name;
     private final List<Form> elements = new ArrayList<>();
 
-    ListSection(CursorRange range, String name, Template body) {
+    SubformSection(CursorRange range, String name, Template body) {
         super(range);
         this.name = name;
         this.body = body;
