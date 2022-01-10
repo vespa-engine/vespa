@@ -39,7 +39,9 @@ namespace search::diskindex {
 
 namespace {
 
+constexpr uint32_t renumber_word_ids_heap_limit = 4;
 constexpr uint32_t renumber_word_ids_merge_chunk = 1000000;
+constexpr uint32_t merge_postings_heap_limit = 4;
 constexpr uint32_t merge_postings_merge_chunk = 50000;
 
 vespalib::string
@@ -177,7 +179,7 @@ FieldMerger::renumber_word_ids_start()
         return false;
     }
     _word_aggregator = std::make_unique<WordAggregator>();
-    _word_heap->setup(4);
+    _word_heap->setup(renumber_word_ids_heap_limit);
     _word_heap->set_merge_chunk(_fusion_out_index.get_force_small_merge_chunk() ? 1u : renumber_word_ids_merge_chunk);
     return true;
 }
@@ -361,7 +363,7 @@ FieldMerger::setup_merge_heap()
             _heap->initialAdd(reader.get());
         }
     }
-    _heap->setup(4);
+    _heap->setup(merge_postings_heap_limit);
     _heap->set_merge_chunk(_fusion_out_index.get_force_small_merge_chunk() ? 1u : merge_postings_merge_chunk);
     return true;
 }
