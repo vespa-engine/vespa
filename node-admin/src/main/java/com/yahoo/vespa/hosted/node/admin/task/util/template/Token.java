@@ -10,6 +10,10 @@ import java.util.Optional;
  * @author hakonhall
  */
 class Token {
+    static final char NEGATE_CHAR = '!';
+    static final char REMOVE_NEWLINE_CHAR = '|';
+    static final char VARIABLE_DIRECTIVE_CHAR = '=';
+
     static Optional<String> skipId(Cursor cursor) {
         if (cursor.eot() || !isIdStart(cursor.getChar())) return Optional.empty();
 

@@ -64,7 +64,7 @@ class TemplateParser {
         var startOfDirective = new Cursor(current);
         current.skip(descriptor.startDelimiter());
 
-        if (current.skip(descriptor.variableDirectiveChar())) {
+        if (current.skip(Token.VARIABLE_DIRECTIVE_CHAR)) {
             parseVariableSection();
         } else {
             var startOfType = new Cursor(current);
@@ -123,7 +123,7 @@ class TemplateParser {
     private Optional<String> skipId() { return Token.skipId(current); }
 
     private boolean parseEndDelimiter(boolean skipNewline) {
-        boolean removeNewline = current.skip(descriptor.removeNewlineChar());
+        boolean removeNewline = current.skip(Token.REMOVE_NEWLINE_CHAR);
         if (!current.skip(descriptor.endDelimiter()))
             throw new BadTemplateException(current, "Expected section end (" + descriptor.endDelimiter() + ")");
 
