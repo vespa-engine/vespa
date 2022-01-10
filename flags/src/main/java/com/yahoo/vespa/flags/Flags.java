@@ -53,7 +53,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag TLS_SIZE_FRACTION = defineDoubleFlag(
-            "tls-size-fraction", 0.07,
+            "tls-size-fraction", 0.04,
             List.of("baldersheim"), "2021-12-20", "2022-02-01",
             "Fraction of disk available for transaction log",
             "Takes effect at redeployment",
