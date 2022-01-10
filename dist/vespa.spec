@@ -50,11 +50,11 @@ BuildRequires: maven
 %define _java_home /usr/lib/jvm/java-11-amazon-corretto.%{?_arch}
 BuildRequires: python3-pytest
 %else
-BuildRequires: devtoolset-10-gcc-c++
-BuildRequires: devtoolset-10-libatomic-devel
-BuildRequires: devtoolset-10-binutils
+BuildRequires: devtoolset-11-gcc-c++
+BuildRequires: devtoolset-11-libatomic-devel
+BuildRequires: devtoolset-11-binutils
 BuildRequires: rh-maven35
-%define _devtoolset_enable /opt/rh/devtoolset-10/enable
+%define _devtoolset_enable /opt/rh/devtoolset-11/enable
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
 BuildRequires: python36-pytest
 %endif
@@ -69,10 +69,10 @@ BuildRequires: gcc-toolset-11-binutils
 BuildRequires: gcc-toolset-11-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %else
-BuildRequires: gcc-toolset-10-gcc-c++
-BuildRequires: gcc-toolset-10-binutils
-BuildRequires: gcc-toolset-10-libatomic-devel
-%define _devtoolset_enable /opt/rh/gcc-toolset-10/enable
+BuildRequires: gcc-toolset-11-gcc-c++
+BuildRequires: gcc-toolset-11-binutils
+BuildRequires: gcc-toolset-11-libatomic-devel
+%define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %endif
 BuildRequires: maven
 BuildRequires: pybind11-devel
