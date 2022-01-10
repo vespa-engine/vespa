@@ -70,7 +70,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int distributorMergeBusyWait = 10;
     private int docstoreCompressionLevel = 9;
     private int maxUnCommittedMemory = 123456;
-    private double diskBloatFactor = 0.25;
+    private double diskBloatFactor = 0.2;
     private boolean distributorEnhancedMaintenanceScheduling = false;
     private boolean asyncApplyBucketDiff = false;
     private boolean unorderedMergeChaining = false;
