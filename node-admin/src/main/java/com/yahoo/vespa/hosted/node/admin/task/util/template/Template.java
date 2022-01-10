@@ -40,12 +40,15 @@ import java.util.function.Consumer;
 public class Template {
     private final CursorRange range;
     private final List<Consumer<FormBuilder>> sections;
-    private final Map<String, Cursor> names;
+    private final Map<String, Cursor> variables;
+    private final Map<String, Cursor> subforms;
 
-    public Template(CursorRange range, List<Consumer<FormBuilder>> sections, Map<String, Cursor> names) {
+    public Template(CursorRange range, List<Consumer<FormBuilder>> sections,
+                    Map<String, Cursor> variables, Map<String, Cursor> subforms) {
         this.range = new CursorRange(range);
         this.sections = List.copyOf(sections);
-        this.names = Map.copyOf(names);
+        this.variables = Map.copyOf(variables);
+        this.subforms = Map.copyOf(subforms);
     }
 
     public static Template from(String text) { return from(text, new TemplateDescriptor()); }
