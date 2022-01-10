@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.text.Cursor;
-import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
 import java.util.Optional;
 
@@ -15,7 +14,7 @@ class TemplateParser {
     private final TemplateDescriptor descriptor;
     private final Cursor start;
     private final Cursor current;
-    private final Template template;
+    private final TemplateBuilder templateBuilder;
     private final FormEndsIn formEndsIn;
 
     static TemplateParser parse(String text, TemplateDescriptor descriptor) {
@@ -34,18 +33,17 @@ class TemplateParser {
         this.descriptor = descriptor;
         this.start = new Cursor(start);
         this.current = new Cursor(start);
-        this.template = new Template(start);
+        this.templateBuilder = new TemplateBuilder(start);
         this.formEndsIn = formEndsIn;
     }
 
-    CursorRange range() { return new CursorRange(start, current); }
-    Template template() { return template; }
+    Template template() { return templateBuilder.build(); }
 
     private void parse() {
         do {
             current.advanceTo(descriptor.startDelimiter());
             if (!current.equals(start)) {
-                template.appendLiteralSection(current);
+                templateBuilder.appendLiteralSection(current);
             }
 
             if (current.eot()) {
@@ -93,7 +91,7 @@ class TemplateParser {
         var nameStart = new Cursor(current);
         String name = parseId();
         parseEndDelimiter(true);
-        template.appendVariableSection(name, nameStart, current);
+        templateBuilder.appendVariableSection(name, nameStart, current);
     }
 
     private void parseEndDirective() {
@@ -109,7 +107,7 @@ class TemplateParser {
         TemplateParser bodyParser = parse(descriptor, current, FormEndsIn.END);
         current.set(bodyParser.current);
 
-        template.appendSubformSection(name, startOfName, current, bodyParser.template());
+        templateBuilder.appendSubformSection(name, startOfName, current, bodyParser.template());
     }
 
     private void skipRequiredWhitespaces() {

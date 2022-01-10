@@ -4,9 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
 import com.yahoo.vespa.hosted.node.admin.task.util.text.Cursor;
 import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -39,12 +38,15 @@ import java.util.function.Consumer;
  * @author hakonhall
  */
 public class Template {
-    private final Cursor start;
-    private final Cursor end;
+    private final CursorRange range;
+    private final List<Consumer<FormBuilder>> sections;
+    private final Map<String, Cursor> names;
 
-    private final List<Consumer<FormBuilder>> sections = new ArrayList<>();
-    /** The value contains the location of the name of a sample variable section (with that name). */
-    private final HashMap<String, Cursor> names = new HashMap<>();
+    public Template(CursorRange range, List<Consumer<FormBuilder>> sections, Map<String, Cursor> names) {
+        this.range = new CursorRange(range);
+        this.sections = List.copyOf(sections);
+        this.names = Map.copyOf(names);
+    }
 
     public static Template from(String text) { return from(text, new TemplateDescriptor()); }
 
@@ -52,45 +54,7 @@ public class Template {
         return TemplateParser.parse(text, descriptor).template();
     }
 
-    Template(Cursor start) {
-        this.start = new Cursor(start);
-        this.end = new Cursor(start);
-    }
-
     public Form instantiate() { return instantiate(null); }
 
-    Form instantiate(Form parent) {
-        return FormBuilder.build(parent, range(), sections);
-    }
-
-    void appendLiteralSection(Cursor end) {
-        CursorRange range = verifyAndUpdateEnd(end);
-        sections.add((FormBuilder builder) -> builder.addLiteralSection(range));
-    }
-
-    void appendVariableSection(String name, Cursor nameOffset, Cursor end) {
-        CursorRange range = verifyAndUpdateEnd(end);
-        sections.add(formBuilder -> formBuilder.addVariableSection(range, name, nameOffset));
-    }
-
-    void appendSubformSection(String name, Cursor nameCursor, Cursor end, Template body) {
-        CursorRange range = verifyAndUpdateEnd(end);
-        verifyNewName(name, nameCursor);
-        sections.add(formBuilder -> formBuilder.addSubformSection(range, name, body));
-    }
-
-    private CursorRange range() { return new CursorRange(start, end); }
-
-    private CursorRange verifyAndUpdateEnd(Cursor newEnd) {
-        var range = new CursorRange(this.end, newEnd);
-        this.end.set(newEnd);
-        return range;
-    }
-
-    private void verifyNewName(String name, Cursor cursor) {
-        Cursor alreadyDefinedNameCursor = names.put(name, cursor);
-        if (alreadyDefinedNameCursor != null) {
-            throw new NameAlreadyExistsTemplateException(name, alreadyDefinedNameCursor, cursor);
-        }
-    }
+    Form instantiate(Form parent) { return FormBuilder.build(parent, range, sections); }
 }
