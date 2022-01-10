@@ -205,12 +205,13 @@ TEST_F("require that we must go below low watermark for memory usage before usin
 
 TEST_F("require that more disk bloat is allowed while node state is retired", Fixture)
 {
+    constexpr double DEFAULT_DISK_BLOAT = 0.25;
     f.notifyDiskMemUsage(ResourceUsageState(0.7, 0.3), belowLimit());
-    TEST_DO(f.assertStrategyDiskConfig(0.2, 0.2));
+    TEST_DO(f.assertStrategyDiskConfig(DEFAULT_DISK_BLOAT, DEFAULT_DISK_BLOAT));
     f.setNodeRetired(true);
-    TEST_DO(f.assertStrategyDiskConfig((0.8 - ((0.3/0.7)*(1 - 0.2))) / 0.8, 1.0));
+    TEST_DO(f.assertStrategyDiskConfig((0.8 - ((0.3/0.7)*(1 - DEFAULT_DISK_BLOAT))) / 0.8, 1.0));
     f.notifyDiskMemUsage(belowLimit(), belowLimit());
-    TEST_DO(f.assertStrategyDiskConfig(0.2, 0.2));
+    TEST_DO(f.assertStrategyDiskConfig(DEFAULT_DISK_BLOAT, DEFAULT_DISK_BLOAT));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
