@@ -91,17 +91,6 @@ public class Cursor {
         }
     }
 
-    public boolean skipBackwards(String substring) {
-        int newOffset = offset - substring.length();
-        if (newOffset < 0) return false;
-        if (text.startsWith(substring, newOffset)) {
-            offset = newOffset;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     /** If the current char is a whitespace, skip it and return true. */
     public boolean skipWhitespace() {
         if (!eot() && Character.isWhitespace(getChar())) {
@@ -127,13 +116,6 @@ public class Cursor {
     public boolean increment() {
         if (eot()) return false;
         ++offset;
-        return true;
-    }
-
-    /** Return false if bot(), otherwise retreat to the previous char and return true. */
-    public boolean decrement() {
-        if (bot()) return false;
-        --offset;
         return true;
     }
 
@@ -164,38 +146,6 @@ public class Cursor {
         } else {
             offset = index;
             return true; // and eot() is false
-        }
-    }
-
-    /** Advance pointer until start of needle is found (and return true), or EOT is reached (and return false). */
-    public boolean advanceTo(char needle) {
-        int index = text.indexOf(needle, offset);
-        if (index == -1) {
-            offset = text.length();
-            return false; // and eot() is true
-        } else {
-            offset = index;
-            return true; // and eot() is false
-        }
-    }
-
-    /** Advance pointer past needle (and return true), or to EOT (and return false). */
-    public boolean advancePast(String needle) {
-        if (advanceTo(needle)) {
-            offset += needle.length();
-            return true; // and eot() may or may not be true
-        } else {
-            return false; // and eot() is true
-        }
-    }
-
-    /** Advance pointer past needle (and return true), or to EOT (and return false). */
-    public boolean advancePast(char needle) {
-        if (advanceTo(needle)) {
-            ++offset;
-            return true; // and eot() may or may not be true
-        } else {
-            return false; // and eot() is true
         }
     }
 

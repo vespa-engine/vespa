@@ -22,21 +22,6 @@ class Token {
         return Optional.of(new CursorRange(start, cursor).string());
     }
 
-    static String verifyId(String id) {
-        if (id.isEmpty())
-            throw new IllegalArgumentException("Token is empty");
-
-        if (!isIdStart(id.charAt(0)))
-            throw new IllegalArgumentException("Invalid identifier: '" + id + "'");
-
-        for (int i = 1; i < id.length(); ++i) {
-            if (!isIdPart(id.charAt(i)))
-                throw new IllegalArgumentException("Invalid identifier: '" + id + "'");
-        }
-
-        return id;
-    }
-
     /** A delimiter either starts a directive (e.g. %{) or ends it (e.g. }). */
     static String verifyDelimiter(String delimiter) {
         if (!isAsciiToken(delimiter)) {
