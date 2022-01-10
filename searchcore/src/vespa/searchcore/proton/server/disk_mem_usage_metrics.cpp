@@ -14,6 +14,7 @@ DiskMemUsageMetrics::DiskMemUsageMetrics() noexcept
 DiskMemUsageMetrics::DiskMemUsageMetrics(const DiskMemUsageState &usage_state) noexcept
     : _disk_usage(usage_state.diskState().usage()),
       _disk_utilization(usage_state.diskState().utilization()),
+      _transient_disk_usage(usage_state.transient_disk_usage()),
       _memory_usage(usage_state.memoryState().usage()),
       _memory_utilization(usage_state.memoryState().utilization()),
       _transient_memory_usage(usage_state.transient_memory_usage())
@@ -25,6 +26,7 @@ DiskMemUsageMetrics::merge(const DiskMemUsageState &usage_state) noexcept
 {
     _disk_usage = std::max(_disk_usage, usage_state.diskState().usage());
     _disk_utilization = std::max(_disk_utilization, usage_state.diskState().utilization());
+    _transient_disk_usage = std::max(_transient_disk_usage, usage_state.transient_disk_usage());
     _memory_usage = std::max(_memory_usage, usage_state.memoryState().usage());
     _memory_utilization = std::max(_memory_utilization, usage_state.memoryState().utilization());
     _transient_memory_usage = std::max(_transient_memory_usage, usage_state.transient_memory_usage());

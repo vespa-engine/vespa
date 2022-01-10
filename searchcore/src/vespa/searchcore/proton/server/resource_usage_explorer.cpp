@@ -44,16 +44,16 @@ ResourceUsageExplorer::get_state(const vespalib::slime::Inserter &inserter, bool
         disk.setDouble("usage", usageState.diskState().usage());
         disk.setDouble("limit", usageState.diskState().limit());
         disk.setDouble("utilization", usageState.diskState().utilization());
+        disk.setDouble("transient", usageState.transient_disk_usage());
         convertDiskStatsToSlime(_usage_filter.getHwInfo(), _usage_filter.getDiskUsedSize(), disk.setObject("stats"));
 
         Cursor &memory = object.setObject("memory");
         memory.setDouble("usage", usageState.memoryState().usage());
         memory.setDouble("limit", usageState.memoryState().limit());
         memory.setDouble("utilization", usageState.memoryState().utilization());
+        memory.setDouble("transient", usageState.transient_memory_usage());
         memory.setLong("physicalMemory", _usage_filter.getHwInfo().memory().sizeBytes());
         convertMemoryStatsToSlime(_usage_filter.getMemoryStats(), memory.setObject("stats"));
-        size_t transient_memory = _usage_filter.get_transient_memory_usage();
-        memory.setLong("transient", transient_memory);
 
         Cursor &address_space = object.setObject("attribute_address_space");
         address_space.setDouble("usage", attr_usage.get_usage());

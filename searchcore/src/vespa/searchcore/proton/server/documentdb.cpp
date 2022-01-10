@@ -97,14 +97,11 @@ public:
     DocumentDBResourceUsageProvider(const DocumentDB& doc_db) noexcept
         : _doc_db(doc_db)
     {}
-    size_t get_transient_memory_usage() const override {
-        return _doc_db.getReadySubDB()->getSearchableStats().memoryUsage().allocatedBytes();
-    }
-    size_t get_transient_disk_usage() const override {
-        // We estimate the transient disk usage for the next disk index fusion
-        // as the size of the largest disk index.
-        // TODO: Change this to actually measure the size of the fusion disk index(es).
-        return _doc_db.getReadySubDB()->getSearchableStats().max_component_size_on_disk();
+    TransientResourceUsage get_transient_resource_usage() const override {
+        // Transient disk usage is measured as the total disk usage of all current fusion indexes.
+        // Transient memory usage is measured as the total memory usage of all memory indexes.
+        auto stats = _doc_db.getReadySubDB()->getSearchableStats();
+        return {stats.fusion_size_on_disk(), stats.memoryUsage().allocatedBytes()};
     }
 };
 
