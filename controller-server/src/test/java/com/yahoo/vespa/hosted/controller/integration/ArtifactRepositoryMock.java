@@ -6,7 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.StableOsVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.OsRelease;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class ArtifactRepositoryMock extends AbstractComponent implements ArtifactRepository {
 
-    private final Map<Integer, StableOsVersion> stableOsVersions = new HashMap<>();
+    private final Map<String, OsRelease> releases = new HashMap<>();
 
     @Override
     public byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version) {
@@ -24,14 +24,18 @@ public class ArtifactRepositoryMock extends AbstractComponent implements Artifac
     }
 
     @Override
-    public StableOsVersion stableOsVersion(int major) {
-        StableOsVersion version = stableOsVersions.get(major);
-        if (version == null) throw new IllegalArgumentException("No version set for major " + major);
-        return version;
+    public OsRelease osRelease(int major, OsRelease.Tag tag) {
+        OsRelease release = releases.get(key(major, tag));
+        if (release == null) throw new IllegalArgumentException("No version set for major " + major + " with tag " + tag);
+        return release;
     }
 
-    public void promoteOsVersion(StableOsVersion stableOsVersion) {
-        stableOsVersions.put(stableOsVersion.version().getMajor(), stableOsVersion);
+    public void addRelease(OsRelease osRelease) {
+        releases.put(key(osRelease.version().getMajor(), osRelease.tag()), osRelease);
+    }
+
+    private static String key(int major, OsRelease.Tag tag) {
+        return major + "@" + tag.name();
     }
 
 }

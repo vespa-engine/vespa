@@ -3,9 +3,10 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.StableOsVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.OsRelease;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import org.junit.Test;
@@ -68,7 +69,6 @@ public class OsUpgradeSchedulerTest {
     @Test
     public void schedule_stable_release() {
         ControllerTester tester = new ControllerTester();
-        OsUpgradeScheduler scheduler = new OsUpgradeScheduler(tester.controller(), Duration.ofDays(1));
         Instant t0 = Instant.parse("2021-06-21T07:00:00.00Z"); // Inside trigger period
         tester.clock().setInstant(t0);
 
@@ -77,40 +77,49 @@ public class OsUpgradeSchedulerTest {
         Version version0 = Version.fromString("8.0");
         tester.controller().upgradeOsIn(cloud, version0, Duration.ZERO, false);
 
-        // New version is promoted to stable
+        // Stable release is scheduled immediately
         Version version1 = Version.fromString("8.1");
-        tester.serviceRegistry().artifactRepository().promoteOsVersion(new StableOsVersion(version1, tester.clock().instant()));
-        scheduler.maintain();
-        assertEquals("Target is unchanged as not enough time has passed", version0,
-                     tester.controller().osVersionTarget(cloud).get().osVersion().version());
-
-        // Enough time passes since promotion of stable release
-        tester.clock().advance(Duration.ofDays(7).plus(Duration.ofSeconds(1)));
-        scheduler.maintain();
-        OsVersionTarget target0 = tester.controller().osVersionTarget(cloud).get();
-        assertEquals(version1, target0.osVersion().version());
-        assertEquals("No budget when upgrading to stable release",
-                     Duration.ZERO, target0.upgradeBudget());
-
-        // Another version is promoted, but target remains unchanged as the release hasn't aged enough
-        tester.clock().advance(Duration.ofDays(1));
-        Version version2 = Version.fromString("8.2");
-        tester.serviceRegistry().artifactRepository().promoteOsVersion(new StableOsVersion(version2, tester.clock().instant()));
-        scheduler.maintain();
-        OsVersionTarget target1 = tester.controller().osVersionTarget(cloud).get();
-        assertEquals("Target is unchanged as not enough time has passed", version1,
-                     target1.osVersion().version());
-        assertEquals("Target is not re-scheduled", target0.scheduledAt(), target1.scheduledAt());
+        tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.stable,
+                                                                               tester.clock().instant()));
+        scheduleUpgradeAfter(Duration.ZERO, version1, tester);
 
         // A newer version is triggered manually
         Version version3 = Version.fromString("8.3");
         tester.controller().upgradeOsIn(cloud, version3, Duration.ZERO, false);
 
-        // Enough time passes for stable version to be promoted. Nothing happens as stable is now before the manually
-        // triggered version
-        tester.clock().advance(Duration.ofDays(7).plus(Duration.ofSeconds(1)));
-        scheduler.maintain();
-        assertEquals(version3, tester.controller().osVersionTarget(cloud).get().osVersion().version());
+        // Nothing happens in next iteration as tagged release is older than manually triggered version
+        scheduleUpgradeAfter(Duration.ofDays(7), version3, tester);
+    }
+
+    @Test
+    public void schedule_latest_release_in_cd() {
+        ControllerTester tester = new ControllerTester(SystemName.cd);
+        Instant t0 = Instant.parse("2021-06-21T07:00:00.00Z"); // Inside trigger period
+        tester.clock().setInstant(t0);
+
+        // Set initial target
+        CloudName cloud = tester.controller().clouds().iterator().next();
+        Version version0 = Version.fromString("8.0");
+        tester.controller().upgradeOsIn(cloud, version0, Duration.ZERO, false);
+
+        // Latest release is not scheduled immediately
+        Version version1 = Version.fromString("8.1");
+        tester.serviceRegistry().artifactRepository().addRelease(new OsRelease(version1, OsRelease.Tag.latest,
+                                                                               tester.clock().instant()));
+        scheduleUpgradeAfter(Duration.ZERO, version0, tester);
+
+        // Cooldown period passes and latest release is scheduled
+        scheduleUpgradeAfter(Duration.ofDays(1), version1, tester);
+    }
+
+    private void scheduleUpgradeAfter(Duration duration, Version version, ControllerTester tester) {
+        tester.clock().advance(duration);
+        new OsUpgradeScheduler(tester.controller(), Duration.ofDays(1)).maintain();
+        CloudName cloud = tester.controller().clouds().iterator().next();
+        OsVersionTarget target = tester.controller().osVersionTarget(cloud).get();
+        assertEquals(version, target.osVersion().version());
+        assertEquals("No budget when scheduling a tagged release",
+                     Duration.ZERO, target.upgradeBudget());
     }
 
     private static ZoneApi zone(String id, CloudName cloud) {

@@ -15,7 +15,7 @@ public interface ArtifactRepository {
     /** Returns the system application package of the given version. */
     byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version);
 
-    /** Returns the current stable OS version for the given major version */
-    StableOsVersion stableOsVersion(int major);
+    /** Returns the current OS release with the given major version and tag */
+    OsRelease osRelease(int major, OsRelease.Tag tag);
 
 }

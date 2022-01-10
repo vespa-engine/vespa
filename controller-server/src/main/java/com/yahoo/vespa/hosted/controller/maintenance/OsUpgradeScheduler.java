@@ -6,7 +6,7 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.StableOsVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.OsRelease;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
 import java.time.Duration;
@@ -67,10 +67,10 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     private Release releaseIn(CloudName cloud) {
-        boolean useStableRelease = controller().zoneRegistry().zones().reprovisionToUpgradeOs().ofCloud(cloud)
+        boolean useTaggedRelease = controller().zoneRegistry().zones().reprovisionToUpgradeOs().ofCloud(cloud)
                                                .zones().isEmpty();
-        if (useStableRelease) {
-            return new StableRelease(controller().system(), controller().serviceRegistry().artifactRepository());
+        if (useTaggedRelease) {
+            return new TaggedRelease(controller().system(), controller().serviceRegistry().artifactRepository());
         }
         return new CalendarVersionedRelease(controller().system());
     }
@@ -85,32 +85,37 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
     }
 
-    /** OS release based on a stable tag */
-    private static class StableRelease implements Release {
+    /** OS release based on a tag */
+    private static class TaggedRelease implements Release {
 
         private final SystemName system;
         private final ArtifactRepository artifactRepository;
 
-        private StableRelease(SystemName system, ArtifactRepository artifactRepository) {
+        private TaggedRelease(SystemName system, ArtifactRepository artifactRepository) {
             this.system = Objects.requireNonNull(system);
             this.artifactRepository = Objects.requireNonNull(artifactRepository);
         }
 
         @Override
         public Version version(OsVersionTarget currentTarget, Instant now) {
-            StableOsVersion stableVersion = artifactRepository.stableOsVersion(currentTarget.osVersion().version().getMajor());
-            boolean cooldownPassed = stableVersion.promotedAt().isBefore(now.minus(cooldown()));
-            return cooldownPassed ? stableVersion.version() : currentTarget.osVersion().version();
+            OsRelease release = artifactRepository.osRelease(currentTarget.osVersion().version().getMajor(), tag());
+            boolean cooldownPassed = !release.taggedAt().plus(cooldown()).isAfter(now);
+            return cooldownPassed ? release.version() : currentTarget.osVersion().version();
         }
 
         @Override
         public Duration upgradeBudget() {
-            return Duration.ZERO; // Stable releases happen in-place so no budget is required
+            return Duration.ZERO; // Upgrades to tagged releases happen in-place so no budget is required
         }
 
-        /** The cool-down period that must pass before a stable version can be used */
+        /** Returns the release tag tracked by this system */
+        private OsRelease.Tag tag() {
+            return system.isCd() ? OsRelease.Tag.latest : OsRelease.Tag.stable;
+        }
+
+        /** The cool-down period that must pass before a release can be used */
         private Duration cooldown() {
-            return system.isCd() ? Duration.ZERO : Duration.ofDays(7);
+            return system.isCd() ? Duration.ofDays(1) : Duration.ZERO;
         }
 
     }
