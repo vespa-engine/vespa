@@ -42,12 +42,14 @@ public class DeploymentApiTest extends ControllerContainerTest {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
                 .build();
+        ApplicationPackage emptyPackage = new ApplicationPackageBuilder().instances("custom").build();
 
-        // 3 applications deploy on current system version
+        // 3 applications deploy on current system version, 1 is empty
         var failingApp = deploymentTester.newDeploymentContext("tenant1", "application1", "default");
         var productionApp = deploymentTester.newDeploymentContext("tenant2", "application2", "i1");
         var otherProductionApp = deploymentTester.newDeploymentContext("tenant2", "application2", "i2");
         var appWithoutDeployments = deploymentTester.newDeploymentContext("tenant3", "application3", "default");
+        var otherAppWithoutDeployment = deploymentTester.newDeploymentContext("tenant4", "application4", "custom");
         failingApp.submit(applicationPackage).deploy();
         productionApp.submit(multiInstancePackage).runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
         otherProductionApp.runJob(JobType.productionUsWest1);
@@ -55,6 +57,9 @@ public class DeploymentApiTest extends ControllerContainerTest {
         // Deploy once so that job information is stored, then remove the deployment by submitting an empty deployment spec.
         appWithoutDeployments.submit(applicationPackage).deploy();
         appWithoutDeployments.submit(new ApplicationPackageBuilder().allow(ValidationId.deploymentRemoval).build());
+
+        // Deploy application without any declared jobs.
+        otherAppWithoutDeployment.submit(emptyPackage);
 
         // New version released
         version = Version.fromString("5.1");
