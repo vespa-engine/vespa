@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.text.Cursor;
 
+import java.util.EnumSet;
 import java.util.Optional;
 
 /**
@@ -15,99 +16,97 @@ class TemplateParser {
     private final Cursor start;
     private final Cursor current;
     private final TemplateBuilder templateBuilder;
-    private final FormEndsIn formEndsIn;
 
     static TemplateParser parse(String text, TemplateDescriptor descriptor) {
-        return parse(new TemplateDescriptor(descriptor), new Cursor(text), FormEndsIn.EOT);
+        return parse(new TemplateDescriptor(descriptor), new Cursor(text), EnumSet.of(Sentinel.EOT));
     }
 
-    private static TemplateParser parse(TemplateDescriptor descriptor, Cursor start, FormEndsIn formEndsIn) {
-        var parser = new TemplateParser(descriptor, start, formEndsIn);
-        parser.parse();
+    private static TemplateParser parse(TemplateDescriptor descriptor, Cursor start, EnumSet<Sentinel> sentinel) {
+        var parser = new TemplateParser(descriptor, start);
+        parser.parse(parser.templateBuilder.sectionList(), sentinel);
         return parser;
     }
 
-    private enum FormEndsIn { EOT, END }
+    private enum Sentinel { END, EOT }
 
-    TemplateParser(TemplateDescriptor descriptor, Cursor start, FormEndsIn formEndsIn) {
+    TemplateParser(TemplateDescriptor descriptor, Cursor start) {
         this.descriptor = descriptor;
         this.start = new Cursor(start);
         this.current = new Cursor(start);
         this.templateBuilder = new TemplateBuilder(start);
-        this.formEndsIn = formEndsIn;
     }
 
     Template template() { return templateBuilder.build(); }
 
-    private void parse() {
+    private Sentinel parse(SectionList sectionList, EnumSet<Sentinel> sentinels) {
         do {
             current.advanceTo(descriptor.startDelimiter());
             if (!current.equals(start)) {
-                templateBuilder.sectionList().appendLiteralSection(current);
+                sectionList.appendLiteralSection(current);
             }
 
             if (current.eot()) {
-                if (formEndsIn == FormEndsIn.END) {
+                if (!sentinels.contains(Sentinel.EOT)) {
                     throw new BadTemplateException(current,
                                                    "Missing end directive for section started at " +
                                                    start.calculateLocation().lineAndColumnText());
                 }
-                return;
+                return Sentinel.EOT;
             }
 
-            if (!parseSection()) return;
+            Optional<Sentinel> sentinel = parseSection(sectionList, sentinels);
+            if (sentinel.isPresent()) return sentinel.get();
         } while (true);
     }
 
-    /** Returns true if end was reached (according to formEndsIn). */
-    private boolean parseSection() {
+    private Optional<Sentinel> parseSection(SectionList sectionList, EnumSet<Sentinel> sentinels) {
         var startOfDirective = new Cursor(current);
         current.skip(descriptor.startDelimiter());
 
         if (current.skip(Token.VARIABLE_DIRECTIVE_CHAR)) {
-            parseVariableSection();
+            parseVariableSection(sectionList);
         } else {
             var startOfType = new Cursor(current);
             String type = skipId().orElseThrow(() -> new BadTemplateException(current, "Missing section name"));
 
             switch (type) {
                 case "end":
-                    if (formEndsIn == FormEndsIn.EOT)
+                    if (!sentinels.contains(Sentinel.END))
                         throw new BadTemplateException(startOfType, "Extraneous 'end'");
                     parseEndDirective();
-                    return false;
+                    return Optional.of(Sentinel.END);
                 case "form":
-                    parseSubformSection();
+                    parseSubformSection(sectionList);
                     break;
                 default:
                     throw new BadTemplateException(startOfType, "Unknown section '" + type + "'");
             }
         }
 
-        return !current.eot();
+        return Optional.empty();
     }
 
-    private void parseVariableSection() {
+    private void parseVariableSection(SectionList sectionList) {
         var nameStart = new Cursor(current);
         String name = parseId();
         parseEndDelimiter(true);
-        templateBuilder.sectionList().appendVariableSection(name, nameStart, current);
+        sectionList.appendVariableSection(name, nameStart, current);
     }
 
     private void parseEndDirective() {
         parseEndDelimiter(true);
     }
 
-    private void parseSubformSection() {
+    private void parseSubformSection(SectionList sectionList) {
         skipRequiredWhitespaces();
         var startOfName = new Cursor(current);
         String name = parseId();
         parseEndDelimiter(true);
 
-        TemplateParser bodyParser = parse(descriptor, current, FormEndsIn.END);
+        TemplateParser bodyParser = parse(descriptor, current, EnumSet.of(Sentinel.END));
         current.set(bodyParser.current);
 
-        templateBuilder.sectionList().appendSubformSection(name, startOfName, current, bodyParser.template());
+        sectionList.appendSubformSection(name, startOfName, current, bodyParser.template());
     }
 
     private void skipRequiredWhitespaces() {
