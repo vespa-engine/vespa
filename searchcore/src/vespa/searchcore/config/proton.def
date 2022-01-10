@@ -54,7 +54,7 @@ flush.strategy enum {SIMPLE, MEMORY} default=MEMORY restart
 flush.memory.maxmemory long default=4294967296
 
 ## Maximum total disk bloat factor before forcing flush.
-flush.memory.diskbloatfactor double default=0.25
+flush.memory.diskbloatfactor double default=0.2
 
 ## Max disk usage (in bytes) for all transaction logs before running flush.
 ## In this case the oldest component is flushed such that transaction log can be pruned and disk freed.
@@ -65,7 +65,7 @@ flush.memory.maxtlssize long default=21474836480
 flush.memory.each.maxmemory long default=1073741824
 
 ## Maximum disk bloat factor per component before forcing flush.
-flush.memory.each.diskbloatfactor double default=0.25
+flush.memory.each.diskbloatfactor double default=0.2
 
 ## Age of unflushed content before forcing age prioritization.
 ## Unit is seconds with 31 hours being the default.
