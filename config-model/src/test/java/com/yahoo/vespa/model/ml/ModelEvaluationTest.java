@@ -170,7 +170,7 @@ public class ModelEvaluationTest {
     }
 
     private final String profile =
-            "rankingExpression(output).rankingScript: onnxModel(small_constants_and_functions).output\n" +
+            "rankingExpression(output).rankingScript: onnx(small_constants_and_functions).output\n" +
             "rankingExpression(output).type: tensor<float>(d0[3])\n";
 
     private RankProfilesConfig.Rankprofile.Fef findProfile(String name, RankProfilesConfig config) {

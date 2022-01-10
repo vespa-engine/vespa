@@ -260,7 +260,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         }
 
         /**
-         * Extract the feature used to evaluate the onnx model. e.g. onnxModel(name) and add
+         * Extract the feature used to evaluate the onnx model. e.g. onnx(name) and add
          * that as a bind target and argument. During evaluation, this will be evaluated before
          * the rest of the expression and the result is added to the context. Also extract the
          * inputs to the model and add them as bind targets and arguments.
