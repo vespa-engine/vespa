@@ -2,67 +2,80 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.text.Cursor;
-import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * @author hakonhall
  */
 class FormBuilder {
-    private final List<Section> sections = new ArrayList<>();
-    private final Map<String, String> variables = new HashMap<>();
+    /** The top-level section list in this form. */
+    private final SectionList sectionList;
+    private final List<Section> allSections = new ArrayList<>();
+    private final Map<String, VariableSection> sampleVariables = new HashMap<>();
+    private final Map<String, IfSection> sampleIfSections = new HashMap<>();
     private final Map<String, SubformSection> subforms = new HashMap<>();
-    private final Form parent;
-    private final CursorRange range;
 
-    static Form build(Form parent, CursorRange range, List<Consumer<FormBuilder>> sections) {
-        var builder = new FormBuilder(parent, range);
-        sections.forEach(section -> section.accept(builder));
-        return builder.build();
+    FormBuilder(Cursor start) {
+        this.sectionList = new SectionList(start, this);
     }
 
-    private FormBuilder(Form parent, CursorRange range) {
-        this.parent = parent;
-        this.range = new CursorRange(range);
+    SectionList topLevelSectionList() { return sectionList; }
+
+    void addLiteralSection(LiteralSection section) {
+        allSections.add(section);
     }
 
-    FormBuilder addLiteralSection(CursorRange range) {
-        sections.add(new LiteralSection(range));
-        return this;
+    void addVariableSection(VariableSection section) {
+        // It's OK if the same name is used in an if-directive (as long as the value is boolean,
+        // determined when set on a form).
+
+        SubformSection existing = subforms.get(section.name());
+        if (existing != null)
+            throw new NameAlreadyExistsTemplateException(section.name(), existing.nameOffset(),
+                                                         section.nameOffset());
+
+        sampleVariables.put(section.name(), section);
+        allSections.add(section);
     }
 
-    FormBuilder addVariableSection(CursorRange range, String name, Cursor nameOffset) {
-        var section = new VariableSection(range, name, nameOffset);
-        sections.add(section);
-        return this;
+    void addIfSection(IfSection section) {
+        // It's OK if the same name is used in a variable section (as long as the value is boolean,
+        // determined when set on a form).
+
+        SubformSection subform = subforms.get(section.name());
+        if (subform != null)
+            throw new NameAlreadyExistsTemplateException(section.name(), subform.nameOffset(),
+                                                         section.nameOffset());
+
+        sampleIfSections.put(section.name(), section);
+        allSections.add(section);
     }
 
-    FormBuilder addSubformSection(CursorRange range, String name, Template body) {
-        checkNameIsAvailable(name, range);
-        var section = new SubformSection(range, name, body);
-        sections.add(section);
-        subforms.put(section.name(), section);
-        return this;
+    void addSubformSection(SubformSection section) {
+        VariableSection variableSection = sampleVariables.get(section.name());
+        if (variableSection != null)
+            throw new NameAlreadyExistsTemplateException(section.name(), variableSection.nameOffset(),
+                                                         section.nameOffset());
+
+        IfSection ifSection = sampleIfSections.get(section.name());
+        if (ifSection != null)
+            throw new NameAlreadyExistsTemplateException(section.name(), ifSection.nameOffset(),
+                                                         section.nameOffset());
+
+        SubformSection previous = subforms.put(section.name(), section);
+        if (previous != null)
+            throw new NameAlreadyExistsTemplateException(section.name(), previous.nameOffset(),
+                                                         section.nameOffset());
+        allSections.add(section);
     }
 
-    private Form build() {
-        var form = new Form(parent, range, sections, variables, subforms);
-        sections.forEach(section -> section.setForm(form));
+    Form build() {
+        var form = new Form(sectionList.range(), sectionList.sections(), subforms);
+        allSections.forEach(section -> section.setForm(form));
         return form;
-    }
-
-    private void checkNameIsAvailable(String name, CursorRange range) {
-        if (nameIsDefined(name)) {
-            throw new NameAlreadyExistsTemplateException(name, range);
-        }
-    }
-
-    private boolean nameIsDefined(String name) {
-        return variables.containsKey(name) || subforms.containsKey(name);
     }
 }

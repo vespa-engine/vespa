@@ -18,4 +18,9 @@ class LiteralSection extends Section {
     void appendTo(StringBuilder buffer) {
         range().appendTo(buffer);
     }
+
+    @Override
+    void appendCopyTo(SectionList sectionList) {
+        sectionList.appendLiteralSection(range().end());
+    }
 }

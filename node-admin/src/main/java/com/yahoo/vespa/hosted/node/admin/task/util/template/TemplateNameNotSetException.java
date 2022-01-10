@@ -8,6 +8,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.text.Cursor;
  */
 public class TemplateNameNotSetException extends TemplateException {
     public TemplateNameNotSetException(String name, Cursor nameOffset) {
-        super(name + " at " + nameOffset.calculateLocation().lineAndColumnText() + " has not been set");
+        super("Variable at " + nameOffset.calculateLocation().lineAndColumnText() + " has not been set: " + name);
     }
 }

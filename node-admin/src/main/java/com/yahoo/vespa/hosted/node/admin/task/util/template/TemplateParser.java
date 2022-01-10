@@ -15,7 +15,7 @@ class TemplateParser {
     private final TemplateDescriptor descriptor;
     private final Cursor start;
     private final Cursor current;
-    private final TemplateBuilder templateBuilder;
+    private final FormBuilder formBuilder;
 
     static TemplateParser parse(String text, TemplateDescriptor descriptor) {
         return parse(new TemplateDescriptor(descriptor), new Cursor(text), EnumSet.of(Sentinel.EOT));
@@ -23,20 +23,20 @@ class TemplateParser {
 
     private static TemplateParser parse(TemplateDescriptor descriptor, Cursor start, EnumSet<Sentinel> sentinel) {
         var parser = new TemplateParser(descriptor, start);
-        parser.parse(parser.templateBuilder.sectionList(), sentinel);
+        parser.parse(parser.formBuilder.topLevelSectionList(), sentinel);
         return parser;
     }
 
     private enum Sentinel { END, EOT }
 
-    TemplateParser(TemplateDescriptor descriptor, Cursor start) {
+    private TemplateParser(TemplateDescriptor descriptor, Cursor start) {
         this.descriptor = descriptor;
         this.start = new Cursor(start);
         this.current = new Cursor(start);
-        this.templateBuilder = new TemplateBuilder(start);
+        this.formBuilder = new FormBuilder(start);
     }
 
-    Template template() { return templateBuilder.build(); }
+    Template template() { return new Template(formBuilder.build()); }
 
     private Sentinel parse(SectionList sectionList, EnumSet<Sentinel> sentinels) {
         do {
@@ -60,7 +60,6 @@ class TemplateParser {
     }
 
     private Optional<Sentinel> parseSection(SectionList sectionList, EnumSet<Sentinel> sentinels) {
-        var startOfDirective = new Cursor(current);
         current.skip(descriptor.startDelimiter());
 
         if (current.skip(Token.VARIABLE_DIRECTIVE_CHAR)) {
@@ -77,6 +76,9 @@ class TemplateParser {
                     return Optional.of(Sentinel.END);
                 case "form":
                     parseSubformSection(sectionList);
+                    break;
+                case "if":
+                    parseIfSection(sectionList);
                     break;
                 default:
                     throw new BadTemplateException(startOfType, "Unknown section '" + type + "'");
@@ -106,7 +108,21 @@ class TemplateParser {
         TemplateParser bodyParser = parse(descriptor, current, EnumSet.of(Sentinel.END));
         current.set(bodyParser.current);
 
-        sectionList.appendSubformSection(name, startOfName, current, bodyParser.template());
+        sectionList.appendSubformSection(name, startOfName, current, bodyParser.formBuilder.build());
+    }
+
+    private void parseIfSection(SectionList sectionList) {
+        skipRequiredWhitespaces();
+        boolean negated = current.skip(Token.NEGATE_CHAR);
+        current.skipWhitespaces();
+        var startOfName = new Cursor(current);
+        String name = parseId();
+        parseEndDelimiter(true);
+
+        SectionList ifSectionList = new SectionList(current, formBuilder);
+        parse(ifSectionList, EnumSet.of(Sentinel.END));
+
+        sectionList.appendIfSection(negated, name, startOfName, current, ifSectionList);
     }
 
     private void skipRequiredWhitespaces() {

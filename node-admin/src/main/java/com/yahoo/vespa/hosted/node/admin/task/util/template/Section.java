@@ -25,4 +25,6 @@ abstract class Section {
     protected CursorRange range() { return range; }
 
     abstract void appendTo(StringBuilder buffer);
+
+    abstract void appendCopyTo(SectionList sectionList);
 }

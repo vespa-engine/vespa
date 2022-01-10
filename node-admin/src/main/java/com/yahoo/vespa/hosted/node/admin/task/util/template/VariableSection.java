@@ -21,11 +21,17 @@ class VariableSection extends Section {
     }
 
     String name() { return name; }
+    Cursor nameOffset() { return new Cursor(nameOffset); }
 
     @Override
     void appendTo(StringBuilder buffer) {
         String value = form().getVariableValue(name)
                              .orElseThrow(() -> new TemplateNameNotSetException(name, nameOffset));
         buffer.append(value);
+    }
+
+    @Override
+    void appendCopyTo(SectionList sectionList) {
+        sectionList.appendVariableSection(name, nameOffset, range().end());
     }
 }

@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * A mutable list of sections at the same level that can be used to build a form, e.g. the if-body.
@@ -14,42 +13,51 @@ import java.util.function.Consumer;
  * @author hakonhall
  */
 class SectionList {
-    private TemplateBuilder templateBuilder;
-
     private final Cursor start;
     private final Cursor end;
+    private final FormBuilder formBuilder;
 
-    private final List<Consumer<FormBuilder>> sections = new ArrayList<>();
+    private final List<Section> sections = new ArrayList<>();
 
-    SectionList(Cursor start) {
+    SectionList(Cursor start, FormBuilder formBuilder) {
         this.start = new Cursor(start);
         this.end = new Cursor(start);
-    }
-
-    /** Must be invoked once before any other method. */
-    void setTemplateBuilder(TemplateBuilder templateBuilder) {
-        this.templateBuilder = templateBuilder;
-    }
-
-    void appendLiteralSection(Cursor end) {
-        CursorRange range = verifyAndUpdateEnd(end);
-        sections.add((FormBuilder builder) -> builder.addLiteralSection(range));
-    }
-
-    void appendVariableSection(String name, Cursor nameOffset, Cursor end) {
-        CursorRange range = verifyAndUpdateEnd(end);
-        templateBuilder.addVariable(name, nameOffset);
-        sections.add(formBuilder -> formBuilder.addVariableSection(range, name, nameOffset));
-    }
-
-    void appendSubformSection(String name, Cursor nameCursor, Cursor end, Template body) {
-        CursorRange range = verifyAndUpdateEnd(end);
-        templateBuilder.addSubform(name, nameCursor);
-        sections.add(formBuilder -> formBuilder.addSubformSection(range, name, body));
+        this.formBuilder = formBuilder;
     }
 
     CursorRange range() { return new CursorRange(start, end); }
-    List<Consumer<FormBuilder>> sections() { return List.copyOf(sections); }
+    FormBuilder formBuilder() { return formBuilder; }
+    List<Section> sections() { return List.copyOf(sections); }
+
+    void appendLiteralSection(Cursor end) {
+        CursorRange range = verifyAndUpdateEnd(end);
+        var section = new LiteralSection(range);
+        formBuilder.addLiteralSection(section);
+        sections.add(section);
+    }
+
+    VariableSection appendVariableSection(String name, Cursor nameOffset, Cursor end) {
+        CursorRange range = verifyAndUpdateEnd(end);
+        var section = new VariableSection(range, name, nameOffset);
+        formBuilder.addVariableSection(section);
+        sections.add(section);
+        return section;
+    }
+
+    void appendIfSection(boolean negated, String name, Cursor nameOffset, Cursor end,
+                                SectionList ifSections) {
+        CursorRange range = verifyAndUpdateEnd(end);
+        var section = new IfSection(range, negated, name, nameOffset, ifSections);
+        formBuilder.addIfSection(section);
+        sections.add(section);
+    }
+
+    void appendSubformSection(String name, Cursor nameOffset, Cursor end, Form body) {
+        CursorRange range = verifyAndUpdateEnd(end);
+        var section = new SubformSection(range, name, nameOffset, body);
+        formBuilder.addSubformSection(section);
+        sections.add(section);
+    }
 
     private CursorRange verifyAndUpdateEnd(Cursor newEnd) {
         var range = new CursorRange(this.end, newEnd);

@@ -83,6 +83,43 @@ class TemplateFileTest {
                      form.render());
     }
 
+    @Test
+    void verifyIfSection() {
+        Template template = Template.from("Hello%{if cond} world%{end}!");
+        assertEquals("Hello world!", template.instantiate().set("cond", true).render());
+        assertEquals("Hello!", template.instantiate().set("cond", false).render());
+    }
+
+    @Test
+    void verifyComplexIfSection() {
+        Template template = Template.from("%{if cond|}\n" +
+                                          "var: %{=varname}\n" +
+                                          "if: %{if !inner}inner is false%{end}\n" +
+                                          "subform: %{form formname}subform%{end}\n" +
+                                          "%{end|}\n");
+
+        assertEquals("", template.instantiate().set("cond", false).render());
+
+        assertEquals("var: varvalue\n" +
+                     "if: \n" +
+                     "subform: \n",
+                     template.instantiate()
+                             .set("cond", true)
+                             .set("varname", "varvalue")
+                             .set("inner", true)
+                             .render());
+
+        Form form = template.instantiate()
+                            .set("cond", true)
+                            .set("varname", "varvalue")
+                            .set("inner", false);
+        form.add("formname");
+
+        assertEquals("var: varvalue\n" +
+                     "if: inner is false\n" +
+                     "subform: subform\n", form.render());
+    }
+
     private Form getForm(String filename) {
         return TemplateFile.read(Path.of("src/test/resources/" + filename)).instantiate();
     }
