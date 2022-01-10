@@ -7,6 +7,19 @@ namespace vespalib {
 
 namespace cpu_usage {
 
+// do not use this directly (use ThreadSampler)
+class DummyThreadSampler {
+private:
+    steady_time _start;
+    double _load;
+public:
+    DummyThreadSampler();
+    void expected_load(double load);
+    duration sample() const;
+};
+
+#ifdef __linux__
+
 /**
  * Samples the total CPU usage of the thread that created it. Note
  * that this must not be used after thread termination. Enables
@@ -19,8 +32,15 @@ private:
     clockid_t _my_clock;
 public:
     ThreadSampler();
+    constexpr void expected_load(double) noexcept {}
     duration sample() const;
 };
+
+#else
+
+using ThreadSampler = DummyThreadSampler;
+
+#endif
 
 } // cpu_usage
 

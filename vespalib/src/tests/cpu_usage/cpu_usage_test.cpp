@@ -12,6 +12,7 @@ bool verbose = false;
 size_t loop_cnt = 10;
 double budget = 0.25;
 
+using DummySampler = vespalib::cpu_usage::DummyThreadSampler;
 using Sampler = vespalib::cpu_usage::ThreadSampler;
 
 //-----------------------------------------------------------------------------
@@ -29,10 +30,11 @@ void be_busy(duration d) {
     }
 }
 
-std::vector<duration> sample(const std::vector<Sampler*> &list) {
+template <typename LIST>
+std::vector<duration> sample(const LIST &list) {
     std::vector<duration> result;
     result.reserve(list.size());
-    for (Sampler *sampler: list) {
+    for (auto *sampler: list) {
         result.push_back(sampler->sample());
     }
     return result;
@@ -40,15 +42,16 @@ std::vector<duration> sample(const std::vector<Sampler*> &list) {
 
 //-----------------------------------------------------------------------------
 
-TEST_MT_F("require that external thread-based CPU usage sampling works", 5, std::vector<Sampler*>(4, nullptr)) {
+template <typename SAMPLER>
+void verify_sampling(size_t thread_id, size_t num_threads, std::vector<SAMPLER*> &samplers) {
     if (thread_id == 0) {
         TEST_BARRIER(); // #1
         auto t0 = steady_clock::now();
-        std::vector<duration> pre_usage = sample(f1);
+        std::vector<duration> pre_usage = sample(samplers);
         TEST_BARRIER(); // #2
         TEST_BARRIER(); // #3
         auto t1 = steady_clock::now();
-        std::vector<duration> post_usage = sample(f1);
+        std::vector<duration> post_usage = sample(samplers);
         TEST_BARRIER(); // #4
         double wall = to_s(t1 - t0);
         std::vector<double> load(4, 0.0);
@@ -58,9 +61,11 @@ TEST_MT_F("require that external thread-based CPU usage sampling works", 5, std:
         EXPECT_GREATER(load[3], load[0]);
         fprintf(stderr, "loads: { %.2f, %.2f, %.2f, %.2f }\n", load[0], load[1], load[2], load[3]);
     } else {
+        SAMPLER sampler;
         int idx = (thread_id - 1);
-        Sampler sampler;
-        f1[idx] = &sampler;
+        double target_load = double(thread_id - 1) / (num_threads - 2);
+        sampler.expected_load(target_load);
+        samplers[idx] = &sampler;
         TEST_BARRIER(); // #1
         TEST_BARRIER(); // #2
         for (size_t i = 0; i < loop_cnt; ++i) {
@@ -72,6 +77,14 @@ TEST_MT_F("require that external thread-based CPU usage sampling works", 5, std:
 }
 
 //-----------------------------------------------------------------------------
+
+TEST_MT_F("require that dummy thread-based CPU usage sampling with known expected load works", 5, std::vector<DummySampler*>(4, nullptr)) {
+    TEST_DO(verify_sampling(thread_id, num_threads, f1));
+}
+
+TEST_MT_F("require that external thread-based CPU usage sampling works", 5, std::vector<Sampler*>(4, nullptr)) {
+    TEST_DO(verify_sampling(thread_id, num_threads, f1));
+}
 
 TEST("measure thread CPU clock overhead") {
     Sampler sampler;

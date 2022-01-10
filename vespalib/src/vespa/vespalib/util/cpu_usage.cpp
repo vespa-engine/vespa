@@ -7,6 +7,25 @@ namespace vespalib {
 
 namespace cpu_usage {
 
+DummyThreadSampler::DummyThreadSampler()
+  : _start(steady_clock::now()),
+    _load(0.16)
+{
+}
+
+void
+DummyThreadSampler::expected_load(double load) {
+    _load = load;
+}
+
+duration
+DummyThreadSampler::sample() const
+{
+    return from_s(to_s(steady_clock::now() - _start) * _load);
+}
+
+#ifdef __linux__
+
 ThreadSampler::ThreadSampler()
   : _my_clock()
 {
@@ -20,6 +39,8 @@ ThreadSampler::sample() const
     REQUIRE_EQ(clock_gettime(_my_clock, &ts), 0);
     return from_timespec(ts);
 }
+
+#endif
 
 } // cpu_usage
 
