@@ -14,21 +14,28 @@ namespace search::diskindex {
 FusionInputIndex::FusionInputIndex(const vespalib::string& path, uint32_t index, const SelectorArray& selector)
     : _path(path),
       _index(index),
-      _schema()
+      _selector(&selector),
+      _schema(),
+      _docIdMapping()
 {
-    vespalib::string fname = path + "/schema.txt";
+}
+
+FusionInputIndex::~FusionInputIndex() = default;
+
+void
+FusionInputIndex::setup()
+{
+    vespalib::string fname = _path + "/schema.txt";
     if ( ! _schema.loadFromFile(fname)) {
         throw IllegalArgumentException(make_string("Failed loading schema %s", fname.c_str()));
     }
     if ( ! SchemaUtil::validateSchema(_schema)) {
         throw IllegalArgumentException(make_string("Failed validating schema %s", fname.c_str()));
     }
-    if (!_docIdMapping.readDocIdLimit(path)) {
-        throw IllegalArgumentException(make_string("Cannot determine docIdLimit for old index \"%s\"", path.c_str()));
+    if (!_docIdMapping.readDocIdLimit(_path)) {
+        throw IllegalArgumentException(make_string("Cannot determine docIdLimit for old index \"%s\"", _path.c_str()));
     }
-    _docIdMapping.setup(_docIdMapping._docIdLimit, &selector, index);
+    _docIdMapping.setup(_docIdMapping._docIdLimit, _selector, _index);
 }
-
-FusionInputIndex::~FusionInputIndex() = default;
 
 }

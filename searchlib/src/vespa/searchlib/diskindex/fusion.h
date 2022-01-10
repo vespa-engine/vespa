@@ -31,21 +31,19 @@ private:
 
     const Schema &getSchema() const { return _fusion_out_index.get_schema(); }
 
+    std::vector<FusionInputIndex> _old_indexes;
     FusionOutputIndex _fusion_out_index;
 public:
     Fusion(const Fusion &) = delete;
     Fusion& operator=(const Fusion &) = delete;
-    Fusion(uint32_t docIdLimit, const Schema &schema, const vespalib::string &dir,
-           const std::vector<vespalib::string> & sources, const SelectorArray &selector, bool dynamicKPosIndexFormat,
-           const TuneFileIndexing &tuneFileIndexing, const common::FileHeaderContext &fileHeaderContext);
+    Fusion(const Schema& schema, const vespalib::string& dir,
+           const std::vector<vespalib::string>& sources, const SelectorArray& selector,
+           const TuneFileIndexing& tuneFileIndexing, const common::FileHeaderContext& fileHeaderContext);
 
     ~Fusion();
-
-    static bool
-    merge(const Schema &schema, const vespalib::string &dir, const std::vector<vespalib::string> &sources,
-          const SelectorArray &docIdSelector, bool dynamicKPosOccFormat, const TuneFileIndexing &tuneFileIndexing,
-          const common::FileHeaderContext &fileHeaderContext, vespalib::ThreadExecutor & executor,
-          std::shared_ptr<IFlushToken> flush_token);
+    void set_dynamic_k_pos_index_format(bool dynamic_k_pos_index_format) { _fusion_out_index.set_dynamic_k_pos_index_format(dynamic_k_pos_index_format); }
+    void set_force_small_merge_chunk(bool force_small_merge_chunk) { _fusion_out_index.set_force_small_merge_chunk(force_small_merge_chunk); }
+    bool merge(vespalib::ThreadExecutor& executor, std::shared_ptr<IFlushToken> flush_token);
 };
 
 }
