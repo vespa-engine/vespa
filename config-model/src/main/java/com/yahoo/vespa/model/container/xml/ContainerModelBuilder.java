@@ -1061,7 +1061,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return CONTAINER_TAG.equals(element.getTagName()) || DEPRECATED_CONTAINER_TAG.equals(element.getTagName());
     }
 
-    private static class JvmOptions {
+    /**
+     * Validates JVM options and logs a warning or fails deployment (depending on feature flag)
+     * if anyone of them has invalid syntax or is an option that is unsupported for the running system.
+     */
+     private static class JvmOptions {
 
         private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,]+");
         // debug port will not be available in hosted, don't allow
@@ -1157,8 +1161,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     /**
-     * Validates JVM GC options and logs a warning if anyone of them has invalid syntax or is an option
-     * that is unsupported for the running system (e.g. uses CMS options for hosted Vespa, which uses JDK 17)
+     * Validates JVM GC options and logs a warning or fails deployment (depending on feature flag)
+     * if anyone of them has invalid syntax or is an option that is unsupported for the running system
+     * (e.g. uses CMS options for hosted Vespa, which uses JDK 17).
      */
     private static class JvmGcOptions {
 
