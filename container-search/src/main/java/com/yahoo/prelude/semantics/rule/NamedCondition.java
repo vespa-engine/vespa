@@ -14,9 +14,9 @@ public class NamedCondition {
 
     private Condition condition;
 
-    public NamedCondition(String name,Condition condition) {
-        this.conditionName=name;
-        this.condition=condition;
+    public NamedCondition(String name, Condition condition) {
+        this.conditionName = name;
+        this.condition = condition;
     }
 
     public String getName() { return conditionName; }
@@ -28,18 +28,18 @@ public class NamedCondition {
     public void setCondition(Condition condition) { this.condition = condition; }
 
     public boolean matches(RuleEvaluation e) {
-        if (e.getTraceLevel()>=3) {
+        if (e.getTraceLevel() >= 3) {
             e.trace(3,"Evaluating '" + this + "' at " + e.currentItem());
             e.indentTrace();
         }
 
         boolean matches=condition.matches(e);
 
-        if (e.getTraceLevel()>=3) {
+        if (e.getTraceLevel() >= 3) {
             e.unindentTrace();
             if (matches)
                 e.trace(3,"Matched '" + this + "' at " + e.previousItem());
-            else if (e.getTraceLevel()>=4)
+            else if (e.getTraceLevel() >= 4)
                 e.trace(4,"Did not match '" + this + "' at " + e.currentItem());
         }
         return matches;

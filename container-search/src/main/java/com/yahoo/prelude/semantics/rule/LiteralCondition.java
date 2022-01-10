@@ -4,7 +4,7 @@ package com.yahoo.prelude.semantics.rule;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 
 /**
- * A condition which is always true, and which has it's own value as return value
+ * A condition which is always true, and which has its own value as return value
  *
  * @author bratseth
  */

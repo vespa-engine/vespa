@@ -17,7 +17,7 @@ import java.util.ListIterator;
  */
 public class RuleEngine {
 
-    private RuleBase rules;
+    private final RuleBase rules;
 
     public RuleEngine(RuleBase rules) {
         this.rules=rules;
@@ -38,7 +38,6 @@ public class RuleEngine {
 
         boolean matchedAnything = false;
         Evaluation evaluation = new Evaluation(query, traceLevel);
-        evaluation.setStemming(rules.getStemming());
         if (traceLevel >= 2)
             evaluation.trace(2,"Evaluating query '" + evaluation.getQuery().getModel().getQueryTree().getRoot() + "':");
         for (ListIterator<ProductionRule> i = rules.ruleIterator(); i.hasNext(); ) {

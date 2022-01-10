@@ -4,6 +4,7 @@ package com.yahoo.prelude.semantics.parser.test;
 import java.util.Iterator;
 
 import com.yahoo.javacc.UnicodeUtilities;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.parser.ParseException;
@@ -24,8 +25,8 @@ public class SemanticsParserTestCase {
 
     @Test
     public void testRuleReading() throws java.io.IOException, ParseException {
-        RuleBase rules=new RuleImporter().importFile(ROOT + "rules.sr");
-        Iterator<?> i=rules.ruleIterator();
+        RuleBase rules = new RuleImporter(new SimpleLinguistics()).importFile(ROOT + "rules.sr");
+        Iterator<?> i = rules.ruleIterator();
         assertEquals("[listing] [preposition] [place] -> listing:[listing] place:[place]!150",
                      i.next().toString());
         assertEquals("[listing] [place] +> place:[place]",
@@ -36,10 +37,10 @@ public class SemanticsParserTestCase {
                      i.next().toString());
         assertEquals("digital camera -> digicamera",
                      i.next().toString());
-        assertEquals("(parameter.ranking='cat'), (parameter.ranking='cat0') -> one",i.next().toString());
+        assertEquals("(parameter.ranking='cat'), (parameter.ranking='cat0') -> one", i.next().toString());
         assertFalse(i.hasNext());
 
-        i=rules.conditionIterator();
+        i = rules.conditionIterator();
         assertEquals("[listing] :- restaurant, shop, cafe, hotel",
                      i.next().toString());
         assertEquals("[preposition] :- in, at, near",
@@ -53,7 +54,7 @@ public class SemanticsParserTestCase {
         assertFalse(i.hasNext());
 
         assertTrue(rules.isDefault());
-        assertEquals(ROOT + "semantics.fsa",rules.getAutomataFile());
+        assertEquals(ROOT + "semantics.fsa", rules.getAutomataFile());
     }
 
 }

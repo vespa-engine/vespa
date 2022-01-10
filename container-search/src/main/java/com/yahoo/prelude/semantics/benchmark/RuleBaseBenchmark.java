@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleImporter;
@@ -27,7 +28,7 @@ public class RuleBaseBenchmark {
                 fsaFile = null;
             }
         }
-        RuleBase ruleBase = new RuleImporter().importFile(ruleBaseFile,fsaFile);
+        RuleBase ruleBase = new RuleImporter(new SimpleLinguistics()).importFile(ruleBaseFile, fsaFile);
         ArrayList<String> queries = new ArrayList<>();
         BufferedReader reader = new BufferedReader(new FileReader(queryFile));
         String line;
@@ -35,7 +36,7 @@ public class RuleBaseBenchmark {
             queries.add(line);
         }
         Date start = new Date();
-        for (int i=0;i<iterations;i++){
+        for (int i=0; i<iterations; i++){
             for (Iterator<String> iter = queries.iterator(); iter.hasNext(); ){
                 String queryString = iter.next();
                 Query query = new Query("?query="+queryString);
@@ -43,7 +44,7 @@ public class RuleBaseBenchmark {
             }
         }
         Date end = new Date();
-        long elapsed = end.getTime()-start.getTime();
+        long elapsed = end.getTime() - start.getTime();
         System.out.print("BENCHMARK: rulebase=" + ruleBaseFile +
                 "\n           fsa=" + fsaFile +
                 "\n           queries=" + queryFile +

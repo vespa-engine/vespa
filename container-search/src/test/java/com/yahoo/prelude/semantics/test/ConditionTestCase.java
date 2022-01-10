@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
+import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.prelude.semantics.engine.RuleBaseLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.engine.Evaluation;
@@ -24,15 +26,17 @@ public class ConditionTestCase {
 
     @Test
     public void testTermCondition() {
-        TermCondition term=new TermCondition("foo");
-        Query query=new Query("?query=foo");
+        var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
+        TermCondition term = new TermCondition("foo", linguistics);
+        Query query = new Query("?query=foo");
         assertTrue(term.matches(new Evaluation(query).freshRuleEvaluation()));
     }
 
     @Test
     public void testSequenceCondition() {
-        TermCondition term1 = new TermCondition("foo");
-        TermCondition term2 = new TermCondition("bar");
+        var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
+        TermCondition term1 = new TermCondition("foo", linguistics);
+        TermCondition term2 = new TermCondition("bar",linguistics);
         SequenceCondition sequence = new SequenceCondition();
         sequence.addCondition(term1);
         sequence.addCondition(term2);
@@ -46,8 +50,9 @@ public class ConditionTestCase {
 
     @Test
     public void testChoiceCondition() {
-        TermCondition term1 = new TermCondition("foo");
-        TermCondition term2 = new TermCondition("bar");
+        var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
+        TermCondition term1 = new TermCondition("foo", linguistics);
+        TermCondition term2 = new TermCondition("bar", linguistics);
         ChoiceCondition choice = new ChoiceCondition();
         choice.addCondition(term1);
         choice.addCondition(term2);
@@ -61,7 +66,8 @@ public class ConditionTestCase {
 
     @Test
     public void testNamedConditionReference() {
-        TermCondition term = new TermCondition("foo");
+        var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
+        TermCondition term = new TermCondition("foo", linguistics);
         NamedCondition named = new NamedCondition("cond",term);
         ConditionReference reference = new ConditionReference("cond");
 
@@ -69,8 +75,7 @@ public class ConditionTestCase {
         ProductionRule rule = new ReplacingProductionRule();
         rule.setCondition(reference);
         rule.setProduction(new ProductionList());
-        RuleBase ruleBase = new RuleBase();
-        ruleBase.setName("test");
+        RuleBase ruleBase = new RuleBase("test", linguistics.linguistics());
         ruleBase.addCondition(named);
         ruleBase.addRule(rule);
         ruleBase.initialize();

@@ -13,6 +13,7 @@
       "public java.lang.String languageCode()",
       "public boolean isCjk()",
       "public static com.yahoo.language.Language fromLanguageTag(java.lang.String)",
+      "public static com.yahoo.language.Language from(java.lang.String)",
       "public static com.yahoo.language.Language fromLocale(java.util.Locale)",
       "public static com.yahoo.language.Language fromEncoding(java.lang.String)"
     ],

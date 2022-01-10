@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.test;
 
+import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.prelude.semantics.engine.RuleBaseLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.engine.Evaluation;
@@ -25,7 +27,8 @@ public class ProductionRuleTestCase {
 
     @Test
     public void testProductionRule() {
-        TermCondition term = new TermCondition("sony");
+        var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
+        TermCondition term = new TermCondition("sony", linguistics);
         NamedCondition named = new NamedCondition("brand", term);
         ConditionReference reference = new ConditionReference("brand");
 
@@ -38,8 +41,7 @@ public class ProductionRuleTestCase {
         rule.setProduction(productionList);
 
         // To initialize the condition reference...
-        RuleBase ruleBase = new RuleBase();
-        ruleBase.setName("test");
+        RuleBase ruleBase = new RuleBase("test", linguistics.linguistics());
         ruleBase.addCondition(named);
         ruleBase.addRule(rule);
         ruleBase.initialize();

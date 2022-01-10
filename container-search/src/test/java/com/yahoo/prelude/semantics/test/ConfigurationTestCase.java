@@ -37,7 +37,7 @@ public class ConfigurationTestCase {
 
     static {
         semanticRulesConfig = new ConfigGetter<>(SemanticRulesConfig.class).getConfig("file:" + root + "semantic-rules.cfg");
-        searcher=new SemanticSearcher(semanticRulesConfig);
+        searcher = new SemanticSearcher(semanticRulesConfig, new SimpleLinguistics());
     }
 
     protected void assertSemantics(String result, String input, String baseName) {
@@ -54,46 +54,46 @@ public class ConfigurationTestCase {
 
     @Test
     public void testReadingConfigurationRuleBase() {
-        RuleBase parent=searcher.getRuleBase("parent");
+        RuleBase parent = searcher.getRuleBase("parent");
         assertNotNull(parent);
-        assertEquals("parent",parent.getName());
-        assertEquals("semantic-rules.cfg",parent.getSource());
+        assertEquals("parent", parent.getName());
+        assertEquals("semantic-rules.cfg", parent.getSource());
     }
 
     @Test
-    public void testParent() throws Exception {
-        assertSemantics("vehiclebrand:audi","audi cars","parent");
-        assertSemantics("vehiclebrand:alfa","alfa bus","parent");
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle","parent.sr");
-        assertSemantics("AND vw car",       "vw cars","parent");
-        assertSemantics("AND skoda car",    "skoda cars","parent.sr");
+    public void testParent() {
+        assertSemantics("vehiclebrand:audi", "audi cars", "parent");
+        assertSemantics("vehiclebrand:alfa", "alfa bus", "parent");
+        assertSemantics("AND vehiclebrand:bmw expensivetv", "bmw motorcycle", "parent.sr");
+        assertSemantics("AND vw car",        "vw cars", "parent");
+        assertSemantics("AND skoda car",     "skoda cars", "parent.sr");
     }
 
     @Test
-    public void testChild1() throws Exception {
-        assertSemantics("vehiclebrand:skoda","audi cars","child1.sr");
-        assertSemantics("vehiclebrand:alfa", "alfa bus","child1");
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle","child1");
-        assertSemantics("vehiclebrand:skoda","vw cars","child1");
-        assertSemantics("AND skoda car",     "skoda cars","child1");
+    public void testChild1() {
+        assertSemantics("vehiclebrand:skoda", "audi cars", "child1.sr");
+        assertSemantics("vehiclebrand:alfa",  "alfa bus", "child1");
+        assertSemantics("AND vehiclebrand:bmw expensivetv", "bmw motorcycle", "child1");
+        assertSemantics("vehiclebrand:skoda", "vw cars", "child1");
+        assertSemantics("AND skoda car",      "skoda cars", "child1");
     }
 
     @Test
-    public void testChild2() throws Exception {
-        assertSemantics("vehiclebrand:audi","audi cars","child2");
-        assertSemantics("vehiclebrand:alfa","alfa bus","child2.sr");
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle","child2.sr");
-        assertSemantics("AND vw car","vw cars","child2");
-        assertSemantics("vehiclebrand:skoda","skoda cars","child2");
+    public void testChild2() {
+        assertSemantics("vehiclebrand:audi", "audi cars", "child2");
+        assertSemantics("vehiclebrand:alfa", "alfa bus", "child2.sr");
+        assertSemantics("AND vehiclebrand:bmw expensivetv", "bmw motorcycle", "child2.sr");
+        assertSemantics("AND vw car", "vw cars", "child2");
+        assertSemantics("vehiclebrand:skoda", "skoda cars", "child2");
     }
 
     @Test
-    public void testGrandchild() throws Exception {
-        assertSemantics("vehiclebrand:skoda","audi cars","grandchild.sr");
-        assertSemantics("vehiclebrand:alfa","alfa bus","grandchild");
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle","grandchild");
-        assertSemantics("vehiclebrand:skoda","vw cars","grandchild");
-        assertSemantics("vehiclebrand:skoda","skoda cars","grandchild");
+    public void testGrandchild() {
+        assertSemantics("vehiclebrand:skoda", "audi cars", "grandchild.sr");
+        assertSemantics("vehiclebrand:alfa", "alfa bus", "grandchild");
+        assertSemantics("AND vehiclebrand:bmw expensivetv", "bmw motorcycle", "grandchild");
+        assertSemantics("vehiclebrand:skoda", "vw cars", "grandchild");
+        assertSemantics("vehiclebrand:skoda", "skoda cars", "grandchild");
     }
 
     @Test

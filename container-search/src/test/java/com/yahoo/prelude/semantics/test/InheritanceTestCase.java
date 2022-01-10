@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import com.yahoo.component.chain.Chain;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleBaseException;
@@ -24,7 +25,6 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
 public class InheritanceTestCase {
 
     private static final String root = "src/test/java/com/yahoo/prelude/semantics/test/rulebases/";
@@ -34,10 +34,10 @@ public class InheritanceTestCase {
 
     static {
         try {
-            parent = RuleBase.createFromFile(root + "inheritingrules/parent.sr", null);
-            child1 = RuleBase.createFromFile(root + "inheritingrules/child1.sr", null);
-            child2 = RuleBase.createFromFile(root + "inheritingrules/child2.sr", null);
-            grandchild = RuleBase.createFromFile(root + "inheritingrules/grandchild.sr", null);
+            parent = RuleBase.createFromFile(root + "inheritingrules/parent.sr", null, new SimpleLinguistics());
+            child1 = RuleBase.createFromFile(root + "inheritingrules/child1.sr", null, new SimpleLinguistics());
+            child2 = RuleBase.createFromFile(root + "inheritingrules/child2.sr", null, new SimpleLinguistics());
+            grandchild = RuleBase.createFromFile(root + "inheritingrules/grandchild.sr", null, new SimpleLinguistics());
             grandchild.setDefault(true);
 
             searcher = new SemanticSearcher(parent, child1, child2, grandchild);
@@ -77,7 +77,7 @@ public class InheritanceTestCase {
     public void testInclusionOrderAndContentDump() {
         StringTokenizer lines = new StringTokenizer(grandchild.toContentString(),"\n",false);
         assertEquals("vw -> audi", lines.nextToken());
-        assertEquals("cars -> car", lines.nextToken());
+        assertEquals("car -> car", lines.nextToken());
         assertEquals("[brand] [vehicle] -> vehiclebrand:[brand]", lines.nextToken());
         assertEquals("vehiclebrand:bmw +> expensivetv", lines.nextToken());
         assertEquals("vehiclebrand:audi -> vehiclebrand:skoda", lines.nextToken());

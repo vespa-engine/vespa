@@ -23,6 +23,8 @@ import java.util.Set;
 /**
  * A wrapper for structured data representing feature values: A map of floats and tensors.
  * This class is immutable but not thread safe.
+ *
+ * @author bratseth
  */
 public class FeatureData implements Inspectable, JsonProducer {
 
