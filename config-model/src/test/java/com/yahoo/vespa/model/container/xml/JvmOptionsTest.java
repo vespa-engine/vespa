@@ -200,9 +200,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
             return;
         }
 
-        Collections.sort(strings);
+        assertTrue("Expected 1 or more log messages for invalid JM options, got none", logger.msgs.size() > 0);
         Pair<Level, String> firstOption = logger.msgs.get(0);
         assertEquals(Level.WARNING, firstOption.getFirst());
+
+        Collections.sort(strings);
         assertEquals("Invalid JVM " + (optionName.equals("gc-options") ? "GC " : "") +
                              "options in services.xml: " + String.join(",", strings), firstOption.getSecond());
     }
@@ -238,6 +240,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                                   "$(touch /tmp/hello-from-gc-options)",
                                   "$(touch", "/tmp/hello-from-gc-options)");
 
+        verifyLoggingOfJvmOptions(true,
+                                  "options",
+                                  "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005",
+                                  "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005");
+
         verifyLoggingOfJvmOptions(false,
                                   "options",
                                   "$(touch /tmp/hello-from-gc-options)",
@@ -246,7 +253,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         // Valid options, should not log anything
         verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
         verifyLoggingOfJvmOptions(true, "options", "-verbose:gc");
-        verifyLoggingOfJvmOptions(true, "options", "-Djava.library.path=/opt/vespa/lib64:/home/y/lib64 -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005");
+        verifyLoggingOfJvmOptions(true, "options", "-Djava.library.path=/opt/vespa/lib64:/home/y/lib64");
         verifyLoggingOfJvmOptions(false, "options", "-Xms2G");
     }
 

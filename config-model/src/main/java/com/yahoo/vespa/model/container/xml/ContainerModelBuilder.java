@@ -1064,12 +1064,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static class JvmOptions {
 
         private static final Pattern validPattern = Pattern.compile("-[a-zA-z0-9=:./,]+");
+        // debug port will not be available in hosted, don't allow
+        private static final Pattern invalidInHostedatttern = Pattern.compile("-Xrunjdwp:transport=.*");
 
         private final ContainerCluster<?> cluster;
         private final Element nodesElement;
         private final DeployLogger logger;
         private final boolean legacyOptions;
         private final boolean failDeploymentWithInvalidJvmOptions;
+        private final boolean isHosted;
 
         public JvmOptions(ContainerCluster<?> cluster, Element nodesElement, DeployState deployState, boolean legacyOptions) {
             this.cluster = cluster;
@@ -1077,6 +1080,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             this.logger = deployState.getDeployLogger();
             this.legacyOptions = legacyOptions;
             this.failDeploymentWithInvalidJvmOptions = deployState.featureFlags().failDeploymentWithInvalidJvmOptions();
+            this.isHosted = deployState.isHosted();
         }
 
         String build() {
@@ -1086,7 +1090,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Element jvmElement = XML.getChild(nodesElement, "jvm");
             if (jvmElement == null) return "";
             String jvmOptions = jvmElement.getAttribute(VespaDomBuilder.OPTIONS);
-            if (jvmOptions == null) return "";
+            if (jvmOptions.isEmpty()) return "";
             validateJvmOptions(jvmOptions);
             return jvmOptions;
         }
@@ -1135,6 +1139,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                 .filter(option -> !Pattern.matches(validPattern.pattern(), option))
                                                 .sorted()
                                                 .collect(Collectors.toList());
+            if (isHosted)
+                invalidOptions.addAll(Arrays.stream(optionList)
+                                            .filter(option -> !option.isEmpty())
+                                            .filter(option -> Pattern.matches(invalidInHostedatttern.pattern(), option))
+                                            .sorted()
+                                            .collect(Collectors.toList()));
 
             if (invalidOptions.isEmpty()) return;
 
