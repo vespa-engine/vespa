@@ -47,12 +47,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         if ( ! admin.multitenant())
             admin.setClusterControllers(addConfiguredClusterControllers(deployState, admin, adminE), deployState);
 
-        ModelElement adminElement = new ModelElement(adminE);
-        addLogForwarders(adminElement.child("logforwarding"), admin);
-
-        if (adminElement.child("filedistribution") != null) {
-            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "'filedistribution' element is deprecated and ignored");
-        }
+        addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin);
     }
 
     private List<Configserver> parseConfigservers(DeployState deployState, Admin admin, Element adminE) {
@@ -158,7 +153,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Logserver doBuild(DeployState deployState, AbstractConfigProducer parent, Element producerSpec) {
+        protected Logserver doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element producerSpec) {
             return new Logserver(parent);
         }
     }
@@ -177,7 +172,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Configserver doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
+        protected Configserver doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
             var configServer = new Configserver(parent, "configserver." + i, rpcPort);
             configServer.setProp("index", i);
             return configServer;
@@ -193,7 +188,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Slobrok doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
+        protected Slobrok doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
             return new Slobrok(parent, i, deployState.featureFlags());
         }
 
@@ -209,7 +204,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
+        protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element spec) {
             return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState, false);
         }
     }
