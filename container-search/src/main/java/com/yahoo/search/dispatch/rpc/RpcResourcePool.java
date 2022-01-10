@@ -2,7 +2,7 @@
 package com.yahoo.search.dispatch.rpc;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;

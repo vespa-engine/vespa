@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.ErrorResponse;

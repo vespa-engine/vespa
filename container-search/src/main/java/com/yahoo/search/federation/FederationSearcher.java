@@ -2,7 +2,7 @@
 package com.yahoo.search.federation;
 
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;

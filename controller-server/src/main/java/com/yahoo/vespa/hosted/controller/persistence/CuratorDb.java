@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;

@@ -2,7 +2,7 @@
 package com.yahoo.container.core.config;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.google.inject.Injector;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.common.net.InetAddresses;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModelProvider;

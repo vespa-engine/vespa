@@ -2,7 +2,7 @@
 package com.yahoo.search.yql;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.processing.IllegalInputException;

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jdisc.Response;
 import com.yahoo.restapi.JacksonJsonResponse;

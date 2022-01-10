@@ -5,7 +5,7 @@ import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.service.VespaServicesConfig.Service;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 
 import java.util.ArrayList;
 import java.util.Collections;

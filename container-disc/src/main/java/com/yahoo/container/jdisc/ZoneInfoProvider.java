@@ -5,7 +5,7 @@ import ai.vespa.cloud.ApplicationId;
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.Zone;
 import ai.vespa.cloud.ZoneInfo;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ApplicationIdConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;

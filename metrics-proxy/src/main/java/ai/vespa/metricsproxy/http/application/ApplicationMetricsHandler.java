@@ -8,7 +8,7 @@ import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
 import com.yahoo.container.handler.metrics.HttpHandlerBase;
 import com.yahoo.container.handler.metrics.JsonResponse;

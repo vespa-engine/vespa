@@ -2,7 +2,7 @@
 package com.yahoo.vespa.orchestrator;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;

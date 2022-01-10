@@ -3,7 +3,7 @@ package com.yahoo.docprocs.indexing;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;

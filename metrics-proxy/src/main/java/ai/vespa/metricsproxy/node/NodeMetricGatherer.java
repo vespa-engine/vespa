@@ -10,7 +10,7 @@ import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.service.SystemPollerProvider;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.state.CoredumpGatherer;
 import com.yahoo.container.jdisc.state.FileWrapper;
 import com.yahoo.container.jdisc.state.HostLifeGatherer;

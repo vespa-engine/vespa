@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;

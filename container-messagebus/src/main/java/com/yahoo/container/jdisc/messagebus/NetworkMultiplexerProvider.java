@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc.messagebus;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.messagebus.network.Identity;

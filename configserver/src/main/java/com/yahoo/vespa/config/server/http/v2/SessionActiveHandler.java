@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import java.time.Duration;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;

@@ -5,7 +5,7 @@ import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.search.query.rewrite.*;
 import com.yahoo.search.*;

@@ -2,7 +2,7 @@
 package com.yahoo.language.sentencepiece;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.tools.Embed;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;

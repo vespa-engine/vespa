@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;

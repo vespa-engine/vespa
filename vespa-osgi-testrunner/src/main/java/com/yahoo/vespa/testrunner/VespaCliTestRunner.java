@@ -2,7 +2,7 @@
 package com.yahoo.vespa.testrunner;
 
 import ai.vespa.hosted.api.TestConfig;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;

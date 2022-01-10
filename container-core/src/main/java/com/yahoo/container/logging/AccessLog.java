@@ -2,7 +2,7 @@
 package com.yahoo.container.logging;
 
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 
 /**

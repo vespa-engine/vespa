@@ -3,7 +3,7 @@ package com.yahoo.search.handler;
 
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.Zone;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Vtag;

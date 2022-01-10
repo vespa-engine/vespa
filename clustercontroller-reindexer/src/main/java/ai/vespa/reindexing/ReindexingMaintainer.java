@@ -4,7 +4,7 @@ package ai.vespa.reindexing;
 import ai.vespa.reindexing.Reindexer.Cluster;
 import ai.vespa.reindexing.Reindexing.Trigger;
 import ai.vespa.reindexing.ReindexingCurator.ReindexingLockException;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.component.AbstractComponent;

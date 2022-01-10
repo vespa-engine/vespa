@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.tenant;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
