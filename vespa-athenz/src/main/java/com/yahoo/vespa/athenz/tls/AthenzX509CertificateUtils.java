@@ -26,13 +26,29 @@ public class AthenzX509CertificateUtils {
     private AthenzX509CertificateUtils() {}
 
     public static AthenzIdentity getIdentityFromRoleCertificate(X509Certificate certificate) {
-        List<com.yahoo.security.SubjectAlternativeName> sans = com.yahoo.security.X509CertificateUtils.getSubjectAlternativeNames(certificate);
+        List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(certificate);
+        return getRoleIdentityFromEmail(sans)
+                .or(() -> getRoleIdentityFromUri(sans))
+                .orElseThrow(() -> new IllegalArgumentException("Could not find identity in SAN: " + sans));
+    }
+
+    private static Optional<AthenzIdentity> getRoleIdentityFromEmail(List<SubjectAlternativeName> sans) {
         return sans.stream()
                 .filter(san -> san.getType() == RFC822_NAME)
                 .map(com.yahoo.security.SubjectAlternativeName::getValue)
                 .map(AthenzX509CertificateUtils::getIdentityFromSanEmail)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Could not find identity in SAN: " + sans));
+                .findFirst();
+    }
+
+    private static Optional<AthenzIdentity> getRoleIdentityFromUri(List<SubjectAlternativeName> sans) {
+        String uriPrefix = "athenz://principal/";
+        return sans.stream()
+                .filter(s -> s.getType() == UNIFORM_RESOURCE_IDENTIFIER && s.getValue().startsWith(uriPrefix))
+                .map(san -> {
+                    String uriPath = URI.create(san.getValue()).getPath();
+                    return AthenzIdentities.from(uriPath.substring(uriPrefix.length()));
+                })
+                .findFirst();
     }
 
     public static AthenzRole getRolesFromRoleCertificate(X509Certificate certificate) {
