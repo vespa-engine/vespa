@@ -23,7 +23,7 @@ public class TermListTestCase {
     @Test
     public void testTermListInWeightedSet() {
         URIBuilder builder = searchUri();
-        builder.setParameter("myTerms", "{'1':1, '2':1, '3':1}");
+        builder.setParameter("myTerms", "{'1':1, '2':1, 3:1}");
         builder.setParameter("yql", "select * from sources * where weightedSet(user_id, @myTerms)");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where weightedSet(user_id, {\"1\": 1, \"2\": 1, \"3\": 1});",
@@ -33,7 +33,7 @@ public class TermListTestCase {
     @Test
     public void testTermListInWand() {
         URIBuilder builder = searchUri();
-        builder.setParameter("myTerms", "{'1':1, '2':1, '3':1}");
+        builder.setParameter("myTerms", "{'1':1, 2:1, '3':1}");
         builder.setParameter("yql", "select * from sources * where wand(user_id, @myTerms)");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where wand(user_id, {\"1\": 1, \"2\": 1, \"3\": 1});",

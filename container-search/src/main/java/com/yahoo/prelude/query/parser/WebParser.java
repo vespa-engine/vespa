@@ -1,10 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NotItem;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.parser.ParserEnvironment;
-
-import java.util.Set;
 
 /**
  * Parser for web search queries. Language:
@@ -21,37 +24,38 @@ import java.util.Set;
 public class WebParser extends AllParser {
 
     public WebParser(ParserEnvironment environment) {
-        super(environment);
+        super(environment, false);
     }
 
-    protected @Override Item parseItemsBody() {
+    @Override
+    protected Item parseItemsBody() {
         // Algorithm: Collect positive, negative, and'ed and or'ed elements, then combine.
-        AndItem and=null;
-        OrItem or=null;
-        NotItem not=null; // Store negatives here as we go
+        CompositeItem and = null;
+        OrItem or = null;
+        NotItem not = null; // Store negatives here as we go
         Item current;
 
         // Find all items
         do {
-            current=negativeItem();
-            if (current!=null) {
-                not=addNot(current,not);
+            current = negativeItem();
+            if (current != null) {
+                not = addNot(current, not);
                 continue;
             }
 
-            current=positiveItem();
-            if (current==null)
+            current = positiveItem();
+            if (current == null)
                 current = indexableItem();
 
-            if (current!=null) {
-                if (and!=null && (current instanceof WordItem) && "OR".equals(((WordItem)current).getRawWord())) {
-                    if (or==null)
-                        or=addOr(and,or);
-                    and=new AndItem();
+            if (current != null) {
+                if (and != null && (current instanceof WordItem) && "OR".equals(((WordItem)current).getRawWord())) {
+                    if (or == null)
+                        or = addOr(and, or);
+                    and = new AndItem();
                     or.addItem(and);
                 }
                 else {
-                    and=addAnd(current,and);
+                    and = addAnd(current, and);
                 }
             }
 
@@ -60,21 +64,17 @@ public class WebParser extends AllParser {
         } while (tokens.hasNext());
 
         // Combine the items
-        Item topLevel=and;
+        Item topLevel = and;
 
-        if (or!=null)
-            topLevel=or;
+        if (or != null)
+            topLevel = or;
 
-        if (not!=null && topLevel!=null) {
+        if (not != null && topLevel != null) {
             not.setPositiveItem(topLevel);
-            topLevel=not;
+            topLevel = not;
         }
 
         return simplifyUnnecessaryComposites(topLevel);
-    }
-
-    protected void setSubmodeFromIndex(String indexName, Set<String> searchDefinitions) {
-        // No submodes in this language
     }
 
 }

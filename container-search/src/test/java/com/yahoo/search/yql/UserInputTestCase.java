@@ -72,7 +72,7 @@ public class UserInputTestCase {
     @Test
     public void testRawUserInput() {
         URIBuilder builder = searchUri();
-        builder.setParameter("yql", "select * from sources * where [{grammar: \"raw\"}]userInput(\"nal le\")");
+        builder.setParameter("yql", "select * from sources * where {grammar: \"raw\"}userInput(\"nal le\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where default contains \"nal le\";", query.yqlRepresentation());
     }
@@ -81,7 +81,7 @@ public class UserInputTestCase {
     public void testSegmentedUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{grammar: \"segment\"}]userInput(\"nal le\")");
+                "select * from sources * where {grammar: \"segment\"}userInput(\"nal le\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where default contains ([{origin: {original: \"nal le\", offset: 0, length: 6}}]phrase(\"nal\", \"le\"));", query.yqlRepresentation());
     }
@@ -90,9 +90,47 @@ public class UserInputTestCase {
     public void testSegmentedNoiseUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
-                "select * from sources * where [{grammar: \"segment\"}]userInput(\"^^^^^^^^\")");
+                "select * from sources * where {grammar: \"segment\"}userInput(\"^^^^^^^^\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals("select * from sources * where default contains \"^^^^^^^^\";", query.yqlRepresentation());
+    }
+
+    @Test
+    public void testAnyParsedUserInput() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where {grammar: \"any\"}userInput('foo bar')");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where (default contains \"foo\" OR default contains \"bar\");",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    public void testAllParsedUserInput() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where {grammar: \"all\"}userInput('foo bar')");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where (default contains \"foo\" AND default contains \"bar\");",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    public void testWeakAndParsedUserInput() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where {grammar: \"weakAnd\"}userInput('foo bar')");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where weakAnd(default contains \"foo\", default contains \"bar\");",
+                     query.yqlRepresentation());
+    }
+
+    @Test
+    public void testIllegalGrammar() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql", "select * from sources * where {grammar: \"nonesuch\"}userInput('foo bar')");
+        Query query = new Query(builder.toString());
+        Result r = execution.search(query);
+        assertNotNull(r.hits().getError());
+        assertEquals("Could not create query from YQL: No query type 'nonesuch'",
+                     r.hits().getError().getDetailedMessage());
     }
 
     @Test

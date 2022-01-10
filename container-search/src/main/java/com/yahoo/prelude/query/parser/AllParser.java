@@ -2,6 +2,7 @@
 package com.yahoo.prelude.query.parser;
 
 import com.yahoo.prelude.query.AndItem;
+import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NotItem;
@@ -10,6 +11,7 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RankItem;
+import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
@@ -26,8 +28,16 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
  */
 public class AllParser extends SimpleParser {
 
-    public AllParser(ParserEnvironment environment) {
+    private final boolean weakAnd;
+
+    /**
+     * Creates an And parser
+     *
+     * @param weakAnd false to parse into AndItem (by default), true to parse to WeakAnd
+     */
+    public AllParser(ParserEnvironment environment, boolean weakAnd) {
         super(environment);
+        this.weakAnd = weakAnd;
     }
 
     @Override
@@ -42,7 +52,7 @@ public class AllParser extends SimpleParser {
 
     protected Item parseItemsBody() {
         // Algorithm: Collect positive, negative, and and'ed items, then combine.
-        AndItem and = null;
+        CompositeItem and = null;
         NotItem not = null; // Store negatives here as we go
         Item current;
 
@@ -88,11 +98,15 @@ public class AllParser extends SimpleParser {
         return root.getRoot() instanceof NullItem ? null : root.getRoot();
     }
 
-    protected AndItem addAnd(Item item, AndItem and) {
+    protected CompositeItem addAnd(Item item, CompositeItem and) {
         if (and == null)
-            and = new AndItem();
+            and = createAnd();
         and.addItem(item);
         return and;
+    }
+
+    private CompositeItem createAnd() {
+        return weakAnd ? new WeakAndItem() : new AndItem();
     }
 
     protected OrItem addOr(Item item, OrItem or) {
@@ -124,7 +138,7 @@ public class AllParser extends SimpleParser {
                 if (item != null) {
                     isComposited = true;
                     if (item instanceof OrItem) { // Turn into And
-                        AndItem and = new AndItem();
+                        CompositeItem and = createAnd();
 
                         for (Iterator<Item> i = ((OrItem) item).getItemIterator(); i.hasNext();) {
                             and.addItem(i.next());
