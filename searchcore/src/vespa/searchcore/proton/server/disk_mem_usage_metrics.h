@@ -14,6 +14,7 @@ class DiskMemUsageMetrics
 {
     double _disk_usage;
     double _disk_utilization;
+    double _transient_disk_usage;
     double _memory_usage;
     double _memory_utilization;
     double _transient_memory_usage;
@@ -24,6 +25,7 @@ public:
     void merge(const DiskMemUsageState &usage_state) noexcept;
     double get_disk_usage() const noexcept { return _disk_usage; }
     double get_disk_utilization() const noexcept { return _disk_utilization; }
+    double get_transient_disk_usage() const noexcept { return _transient_disk_usage; }
     double get_memory_usage() const noexcept { return _memory_usage; }
     double get_memory_utilization() const noexcept { return _memory_utilization; }
     double get_transient_memory_usage() const noexcept { return _transient_memory_usage; }

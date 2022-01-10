@@ -117,6 +117,7 @@ public:
     {
         return _index->createBlueprint(requestContext, fields, term);
     }
+    // TODO: Calculate the total disk size of current fusion indexes and set fusion_size_on_disk().
     search::SearchableStats getSearchableStats() const override { return _index->getSearchableStats(); }
     search::SerialNum getSerialNum() const override {
         return _index->getSerialNum();

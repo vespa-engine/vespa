@@ -131,6 +131,7 @@ DiskMemUsageFilter::recalcState(const Guard &guard)
     }
     DiskMemUsageState dmstate(ResourceUsageState(_config._diskLimit, diskUsed),
                               ResourceUsageState(_config._memoryLimit, memoryUsed),
+                              get_relative_transient_disk_usage(guard),
                               get_relative_transient_memory_usage(guard));
     notifyDiskMemUsage(guard, dmstate);
 }
@@ -153,9 +154,14 @@ DiskMemUsageFilter::getDiskUsedRatio(const Guard&) const
 double
 DiskMemUsageFilter::get_relative_transient_memory_usage(const Guard&) const
 {
-    return  static_cast<double>(_transient_memory_usage) / _hwInfo.memory().sizeBytes();
+    return  static_cast<double>(_transient_usage.memory()) / _hwInfo.memory().sizeBytes();
 }
 
+double
+DiskMemUsageFilter::get_relative_transient_disk_usage(const Guard&) const
+{
+    return  static_cast<double>(_transient_usage.disk()) / _hwInfo.disk().sizeBytes();
+}
 
 DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
     : _lock(),
@@ -163,7 +169,7 @@ DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
       _acceptWrite(true),
       _memoryStats(),
       _diskUsedSizeBytes(),
-      _transient_memory_usage(0u),
+      _transient_usage(),
       _config(),
       _state(),
       _dmstate(),
@@ -190,11 +196,10 @@ DiskMemUsageFilter::setDiskUsedSize(uint64_t diskUsedSizeBytes)
 }
 
 void
-DiskMemUsageFilter::set_transient_resource_usage(size_t transient_memory_usage, size_t transient_disk_usage)
+DiskMemUsageFilter::set_transient_resource_usage(const TransientResourceUsage& transient_usage)
 {
     Guard guard(_lock);
-    _transient_memory_usage = transient_memory_usage;
-    _transient_disk_usage = transient_disk_usage;
+    _transient_usage = transient_usage;
     recalcState(guard);
 }
 
@@ -220,25 +225,11 @@ DiskMemUsageFilter::getDiskUsedSize() const
     return _diskUsedSizeBytes;
 }
 
-size_t
-DiskMemUsageFilter::get_transient_memory_usage() const
+TransientResourceUsage
+DiskMemUsageFilter::get_transient_resource_usage() const
 {
     Guard guard(_lock);
-    return _transient_memory_usage;
-}
-
-size_t
-DiskMemUsageFilter::get_transient_disk_usage() const
-{
-    Guard guard(_lock);
-    return _transient_disk_usage;
-}
-
-double
-DiskMemUsageFilter::get_relative_transient_disk_usage() const
-{
-    Guard guard(_lock);
-    return  static_cast<double>(_transient_disk_usage) / _hwInfo.disk().sizeBytes();
+    return _transient_usage;
 }
 
 DiskMemUsageFilter::Config

@@ -6,6 +6,7 @@
 #include "disk_mem_usage_state.h"
 #include "disk_mem_usage_metrics.h"
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <atomic>
@@ -47,8 +48,7 @@ private:
     // Following member variables are protected by _lock
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
-    size_t                       _transient_memory_usage;
-    size_t                       _transient_disk_usage;
+    TransientResourceUsage       _transient_usage;
     Config                       _config;
     State                        _state;
     DiskMemUsageState            _dmstate;
@@ -59,6 +59,7 @@ private:
     double getMemoryUsedRatio(const Guard &guard) const;
     double getDiskUsedRatio(const Guard &guard) const;
     double get_relative_transient_memory_usage(const Guard& guard) const;
+    double get_relative_transient_disk_usage(const Guard& guard) const;
     void notifyDiskMemUsage(const Guard &guard, DiskMemUsageState state);
 
 public:
@@ -66,13 +67,11 @@ public:
     ~DiskMemUsageFilter() override;
     void setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in);
     void setDiskUsedSize(uint64_t diskUsedSizeBytes);
-    void set_transient_resource_usage(size_t transient_memory_usage, size_t transient_disk_usage);
+    void set_transient_resource_usage(const TransientResourceUsage& transient_usage);
     void setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
-    size_t get_transient_memory_usage() const;
-    size_t get_transient_disk_usage() const;
-    double get_relative_transient_disk_usage() const;
+    TransientResourceUsage get_transient_resource_usage() const;
     Config getConfig() const;
     const HwInfo &getHwInfo() const { return _hwInfo; }
     DiskMemUsageState usageState() const;
