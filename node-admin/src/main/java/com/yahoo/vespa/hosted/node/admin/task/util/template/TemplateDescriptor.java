@@ -9,7 +9,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
 public class TemplateDescriptor {
     private static final char VARIABLE_DIRECTIVE_CHAR = '=';
     private static final char REMOVE_NEWLINE_CHAR = '|';
-    private static final char COMMENT_CHAR = '#';
 
     private String startDelimiter = "%{";
     private String endDelimiter = "}";
@@ -33,5 +32,4 @@ public class TemplateDescriptor {
 
     char variableDirectiveChar() { return VARIABLE_DIRECTIVE_CHAR; }
     char removeNewlineChar() { return REMOVE_NEWLINE_CHAR; }
-    char commentChar() { return COMMENT_CHAR; }
 }

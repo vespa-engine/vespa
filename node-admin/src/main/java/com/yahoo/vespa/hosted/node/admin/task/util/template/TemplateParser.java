@@ -68,8 +68,6 @@ class TemplateParser {
 
         if (current.skip(descriptor.variableDirectiveChar())) {
             parseVariableSection();
-        } else if (current.skip(descriptor.commentChar())) {
-            parseCommentSection(startOfDirective);
         } else {
             var startOfType = new Cursor(current);
             String type = skipId().orElseThrow(() -> new BadTemplateException(current, "Missing section name"));
@@ -96,16 +94,6 @@ class TemplateParser {
         String name = parseId();
         parseEndDelimiter(true);
         template.appendVariableSection(name, nameStart, current);
-    }
-
-    private void parseCommentSection(Cursor startOfDirective) {
-        if (parseEndDelimiter(false)) {
-            current.advancePast('\n');
-        } else {
-            current.advanceTo('\n');
-        }
-
-        template.appendCommentSection(current);
     }
 
     private void parseEndDirective() {

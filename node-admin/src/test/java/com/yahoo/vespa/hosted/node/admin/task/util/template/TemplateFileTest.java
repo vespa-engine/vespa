@@ -83,17 +83,6 @@ class TemplateFileTest {
                      form.render());
     }
 
-    @Test
-    void verifyComment() {
-        assertEquals("first\n" +
-                     "second\n" +
-                     "third and still third\n",
-                     makeForm("first\n" +
-                              "second%{#} rest of line is ignored\n" +
-                              "third%{#|} this line continues on the next\n" +
-                              " and still third\n").render());
-    }
-
     private Form getForm(String filename) {
         return TemplateFile.read(Path.of("src/test/resources/" + filename)).instantiate();
     }
