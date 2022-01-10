@@ -267,7 +267,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             String modelConfigName = OnnxModelTransformer.getModelConfigName(reference);
             String modelOutput = OnnxModelTransformer.getModelOutput(reference, null);
 
-            reference = new Reference("onnxModel", new Arguments(new ReferenceNode(modelConfigName)), modelOutput);
+            reference = new Reference("onnx", new Arguments(new ReferenceNode(modelConfigName)), modelOutput);
             if ( ! featureTypes.containsKey(reference)) {
                 throw new IllegalArgumentException("Missing onnx-model config for '" + configOrFileName + "'");
             }

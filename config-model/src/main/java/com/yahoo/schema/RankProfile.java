@@ -1089,11 +1089,11 @@ public class RankProfile implements Cloneable {
             Map<String, TensorType> inputTypes = resolveOnnxInputTypes(model, context);
 
             TensorType defaultOutputType = model.getTensorType(model.getDefaultOutput(), inputTypes);
-            context.setType(new Reference("onnxModel", args, null), defaultOutputType);
+            context.setType(new Reference("onnx", args, null), defaultOutputType);
 
             for (Map.Entry<String, String> mapping : model.getOutputMap().entrySet()) {
                 TensorType type = model.getTensorType(mapping.getKey(), inputTypes);
-                context.setType(new Reference("onnxModel", args, mapping.getValue()), type);
+                context.setType(new Reference("onnx", args, mapping.getValue()), type);
             }
         }
         return context;
