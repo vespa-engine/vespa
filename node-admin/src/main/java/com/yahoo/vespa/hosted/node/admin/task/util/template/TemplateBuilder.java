@@ -2,22 +2,15 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.text.Cursor;
-import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * @author hakonhall
  */
 class TemplateBuilder {
-    private final Cursor start;
-    private final Cursor end;
-
-    private final List<Consumer<FormBuilder>> sections = new ArrayList<>();
+    private final SectionList sections;
 
     /** Example location (value) of a variable name (key). */
     private final Map<String, Cursor> variables = new HashMap<>();
@@ -26,27 +19,20 @@ class TemplateBuilder {
     private final Map<String, Cursor> subforms = new HashMap<>();
 
     TemplateBuilder(Cursor start) {
-        this.start = new Cursor(start);
-        this.end = new Cursor(start);
+        sections = new SectionList(start);
+        sections.setTemplateBuilder(this);
     }
 
-    void appendLiteralSection(Cursor end) {
-        CursorRange range = verifyAndUpdateEnd(end);
-        sections.add((FormBuilder builder) -> builder.addLiteralSection(range));
-    }
+    SectionList sectionList() { return sections; }
 
-    void appendVariableSection(String name, Cursor nameOffset, Cursor end) {
-        CursorRange range = verifyAndUpdateEnd(end);
+    void addVariable(String name, Cursor nameOffset) {
         Cursor existing = subforms.get(name);
         if (existing != null)
             throw new NameAlreadyExistsTemplateException(name, existing, nameOffset);
         variables.put(name, new Cursor(nameOffset));
-        sections.add(formBuilder -> formBuilder.addVariableSection(range, name, nameOffset));
     }
 
-    void appendSubformSection(String name, Cursor nameCursor, Cursor end, Template body) {
-        CursorRange range = verifyAndUpdateEnd(end);
-
+    void addSubform(String name, Cursor nameCursor) {
         Cursor existing = variables.get(name);
         if (existing != null)
             throw new NameAlreadyExistsTemplateException(name, existing, nameCursor);
@@ -54,18 +40,9 @@ class TemplateBuilder {
         existing = subforms.put(name, nameCursor);
         if (existing != null)
             throw new NameAlreadyExistsTemplateException(name, existing, nameCursor);
-
-        sections.add(formBuilder -> formBuilder.addSubformSection(range, name, body));
     }
 
     Template build() {
-        var range = new CursorRange(start, end);
-        return new Template(range, sections, variables, subforms);
-    }
-
-    private CursorRange verifyAndUpdateEnd(Cursor newEnd) {
-        var range = new CursorRange(this.end, newEnd);
-        this.end.set(newEnd);
-        return range;
+        return new Template(sections.range(), sections.sections(), variables, subforms);
     }
 }

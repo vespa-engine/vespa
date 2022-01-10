@@ -43,7 +43,7 @@ class TemplateParser {
         do {
             current.advanceTo(descriptor.startDelimiter());
             if (!current.equals(start)) {
-                templateBuilder.appendLiteralSection(current);
+                templateBuilder.sectionList().appendLiteralSection(current);
             }
 
             if (current.eot()) {
@@ -91,7 +91,7 @@ class TemplateParser {
         var nameStart = new Cursor(current);
         String name = parseId();
         parseEndDelimiter(true);
-        templateBuilder.appendVariableSection(name, nameStart, current);
+        templateBuilder.sectionList().appendVariableSection(name, nameStart, current);
     }
 
     private void parseEndDirective() {
@@ -107,7 +107,7 @@ class TemplateParser {
         TemplateParser bodyParser = parse(descriptor, current, FormEndsIn.END);
         current.set(bodyParser.current);
 
-        templateBuilder.appendSubformSection(name, startOfName, current, bodyParser.template());
+        templateBuilder.sectionList().appendSubformSection(name, startOfName, current, bodyParser.template());
     }
 
     private void skipRequiredWhitespaces() {
