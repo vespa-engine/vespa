@@ -2,5 +2,4 @@
 @ExportPackage
 package com.yahoo.vespa.orchestrator.config;
 
-import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;
