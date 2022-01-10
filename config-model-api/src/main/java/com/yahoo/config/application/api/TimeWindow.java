@@ -12,9 +12,11 @@ import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -39,7 +41,7 @@ public class TimeWindow {
         if (days.isEmpty()) throw new IllegalArgumentException("At least one day must be specified");
         if (hours.isEmpty()) throw new IllegalArgumentException("At least one hour must be specified");
         for (var day : days) {
-            if (!dateRange.includes(day)) {
+            if (!dateRange.days().contains(day)) {
                 throw new IllegalArgumentException("Invalid day: " + dateRange + " does not contain " + day);
             }
         }
@@ -83,14 +85,15 @@ public class TimeWindow {
 
     /** Parse a time window from the given day, hour and time zone specification */
     public static TimeWindow from(String daySpec, String hourSpec, String zoneSpec, String dateStart, String dateEnd) {
+        LocalDateRange dateRange = LocalDateRange.from(dateStart, dateEnd);
         List<DayOfWeek> days = daySpec.isEmpty()
-                ? List.of(DayOfWeek.values()) // All days by default
+                ? List.copyOf(dateRange.days()) // Default to the days contained in the date range
                 : parse(daySpec, TimeWindow::parseDays);
         List<Integer> hours = hourSpec.isEmpty()
                 ? IntStream.rangeClosed(0, 23).boxed().collect(Collectors.toList()) // All hours by default
                 : parse(hourSpec, TimeWindow::parseHours);
         ZoneId zone = zoneFrom(zoneSpec.isEmpty() ? "UTC" : zoneSpec);
-        return new TimeWindow(days, hours, zone, LocalDateRange.from(dateStart, dateEnd));
+        return new TimeWindow(days, hours, zone, dateRange);
     }
 
     /** Parse a specification, e.g. "1,4-5", using the given value parser */
@@ -187,15 +190,14 @@ public class TimeWindow {
             return end;
         }
 
-        /** Returns whether this contains the given day */
-        private boolean includes(DayOfWeek day) {
-            if (start.isEmpty() || end.isEmpty()) return true;
-            for (LocalDate date = start.get(); !date.isAfter(end.get()); date = date.plusDays(1)) {
-                if (date.getDayOfWeek() == day) {
-                    return true;
-                }
+        /** Return days of week found in this range */
+        private Set<DayOfWeek> days() {
+            if (start.isEmpty() || end.isEmpty()) return EnumSet.allOf(DayOfWeek.class);
+            Set<DayOfWeek> days = EnumSet.noneOf(DayOfWeek.class);
+            for (LocalDate date = start.get(); !date.isAfter(end.get()) && days.size() < 7; date = date.plusDays(1)) {
+                days.add(date.getDayOfWeek());
             }
-            return false;
+            return days;
         }
 
         /** Returns whether includes the given date */

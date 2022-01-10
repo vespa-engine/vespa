@@ -129,6 +129,12 @@ public class TimeWindowTest {
             assertEquals(List.of(MONDAY, WEDNESDAY, THURSDAY), tw.days());
             assertEquals(List.of(1, 2, 3, 4), tw.hours());
         }
+        {   // Default to days contained in the date range
+            TimeWindow tw = TimeWindow.from("", "", "", "2022-01-11", "2022-01-14");
+            assertEquals(List.of(TUESDAY, WEDNESDAY, THURSDAY, FRIDAY), tw.days());
+            TimeWindow tw2 = TimeWindow.from("", "", "", "2022-01-01", "2100-01-01");
+            assertEquals(List.of(DayOfWeek.values()), tw2.days());
+        }
     }
 
     @Test
