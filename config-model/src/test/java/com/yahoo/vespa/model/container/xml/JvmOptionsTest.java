@@ -196,13 +196,15 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         List<String> strings = Arrays.asList(invalidOptions.clone());
         // Verify that nothing is logged if there are no invalid options
         if (strings.isEmpty()) {
-            assertEquals(0, logger.msgs.size());
+            assertEquals(logger.msgs.size() > 0 ? logger.msgs.get(0).getSecond() : "", 0, logger.msgs.size());
             return;
         }
 
-        Collections.sort(strings);
+        assertTrue("Expected 1 or more log messages for invalid JM options, got none", logger.msgs.size() > 0);
         Pair<Level, String> firstOption = logger.msgs.get(0);
         assertEquals(Level.WARNING, firstOption.getFirst());
+
+        Collections.sort(strings);
         assertEquals("Invalid JVM " + (optionName.equals("gc-options") ? "GC " : "") +
                              "options in services.xml: " + String.join(",", strings), firstOption.getSecond());
     }
@@ -237,6 +239,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                                   "options",
                                   "$(touch /tmp/hello-from-gc-options)",
                                   "$(touch", "/tmp/hello-from-gc-options)");
+
+        verifyLoggingOfJvmOptions(true,
+                                  "options",
+                                  "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005",
+                                  "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005");
 
         verifyLoggingOfJvmOptions(false,
                                   "options",
