@@ -21,17 +21,16 @@ import java.util.List;
 /**
  * Transforms ONNX model features of the forms:
  *
- *     onnxModel(config_name)
- *     onnxModel(config_name).output
- *     onnxModel("path/to/model")
- *     onnxModel("path/to/model").output
- *     onnxModel("path/to/model", "path/to/output")
- *     onnxModel("path/to/model", "unused", "path/to/output")    // signature is unused
- *     onnx(...)   // same as with onnxModel, onnx is an alias of onnxModel
+ *     onnx(config_name)
+ *     onnx(config_name).output
+ *     onnx("path/to/model")
+ *     onnx("path/to/model").output
+ *     onnx("path/to/model", "path/to/output")
+ *     onnx("path/to/model", "unused", "path/to/output")    // signature is unused
  *
  * To the format expected by the backend:
  *
- *     onnxModel(config_name).output
+ *     onnx(config_name).output
  *
  * @author lesters
  */
@@ -86,7 +85,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
             throw new IllegalArgumentException(featureName + " argument '" + output +
                     "' output not found in model '" + onnxModel.getFileName() + "'");
         }
-        return new ReferenceNode("onnxModel", List.of(new ReferenceNode(modelConfigName)), output);
+        return new ReferenceNode("onnx", List.of(new ReferenceNode(modelConfigName)), output);
     }
 
     public static String getModelConfigName(Reference reference) {
@@ -95,7 +94,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
             if (expr instanceof ReferenceNode) {  // refers to onnx-model config
                 return expr.toString();
             }
-            if (expr instanceof ConstantNode) {  // refers to an file path
+            if (expr instanceof ConstantNode) {  // refers to a file path
                 return asValidIdentifier(expr);
             }
         }
