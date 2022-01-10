@@ -67,6 +67,10 @@ constexpr duration from_timeval(const timeval & tv) {
     return duration(tv.tv_sec*1000000000L + tv.tv_usec*1000L);
 }
 
+constexpr duration from_timespec(const timespec & ts) {
+    return duration(ts.tv_sec*1000000000L + ts.tv_nsec);
+}
+
 vespalib::string to_string(system_time time);
 
 /**

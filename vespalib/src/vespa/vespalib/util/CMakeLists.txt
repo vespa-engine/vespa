@@ -18,6 +18,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     classname.cpp
     compress.cpp
     compressor.cpp
+    cpu_usage.cpp
     destructor_callbacks.cpp
     dual_merge_director.cpp
     error.cpp

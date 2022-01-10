@@ -31,6 +31,7 @@ vespa_define_module(
     src/tests/component
     src/tests/compress
     src/tests/compression
+    src/tests/cpu_usage
     src/tests/crypto
     src/tests/data/databuffer
     src/tests/data/input_reader
