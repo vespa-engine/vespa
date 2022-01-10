@@ -10,8 +10,6 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
-import com.yahoo.slime.Cursor;
-import com.yahoo.vespa.config.server.http.JSONResponse;
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
@@ -92,27 +90,26 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Check all services in given application. Returns the minimum current generation of all services */
-    public JSONResponse getServiceConfigGenerationsResponse(Application application, URI requestUrl, Duration timeoutPerService) {
+    public ServiceListResponse getServiceConfigGenerations(Application application, URI uri, Duration timeoutPerService) {
         Map<ServiceInfo, Long> currentGenerations = getServiceConfigGenerations(application, timeoutPerService);
         long currentGeneration = currentGenerations.values().stream().mapToLong(Long::longValue).min().orElse(-1);
-        return new ServiceListResponse(200, currentGenerations, requestUrl, application.getApplicationGeneration(),
-                                       currentGeneration);
+        return new ServiceListResponse(currentGenerations, uri, application.getApplicationGeneration(), currentGeneration);
     }
 
     /** Check service identified by host and port in given application */
-    public JSONResponse getServiceConfigGenerationResponse(Application application, String hostAndPortToCheck, URI requestUrl, Duration timeout) {
+    public ServiceResponse getServiceConfigGeneration(Application application, String hostAndPortToCheck, Duration timeout) {
         Long wantedGeneration = application.getApplicationGeneration();
         try (CloseableHttpAsyncClient client = createHttpClient()) {
             client.start();
             if ( ! hostInApplication(application, hostAndPortToCheck))
-                return ServiceResponse.createHostNotFoundInAppResponse(requestUrl, hostAndPortToCheck, wantedGeneration);
+                return new ServiceResponse(ServiceResponse.Status.hostNotFound, wantedGeneration);
             long currentGeneration = getServiceGeneration(client, URI.create("http://" + hostAndPortToCheck), timeout).get();
             boolean converged = currentGeneration >= wantedGeneration;
-            return ServiceResponse.createOkResponse(requestUrl, hostAndPortToCheck, wantedGeneration, currentGeneration, converged);
+            return new ServiceResponse(ServiceResponse.Status.ok, wantedGeneration, currentGeneration, converged);
         } catch (InterruptedException | ExecutionException | CancellationException e) { // e.g. if we cannot connect to the service to find generation
-            return ServiceResponse.createNotFoundResponse(requestUrl, hostAndPortToCheck, wantedGeneration, e.getMessage());
+            return new ServiceResponse(ServiceResponse.Status.notFound, wantedGeneration, e.getMessage());
         } catch (Exception e) {
-            return ServiceResponse.createErrorResponse(requestUrl, hostAndPortToCheck, wantedGeneration, e.getMessage());
+            return new ServiceResponse(ServiceResponse.Status.error, wantedGeneration, e.getMessage());
         }
     }
 
@@ -192,7 +189,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return false;
     }
 
-    private static Optional<Integer> getStatePort(ServiceInfo service) {
+    public static Optional<Integer> getStatePort(ServiceInfo service) {
         return service.getPorts().stream()
                       .filter(port -> port.getTags().contains("state"))
                       .map(PortInfo::getPort)
@@ -249,63 +246,70 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                 .build();
     }
 
-    private static class ServiceListResponse extends JSONResponse {
+    public static class ServiceResponse {
 
-        // Pre-condition: servicesToCheck has a state port
-        private ServiceListResponse(int status, Map<ServiceInfo, Long> servicesToCheck, URI uri, long wantedGeneration,
-                                    long currentGeneration) {
-            super(status);
-            Cursor serviceArray = object.setArray("services");
-            servicesToCheck.forEach((service, generation) -> {
-                Cursor serviceObject = serviceArray.addObject();
-                String hostName = service.getHostName();
-                int statePort = getStatePort(service).get();
-                serviceObject.setString("host", hostName);
-                serviceObject.setLong("port", statePort);
-                serviceObject.setString("type", service.getServiceType());
-                serviceObject.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
-                serviceObject.setLong("currentGeneration", generation);
-            });
-            object.setString("url", uri.toString());
-            object.setLong("currentGeneration", currentGeneration);
-            object.setLong("wantedGeneration", wantedGeneration);
-            object.setBool("converged", currentGeneration >= wantedGeneration);
+        public enum Status { ok, notFound, hostNotFound, error }
+
+        public final Status status;
+        public final Long wantedGeneration;
+        public final Long currentGeneration;
+        public final boolean converged;
+        public final Optional<String> errorMessage;
+
+        public ServiceResponse(Status status, Long wantedGeneration) {
+            this(status, wantedGeneration, 0L);
         }
+
+        public ServiceResponse(Status status, Long wantedGeneration, Long currentGeneration) {
+            this(status, wantedGeneration, currentGeneration, false);
+        }
+
+        public ServiceResponse(Status status, Long wantedGeneration, Long currentGeneration, boolean converged) {
+            this(status, wantedGeneration, currentGeneration, converged, Optional.empty());
+        }
+
+        public ServiceResponse(Status status, Long wantedGeneration, String errorMessage) {
+            this(status, wantedGeneration, 0L, false, Optional.ofNullable(errorMessage));
+        }
+
+        private ServiceResponse(Status status, Long wantedGeneration, Long currentGeneration, boolean converged, Optional<String> errorMessage) {
+            this.status = status;
+            this.wantedGeneration = wantedGeneration;
+            this.currentGeneration = currentGeneration;
+            this.converged = converged;
+            this.errorMessage = errorMessage;
+        }
+
     }
 
-    private static class ServiceResponse extends JSONResponse {
+    public static class ServiceListResponse {
 
-        private ServiceResponse(int status, URI uri, String hostname, Long wantedGeneration) {
-            super(status);
-            object.setString("url", uri.toString());
-            object.setString("host", hostname);
-            object.setLong("wantedGeneration", wantedGeneration);
+        public final List<Service> services = new ArrayList<>();
+        public final URI uri;
+        public final long wantedGeneration;
+        public final long currentGeneration;
+
+        public ServiceListResponse(Map<ServiceInfo, Long> services, URI uri, long wantedGeneration, long currentGeneration) {
+            services.forEach((key, value) -> this.services.add(new Service(key, value)));
+            this.uri = uri;
+            this.wantedGeneration = wantedGeneration;
+            this.currentGeneration = currentGeneration;
         }
 
-        static ServiceResponse createOkResponse(URI uri, String hostname, Long wantedGeneration, Long currentGeneration, boolean converged) {
-            ServiceResponse serviceResponse = new ServiceResponse(200, uri, hostname, wantedGeneration);
-            serviceResponse.object.setBool("converged", converged);
-            serviceResponse.object.setLong("currentGeneration", currentGeneration);
-            return serviceResponse;
+        public List<Service> services() { return services; }
+
+        public static class Service {
+
+            public final ServiceInfo serviceInfo;
+            public final Long currentGeneration;
+
+            public Service(ServiceInfo serviceInfo, Long currentGeneration) {
+                this.serviceInfo = serviceInfo;
+                this.currentGeneration = currentGeneration;
+            }
+
         }
 
-        static ServiceResponse createHostNotFoundInAppResponse(URI uri, String hostname, Long wantedGeneration) {
-            ServiceResponse serviceResponse = new ServiceResponse(410, uri, hostname, wantedGeneration);
-            serviceResponse.object.setString("problem", "Host:port (service) no longer part of application, refetch list of services.");
-            return serviceResponse;
-        }
-
-        static ServiceResponse createErrorResponse(URI uri, String hostname, Long wantedGeneration, String error) {
-            ServiceResponse serviceResponse = new ServiceResponse(500, uri, hostname, wantedGeneration);
-            serviceResponse.object.setString("error", error);
-            return serviceResponse;
-        }
-
-        static ServiceResponse createNotFoundResponse(URI uri, String hostname, Long wantedGeneration, String error) {
-            ServiceResponse serviceResponse = new ServiceResponse(404, uri, hostname, wantedGeneration);
-            serviceResponse.object.setString("error", error);
-            return serviceResponse;
-        }
     }
 
 }

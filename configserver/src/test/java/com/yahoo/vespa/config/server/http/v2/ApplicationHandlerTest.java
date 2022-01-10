@@ -4,6 +4,8 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.PortInfo;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -50,14 +52,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static com.yahoo.container.jdisc.HttpRequest.createTestRequest;
@@ -65,8 +71,12 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCodeAndMessage;
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
+import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServiceListResponse;
+import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServiceResponse.createResponse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -146,7 +156,7 @@ public class ApplicationHandlerTest {
             Tenant mytenant = applicationRepository.getTenant(applicationId);
             deleteAndAssertOKResponse(mytenant, applicationId);
         }
-        
+
         {
             applicationRepository.deploy(testApp, prepareParams(applicationId));
             deleteAndAssertOKResponseMocked(applicationId, true);
@@ -539,6 +549,143 @@ public class ApplicationHandlerTest {
                          "}\n");
     }
 
+    @Test
+    public void service_convergence() {
+        String hostAndPort = "localhost:1234";
+        URI uri = URI.create("https://" + hostAndPort + "/serviceconvergence/container");
+
+        { // Known service
+            HttpResponse response = createResponse(new ServiceResponse(ServiceResponse.Status.ok,
+                                                                       3L,
+                                                                       3L,
+                                                                       true),
+                                                   hostAndPort,
+                                                   uri);
+            assertResponse("{\n" +
+                                   "  \"url\": \"" + uri.toString() + "\",\n" +
+                                   "  \"host\": \"" + hostAndPort + "\",\n" +
+                                   "  \"wantedGeneration\": 3,\n" +
+                                   "  \"converged\": true,\n" +
+                                   "  \"currentGeneration\": 3\n" +
+                                   "}",
+                           200,
+                           response);
+        }
+
+        { // Missing service
+            HttpResponse response = createResponse(new ServiceResponse(ServiceResponse.Status.hostNotFound,
+                                                                       3L),
+                                                   hostAndPort,
+                                                   uri);
+
+            assertResponse("{\n" +
+                                   "  \"url\": \"" + uri.toString() + "\",\n" +
+                                   "  \"host\": \"" + hostAndPort + "\",\n" +
+                                   "  \"wantedGeneration\": 3,\n" +
+                                   "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
+                                   "}",
+                           410,
+                           response);
+        }
+    }
+
+    @Test
+    public void service_list_convergence() {
+        URI requestUrl = URI.create("https://configserver/serviceconvergence");
+
+        String hostname = "localhost";
+        int port = 1234;
+        String hostAndPort = hostname + ":" + port;
+        URI serviceUrl = URI.create("https://configserver/serviceconvergence/" + hostAndPort);
+
+        {
+            HttpServiceListResponse response =
+                    new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port), 3L),
+                                                                        requestUrl,
+                                                                        3L,
+                                                                        3L));
+            assertResponse("{\n" +
+                                   "  \"services\": [\n" +
+                                   "    {\n" +
+                                   "      \"host\": \"" + hostname + "\",\n" +
+                                   "      \"port\": " + port + ",\n" +
+                                   "      \"type\": \"container\",\n" +
+                                   "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                                   "      \"currentGeneration\":" + 3 + "\n" +
+                                   "    }\n" +
+                                   "  ],\n" +
+                                   "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                                   "  \"currentGeneration\": 3,\n" +
+                                   "  \"wantedGeneration\": 3,\n" +
+                                   "  \"converged\": true\n" +
+                                   "}",
+                           200,
+                           response);
+        }
+
+        { // Two hosts on different generations
+            String hostname2 = "localhost2";
+            int port2 = 5678;
+            String hostAndPort2 = hostname2 + ":" + port2;
+            URI serviceUrl2 = URI.create("https://configserver/serviceconvergence/" + hostAndPort2);
+
+            Map<ServiceInfo, Long> serviceInfos = new HashMap<>();
+            serviceInfos.put(createServiceInfo(hostname, port), 4L);
+            serviceInfos.put(createServiceInfo(hostname2, port2), 3L);
+
+            HttpServiceListResponse response =
+                    new HttpServiceListResponse(new ServiceListResponse(serviceInfos,
+                                                                        requestUrl,
+                                                                        4L,
+                                                                        3L));
+            assertResponse("{\n" +
+                                   "  \"services\": [\n" +
+                                   "    {\n" +
+                                   "      \"host\": \"" + hostname + "\",\n" +
+                                   "      \"port\": " + port + ",\n" +
+                                   "      \"type\": \"container\",\n" +
+                                   "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                                   "      \"currentGeneration\":" + 4 + "\n" +
+                                   "    },\n" +
+                                   "    {\n" +
+                                   "      \"host\": \"" + hostname2 + "\",\n" +
+                                   "      \"port\": " + port2 + ",\n" +
+                                   "      \"type\": \"container\",\n" +
+                                   "      \"url\": \"" + serviceUrl2.toString() + "\",\n" +
+                                   "      \"currentGeneration\":" + 3 + "\n" +
+                                   "    }\n" +
+                                   "  ],\n" +
+                                   "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                                   "  \"currentGeneration\": 3,\n" +
+                                   "  \"wantedGeneration\": 4,\n" +
+                                   "  \"converged\": false\n" +
+                                   "}",
+                           200,
+                           response);
+        }
+    }
+
+    @Test
+    public void service_convergence_timeout() {
+        String hostAndPort = "localhost:1234";
+        URI uri = URI.create("https://" + hostAndPort + "/serviceconvergence/container");
+
+        HttpResponse response = createResponse(new ServiceResponse(ServiceResponse.Status.notFound,
+                                                                   3L,
+                                                                   "some error message"),
+                                               hostAndPort,
+                                               uri);
+
+        assertResponse("{\n" +
+                               "  \"url\": \"" + uri.toString() + "\",\n" +
+                               "  \"host\": \"" + hostAndPort + "\",\n" +
+                               "  \"wantedGeneration\": 3,\n" +
+                               "  \"error\": \"some error message\"" +
+                               "}",
+                       404,
+                       response);
+    }
+
     private void assertNotAllowed(Method method) throws IOException {
         String url = "http://myhost:14000/application/v2/tenant/" + mytenantName + "/application/default";
         deleteAndAssertResponse(url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.ErrorCode.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
@@ -666,6 +813,31 @@ public class ApplicationHandlerTest {
 
     private PrepareParams prepareParams(ApplicationId applicationId) {
         return new PrepareParams.Builder().applicationId(applicationId).build();
+    }
+
+    private static void assertResponse(String expectedJson, int status, HttpResponse response) {
+        assertResponse((responseBody) -> assertJsonEquals(new String(responseBody
+                                                                             .getBytes()), expectedJson), status, response);
+    }
+
+    private static void assertResponse(Consumer<String> assertFunc, int status, HttpResponse response) {
+        ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
+        try {
+            response.render(responseBody);
+            assertFunc.accept(responseBody.toString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        assertEquals(status, response.getStatus());
+    }
+
+    private ServiceInfo createServiceInfo(String hostname, int port) {
+        return new ServiceInfo("container",
+                               "container",
+                               List.of(new PortInfo(port, List.of("state"))),
+                               Map.of(),
+                               "configId",
+                               hostname);
     }
 
 }

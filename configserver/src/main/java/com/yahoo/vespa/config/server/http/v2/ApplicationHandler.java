@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.model.api.Model;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.InstanceName;
@@ -16,13 +17,15 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.slime.Cursor;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.application.ApplicationReindexing;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
 import com.yahoo.vespa.config.server.http.HttpHandler;
+import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.v2.request.ApplicationContentRequest;
 import com.yahoo.vespa.config.server.http.v2.response.ApplicationSuspendedResponse;
@@ -33,6 +36,7 @@ import com.yahoo.vespa.config.server.http.v2.response.ReindexingResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -43,7 +47,10 @@ import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.yolean.Exceptions.uncheck;
+
 
 /**
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
@@ -108,13 +115,21 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private HttpResponse listServiceConverge(ApplicationId applicationId, HttpRequest request) {
-        return applicationRepository.servicesToCheckForConfigConvergence(applicationId, request.getUri(),
-                getTimeoutFromRequest(request), getVespaVersionFromRequest(request));
+        ServiceListResponse response =
+                applicationRepository.servicesToCheckForConfigConvergence(applicationId,
+                                                                          request.getUri(),
+                                                                          getTimeoutFromRequest(request),
+                                                                          getVespaVersionFromRequest(request));
+        return new HttpServiceListResponse(response);
     }
 
     private HttpResponse checkServiceConverge(ApplicationId applicationId, String hostAndPort, HttpRequest request) {
-        return applicationRepository.checkServiceForConfigConvergence(applicationId, hostAndPort, request.getUri(),
-                getTimeoutFromRequest(request), getVespaVersionFromRequest(request));
+        ServiceResponse response =
+                applicationRepository.checkServiceForConfigConvergence(applicationId,
+                                                                       hostAndPort,
+                                                                       getTimeoutFromRequest(request),
+                                                                       getVespaVersionFromRequest(request));
+        return HttpServiceResponse.createResponse(response, hostAndPort, request.getUri());
     }
 
     private HttpResponse serviceStatusPage(ApplicationId applicationId, String service, String hostname, String pathSuffix) {
@@ -299,6 +314,81 @@ public class ApplicationHandler extends HttpHandler {
         return Optional.ofNullable(request.getProperty("vespaVersion"))
                 .filter(s -> !s.isEmpty())
                 .map(Version::fromString);
+    }
+
+    static class HttpServiceResponse extends JSONResponse {
+
+        public static HttpServiceResponse createResponse(ConfigConvergenceChecker.ServiceResponse serviceResponse, String hostAndPort, URI uri) {
+            switch (serviceResponse.status) {
+                case ok:
+                    return createOkResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.currentGeneration, serviceResponse.converged);
+                case hostNotFound:
+                    return createHostNotFoundInAppResponse(uri, hostAndPort, serviceResponse.wantedGeneration);
+                case notFound:
+                    return createNotFoundResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.errorMessage.orElse(""));
+                case error:
+                    return createErrorResponse(uri, hostAndPort, serviceResponse.wantedGeneration, serviceResponse.errorMessage.orElse(""));
+                default:
+                    throw new IllegalArgumentException("Unknown status " + serviceResponse.status);
+            }
+        }
+
+        private HttpServiceResponse(int status, URI uri, String hostname, Long wantedGeneration) {
+            super(status);
+            object.setString("url", uri.toString());
+            object.setString("host", hostname);
+            object.setLong("wantedGeneration", wantedGeneration);
+        }
+
+        private static HttpServiceResponse createOkResponse(URI uri, String hostname, Long wantedGeneration, Long currentGeneration, boolean converged) {
+            HttpServiceResponse serviceResponse = new HttpServiceResponse(200, uri, hostname, wantedGeneration);
+            serviceResponse.object.setBool("converged", converged);
+            serviceResponse.object.setLong("currentGeneration", currentGeneration);
+            return serviceResponse;
+        }
+
+        private static HttpServiceResponse createHostNotFoundInAppResponse(URI uri, String hostname, Long wantedGeneration) {
+            HttpServiceResponse serviceResponse = new HttpServiceResponse(410, uri, hostname, wantedGeneration);
+            serviceResponse.object.setString("problem", "Host:port (service) no longer part of application, refetch list of services.");
+            return serviceResponse;
+        }
+
+        private static HttpServiceResponse createErrorResponse(URI uri, String hostname, Long wantedGeneration, String error) {
+            HttpServiceResponse serviceResponse = new HttpServiceResponse(500, uri, hostname, wantedGeneration);
+            serviceResponse.object.setString("error", error);
+            return serviceResponse;
+        }
+
+        private static HttpServiceResponse createNotFoundResponse(URI uri, String hostname, Long wantedGeneration, String error) {
+            HttpServiceResponse serviceResponse = new HttpServiceResponse(404, uri, hostname, wantedGeneration);
+            serviceResponse.object.setString("error", error);
+            return serviceResponse;
+        }
+
+    }
+
+    static class HttpServiceListResponse extends JSONResponse {
+
+        // Pre-condition: servicesToCheck has a state port
+        public HttpServiceListResponse(ConfigConvergenceChecker.ServiceListResponse response) {
+            super(200);
+            Cursor serviceArray = object.setArray("services");
+            response.services().forEach((service) -> {
+                ServiceInfo serviceInfo = service.serviceInfo;
+                Cursor serviceObject = serviceArray.addObject();
+                String hostName = serviceInfo.getHostName();
+                int statePort = ConfigConvergenceChecker.getStatePort(serviceInfo).get();
+                serviceObject.setString("host", hostName);
+                serviceObject.setLong("port", statePort);
+                serviceObject.setString("type", serviceInfo.getServiceType());
+                serviceObject.setString("url", response.uri.toString() + "/" + hostName + ":" + statePort);
+                serviceObject.setLong("currentGeneration", service.currentGeneration);
+            });
+            object.setString("url", response.uri.toString());
+            object.setLong("currentGeneration", response.currentGeneration);
+            object.setLong("wantedGeneration", response.wantedGeneration);
+            object.setBool("converged", response.currentGeneration >= response.wantedGeneration);
+        }
     }
 
 }
