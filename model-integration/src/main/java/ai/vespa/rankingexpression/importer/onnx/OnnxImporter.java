@@ -37,7 +37,7 @@ public class OnnxImporter extends ModelImporter {
             for (int i = 0; i < model.getGraph().getOutputCount(); ++i) {
                 Onnx.ValueInfoProto output = model.getGraph().getOutput(i);
                 String outputName = asValidIdentifier(output.getName());
-                importedModel.expression(outputName, "onnxModel(" + modelName + ")." + outputName);
+                importedModel.expression(outputName, "onnx(" + modelName + ")." + outputName);
             }
             return importedModel;
 
