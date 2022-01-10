@@ -16,7 +16,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
 
     private final static double SUMMARY_FILE_SIZE_AS_FRACTION_OF_MEMORY = 0.02;
     private final static double SUMMARY_CACHE_SIZE_AS_FRACTION_OF_MEMORY = 0.05;
-    private final static double MEMORY_GAIN_AS_FRACTION_OF_MEMORY = 0.10;
+    private final static double MEMORY_GAIN_AS_FRACTION_OF_MEMORY = 0.08;
     final static long MB = 1024 * 1024;
     public final static long GB = MB * 1024;
     // This is an approximate number base on observation of a node using 33G memory with 765M docs
