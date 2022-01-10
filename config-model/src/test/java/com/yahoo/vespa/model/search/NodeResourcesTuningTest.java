@@ -157,14 +157,14 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
-        assertEquals(1*GB / 20, configFromMemorySetting(1 + reservedMemoryGb, 0).summary().cache().maxbytes());
-        assertEquals(256*GB / 20, configFromMemorySetting(256 + reservedMemoryGb, 0).summary().cache().maxbytes());
+        assertEquals(1*GB / 25, configFromMemorySetting(1 + reservedMemoryGb, 0).summary().cache().maxbytes());
+        assertEquals(256*GB / 25, configFromMemorySetting(256 + reservedMemoryGb, 0).summary().cache().maxbytes());
     }
 
     @Test
     public void require_that_summary_cache_memory_is_reduced_with_combined_cluster() {
-        assertEquals(combinedFactor * 1*GB / 20, configFromMemorySetting(1 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).summary().cache().maxbytes(), 1000);
-        assertEquals(combinedFactor * 256*GB / 20, configFromMemorySetting(256 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).summary().cache().maxbytes(), 1000);
+        assertEquals(combinedFactor * 1*GB / 25, configFromMemorySetting(1 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).summary().cache().maxbytes(), 1000);
+        assertEquals(combinedFactor * 256*GB / 25, configFromMemorySetting(256 + reservedMemoryGb, ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster*0.01).summary().cache().maxbytes(), 1000);
     }
 
     @Test
