@@ -12,7 +12,7 @@ namespace search {
 template <class Reader>
 class PostingPriorityQueue
 {
-public:
+protected:
     class Ref
     {
         Reader *_ref;
@@ -28,9 +28,14 @@ public:
 
     using Vector = std::vector<Ref>;
     Vector _vec;
+    uint32_t _heap_limit;
+    uint32_t _merge_chunk;
 
+public:
     PostingPriorityQueue()
-        : _vec()
+        : _vec(),
+          _heap_limit(0u),
+          _merge_chunk(0u)
     {
     }
 
@@ -40,9 +45,10 @@ public:
 
     /*
      * Sort vector after a set of initial add operations, so lowest()
-     * and adjust() can be used.
+     * and adjust() can be used. Skip sort if _vec.size() < heap_limit
+     * since merging with few elements don't use heap.
      */
-    void sort() { std::sort(_vec.begin(), _vec.end()); }
+    void setup(uint32_t heap_limit);
 
     /*
      * Return lowest value.  Assumes vector is sorted.

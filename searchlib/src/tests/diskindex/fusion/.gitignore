@@ -21,10 +21,7 @@ mdump2
 mdump3
 mdump4
 mdump5
-sdump2
-sdump3
-sdump4
-sdump5
+sdump[2-6]
 /ddump6
 /dmdump6
 /dump6

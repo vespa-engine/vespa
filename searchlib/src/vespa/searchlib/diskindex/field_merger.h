@@ -53,13 +53,14 @@ class FieldMerger
     std::unique_ptr<FieldWriter> _writer;
     State _state;
     bool _failed;
+    bool _force_small_merge_chunk;
 
     void make_tmp_dirs();
     bool clean_tmp_dirs();
     bool open_input_word_readers();
     bool read_mapping_files();
     bool renumber_word_ids_start();
-    bool renumber_word_ids_main();
+    void renumber_word_ids_main();
     bool renumber_word_ids_finish();
     void renumber_word_ids_failed();
     std::shared_ptr<FieldLengthScanner> allocate_field_length_scanner();
@@ -68,7 +69,7 @@ class FieldMerger
     bool select_cooked_or_raw_features(FieldReader& reader);
     bool setup_merge_heap();
     bool merge_postings_start();
-    bool merge_postings_main();
+    void merge_postings_main();
     bool merge_postings_finish();
     void merge_postings_failed();
 public:

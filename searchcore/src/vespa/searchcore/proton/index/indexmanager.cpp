@@ -69,9 +69,9 @@ IndexManager::MaintainerOperations::runFusion(const Schema &schema,
                                               std::shared_ptr<IFlushToken> flush_token)
 {
     SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext, serialNum);
-    const bool dynamic_k_doc_pos_occ_format = false;
-    return Fusion::merge(schema, outputDir, sources, selectorArray, dynamic_k_doc_pos_occ_format,
-                         _tuneFileIndexing, fileHeaderContext, _threadingService.shared(), std::move(flush_token));
+    Fusion fusion(schema, outputDir, sources, selectorArray,
+                  _tuneFileIndexing, fileHeaderContext);
+    return fusion.merge(_threadingService.shared(), std::move(flush_token));
 }
 
 

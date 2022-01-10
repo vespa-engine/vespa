@@ -197,16 +197,16 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     bool fret1 = DocumentSummary::readDocIdLimit(index_dir, fusionDocIdLimit);
     ASSERT_TRUE(fret1);
     SelectorArray selector(fusionDocIdLimit, 0);
-    bool fret2 = Fusion::merge(schema,
-                              index_dir2,
-                              fusionInputs,
-                              selector,
-                              false /* dynamicKPosOccFormat */,
-                              tuneFileIndexing,
-                              fileHeaderContext,
-                              sharedExecutor,
-                              std::make_shared<FlushToken>());
-    ASSERT_TRUE(fret2);
+    {
+        Fusion fusion(schema,
+                      index_dir2,
+                      fusionInputs,
+                      selector,
+                      tuneFileIndexing,
+                      fileHeaderContext);
+        bool fret2 = fusion.merge(sharedExecutor, std::make_shared<FlushToken>());
+        ASSERT_TRUE(fret2);
+    }
 
     // Fusion test with all docs removed in output (doesn't affect word list)
     const string index_dir3 = "test_index3";
@@ -216,16 +216,16 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     bool fret3 = DocumentSummary::readDocIdLimit(index_dir, fusionDocIdLimit);
     ASSERT_TRUE(fret3);
     SelectorArray selector2(fusionDocIdLimit, 1);
-    bool fret4 = Fusion::merge(schema,
-                              index_dir3,
-                              fusionInputs,
-                              selector2,
-                              false /* dynamicKPosOccFormat */,
-                              tuneFileIndexing,
-                              fileHeaderContext,
-                              sharedExecutor,
-                              std::make_shared<FlushToken>());
-    ASSERT_TRUE(fret4);
+    {
+        Fusion fusion(schema,
+                      index_dir3,
+                      fusionInputs,
+                      selector2,
+                      tuneFileIndexing,
+                      fileHeaderContext);
+        bool fret4 = fusion.merge(sharedExecutor, std::make_shared<FlushToken>());
+        ASSERT_TRUE(fret4);
+    }
 
     // Fusion test with all docs removed in input (affects word list)
     const string index_dir4 = "test_index4";
@@ -235,16 +235,17 @@ void Test::requireThatMemoryIndexCanBeDumpedAndSearched() {
     bool fret5 = DocumentSummary::readDocIdLimit(index_dir3, fusionDocIdLimit);
     ASSERT_TRUE(fret5);
     SelectorArray selector3(fusionDocIdLimit, 0);
-    bool fret6 = Fusion::merge(schema,
-                              index_dir4,
-                              fusionInputs,
-                              selector3,
-                              false /* dynamicKPosOccFormat */,
-                              tuneFileIndexing,
-                              fileHeaderContext,
-                              sharedExecutor,
-                              std::make_shared<FlushToken>());
-    ASSERT_TRUE(fret6);
+    {
+        Fusion fusion(schema,
+                      index_dir4,
+                      fusionInputs,
+                      selector3,
+                      tuneFileIndexing,
+                      fileHeaderContext);
+        bool fret6 = fusion.merge(sharedExecutor,
+                                  std::make_shared<FlushToken>());
+        ASSERT_TRUE(fret6);
+    }
 
     DiskIndex disk_index(index_dir);
     ASSERT_TRUE(disk_index.setup(TuneFileSearch()));

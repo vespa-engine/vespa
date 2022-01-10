@@ -39,6 +39,11 @@ namespace search::diskindex {
 
 namespace {
 
+constexpr uint32_t renumber_word_ids_heap_limit = 4;
+constexpr uint32_t renumber_word_ids_merge_chunk = 1000000;
+constexpr uint32_t merge_postings_heap_limit = 4;
+constexpr uint32_t merge_postings_merge_chunk = 50000;
+
 vespalib::string
 createTmpPath(const vespalib::string & base, uint32_t index) {
     vespalib::asciistream os;
@@ -174,18 +179,20 @@ FieldMerger::renumber_word_ids_start()
         return false;
     }
     _word_aggregator = std::make_unique<WordAggregator>();
+    _word_heap->setup(renumber_word_ids_heap_limit);
+    _word_heap->set_merge_chunk(_fusion_out_index.get_force_small_merge_chunk() ? 1u : renumber_word_ids_merge_chunk);
     return true;
 }
 
-bool
+void
 FieldMerger::renumber_word_ids_main()
 {
-    _word_heap->merge(*_word_aggregator, 4, *_flush_token);
+    _word_heap->merge(*_word_aggregator, *_flush_token);
     if (_flush_token->stop_requested()) {
-        return false;
+        _failed = true;
+    } else if (_word_heap->empty()) {
+        _state = State::RENUMBER_WORD_IDS_FINISH;
     }
-    assert(_word_heap->empty());
-    return true;
 }
 
 bool
@@ -356,6 +363,8 @@ FieldMerger::setup_merge_heap()
             _heap->initialAdd(reader.get());
         }
     }
+    _heap->setup(merge_postings_heap_limit);
+    _heap->set_merge_chunk(_fusion_out_index.get_force_small_merge_chunk() ? 1u : merge_postings_merge_chunk);
     return true;
 }
 
@@ -374,15 +383,15 @@ FieldMerger::merge_postings_start()
     return setup_merge_heap();
 }
 
-bool
+void
 FieldMerger::merge_postings_main()
 {
-    _heap->merge(*_writer, 4, *_flush_token);
+    _heap->merge(*_writer, *_flush_token);
     if (_flush_token->stop_requested()) {
-        return false;
+        _failed = true;
+    } else if (_heap->empty()) {
+        _state = State::MERGE_POSTINGS_FINISH;
     }
-    assert(_heap->empty());
-    return true;
 }
 
 bool
@@ -475,11 +484,7 @@ FieldMerger::process_merge_field()
         merge_field_start();
         break;
     case State::RENUMBER_WORD_IDS:
-        if (!renumber_word_ids_main()) {
-            renumber_word_ids_failed();
-        } else {
-            _state = State::RENUMBER_WORD_IDS_FINISH;
-        }
+        renumber_word_ids_main();
         break;
     case State::RENUMBER_WORD_IDS_FINISH:
         if (!renumber_word_ids_finish()) {
@@ -491,11 +496,7 @@ FieldMerger::process_merge_field()
         }
         break;
     case State::MERGE_POSTINGS:
-        if (!merge_postings_main()) {
-            merge_postings_failed();
-        } else {
-            _state = State::MERGE_POSTINGS_FINISH;
-        }
+        merge_postings_main();
         break;
     case State::MERGE_POSTINGS_FINISH:
         merge_field_finish();
