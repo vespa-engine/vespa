@@ -23,6 +23,7 @@ public class NodeResourcesTuningTest {
 
     private static final double delta = 0.00001;
     private static final double combinedFactor = 1 - 18.0/100;
+    private static final double DEFAULT_MEMORY_GAIN = 0.08;
 
     @Test
     public void require_that_hwinfo_disk_size_is_set() {
@@ -125,10 +126,10 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_flush_strategy_memory_limits_are_set_based_on_available_memory() {
-        assertFlushStrategyMemory((long)(4 * GB * 0.10), 4);
-        assertFlushStrategyMemory((long)(8 * GB * 0.10), 8);
-        assertFlushStrategyMemory((long)(24 * GB * 0.10), 24);
-        assertFlushStrategyMemory((long)(64 * GB * 0.10), 64);
+        assertFlushStrategyMemory((long)(4 * GB * DEFAULT_MEMORY_GAIN), 4);
+        assertFlushStrategyMemory((long)(8 * GB * DEFAULT_MEMORY_GAIN), 8);
+        assertFlushStrategyMemory((long)(24 * GB * DEFAULT_MEMORY_GAIN), 24);
+        assertFlushStrategyMemory((long)(64 * GB * DEFAULT_MEMORY_GAIN), 64);
     }
 
     @Test

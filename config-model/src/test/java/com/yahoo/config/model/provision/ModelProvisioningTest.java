@@ -2166,7 +2166,7 @@ public class ModelProvisioningTest {
         ProtonConfig cfg = getProtonConfig(model, cluster.getSearchNodes().get(0).getConfigId());
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
-        assertEquals((long) ((128 - reservedMemoryGb) * GB * 0.10), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
+        assertEquals((long) ((128 - reservedMemoryGb) * GB * 0.08), cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
     }
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
