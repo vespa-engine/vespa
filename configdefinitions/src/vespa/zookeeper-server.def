@@ -51,3 +51,4 @@ tlsForClientServerCommunication enum { OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIF
 jksKeyStoreFile string default="conf/zookeeper/zookeeper.jks"
 
 dynamicReconfiguration bool default=false
+snapshotMethod string default=""
