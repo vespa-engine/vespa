@@ -9,15 +9,15 @@ import java.util.Optional;
 /**
  * @author hakonhall
  */
-public class IfSection extends Section {
+class IfSection extends Section {
     private final boolean negated;
     private final String name;
     private final Cursor nameOffset;
     private final SectionList ifSections;
     private final Optional<SectionList> elseSections;
 
-    public IfSection(CursorRange range, boolean negated, String name, Cursor nameOffset,
-                     SectionList ifSections, Optional<SectionList> elseSections) {
+    IfSection(CursorRange range, boolean negated, String name, Cursor nameOffset,
+              SectionList ifSections, Optional<SectionList> elseSections) {
         super(range);
         this.negated = negated;
         this.name = name;

@@ -8,9 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a template list section, to be replaced by any number of body form elements.
- *
- * @see Template
  * @author hakonhall
  */
 class ListSection extends Section {

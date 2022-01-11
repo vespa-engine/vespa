@@ -86,8 +86,8 @@ class TemplateFileTest {
     @Test
     void verifyIfSection() {
         Template template = Template.from("Hello%{if cond} world%{end}!");
-        assertEquals("Hello world!", template.instantiate().set("cond", true).render());
-        assertEquals("Hello!", template.instantiate().set("cond", false).render());
+        assertEquals("Hello world!", template.newForm().set("cond", true).render());
+        assertEquals("Hello!", template.newForm().set("cond", false).render());
     }
 
     @Test
@@ -98,18 +98,18 @@ class TemplateFileTest {
                                           "list: %{list formname}element%{end}\n" +
                                           "%{end-}\n");
 
-        assertEquals("", template.instantiate().set("cond", false).render());
+        assertEquals("", template.newForm().set("cond", false).render());
 
         assertEquals("var: varvalue\n" +
                      "if: \n" +
                      "list: \n",
-                     template.instantiate()
+                     template.newForm()
                              .set("cond", true)
                              .set("varname", "varvalue")
                              .set("inner", true)
                              .render());
 
-        Form form = template.instantiate()
+        Form form = template.newForm()
                             .set("cond", true)
                             .set("varname", "varvalue")
                             .set("inner", false);
@@ -127,15 +127,15 @@ class TemplateFileTest {
                                      "%{else-}\n" +
                                      "else body\n" +
                                      "%{end-}\n");
-        assertEquals("if body\n", template.instantiate().set("cond", true).render());
-        assertEquals("else body\n", template.instantiate().set("cond", false).render());
+        assertEquals("if body\n", template.newForm().set("cond", true).render());
+        assertEquals("else body\n", template.newForm().set("cond", false).render());
     }
 
     private Form getForm(String filename) {
-        return TemplateFile.read(Path.of("src/test/resources/" + filename)).instantiate();
+        return TemplateFile.read(Path.of("src/test/resources/" + filename)).newForm();
     }
 
     private Form makeForm(String templateText) {
-        return Template.from(templateText).instantiate();
+        return Template.from(templateText).newForm();
     }
 }
