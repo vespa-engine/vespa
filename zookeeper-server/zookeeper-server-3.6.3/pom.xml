@@ -11,9 +11,6 @@
   <artifactId>zookeeper-server-3.6.3</artifactId>
   <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
-  <properties>
-    <zookeeper.version>3.6.3</zookeeper.version>
-  </properties>
   <dependencies>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -35,7 +32,7 @@
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
-      <version>${zookeeper.version}</version>
+      <version>3.6.3</version>
       <exclusions>
         <!--
           Container provides wiring for all common log libraries
@@ -90,6 +87,7 @@
         <configuration>
           <compilerArgs>
             <arg>-Xlint:all</arg>
+            <arg>-Werror</arg>
           </compilerArgs>
         </configuration>
       </plugin>
@@ -99,9 +97,6 @@
         <configuration>
           <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
           <forkMode>once</forkMode>
-          <systemPropertyVariables>
-            <zk-version>${zookeeper.version}</zk-version>
-          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
