@@ -349,13 +349,6 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>generate-javadoc</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>javadoc-no-fork</goal>
-                                </goals>
-                            </execution>
-                            <execution>
                                 <id>attach-javadocs</id>
                                 <goals>
                                     <goal>jar</goal>
