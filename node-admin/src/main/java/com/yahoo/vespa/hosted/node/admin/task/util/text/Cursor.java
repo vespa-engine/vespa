@@ -29,17 +29,18 @@ public class Cursor {
     @Override
     public String toString() { return text.substring(offset); }
 
+    public String fullText() { return text; }
     public int offset() { return offset; }
     public boolean bot() { return offset == 0; }
     public boolean eot() { return offset == text.length(); }
     public boolean startsWith(char c) { return offset < text.length() && text.charAt(offset) == c; }
     public boolean startsWith(String prefix) { return text.startsWith(prefix, offset); }
+
+    /** @throws IndexOutOfBoundsException if {@link #eot()}. */
     public char getChar() { return text.charAt(offset); }
 
     /** The number of chars between pointer and EOT. */
     public int length() { return text.length() - offset; }
-
-    public String fullText() { return text; }
 
     /** Calculate the current text location in O(length(text)). */
     public TextLocation calculateLocation() {
@@ -72,7 +73,7 @@ public class Cursor {
         this.offset = that.offset;
     }
 
-    /** If the next substring.length() chars of matches substring pointing at Advance pointer past substring if pointer  Returns true if pointing at string. */
+    /** Advance substring.length() if this startsWith the substring, returning true if so. */
     public boolean skip(String substring) {
         if (startsWith(substring)) {
             offset += substring.length();
@@ -161,6 +162,4 @@ public class Cursor {
     public int hashCode() {
         return Objects.hash(text, offset);
     }
-
-    private void throwIfEot() { if (eot()) throw new StringIndexOutOfBoundsException(offset); }
 }
