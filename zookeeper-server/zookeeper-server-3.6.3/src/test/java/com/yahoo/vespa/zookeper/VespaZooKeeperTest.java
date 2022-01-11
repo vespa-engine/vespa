@@ -189,7 +189,7 @@ public class VespaZooKeeperTest {
         int versionPortOffset = 0;
         for (String part : version)
             versionPortOffset = 32 * (versionPortOffset + Integer.parseInt(part));
-        int port = 51000 + versionPortOffset % 14000;
+        int port = 51000 + versionPortOffset % 9785;
         return new ZookeeperServerConfig.Builder()
                 .clientPort(port + 3 * id)
                 .dataDir(tempDir.toString())
