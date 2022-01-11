@@ -323,7 +323,7 @@ public class Sorting implements Cloneable {
 
         public String getLocale() { return locale; }
         public Strength getStrength() { return strength; }
-        public Collator getCollator() { return collator; }
+        Collator getCollator() { return collator; }
         public String getDecomposition() { return (collator.getDecomposition() == Collator.CANONICAL_DECOMPOSITION) ? "CANONICAL_DECOMPOSITION" : "NO_DECOMPOSITION"; }
 
         @Override

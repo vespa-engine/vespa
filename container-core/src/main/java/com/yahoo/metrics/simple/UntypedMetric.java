@@ -1,11 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics.simple;
 
-import java.util.logging.Logger;
-
+import com.yahoo.api.annotations.Beta;
 import org.HdrHistogram.DoubleHistogram;
 
+import java.io.PrintStream;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A gauge or a counter or... who knows? The class for storing a metric when the
@@ -114,8 +115,9 @@ public class UntypedMetric {
         return metricSettings;
     }
 
-    public DoubleHistogram getHistogram() {
-        return histogram;
+    @Beta
+    public Histogram getHistogram() {
+        return histogram != null ? new Histogram(histogram) : null;
     }
 
     @Override
@@ -137,6 +139,21 @@ public class UntypedMetric {
         buf.append("current=").append(current).append(", ");
         buf.append("count=").append(count);
         return buf.toString();
+    }
+
+    @Beta
+    public static class Histogram {
+        private final DoubleHistogram hdrHistogram;
+
+        private Histogram(DoubleHistogram hdrHistogram) { this.hdrHistogram = hdrHistogram; }
+
+        public double getValueAtPercentile(double percentile) { return hdrHistogram.getValueAtPercentile(percentile); }
+
+        public void outputPercentileDistribution(PrintStream printStream, int percentileTicksPerHalfDistance,
+                                                 Double outputValueUnitScalingRatio, boolean useCsvFormat) {
+            hdrHistogram.outputPercentileDistribution(
+                    printStream, percentileTicksPerHalfDistance, outputValueUnitScalingRatio, useCsvFormat);
+        }
     }
 
 }
