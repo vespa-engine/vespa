@@ -142,11 +142,6 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testPluralReplaceBecomesSingular() {
-        assertSemantics("AND from:paris to:texas","pariss to texass");
-    }
-
-    @Test
     public void testOrProduction() {
         assertSemantics("OR something somethingelse", "something");
     }
@@ -155,7 +150,7 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     @Test
     public void testWeightedSetItem() {
         Query q = new Query();
-        WeightedSetItem weightedSet=new WeightedSetItem("fieldName");
+        WeightedSetItem weightedSet = new WeightedSetItem("fieldName");
         weightedSet.addToken("a", 1);
         weightedSet.addToken("b", 2);
         q.getModel().getQueryTree().setRoot(weightedSet);

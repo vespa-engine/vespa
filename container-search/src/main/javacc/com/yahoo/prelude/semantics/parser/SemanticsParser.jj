@@ -6,7 +6,6 @@ options {
     CACHE_TOKENS    = true;
     DEBUG_PARSER    = false;
     ERROR_REPORTING = true;
-    STATIC          = false;
     UNICODE_INPUT   = true;
 }
 
@@ -15,11 +14,22 @@ PARSER_BEGIN(SemanticsParser)
 package com.yahoo.prelude.semantics.parser;
 
 import com.yahoo.javacc.UnicodeUtilities;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.Language;
 import com.yahoo.prelude.semantics.*;
 import com.yahoo.prelude.semantics.rule.*;
+import com.yahoo.prelude.semantics.engine.RuleBaseLinguistics;
 import com.yahoo.prelude.query.TermType;
 
 public class SemanticsParser {
+
+    private RuleBaseLinguistics linguistics;
+
+    public SemanticsParser(java.io.Reader stream, Linguistics linguistics) {
+        this(stream);
+        this.linguistics = new RuleBaseLinguistics(linguistics);
+    }
 
 }
 
@@ -77,6 +87,7 @@ TOKEN :
     <SMALLER: "<"> |
     <SMALLEREQUALS: "<="> |
     <STEMMINGDIRECTIVE: "@stemming"> |
+    <LANGUAGEDIRECTIVE: "@language"> |
     <SUPERDIRECTIVE: "@super"> |
     <IDENTIFIER: (~[
 "\u0000"-"\u002f","\u003a"-"\u003f","\u005b"-"\u005d","\u007b"-"\u00a7","\u00a9","\u00ab"-"\u00ae","\u00b0"-"\u00b3","\u00b6"-"\u00b7","\u00b9","\u00bb"-"\u00bf",
@@ -114,16 +125,20 @@ RuleBase semanticRules(RuleBase rules,RuleImporter importer) :
 
 // ---------------------------------- Directive ---------------------------------------
 
-RuleBase directive(RuleBase rules,RuleImporter importer) :
+RuleBase directive(RuleBase rules, RuleImporter importer) :
 {
     String name;
 }
 {
-    ( includeDirective(rules,importer) | defaultDirective(rules) | automataDirective(rules,importer) | stemmingDirective(rules) )
+    ( includeDirective(rules, importer) |
+      defaultDirective(rules) |
+      automataDirective(rules, importer) |
+      stemmingDirective(rules) |
+      languageDirective(rules) )
     { return rules; }
 }
 
-void includeDirective(RuleBase rules,RuleImporter importer) :
+void includeDirective(RuleBase rules, RuleImporter importer) :
 {
     String name;
 }
@@ -131,25 +146,24 @@ void includeDirective(RuleBase rules,RuleImporter importer) :
     <INCLUDEDIRECTIVE> <LEFTBRACE> name=stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
     {
         try {
-            importer.include(name,rules);
+            importer.include(name, rules);
         }
         catch (java.io.IOException e) {
-            ParseException ep=new ParseException("Could not read included rule base '" +
-                                                 name + "'");
+            ParseException ep=new ParseException("Could not read included rule base '" + name + "'");
             ep.initCause(e);
             throw ep;
         }
     }
 }
 
-void automataDirective(RuleBase rules,RuleImporter importer) :
+void automataDirective(RuleBase rules, RuleImporter importer) :
 {
     String name;
 }
 {
-    <AUTOMATADIRECTIVE> <LEFTBRACE> name=stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
+    <AUTOMATADIRECTIVE> <LEFTBRACE> name = stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
     {
-        importer.setAutomata(rules,name);
+        importer.setAutomata(rules, name);
     }
 }
 
@@ -168,9 +182,20 @@ void stemmingDirective(RuleBase rules) :
     String booleanString;
 }
 {
-    <STEMMINGDIRECTIVE> <LEFTBRACE> booleanString=stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
+    <STEMMINGDIRECTIVE> <LEFTBRACE> booleanString = stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
     {
-        rules.setStemming(Boolean.parseBoolean(booleanString));
+        linguistics = linguistics.withStemMode(Boolean.parseBoolean(booleanString) ? StemMode.BEST : StemMode.NONE);
+    }
+}
+
+void languageDirective(RuleBase rules) :
+{
+    String languageString;
+}
+{
+    <LANGUAGEDIRECTIVE> <LEFTBRACE> languageString = stringOrLiteral() <RIGHTBRACE> (<SEMICOLON>)?
+    {
+        linguistics = linguistics.withLanguage(Language.from(languageString));
     }
 }
 
@@ -183,10 +208,10 @@ void productionRule(RuleBase rules) :
     ProductionList production=null;
 }
 {
-    condition=topLevelCondition() rule=productionRuleType() ( production=productionList() )? <SEMICOLON>
+    condition = topLevelCondition() rule = productionRuleType() ( production = productionList() )? <SEMICOLON>
     {
         rule.setCondition(condition);
-        if (production!=null) rule.setProduction(production);
+        if (production != null) rule.setProduction(production);
         rules.addRule(rule);
     }
 }
@@ -201,16 +226,16 @@ ProductionRule productionRuleType() :
 
 ProductionList productionList() :
 {
-    ProductionList productionList=new ProductionList();
+    ProductionList productionList = new ProductionList();
     Production production;
     int weight=100;
 }
 {
-    ( production=production() (<EXCLAMATION> weight=number())?
+    ( production = production() (<EXCLAMATION> weight = number())?
       {
           production.setWeight(weight);
           productionList.addProduction(production);
-          weight=100;
+          weight = 100;
       } (<NL>)*
     ) +
     { return productionList; }
@@ -221,7 +246,7 @@ Production production() :
     Production production;
 }
 {
-    ( LOOKAHEAD(2) production=namespaceProduction() | production=termProduction() )
+    ( LOOKAHEAD(2) production = namespaceProduction() | production = termProduction() )
     { return production; }
 }
 
@@ -229,12 +254,12 @@ TermProduction termProduction() :
 {
     TermProduction termProduction;
     TermType termType;
-    String label=null;
+    String label = null;
 }
 {
-    termType=termType()
-    ( LOOKAHEAD(2) label=label() )?
-    ( termProduction=nonphraseTermProduction() | termProduction=phraseProduction() )
+    termType = termType()
+    ( LOOKAHEAD(2) label = label() )?
+    ( termProduction = nonphraseTermProduction() | termProduction = phraseProduction() )
 
     {
         termProduction.setLabel(label);
@@ -248,8 +273,8 @@ TermProduction nonphraseTermProduction() :
     TermProduction termProduction;
 }
 {
-    ( termProduction=referenceTermProduction() |
-      termProduction=literalTermProduction() )
+    ( termProduction = referenceTermProduction() |
+      termProduction = literalTermProduction() )
     {
       return termProduction;
     }
@@ -257,14 +282,14 @@ TermProduction nonphraseTermProduction() :
 
 LiteralPhraseProduction phraseProduction() :
 {
-    LiteralPhraseProduction phraseProduction=new LiteralPhraseProduction();
-    String term=null;
+    LiteralPhraseProduction phraseProduction = new LiteralPhraseProduction();
+    String term = null;
 }
 {
 
     <QUOTE>
     (
-      term=identifier()
+      term = identifier()
       { phraseProduction.addTerm(term); }
     )+
     <QUOTE>
@@ -277,11 +302,11 @@ NamespaceProduction namespaceProduction() :
 {
     String namespace;
     String key;
-    String value=null;
+    String value = null;
 }
 {
-    namespace=identifier() <DOT> key=stringOrLiteral() <EQUALS> value=identifierOrLiteral()
-    { return new NamespaceProduction(namespace,key,value); }
+    namespace = identifier() <DOT> key = stringOrLiteral() <EQUALS> value = identifierOrLiteral()
+    { return new NamespaceProduction(namespace, key, value); }
 }
 
 ReferenceTermProduction referenceTermProduction() :
@@ -289,7 +314,7 @@ ReferenceTermProduction referenceTermProduction() :
     String reference;
 }
 {
-    <LEFTSQUAREBRACKET> reference=referenceIdentifier() <RIGHTSQUAREBRACKET>
+    <LEFTSQUAREBRACKET> reference = referenceIdentifier() <RIGHTSQUAREBRACKET>
     { return new ReferenceTermProduction(reference); }
 }
 
@@ -298,7 +323,7 @@ LiteralTermProduction literalTermProduction() :
     String literal;
 }
 {
-    literal=identifier()
+    literal = identifier()
     { return new LiteralTermProduction(literal); }
 }
 
@@ -319,7 +344,7 @@ String referenceIdentifier() :
     String reference;
 }
 {
-    ( reference=identifier() { return reference; } )
+    ( reference = identifier() { return reference; } )
     |
     ( <ELLIPSIS> { return "..."; } )
 }
@@ -332,25 +357,25 @@ void namedCondition(RuleBase rules) :
     Condition condition;
 }
 {
-    <LEFTSQUAREBRACKET> conditionName=identifier() <RIGHTSQUAREBRACKET> <CONDITION> condition=topLevelCondition() <SEMICOLON>
-    { rules.addCondition(new NamedCondition(conditionName,condition)); }
+    <LEFTSQUAREBRACKET> conditionName = identifier() <RIGHTSQUAREBRACKET> <CONDITION> condition = topLevelCondition() <SEMICOLON>
+    { rules.addCondition(new NamedCondition(conditionName, condition)); }
 }
 
 Condition topLevelCondition() :
 {
     Condition condition;
-    boolean startAnchor=false;
-    boolean endAnchor=false;
+    boolean startAnchor = false;
+    boolean endAnchor = false;
 }
 {
-    ( <DOT> { startAnchor=true; } )?
+    ( <DOT> { startAnchor = true; } )?
     (
-      LOOKAHEAD(3) condition=choiceCondition() |
-      LOOKAHEAD(3) condition=sequenceCondition()
+      LOOKAHEAD(3) condition = choiceCondition() |
+      LOOKAHEAD(3) condition = sequenceCondition()
     )
-    ( LOOKAHEAD(2) <DOT> { endAnchor=true; } )?
+    ( LOOKAHEAD(2) <DOT> { endAnchor = true; } )?
     {
-      condition.setAnchor(Condition.Anchor.create(startAnchor,endAnchor));
+      condition.setAnchor(Condition.Anchor.create(startAnchor, endAnchor));
       return condition;
     }
 }
@@ -361,8 +386,8 @@ Condition condition() :
 }
 {
   (
-    ( LOOKAHEAD(3) condition=choiceCondition()
-      | condition=terminalCondition() )
+    ( LOOKAHEAD(3) condition = choiceCondition()
+      | condition = terminalCondition() )
     {
       return condition;
     }
@@ -374,8 +399,8 @@ Condition terminalOrSequenceCondition() :
     Condition condition;
 }
 {
-    ( LOOKAHEAD(3) condition=sequenceCondition() |
-      condition=terminalCondition() )
+    ( LOOKAHEAD(3) condition = sequenceCondition() |
+      condition = terminalCondition() )
     { return condition; }
 }
 
@@ -384,20 +409,20 @@ Condition terminalCondition() :
     Condition condition;
 }
 {
-    ( condition=notCondition() | condition=terminalOrComparisonCondition() )
+    ( condition = notCondition() | condition = terminalOrComparisonCondition() )
     { return condition; }
 }
 
 Condition terminalOrComparisonCondition() :
 {
-    Condition condition,rightCondition;
+    Condition condition, rightCondition;
     String comparison;
 }
 {
-    condition=reallyTerminalCondition()
-    ( comparison=comparison() ( LOOKAHEAD(2) rightCondition=nestedCondition() | rightCondition=reallyTerminalCondition() )
-//    ( comparison=comparison() rightCondition=condition()
-      { condition=new ComparisonCondition(condition,comparison,rightCondition); }
+    condition = reallyTerminalCondition()
+    ( comparison = comparison() ( LOOKAHEAD(2) rightCondition = nestedCondition() | rightCondition = reallyTerminalCondition() )
+//    ( comparison = comparison() rightCondition = condition()
+      { condition = new ComparisonCondition(condition, comparison, rightCondition); }
     ) ?
     { return condition; }
 
@@ -405,10 +430,10 @@ Condition terminalOrComparisonCondition() :
 
 Condition reallyTerminalCondition() :
 {
-    String label=null;
-    String context=null;
-    String nameSpace=null;
-    Condition condition=null;
+    String label = null;
+    String context = null;
+    String nameSpace = null;
+    Condition condition = null;
 }
 {
 // This body looks like this to distinguish these two cases
@@ -416,20 +441,20 @@ Condition reallyTerminalCondition() :
 // condition .  (end anchor)
    ( LOOKAHEAD(8)
    (
-       ( LOOKAHEAD(2) context=context() )?
-       ( nameSpace=nameSpace() )
-       ( LOOKAHEAD(2) label=label() )?
-       condition=terminalConditionBody()
+       ( LOOKAHEAD(2) context = context() )?
+       ( nameSpace = nameSpace() )
+       ( LOOKAHEAD(2) label = label() )?
+       condition = terminalConditionBody()
    )
    |
    (
-       ( LOOKAHEAD(2) context=context() )?
-       ( LOOKAHEAD(2) label=label() )?
-       condition=terminalConditionBody()
+       ( LOOKAHEAD(2) context = context() )?
+       ( LOOKAHEAD(2) label = label() )?
+       condition = terminalConditionBody()
    )
    )
    {
-     if (context!=null)
+     if (context != null)
          condition.setContextName(context);
      condition.setLabel(label);
      condition.setNameSpace(nameSpace);
@@ -440,18 +465,18 @@ Condition reallyTerminalCondition() :
 
 Condition terminalConditionBody() :
 {
-    Condition condition=null;
+    Condition condition = null;
 }
 {
     (
-    LOOKAHEAD(2) condition=conditionReference() |
-    condition=termCondition() |
-    condition=nestedCondition() |
-    condition=nonReferableEllipsisCondition() |
-    condition=referableEllipsisCondition() |
-    condition=superCondition() |
-    condition=literalCondition() |
-    condition=compositeItemCondition())
+    LOOKAHEAD(2) condition = conditionReference() |
+    condition = termCondition() |
+    condition = nestedCondition() |
+    condition = nonReferableEllipsisCondition() |
+    condition = referableEllipsisCondition() |
+    condition = superCondition() |
+    condition = literalCondition() |
+    condition = compositeItemCondition())
     { return condition; }
 }
 
@@ -460,7 +485,7 @@ Condition notCondition() :
     Condition condition;
 }
 {
-    <EXCLAMATION> condition=terminalOrComparisonCondition()
+    <EXCLAMATION> condition = terminalOrComparisonCondition()
     { return new NotCondition(condition); }
 }
 
@@ -470,7 +495,7 @@ ConditionReference conditionReference() :
     String conditionName;
 }
 {
-    <LEFTSQUAREBRACKET> conditionName=identifier() <RIGHTSQUAREBRACKET>
+    <LEFTSQUAREBRACKET> conditionName = identifier() <RIGHTSQUAREBRACKET>
     { return new ConditionReference(conditionName); }
 }
 
@@ -494,23 +519,23 @@ Condition nestedCondition() :
     Condition condition;
 }
 {
-    <LEFTBRACE> condition=choiceCondition() <RIGHTBRACE>
+    <LEFTBRACE> condition = choiceCondition() <RIGHTBRACE>
     { return condition; }
 }
 
 Condition sequenceCondition() :
 {
-    SequenceCondition sequenceCondition=new SequenceCondition();
+    SequenceCondition sequenceCondition = new SequenceCondition();
     Condition condition;
 }
 {
-    condition=terminalCondition()
+    condition = terminalCondition()
     { sequenceCondition.addCondition(condition); }
-    ( LOOKAHEAD(2) condition=terminalCondition()
+    ( LOOKAHEAD(2) condition = terminalCondition()
       { sequenceCondition.addCondition(condition); }
     )*
     {
-      if (sequenceCondition.conditionSize()==1)
+      if (sequenceCondition.conditionSize() == 1)
           return sequenceCondition.removeCondition(0);
       else
           return sequenceCondition;
@@ -519,17 +544,17 @@ Condition sequenceCondition() :
 
 Condition choiceCondition() :
 {
-    ChoiceCondition choiceCondition=new ChoiceCondition();
+    ChoiceCondition choiceCondition = new ChoiceCondition();
     Condition condition;
 }
 {
-    condition=terminalOrSequenceCondition()
+    condition = terminalOrSequenceCondition()
     { choiceCondition.addCondition(condition); }
-    ( LOOKAHEAD(3) (<NL>)* <COMMA> (<NL>)* condition=terminalOrSequenceCondition()
+    ( LOOKAHEAD(3) (<NL>)* <COMMA> (<NL>)* condition = terminalOrSequenceCondition()
       { choiceCondition.addCondition(condition); }
     ) *
     {
-      if (choiceCondition.conditionSize()==1)
+      if (choiceCondition.conditionSize() == 1)
           return choiceCondition.removeCondition(0);
       else
           return choiceCondition;
@@ -542,7 +567,7 @@ TermCondition termCondition() :
 }
 {
     ( str = identifier() )
-    { return new TermCondition(str); }
+    { return new TermCondition(str, linguistics); }
 }
 
 SuperCondition superCondition() : { }
@@ -566,7 +591,7 @@ CompositeItemCondition compositeItemCondition() :
     CompositeItemCondition compositeItemCondition = new CompositeItemCondition();
 }
 {
-    ( <QUOTE> ( condition=terminalConditionBody() { compositeItemCondition.addCondition(condition); } ) <QUOTE> )
+    ( <QUOTE> ( condition = terminalConditionBody() { compositeItemCondition.addCondition(condition); } ) <QUOTE> )
     { return compositeItemCondition; }
 }
 

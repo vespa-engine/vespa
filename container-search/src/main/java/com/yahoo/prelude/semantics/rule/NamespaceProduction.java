@@ -18,13 +18,13 @@ public class NamespaceProduction extends Production {
     private String key;
 
     /** The value to set in the namespace */
-    private String value=null;
+    private String value;
 
     /** Creates a produced template term with no label and the default type */
-    public NamespaceProduction(String namespace,String key,String value) {
+    public NamespaceProduction(String namespace, String key, String value) {
         setNamespace(namespace);
-        this.key=key;
-        this.value=value;
+        this.key = key;
+        this.value = value;
     }
 
     public String getNamespace() { return namespace; }
@@ -44,7 +44,7 @@ public class NamespaceProduction extends Production {
 
     public void setValue(String value) { this.value = value; }
 
-    public void produce(RuleEvaluation e,int offset) {
+    public void produce(RuleEvaluation e, int offset) {
         e.getEvaluation().getQuery().properties().set(key, value);
     }
 

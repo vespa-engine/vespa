@@ -12,7 +12,7 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 import com.yahoo.protect.Validator;
 
 /**
- * A term produced by a production rule which takes it's actual term value
+ * A term produced by a production rule which takes its actual term value
  * from one or more terms matched in the condition
  *
  * @author bratseth

@@ -6,6 +6,7 @@ import com.yahoo.text.Lowercase;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Rich Pito
@@ -529,14 +530,30 @@ public enum Language {
     }
 
     /**
-     * <p>Convenience method for calling <code>fromLocale(LocaleFactory.fromLanguageTag(languageTag))</code>.</p>
+     * Convenience method for calling <code>fromLocale(LocaleFactory.fromLanguageTag(languageTag))</code>.
+     * Returns UNKNOWN when passed null or an unknown language tag.
      *
-     * @param languageTag The language tag for which the <code>Language</code> to return.
-     * @return the corresponding <code>Language</code>, or {@link #UNKNOWN} if not known.
+     * @param languageTag the language tag for which the <code>Language</code> to return
+     * @return the corresponding <code>Language</code>, or {@link #UNKNOWN} if not known
      */
     public static Language fromLanguageTag(String languageTag) {
         if (languageTag == null) return UNKNOWN;
         return fromLocale(LocaleFactory.fromLanguageTag(languageTag));
+    }
+
+    /**
+     * Returns the Language from a language tag
+     *
+     * @param languageTag the language tag for which the <code>Language</code> to return, cannot be null
+     * @return the Language instance
+     * @throws IllegalArgumentException if the language tag is unknown
+     */
+    public static Language from(String languageTag) {
+        Objects.requireNonNull(languageTag, "languageTag cannot be null");
+        Language language = fromLocale(LocaleFactory.fromLanguageTag(languageTag));
+        if ( ! languageTag.equalsIgnoreCase("unknown") && language == Language.UNKNOWN)
+            throw new IllegalArgumentException("Unknown language tag '" + languageTag + "'");
+        return language;
     }
 
     /**

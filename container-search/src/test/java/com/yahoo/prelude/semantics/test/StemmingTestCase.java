@@ -4,34 +4,52 @@ package com.yahoo.prelude.semantics.test;
 import org.junit.Test;
 
 /**
- * Tests a case reported by tularam
+ * Tests stemming.
  *
  * @author bratseth
  */
-public class StemmingTestCase extends RuleBaseAbstractTestCase {
-
-    public StemmingTestCase() {
-        super("stemming.sr");
-    }
+public class StemmingTestCase {
 
     @Test
     public void testRewritingDueToStemmingInQuery() {
-        assertSemantics("+(AND i:vehicle TRUE) -i:s","i:cars -i:s");
+        var tester = new RuleBaseTester("stemming.sr");
+        tester.assertSemantics("+(AND i:vehicle TRUE) -i:s", "i:cars -i:s");
+    }
+
+    @Test
+    public void testNoRewritingDueToStemmingInQueryWhenStemmingDisabled() {
+        var tester = new RuleBaseTester("stemming-none.sr");
+        tester.assertSemantics("+i:cars -i:s", "i:cars -i:s");
     }
 
     @Test
     public void testRewritingDueToStemmingInRule() {
-        assertSemantics("+(AND i:animal TRUE) -i:s","i:horse -i:s");
+        var tester = new RuleBaseTester("stemming.sr");
+        tester.assertSemantics("+(AND i:animal TRUE) -i:s", "i:horse -i:s");
+    }
+
+    @Test
+    public void testNoRewritingDueToStemmingInRuleWhenStemmingDisabled() {
+        var tester = new RuleBaseTester("stemming-none.sr");
+        tester.assertSemantics("+i:horse -i:s", "i:horse -i:s");
     }
 
     @Test
     public void testRewritingDueToExactMatch() {
-        assertSemantics("+(AND i:arts i:sciences TRUE) -i:s","i:as -i:s");
+        var tester = new RuleBaseTester("stemming.sr");
+        tester.assertSemantics("+(AND i:arts i:sciences TRUE) -i:s", "i:as -i:s");
     }
 
     @Test
-    public void testNoRewritingBecauseShortWordsAreNotStemmed() {
-        assertSemantics("+i:a -i:s","i:a -i:s");
+    public void testEnglishStemming() {
+        var tester = new RuleBaseTester("stemming.sr");
+        tester.assertSemantics("i:drive", "i:going");
+    }
+
+    @Test
+    public void testFrenchStemming() {
+        var tester = new RuleBaseTester("stemming-french.sr");
+        tester.assertSemantics("i:going", "i:going");
     }
 
 }

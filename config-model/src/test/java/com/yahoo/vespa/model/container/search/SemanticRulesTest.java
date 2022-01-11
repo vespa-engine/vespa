@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.semantics.RuleBase;
 import com.yahoo.prelude.semantics.RuleImporter;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
@@ -39,7 +40,7 @@ public class SemanticRulesTest {
     }
 
     private static Map<String, RuleBase> toMap(SemanticRulesConfig config) throws ParseException, IOException {
-        RuleImporter ruleImporter = new RuleImporter(config);
+        RuleImporter ruleImporter = new RuleImporter(config, new SimpleLinguistics());
         Map<String, RuleBase> ruleBaseMap = new HashMap<>();
         for (SemanticRulesConfig.Rulebase ruleBaseConfig : config.rulebase()) {
             RuleBase ruleBase = ruleImporter.importConfig(ruleBaseConfig);

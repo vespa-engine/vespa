@@ -30,7 +30,7 @@ public class BacktrackingTestCase {
 
     static {
         try {
-            searcher = new SemanticSearcher(new RuleImporter().importFile(root + "backtrackingrules.sr"));
+            searcher = new SemanticSearcher(new RuleImporter(new SimpleLinguistics()).importFile(root + "backtrackingrules.sr"));
         }
         catch (Exception e) {
             throw new RuntimeException(e);

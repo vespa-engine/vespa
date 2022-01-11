@@ -1,19 +1,34 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics;
 
+import com.yahoo.language.Language;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.prelude.semantics.engine.RuleBaseLinguistics;
+import com.yahoo.prelude.semantics.rule.CompositeCondition;
+import com.yahoo.prelude.semantics.rule.Condition;
+import com.yahoo.prelude.semantics.rule.NamedCondition;
+import com.yahoo.prelude.semantics.rule.ProductionRule;
+import com.yahoo.prelude.semantics.rule.SuperCondition;
 import com.yahoo.search.Query;
 import com.yahoo.prelude.querytransform.PhraseMatcher;
 import com.yahoo.prelude.semantics.engine.RuleEngine;
 import com.yahoo.prelude.semantics.parser.ParseException;
-import com.yahoo.prelude.semantics.rule.*;
 import com.yahoo.protect.Validator;
 
 import java.io.File;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 /**
- * A set of semantic production rules and named conditions used to analyze
- * and rewrite queries
+ * A set of semantic production rules and named conditions used to analyze and rewrite queries
  *
  * @author bratseth
  */
@@ -26,7 +41,7 @@ public class RuleBase {
     private String source;
 
     /** The name of the automata file used, or null if none */
-    protected String automataFileName = null;
+    private String automataFileName = null;
 
     /**
      * True if this rule base is default.
@@ -61,29 +76,26 @@ public class RuleBase {
      */
     private boolean usesAutomata = false;
 
-    /** Should we allow stemmed matches? */
-    private boolean stemming = true;
-
-    /** Creates an empty rule base. TODO: Disallow */
-    public RuleBase() {
-    }
+    private RuleBaseLinguistics linguistics;
 
     /** Creates an empty rule base */
-    public RuleBase(String name) {
-        setName(name);
+    public RuleBase(String name, Linguistics linguistics) {
+        this.name = name;
+        this.linguistics = new RuleBaseLinguistics(StemMode.BEST, Language.ENGLISH, linguistics);
     }
 
     /**
-     * Creates a rule base from a file
+     * Creates a rule base from file
      *
-     * @param  ruleFile the rule file to read. The name of the file (minus path) becomes the rule base name
+     * @param  ruleFile the rule file to read. The name of the file (minus path) becomes the rule base name.
      * @param  automataFile the automata file, or null to not use an automata
      * @throws java.io.IOException if there is a problem reading one of the files
      * @throws ParseException if the rule file can not be parsed correctly
      * @throws RuleBaseException if the rule file contains inconsistencies
      */
-    public static RuleBase createFromFile(String ruleFile, String automataFile) throws java.io.IOException, ParseException {
-        return new RuleImporter().importFile(ruleFile, automataFile);
+    public static RuleBase createFromFile(String ruleFile, String automataFile, Linguistics linguistics)
+            throws java.io.IOException, ParseException {
+        return new RuleImporter(linguistics).importFile(ruleFile, automataFile);
     }
 
     /**
@@ -96,17 +108,12 @@ public class RuleBase {
      * @throws com.yahoo.prelude.semantics.parser.ParseException if the rule file can not be parsed correctly
      * @throws com.yahoo.prelude.semantics.RuleBaseException if the rule file contains inconsistencies
      */
-    public static RuleBase createFromString(String name, String ruleString, String automataFile) throws java.io.IOException, ParseException {
-        RuleBase base = new RuleImporter().importString(ruleString, automataFile, new RuleBase());
+    public static RuleBase createFromString(String name, String ruleString, String automataFile, Linguistics linguistics)
+            throws java.io.IOException, ParseException {
+        RuleBase base = new RuleImporter(linguistics).importString(ruleString, automataFile);
         base.setName(name);
         return base;
     }
-
-    /** Set to true to enable stemmed matches. True by default */
-    public void setStemming(boolean stemming) { this.stemming = stemming; }
-
-    /** Returns whether stemmed matches are allowed. True by default */
-    public boolean getStemming() { return stemming; }
 
     /**
      * <p>Include another rule base into this. This <b>transfers ownership</b>
@@ -171,7 +178,7 @@ public class RuleBase {
         resolveSuper(condition, superCondition);
     }
 
-    private void resolveSuper(Condition condition,Condition superCondition) {
+    private void resolveSuper(Condition condition, Condition superCondition) {
         if (condition instanceof SuperCondition) {
             ((SuperCondition)condition).setCondition(superCondition);
         }
@@ -336,7 +343,7 @@ public class RuleBase {
 
     // TODO: Values are not added right now
     protected void annotatePhrase(PhraseMatcher.Phrase phrase,Query query,int traceLevel) {
-        for (StringTokenizer tokens = new StringTokenizer(phrase.getData(),"|",false) ; tokens.hasMoreTokens(); ) {
+        for (StringTokenizer tokens = new StringTokenizer(phrase.getData(), "|", false); tokens.hasMoreTokens(); ) {
             String token = tokens.nextToken();
             int semicolonIndex = token.indexOf(";");
             String annotation = token;
