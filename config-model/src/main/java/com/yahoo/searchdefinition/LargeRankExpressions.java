@@ -10,9 +10,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class LargeRankExpressions {
     private final Map<String, RankExpressionBody> expressions = new ConcurrentHashMap<>();
     private final FileRegistry fileRegistry;
+    private final int limit;
 
     public LargeRankExpressions(FileRegistry fileRegistry) {
+        this(fileRegistry, 8192);
+    }
+    public LargeRankExpressions(FileRegistry fileRegistry, int limit) {
         this.fileRegistry = fileRegistry;
+        this.limit = limit;
     }
 
     public void add(RankExpressionBody expression) {
@@ -29,6 +34,7 @@ public class LargeRankExpressions {
             }
         }
     }
+    public int limit() { return limit; }
 
     /** Returns a read-only map of the ranking constants in this indexed by name */
     public Map<String, RankExpressionBody> asMap() {
