@@ -61,6 +61,12 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
                                                     .anyMatch(deployment -> deployment.version().isBefore(version)));
     }
 
+    /** Returns the subset of applications with at least one declared job in deployment spec. */
+    public ApplicationList withJobs() {
+        return matching(application -> application.deploymentSpec().steps().stream()
+                                                  .anyMatch(step -> ! step.zones().isEmpty()));
+    }
+
     /** Returns the subset of applications which have a project ID */
     public ApplicationList withProjectId() {
         return matching(application -> application.projectId().isPresent());

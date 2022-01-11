@@ -94,9 +94,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         Cursor platformArray = root.setArray("versions");
         var versionStatus = controller.readVersionStatus();
         var systemVersion = controller.systemVersion(versionStatus);
-        ApplicationList applications = ApplicationList.from(controller.applications().asList())
-                                                      .matching(application -> application.deploymentSpec().steps().stream()
-                                                                                          .anyMatch(step -> ! step.zones().isEmpty()));
+        ApplicationList applications = ApplicationList.from(controller.applications().asList()).withJobs();
         var deploymentStatuses = controller.jobController().deploymentStatuses(applications, systemVersion);
         var deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toList()),
                                                                 deploymentStatuses)
