@@ -10,12 +10,9 @@ import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.server.ZooKeeperServerBean;
-import org.apache.zookeeper.server.ZooKeeperServerConf;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -55,7 +52,7 @@ public class VespaZooKeeperTest {
      *
      * Throughout all of this, quorum should remain, and the data should remain the same.
      */
-    @Test
+    @Test(timeout = 120_000)
     public void testReconfiguration() throws ExecutionException, InterruptedException, IOException, KeeperException, TimeoutException {
         List<ZooKeeper> keepers = new ArrayList<>();
         for (int i = 0; i < 8; i++) keepers.add(new ZooKeeper());

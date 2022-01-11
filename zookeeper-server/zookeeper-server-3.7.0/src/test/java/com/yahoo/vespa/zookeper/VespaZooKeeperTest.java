@@ -52,7 +52,7 @@ public class VespaZooKeeperTest {
      *
      * Throughout all of this, quorum should remain, and the data should remain the same.
      */
-    @Test
+    @Test(timeout = 120_000)
     public void testReconfiguration() throws ExecutionException, InterruptedException, IOException, KeeperException, TimeoutException {
         List<ZooKeeper> keepers = new ArrayList<>();
         for (int i = 0; i < 8; i++) keepers.add(new ZooKeeper());
