@@ -32,6 +32,7 @@ juteMaxBuffer int default=52428800
 myid int restart
 server[].id int
 server[].hostname string
+server[].clientPort int default=2181
 server[].quorumPort int default=2182
 server[].electionPort int default=2183
 # Whether this server is joining an existing cluster

@@ -130,7 +130,7 @@ public class Configurator {
               .append("observer");
         }
         sb.append(";")
-          .append(clientPort);
+          .append(server.clientPort());
         return sb.toString();
     }
 

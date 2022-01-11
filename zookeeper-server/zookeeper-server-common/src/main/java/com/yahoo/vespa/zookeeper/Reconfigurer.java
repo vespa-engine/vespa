@@ -86,10 +86,7 @@ public class Reconfigurer extends AbstractComponent {
 
     // TODO jonmv: read dynamic file, discard if old quorum impossible (config file + .dynamic.<id>)
     // TODO jonmv: if dynamic file, all unlisted servers are observers; otherwise joiners are observers
-    // TODO jonmv: verify reconfig by issuing a dummy write
     // TODO jonmv: wrap Curator in Provider, for Curator shutdown
-    // TODO jonmv: scale down to 1 server as well
-    // TODO jonmv: unit test this
     private void reconfigure(ZookeeperServerConfig newConfig) {
         Instant reconfigTriggered = Instant.now();
         String newServers = String.join(",", servers(newConfig));
