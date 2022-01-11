@@ -59,7 +59,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxConcurrentMergesPerNode = 16;
     private int maxMergeQueueSize = 1024;
     private boolean ignoreMergeQueueLimit = false;
-    private int largeRankExpressionLimit = 8192;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
     private double resourceLimitDisk = 0.8;
@@ -115,7 +114,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
-    @Override public int largeRankExpressionLimit() { return largeRankExpressionLimit; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
     @Override public boolean ignoreMergeQueueLimit() { return ignoreMergeQueueLimit; }
@@ -160,10 +158,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         containerShutdownTimeout = value;
         return this;
     }
-    public TestProperties largeRankExpressionLimit(int value) {
-        largeRankExpressionLimit = value;
-        return this;
-    }
+
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
         return this;

@@ -104,8 +104,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testRankExpression() throws IOException, ParseException {
-        assertCorrectDeriving("rankexpression", null,
-                new TestProperties().largeRankExpressionLimit(1024), new TestableDeployLogger());
+        assertCorrectDeriving("rankexpression");
     }
 
     @Test

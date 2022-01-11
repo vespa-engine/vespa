@@ -115,9 +115,9 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testLargeInheritedFunctions() throws IOException, ParseException {
-        ModelContext.Properties properties = new TestProperties().largeRankExpressionLimit(50);
+        ModelContext.Properties properties = new TestProperties();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        LargeRankExpressions largeExpressions = new LargeRankExpressions(new MockFileRegistry());
+        LargeRankExpressions largeExpressions = new LargeRankExpressions(new MockFileRegistry(), 50);
         QueryProfileRegistry queryProfiles = new QueryProfileRegistry();
         ImportedMlModels models = new ImportedMlModels();
         Schema schema = createSearch("src/test/examples/largerankingexpressions", properties, rankProfileRegistry);
