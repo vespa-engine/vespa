@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
-import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.Lock;
 import com.yahoo.concurrent.Locks;
 import com.yahoo.concurrent.StripedExecutor;
@@ -36,7 +35,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.curator.framework.state.ConnectionState;
@@ -202,7 +200,7 @@ public class TenantRepository {
         this.tenantListener = tenantListener;
         this.zookeeperServerConfig = zookeeperServerConfig;
         // This we should control with a feature flag.
-        this.deployHelperExecutor = createModelBuilderExecutor(Flags.NUM_DEPLOY_HELPER_THREADS.bindTo(flagSource).value());
+        this.deployHelperExecutor = createModelBuilderExecutor();
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -220,14 +218,11 @@ public class TenantRepository {
                                                                   TimeUnit.SECONDS);
     }
 
-    private ExecutorService createModelBuilderExecutor(int numThreads) {
+    private ExecutorService createModelBuilderExecutor() {
         final long GB = 1024*1024*1024;
-        if (numThreads == 0) return new InThreadExecutorService();
-        if (numThreads < 0) {
-            long maxHeap = Runtime.getRuntime().maxMemory();
-            int maxThreadsToFitInMemory = (int)((maxHeap + (GB - 1))/(1*GB));
-            numThreads = Math.min(Runtime.getRuntime().availableProcessors(), maxThreadsToFitInMemory);
-        }
+        long maxHeap = Runtime.getRuntime().maxMemory();
+        int maxThreadsToFitInMemory = (int)((maxHeap + (GB - 1))/(1*GB));
+        int numThreads = Math.min(Runtime.getRuntime().availableProcessors(), maxThreadsToFitInMemory);
         return Executors.newFixedThreadPool(numThreads, ThreadFactoryFactory.getDaemonThreadFactory("deploy-helper"));
     }
 
