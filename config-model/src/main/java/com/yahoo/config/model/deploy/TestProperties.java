@@ -77,7 +77,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
-    private double tlsSizeFraction = 0.04;
+    private double tlsSizeFraction = 0.02;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }

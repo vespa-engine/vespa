@@ -1062,7 +1062,7 @@ public class ContentClusterTest extends ContentBaseTest {
         var flavor = new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().name("test").minDiskAvailableGb(100)));
         assertEquals(21474836480L, resolveMaxTLSSize(OptionalDouble.empty(), Optional.empty()));
         assertEquals(21474836480L, resolveMaxTLSSize(OptionalDouble.of(0.02), Optional.empty()));
-        assertEquals(4294967296L, resolveMaxTLSSize(OptionalDouble.empty(), Optional.of(flavor)));
+        assertEquals(2147483648L, resolveMaxTLSSize(OptionalDouble.empty(), Optional.of(flavor)));
         assertEquals(2147483648L, resolveMaxTLSSize(OptionalDouble.of(0.02), Optional.of(flavor)));
         assertEquals(3221225472L, resolveMaxTLSSize(OptionalDouble.of(0.03), Optional.of(flavor)));
     }
