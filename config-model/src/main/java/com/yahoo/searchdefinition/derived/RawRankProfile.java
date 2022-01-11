@@ -140,6 +140,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final int numSearchPartitions;
         private final double termwiseLimit;
         private final double rankScoreDropLimit;
+        private final int largeRankExpressionLimit;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -175,6 +176,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
+            largeRankExpressionLimit = deployProperties.featureFlags().largeRankExpressionLimit();
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
             Map<String, RankProfile.RankingExpressionFunction> functions = compiled.getFunctions();
@@ -417,7 +419,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (ListIterator<Pair<String, String>> iter = properties.listIterator(); iter.hasNext();) {
                 Pair<String, String> property = iter.next();
                 String expression = property.getSecond();
-                if (expression.length() > largeRankExpressions.limit()) {
+                if (expression.length() > largeRankExpressionLimit) {
                     String propertyName = property.getFirst();
                     String functionName = RankingExpression.extractScriptName(propertyName);
                     if (functionName != null) {
