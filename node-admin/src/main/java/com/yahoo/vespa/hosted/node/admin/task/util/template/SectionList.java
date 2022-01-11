@@ -52,10 +52,10 @@ class SectionList {
         sections.add(section);
     }
 
-    void appendSubformSection(String name, Cursor nameOffset, Cursor end, Form body) {
+    void appendListSection(String name, Cursor nameOffset, Cursor end, Form body) {
         CursorRange range = verifyAndUpdateEnd(end);
-        var section = new SubformSection(range, name, nameOffset, body);
-        formBuilder.addSubformSection(section);
+        var section = new ListSection(range, name, nameOffset, body);
+        formBuilder.addListSection(section);
         sections.add(section);
     }
 

@@ -8,11 +8,11 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
  *
  * <pre>
  *     template: section*
- *     section: literal | variable | subform
+ *     section: literal | variable | list
  *     literal: plain text not containing %{
  *     variable: %{=id}
  *     if: %{if [!]id}template[%{else}template]%{end}
- *     subform: %{form id}template%{end}
+ *     list: %{list id}template%{end}
  *     id: a valid Java identifier
  * </pre>
  *
@@ -22,7 +22,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
  * <p>To use the template, <b>Instantiate</b> it to get a form ({@link #instantiate()}), fill it (e.g.
  * {@link Form#set(String, String) Form.set()}), and render the String ({@link Form#render()}).</p>
  *
- * <p>A form (like a template) has direct sections, and indirect sections in the body of direct subforms
+ * <p>A form (like a template) has direct sections, and indirect sections in the body of direct list
  * sections (recursively). The variables that can be set for a form, are the variables defined in
  * either direct or indirect variable sections.</p>
  *

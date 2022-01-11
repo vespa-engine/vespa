@@ -20,10 +20,10 @@ class TemplateFileTest {
     }
 
     @Test
-    void verifySimpleSubformSection() {
+    void verifySimpleListSection() {
         Form form = getForm("template1.tmp");
         form.set("varname", "varvalue")
-            .add("formname")
+            .add("listname")
             .set("varname", "different varvalue")
             .set("varname2", "varvalue2");
         assertEquals("variable section 'varvalue'\n" +
@@ -34,14 +34,14 @@ class TemplateFileTest {
     }
 
     @Test
-    void verifyNestedSubformSection() {
+    void verifyNestedListSection() {
         Form form = getForm("template2.tmp");
-        Form A0 = form.add("formA");
-        Form A0B0 = A0.add("formB");
-        Form A0B1 = A0.add("formB");
+        Form A0 = form.add("listA");
+        Form A0B0 = A0.add("listB");
+        Form A0B1 = A0.add("listB");
 
-        Form A1 = form.add("formA");
-        Form A1B0 = A1.add("formB");
+        Form A1 = form.add("listA");
+        Form A1B0 = A1.add("listB");
         assertEquals("body A\n" +
                      "body B\n" +
                      "body B\n" +
@@ -69,9 +69,9 @@ class TemplateFileTest {
 
     @Test
     void verifyNewlineRemoval() {
-        Form form = makeForm("a%{form a}\n" +
+        Form form = makeForm("a%{list a}\n" +
                              "b%{end}\n" +
-                             "c%{form c-}\n" +
+                             "c%{list c-}\n" +
                              "d%{end-}\n" +
                              "e\n");
         form.add("a");
@@ -95,14 +95,14 @@ class TemplateFileTest {
         Template template = Template.from("%{if cond-}\n" +
                                           "var: %{=varname}\n" +
                                           "if: %{if !inner}inner is false%{end}\n" +
-                                          "subform: %{form formname}subform%{end}\n" +
+                                          "list: %{list formname}element%{end}\n" +
                                           "%{end-}\n");
 
         assertEquals("", template.instantiate().set("cond", false).render());
 
         assertEquals("var: varvalue\n" +
                      "if: \n" +
-                     "subform: \n",
+                     "list: \n",
                      template.instantiate()
                              .set("cond", true)
                              .set("varname", "varvalue")
@@ -117,7 +117,7 @@ class TemplateFileTest {
 
         assertEquals("var: varvalue\n" +
                      "if: inner is false\n" +
-                     "subform: subform\n", form.render());
+                     "list: element\n", form.render());
     }
 
     private Form getForm(String filename) {

@@ -17,7 +17,7 @@ class FormBuilder {
     private final List<Section> allSections = new ArrayList<>();
     private final Map<String, VariableSection> sampleVariables = new HashMap<>();
     private final Map<String, IfSection> sampleIfSections = new HashMap<>();
-    private final Map<String, SubformSection> subforms = new HashMap<>();
+    private final Map<String, ListSection> lists = new HashMap<>();
 
     FormBuilder(Cursor start) {
         this.sectionList = new SectionList(start, this);
@@ -33,7 +33,7 @@ class FormBuilder {
         // It's OK if the same name is used in an if-directive (as long as the value is boolean,
         // determined when set on a form).
 
-        SubformSection existing = subforms.get(section.name());
+        ListSection existing = lists.get(section.name());
         if (existing != null)
             throw new NameAlreadyExistsTemplateException(section.name(), existing.nameOffset(),
                                                          section.nameOffset());
@@ -46,16 +46,16 @@ class FormBuilder {
         // It's OK if the same name is used in a variable section (as long as the value is boolean,
         // determined when set on a form).
 
-        SubformSection subform = subforms.get(section.name());
-        if (subform != null)
-            throw new NameAlreadyExistsTemplateException(section.name(), subform.nameOffset(),
+        ListSection list = lists.get(section.name());
+        if (list != null)
+            throw new NameAlreadyExistsTemplateException(section.name(), list.nameOffset(),
                                                          section.nameOffset());
 
         sampleIfSections.put(section.name(), section);
         allSections.add(section);
     }
 
-    void addSubformSection(SubformSection section) {
+    void addListSection(ListSection section) {
         VariableSection variableSection = sampleVariables.get(section.name());
         if (variableSection != null)
             throw new NameAlreadyExistsTemplateException(section.name(), variableSection.nameOffset(),
@@ -66,7 +66,7 @@ class FormBuilder {
             throw new NameAlreadyExistsTemplateException(section.name(), ifSection.nameOffset(),
                                                          section.nameOffset());
 
-        SubformSection previous = subforms.put(section.name(), section);
+        ListSection previous = lists.put(section.name(), section);
         if (previous != null)
             throw new NameAlreadyExistsTemplateException(section.name(), previous.nameOffset(),
                                                          section.nameOffset());
@@ -74,7 +74,7 @@ class FormBuilder {
     }
 
     Form build() {
-        var form = new Form(sectionList.range(), sectionList.sections(), subforms);
+        var form = new Form(sectionList.range(), sectionList.sections(), lists);
         allSections.forEach(section -> section.setForm(form));
         return form;
     }

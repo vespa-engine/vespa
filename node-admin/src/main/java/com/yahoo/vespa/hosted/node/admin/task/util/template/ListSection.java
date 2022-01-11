@@ -8,18 +8,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a template subform section
+ * Represents a template list section, to be replaced by any number of body form elements.
  *
  * @see Template
  * @author hakonhall
  */
-class SubformSection extends Section {
+class ListSection extends Section {
     private final String name;
     private final Cursor nameOffset;
     private final Form body;
     private final List<Form> elements = new ArrayList<>();
 
-    SubformSection(CursorRange range, String name, Cursor nameOffset, Form body) {
+    ListSection(CursorRange range, String name, Cursor nameOffset, Form body) {
         super(range);
         this.name = name;
         this.nameOffset = new Cursor(nameOffset);
@@ -52,6 +52,6 @@ class SubformSection extends Section {
         // avoid copying elements for now
         // Optimization: Reuse body in copy, since it is only used for copying.
 
-        sectionList.appendSubformSection(name, nameOffset, range().end(), body);
+        sectionList.appendListSection(name, nameOffset, range().end(), body);
     }
 }

@@ -1,4 +1,4 @@
-%{form formA-}body A
-%{form formB-}body B
+%{list listA-}body A
+%{list listB-}body B
 %{end-}
 %{end-}

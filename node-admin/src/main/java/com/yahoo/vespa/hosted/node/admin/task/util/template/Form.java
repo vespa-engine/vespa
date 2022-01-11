@@ -20,12 +20,12 @@ public class Form {
     private final List<Section> sections;
 
     private final Map<String, String> values = new HashMap<>();
-    private final Map<String, SubformSection> subforms;
+    private final Map<String, ListSection> lists;
 
-    Form(CursorRange range, List<Section> sections, Map<String, SubformSection> subforms) {
+    Form(CursorRange range, List<Section> sections, Map<String, ListSection> lists) {
         this.range = new CursorRange(range);
         this.sections = List.copyOf(sections);
-        this.subforms = Map.copyOf(subforms);
+        this.lists = Map.copyOf(lists);
     }
 
     void setParent(Form parent) { this.parent = parent; }
@@ -49,9 +49,9 @@ public class Form {
         return set(name, value);
     }
 
-    /** Add an instance of a subform section after any previously added (for the given name)  */
+    /** Add an instance of a list section after any previously added (for the given name)  */
     public Form add(String name) {
-        var section = subforms.get(name);
+        var section = lists.get(name);
         if (section == null) {
             throw new NoSuchNameTemplateException(range, name);
         }

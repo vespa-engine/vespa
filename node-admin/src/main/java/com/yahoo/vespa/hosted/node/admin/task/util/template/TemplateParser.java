@@ -74,11 +74,11 @@ class TemplateParser {
                         throw new BadTemplateException(startOfType, "Extraneous 'end'");
                     parseEndDirective();
                     return Optional.of(Sentinel.END);
-                case "form":
-                    parseSubformSection(sectionList);
-                    break;
                 case "if":
                     parseIfSection(sectionList);
+                    break;
+                case "list":
+                    parseListSection(sectionList);
                     break;
                 default:
                     throw new BadTemplateException(startOfType, "Unknown section '" + type + "'");
@@ -99,7 +99,7 @@ class TemplateParser {
         parseEndDelimiter(true);
     }
 
-    private void parseSubformSection(SectionList sectionList) {
+    private void parseListSection(SectionList sectionList) {
         skipRequiredWhitespaces();
         var startOfName = new Cursor(current);
         String name = parseId();
@@ -108,7 +108,7 @@ class TemplateParser {
         TemplateParser bodyParser = parse(descriptor, current, EnumSet.of(Sentinel.END));
         current.set(bodyParser.current);
 
-        sectionList.appendSubformSection(name, startOfName, current, bodyParser.formBuilder.build());
+        sectionList.appendListSection(name, startOfName, current, bodyParser.formBuilder.build());
     }
 
     private void parseIfSection(SectionList sectionList) {
