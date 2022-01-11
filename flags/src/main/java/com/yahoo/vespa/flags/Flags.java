@@ -60,7 +60,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
-            "feed-sequencer-type", "LATENCY",
+            "feed-sequencer-type", "THROUGHPUT",
             List.of("baldersheim"), "2020-12-02", "2022-02-01",
             "Selects type of sequenced executor used for feeding in proton, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment (requires restart)",
@@ -74,7 +74,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag FEED_MASTER_TASK_LIMIT = defineIntFlag(
-            "feed-master-task-limit", 0,
+            "feed-master-task-limit", 1000,
             List.of("geirst, baldersheim"), "2021-11-18", "2022-02-01",
             "The task limit used by the master thread in each document db in proton. Ignored when set to 0.",
             "Takes effect at redeployment",
@@ -216,21 +216,21 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_CONCURRENT_MERGES_PER_NODE = defineIntFlag(
-            "max-concurrent-merges-per-node", 128,
+            "max-concurrent-merges-per-node", 16,
             List.of("balder", "vekterli"), "2021-06-06", "2022-02-01",
             "Specifies max concurrent merges per content node.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_MERGE_QUEUE_SIZE = defineIntFlag(
-            "max-merge-queue-size", 1024,
+            "max-merge-queue-size", 100,
             List.of("balder", "vekterli"), "2021-06-06", "2022-02-01",
             "Specifies max size of merge queue.",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag IGNORE_MERGE_QUEUE_LIMIT = defineFeatureFlag(
-            "ignore-merge-queue-limit", false,
+            "ignore-merge-queue-limit", true,
             List.of("vekterli", "geirst"), "2021-10-06", "2022-03-01",
             "Specifies if merges that are forwarded (chained) from another content node are always " +
                     "allowed to be enqueued even if the queue is otherwise full.",
@@ -306,7 +306,7 @@ public class Flags {
     );
 
     public static final UnboundIntFlag DISTRIBUTOR_MERGE_BUSY_WAIT = defineIntFlag(
-            "distributor-merge-busy-wait", 10,
+            "distributor-merge-busy-wait", 1,
             List.of("geirst", "vekterli"), "2021-10-04", "2022-03-01",
             "Number of seconds that scheduling of new merge operations in the distributor should be inhibited " +
                     "towards a content node that has indicated merge busy",
@@ -314,21 +314,21 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag DISTRIBUTOR_ENHANCED_MAINTENANCE_SCHEDULING = defineFeatureFlag(
-            "distributor-enhanced-maintenance-scheduling", false,
+            "distributor-enhanced-maintenance-scheduling", true,
             List.of("vekterli", "geirst"), "2021-10-14", "2022-01-31",
             "Enable enhanced maintenance operation scheduling semantics on the distributor",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag ASYNC_APPLY_BUCKET_DIFF = defineFeatureFlag(
-            "async-apply-bucket-diff", false,
+            "async-apply-bucket-diff", true,
             List.of("geirst", "vekterli"), "2021-10-22", "2022-01-31",
             "Whether portions of apply bucket diff handling will be performed asynchronously",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
-            "unordered-merge-chaining", false,
+            "unordered-merge-chaining", true,
             List.of("vekterli", "geirst"), "2021-11-15", "2022-03-01",
             "Enables the use of unordered merge chains for data merge operations",
             "Takes effect at redeploy",
