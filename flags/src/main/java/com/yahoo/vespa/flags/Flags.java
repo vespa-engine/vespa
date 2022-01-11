@@ -414,6 +414,13 @@ public class Flags {
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundStringFlag ZOOKEEPER_SNAPSHOT_METHOD = defineStringFlag(
+            "zookeeper-snapshot-method", "",
+            List.of("hmusum"), "2022-01-11", "2022-02-11",
+            "ZooKeeper snapshot method. Valid values are '', 'gz' and 'snappy'",
+            "Takes effect on Docker container restart",
+            ZONE_ID, APPLICATION_ID, NODE_TYPE);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
