@@ -30,7 +30,8 @@ public:
     using UP = std::unique_ptr<MessageTracker>;
 
     MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender,
-                   FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg);
+                   FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg,
+                   SharedOperationThrottler::Token throttle_token);
 
     ~MessageTracker();
 
@@ -91,7 +92,8 @@ public:
 
 private:
     MessageTracker(const framework::MilliSecTimer & timer, const PersistenceUtil & env, MessageSender & replySender, bool updateBucketInfo,
-                   FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg);
+                   FileStorHandler::BucketLockInterface::SP bucketLock, std::shared_ptr<api::StorageMessage> msg,
+                   SharedOperationThrottler::Token throttle_token);
 
     [[nodiscard]] bool count_result_as_failure() const noexcept;
 
@@ -99,6 +101,7 @@ private:
     bool                                     _updateBucketInfo;
     FileStorHandler::BucketLockInterface::SP _bucketLock;
     std::shared_ptr<api::StorageMessage>     _msg;
+    SharedOperationThrottler::Token          _throttle_token;
     spi::Context                             _context;
     const PersistenceUtil                   &_env;
     MessageSender                           &_replySender;

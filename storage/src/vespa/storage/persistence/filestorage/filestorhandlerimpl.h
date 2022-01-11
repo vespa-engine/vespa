@@ -42,11 +42,12 @@ class AbortBucketOperationsCommand;
 
 namespace bmi = boost::multi_index;
 
-class FileStorHandlerImpl : private framework::MetricUpdateHook,
-                            private ResumeGuard::Callback,
-                            public FileStorHandler {
+class FileStorHandlerImpl final
+    : private framework::MetricUpdateHook,
+      private ResumeGuard::Callback,
+      public FileStorHandler
+{
 public:
-
     struct MessageEntry {
         std::shared_ptr<api::StorageMessage> _command;
         metrics::MetricTimer _timer;
@@ -147,7 +148,8 @@ public:
         // Precondition: the bucket used by `iter`s operation is not locked in a way that conflicts
         // with its locking requirements.
         FileStorHandler::LockedMessage getMessage(monitor_guard & guard, PriorityIdx & idx,
-                                                  PriorityIdx::iterator iter);
+                                                  PriorityIdx::iterator iter,
+                                                  SharedOperationThrottler::Token throttle_token);
         using LockedBuckets = vespalib::hash_map<document::Bucket, MultiLockEntry, document::Bucket::hash>;
         const FileStorHandlerImpl      &_owner;
         MessageSender                  &_messageSender;
@@ -163,7 +165,9 @@ public:
     class BucketLock : public FileStorHandler::BucketLockInterface {
     public:
         // TODO refactor, too many params
-        BucketLock(const monitor_guard & guard, Stripe& disk, const document::Bucket &bucket,
+        BucketLock(const monitor_guard & guard,
+                   Stripe& disk,
+                   const document::Bucket &bucket,
                    uint8_t priority, api::MessageType::Id msgType, api::StorageMessage::Id,
                    api::LockingRequirements lockReq);
         ~BucketLock() override;
@@ -187,9 +191,9 @@ public:
     FileStorHandlerImpl(MessageSender& sender, FileStorMetrics& metrics,
                         ServiceLayerComponentRegister& compReg);
     FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
-                        ServiceLayerComponentRegister&);
+                        ServiceLayerComponentRegister&, std::unique_ptr<SharedOperationThrottler>);
 
-    ~FileStorHandlerImpl();
+    ~FileStorHandlerImpl() override;
     void setGetNextMessageTimeout(vespalib::duration timeout) override { _getNextMessageTimeout = timeout; }
 
     void flush(bool killPendingMerges) override;
@@ -239,6 +243,10 @@ public:
     ResumeGuard pause() override;
     void abortQueuedOperations(const AbortBucketOperationsCommand& cmd) override;
 
+    SharedOperationThrottler& operation_throttler() const noexcept override {
+        return *_operation_throttler;
+    }
+
     // Implements ResumeGuard::Callback
     void resume() override;
 
@@ -249,6 +257,7 @@ private:
     ServiceLayerComponent   _component;
     std::atomic<DiskState>  _state;
     FileStorDiskMetrics   * _metrics;
+    std::unique_ptr<SharedOperationThrottler> _operation_throttler;
     std::vector<Stripe>     _stripes;
     MessageSender&          _messageSender;
     const document::BucketIdFactory& _bucketIdFactory;

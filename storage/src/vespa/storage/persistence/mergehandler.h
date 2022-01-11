@@ -34,6 +34,7 @@ namespace spi {
 class PersistenceUtil;
 class ApplyBucketDiffState;
 class MergeStatus;
+class SharedOperationThrottler;
 
 class MergeHandler : public Types,
                      public MergeBucketInfoSyncer {
@@ -52,7 +53,7 @@ public:
                  uint32_t commonMergeChainOptimalizationMinimumSize = 64,
                  bool async_apply_bucket_diff = false);
 
-    ~MergeHandler();
+    ~MergeHandler() override;
 
     bool buildBucketInfoList(
             const spi::Bucket& bucket,
@@ -86,6 +87,7 @@ private:
     const ClusterContext &_cluster_context;
     PersistenceUtil          &_env;
     spi::PersistenceProvider &_spi;
+    SharedOperationThrottler& _operation_throttler;
     std::unique_ptr<vespalib::MonitoredRefCount> _monitored_ref_count;
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;

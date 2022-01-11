@@ -40,16 +40,18 @@ uint32_t per_stripe_merge_limit(uint32_t num_threads, uint32_t num_stripes) noex
 
 FileStorHandlerImpl::FileStorHandlerImpl(MessageSender& sender, FileStorMetrics& metrics,
                                          ServiceLayerComponentRegister& compReg)
-    : FileStorHandlerImpl(1, 1, sender, metrics, compReg)
+    : FileStorHandlerImpl(1, 1, sender, metrics, compReg, SharedOperationThrottler::make_unlimited_throttler())
 {
 }
 
 FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender& sender,
                                          FileStorMetrics& metrics,
-                                         ServiceLayerComponentRegister& compReg)
+                                         ServiceLayerComponentRegister& compReg,
+                                         std::unique_ptr<SharedOperationThrottler> operation_throttler)
     : _component(compReg, "filestorhandlerimpl"),
       _state(FileStorHandler::AVAILABLE),
       _metrics(nullptr),
+      _operation_throttler(std::move(operation_throttler)),
       _stripes(),
       _messageSender(sender),
       _bucketIdFactory(_component.getBucketIdFactory()),
@@ -330,6 +332,7 @@ FileStorHandlerImpl::updateMetrics(const MetricLockGuard &)
     std::lock_guard lockGuard(_mergeStatesLock);
     _metrics->pendingMerges.addValue(_mergeStates.size());
     _metrics->queueSize.addValue(getQueueSize());
+    _metrics->throttle_window_size.addValue(_operation_throttler->current_window_size());
 
     for (const auto & stripe : _metrics->stripes) {
         const auto & m = stripe->averageQueueWaitingTime;
@@ -885,10 +888,39 @@ FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSe
       _active_operations_stats()
 {}
 
+namespace {
+
+bool
+operation_type_should_be_throttled(api::MessageType::Id type_id) noexcept
+{
+    // Note: SetBucketState is intentionally _not_ included in this set, even though it's
+    // dispatched async. The rationale behind this is that SetBucketState is very cheap
+    // to execute, usually comes in large waves (up to #buckets count) and processing all
+    // requests should complete as quickly as possible. We also don't want such waves to
+    // artificially boost the dynamic throttle window size due to a sudden throughput spike.
+    //
+    // Merge-related operations are transitively throttled by using the operation throttler
+    // directly for all async ops within the MergeHandler.
+    switch (type_id) {
+    case api::MessageType::PUT_ID:
+    case api::MessageType::REMOVE_ID:
+    case api::MessageType::UPDATE_ID:
+    case api::MessageType::REMOVELOCATION_ID:
+    case api::MessageType::CREATEBUCKET_ID:
+    case api::MessageType::DELETEBUCKET_ID:
+        return true;
+    default:
+        return false;
+    }
+}
+
+}
+
 FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getNextMessage(vespalib::duration timeout)
 {
     std::unique_lock guard(*_lock);
+    SharedOperationThrottler::Token throttle_token;
     // Try to grab a message+lock, immediately retrying once after a wait
     // if none can be found and then exiting if the same is the case on the
     // second attempt. This is key to allowing the run loop to register
@@ -896,15 +928,39 @@ FileStorHandlerImpl::Stripe::getNextMessage(vespalib::duration timeout)
     for (int attempt = 0; (attempt < 2) && !_owner.isPaused(); ++attempt) {
         PriorityIdx& idx(bmi::get<1>(*_queue));
         PriorityIdx::iterator iter(idx.begin()), end(idx.end());
+        bool was_throttled = false;
 
-        while (iter != end && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
+        while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
             iter++;
         }
         if (iter != end) {
-            return getMessage(guard, idx, iter);
+            const bool should_throttle_op = operation_type_should_be_throttled(iter->_command->getType().getId());
+            if (!should_throttle_op && throttle_token.valid()) {
+                throttle_token.reset(); // Let someone else play with it.
+            } else if (should_throttle_op && !throttle_token.valid()) {
+                // Important: _non-blocking_ attempt at getting a throttle token.
+                throttle_token = _owner.operation_throttler().try_acquire_one();
+                was_throttled = !throttle_token.valid();
+            }
+            if (!should_throttle_op || throttle_token.valid()) {
+                return getMessage(guard, idx, iter, std::move(throttle_token));
+            }
         }
         if (attempt == 0) {
-            _cond->wait_for(guard, timeout);
+            // Depending on whether we were blocked due to no usable ops in queue or throttling,
+            // wait for either the queue or throttler to (hopefully) have some fresh stuff for us.
+            if (!was_throttled) {
+                _cond->wait_for(guard, timeout);
+            } else {
+                // Have to release lock before doing a blocking throttle token fetch, since it
+                // prevents RPC threads from pushing onto the queue.
+                guard.unlock();
+                throttle_token = _owner.operation_throttler().blocking_acquire_one(timeout);
+                if (!throttle_token.valid()) {
+                    return {}; // Already exhausted our timeout window.
+                }
+                guard.lock();
+            }
         }
     }
     return {}; // No message fetched.
@@ -923,14 +979,20 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
         ++iter;
     }
     if ((iter != end) && AsyncHandler::is_async_message(iter->_command->getType().getId())) {
-        return getMessage(guard, idx, iter);
+        // This is executed in the context of an RPC thread, so only do a _non-blocking_
+        // poll of the throttle policy.
+        auto throttle_token = _owner.operation_throttler().try_acquire_one();
+        if (throttle_token.valid()) {
+            return getMessage(guard, idx, iter, std::move(throttle_token));
+        }
     }
     return {};
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx, PriorityIdx::iterator iter) {
-
+FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx, PriorityIdx::iterator iter,
+                                        SharedOperationThrottler::Token throttle_token)
+{
     std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(_metrics->averageQueueWaitingTime)));
 
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
@@ -942,7 +1004,7 @@ FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx
                                                    msg->getType().getId(), msg->getMsgId(),
                                                    msg->lockingRequirements());
         guard.unlock();
-        return FileStorHandler::LockedMessage(std::move(locker), std::move(msg));
+        return {std::move(locker), std::move(msg), std::move(throttle_token)};
     } else {
         std::shared_ptr<api::StorageReply> msgReply(makeQueueTimeoutReply(*msg));
         guard.unlock();
@@ -1014,7 +1076,7 @@ FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry en
     std::unique_lock guard(*_lock);
     _queue->emplace_back(std::move(entry));
     auto lockedMessage = get_next_async_message(guard);
-    if ( ! lockedMessage.second) {
+    if ( ! lockedMessage.msg) {
         if (guard.owns_lock()) {
             guard.unlock();
         }

@@ -32,6 +32,7 @@ LOG_SETUP(".persistence.filestor.manager");
 using std::shared_ptr;
 using document::BucketSpace;
 using vespalib::make_string_short::fmt;
+using vespa::config::content::StorFilestorConfig;
 
 namespace {
 
@@ -130,15 +131,28 @@ uint32_t computeNumResponseThreads(int configured) {
 }
 
 vespalib::Executor::OptimizeFor
-selectSequencer(vespa::config::content::StorFilestorConfig::ResponseSequencerType sequencerType) {
+selectSequencer(StorFilestorConfig::ResponseSequencerType sequencerType) {
     switch (sequencerType) {
-        case vespa::config::content::StorFilestorConfig::ResponseSequencerType::THROUGHPUT:
+        case StorFilestorConfig::ResponseSequencerType::THROUGHPUT:
             return vespalib::Executor::OptimizeFor::THROUGHPUT;
-        case vespa::config::content::StorFilestorConfig::ResponseSequencerType::LATENCY:
+        case StorFilestorConfig::ResponseSequencerType::LATENCY:
             return vespalib::Executor::OptimizeFor::LATENCY;
-        case vespa::config::content::StorFilestorConfig::ResponseSequencerType::ADAPTIVE:
+        case StorFilestorConfig::ResponseSequencerType::ADAPTIVE:
         default:
             return vespalib::Executor::OptimizeFor::ADAPTIVE;
+    }
+}
+
+std::unique_ptr<SharedOperationThrottler>
+make_operation_throttler_from_config(const StorFilestorConfig& config, size_t num_threads)
+{
+    const bool use_dynamic_throttling = (config.asyncOperationThrottlerType == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC);
+    if (use_dynamic_throttling) {
+        auto config_win_size_incr = std::max(config.asyncOperationDynamicThrottlingWindowIncrement, 1);
+        auto win_size_increment = std::max(static_cast<size_t>(config_win_size_incr), num_threads);
+        return SharedOperationThrottler::make_dynamic_throttler(win_size_increment);
+    } else {
+        return SharedOperationThrottler::make_unlimited_throttler();
     }
 }
 
@@ -185,7 +199,7 @@ FileStorManager::getThreadLocalHandler() {
  * incoming during reconfiguration
  */
 void
-FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorConfig> config)
+FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
 {
     // If true, this is not the first configure.
     bool liveUpdate = ! _threads.empty();
@@ -198,8 +212,10 @@ FileStorManager::configure(std::unique_ptr<vespa::config::content::StorFilestorC
         size_t numThreads = _config->numThreads;
         size_t numStripes = std::max(size_t(1u), numThreads / 2);
         _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
+        auto operation_throttler = make_operation_throttler_from_config(*_config, numThreads);
 
-        _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics, _compReg);
+        _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics,
+                                                                 _compReg, std::move(operation_throttler));
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
         _sequencedExecutor = vespalib::SequencedTaskExecutor::create(response_executor, numResponseThreads, 10000,
                                                                      selectSequencer(_config->responseSequencerType));

@@ -96,17 +96,17 @@ ActiveOperationsStatsTest::test_active_operations_stats()
     auto lock0 = filestorHandler->getNextMessage(stripeId);
     auto lock1 = filestorHandler->getNextMessage(stripeId);
     auto lock2 = filestorHandler->getNextMessage(stripeId);
-    ASSERT_TRUE(lock0.first);
-    ASSERT_TRUE(lock1.first);
-    ASSERT_FALSE(lock2.first);
+    ASSERT_TRUE(lock0.lock);
+    ASSERT_TRUE(lock1.lock);
+    ASSERT_FALSE(lock2.lock);
     auto stats = filestorHandler->get_active_operations_stats(false);
     {
         SCOPED_TRACE("during");
         assert_active_operations_stats(stats, 2, 2, 0);
     }
     EXPECT_EQ(3, stats.get_total_size());
-    lock0.first.reset();
-    lock1.first.reset();
+    lock0.lock.reset();
+    lock1.lock.reset();
     stats = filestorHandler->get_active_operations_stats(false);
     {
         SCOPED_TRACE("after");

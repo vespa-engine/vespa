@@ -14,6 +14,7 @@ vespa_add_library(storage_spersistence OBJECT
     persistenceutil.cpp
     processallhandler.cpp
     provider_error_wrapper.cpp
+    shared_operation_throttler.cpp
     simplemessagehandler.cpp
     splitbitdetector.cpp
     splitjoinhandler.cpp

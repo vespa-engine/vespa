@@ -75,3 +75,22 @@ use_async_message_handling_on_schedule bool default=false restart
 ## the entire resource usage sample is immediately reported to the cluster controller (via host info).
 ## This config can be live updated (doesn't require restart).
 resource_usage_reporter_noise_level double default=0.001
+
+## Specify throttling used for async persistence operations. This throttling takes place
+## before operations are dispatched to Proton and serves as a limiter for how many
+## operations may be in flight in Proton's internal queues.
+##
+##  - UNLIMITED is, as it says on the tin, unlimited. Offers no actual throttling, but
+##    has near zero overhead and never blocks.
+##  - DYNAMIC uses DynamicThrottlePolicy under the hood and will block if the window
+##    is full (if a blocking throttler API call is invoked).
+##
+async_operation_throttler_type enum { UNLIMITED, DYNAMIC } default=UNLIMITED restart
+
+## Specifies the extent the throttling window is increased by when the async throttle
+## policy has decided that more concurrent operations are desirable. Also affects the
+## _minimum_ size of the throttling window; its size is implicitly set to max(this config
+## value, number of threads).
+##
+## Only applies if async_operation_throttler_type == DYNAMIC.
+async_operation_dynamic_throttling_window_increment int default=20 restart
