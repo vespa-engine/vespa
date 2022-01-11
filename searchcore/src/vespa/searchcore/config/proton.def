@@ -203,7 +203,7 @@ distribution.searchablecopies long default=1
 ## Control cache size in bytes.
 ## Postive numbers are absolute in bytes.
 ## Negative numbers are a percentage of memory.
-summary.cache.maxbytes long default=-5
+summary.cache.maxbytes long default=-4
 
 ## Include visits in the cache, if the visitoperation allows it.
 ## This will enable another separate cache of summary.cache.maxbytes size.
