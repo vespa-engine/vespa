@@ -30,13 +30,15 @@ public class Form {
 
     void setParent(Form parent) { this.parent = parent; }
 
-    /** Set the value of a variable expression, e.g. %{=color}. */
+    /** Set the value of a variable, e.g. %{=color}. */
     public Form set(String name, String value) {
         values.put(name, value);
         return this;
     }
 
+    /** Set the value of a variable and/or if-condition. */
     public Form set(String name, boolean value) { return set(name, Boolean.toString(value)); }
+
     public Form set(String name, int value) { return set(name, Integer.toString(value)); }
     public Form set(String name, long value) { return set(name, Long.toString(value)); }
 
@@ -78,9 +80,7 @@ public class Form {
     Optional<String> getVariableValue(String name) {
         String value = values.get(name);
         if (value != null) return Optional.of(value);
-        if (parent != null) {
-            return parent.getVariableValue(name);
-        }
+        if (parent != null) return parent.getVariableValue(name);
         return Optional.empty();
     }
 }
