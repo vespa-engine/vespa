@@ -41,6 +41,7 @@ public class Configurator {
         System.setProperty("zookeeper.authProvider.x509", "com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider");
         // Need to set this as a system property, otherwise it will be parsed for _every_ packet and an exception will be thrown (and handled)
         System.setProperty("zookeeper.globalOutstandingLimit", "1000");
+        System.setProperty("zookeeper.snapshot.compression.method", zookeeperServerConfig.snapshotMethod());
     }
 
     void writeConfigToDisk() { writeConfigToDisk(VespaTlsConfig.fromSystem()); }

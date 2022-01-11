@@ -47,16 +47,17 @@ public class ConfigserverClusterTest {
     }
 
     @Test
-    public void zookeeperConfig_only_config_servers_set() {
+    public void zookeeperConfig_only_config_servers_set_hosted() {
         TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Collections.emptyList());
         ZookeeperServerConfig config = getConfig(ZookeeperServerConfig.class, testOptions);
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 0, 1, 2);
         assertEquals(1, config.myid());
+        assertEquals("gz", config.snapshotMethod());
     }
 
     @Test
-    public void zookeeperConfig_with_config_servers_and_zk_ids() {
+    public void zookeeperConfig_with_config_servers_and_zk_ids_hosted() {
         TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Arrays.asList(4, 2, 3));
         ZookeeperServerConfig config = getConfig(ZookeeperServerConfig.class, testOptions);
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
@@ -72,6 +73,7 @@ public class ConfigserverClusterTest {
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::hostname, "cfg1", "localhost", "cfg3");
         assertZookeeperServerProperty(config.server(), ZookeeperServerConfig.Server::id, 4, 2, 3);
         assertEquals(2, config.myid());
+        assertEquals("", config.snapshotMethod());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -150,7 +152,8 @@ public class ConfigserverClusterTest {
                 .useVespaVersionInRequest(true)
                 .hostedVespa(hostedVespa)
                 .environment("test")
-                .region("bar");
+                .region("bar")
+                .zooKeeperSnapshotMethod(hostedVespa ? "gz" : "");
 
         Optional.of(configServerHostnames)
                 .filter(hostnames -> !hostnames.isEmpty())

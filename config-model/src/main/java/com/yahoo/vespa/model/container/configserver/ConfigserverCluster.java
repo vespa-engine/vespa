@@ -47,7 +47,7 @@ public class ConfigserverCluster extends AbstractConfigProducer
         this.containerCluster = containerCluster;
 
         // If we are in a config server cluster the correct zone is propagated through cloud config options,
-        // not through config to deployment options (see StandaloneContainerApplication.scala),
+        // not through config to deployment options (see StandaloneContainerApplication.java),
         // so we need to propagate the zone options into the container from here
         Environment environment = options.environment().isPresent() ? Environment.from(options.environment().get()) : Environment.defaultEnvironment();
         RegionName region = options.region().isPresent() ? RegionName.from(options.region().get()) : RegionName.defaultName();
@@ -83,6 +83,8 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.zookeeperClientPort().isPresent()) {
             builder.clientPort(options.zookeeperClientPort().get());
         }
+
+        builder.snapshotMethod(options.zooKeeperSnapshotMethod());
     }
 
     @Override

@@ -38,4 +38,5 @@ public interface CloudConfigOptions {
     Optional<String> loadBalancerAddress();
     Optional<String> athenzDnsSuffix();
     Optional<String> ztsUrl();
+    String zooKeeperSnapshotMethod();
 }

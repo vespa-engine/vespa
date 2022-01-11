@@ -121,6 +121,12 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
         return getInstallVariable("zts_url");
     }
 
+    @Override
+    public String zooKeeperSnapshotMethod() {
+        String vespa_zookeeper_snapshot_method = System.getenv("VESPA_ZOOKEEPER_SNAPSHOT_METHOD");
+        return vespa_zookeeper_snapshot_method == null ? "" : vespa_zookeeper_snapshot_method;
+    }
+
     static ConfigServer[] toConfigServers(String configserversString) {
         return multiValueParameterStream(configserversString)
                 .map(CloudConfigInstallVariables::toConfigServer)
