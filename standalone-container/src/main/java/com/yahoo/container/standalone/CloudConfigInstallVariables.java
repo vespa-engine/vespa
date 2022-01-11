@@ -123,8 +123,8 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public String zooKeeperSnapshotMethod() {
-        String vespa_zookeeper_snapshot_method = System.getenv("VESPA_ZOOKEEPER_SNAPSHOT_METHOD");
-        return vespa_zookeeper_snapshot_method == null ? "" : vespa_zookeeper_snapshot_method;
+        String vespaZookeeperSnapshotMethod = System.getenv("VESPA_ZOOKEEPER_SNAPSHOT_METHOD");
+        return vespaZookeeperSnapshotMethod == null ? "" : vespaZookeeperSnapshotMethod;
     }
 
     static ConfigServer[] toConfigServers(String configserversString) {
