@@ -173,12 +173,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag NUM_DEPLOY_HELPER_THREADS = defineIntFlag(
-            "num-model-builder-threads", -1,
-            List.of("balder"), "2021-09-09", "2022-02-01",
-            "Number of threads used for speeding up building of models.",
-            "Takes effect on first (re)start of config server");
-
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2022-01-31",
