@@ -237,13 +237,6 @@ public class Flags {
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag LARGE_RANK_EXPRESSION_LIMIT = defineIntFlag(
-            "large-rank-expression-limit", 8192,
-            List.of("baldersheim"), "2021-06-09", "2022-02-01",
-            "Limit for size of rank expressions distributed by filedistribution",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
             List.of("geirst", "vekterli"), "2021-07-16", "2022-03-01",
