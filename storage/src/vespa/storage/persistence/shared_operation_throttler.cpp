@@ -149,7 +149,8 @@ DynamicOperationThrottler::release_one() noexcept
 {
     std::unique_lock lock(_mutex);
     subtract_one_from_active_window_size();
-    if (_waiting_threads > 0) {
+    // Only wake up a waiting thread if doing so would possibly result in success.
+    if ((_waiting_threads > 0) && has_spare_capacity_in_active_window()) {
         lock.unlock();
         _cond.notify_one();
     }
