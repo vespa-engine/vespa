@@ -1,0 +1,19 @@
+## Some test rules
+
+# Spelling correction
+bahc -> bach;
+
+# Stopwords
+somelongstopword -> ;
+[stopword] -> ;
+[stopword] :- someotherlongstopword, yetanotherstopword;
+
+#
+[song] by [artist] -> song:[song] artist:[artist];
+
+[song] :- together, imagine, tinseltown;
+[artist] :- youngbloods, beatles, zappa;
+
+# Negative
+various +> -kingz;
+
