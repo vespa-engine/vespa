@@ -21,8 +21,8 @@ public class ComponentValidatorTest {
     public void basicComponentValidation() throws Exception {
         // Valid jar file
         JarFile ok = new JarFile(new File(JARS_DIR + "ok.jar"));
-        ComponentValidator componentValidator = new ComponentValidator(ok);
-        componentValidator.validateAll(new BaseDeployLogger());
+        ComponentValidator componentValidator = new ComponentValidator();
+        componentValidator.validateJarFile(new BaseDeployLogger(), ok);
 
         // No manifest
         validateWithException("nomanifest.jar", "Non-existing or invalid manifest in " + JARS_DIR + "nomanifest.jar");
@@ -31,8 +31,8 @@ public class ComponentValidatorTest {
     private void validateWithException(String jarName, String exceptionMessage) throws IOException {
         try {
             JarFile jarFile = new JarFile(JARS_DIR + jarName);
-            ComponentValidator componentValidator = new ComponentValidator(jarFile);
-            componentValidator.validateAll(new BaseDeployLogger());
+            ComponentValidator componentValidator = new ComponentValidator();
+            componentValidator.validateJarFile(new BaseDeployLogger(), jarFile);
             assert (false);
         } catch (IllegalArgumentException e) {
             assertEquals(e.getMessage(), exceptionMessage);
@@ -50,7 +50,7 @@ public class ComponentValidatorTest {
             }
         };
         
-        new ComponentValidator(new JarFile(JARS_DIR + "snapshot_bundle.jar")).validateAll(logger);
+        new ComponentValidator().validateJarFile(logger, new JarFile(JARS_DIR + "snapshot_bundle.jar"));
         assertTrue(buffer.toString().contains("Deploying snapshot bundle"));
     }
 }

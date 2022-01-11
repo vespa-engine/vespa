@@ -2,11 +2,12 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.ComponentInfo;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.config.application.api.ComponentInfo;
-import com.yahoo.config.application.api.DeployLogger;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -16,49 +17,39 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Level;
-import java.util.zip.ZipException;
 
 /**
  * A validator for bundles.  Uses BND library for some of the validation (not active yet)
  *
  * @author hmusum
- * @since 2010-11-11
+ * @author bjorncs
  */
 public class ComponentValidator extends Validator {
-    private JarFile jarFile;
 
-    public ComponentValidator() {
-    }
-
-    public ComponentValidator(JarFile jarFile) {
-        this.jarFile = jarFile;
-    }
+    public ComponentValidator() {}
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         ApplicationPackage app = deployState.getApplicationPackage();
         for (ComponentInfo info : app.getComponentsInfo(deployState.getVespaVersion())) {
             try {
-                this.jarFile = new JarFile(app.getFileReference(Path.fromString(info.getPathRelativeToAppDir())));
-            } catch (ZipException e) {
-                throw new IllegalArgumentException("Error opening jar file '" + info.getPathRelativeToAppDir() +
-                                                   "'. Please check that this is a valid jar file");
+                Path path = Path.fromString(info.getPathRelativeToAppDir());
+                DeployLogger deployLogger = deployState.getDeployLogger();
+                deployLogger.log(Level.FINE, String.format("Validating bundle at '%s'", path));
+                JarFile jarFile = new JarFile(app.getFileReference(path));
+                validateJarFile(deployLogger, jarFile);
             } catch (IOException e) {
-                e.printStackTrace();
-            }
-            try {
-                validateAll(deployState.getDeployLogger());
-            } catch (IOException e) {
-                e.printStackTrace();
+                throw new IllegalArgumentException(
+                        "Failed to validate JAR file '" + info.getPathRelativeToAppDir() + "'", e);
             }
         }
     }
 
-    public void validateAll(DeployLogger deployLogger) throws IOException {
-        validateOSGIHeaders(deployLogger);
+    void validateJarFile(DeployLogger deployLogger, JarFile jarFile) throws IOException {
+        validateOSGIHeaders(deployLogger, jarFile);
     }
 
-    public void validateOSGIHeaders(DeployLogger deployLogger) throws IOException {
+    public void validateOSGIHeaders(DeployLogger deployLogger, JarFile jarFile) throws IOException {
         Manifest mf = jarFile.getManifest();
         if (mf == null) {
             throw new IllegalArgumentException("Non-existing or invalid manifest in " + jarFile.getName());
@@ -67,9 +58,8 @@ public class ComponentValidator extends Validator {
         // Check for required OSGI headers
         Attributes attributes = mf.getMainAttributes();
         HashSet<String> mfAttributes = new HashSet<>();
-        for (Object attributeSet : attributes.entrySet()) {
-            Map.Entry<Object, Object> e = (Map.Entry<Object, Object>) attributeSet;
-            mfAttributes.add(e.getKey().toString());
+        for (Map.Entry<Object,Object> entry : attributes.entrySet()) {
+            mfAttributes.add(entry.getKey().toString());
         }
         List<String> requiredOSGIHeaders = Arrays.asList(
                 "Bundle-ManifestVersion", "Bundle-Name", "Bundle-SymbolicName", "Bundle-Version");
