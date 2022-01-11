@@ -10,9 +10,12 @@ import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.server.ZooKeeperServerBean;
+import org.apache.zookeeper.server.ZooKeeperServerConf;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -47,8 +50,8 @@ public class VespaZooKeeperTest {
      * Then, 3 new servers are added, and the first 3 marked for retirement;
      * this should force the quorum to move the 3 new servers, but not disconnect the old ones.
      * Next, the old servers are removed.
-     * Then, 4 new servers are added.
-     * Finally, 6 servers are removed.
+     * Then, the cluster is reduced to size 1.
+     * Finally, the cluster grows to size 3 again.
      *
      * Throughout all of this, quorum should remain, and the data should remain the same.
      */
@@ -185,7 +188,11 @@ public class VespaZooKeeperTest {
             return null;
 
         Path tempDir = tempDirRoot.resolve("zookeeper-" + id);
-        int port = 59267;
+        String[] version = System.getProperty("zk-version").split("\\.");
+        int versionPortOffset = 0;
+        for (String part : version)
+            versionPortOffset = versionPortOffset * 32 + Integer.parseInt(part);
+        int port = 51000 + versionPortOffset;
         return new ZookeeperServerConfig.Builder()
                 .clientPort(port + 3 * id)
                 .dataDir(tempDir.toString())

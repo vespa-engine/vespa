@@ -47,8 +47,8 @@ public class VespaZooKeeperTest {
      * Then, 3 new servers are added, and the first 3 marked for retirement;
      * this should force the quorum to move the 3 new servers, but not disconnect the old ones.
      * Next, the old servers are removed.
-     * Then, 4 new servers are added.
-     * Finally, 6 servers are removed.
+     * Then, the cluster is reduced to size 1.
+     * Finally, the cluster grows to size 3 again.
      *
      * Throughout all of this, quorum should remain, and the data should remain the same.
      */
@@ -185,7 +185,11 @@ public class VespaZooKeeperTest {
             return null;
 
         Path tempDir = tempDirRoot.resolve("zookeeper-" + id);
-        int port = 59267;
+        String[] version = System.getProperty("zk-version").split("\\.");
+        int versionPortOffset = 0;
+        for (String part : version)
+            versionPortOffset = versionPortOffset * 32 + Integer.parseInt(part);
+        int port = 51000 + versionPortOffset;
         return new ZookeeperServerConfig.Builder()
                 .clientPort(port + 3 * id)
                 .dataDir(tempDir.toString())
