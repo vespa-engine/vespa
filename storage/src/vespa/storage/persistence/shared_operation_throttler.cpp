@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "shared_operation_throttler.h"
 #include <vespa/messagebus/dynamicthrottlepolicy.h>
-#include <vespa/messagebus/message.h>
+#include <vespa/storage/common/dummy_mbus_messages.h>
 #include <condition_variable>
 #include <cassert>
 #include <mutex>
@@ -27,19 +27,6 @@ public:
 private:
     void release_one() noexcept override { /* no-op */ }
 };
-
-// Class used to sneakily get around IThrottlePolicy only accepting MBus objects
-template <typename Base>
-class DummyMbusMessage final : public Base {
-    static const mbus::string NAME;
-public:
-    const mbus::string& getProtocol() const override { return NAME; }
-    uint32_t getType() const override { return 0x1badb007; }
-    uint8_t priority() const override { return 255; }
-};
-
-template <typename Base>
-const mbus::string DummyMbusMessage<Base>::NAME = "FooBar";
 
 class DynamicOperationThrottler final : public SharedOperationThrottler {
     mutable std::mutex          _mutex;
@@ -79,22 +66,22 @@ DynamicOperationThrottler::~DynamicOperationThrottler() = default;
 bool
 DynamicOperationThrottler::has_spare_capacity_in_active_window() noexcept
 {
-    DummyMbusMessage<mbus::Message> dummy_msg;
-    return _throttle_policy.canSend(dummy_msg, _pending_ops);
+    DummyMbusRequest dummy_request;
+    return _throttle_policy.canSend(dummy_request, _pending_ops);
 }
 
 void
 DynamicOperationThrottler::add_one_to_active_window_size()
 {
-    DummyMbusMessage<mbus::Message> dummy_msg;
-    _throttle_policy.processMessage(dummy_msg);
+    DummyMbusRequest dummy_request;
+    _throttle_policy.processMessage(dummy_request);
     ++_pending_ops;
 }
 
 void
 DynamicOperationThrottler::subtract_one_from_active_window_size()
 {
-    DummyMbusMessage<mbus::Reply> dummy_reply;
+    DummyMbusReply dummy_reply;
     _throttle_policy.processReply(dummy_reply);
     assert(_pending_ops > 0);
     --_pending_ops;
