@@ -30,4 +30,9 @@ public class VespaVersionTarget implements VersionTarget {
         return downgrade;
     }
 
+    @Override
+    public String toString() {
+        return "vespa version target " + version.toFullString() + (downgrade ? " (downgrade)" : "");
+    }
+
 }

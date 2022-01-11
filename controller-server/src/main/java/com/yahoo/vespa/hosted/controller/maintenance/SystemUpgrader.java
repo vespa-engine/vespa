@@ -34,7 +34,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<VespaVersionTarget> {
 
     @Override
     protected void upgrade(VespaVersionTarget target, SystemApplication application, ZoneApi zone) {
-        log.info(Text.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
+        log.info(Text.format("Deploying %s on %s in %s", application.id(), target, zone.getId()));
         controller().applications().deploy(application, zone.getId(), target.version(), target.downgrade());
     }
 
