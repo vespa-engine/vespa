@@ -14,14 +14,16 @@ public class IfSection extends Section {
     private final String name;
     private final Cursor nameOffset;
     private final SectionList ifSections;
+    private final Optional<SectionList> elseSections;
 
     public IfSection(CursorRange range, boolean negated, String name, Cursor nameOffset,
-                     SectionList ifSections) {
+                     SectionList ifSections, Optional<SectionList> elseSections) {
         super(range);
         this.negated = negated;
         this.name = name;
         this.nameOffset = nameOffset;
         this.ifSections = ifSections;
+        this.elseSections = elseSections;
     }
 
     String name() { return name; }
@@ -45,6 +47,8 @@ public class IfSection extends Section {
         boolean condition = negated ? !value : value;
         if (condition) {
             ifSections.sections().forEach(section -> section.appendTo(buffer));
+        } else if (elseSections.isPresent()) {
+            elseSections.get().sections().forEach(section -> section.appendTo(buffer));
         }
     }
 
@@ -52,6 +56,13 @@ public class IfSection extends Section {
     void appendCopyTo(SectionList sectionList) {
         SectionList ifSectionCopy = new SectionList(ifSections.range().start(), sectionList.formBuilder());
         ifSections.sections().forEach(section -> section.appendCopyTo(ifSectionCopy));
-        sectionList.appendIfSection(negated, name, nameOffset, range().end(), ifSectionCopy);
+
+        Optional<SectionList> elseSectionCopy = elseSections.map(elseSections2 -> {
+            SectionList elseSectionCopy2 = new SectionList(elseSections2.range().start(), sectionList.formBuilder());
+            elseSections2.sections().forEach(section -> section.appendCopyTo(elseSectionCopy2));
+            return elseSectionCopy2;
+        });
+
+        sectionList.appendIfSection(negated, name, nameOffset, range().end(), ifSectionCopy, elseSectionCopy);
     }
 }

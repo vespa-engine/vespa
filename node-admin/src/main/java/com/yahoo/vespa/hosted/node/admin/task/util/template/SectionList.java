@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A mutable list of sections at the same level that can be used to build a form, e.g. the if-body.
@@ -45,9 +46,9 @@ class SectionList {
     }
 
     void appendIfSection(boolean negated, String name, Cursor nameOffset, Cursor end,
-                                SectionList ifSections) {
+                         SectionList ifSections, Optional<SectionList> elseSections) {
         CursorRange range = verifyAndUpdateEnd(end);
-        var section = new IfSection(range, negated, name, nameOffset, ifSections);
+        var section = new IfSection(range, negated, name, nameOffset, ifSections, elseSections);
         formBuilder.addIfSection(section);
         sections.add(section);
     }

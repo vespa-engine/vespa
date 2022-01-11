@@ -120,6 +120,17 @@ class TemplateFileTest {
                      "list: element\n", form.render());
     }
 
+    @Test
+    void verifyElse() {
+        var template = Template.from("%{if cond-}\n" +
+                                     "if body\n" +
+                                     "%{else-}\n" +
+                                     "else body\n" +
+                                     "%{end-}\n");
+        assertEquals("if body\n", template.instantiate().set("cond", true).render());
+        assertEquals("else body\n", template.instantiate().set("cond", false).render());
+    }
+
     private Form getForm(String filename) {
         return TemplateFile.read(Path.of("src/test/resources/" + filename)).instantiate();
     }

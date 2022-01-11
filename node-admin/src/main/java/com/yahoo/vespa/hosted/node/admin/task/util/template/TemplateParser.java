@@ -27,7 +27,7 @@ class TemplateParser {
         return parser;
     }
 
-    private enum Sentinel { END, EOT }
+    private enum Sentinel { ELSE, END, EOT }
 
     private TemplateParser(TemplateDescriptor descriptor, Cursor start) {
         this.descriptor = descriptor;
@@ -69,6 +69,11 @@ class TemplateParser {
             String type = skipId().orElseThrow(() -> new BadTemplateException(current, "Missing section name"));
 
             switch (type) {
+                case "else":
+                    if (!sentinels.contains(Sentinel.ELSE))
+                        throw new BadTemplateException(startOfType, "Extraneous 'else'");
+                    parseEndDirective();
+                    return Optional.of(Sentinel.ELSE);
                 case "end":
                     if (!sentinels.contains(Sentinel.END))
                         throw new BadTemplateException(startOfType, "Extraneous 'end'");
@@ -120,9 +125,15 @@ class TemplateParser {
         parseEndDelimiter(true);
 
         SectionList ifSectionList = new SectionList(current, formBuilder);
-        parse(ifSectionList, EnumSet.of(Sentinel.END));
+        Sentinel ifSentinel = parse(ifSectionList, EnumSet.of(Sentinel.ELSE, Sentinel.END));
 
-        sectionList.appendIfSection(negated, name, startOfName, current, ifSectionList);
+        Optional<SectionList> elseSectionList = Optional.empty();
+        if (ifSentinel == Sentinel.ELSE) {
+            elseSectionList = Optional.of(new SectionList(current, formBuilder));
+            parse(elseSectionList.get(), EnumSet.of(Sentinel.END));
+        }
+
+        sectionList.appendIfSection(negated, name, startOfName, current, ifSectionList, elseSectionList);
     }
 
     private void skipRequiredWhitespaces() {
