@@ -96,7 +96,6 @@ public class VespaZooKeeperTest {
 
 
         // Cluster shrinks to a single server.
-        // TODO: Consider throwing old dynamic config file when this can never allow quorum with existing servers.
         configs = getConfigs(5, 0, 1, 0);
         for (int i = 3; i < 6; i++) keepers.get(i).config = configs.get(i);
         for (int i = 5; i < 6; i++) keepers.get(i).phaser.arriveAndAwaitAdvance();
@@ -130,8 +129,16 @@ public class VespaZooKeeperTest {
     }
 
     static void verifyData(String path, ZookeeperServerConfig config) throws IOException, InterruptedException, KeeperException {
-        ZooKeeperAdmin admin = createAdmin(config);
-        assertEquals("hi", new String(admin.getData(path, false, new Stat()), UTF_8));
+        for (int i = 0; i < 10; i++) {
+            try {
+                assertEquals("hi", new String(createAdmin(config).getData(path, false, new Stat()), UTF_8));
+                return;
+            }
+            catch (KeeperException.ConnectionLossException e) {
+                e.printStackTrace();
+                Thread.sleep(10 << i);
+            }
+        }
     }
 
     static ZooKeeperAdmin createAdmin(ZookeeperServerConfig config) throws IOException {
