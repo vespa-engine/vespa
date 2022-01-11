@@ -72,7 +72,8 @@ public class Autoscaler {
 
         if (scaledIn(clusterModel.scalingDuration(), cluster))
             return Advice.dontScale(Status.waiting,
-                                    "Won't autoscale now: Less than " + clusterModel.scalingDuration() + " since last resource change");
+                                    "Won't autoscale now: Less than " + clusterModel.scalingDuration() +
+                                    " since last resource change");
 
         if  (clusterModel.nodeTimeseries().measurementsPerNode() < minimumMeasurementsPerNode(clusterModel.scalingDuration()))
             return Advice.none(Status.waiting,

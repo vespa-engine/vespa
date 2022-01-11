@@ -113,7 +113,9 @@ public abstract class Maintainer implements Runnable {
             successFactor = maintain();
         }
         catch (UncheckedTimeoutException e) {
-            if ( ! ignoreCollision)
+            if (ignoreCollision)
+                successFactor = 1;
+            else
                 log.log(Level.WARNING, this + " collided with another run. Will retry in " + interval);
         }
         catch (Throwable e) {
