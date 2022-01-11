@@ -14,8 +14,8 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 public class TermCondition extends Condition {
 
     private final RuleBaseLinguistics linguistics;
-    private String originalTerm;
-    private String term;
+    private final String originalTerm;
+    private final String term;
 
     public TermCondition(String term, RuleBaseLinguistics linguistics) {
         this(null, term, linguistics);
@@ -28,12 +28,6 @@ public class TermCondition extends Condition {
         this.term = linguistics.process(term);
     }
 
-    public String getTerm() { return term; }
-
-    public void setTerm(String term) {
-        this.term = term;
-    }
-
     protected boolean doesMatch(RuleEvaluation e) {
         // TODO: Move this into the respective namespaces when query becomes one */
         if (getNameSpace() != null) {
@@ -44,21 +38,15 @@ public class TermCondition extends Condition {
             if (e.currentItem() == null) return false;
             if ( ! labelMatches(e)) return false;
 
-            String matchedValue = termMatches(e.currentItem().getItem());
-            boolean matches = matchedValue!=null && labelMatches(e.currentItem().getItem(), e);
+            boolean matches = labelMatches(e.currentItem().getItem(), e) &&
+                              linguistics.process(e.currentItem().getItem().stringValue()).equals(term);
             if ((matches && !e.isInNegation() || (!matches && e.isInNegation()))) {
-                e.addMatch(e.currentItem(), matchedValue);
+                e.addMatch(e.currentItem(), originalTerm);
                 e.setValue(term);
                 e.next();
             }
             return matches;
         }
-    }
-
-    /** Returns a non-null replacement term if there is a match, null otherwise */
-    private String termMatches(TermItem queryTerm) {
-        boolean matches = linguistics.process(queryTerm.stringValue()).equals(term);
-        return matches ? term : null;
     }
 
     public String toInnerString() {

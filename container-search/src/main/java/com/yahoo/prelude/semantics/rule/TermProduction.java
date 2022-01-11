@@ -15,7 +15,7 @@ import com.yahoo.protect.Validator;
 public abstract class TermProduction extends Production {
 
     /** The label of this term, or null if none */
-    private String label = null;
+    private String label;
 
     /** The type of term to produce */
     private TermType termType;
@@ -62,7 +62,7 @@ public abstract class TermProduction extends Production {
     protected void insertMatch(RuleEvaluation e, Match matched, Item newItem, int offset) {
         if (getWeight() != 100)
             newItem.setWeight(getWeight());
-        int insertPosition = matched.getPosition()+offset;
+        int insertPosition = matched.getPosition() + offset;
 
         // This check is necessary (?) because earlier items may have been removed
         // after we recorded the match position. It is sort of hackish. A cleaner
