@@ -60,8 +60,9 @@ public:
     // Exposed for unit testing only.
     [[nodiscard]] virtual uint32_t waiting_threads() const noexcept = 0;
 
+    // Creates a throttler that does exactly zero throttling (but also has zero overhead and locking)
     static std::unique_ptr<SharedOperationThrottler> make_unlimited_throttler();
-
+    // Creates a throttler that uses a MessageBus DynamicThrottlePolicy under the hood
     static std::unique_ptr<SharedOperationThrottler> make_dynamic_throttler(uint32_t min_size_and_window_increment);
 private:
     // Exclusively called from a valid Token. Thread safe.

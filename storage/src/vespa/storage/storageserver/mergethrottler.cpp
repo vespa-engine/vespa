@@ -2,6 +2,7 @@
 
 #include "mergethrottler.h"
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/common/dummy_mbus_messages.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/messagebus/message.h>
@@ -26,22 +27,6 @@ struct NodeComparator {
         return a.index < b.index;
     }
 };
-
-// Class used to sneakily get around IThrottlePolicy only accepting
-// messagebus objects
-template <typename Base>
-class DummyMbusMessage : public Base {
-private:
-    static const mbus::string NAME;
-public:
-    const mbus::string& getProtocol() const override { return NAME; }
-    uint32_t getType() const override { return 0x1badb007; }
-
-    uint8_t priority() const override { return 255; }
-};
-
-template <typename Base>
-const mbus::string DummyMbusMessage<Base>::NAME = "SkyNet";
 
 }
 
@@ -310,7 +295,7 @@ MergeThrottler::onFlush(bool /*downwards*/)
                 "own the command", merge.first.toString().c_str());
         }
 
-        DummyMbusMessage<mbus::Reply> dummyReply;
+        DummyMbusReply dummyReply;
         _throttlePolicy->processReply(dummyReply);
     }
     for (auto& entry : _queue) {
@@ -419,7 +404,7 @@ MergeThrottler::enqueue_merge_for_later_processing(
 bool
 MergeThrottler::canProcessNewMerge() const
 {
-    DummyMbusMessage<mbus::Message> dummyMsg;
+    DummyMbusRequest dummyMsg;
     return _throttlePolicy->canSend(dummyMsg, _merges.size());
 }
 
@@ -858,7 +843,7 @@ MergeThrottler::processNewMergeCommand(
     LOG(debug, "Added merge %s to internal state",
         mergeCmd.toString().c_str());
 
-    DummyMbusMessage<mbus::Message> dummyMsg;
+    DummyMbusRequest dummyMsg;
     _throttlePolicy->processMessage(dummyMsg);
 
     bool execute = false;
@@ -1058,7 +1043,7 @@ MergeThrottler::processMergeReply(
         updateOperationMetrics(mergeReply.getResult(), _metrics->local);
     }
 
-    DummyMbusMessage<mbus::Reply> dummyReply;
+    DummyMbusReply dummyReply;
     if (mergeReply.getResult().failed()) {
         // Must be sure to add an error if reply contained a failure, since
         // DynamicThrottlePolicy penalizes on failed transmissions
