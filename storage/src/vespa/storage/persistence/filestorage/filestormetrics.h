@@ -131,6 +131,9 @@ class FileStorStripeMetrics : public metrics::MetricSet
 public:
     using SP = std::shared_ptr<FileStorStripeMetrics>;
     metrics::DoubleAverageMetric averageQueueWaitingTime;
+    metrics::LongCountMetric throttled_rpc_direct_dispatches;
+    metrics::LongCountMetric throttled_persistence_thread_polls;
+    metrics::LongCountMetric timeouts_waiting_for_throttle_token;
     FileStorStripeMetrics(const std::string& name, const std::string& description);
     ~FileStorStripeMetrics() override;
 };

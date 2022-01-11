@@ -940,7 +940,10 @@ FileStorHandlerImpl::Stripe::getNextMessage(vespalib::duration timeout)
             } else if (should_throttle_op && !throttle_token.valid()) {
                 // Important: _non-blocking_ attempt at getting a throttle token.
                 throttle_token = _owner.operation_throttler().try_acquire_one();
-                was_throttled = !throttle_token.valid();
+                if (!throttle_token.valid()) {
+                    was_throttled = true;
+                    _metrics->throttled_persistence_thread_polls.inc();
+                }
             }
             if (!should_throttle_op || throttle_token.valid()) {
                 return getMessage(guard, idx, iter, std::move(throttle_token));
@@ -956,10 +959,11 @@ FileStorHandlerImpl::Stripe::getNextMessage(vespalib::duration timeout)
                 // prevents RPC threads from pushing onto the queue.
                 guard.unlock();
                 throttle_token = _owner.operation_throttler().blocking_acquire_one(timeout);
+                guard.lock();
                 if (!throttle_token.valid()) {
+                    _metrics->timeouts_waiting_for_throttle_token.inc();
                     return {}; // Already exhausted our timeout window.
                 }
-                guard.lock();
             }
         }
     }
@@ -984,6 +988,8 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
         auto throttle_token = _owner.operation_throttler().try_acquire_one();
         if (throttle_token.valid()) {
             return getMessage(guard, idx, iter, std::move(throttle_token));
+        } else {
+            _metrics->throttled_rpc_direct_dispatches.inc();
         }
     }
     return {};
