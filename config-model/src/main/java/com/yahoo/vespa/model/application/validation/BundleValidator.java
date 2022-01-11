@@ -24,9 +24,9 @@ import java.util.logging.Level;
  * @author hmusum
  * @author bjorncs
  */
-public class ComponentValidator extends Validator {
+public class BundleValidator extends Validator {
 
-    public ComponentValidator() {}
+    public BundleValidator() {}
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {

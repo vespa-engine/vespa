@@ -14,15 +14,15 @@ import java.util.logging.Level;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ComponentValidatorTest {
+public class BundleValidatorTest {
     private static final String JARS_DIR = "src/test/cfg/application/validation/testjars/";
 
     @Test
-    public void basicComponentValidation() throws Exception {
+    public void basicBundleValidation() throws Exception {
         // Valid jar file
         JarFile ok = new JarFile(new File(JARS_DIR + "ok.jar"));
-        ComponentValidator componentValidator = new ComponentValidator();
-        componentValidator.validateJarFile(new BaseDeployLogger(), ok);
+        BundleValidator bundleValidator = new BundleValidator();
+        bundleValidator.validateJarFile(new BaseDeployLogger(), ok);
 
         // No manifest
         validateWithException("nomanifest.jar", "Non-existing or invalid manifest in " + JARS_DIR + "nomanifest.jar");
@@ -31,8 +31,8 @@ public class ComponentValidatorTest {
     private void validateWithException(String jarName, String exceptionMessage) throws IOException {
         try {
             JarFile jarFile = new JarFile(JARS_DIR + jarName);
-            ComponentValidator componentValidator = new ComponentValidator();
-            componentValidator.validateJarFile(new BaseDeployLogger(), jarFile);
+            BundleValidator bundleValidator = new BundleValidator();
+            bundleValidator.validateJarFile(new BaseDeployLogger(), jarFile);
             assert (false);
         } catch (IllegalArgumentException e) {
             assertEquals(e.getMessage(), exceptionMessage);
@@ -50,7 +50,7 @@ public class ComponentValidatorTest {
             }
         };
         
-        new ComponentValidator().validateJarFile(logger, new JarFile(JARS_DIR + "snapshot_bundle.jar"));
+        new BundleValidator().validateJarFile(logger, new JarFile(JARS_DIR + "snapshot_bundle.jar"));
         assertTrue(buffer.toString().contains("Deploying snapshot bundle"));
     }
 }
