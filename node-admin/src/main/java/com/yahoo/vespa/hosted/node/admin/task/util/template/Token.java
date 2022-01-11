@@ -11,7 +11,7 @@ import java.util.Optional;
  */
 class Token {
     static final char NEGATE_CHAR = '!';
-    static final char REMOVE_NEWLINE_CHAR = '|';
+    static final char REMOVE_NEWLINE_CHAR = '-';
     static final char VARIABLE_DIRECTIVE_CHAR = '=';
 
     static Optional<String> skipId(Cursor cursor) {

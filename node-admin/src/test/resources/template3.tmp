@@ -1,6 +1,6 @@
 %{=varname}
 %{=varname}
-%{form l|}
+%{form l-}
 inner %{=varname}
 %{=innerVarSetAtTop}
-%{end|}
+%{end-}

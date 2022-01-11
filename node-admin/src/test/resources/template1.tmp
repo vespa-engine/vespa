@@ -1,10 +1,10 @@
 variable section '%{=varname}'
-%{form formname|}
+%{form formname-}
 same variable section '%{=varname}'
 different variable section '%{=varname2}'
-%{form innerformname|}
+%{form innerformname-}
 inner form text
-%{end|}
+%{end-}
 between ends
-%{end|}
+%{end-}
 end of text

@@ -10,14 +10,14 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
  *     template: section*
  *     section: literal | variable | subform
  *     literal: plain text not containing %{
- *     variable: %{=identifier}
- *     if: %{if [!]identifier}template[%{else}template]%{end}
- *     subform: %{form identifier}template%{end}
- *     identifier: a valid Java identifier
+ *     variable: %{=id}
+ *     if: %{if [!]id}template[%{else}template]%{end}
+ *     subform: %{form id}template%{end}
+ *     id: a valid Java identifier
  * </pre>
  *
- * <p>If the directive's end delimiter (}) is preceded by a "|" char, then any newline (\n)
- * following the end delimiter is removed.</p>
+ * <p>If the directive's end delimiter (}) is preceded by a "-" char, then any newline (\n)
+ * immediately following the end delimiter is removed.</p>
  *
  * <p>To use the template, <b>Instantiate</b> it to get a form ({@link #instantiate()}), fill it (e.g.
  * {@link Form#set(String, String) Form.set()}), and render the String ({@link Form#render()}).</p>
@@ -27,7 +27,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
  * either direct or indirect variable sections.</p>
  *
  * @see Form
- * @see TemplateParser
  * @see TemplateFile
  * @author hakonhall
  */
@@ -45,4 +44,5 @@ public class Template {
     }
 
     public Form instantiate() { return form.copy(); }
+
 }

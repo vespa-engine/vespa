@@ -71,8 +71,8 @@ class TemplateFileTest {
     void verifyNewlineRemoval() {
         Form form = makeForm("a%{form a}\n" +
                              "b%{end}\n" +
-                             "c%{form c|}\n" +
-                             "d%{end|}\n" +
+                             "c%{form c-}\n" +
+                             "d%{end-}\n" +
                              "e\n");
         form.add("a");
         form.add("c");
@@ -92,11 +92,11 @@ class TemplateFileTest {
 
     @Test
     void verifyComplexIfSection() {
-        Template template = Template.from("%{if cond|}\n" +
+        Template template = Template.from("%{if cond-}\n" +
                                           "var: %{=varname}\n" +
                                           "if: %{if !inner}inner is false%{end}\n" +
                                           "subform: %{form formname}subform%{end}\n" +
-                                          "%{end|}\n");
+                                          "%{end-}\n");
 
         assertEquals("", template.instantiate().set("cond", false).render());
 
