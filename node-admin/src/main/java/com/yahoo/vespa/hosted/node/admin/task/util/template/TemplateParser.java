@@ -96,7 +96,7 @@ class TemplateParser {
     private void parseVariableSection(SectionList sectionList) {
         var nameStart = new Cursor(current);
         String name = parseId();
-        parseEndDelimiter(true);
+        parseEndDelimiter(false);
         sectionList.appendVariableSection(name, nameStart, current);
     }
 
@@ -148,14 +148,14 @@ class TemplateParser {
 
     private Optional<String> skipId() { return Token.skipId(current); }
 
-    private boolean parseEndDelimiter(boolean skipNewline) {
-        boolean removeNewline = current.skip(Token.REMOVE_NEWLINE_CHAR);
+    private void parseEndDelimiter(boolean allowSkipNewline) {
+        boolean removeNewlineCharPresent = current.skip(Token.REMOVE_NEWLINE_CHAR);
+
         if (!current.skip(descriptor.endDelimiter()))
             throw new BadTemplateException(current, "Expected section end (" + descriptor.endDelimiter() + ")");
 
-        if (skipNewline && removeNewline)
+        // The presence of the remove-newline-char means the opposite behavior is wanted.
+        if (allowSkipNewline && (removeNewlineCharPresent != descriptor.removeNewline()))
             current.skip('\n');
-
-        return removeNewline;
     }
 }

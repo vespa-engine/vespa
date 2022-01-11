@@ -16,9 +16,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
  *     id: a valid Java identifier
  * </pre>
  *
- * <p>If the directive's end delimiter (}) is preceded by a "-" char, then any newline (\n)
- * immediately following the end delimiter is removed.</p>
- *
  * <p>To use the template create a form ({@link #newForm()}), fill the form (e.g.
  * {@link Form#set(String, String) Form.set()}), and render the String ({@link Form#render()}).</p>
  *
