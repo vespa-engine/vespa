@@ -1,21 +1,30 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.metrics.simple.jdisc;
 
-import java.io.PrintStream;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
-import org.HdrHistogram.DoubleHistogram;
-
 import com.yahoo.collections.Tuple2;
-import com.yahoo.container.jdisc.state.*;
+import com.yahoo.container.jdisc.state.CountMetric;
+import com.yahoo.container.jdisc.state.GaugeMetric;
+import com.yahoo.container.jdisc.state.MetricDimensions;
+import com.yahoo.container.jdisc.state.MetricSet;
+import com.yahoo.container.jdisc.state.MetricSnapshot;
+import com.yahoo.container.jdisc.state.MetricValue;
+import com.yahoo.container.jdisc.state.StateMetricContext;
 import com.yahoo.metrics.simple.Bucket;
 import com.yahoo.metrics.simple.Identifier;
 import com.yahoo.metrics.simple.Point;
 import com.yahoo.metrics.simple.UntypedMetric;
+import com.yahoo.metrics.simple.UntypedMetric.Histogram;
 import com.yahoo.metrics.simple.Value;
-import com.yahoo.text.JSON;
+
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * Convert simple metrics snapshots into jdisc state snapshots.
@@ -74,7 +83,7 @@ class SnapshotConverter {
         }
     }
 
-    private static List<Tuple2<String, Double>> buildPercentileList(DoubleHistogram histogram) {
+    private static List<Tuple2<String, Double>> buildPercentileList(Histogram histogram) {
         List<Tuple2<String, Double>> prefixAndValues = new ArrayList<>(2);
         prefixAndValues.add(new Tuple2<>("95", histogram.getValueAtPercentile(95.0d)));
         prefixAndValues.add(new Tuple2<>("99", histogram.getValueAtPercentile(99.0d)));
@@ -122,7 +131,7 @@ class SnapshotConverter {
                 continue;
             }
             gotHistogram = true;
-            DoubleHistogram histogram = entry.getValue().getHistogram();
+            Histogram histogram = entry.getValue().getHistogram();
             Identifier id = entry.getKey();
             String metricIdentifier = getIdentifierString(id);
             output.println("# start of metric " + metricIdentifier);

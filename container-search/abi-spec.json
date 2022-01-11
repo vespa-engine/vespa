@@ -5538,7 +5538,6 @@
       "public void setLocale(java.lang.String, com.yahoo.search.query.Sorting$UcaSorter$Strength)",
       "public java.lang.String getLocale()",
       "public com.yahoo.search.query.Sorting$UcaSorter$Strength getStrength()",
-      "public com.ibm.icu.text.Collator getCollator()",
       "public java.lang.String getDecomposition()",
       "public java.lang.String toSerialForm()",
       "public int hashCode()",

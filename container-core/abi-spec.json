@@ -2667,6 +2667,18 @@
       "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType COUNTER"
     ]
   },
+  "com.yahoo.metrics.simple.UntypedMetric$Histogram": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public double getValueAtPercentile(double)",
+      "public void outputPercentileDistribution(java.io.PrintStream, int, java.lang.Double, boolean)"
+    ],
+    "fields": []
+  },
   "com.yahoo.metrics.simple.UntypedMetric": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -2680,7 +2692,7 @@
       "public double getMax()",
       "public double getMin()",
       "public double getSum()",
-      "public org.HdrHistogram.DoubleHistogram getHistogram()",
+      "public com.yahoo.metrics.simple.UntypedMetric$Histogram getHistogram()",
       "public java.lang.String toString()"
     ],
     "fields": []
