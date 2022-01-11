@@ -121,7 +121,8 @@ public class VersionStatus {
 
         List<DeploymentStatistics> deploymentStatistics = DeploymentStatistics.compute(infrastructureVersions.keySet(),
                                                                                        controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())
-                                                                                                                                                    .withProjectId()));
+                                                                                                                                                    .withProjectId()
+                                                                                                                                                    .withJobs()));
         List<VespaVersion> versions = new ArrayList<>();
         List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
 
