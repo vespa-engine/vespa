@@ -8,7 +8,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import org.junit.Before;
@@ -16,22 +15,20 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.function.Consumer;
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
-import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
-import static org.assertj.core.api.Assertions.assertThat;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -72,63 +69,35 @@ public class ConfigConvergenceCheckerTest {
     @Test
     public void service_convergence() {
         { // Known service
-            String serviceName = hostAndPort(this.service);
-            URI requestUrl = testServer().resolve("/serviceconverge/" + serviceName);
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
-            HttpResponse serviceResponse = checker.getServiceConfigGenerationResponse(application, hostAndPort(this.service), requestUrl, clientTimeout);
-            assertResponse("{\n" +
-                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                           "  \"host\": \"" + hostAndPort(this.service) + "\",\n" +
-                           "  \"wantedGeneration\": 3,\n" +
-                           "  \"converged\": true,\n" +
-                           "  \"currentGeneration\": 3\n" +
-                           "}",
-                           200,
-                           serviceResponse);
+
+            ServiceResponse response = checker.getServiceConfigGeneration(application, hostAndPort(this.service), clientTimeout);
+            assertEquals(3, response.wantedGeneration.longValue());
+            assertEquals(3, response.currentGeneration.longValue());
+            assertTrue(response.converged);
+            assertEquals(ServiceResponse.Status.ok, response.status);
         }
 
         { // Missing service
-            String serviceName = "notPresent:1337";
-            URI requestUrl = testServer().resolve("/serviceconverge/" + serviceName);
-            HttpResponse response = checker.getServiceConfigGenerationResponse(application, "notPresent:1337", requestUrl, clientTimeout);
-            assertResponse("{\n" +
-                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                           "  \"host\": \"" + serviceName + "\",\n" +
-                           "  \"wantedGeneration\": 3,\n" +
-                           "  \"problem\": \"Host:port (service) no longer part of application, refetch list of services.\"\n" +
-                           "}",
-                           410,
-                           response);
+            ServiceResponse response = checker.getServiceConfigGeneration(application, "notPresent:1337", clientTimeout);
+            assertEquals(3, response.wantedGeneration.longValue());
+            assertEquals(ServiceResponse.Status.hostNotFound, response.status);
         }
     }
 
     @Test
     public void service_list_convergence() {
         {
-            String serviceName = hostAndPort(this.service);
             URI requestUrl = testServer().resolve("/serviceconverge");
-            URI serviceUrl = testServer().resolve("/serviceconverge/" + serviceName);
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
-            HttpResponse response = checker.getServiceConfigGenerationsResponse(application, requestUrl, clientTimeout);
-            assertResponse("{\n" +
-                           "  \"services\": [\n" +
-                           "    {\n" +
-                           "      \"host\": \"" + serviceUrl.getHost() + "\",\n" +
-                           "      \"port\": " + serviceUrl.getPort() + ",\n" +
-                           "      \"type\": \"container\",\n" +
-                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
-                           "      \"currentGeneration\":" + 3 + "\n" +
-                           "    }\n" +
-                           "  ],\n" +
-                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                           "  \"currentGeneration\": 3,\n" +
-                           "  \"wantedGeneration\": 3,\n" +
-                           "  \"converged\": true\n" +
-                           "}",
-                           200,
-                           response);
-        }
 
+            ServiceListResponse response = checker.getServiceConfigGenerations(application, requestUrl, clientTimeout);
+            assertEquals(3, response.wantedGeneration);
+            assertEquals(3, response.currentGeneration);
+            List<ServiceListResponse.Service> services = response.services;
+            assertEquals(1, services.size());
+            assertService(this.service, services.get(0), 3);
+        }
 
         { // Model with two hosts on different generations
             MockModel model = new MockModel(Arrays.asList(
@@ -143,53 +112,29 @@ public class ConfigConvergenceCheckerTest {
             wireMock2.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
 
             URI requestUrl = testServer().resolve("/serviceconverge");
-            URI serviceUrl = testServer().resolve("/serviceconverge/" + hostAndPort(service));
-            URI serviceUrl2 = testServer().resolve("/serviceconverge/" + hostAndPort(service2));
-            HttpResponse response = checker.getServiceConfigGenerationsResponse(application, requestUrl, clientTimeout);
-            assertResponse("{\n" +
-                           "  \"services\": [\n" +
-                           "    {\n" +
-                           "      \"host\": \"" + service.getHost() + "\",\n" +
-                           "      \"port\": " + service.getPort() + ",\n" +
-                           "      \"type\": \"container\",\n" +
-                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
-                           "      \"currentGeneration\":" + 4 + "\n" +
-                           "    },\n" +
-                           "    {\n" +
-                           "      \"host\": \"" + service2.getHost() + "\",\n" +
-                           "      \"port\": " + service2.getPort() + ",\n" +
-                           "      \"type\": \"container\",\n" +
-                           "      \"url\": \"" + serviceUrl2.toString() + "\",\n" +
-                           "      \"currentGeneration\":" + 3 + "\n" +
-                           "    }\n" +
-                           "  ],\n" +
-                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                           "  \"currentGeneration\": 3,\n" +
-                           "  \"wantedGeneration\": 4,\n" +
-                           "  \"converged\": false\n" +
-                           "}",
-                           200,
-                           response);
+
+            ServiceListResponse response = checker.getServiceConfigGenerations(application, requestUrl, clientTimeout);
+            assertEquals(4, response.wantedGeneration);
+            assertEquals(3, response.currentGeneration);
+
+            List<ServiceListResponse.Service> services = response.services;
+            assertEquals(2, services.size());
+            assertService(this.service, services.get(0), 4);
+            assertService(this.service2, services.get(1), 3);
         }
     }
 
+
     @Test
     public void service_convergence_timeout() {
-        URI requestUrl = testServer().resolve("/serviceconverge");
         wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(aResponse()
                                                                                 .withFixedDelay((int) clientTimeout.plus(Duration.ofSeconds(1)).toMillis())
                                                                                 .withBody("response too slow")));
-        HttpResponse response = checker.getServiceConfigGenerationResponse(application, hostAndPort(service), requestUrl, Duration.ofMillis(1));
-        // Message contained in a SocketTimeoutException may differ across platforms, so we do a partial match of the response here
-        assertResponse(
-                responseBody ->
-                        assertThat(responseBody)
-                                .startsWith("{\"url\":\"" + requestUrl.toString() + "\",\"host\":\"" + hostAndPort(requestUrl) +
-                                        "\",\"wantedGeneration\":3,\"error\":\"")
-                                .contains("java.net.SocketTimeoutException: 1 MILLISECONDS")
-                                .endsWith("\"}"),
-                404,
-                response);
+        ServiceResponse response = checker.getServiceConfigGeneration(application, hostAndPort(service), Duration.ofMillis(1));
+
+        assertEquals(3, response.wantedGeneration.longValue());
+        assertEquals(ServiceResponse.Status.notFound, response.status);
+        assertTrue(response.errorMessage.get().contains("java.net.SocketTimeoutException: 1 MILLISECONDS"));
     }
 
     private URI testServer() {
@@ -204,19 +149,11 @@ public class ConfigConvergenceCheckerTest {
         return uri.getHost() + ":" + uri.getPort();
     }
 
-    private static void assertResponse(String expectedJson, int status, HttpResponse response) {
-        assertResponse((responseBody) -> assertJsonEquals(new String(responseBody.getBytes()), expectedJson), status, response);
-    }
-
-    private static void assertResponse(Consumer<String> assertFunc, int status, HttpResponse response) {
-        ByteArrayOutputStream responseBody = new ByteArrayOutputStream();
-        try {
-            response.render(responseBody);
-            assertFunc.accept(responseBody.toString());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        assertEquals(status, response.getStatus());
+    private void assertService(URI uri, ServiceListResponse.Service service1, long expectedGeneration) {
+        assertEquals(expectedGeneration, service1.currentGeneration.longValue());
+        assertEquals(uri.getHost(), service1.serviceInfo.getHostName());
+        assertEquals(uri.getPort(), ConfigConvergenceChecker.getStatePort(service1.serviceInfo).get().intValue());
+        assertEquals("container", service1.serviceInfo.getServiceType());
     }
 
 }

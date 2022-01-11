@@ -111,6 +111,8 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
@@ -737,15 +739,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Convergence ----------------------------------------------------------------
 
-    public HttpResponse checkServiceForConfigConvergence(ApplicationId applicationId, String hostAndPort, URI uri,
-                                                         Duration timeout, Optional<Version> vespaVersion) {
-        return convergeChecker.getServiceConfigGenerationResponse(getApplication(applicationId, vespaVersion), hostAndPort, uri, timeout);
+    public ServiceResponse checkServiceForConfigConvergence(ApplicationId applicationId,
+                                                            String hostAndPort,
+                                                            Duration timeout,
+                                                            Optional<Version> vespaVersion) {
+        return convergeChecker.getServiceConfigGeneration(getApplication(applicationId, vespaVersion), hostAndPort, timeout);
     }
 
-    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri,
-                                                            Duration timeoutPerService, Optional<Version> vespaVersion) {
-        return convergeChecker.getServiceConfigGenerationsResponse(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
+    public ServiceListResponse servicesToCheckForConfigConvergence(ApplicationId applicationId,
+                                                                   URI uri,
+                                                                   Duration timeoutPerService,
+                                                                   Optional<Version> vespaVersion) {
+        return convergeChecker.getServiceConfigGenerations(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
     }
+
+    public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }
 
     // ---------------- Logs ----------------------------------------------------------------
 
