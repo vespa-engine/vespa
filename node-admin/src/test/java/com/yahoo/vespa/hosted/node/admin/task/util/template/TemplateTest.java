@@ -73,4 +73,19 @@ public class TemplateTest {
         assertEquals("if body\n", template.snapshot().set("cond", true).render());
         assertEquals("else body\n", template.snapshot().set("cond", false).render());
     }
+
+    @Test
+    void verifySnapshotPreservesList() {
+        var template = Template.from("%{list foo}hello %{=area}%{end}");
+        template.add("foo")
+                .set("area", "world");
+
+        assertEquals("hello world", template.render());
+        assertEquals("hello world", template.snapshot().render());
+
+        Template snapshot = template.snapshot();
+        snapshot.add("foo")
+                .set("area", "Norway");
+        assertEquals("hello worldhello Norway", snapshot.render());
+    }
 }
