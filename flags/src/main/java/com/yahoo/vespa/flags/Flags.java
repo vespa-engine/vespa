@@ -159,13 +159,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundDoubleFlag DISK_BLOAT_FACTOR = defineDoubleFlag(
-            "disk-bloat-factor", 0.25,
-            List.of("baldersheim"), "2021-10-08", "2022-02-01",
-            "Amount of bloat allowed before compacting file",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2022-01-31",

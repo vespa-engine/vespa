@@ -268,15 +268,9 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void verifyControlOfDiskBloatFactor() throws Exception {
+    public void verifyDefaultDiskBloatFactor() throws Exception {
         var defaultCfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml()));
         assertEquals(0.25, defaultCfg.flush().memory().diskbloatfactor(), EPSILON);
         assertEquals(0.25, defaultCfg.flush().memory().each().diskbloatfactor(), EPSILON);
-
-        var controlledCfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml(),
-                new DeployState.Builder().properties(new TestProperties().diskBloatFactor(0.31))
-        ));
-        assertEquals(0.31, controlledCfg.flush().memory().diskbloatfactor(), EPSILON);
-        assertEquals(0.31, controlledCfg.flush().memory().each().diskbloatfactor(), EPSILON);
     }
 }
