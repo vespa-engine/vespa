@@ -2,45 +2,54 @@
 
 #include "cpu_usage.h"
 #include "require.h"
+#include <pthread.h>
 
 namespace vespalib {
 
 namespace cpu_usage {
 
-DummyThreadSampler::DummyThreadSampler()
-  : _start(steady_clock::now()),
-    _load(0.16)
-{
-}
+namespace {
 
-void
-DummyThreadSampler::expected_load(double load) {
-    _load = load;
-}
-
-duration
-DummyThreadSampler::sample() const
-{
-    return from_s(to_s(steady_clock::now() - _start) * _load);
-}
+class DummyThreadSampler : public ThreadSampler {
+private:
+    steady_time _start;
+    double _load;
+public:
+    DummyThreadSampler(double load) : _start(steady_clock::now()), _load(load) {}
+    duration sample() const override {
+        return from_s(to_s(steady_clock::now() - _start) * _load);
+    }
+};
 
 #ifdef __linux__
 
-ThreadSampler::ThreadSampler()
-  : _my_clock()
-{
-    REQUIRE_EQ(pthread_getcpuclockid(pthread_self(), &_my_clock), 0);
-}
-
-duration
-ThreadSampler::sample() const
-{
-    timespec ts;
-    REQUIRE_EQ(clock_gettime(_my_clock, &ts), 0);
-    return from_timespec(ts);
-}
+class LinuxThreadSampler : public ThreadSampler {
+private:
+    clockid_t _my_clock;
+public:
+    LinuxThreadSampler() : _my_clock() {
+        REQUIRE_EQ(pthread_getcpuclockid(pthread_self(), &_my_clock), 0);
+    }
+    duration sample() const override {
+        timespec ts;
+        REQUIRE_EQ(clock_gettime(_my_clock, &ts), 0);
+        return from_timespec(ts);
+    }
+};
 
 #endif
+
+} // <unnamed>
+
+ThreadSampler::UP create_thread_sampler(bool force_mock_impl, double expected_load) {
+    if (force_mock_impl) {
+        return std::make_unique<DummyThreadSampler>(expected_load);
+    }
+#ifdef __linux__
+    return std::make_unique<LinuxThreadSampler>();
+#endif
+    return std::make_unique<DummyThreadSampler>(expected_load);
+}
 
 } // cpu_usage
 
