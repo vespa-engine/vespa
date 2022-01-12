@@ -33,7 +33,7 @@ import java.util.Optional;
  *
  * @author hakonhall
  */
-public class Template {
+public class Template implements Form {
     private Template parent = null;
     private final CursorRange range;
     private final List<Section> sections;
@@ -58,38 +58,15 @@ public class Template {
         this.lists = Map.copyOf(lists);
     }
 
-    /** Must be set (if there is a parent) before any other method. */
-    void setParent(Template parent) { this.parent = parent; }
-
     /** Set the value of a variable, e.g. %{=color}. */
+    @Override
     public Template set(String name, String value) {
         values.put(name, value);
         return this;
     }
 
-    /** Set the value of a variable and/or if-condition. */
-    public Template set(String name, boolean value) { return set(name, Boolean.toString(value)); }
-
-    public Template set(String name, int value) { return set(name, Integer.toString(value)); }
-    public Template set(String name, long value) { return set(name, Long.toString(value)); }
-
-    public Template set(String name, String format, String first, String... rest) {
-        var args = new Object[1 + rest.length];
-        args[0] = first;
-        System.arraycopy(rest, 0, args, 1, rest.length);
-        var value = String.format(format, args);
-
-        return set(name, value);
-    }
-
-    /** Add an instance of a list section after any previously added (for the given name)  */
-    public Template add(String name) {
-        var section = lists.get(name);
-        if (section == null) {
-            throw new NoSuchNameTemplateException(range, name);
-        }
-        return section.add();
-    }
+    @Override
+    public ListElement add(String name) { return new ListElement(addElement(name)); }
 
     public String render() {
         var buffer = new StringBuilder((int) (range.length() * 1.2 + 128));
@@ -106,6 +83,17 @@ public class Template {
         Template template = builder.build();
         values.forEach(template::set);
         return template;
+    }
+
+    /** Must be called (if there is a parent) before any other method. */
+    void setParent(Template parent) { this.parent = parent; }
+
+    Template addElement(String name) {
+        var section = lists.get(name);
+        if (section == null) {
+            throw new NoSuchNameTemplateException(range, name);
+        }
+        return section.add();
     }
 
     Optional<String> getVariableValue(String name) {

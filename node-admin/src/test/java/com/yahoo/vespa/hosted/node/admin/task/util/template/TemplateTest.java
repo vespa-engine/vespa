@@ -116,12 +116,12 @@ public class TemplateTest {
     @Test
     void verifyNestedListSection() {
         Template template = getTemplate("template2.tmp");
-        Template A0 = template.add("listA");
-        Template A0B0 = A0.add("listB");
-        Template A0B1 = A0.add("listB");
+        ListElement A0 = template.add("listA");
+        ListElement A0B0 = A0.add("listB");
+        ListElement A0B1 = A0.add("listB");
 
-        Template A1 = template.add("listA");
-        Template A1B0 = A1.add("listB");
+        ListElement A1 = template.add("listA");
+        ListElement A1B0 = A1.add("listB");
         assertEquals("body A\n" +
                      "body B\n" +
                      "body B\n" +
