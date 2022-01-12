@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Created-By: 1.6.0_20 (Apple Inc.)
+Bundle-ManifestVersion: 2
+Bundle-Name: ok
+Bundle-SymbolicName: ok
+Bundle-Version: 0
+

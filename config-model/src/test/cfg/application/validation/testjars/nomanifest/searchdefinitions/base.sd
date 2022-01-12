@@ -1,0 +1,7 @@
+search base {
+    document base {
+        field base type string {
+            indexing: summary | index
+        }
+    }
+}

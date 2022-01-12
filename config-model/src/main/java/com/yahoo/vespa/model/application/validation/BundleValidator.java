@@ -12,6 +12,7 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,29 +41,29 @@ public class BundleValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         ApplicationPackage app = deployState.getApplicationPackage();
         for (ComponentInfo info : app.getComponentsInfo(deployState.getVespaVersion())) {
+            Path path = Path.fromString(info.getPathRelativeToAppDir());
             try {
-                Path path = Path.fromString(info.getPathRelativeToAppDir());
                 DeployLogger deployLogger = deployState.getDeployLogger();
                 deployLogger.log(Level.FINE, String.format("Validating bundle at '%s'", path));
                 JarFile jarFile = new JarFile(app.getFileReference(path));
                 validateJarFile(deployLogger, jarFile);
             } catch (IOException e) {
                 throw new IllegalArgumentException(
-                        "Failed to validate JAR file '" + info.getPathRelativeToAppDir() + "'", e);
+                        "Failed to validate JAR file '" + path.last() + "'", e);
             }
         }
     }
 
     void validateJarFile(DeployLogger deployLogger, JarFile jarFile) throws IOException {
         Manifest manifest = jarFile.getManifest();
-        String jarPath = jarFile.getName();
+        String filename = Paths.get(jarFile.getName()).getFileName().toString();
         if (manifest == null) {
-            throw new IllegalArgumentException("Non-existing or invalid manifest in " + jarPath);
+            throw new IllegalArgumentException("Non-existing or invalid manifest in " + filename);
         }
-        validateManifest(deployLogger, jarPath, manifest);
+        validateManifest(deployLogger, filename, manifest);
     }
 
-    void validateManifest(DeployLogger deployLogger, String jarPath, Manifest mf) {
+    private void validateManifest(DeployLogger deployLogger, String filename, Manifest mf) {
         // Check for required OSGI headers
         Attributes attributes = mf.getMainAttributes();
         HashSet<String> mfAttributes = new HashSet<>();
@@ -74,21 +75,21 @@ public class BundleValidator extends Validator {
         for (String header : requiredOSGIHeaders) {
             if (!mfAttributes.contains(header)) {
                 throw new IllegalArgumentException("Required OSGI header '" + header +
-                        "' was not found in manifest in '" + jarPath + "'");
+                        "' was not found in manifest in '" + filename + "'");
             }
         }
 
         if (attributes.getValue("Bundle-Version").endsWith(".SNAPSHOT")) {
-            deployLogger.logApplicationPackage(Level.WARNING, "Deploying snapshot bundle " + jarPath +
+            deployLogger.logApplicationPackage(Level.WARNING, "Deploying snapshot bundle " + filename +
                     ".\nTo use this bundle, you must include the qualifier 'SNAPSHOT' in  the version specification in services.xml.");
         }
 
         if (attributes.getValue("Import-Package") != null) {
-            validateImportedPackages(deployLogger, jarPath, mf);
+            validateImportedPackages(deployLogger, filename, mf);
         }
     }
 
-    private static void validateImportedPackages(DeployLogger deployLogger, String jarPath, Manifest manifest) {
+    private static void validateImportedPackages(DeployLogger deployLogger, String filename, Manifest manifest) {
         Domain osgiHeaders = Domain.domain(manifest);
         Parameters importPackage = osgiHeaders.getImportPackage();
         Map<DeprecatedArtifact, List<String>> deprecatedPackagesInUse = new HashMap<>();
@@ -112,7 +113,7 @@ public class BundleValidator extends Validator {
                     String.format("For JAR file '%s': \n" +
                             "Manifest imports the following Java packages from '%s': %s. \n" +
                             "%s",
-                            jarPath, artifact.name, packagesInUse, artifact.description));
+                            filename, artifact.name, packagesInUse, artifact.description));
         });
     }
 
