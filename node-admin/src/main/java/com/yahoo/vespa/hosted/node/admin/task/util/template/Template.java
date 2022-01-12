@@ -1,8 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,6 @@ import java.util.Optional;
  *
  * <p>To reuse a template, create the template and work on snapshots of that ({@link #snapshot()}).</p>
  *
- * @see TemplateFile
  * @author hakonhall
  */
 public class Template {
@@ -40,8 +41,13 @@ public class Template {
     private final Map<String, String> values = new HashMap<>();
     private final Map<String, ListSection> lists;
 
-    public static Template from(String text) { return from(text, new TemplateDescriptor()); }
+    public static Template at(Path path) { return at(path, new TemplateDescriptor()); }
+    public static Template at(Path path, TemplateDescriptor descriptor) {
+        String content = new UnixPath(path).readUtf8File();
+        return Template.from(content, descriptor);
+    }
 
+    public static Template from(String text) { return from(text, new TemplateDescriptor()); }
     public static Template from(String text, TemplateDescriptor descriptor) {
         return TemplateParser.parse(text, descriptor).template();
     }
