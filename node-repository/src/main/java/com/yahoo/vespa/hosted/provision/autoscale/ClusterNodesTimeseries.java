@@ -31,7 +31,7 @@ public class ClusterNodesTimeseries {
         // If none can be detected we assume the node is new/was down.
         // If either this is the case, or there is a generation change, we ignore
         // the first warmupWindow metrics
-        var timeseries = db.getNodeTimeseries(period.plus(warmupDuration.multipliedBy(8)), clusterNodes);
+        var timeseries = db.getNodeTimeseries(period.plus(warmupDuration.multipliedBy(4)), clusterNodes);
         if (cluster.lastScalingEvent().isPresent()) {
             long currentGeneration = cluster.lastScalingEvent().get().generation();
             timeseries = keepCurrentGenerationAfterWarmup(timeseries, currentGeneration);
