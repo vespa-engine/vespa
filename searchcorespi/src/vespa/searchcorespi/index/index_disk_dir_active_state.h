@@ -1,5 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
+
+#include <cstdint>
 
 namespace searchcorespi::index {
 
@@ -15,7 +18,7 @@ public:
     }
 
     void activate() noexcept { ++_active_count; }
-    void deactivate() noexcept { --_active_count; }
+    void deactivate() noexcept;
     bool is_active() const noexcept { return _active_count != 0; }
 };
 

@@ -8,6 +8,7 @@ vespa_add_library(searchcorespi_index OBJECT
     fusionrunner.cpp
     iindexmanager.cpp
     iindexcollection.cpp
+    index_disk_dir_active_state.cpp
     index_manager_explorer.cpp
     index_manager_stats.cpp
     indexcollection.cpp
