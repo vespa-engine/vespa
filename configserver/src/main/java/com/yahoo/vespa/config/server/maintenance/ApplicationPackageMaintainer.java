@@ -101,7 +101,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         ConnectionPool connectionPool = (otherConfigServersInCluster.isEmpty())
                 ? FileDownloader.emptyConnectionPool()
                 : new FileDistributionConnectionPool(configSourceSet, supervisor);
-        return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(30));
+        return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(300));
     }
 
     @Override
