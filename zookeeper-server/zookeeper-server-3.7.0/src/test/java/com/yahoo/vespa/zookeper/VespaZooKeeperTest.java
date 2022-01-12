@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,6 +40,7 @@ import static org.junit.Assert.assertEquals;
 public class VespaZooKeeperTest {
 
     static final Path tempDirRoot = getTmpDir();
+    static final List<Integer> ports = new ArrayList<>();
 
     /**
      * Performs dynamic reconfiguration of ZooKeeper servers.
@@ -185,13 +187,8 @@ public class VespaZooKeeperTest {
             return null;
 
         Path tempDir = tempDirRoot.resolve("zookeeper-" + id);
-        String[] version = System.getProperty("zk-version").split("\\.");
-        int versionPortOffset = 0;
-        for (String part : version)
-            versionPortOffset = 32 * (versionPortOffset + Integer.parseInt(part));
-        int port = 51000 + versionPortOffset % 9785;
         return new ZookeeperServerConfig.Builder()
-                .clientPort(port + 3 * id)
+                .clientPort(getPorts(id).get(0))
                 .dataDir(tempDir.toString())
                 .zooKeeperConfigFile(tempDir.resolve("zookeeper.cfg").toString())
                 .myid(id)
@@ -200,14 +197,49 @@ public class VespaZooKeeperTest {
                 .server(IntStream.rangeClosed(removed + 1, removed + retired + active)
                                  .mapToObj(i -> new ZookeeperServerConfig.Server.Builder()
                                          .id(i)
-                                         .clientPort(port + 3 * i)
-                                         .electionPort(port + 3 * i + 1)
-                                         .quorumPort(port + 3 * i + 2)
+                                         .clientPort(getPorts(i).get(0))
+                                         .electionPort(getPorts(i).get(1))
+                                         .quorumPort(getPorts(i).get(2))
                                          .hostname("localhost")
                                          .joining(i - removed > retired + active - joining)
                                          .retired(i - removed <= retired))
                                  .collect(toList()))
                 .build();
+    }
+
+    static List<Integer> getPorts(int id) {
+        if (ports.size() < id * 3) {
+            int previousPort;
+            if (ports.isEmpty()) {
+                String[] version = System.getProperty("zk-version").split("\\.");
+                int versionPortOffset = 0;
+                for (String part : version)
+                    versionPortOffset = 32 * (versionPortOffset + Integer.parseInt(part));
+                previousPort = 20000 + versionPortOffset % 30000;
+            }
+            else
+                previousPort = ports.get(ports.size() - 1);
+
+            for (int i = 0; i < 3; i++)
+                ports.add(previousPort = nextPort(previousPort));
+        }
+        return ports.subList(id * 3 - 3, id * 3);
+    }
+
+    static int nextPort(int previousPort) {
+        for (int j = 1; j <= 30000; j++) {
+            int port = (previousPort + j);
+            while (port > 50000)
+                port -= 30000;
+
+            try (ServerSocket socket = new ServerSocket(port)) {
+                return socket.getLocalPort();
+            }
+            catch (IOException e) {
+                System.err.println("Could not bind port " + port + ": " + e);
+            }
+        }
+        throw new RuntimeException("No free ports");
     }
 
     static Path getTmpDir() {
