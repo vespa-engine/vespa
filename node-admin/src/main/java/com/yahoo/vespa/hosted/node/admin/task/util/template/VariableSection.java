@@ -25,8 +25,8 @@ class VariableSection extends Section {
 
     @Override
     void appendTo(StringBuilder buffer) {
-        String value = form().getVariableValue(name)
-                             .orElseThrow(() -> new TemplateNameNotSetException(name, nameOffset));
+        String value = template().getVariableValue(name)
+                                 .orElseThrow(() -> new TemplateNameNotSetException(name, nameOffset));
         buffer.append(value);
     }
 

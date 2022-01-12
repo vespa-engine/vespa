@@ -15,7 +15,7 @@ class TemplateParser {
     private final TemplateDescriptor descriptor;
     private final Cursor start;
     private final Cursor current;
-    private final FormBuilder formBuilder;
+    private final TemplateBuilder templateBuilder;
 
     static TemplateParser parse(String text, TemplateDescriptor descriptor) {
         return parse(new TemplateDescriptor(descriptor), new Cursor(text), EnumSet.of(Sentinel.EOT));
@@ -23,7 +23,7 @@ class TemplateParser {
 
     private static TemplateParser parse(TemplateDescriptor descriptor, Cursor start, EnumSet<Sentinel> sentinel) {
         var parser = new TemplateParser(descriptor, start);
-        parser.parse(parser.formBuilder.topLevelSectionList(), sentinel);
+        parser.parse(parser.templateBuilder.topLevelSectionList(), sentinel);
         return parser;
     }
 
@@ -33,10 +33,10 @@ class TemplateParser {
         this.descriptor = descriptor;
         this.start = new Cursor(start);
         this.current = new Cursor(start);
-        this.formBuilder = new FormBuilder(start);
+        this.templateBuilder = new TemplateBuilder(start);
     }
 
-    Template template() { return new Template(formBuilder.build()); }
+    Template template() { return templateBuilder.build(); }
 
     private Sentinel parse(SectionList sectionList, EnumSet<Sentinel> sentinels) {
         do {
@@ -113,7 +113,7 @@ class TemplateParser {
         TemplateParser bodyParser = parse(descriptor, current, EnumSet.of(Sentinel.END));
         current.set(bodyParser.current);
 
-        sectionList.appendListSection(name, startOfName, current, bodyParser.formBuilder.build());
+        sectionList.appendListSection(name, startOfName, current, bodyParser.templateBuilder.build());
     }
 
     private void parseIfSection(SectionList sectionList) {
@@ -124,12 +124,12 @@ class TemplateParser {
         String name = parseId();
         parseEndDelimiter(true);
 
-        SectionList ifSectionList = new SectionList(current, formBuilder);
+        SectionList ifSectionList = new SectionList(current, templateBuilder);
         Sentinel ifSentinel = parse(ifSectionList, EnumSet.of(Sentinel.ELSE, Sentinel.END));
 
         Optional<SectionList> elseSectionList = Optional.empty();
         if (ifSentinel == Sentinel.ELSE) {
-            elseSectionList = Optional.of(new SectionList(current, formBuilder));
+            elseSectionList = Optional.of(new SectionList(current, templateBuilder));
             parse(elseSectionList.get(), EnumSet.of(Sentinel.END));
         }
 

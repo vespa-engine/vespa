@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
+import java.util.Objects;
+
 /**
  * A section of a template text.
  *
@@ -11,16 +13,16 @@ import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
  */
 abstract class Section {
     private final CursorRange range;
-    private Form form;
+    private Template template;
 
     protected Section(CursorRange range) {
         this.range = range;
     }
 
-    void setForm(Form form) { this.form = form; }
+    void setTemplate(Template template) { this.template = template; }
 
-    /** Guaranteed to return non-null after FormBuilder::build() returns. */
-    protected Form form() { return form; }
+    /** Guaranteed to return non-null after TemplateBuilder::build() returns. */
+    protected Template template() { return Objects.requireNonNull(template); }
 
     protected CursorRange range() { return range; }
 

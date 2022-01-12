@@ -13,10 +13,10 @@ import java.util.List;
 class ListSection extends Section {
     private final String name;
     private final Cursor nameOffset;
-    private final Form body;
-    private final List<Form> elements = new ArrayList<>();
+    private final Template body;
+    private final List<Template> elements = new ArrayList<>();
 
-    ListSection(CursorRange range, String name, Cursor nameOffset, Form body) {
+    ListSection(CursorRange range, String name, Cursor nameOffset, Template body) {
         super(range);
         this.name = name;
         this.nameOffset = new Cursor(nameOffset);
@@ -27,28 +27,35 @@ class ListSection extends Section {
     Cursor nameOffset() { return new Cursor(nameOffset); }
 
     @Override
-    void setForm(Form form) {
-        super.setForm(form);
-        body.setParent(form);
+    void setTemplate(Template template) {
+        super.setTemplate(template);
+        body.setParent(template);
     }
 
-    Form add() {
-        Form element = body.copy();
-        element.setParent(form());
+    Template add() {
+        Template element = body.snapshot();
+        element.setParent(template());
         elements.add(element);
         return element;
     }
 
     @Override
     void appendTo(StringBuilder buffer) {
-        elements.forEach(form -> form.appendTo(buffer));
+        elements.forEach(template -> template.appendTo(buffer));
     }
 
     @Override
     void appendCopyTo(SectionList sectionList) {
-        // avoid copying elements for now
         // Optimization: Reuse body in copy, since it is only used for copying.
 
-        sectionList.appendListSection(name, nameOffset, range().end(), body);
+        ListSection newSection = sectionList.appendListSection(name, nameOffset, range().end(), body);
+
+        elements.stream()
+                .map(template -> {
+                    Template templateCopy = template.snapshot();
+                    templateCopy.setParent(template());
+                    return templateCopy;
+                })
+                .forEach(newSection.elements::add);
     }
 }
