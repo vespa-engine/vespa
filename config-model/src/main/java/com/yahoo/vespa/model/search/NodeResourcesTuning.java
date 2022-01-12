@@ -17,6 +17,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final static double SUMMARY_FILE_SIZE_AS_FRACTION_OF_MEMORY = 0.02;
     private final static double SUMMARY_CACHE_SIZE_AS_FRACTION_OF_MEMORY = 0.04;
     private final static double MEMORY_GAIN_AS_FRACTION_OF_MEMORY = 0.08;
+    private final static double TLS_SIZE_FRACTION = 0.02;
     final static long MB = 1024 * 1024;
     public final static long GB = MB * 1024;
     // This is an approximate number base on observation of a node using 33G memory with 765M docs
@@ -24,19 +25,16 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private final NodeResources resources;
     private final int threadsPerSearch;
     private final double fractionOfMemoryReserved;
-    private final double tlsSizeFraction;
 
     // "Reserve" 0.5GB of memory for other processes running on the content node (config-proxy, metrics-proxy).
     public static final double reservedMemoryGb = 0.5;
 
     public NodeResourcesTuning(NodeResources resources,
                                int threadsPerSearch,
-                               double fractionOfMemoryReserved,
-                               double tlsSizeFraction) {
+                               double fractionOfMemoryReserved) {
         this.resources = resources;
         this.threadsPerSearch = threadsPerSearch;
         this.fractionOfMemoryReserved = fractionOfMemoryReserved;
-        this.tlsSizeFraction = tlsSizeFraction;
     }
 
     @Override
@@ -93,7 +91,7 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneFlushStrategyTlsSize(ProtonConfig.Flush.Memory.Builder builder) {
-        long tlsSizeBytes = (long) ((resources.diskGb() * tlsSizeFraction) * GB);
+        long tlsSizeBytes = (long) ((resources.diskGb() * TLS_SIZE_FRACTION) * GB);
         tlsSizeBytes = max(2*GB, min(tlsSizeBytes, 100 * GB));
         builder.maxtlssize(tlsSizeBytes);
     }
