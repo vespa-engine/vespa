@@ -190,10 +190,12 @@
                                 <configuration>
                                     <rules>
                                         <bannedDependencies>
-                                            <!-- Fail validation for apps with log4j deps, in any scope. -->
+                                            <!-- Fail validation for apps with log4j deps in compile or provided scope. -->
                                             <excludes>
-                                                <exclude>log4j:log4j:*:jar:*</exclude>
-                                                <exclude>org.apache.logging.log4j:log4j-core:*:jar:*</exclude>
+                                                <exclude>log4j:log4j:*:jar:compile</exclude>
+                                                <exclude>log4j:log4j:*:jar:provided</exclude>
+                                                <exclude>org.apache.logging.log4j:log4j-core:*:jar:compile</exclude>
+                                                <exclude>org.apache.logging.log4j:log4j-core:*:jar:provided</exclude>
                                             </excludes>
                                         </bannedDependencies>
                                     </rules>
