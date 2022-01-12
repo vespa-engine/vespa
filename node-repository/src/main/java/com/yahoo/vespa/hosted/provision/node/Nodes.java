@@ -16,7 +16,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
-import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
+import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Clock;
@@ -591,7 +591,7 @@ public class Nodes {
      * @return the nodes in their new state
      */
     public List<Node> restartActive(Predicate<Node> filter) {
-        return restart(StateFilter.from(Node.State.active).and(filter));
+        return restart(NodeFilter.in(Set.of(Node.State.active)).and(filter));
     }
 
     /**
