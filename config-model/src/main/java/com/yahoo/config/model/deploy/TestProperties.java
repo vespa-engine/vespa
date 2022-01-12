@@ -77,6 +77,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
     private double tlsSizeFraction = 0.02;
+    private String persistenceAsyncThrottling = "UNLIMITED";
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -134,6 +135,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
     @Override public double tlsSizeFraction() { return tlsSizeFraction; }
+    @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -353,6 +355,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties tlsSizeFraction(double tlsSizeFraction) {
         this.tlsSizeFraction = tlsSizeFraction;
+        return this;
+    }
+
+    public TestProperties setPersistenceAsyncThrottling(String type) {
+        this.persistenceAsyncThrottling = type;
         return this;
     }
 
