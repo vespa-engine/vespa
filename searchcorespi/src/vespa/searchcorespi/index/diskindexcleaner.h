@@ -16,9 +16,9 @@ struct DiskIndexCleaner {
      * Deletes all indexes with id lower than the most recent fusion id.
      */
     static void clean(const vespalib::string &index_dir,
-                      const ActiveDiskIndexes& active_indexes);
+                      ActiveDiskIndexes& active_indexes);
     static void removeOldIndexes(const vespalib::string &index_dir,
-                                 const ActiveDiskIndexes& active_indexes);
+                                 ActiveDiskIndexes& active_indexes);
 };
 
 }  // namespace index

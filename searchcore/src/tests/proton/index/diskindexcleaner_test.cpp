@@ -102,8 +102,8 @@ void Test::requireThatAllIndexesOlderThanLastFusionIsRemoved() {
 void Test::requireThatIndexesInUseAreNotRemoved() {
     createIndexes();
     ActiveDiskIndexes active_indexes;
-    active_indexes.setActive(index_dir + "/index.fusion.1");
-    active_indexes.setActive(index_dir + "/index.flush.2");
+    active_indexes.setActive(index_dir + "/index.fusion.1", 0);
+    active_indexes.setActive(index_dir + "/index.flush.2", 0);
     DiskIndexCleaner::clean(index_dir, active_indexes);
     vector<string> indexes = readIndexes();
     EXPECT_TRUE(contains(indexes, "index.fusion.1"));

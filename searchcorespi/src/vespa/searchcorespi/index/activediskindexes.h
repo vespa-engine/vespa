@@ -11,6 +11,7 @@ namespace searchcorespi::index {
 
 class IndexDiskDir;
 class IndexDiskDirActiveState;
+class IndexDiskLayout;
 
 /**
  * Class used to keep track of the set of active disk indexes in an index maintainer.
@@ -26,9 +27,12 @@ public:
     ~ActiveDiskIndexes();
     ActiveDiskIndexes(const ActiveDiskIndexes &) = delete;
     ActiveDiskIndexes & operator = (const ActiveDiskIndexes &) = delete;
-    void setActive(const vespalib::string & index);
+    void setActive(const vespalib::string & index, uint64_t size_on_disk);
     void notActive(const vespalib::string & index);
     bool isActive(const vespalib::string & index) const;
+    void add_not_active(IndexDiskDir index_disk_dir);
+    bool remove(IndexDiskDir index_disk_dir);
+    uint64_t get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk_dir) const;
 };
 
 }
