@@ -203,7 +203,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8DocManagerCfg;
         private final int maxCompactBuffers;
         private final boolean failDeploymentWithInvalidJvmOptions;
-        private final double tlsSizeFraction;
         private final List<String> ignoredHttpUserAgents;
         private final boolean enableServerOcspStapling;
         private final String persistenceAsyncThrottling;
@@ -248,7 +247,6 @@ public class ModelContextImpl implements ModelContext {
             this.useV8DocManagerCfg = flagValue(source, appId, Flags.USE_V8_DOC_MANAGER_CFG);
             this.maxCompactBuffers = flagValue(source, appId, Flags.MAX_COMPACT_BUFFERS);
             this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
-            this.tlsSizeFraction = flagValue(source, appId, Flags.TLS_SIZE_FRACTION);
             this.ignoredHttpUserAgents = flagValue(source, appId, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
             this.enableServerOcspStapling = flagValue(source, appId, Flags.ENABLE_SERVER_OCSP_STAPLING);
             this.persistenceAsyncThrottling = flagValue(source, appId, Flags.PERSISTENCE_ASYNC_THROTTLING);
@@ -295,7 +293,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useV8DocManagerCfg() { return useV8DocManagerCfg; }
         @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
-        @Override public double tlsSizeFraction() { return tlsSizeFraction; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public boolean enableServerOcspStapling() { return enableServerOcspStapling; }
         @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }

@@ -111,7 +111,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "baldersheim"}) default boolean useV8DocManagerCfg() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default int maxCompactBuffers() { return 1; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean failDeploymentWithInvalidJvmOptions() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default double tlsSizeFraction() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.527") default double tlsSizeFraction() { return 0.02; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean enableServerOcspStapling() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default String persistenceAsyncThrottling() {  throw new UnsupportedOperationException("TODO specify default value"); }
