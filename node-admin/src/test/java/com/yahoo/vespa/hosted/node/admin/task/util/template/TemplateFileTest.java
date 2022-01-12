@@ -13,61 +13,61 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TemplateFileTest {
     @Test
     void verifyVariableSection() {
-        Form form = getForm("template1.tmp");
-        form.set("varname", "varvalue");
+        Template template = getTemplate("template1.tmp");
+        template.set("varname", "varvalue");
         assertEquals("variable section 'varvalue'\n" +
-                     "end of text\n", form.render());
+                     "end of text\n", template.render());
     }
 
     @Test
     void verifySimpleListSection() {
-        Form form = getForm("template1.tmp");
-        form.set("varname", "varvalue")
-            .add("listname")
-            .set("varname", "different varvalue")
-            .set("varname2", "varvalue2");
+        Template template = getTemplate("template1.tmp");
+        template.set("varname", "varvalue")
+                .add("listname")
+                .set("varname", "different varvalue")
+                .set("varname2", "varvalue2");
         assertEquals("variable section 'varvalue'\n" +
                      "same variable section 'different varvalue'\n" +
                      "different variable section 'varvalue2'\n" +
                      "between ends\n" +
-                     "end of text\n", form.render());
+                     "end of text\n", template.render());
     }
 
     @Test
     void verifyNestedListSection() {
-        Form form = getForm("template2.tmp");
-        Form A0 = form.add("listA");
-        Form A0B0 = A0.add("listB");
-        Form A0B1 = A0.add("listB");
+        Template template = getTemplate("template2.tmp");
+        Template A0 = template.add("listA");
+        Template A0B0 = A0.add("listB");
+        Template A0B1 = A0.add("listB");
 
-        Form A1 = form.add("listA");
-        Form A1B0 = A1.add("listB");
+        Template A1 = template.add("listA");
+        Template A1B0 = A1.add("listB");
         assertEquals("body A\n" +
                      "body B\n" +
                      "body B\n" +
                      "body A\n" +
                      "body B\n",
-                     form.render());
+                     template.render());
     }
 
     @Test
     void verifyVariableReferences() {
-        Form form = getForm("template3.tmp");
-        form.set("varname", "varvalue")
-            .set("innerVarSetAtTop", "val2");
-        form.add("l");
-        form.add("l")
-            .set("varname", "varvalue2");
+        Template template = getTemplate("template3.tmp");
+        template.set("varname", "varvalue")
+                .set("innerVarSetAtTop", "val2");
+        template.add("l");
+        template.add("l")
+                .set("varname", "varvalue2");
         assertEquals("varvalue\n" +
                      "varvalue\n" +
                      "inner varvalue\n" +
                      "val2\n" +
                      "inner varvalue2\n" +
                      "val2\n",
-                     form.render());
+                     template.render());
     }
 
-    private Form getForm(String filename) {
-        return TemplateFile.read(Path.of("src/test/resources/" + filename)).newForm();
+    private Template getTemplate(String filename) {
+        return TemplateFile.read(Path.of("src/test/resources/" + filename));
     }
 }

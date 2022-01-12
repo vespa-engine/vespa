@@ -9,38 +9,38 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A mutable list of sections at the same level that can be used to build a form, e.g. the if-body.
+ * A mutable list of sections at the same level that can be used to build a template, e.g. the if-body.
  *
  * @author hakonhall
  */
 class SectionList {
     private final Cursor start;
     private final Cursor end;
-    private final FormBuilder formBuilder;
+    private final TemplateBuilder templateBuilder;
 
     private final List<Section> sections = new ArrayList<>();
 
-    SectionList(Cursor start, FormBuilder formBuilder) {
+    SectionList(Cursor start, TemplateBuilder templateBuilder) {
         this.start = new Cursor(start);
         this.end = new Cursor(start);
-        this.formBuilder = formBuilder;
+        this.templateBuilder = templateBuilder;
     }
 
     CursorRange range() { return new CursorRange(start, end); }
-    FormBuilder formBuilder() { return formBuilder; }
+    TemplateBuilder templateBuilder() { return templateBuilder; }
     List<Section> sections() { return List.copyOf(sections); }
 
     void appendLiteralSection(Cursor end) {
         CursorRange range = verifyAndUpdateEnd(end);
         var section = new LiteralSection(range);
-        formBuilder.addLiteralSection(section);
+        templateBuilder.addLiteralSection(section);
         sections.add(section);
     }
 
     VariableSection appendVariableSection(String name, Cursor nameOffset, Cursor end) {
         CursorRange range = verifyAndUpdateEnd(end);
         var section = new VariableSection(range, name, nameOffset);
-        formBuilder.addVariableSection(section);
+        templateBuilder.addVariableSection(section);
         sections.add(section);
         return section;
     }
@@ -49,15 +49,16 @@ class SectionList {
                          SectionList ifSections, Optional<SectionList> elseSections) {
         CursorRange range = verifyAndUpdateEnd(end);
         var section = new IfSection(range, negated, name, nameOffset, ifSections, elseSections);
-        formBuilder.addIfSection(section);
+        templateBuilder.addIfSection(section);
         sections.add(section);
     }
 
-    void appendListSection(String name, Cursor nameOffset, Cursor end, Form body) {
+    ListSection appendListSection(String name, Cursor nameOffset, Cursor end, Template body) {
         CursorRange range = verifyAndUpdateEnd(end);
         var section = new ListSection(range, name, nameOffset, body);
-        formBuilder.addListSection(section);
+        templateBuilder.addListSection(section);
         sections.add(section);
+        return section;
     }
 
     private CursorRange verifyAndUpdateEnd(Cursor newEnd) {

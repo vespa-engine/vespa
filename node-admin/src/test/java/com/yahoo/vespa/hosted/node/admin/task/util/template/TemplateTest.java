@@ -11,69 +11,81 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TemplateTest {
     @Test
     void verifyNewlineRemoval() {
-        Form form = makeForm("a%{list a}\n" +
-                             "b%{end}\n" +
-                             "c%{list c-}\n" +
-                             "d%{end-}\n" +
-                             "e\n");
-        form.add("a");
-        form.add("c");
+        Template template = Template.from("a%{list a}\n" +
+                                          "b%{end}\n" +
+                                          "c%{list c-}\n" +
+                                          "d%{end-}\n" +
+                                          "e\n",
+                                          new TemplateDescriptor().setRemoveNewline(false));
+        template.add("a");
+        template.add("c");
 
         assertEquals("a\n" +
                      "b\n" +
                      "cde\n",
-                     form.render());
+                     template.render());
     }
 
     @Test
     void verifyIfSection() {
         Template template = Template.from("Hello%{if cond} world%{end}!");
-        assertEquals("Hello world!", template.newForm().set("cond", true).render());
-        assertEquals("Hello!", template.newForm().set("cond", false).render());
+        assertEquals("Hello world!", template.snapshot().set("cond", true).render());
+        assertEquals("Hello!", template.snapshot().set("cond", false).render());
     }
 
     @Test
     void verifyComplexIfSection() {
-        Template template = Template.from("%{if cond-}\n" +
+        Template template = Template.from("%{if cond}\n" +
                                           "var: %{=varname}\n" +
-                                          "if: %{if !inner}inner is false%{end}\n" +
-                                          "list: %{list formname}element%{end}\n" +
-                                          "%{end-}\n");
+                                          "if: %{if !inner}inner is false%{end-}\n" +
+                                          "list: %{list formname}element%{end-}\n" +
+                                          "%{end}\n");
 
-        assertEquals("", template.newForm().set("cond", false).render());
+        assertEquals("", template.snapshot().set("cond", false).render());
 
         assertEquals("var: varvalue\n" +
                      "if: \n" +
                      "list: \n",
-                     template.newForm()
+                     template.snapshot()
                              .set("cond", true)
                              .set("varname", "varvalue")
                              .set("inner", true)
                              .render());
 
-        Form form = template.newForm()
-                            .set("cond", true)
-                            .set("varname", "varvalue")
-                            .set("inner", false);
-        form.add("formname");
+        Template template2 = template.snapshot()
+                                     .set("cond", true)
+                                     .set("varname", "varvalue")
+                                     .set("inner", false);
+        template2.add("formname");
 
         assertEquals("var: varvalue\n" +
                      "if: inner is false\n" +
-                     "list: element\n", form.render());
+                     "list: element\n", template2.render());
     }
 
     @Test
     void verifyElse() {
-        var template = Template.from("%{if cond-}\n" +
+        var template = Template.from("%{if cond}\n" +
                                      "if body\n" +
-                                     "%{else-}\n" +
+                                     "%{else}\n" +
                                      "else body\n" +
-                                     "%{end-}\n");
-        assertEquals("if body\n", template.newForm().set("cond", true).render());
-        assertEquals("else body\n", template.newForm().set("cond", false).render());
+                                     "%{end}\n");
+        assertEquals("if body\n", template.snapshot().set("cond", true).render());
+        assertEquals("else body\n", template.snapshot().set("cond", false).render());
     }
 
-    private Form makeForm(String templateText) {
-        return Template.from(templateText).newForm();
+    @Test
+    void verifySnapshotPreservesList() {
+        var template = Template.from("%{list foo}hello %{=area}%{end}");
+        template.add("foo")
+                .set("area", "world");
+
+        assertEquals("hello world", template.render());
+        assertEquals("hello world", template.snapshot().render());
+
+        Template snapshot = template.snapshot();
+        snapshot.add("foo")
+                .set("area", "Norway");
+        assertEquals("hello worldhello Norway", snapshot.render());
     }
 }

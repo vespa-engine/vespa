@@ -11,15 +11,15 @@ import java.util.Map;
 /**
  * @author hakonhall
  */
-class FormBuilder {
-    /** The top-level section list in this form. */
+class TemplateBuilder {
+    /** The top-level section list in this template. */
     private final SectionList sectionList;
     private final List<Section> allSections = new ArrayList<>();
     private final Map<String, VariableSection> sampleVariables = new HashMap<>();
     private final Map<String, IfSection> sampleIfSections = new HashMap<>();
     private final Map<String, ListSection> lists = new HashMap<>();
 
-    FormBuilder(Cursor start) {
+    TemplateBuilder(Cursor start) {
         this.sectionList = new SectionList(start, this);
     }
 
@@ -31,7 +31,7 @@ class FormBuilder {
 
     void addVariableSection(VariableSection section) {
         // It's OK if the same name is used in an if-directive (as long as the value is boolean,
-        // determined when set on a form).
+        // determined when set on a template).
 
         ListSection existing = lists.get(section.name());
         if (existing != null)
@@ -44,7 +44,7 @@ class FormBuilder {
 
     void addIfSection(IfSection section) {
         // It's OK if the same name is used in a variable section (as long as the value is boolean,
-        // determined when set on a form).
+        // determined when set on a template).
 
         ListSection list = lists.get(section.name());
         if (list != null)
@@ -73,9 +73,9 @@ class FormBuilder {
         allSections.add(section);
     }
 
-    Form build() {
-        var form = new Form(sectionList.range(), sectionList.sections(), lists);
-        allSections.forEach(section -> section.setForm(form));
-        return form;
+    Template build() {
+        var template = new Template(sectionList.range(), sectionList.sections(), lists);
+        allSections.forEach(section -> section.setTemplate(template));
+        return template;
     }
 }

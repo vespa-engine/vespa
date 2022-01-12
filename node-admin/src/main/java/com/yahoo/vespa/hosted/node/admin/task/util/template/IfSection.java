@@ -31,7 +31,7 @@ class IfSection extends Section {
 
     @Override
     void appendTo(StringBuilder buffer) {
-        Optional<String> stringValue = form().getVariableValue(name);
+        Optional<String> stringValue = template().getVariableValue(name);
         if (stringValue.isEmpty())
             throw new TemplateNameNotSetException(name, nameOffset);
 
@@ -54,11 +54,12 @@ class IfSection extends Section {
 
     @Override
     void appendCopyTo(SectionList sectionList) {
-        SectionList ifSectionCopy = new SectionList(ifSections.range().start(), sectionList.formBuilder());
+        SectionList ifSectionCopy = new SectionList(ifSections.range().start(), sectionList.templateBuilder());
         ifSections.sections().forEach(section -> section.appendCopyTo(ifSectionCopy));
 
         Optional<SectionList> elseSectionCopy = elseSections.map(elseSections2 -> {
-            SectionList elseSectionCopy2 = new SectionList(elseSections2.range().start(), sectionList.formBuilder());
+            SectionList elseSectionCopy2 = new SectionList(elseSections2.range().start(),
+                                                           sectionList.templateBuilder());
             elseSections2.sections().forEach(section -> section.appendCopyTo(elseSectionCopy2));
             return elseSectionCopy2;
         });
