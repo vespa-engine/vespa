@@ -290,7 +290,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(),
-                                           fractionOfMemoryReserved, deployState.featureFlags().tlsSizeFraction());
+                                           fractionOfMemoryReserved);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState.getDeployLogger());
 
