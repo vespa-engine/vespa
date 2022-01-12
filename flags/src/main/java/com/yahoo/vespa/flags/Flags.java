@@ -408,6 +408,14 @@ public class Flags {
             "Takes effect on Docker container restart",
             ZONE_ID, APPLICATION_ID, NODE_TYPE);
 
+    public static final UnboundStringFlag PERSISTENCE_ASYNC_THROTTLING = defineStringFlag(
+            "persistence-async-throttling", "UNLIMITED",
+            List.of("vekterli"), "2022-01-12", "2022-05-01",
+            "Sets the throttling policy used for async persistence operations on the content nodes. " +
+            "Valid values: UNLIMITED, DYNAMIC",
+            "Triggers restart, takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

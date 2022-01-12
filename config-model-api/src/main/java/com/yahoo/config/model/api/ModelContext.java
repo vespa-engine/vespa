@@ -114,6 +114,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default double tlsSizeFraction() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean enableServerOcspStapling() { return false; }
+        @ModelFeatureFlag(owners = {"vekterli"}) default String persistenceAsyncThrottling() {  throw new UnsupportedOperationException("TODO specify default value"); }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

@@ -306,6 +306,25 @@ public class StorageClusterTest {
     }
 
     @Test
+    public void persistence_async_throttle_config_defaults_to_unlimited() {
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties()));
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+    }
+
+    @Test
+    public void persistence_async_throttle_config_is_derived_from_flag() {
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("UNLIMITED")));
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+
+        config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("DYNAMIC")));
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.DYNAMIC, config.async_operation_throttler_type());
+
+        // Invalid enum values fall back to the default
+        config = filestorConfigFromProducer(simpleCluster(new TestProperties().setPersistenceAsyncThrottling("BANANAS")));
+        assertEquals(StorFilestorConfig.Async_operation_throttler_type.UNLIMITED, config.async_operation_throttler_type());
+    }
+
+    @Test
     public void integrity_checker_explicitly_disabled_when_not_running_with_vds_provider() {
         StorIntegritycheckerConfig.Builder builder = new StorIntegritycheckerConfig.Builder();
         parse(cluster("bees", "")).getConfig(builder);

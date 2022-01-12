@@ -46,6 +46,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final ContentCluster cluster;
     private final int reponseNumThreads;
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
+    private final StorFilestorConfig.Async_operation_throttler_type.Enum asyncOperationThrottlerType;
     private final boolean useAsyncMessageHandlingOnSchedule;
     private final boolean asyncApplyBucketDiff;
 
@@ -57,11 +58,20 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         }
     }
 
+    private static StorFilestorConfig.Async_operation_throttler_type.Enum toAsyncOperationThrottlerType(String throttlerType) {
+        try {
+            return StorFilestorConfig.Async_operation_throttler_type.Enum.valueOf(throttlerType);
+        } catch (Throwable t) {
+            return StorFilestorConfig.Async_operation_throttler_type.UNLIMITED;
+        }
+    }
+
     public FileStorProducer(ModelContext.FeatureFlags featureFlags, ContentCluster parent, Integer numThreads) {
         this.numThreads = numThreads;
         this.cluster = parent;
         this.reponseNumThreads = featureFlags.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
+        this.asyncOperationThrottlerType = toAsyncOperationThrottlerType(featureFlags.persistenceAsyncThrottling());
         useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
         asyncApplyBucketDiff = featureFlags.asyncApplyBucketDiff();
     }
@@ -76,6 +86,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.response_sequencer_type(responseSequencerType);
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
         builder.async_apply_bucket_diff(asyncApplyBucketDiff);
+        builder.async_operation_throttler_type(asyncOperationThrottlerType);
     }
 
 }
