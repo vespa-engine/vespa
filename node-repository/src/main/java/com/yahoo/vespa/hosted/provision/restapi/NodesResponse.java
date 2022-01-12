@@ -5,13 +5,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -21,6 +21,7 @@ import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.net.URI;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -93,17 +94,16 @@ class NodesResponse extends SlimeJsonResponse {
     /** Outputs the nodes in the given state to a node array */
     private void nodesToSlime(Node.State state, Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        for (NodeType type : NodeType.values())
-            toSlime(nodeRepository.nodes().list(state).nodeType(type).asList(), nodeArray);
+        toSlime(nodeRepository.nodes().list(state).sortedBy(Comparator.comparing(Node::type)), nodeArray);
     }
 
     /** Outputs all the nodes to a node array */
     private void nodesToSlime(Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        toSlime(nodeRepository.nodes().list().asList(), nodeArray);
+        toSlime(nodeRepository.nodes().list(), nodeArray);
     }
 
-    private void toSlime(List<Node> nodes, Cursor array) {
+    private void toSlime(NodeList nodes, Cursor array) {
         for (Node node : nodes) {
             if ( ! filter.test(node)) continue;
             toSlime(node, recursive, array.addObject());
