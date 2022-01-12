@@ -10,7 +10,7 @@ public class TemplateDescriptor {
 
     private String startDelimiter = "%{";
     private String endDelimiter = "}";
-    private boolean removeNewline = false;
+    private boolean removeNewline = true;
 
     public TemplateDescriptor() {}
 

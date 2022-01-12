@@ -15,7 +15,8 @@ public class TemplateTest {
                                           "b%{end}\n" +
                                           "c%{list c-}\n" +
                                           "d%{end-}\n" +
-                                          "e\n");
+                                          "e\n",
+                                          new TemplateDescriptor().setRemoveNewline(false));
         template.add("a");
         template.add("c");
 
@@ -34,11 +35,11 @@ public class TemplateTest {
 
     @Test
     void verifyComplexIfSection() {
-        Template template = Template.from("%{if cond-}\n" +
+        Template template = Template.from("%{if cond}\n" +
                                           "var: %{=varname}\n" +
-                                          "if: %{if !inner}inner is false%{end}\n" +
-                                          "list: %{list formname}element%{end}\n" +
-                                          "%{end-}\n");
+                                          "if: %{if !inner}inner is false%{end-}\n" +
+                                          "list: %{list formname}element%{end-}\n" +
+                                          "%{end}\n");
 
         assertEquals("", template.snapshot().set("cond", false).render());
 
@@ -64,11 +65,11 @@ public class TemplateTest {
 
     @Test
     void verifyElse() {
-        var template = Template.from("%{if cond-}\n" +
+        var template = Template.from("%{if cond}\n" +
                                      "if body\n" +
-                                     "%{else-}\n" +
+                                     "%{else}\n" +
                                      "else body\n" +
-                                     "%{end-}\n");
+                                     "%{end}\n");
         assertEquals("if body\n", template.snapshot().set("cond", true).render());
         assertEquals("else body\n", template.snapshot().set("cond", false).render());
     }
