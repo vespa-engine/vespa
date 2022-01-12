@@ -29,7 +29,7 @@ public:
         return (_id == rhs._id) && (_fusion == rhs._fusion);
     }
     bool valid() const noexcept { return _id != 0u; }
-    bool get_fusion() const noexcept { return _fusion; }
+    bool is_fusion_index() const noexcept { return _fusion; }
     uint64_t get_id() const noexcept { return _id; }
 };
 

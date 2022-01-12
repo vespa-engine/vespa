@@ -80,7 +80,7 @@ ActiveDiskIndexes::remove(IndexDiskDir index_disk_dir)
 uint64_t
 ActiveDiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk_dir) const
 {
-    if (!index_disk_dir.valid() || !index_disk_dir.get_fusion()) {
+    if (!index_disk_dir.valid() || !index_disk_dir.is_fusion_index()) {
         return 0u;
     }
     uint64_t transient_size = 0u;
@@ -93,7 +93,7 @@ ActiveDiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir inde
                     transient_size += entry.second.get_size_on_disk().value();
                 }
             }
-            if (index_disk_dir < entry.first && entry.first.get_fusion()) {
+            if (index_disk_dir < entry.first && entry.first.is_fusion_index()) {
                 if (entry.second.get_size_on_disk().has_value()) {
                     transient_size += entry.second.get_size_on_disk().value();
                 } else {
