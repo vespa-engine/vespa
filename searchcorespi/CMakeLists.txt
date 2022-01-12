@@ -18,4 +18,8 @@ vespa_define_module(
     src/vespa/searchcorespi
     src/vespa/searchcorespi/flush
     src/vespa/searchcorespi/index
+
+    TESTS
+    src/tests/index/active_disk_indexes
+    src/tests/index/index_disk_layout
 )
