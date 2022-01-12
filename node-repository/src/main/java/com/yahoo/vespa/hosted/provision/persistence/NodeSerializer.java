@@ -254,10 +254,10 @@ public class NodeSerializer {
     // ---------------- Deserialization --------------------------------------------------
 
     public Node fromJson(Node.State state, byte[] data) {
-        var key = Hashing.sipHash24().newHasher()
-                         .putString(state.name(), StandardCharsets.UTF_8)
-                         .putBytes(data).hash()
-                         .asLong();
+        long key = Hashing.sipHash24().newHasher()
+                          .putString(state.name(), StandardCharsets.UTF_8)
+                          .putBytes(data).hash()
+                          .asLong();
         try {
             return cache.get(key, () -> nodeFromSlime(state, SlimeUtils.jsonToSlime(data).get()));
         } catch (ExecutionException e) {
