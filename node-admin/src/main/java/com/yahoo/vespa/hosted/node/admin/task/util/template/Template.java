@@ -97,7 +97,9 @@ public class Template {
     public Template snapshot() {
         var builder = new TemplateBuilder(range.start());
         sections.forEach(section -> section.appendCopyTo(builder.topLevelSectionList()));
-        return builder.build();
+        Template template = builder.build();
+        values.forEach(template::set);
+        return template;
     }
 
     Optional<String> getVariableValue(String name) {
