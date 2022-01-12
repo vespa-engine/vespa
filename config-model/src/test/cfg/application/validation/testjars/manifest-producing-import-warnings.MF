@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Export-Package: com.yahoo.vespa.test.myapp;version=1.0.0
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: my-bundle
+Bundle-Version: 7.0.0
+Created-By: vespa container maven plugin
+Bundle-Name: my-bundle
+Bundle-Vendor: Yahoo!
+Import-Package: org.json;version="[0.0.0,1)"
+

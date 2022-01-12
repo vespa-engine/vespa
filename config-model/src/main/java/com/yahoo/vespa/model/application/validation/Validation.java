@@ -63,7 +63,7 @@ public class Validation {
             new RoutingSelectorValidator().validate(model, deployState);
         }
         new SchemasDirValidator().validate(model, deployState);
-        new ComponentValidator().validate(model, deployState);
+        new BundleValidator().validate(model, deployState);
         new SearchDataTypeValidator().validate(model, deployState);
         new ComplexAttributeFieldsValidator().validate(model, deployState);
         new StreamingValidator().validate(model, deployState);
