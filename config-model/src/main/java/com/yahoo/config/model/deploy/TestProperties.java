@@ -75,7 +75,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
-    private double tlsSizeFraction = 0.02;
     private String persistenceAsyncThrottling = "UNLIMITED";
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -132,7 +131,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
-    @Override public double tlsSizeFraction() { return tlsSizeFraction; }
     @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -343,11 +341,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties failDeploymentWithInvalidJvmOptions(boolean fail) {
         failDeploymentWithInvalidJvmOptions = fail;
-        return this;
-    }
-
-    public TestProperties tlsSizeFraction(double tlsSizeFraction) {
-        this.tlsSizeFraction = tlsSizeFraction;
         return this;
     }
 
