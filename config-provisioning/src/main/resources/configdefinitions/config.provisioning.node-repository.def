@@ -11,4 +11,4 @@ tenantContainerImage string default=""
 useCuratorClientCache bool default=false
 
 # The number of Node objects to cache in-memory.
-nodeCacheSize long default=2000
+nodeCacheSize long default=3000
