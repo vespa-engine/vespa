@@ -309,9 +309,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
             serverBuilder.hostname(container.getHostName())
                          .id(container.index())
-                         .joining( ! previousHosts.isEmpty() &&
-                                   ! previousHosts.contains(container.getHostName()))
-                         .retired(container.isRetired());
+                         .joining(!previousHosts.isEmpty() &&
+                                  !previousHosts.contains(container.getHostName()));
             builder.server(serverBuilder);
             builder.dynamicReconfiguration(true);
         }
