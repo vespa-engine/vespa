@@ -43,6 +43,8 @@ import static java.util.stream.Collectors.toList;
  */
 public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements ProtonConfig.Producer, DispatchConfig.Producer {
 
+    private static final int DEFAULT_DOC_STORE_COMPRESSION_LEVEL = 3;
+
     private final boolean flushOnShutdown;
     private final Boolean syncTransactionLog;
 
@@ -69,7 +71,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final ProtonConfig.Feeding.Shared_field_writer_executor.Enum sharedFieldWriterExecutor;
     private final double defaultFeedConcurrency;
     private final double defaultDiskBloatFactor;
-    private final int defaultDocStoreCompressionLevel;
     private final boolean forwardIssuesToQrs;
     private final int defaultMaxCompactBuffers;
 
@@ -224,7 +225,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.sharedFieldWriterExecutor = convertSharedFieldWriterExecutor(featureFlags.sharedFieldWriterExecutor());
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultDiskBloatFactor = featureFlags.diskBloatFactor();
-        this.defaultDocStoreCompressionLevel = featureFlags.docstoreCompressionLevel();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
     }
@@ -425,8 +425,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
         builder.flush.memory.diskbloatfactor(defaultDiskBloatFactor);
         builder.flush.memory.each.diskbloatfactor(defaultDiskBloatFactor);
-        builder.summary.log.chunk.compression.level(defaultDocStoreCompressionLevel);
-        builder.summary.log.compact.compression.level(defaultDocStoreCompressionLevel);
+        builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
+        builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.forward_issues(forwardIssuesToQrs);
 
         int numDocumentDbs = builder.documentdb.size();

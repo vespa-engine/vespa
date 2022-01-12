@@ -166,13 +166,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag DOCSTORE_COMPRESSION_LEVEL = defineIntFlag(
-            "docstore-compression-level", 3,
-            List.of("baldersheim"), "2021-10-08", "2022-02-01",
-            "Default compression level used for document store",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2022-01-31",
