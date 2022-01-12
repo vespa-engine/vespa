@@ -1127,8 +1127,8 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void distributor_merge_busy_wait_controlled_by_properties() throws Exception {
-        assertEquals(10, resolveDistributorMergeBusyWaitConfig(Optional.empty()));
-        assertEquals(1, resolveDistributorMergeBusyWaitConfig(Optional.of(1)));
+        assertEquals(1, resolveDistributorMergeBusyWaitConfig(Optional.empty()));
+        assertEquals(5, resolveDistributorMergeBusyWaitConfig(Optional.of(5)));
     }
 
     private int resolveDistributorMergeBusyWaitConfig(Optional<Integer> mergeBusyWait) throws Exception {
@@ -1144,14 +1144,14 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void distributor_enhanced_maintenance_scheduling_controlled_by_properties() throws Exception {
-        assertFalse(resolveDistributorEnhancedSchedulingConfig(false));
-        assertTrue(resolveDistributorEnhancedSchedulingConfig(true));
+        assertFalse(resolveDistributorEnhancedSchedulingConfig(Optional.of(false)));
+        assertTrue(resolveDistributorEnhancedSchedulingConfig(Optional.empty()));
     }
 
-    private boolean resolveDistributorEnhancedSchedulingConfig(boolean enhancedScheduling) throws Exception {
+    private boolean resolveDistributorEnhancedSchedulingConfig(Optional<Boolean> enhancedScheduling) throws Exception {
         var props = new TestProperties();
-        if (enhancedScheduling) {
-            props.distributorEnhancedMaintenanceScheduling(enhancedScheduling);
+        if (enhancedScheduling.isPresent()) {
+            props.distributorEnhancedMaintenanceScheduling(enhancedScheduling.get());
         }
         var cluster = createOneNodeCluster(props);
         var builder = new StorDistributormanagerConfig.Builder();
@@ -1161,14 +1161,14 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void unordered_merge_chaining_config_controlled_by_properties() throws Exception {
-        assertFalse(resolveUnorderedMergeChainingConfig(false));
-        assertTrue(resolveUnorderedMergeChainingConfig(true));
+        assertFalse(resolveUnorderedMergeChainingConfig(Optional.of(false)));
+        assertTrue(resolveUnorderedMergeChainingConfig(Optional.empty()));
     }
 
-    private boolean resolveUnorderedMergeChainingConfig(boolean unorderedMergeChaining) throws Exception {
+    private boolean resolveUnorderedMergeChainingConfig(Optional<Boolean> unorderedMergeChaining) throws Exception {
         var props = new TestProperties();
-        if (unorderedMergeChaining) {
-            props.setUnorderedMergeChaining(true);
+        if (unorderedMergeChaining.isPresent()) {
+            props.setUnorderedMergeChaining(unorderedMergeChaining.get());
         }
         var cluster = createOneNodeCluster(props);
         var builder = new StorDistributormanagerConfig.Builder();
