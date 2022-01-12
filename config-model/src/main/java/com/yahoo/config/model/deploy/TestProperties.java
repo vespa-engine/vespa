@@ -68,7 +68,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double containerShutdownTimeout = 50.0;
     private int distributorMergeBusyWait = 10;
     private int maxUnCommittedMemory = 123456;
-    private double diskBloatFactor = 0.25;
     private boolean distributorEnhancedMaintenanceScheduling = false;
     private boolean asyncApplyBucketDiff = false;
     private boolean unorderedMergeChaining = false;
@@ -123,7 +122,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
     @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
-    @Override public double diskBloatFactor() { return diskBloatFactor; }
     @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
@@ -135,11 +133,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
-        return this;
-    }
-
-    public TestProperties diskBloatFactor(double diskBloatFactor) {
-        this.diskBloatFactor = diskBloatFactor;
         return this;
     }
 

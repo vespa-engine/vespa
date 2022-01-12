@@ -90,7 +90,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli", "geirst"}) default boolean ignoreMergeQueueLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean containerDumpHeapOnShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double containerShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default double diskBloatFactor() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.527") default double diskBloatFactor() { return 0.25; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.527") default int docstoreCompressionLevel() { return 3; }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return true; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
