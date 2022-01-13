@@ -24,10 +24,11 @@ public:
     ~SequencedTaskExecutorObserver() override;
 
     ExecutorId getExecutorId(uint64_t componentId) const override;
-    void executeTask(ExecutorId id, vespalib::Executor::Task::UP task) override;
+    void executeTask(ExecutorId id, Executor::Task::UP task) override;
+    void executeTasks(TaskList tasks) override;
     void sync_all() override;
     void setTaskLimit(uint32_t taskLimit) override;
-    vespalib::ExecutorStats getStats() override;
+    ExecutorStats getStats() override;
 
     uint32_t getExecuteCnt() const { return _executeCnt; }
     uint32_t getSyncCnt() const { return _syncCnt; }
