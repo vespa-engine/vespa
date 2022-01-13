@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcorespi/index/activediskindexes.h>
+#include <vespa/searchcorespi/index/disk_indexes.h>
 #include <vespa/searchcorespi/index/index_disk_dir.h>
 #include <vespa/searchcorespi/index/indexdisklayout.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -18,13 +18,13 @@ constexpr uint32_t block_size = 4_Ki;
 
 namespace searchcorespi::index {
 
-class ActiveDiskIndexesTest : public ::testing::Test,
-                              public ActiveDiskIndexes
+class DiskIndexesTest : public ::testing::Test,
+                              public DiskIndexes
 {
     IndexDiskLayout _layout;
 protected:
-    ActiveDiskIndexesTest();
-    ~ActiveDiskIndexesTest();
+    DiskIndexesTest();
+    ~DiskIndexesTest();
 
     static IndexDiskDir get_index_disk_dir(const vespalib::string& dir) {
         return IndexDiskLayout::get_index_disk_dir(dir);
@@ -35,16 +35,16 @@ protected:
     }
 };
 
-ActiveDiskIndexesTest::ActiveDiskIndexesTest()
+DiskIndexesTest::DiskIndexesTest()
     : ::testing::Test(),
-      ActiveDiskIndexes(),
+      DiskIndexes(),
       _layout(base_dir)
 {
 }
 
-ActiveDiskIndexesTest::~ActiveDiskIndexesTest() = default;
+DiskIndexesTest::~DiskIndexesTest() = default;
 
-TEST_F(ActiveDiskIndexesTest, simple_set_active_works)
+TEST_F(DiskIndexesTest, simple_set_active_works)
 {
     EXPECT_FALSE(isActive("index.flush.1"));
     setActive("index.flush.1", 0);
@@ -53,7 +53,7 @@ TEST_F(ActiveDiskIndexesTest, simple_set_active_works)
     EXPECT_FALSE(isActive("index.flush.1"));
 }
 
-TEST_F(ActiveDiskIndexesTest, nested_set_active_works)
+TEST_F(DiskIndexesTest, nested_set_active_works)
 {
     setActive("index.flush.1", 0);
     setActive("index.flush.1", 0);
@@ -64,13 +64,13 @@ TEST_F(ActiveDiskIndexesTest, nested_set_active_works)
     EXPECT_FALSE(isActive("index.flush.1"));
 }
 
-TEST_F(ActiveDiskIndexesTest, is_active_returns_false_for_bad_name)
+TEST_F(DiskIndexesTest, is_active_returns_false_for_bad_name)
 {
     EXPECT_FALSE(isActive("foo/bar/baz"));
     EXPECT_FALSE(isActive("index.flush.0"));
 }
 
-TEST_F(ActiveDiskIndexesTest, remove_works)
+TEST_F(DiskIndexesTest, remove_works)
 {
     EXPECT_TRUE(remove(IndexDiskDir()));
     auto fusion1 = get_index_disk_dir("index.fusion.1");
@@ -83,7 +83,7 @@ TEST_F(ActiveDiskIndexesTest, remove_works)
     EXPECT_TRUE(remove(fusion1));
 }
 
-TEST_F(ActiveDiskIndexesTest, basic_get_transient_size_works)
+TEST_F(DiskIndexesTest, basic_get_transient_size_works)
 {
     /*
      * When starting to use a new fusion index, we have a transient
@@ -128,7 +128,7 @@ TEST_F(ActiveDiskIndexesTest, basic_get_transient_size_works)
     }
 }
 
-TEST_F(ActiveDiskIndexesTest, get_transient_size_during_ongoing_fusion)
+TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
 {
     /*
      * During ongoing fusion, we have one ISearchableIndexCollection instance:

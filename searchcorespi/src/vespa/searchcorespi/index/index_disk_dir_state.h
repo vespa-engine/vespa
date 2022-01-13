@@ -8,13 +8,13 @@
 namespace searchcorespi::index {
 
 /*
- * Class describing active state for a disk index directory.
+ * Class describing state for a disk index directory.
  */
-class IndexDiskDirActiveState {
+class IndexDiskDirState {
     uint32_t _active_count;
     std::optional<uint64_t> _size_on_disk;
 public:
-    IndexDiskDirActiveState()
+    IndexDiskDirState()
         : _active_count(0),
           _size_on_disk()
     {

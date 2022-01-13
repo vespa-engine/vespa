@@ -91,18 +91,18 @@ private:
     IDiskIndex::SP                       _index;
     IndexDiskDir                         _index_disk_dir;
     IndexDiskLayout&                     _layout;
-    ActiveDiskIndexes&                   _active_indexes;
+    DiskIndexes&                         _disk_indexes;
 
 public:
     DiskIndexWithDestructorCallback(IDiskIndex::SP index,
                                     std::shared_ptr<IDestructorCallback> callback,
                                     IndexDiskLayout& layout,
-                                    ActiveDiskIndexes& active_indexes) noexcept
+                                    DiskIndexes& disk_indexes) noexcept
         : _callback(std::move(callback)),
           _index(std::move(index)),
           _index_disk_dir(IndexDiskLayout::get_index_disk_dir(_index->getIndexDir())),
           _layout(layout),
-          _active_indexes(active_indexes)
+          _disk_indexes(disk_indexes)
     {
     }
     ~DiskIndexWithDestructorCallback() override;
@@ -156,7 +156,7 @@ search::SearchableStats
 DiskIndexWithDestructorCallback::getSearchableStats() const
 {
     auto stats = _index->getSearchableStats();
-    uint64_t transient_size = _active_indexes.get_transient_size(_layout, _index_disk_dir);
+    uint64_t transient_size = _disk_indexes.get_transient_size(_layout, _index_disk_dir);
     stats.fusion_size_on_disk(transient_size);
     return stats;
 }
@@ -291,7 +291,7 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
 void
 IndexMaintainer::deactivateDiskIndexes(vespalib::string indexDir)
 {
-    _active_indexes->notActive(indexDir);
+    _disk_indexes->notActive(indexDir);
     removeOldDiskIndexes();
 }
 
@@ -305,11 +305,11 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
     vespalib::Timer timer;
     auto index = _operations.loadDiskIndex(indexDir);
     auto stats = index->getSearchableStats();
-    _active_indexes->setActive(indexDir, stats.sizeOnDisk());
+    _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
     auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
             std::move(index),
             makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
-            _layout, *_active_indexes);
+            _layout, *_disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
@@ -328,11 +328,11 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
     const IDiskIndex &wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCallback &>(oldIndex)).getWrapped();
     auto index = _operations.reloadDiskIndex(wrappedDiskIndex);
     auto stats = index->getSearchableStats();
-    _active_indexes->setActive(indexDir, stats.sizeOnDisk());
+    _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
     auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
             std::move(index),
             makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
-            _layout, *_active_indexes);
+            _layout, *_disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
@@ -869,7 +869,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
                                  IIndexMaintainerOperations &operations)
     : _base_dir(config.getBaseDir()),
       _warmupConfig(config.getWarmup()),
-      _active_indexes(std::make_shared<ActiveDiskIndexes>()),
+      _disk_indexes(std::make_shared<DiskIndexes>()),
       _layout(config.getBaseDir()),
       _schema(config.getSchema()),
       _activeFusionSchema(),
@@ -902,7 +902,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
 {
     // Called by document db init executor thread
     _changeGens.bumpPruneGen();
-    DiskIndexCleaner::clean(_base_dir, *_active_indexes);
+    DiskIndexCleaner::clean(_base_dir, *_disk_indexes);
     FusionSpec spec = IndexReadUtilities::readFusionSpec(_base_dir);
     _next_id = 1 + (spec.flush_ids.empty() ? spec.last_fusion_id : spec.flush_ids.back());
     _last_fusion_id = spec.last_fusion_id;
@@ -1041,21 +1041,21 @@ IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushTok
 namespace {
 
 class RemoveFusionIndexGuard {
-    ActiveDiskIndexes* _active_indexes;
+    DiskIndexes*       _disk_indexes;
     IndexDiskDir       _index_disk_dir;
 public:
-    RemoveFusionIndexGuard(ActiveDiskIndexes& active_indexes, IndexDiskDir index_disk_dir)
-        : _active_indexes(&active_indexes),
+    RemoveFusionIndexGuard(DiskIndexes& disk_indexes, IndexDiskDir index_disk_dir)
+        : _disk_indexes(&disk_indexes),
           _index_disk_dir(index_disk_dir)
     {
-        _active_indexes->add_not_active(index_disk_dir);
+        _disk_indexes->add_not_active(index_disk_dir);
     }
     ~RemoveFusionIndexGuard() {
-        if (_active_indexes != nullptr) {
-            (void) _active_indexes->remove(_index_disk_dir);
+        if (_disk_indexes != nullptr) {
+            (void) _disk_indexes->remove(_index_disk_dir);
         }
     }
-    void reset() { _active_indexes = nullptr; }
+    void reset() { _disk_indexes = nullptr; }
 };
 
 }
@@ -1081,7 +1081,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
         serialNum = IndexReadUtilities::readSerialNum(lastFlushDir);
     }
     IndexDiskDir fusion_index_disk_dir(fusion_spec.flush_ids.back(), true);
-    RemoveFusionIndexGuard remove_fusion_index_guard(*_active_indexes, fusion_index_disk_dir);
+    RemoveFusionIndexGuard remove_fusion_index_guard(*_disk_indexes, fusion_index_disk_dir);
     FusionRunner fusion_runner(_base_dir, args._schema, tuneFileAttributes, _ctx.getFileHeaderContext());
     uint32_t new_fusion_id = fusion_runner.fuse(fusion_spec, serialNum, _operations, flush_token);
     bool ok = (new_fusion_id != 0);
@@ -1150,7 +1150,7 @@ void
 IndexMaintainer::removeOldDiskIndexes()
 {
     LockGuard slock(_remove_lock);
-    DiskIndexCleaner::removeOldIndexes(_base_dir, *_active_indexes);
+    DiskIndexCleaner::removeOldIndexes(_base_dir, *_disk_indexes);
 }
 
 IndexMaintainer::FlushStats

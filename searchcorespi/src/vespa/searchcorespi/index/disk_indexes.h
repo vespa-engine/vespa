@@ -10,23 +10,23 @@
 namespace searchcorespi::index {
 
 class IndexDiskDir;
-class IndexDiskDirActiveState;
+class IndexDiskDirState;
 class IndexDiskLayout;
 
 /**
  * Class used to keep track of the set of active disk indexes in an index maintainer.
  * The index directories are used as identifiers.
  */
-class ActiveDiskIndexes {
-    std::map<IndexDiskDir, IndexDiskDirActiveState> _active;
+class DiskIndexes {
+    std::map<IndexDiskDir, IndexDiskDirState> _active;
     mutable std::mutex _lock;
 
 public:
-    using SP = std::shared_ptr<ActiveDiskIndexes>;
-    ActiveDiskIndexes();
-    ~ActiveDiskIndexes();
-    ActiveDiskIndexes(const ActiveDiskIndexes &) = delete;
-    ActiveDiskIndexes & operator = (const ActiveDiskIndexes &) = delete;
+    using SP = std::shared_ptr<DiskIndexes>;
+    DiskIndexes();
+    ~DiskIndexes();
+    DiskIndexes(const DiskIndexes &) = delete;
+    DiskIndexes & operator = (const DiskIndexes &) = delete;
     void setActive(const vespalib::string & index, uint64_t size_on_disk);
     void notActive(const vespalib::string & index);
     bool isActive(const vespalib::string & index) const;

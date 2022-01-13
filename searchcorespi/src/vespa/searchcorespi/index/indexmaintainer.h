@@ -2,7 +2,7 @@
 #pragma once
 
 #include "iindexmanager.h"
-#include "activediskindexes.h"
+#include "disk_indexes.h"
 #include "fusionspec.h"
 #include "idiskindex.h"
 #include "iindexmaintaineroperations.h"
@@ -76,7 +76,7 @@ class IndexMaintainer : public IIndexManager,
 
     const vespalib::string _base_dir;
     const WarmupConfig     _warmupConfig;
-    ActiveDiskIndexes::SP  _active_indexes;
+    DiskIndexes::SP        _disk_indexes;
     IndexDiskLayout        _layout;
     Schema                 _schema;             // Protected by SL + IUL
     Schema::SP             _activeFusionSchema; // Protected by SL + IUL

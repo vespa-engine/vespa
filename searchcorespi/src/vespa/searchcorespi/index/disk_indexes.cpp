@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "activediskindexes.h"
+#include "disk_indexes.h"
 #include "indexdisklayout.h"
 #include "index_disk_dir.h"
-#include "index_disk_dir_active_state.h"
+#include "index_disk_dir_state.h"
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <cassert>
 #include <vector>
@@ -12,23 +12,23 @@ using vespalib::string;
 
 namespace searchcorespi::index {
 
-ActiveDiskIndexes::ActiveDiskIndexes() = default;
-ActiveDiskIndexes::~ActiveDiskIndexes() = default;
+DiskIndexes::DiskIndexes() = default;
+DiskIndexes::~DiskIndexes() = default;
 
 void
-ActiveDiskIndexes::setActive(const string &index, uint64_t size_on_disk)
+DiskIndexes::setActive(const string &index, uint64_t size_on_disk)
 {
     auto index_disk_dir = IndexDiskLayout::get_index_disk_dir(index);
     assert(index_disk_dir.valid());
     std::lock_guard lock(_lock);
-    auto insres = _active.insert(std::make_pair(index_disk_dir, IndexDiskDirActiveState()));
+    auto insres = _active.insert(std::make_pair(index_disk_dir, IndexDiskDirState()));
     insres.first->second.activate();
     if (!insres.first->second.get_size_on_disk().has_value()) {
         insres.first->second.set_size_on_disk(size_on_disk);
     }
 }
 
-void ActiveDiskIndexes::notActive(const string & index) {
+void DiskIndexes::notActive(const string & index) {
     auto index_disk_dir = IndexDiskLayout::get_index_disk_dir(index);
     assert(index_disk_dir.valid());
     std::lock_guard lock(_lock);
@@ -41,7 +41,7 @@ void ActiveDiskIndexes::notActive(const string & index) {
     }
 }
 
-bool ActiveDiskIndexes::isActive(const string &index) const {
+bool DiskIndexes::isActive(const string &index) const {
     auto index_disk_dir = IndexDiskLayout::get_index_disk_dir(index);
     if (!index_disk_dir.valid()) {
         return false;
@@ -53,14 +53,14 @@ bool ActiveDiskIndexes::isActive(const string &index) const {
 
 
 void
-ActiveDiskIndexes::add_not_active(IndexDiskDir index_disk_dir)
+DiskIndexes::add_not_active(IndexDiskDir index_disk_dir)
 {
     std::lock_guard lock(_lock);
-    _active.insert(std::make_pair(index_disk_dir, IndexDiskDirActiveState()));
+    _active.insert(std::make_pair(index_disk_dir, IndexDiskDirState()));
 }
 
 bool
-ActiveDiskIndexes::remove(IndexDiskDir index_disk_dir)
+DiskIndexes::remove(IndexDiskDir index_disk_dir)
 {
     if (!index_disk_dir.valid()) {
         return true;
@@ -78,7 +78,7 @@ ActiveDiskIndexes::remove(IndexDiskDir index_disk_dir)
 }
 
 uint64_t
-ActiveDiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk_dir) const
+DiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk_dir) const
 {
     /*
      * Only report transient size related to a valid fusion index. This ensures
