@@ -48,13 +48,14 @@ private:
         return counter & (_taskLimit.load(std::memory_order_relaxed) - 1);
     }
 
-    uint64_t numTasks() const {
-        return num_task_in_main_q() + num_tasks_in_overflow_q();
+    uint64_t numTasks();
+    uint64_t numTasks(Lock & guard) const {
+        return num_tasks_in_main_q() + num_tasks_in_overflow_q(guard);
     }
-    uint64_t num_tasks_in_overflow_q() const {
+    uint64_t num_tasks_in_overflow_q(Lock &) const {
         return _overflow ? _overflow->size() : 0;
     }
-    uint64_t num_task_in_main_q() const {
+    uint64_t num_tasks_in_main_q() const {
         return _wp.load(std::memory_order_relaxed) - _rp.load(std::memory_order_acquire);
     }
     const double                _watermarkRatio;
