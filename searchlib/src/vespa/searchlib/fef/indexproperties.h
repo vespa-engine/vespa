@@ -57,6 +57,20 @@ namespace rank {
 
 } // namespace rank
 
+namespace feature_rename {
+
+    /**
+     * Property for match/summary/dump featuress that should be exposed
+     * with a different name, typically rankingExpression(foo) -> foo
+     **/
+    struct Rename {
+        static const vespalib::string NAME;
+        static std::vector<std::pair<vespalib::string,vespalib::string>> lookup(const Properties &props);
+    };
+
+
+} // namespace featurerename
+
 namespace match {
 
     /**

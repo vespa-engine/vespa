@@ -246,7 +246,25 @@ namespace on_summary {
     }
 
 }
-}
+} // namespace mutate
+
+namespace feature_rename {
+    const vespalib::string Rename::NAME("vespa.feature.rename");
+
+    std::vector<std::pair<vespalib::string,vespalib::string>>
+    Rename::lookup(const Properties &props) {
+        std::vector<std::pair<vespalib::string,vespalib::string>> retval;
+        Property p = props.lookup(NAME);
+        if (p.found()) {
+            for (uint32_t i = 0; i+1 < p.size(); i += 2) {
+                vespalib::string from = p.getAt(i);
+                vespalib::string to = p.getAt(i+1);
+                retval.emplace_back(from, to);
+            }
+        }
+        return retval;
+    }
+} // namespace feature_rename
 
 namespace match {
 

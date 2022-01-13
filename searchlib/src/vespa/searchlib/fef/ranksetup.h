@@ -7,6 +7,7 @@
 #include "iqueryenvironment.h"
 #include "blueprintresolver.h"
 #include "rank_program.h"
+#include <unordered_map>
 
 namespace search::fef {
 
@@ -32,6 +33,7 @@ public:
         vespalib::string _attribute;
         vespalib::string _operation;
     };
+    using StringStringMap = std::unordered_map<vespalib::string, vespalib::string, vespalib::hash<vespalib::string>>;
 private:
     const BlueprintFactory  &_factory;
     const IIndexEnvironment &_indexEnv;
@@ -61,6 +63,7 @@ private:
     std::vector<vespalib::string> _match_features;
     std::vector<vespalib::string> _summaryFeatures;
     std::vector<vespalib::string> _dumpFeatures;
+    StringStringMap          _feature_rename_map;
     bool                     _ignoreDefaultRankFeatures;
     bool                     _compiled;
     bool                     _compileError;
@@ -372,6 +375,8 @@ public:
      * @return vector of match feature names.
      **/
     const std::vector<vespalib::string> &get_match_features() const { return _match_features; }
+
+    const StringStringMap &get_feature_rename_map() const { return _feature_rename_map; }
 
     /**
      * Returns a const view of the summary features added.
