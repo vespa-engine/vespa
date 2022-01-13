@@ -85,7 +85,7 @@ public class NodeTimeseries {
         if (snapshot.generation() < 0) return true; // Content nodes do not yet send generation
         if (snapshot.generation() < currentGeneration) return false;
         if (generationChange.isEmpty()) return true;
-        return ! snapshot.at().isBefore(generationChange.get().plus(warmupDuration.multipliedBy(2)));
+        return ! snapshot.at().isBefore(generationChange.get().plus(warmupDuration));
     }
 
 }

@@ -42,7 +42,7 @@ public class NodeResourcesTuningTest {
         assertEquals(0.5, reservedMemoryGb, delta);
     }
 
-    private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, double gb, int redundancy, int searchableCopies) {
+    private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, double gb) {
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
         for (Pair<String, String> sdMode : sdAndMode) {
             builder.documentdb.add(new ProtonConfig.Documentdb.Builder()
@@ -53,8 +53,8 @@ public class NodeResourcesTuningTest {
         return configFromMemorySetting(gb, builder);
     }
 
-    private void verify_that_initial_numdocs_is_dependent_of_mode(int redundancy, int searchablecopies) {
-        ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24 + reservedMemoryGb, redundancy, searchablecopies);
+    private void verify_that_initial_numdocs_is_dependent_of_mode() {
+        ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24 + reservedMemoryGb);
         assertEquals(3, cfg.documentdb().size());
         assertEquals(1024, cfg.documentdb(0).allocation().initialnumdocs());
         assertEquals("a", cfg.documentdb(0).inputdoctypename());
@@ -66,10 +66,8 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_initial_numdocs_is_dependent_of_mode_and_searchablecopies() {
-        verify_that_initial_numdocs_is_dependent_of_mode(2,0);
-        verify_that_initial_numdocs_is_dependent_of_mode(1,1);
-        verify_that_initial_numdocs_is_dependent_of_mode(3, 2);
-        verify_that_initial_numdocs_is_dependent_of_mode(3, 3);
+        verify_that_initial_numdocs_is_dependent_of_mode();
+
     }
 
     @Test
@@ -134,13 +132,11 @@ public class NodeResourcesTuningTest {
 
     @Test
     public void require_that_flush_strategy_tls_size_is_set_based_on_available_disk() {
-        assertFlushStrategyTlsSize(2 * GB, 10, 0.05);
-        assertFlushStrategyTlsSize(7 * GB, 100, 0.07);
-        assertFlushStrategyTlsSize(5 * GB, 100, 0.05);
-        assertFlushStrategyTlsSize(35 * GB, 500, 0.07);
-        assertFlushStrategyTlsSize(84 * GB, 1200, 0.07);
-        assertFlushStrategyTlsSize(100 * GB, 1720, 0.07);
-        assertFlushStrategyTlsSize(100 * GB, 24000, 0.07);
+        assertFlushStrategyTlsSize(2 * GB, 10);
+        assertFlushStrategyTlsSize(2 * GB, 100);
+        assertFlushStrategyTlsSize(10 * GB, 500);
+        assertFlushStrategyTlsSize(24 * GB, 1200);
+        assertFlushStrategyTlsSize(100 * GB, 24000);
     }
 
     @Test
@@ -181,8 +177,8 @@ public class NodeResourcesTuningTest {
         assertEquals(expMemoryBytes, configFromMemorySetting(wantedMemoryGb + reservedMemoryGb, 0).flush().memory().each().maxmemory());
     }
 
-    private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb, double tlsSizeFraction) {
-        assertEquals(expTlsSizeBytes, configFromDiskSetting(diskGb, tlsSizeFraction).flush().memory().maxtlssize());
+    private static void assertFlushStrategyTlsSize(long expTlsSizeBytes, int diskGb) {
+        assertEquals(expTlsSizeBytes, configFromDiskSetting(diskGb).flush().memory().maxtlssize());
     }
 
     private static void assertSummaryReadIo(ProtonConfig.Summary.Read.Io.Enum expValue, boolean fastDisk) {
@@ -197,23 +193,16 @@ public class NodeResourcesTuningTest {
         assertEquals(sharedDisk, configFromEnvironmentType(docker).hwinfo().disk().shared());
     }
 
-    private static void assertWriteFilter(double expMemoryLimit, int memoryGb) {
-        assertEquals(expMemoryLimit, configFromMemorySetting(memoryGb, 0).writefilter().memorylimit(), delta);
-    }
-
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {
         return getConfig(new FlavorsConfig.Flavor.Builder().fastDisk(fastDisk));
     }
 
     private static ProtonConfig configFromDiskSetting(int diskGb) {
-        return configFromDiskSetting(diskGb, 0.07);
-    }
-    private static ProtonConfig configFromDiskSetting(int diskGb, double tlsSizeFraction) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb), 0, tlsSizeFraction);
+        return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb), 0);
     }
 
     private static ProtonConfig configFromMemorySetting(double memoryGb, double fractionOfMemoryReserved) {
-        return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), fractionOfMemoryReserved, 0.07);
+        return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), fractionOfMemoryReserved);
     }
 
     private static ProtonConfig configFromMemorySetting(double memoryGb, ProtonConfig.Builder builder) {
@@ -239,26 +228,26 @@ public class NodeResourcesTuningTest {
         return getConfig(flavorBuilder, new ProtonConfig.Builder());
     }
 
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, double fractionOfMemoryReserved, double tlsSizeFraction) {
-        return getConfig(flavorBuilder, new ProtonConfig.Builder(), fractionOfMemoryReserved, tlsSizeFraction);
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, double fractionOfMemoryReserved) {
+        return getConfig(flavorBuilder, new ProtonConfig.Builder(), fractionOfMemoryReserved);
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder) {
         return getConfig(flavorBuilder, protonBuilder,1);
     }
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, double fractionOfMemoryReserved, double tlsSizeFraction) {
-        return getConfig(flavorBuilder, protonBuilder, 1, fractionOfMemoryReserved, tlsSizeFraction);
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, double fractionOfMemoryReserved) {
+        return getConfig(flavorBuilder, protonBuilder, 1, fractionOfMemoryReserved);
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
                                           int numThreadsPerSearch) {
-        return getConfig(flavorBuilder, protonBuilder, numThreadsPerSearch, 0, 0.07);
+        return getConfig(flavorBuilder, protonBuilder, numThreadsPerSearch, 0);
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
-                                          int numThreadsPerSearch, double fractionOfMemoryReserved, double tlsSizeFraction) {
+                                          int numThreadsPerSearch, double fractionOfMemoryReserved) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), numThreadsPerSearch, fractionOfMemoryReserved, tlsSizeFraction);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), numThreadsPerSearch, fractionOfMemoryReserved);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }

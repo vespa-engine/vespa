@@ -3,18 +3,21 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <set>
+#include <map>
 #include <mutex>
 #include <memory>
 
 namespace searchcorespi::index {
+
+class IndexDiskDir;
+class IndexDiskDirActiveState;
 
 /**
  * Class used to keep track of the set of active disk indexes in an index maintainer.
  * The index directories are used as identifiers.
  */
 class ActiveDiskIndexes {
-    std::multiset<vespalib::string> _active;
+    std::map<IndexDiskDir, IndexDiskDirActiveState> _active;
     mutable std::mutex _lock;
 
 public:

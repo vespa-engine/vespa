@@ -45,7 +45,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 import static org.junit.Assert.assertEquals;
@@ -1046,11 +1045,9 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(7, resolveMaxCompactBuffers(OptionalInt.of(7)));
     }
 
-    private long resolveMaxTLSSize(OptionalDouble tlsSizeFraction, Optional<Flavor> flavor) throws Exception {
+    private long resolveMaxTLSSize(Optional<Flavor> flavor) throws Exception {
         TestProperties testProperties = new TestProperties();
-        if (tlsSizeFraction.isPresent()) {
-            testProperties.tlsSizeFraction(tlsSizeFraction.getAsDouble());
-        }
+
         ContentCluster cc = createOneNodeCluster(testProperties, flavor);
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
         cc.getSearch().getSearchNodes().get(0).getConfig(protonBuilder);
@@ -1058,13 +1055,10 @@ public class ContentClusterTest extends ContentBaseTest {
         return protonConfig.flush().memory().maxtlssize();
     }
     @Test
-    public void default_max_tls_size_controlled_by_properties() throws Exception {
+    public void verifyt_max_tls_size() throws Exception {
         var flavor = new Flavor(new FlavorsConfig.Flavor(new FlavorsConfig.Flavor.Builder().name("test").minDiskAvailableGb(100)));
-        assertEquals(21474836480L, resolveMaxTLSSize(OptionalDouble.empty(), Optional.empty()));
-        assertEquals(21474836480L, resolveMaxTLSSize(OptionalDouble.of(0.02), Optional.empty()));
-        assertEquals(2147483648L, resolveMaxTLSSize(OptionalDouble.empty(), Optional.of(flavor)));
-        assertEquals(2147483648L, resolveMaxTLSSize(OptionalDouble.of(0.02), Optional.of(flavor)));
-        assertEquals(3221225472L, resolveMaxTLSSize(OptionalDouble.of(0.03), Optional.of(flavor)));
+        assertEquals(21474836480L, resolveMaxTLSSize(Optional.empty()));
+        assertEquals(2147483648L, resolveMaxTLSSize(Optional.of(flavor)));
     }
 
     void assertZookeeperServerImplementation(String expectedClassName,

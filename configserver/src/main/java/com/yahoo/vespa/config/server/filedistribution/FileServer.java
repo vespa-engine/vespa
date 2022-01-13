@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -217,7 +218,8 @@ public class FileServer {
         return new FileDownloader(configServers.isEmpty()
                                           ? FileDownloader.emptyConnectionPool()
                                           : createConnectionPool(configServers, supervisor),
-                                  supervisor);
+                                  supervisor,
+                                  Duration.ofSeconds(10)); // set this low, to make sure we don't wait a for a long time in this thread
     }
 
     private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {

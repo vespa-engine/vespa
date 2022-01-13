@@ -6,6 +6,8 @@
 namespace searchcorespi {
 namespace index {
 
+class IndexDiskDir;
+
 /**
  * Utility class used to get static aspects of the disk layout (i.e directory and file names)
  * needed by the index maintainer.
@@ -23,6 +25,7 @@ public:
     IndexDiskLayout(const vespalib::string &baseDir);
     vespalib::string getFlushDir(uint32_t sourceId) const;
     vespalib::string getFusionDir(uint32_t sourceId) const;
+    static IndexDiskDir get_index_disk_dir(const vespalib::string& dir);
 
     static vespalib::string getSerialNumFileName(const vespalib::string &dir);
     static vespalib::string getSchemaFileName(const vespalib::string &dir);

@@ -5,27 +5,28 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.TrustStoreItem;
+import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.net.URI;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
 * @author bratseth
@@ -41,7 +42,7 @@ class NodesResponse extends SlimeJsonResponse {
     /** The parent url of nodes */
     private final String nodeParentUrl;
 
-    private final Predicate<Node> filter;
+    private final NodeFilter filter;
     private final boolean recursive;
     private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
@@ -57,9 +58,9 @@ class NodesResponse extends SlimeJsonResponse {
 
         Cursor root = slime.setObject();
         switch (responseType) {
-            case nodeList: nodesToSlime(root); break;
+            case nodeList: nodesToSlime(filter.states(), root); break;
             case stateList : statesToSlime(root); break;
-            case nodesInStateList: nodesToSlime(NodeSerializer.stateFrom(lastElement(parentUrl)), root); break;
+            case nodesInStateList: nodesToSlime(Set.of(NodeSerializer.stateFrom(lastElement(parentUrl))), root); break;
             case singleNode : nodeToSlime(lastElement(parentUrl), root); break;
             default: throw new IllegalArgumentException();
         }
@@ -87,23 +88,23 @@ class NodesResponse extends SlimeJsonResponse {
     private void toSlime(Node.State state, Cursor object) {
         object.setString("url", parentUrl + NodeSerializer.toString(state));
         if (recursive)
-            nodesToSlime(state, object);
+            nodesToSlime(Set.of(state), object);
     }
 
-    /** Outputs the nodes in the given state to a node array */
-    private void nodesToSlime(Node.State state, Cursor parentObject) {
+    /** Outputs the nodes in the given states to a node array */
+    private void nodesToSlime(Set<Node.State> statesToRead, Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        for (NodeType type : NodeType.values())
-            toSlime(nodeRepository.nodes().list(state).nodeType(type).asList(), nodeArray);
+        boolean sortByNodeType = statesToRead.size() == 1;
+        statesToRead.stream().sorted().forEach(state -> {
+            NodeList nodes = nodeRepository.nodes().list(state);
+            if (sortByNodeType) {
+                nodes = nodes.sortedBy(Comparator.comparing(Node::type));
+            }
+            toSlime(nodes, nodeArray);
+        });
     }
 
-    /** Outputs all the nodes to a node array */
-    private void nodesToSlime(Cursor parentObject) {
-        Cursor nodeArray = parentObject.setArray("nodes");
-        toSlime(nodeRepository.nodes().list().asList(), nodeArray);
-    }
-
-    private void toSlime(List<Node> nodes, Cursor array) {
+    private void toSlime(NodeList nodes, Cursor array) {
         for (Node node : nodes) {
             if ( ! filter.test(node)) continue;
             toSlime(node, recursive, array.addObject());

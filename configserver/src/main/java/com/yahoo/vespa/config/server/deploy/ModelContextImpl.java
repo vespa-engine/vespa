@@ -191,8 +191,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final double containerShutdownTimeout;
         private final int distributorMergeBusyWait;
-        private final int docstoreCompressionLevel;
-        private final double diskBloatFactor;
         private final boolean distributorEnhancedMaintenanceScheduling;
         private final int maxUnCommittedMemory;
         private final boolean forwardIssuesAsErrors;
@@ -203,9 +201,9 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8DocManagerCfg;
         private final int maxCompactBuffers;
         private final boolean failDeploymentWithInvalidJvmOptions;
-        private final double tlsSizeFraction;
         private final List<String> ignoredHttpUserAgents;
         private final boolean enableServerOcspStapling;
+        private final String persistenceAsyncThrottling;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -235,8 +233,6 @@ public class ModelContextImpl implements ModelContext {
             this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
             this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
             this.distributorMergeBusyWait = flagValue(source, appId, Flags.DISTRIBUTOR_MERGE_BUSY_WAIT);
-            this.docstoreCompressionLevel = flagValue(source, appId, Flags.DOCSTORE_COMPRESSION_LEVEL);
-            this.diskBloatFactor = flagValue(source, appId, Flags.DISK_BLOAT_FACTOR);
             this.distributorEnhancedMaintenanceScheduling = flagValue(source, appId, Flags.DISTRIBUTOR_ENHANCED_MAINTENANCE_SCHEDULING);
             this.maxUnCommittedMemory = flagValue(source, appId, Flags.MAX_UNCOMMITTED_MEMORY);;
             this.forwardIssuesAsErrors = flagValue(source, appId, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
@@ -247,9 +243,9 @@ public class ModelContextImpl implements ModelContext {
             this.useV8DocManagerCfg = flagValue(source, appId, Flags.USE_V8_DOC_MANAGER_CFG);
             this.maxCompactBuffers = flagValue(source, appId, Flags.MAX_COMPACT_BUFFERS);
             this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
-            this.tlsSizeFraction = flagValue(source, appId, Flags.TLS_SIZE_FRACTION);
             this.ignoredHttpUserAgents = flagValue(source, appId, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
             this.enableServerOcspStapling = flagValue(source, appId, Flags.ENABLE_SERVER_OCSP_STAPLING);
+            this.persistenceAsyncThrottling = flagValue(source, appId, Flags.PERSISTENCE_ASYNC_THROTTLING);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -281,8 +277,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
-        @Override public double diskBloatFactor() { return diskBloatFactor; }
-        @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
         @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
@@ -293,9 +287,9 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useV8DocManagerCfg() { return useV8DocManagerCfg; }
         @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
-        @Override public double tlsSizeFraction() { return tlsSizeFraction; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public boolean enableServerOcspStapling() { return enableServerOcspStapling; }
+        @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

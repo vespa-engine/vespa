@@ -52,13 +52,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundDoubleFlag TLS_SIZE_FRACTION = defineDoubleFlag(
-            "tls-size-fraction", 0.02,
-            List.of("baldersheim"), "2021-12-20", "2022-02-01",
-            "Fraction of disk available for transaction log",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
             "feed-sequencer-type", "THROUGHPUT",
             List.of("baldersheim"), "2020-12-02", "2022-02-01",
@@ -156,20 +149,6 @@ public class Flags {
             "feed-concurrency", 0.5,
             List.of("baldersheim"), "2020-12-02", "2022-02-01",
             "How much concurrency should be allowed for feed",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundDoubleFlag DISK_BLOAT_FACTOR = defineDoubleFlag(
-            "disk-bloat-factor", 0.25,
-            List.of("baldersheim"), "2021-10-08", "2022-02-01",
-            "Amount of bloat allowed before compacting file",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundIntFlag DOCSTORE_COMPRESSION_LEVEL = defineIntFlag(
-            "docstore-compression-level", 3,
-            List.of("baldersheim"), "2021-10-08", "2022-02-01",
-            "Default compression level used for document store",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -407,6 +386,14 @@ public class Flags {
             "ZooKeeper snapshot method. Valid values are '', 'gz' and 'snappy'",
             "Takes effect on Docker container restart",
             ZONE_ID, APPLICATION_ID, NODE_TYPE);
+
+    public static final UnboundStringFlag PERSISTENCE_ASYNC_THROTTLING = defineStringFlag(
+            "persistence-async-throttling", "UNLIMITED",
+            List.of("vekterli"), "2022-01-12", "2022-05-01",
+            "Sets the throttling policy used for async persistence operations on the content nodes. " +
+            "Valid values: UNLIMITED, DYNAMIC",
+            "Triggers restart, takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

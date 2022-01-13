@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ContentSchemaClusterTest {
 
-    private static double EPSILON = 0.000001;
+    private static final double EPSILON = 0.000001;
 
     private static ContentCluster createClusterWithOneDocumentType() throws Exception {
         return createCluster(new ContentClusterBuilder().getXml());
@@ -261,27 +261,16 @@ public class ContentSchemaClusterTest {
     }
 
     @Test
-    public void verifyControlOfDocStoreCompression() throws Exception {
+    public void verifyDefaultDocStoreCompression() throws Exception {
         ProtonConfig cfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml()));
-        assertEquals(9, cfg.summary().log().chunk().compression().level());
-        assertEquals(9, cfg.summary().log().compact().compression().level());
-
-        cfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml(),
-                new DeployState.Builder().properties(new TestProperties().docstoreCompressionLevel(3))));
         assertEquals(3, cfg.summary().log().chunk().compression().level());
         assertEquals(3, cfg.summary().log().compact().compression().level());
     }
 
     @Test
-    public void verifyControlOfDiskBloatFactor() throws Exception {
+    public void verifyDefaultDiskBloatFactor() throws Exception {
         var defaultCfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml()));
         assertEquals(0.25, defaultCfg.flush().memory().diskbloatfactor(), EPSILON);
         assertEquals(0.25, defaultCfg.flush().memory().each().diskbloatfactor(), EPSILON);
-
-        var controlledCfg = getProtonConfig(createCluster(new ContentClusterBuilder().getXml(),
-                new DeployState.Builder().properties(new TestProperties().diskBloatFactor(0.31))
-        ));
-        assertEquals(0.31, controlledCfg.flush().memory().diskbloatfactor(), EPSILON);
-        assertEquals(0.31, controlledCfg.flush().memory().each().diskbloatfactor(), EPSILON);
     }
 }

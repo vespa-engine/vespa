@@ -51,8 +51,7 @@ public class SchemaNodeTest {
     private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey,
                                                NodeSpec nodeSpec, boolean flushOnShutDown, boolean isHosted) {
         return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
-                Optional.empty(), Optional.empty(), isHosted, 0.0,
-                root.getDeployState().featureFlags().tlsSizeFraction());
+                Optional.empty(), Optional.empty(), isHosted, 0.0);
     }
 
     private static SearchNode createSearchNode(MockRoot root) {

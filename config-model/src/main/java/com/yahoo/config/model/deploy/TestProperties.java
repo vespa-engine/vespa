@@ -67,16 +67,14 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
     private int distributorMergeBusyWait = 1;
-    private int docstoreCompressionLevel = 9;
     private int maxUnCommittedMemory = 123456;
-    private double diskBloatFactor = 0.25;
     private boolean distributorEnhancedMaintenanceScheduling = true;
     private boolean asyncApplyBucketDiff = true;
     private boolean unorderedMergeChaining = true;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
-    private double tlsSizeFraction = 0.02;
+    private String persistenceAsyncThrottling = "UNLIMITED";
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -124,8 +122,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
     @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
-    @Override public double diskBloatFactor() { return diskBloatFactor; }
-    @Override public int docstoreCompressionLevel() { return docstoreCompressionLevel; }
     @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
@@ -133,20 +129,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
-    @Override public double tlsSizeFraction() { return tlsSizeFraction; }
+    @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
-        return this;
-    }
-
-    public TestProperties docstoreCompressionLevel(int docstoreCompressionLevel) {
-        this.docstoreCompressionLevel = docstoreCompressionLevel;
-        return this;
-    }
-
-    public TestProperties diskBloatFactor(double diskBloatFactor) {
-        this.diskBloatFactor = diskBloatFactor;
         return this;
     }
 
@@ -351,8 +337,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties tlsSizeFraction(double tlsSizeFraction) {
-        this.tlsSizeFraction = tlsSizeFraction;
+    public TestProperties setPersistenceAsyncThrottling(String type) {
+        this.persistenceAsyncThrottling = type;
         return this;
     }
 

@@ -43,6 +43,9 @@ import static java.util.stream.Collectors.toList;
  */
 public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements ProtonConfig.Producer, DispatchConfig.Producer {
 
+    private static final int DEFAULT_DOC_STORE_COMPRESSION_LEVEL = 3;
+    private static final double DEFAULT_DISK_BLOAT = 0.25;
+
     private final boolean flushOnShutdown;
     private final Boolean syncTransactionLog;
 
@@ -68,8 +71,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final int feedMasterTaskLimit;
     private final ProtonConfig.Feeding.Shared_field_writer_executor.Enum sharedFieldWriterExecutor;
     private final double defaultFeedConcurrency;
-    private final double defaultDiskBloatFactor;
-    private final int defaultDocStoreCompressionLevel;
     private final boolean forwardIssuesToQrs;
     private final int defaultMaxCompactBuffers;
 
@@ -223,8 +224,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.feedMasterTaskLimit = featureFlags.feedMasterTaskLimit();
         this.sharedFieldWriterExecutor = convertSharedFieldWriterExecutor(featureFlags.sharedFieldWriterExecutor());
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
-        this.defaultDiskBloatFactor = featureFlags.diskBloatFactor();
-        this.defaultDocStoreCompressionLevel = featureFlags.docstoreCompressionLevel();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
     }
@@ -291,7 +290,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, resourceLimits, parentGroup.isHosted(),
-                                           fractionOfMemoryReserved, deployState.featureFlags().tlsSizeFraction());
+                                           fractionOfMemoryReserved);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState.getDeployLogger());
 
@@ -423,10 +422,10 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         } else {
             builder.feeding.concurrency(defaultFeedConcurrency);
         }
-        builder.flush.memory.diskbloatfactor(defaultDiskBloatFactor);
-        builder.flush.memory.each.diskbloatfactor(defaultDiskBloatFactor);
-        builder.summary.log.chunk.compression.level(defaultDocStoreCompressionLevel);
-        builder.summary.log.compact.compression.level(defaultDocStoreCompressionLevel);
+        builder.flush.memory.diskbloatfactor(DEFAULT_DISK_BLOAT);
+        builder.flush.memory.each.diskbloatfactor(DEFAULT_DISK_BLOAT);
+        builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
+        builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.forward_issues(forwardIssuesToQrs);
 
         int numDocumentDbs = builder.documentdb.size();
