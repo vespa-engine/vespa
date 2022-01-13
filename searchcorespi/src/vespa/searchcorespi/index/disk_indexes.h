@@ -14,8 +14,16 @@ class IndexDiskDirState;
 class IndexDiskLayout;
 
 /**
- * Class used to keep track of the set of active disk indexes in an index maintainer.
+ * Class used to keep track of the set of disk indexes in an index maintainer.
  * The index directories are used as identifiers.
+ *
+ * DiskIndexCleaner will remove old disk indexes not marked active,
+ * i.e. old disk indexes used by old index collections are not removed.
+ *
+ * At start of fusion, an entry for fusion output index is added, to allow for
+ * tracking of transient disk use while fusion is ongoing. If fusion fails then
+ * the entry is removed, otherwise the entry is marked active as a side effect
+ * of setting up a new index collection.
  */
 class DiskIndexes {
     std::map<IndexDiskDir, IndexDiskDirState> _active;
