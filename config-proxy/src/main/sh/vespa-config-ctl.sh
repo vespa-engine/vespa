@@ -106,7 +106,7 @@ export LD_LIBRARY_PATH="$VESPA_HOME/lib64"
 
 case $1 in
     start)
-        nohup sbin/vespa-retention-enforcer > ${LOGDIR}/vre-start.log 2>&1 </dev/null &
+        nohup nice sbin/vespa-retention-enforcer > ${LOGDIR}/vre-start.log 2>&1 </dev/null &
         configsources=`bin/vespa-print-default configservers_rpc`
         userargs=$VESPA_CONFIGPROXY_JVMARGS
         jvmopts="-Xms32M -Xmx128M -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000 -XX:-OmitStackTraceInFastThrow"
