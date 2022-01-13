@@ -138,6 +138,9 @@ public:
 
     const Query & query() const { return _query; }
     const RequestContext & getRequestContext() const { return _requestContext; }
+
+    using StringStringMap = std::unordered_map<vespalib::string, vespalib::string, vespalib::hash<vespalib::string>>;
+    const StringStringMap & get_feature_rename_map() const;
 };
 
 }

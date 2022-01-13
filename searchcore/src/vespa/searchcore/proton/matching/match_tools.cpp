@@ -293,6 +293,12 @@ MatchToolsFactory::has_match_features() const
     return _rankSetup.has_match_features();
 }
 
+const MatchToolsFactory::StringStringMap &
+MatchToolsFactory::get_feature_rename_map() const
+{
+    return _rankSetup.get_feature_rename_map();
+}
+
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,
                                                vespalib::stringref attribute, vespalib::stringref operation)
     : _requestContext(requestContext),

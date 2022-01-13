@@ -220,6 +220,13 @@ struct MyWorld {
         config.add(indexproperties::match::Feature::NAME, "rankingExpression(\"tensor(x[3])(x)\")");
     }
 
+    void setup_feature_renames() {
+        config.add(indexproperties::feature_rename::Rename::NAME, "matches(f1)");
+        config.add(indexproperties::feature_rename::Rename::NAME, "foobar");
+        config.add(indexproperties::feature_rename::Rename::NAME, "rankingExpression(\"tensor(x[3])(x)\")");
+        config.add(indexproperties::feature_rename::Rename::NAME, "tensor(x[3])(x)");
+    }
+
     static void verify_match_features(SearchReply &reply, const vespalib::string &matched_field) {
         if (reply.hits.empty()) {
             EXPECT_EQUAL(reply.match_features.names.size(), 0u);
@@ -247,6 +254,23 @@ struct MyWorld {
                     auto expect = TensorSpec("tensor(x[3])").add({{"x", 0}}, 0).add({{"x", 1}}, 1).add({{"x", 2}}, 2);
                     EXPECT_EQUAL(actual, expect);
                 }
+            }
+        }
+    }
+
+    static void verify_match_feature_renames(SearchReply &reply, const vespalib::string &matched_field) {
+        if (reply.hits.empty()) {
+            EXPECT_EQUAL(reply.match_features.names.size(), 0u);
+            EXPECT_EQUAL(reply.match_features.values.size(), 0u);
+        } else {
+            ASSERT_EQUAL(reply.match_features.names.size(), 5u);
+            EXPECT_EQUAL(reply.match_features.names[3], "foobar");
+            EXPECT_EQUAL(reply.match_features.names[4], "tensor(x[3])(x)");
+            ASSERT_EQUAL(reply.match_features.values.size(), 5 * reply.hits.size());
+            for (size_t i = 0; i < reply.hits.size(); ++i) {
+                const auto *f = &reply.match_features.values[i * 5];
+                EXPECT_EQUAL(f[3].as_double(), double(matched_field == "f1"));
+                EXPECT_TRUE(f[4].is_data());
             }
         }
     }
@@ -493,6 +517,18 @@ TEST("require that match features are calculated (multi-threaded)") {
         EXPECT_GREATER(reply->hits.size(), 0u);
         world.verify_match_features(*reply, "f1");
     }
+}
+
+TEST("require that match features can be renamed") {
+    MyWorld world;
+    world.basicSetup();
+    world.basicResults();
+    world.setup_match_features();
+    world.setup_feature_renames();
+    SearchRequest::SP request = world.createSimpleRequest("f1", "spread");
+    SearchReply::UP reply = world.performSearch(request, 1);
+    EXPECT_GREATER(reply->hits.size(), 0u);
+    world.verify_match_feature_renames(*reply, "f1");
 }
 
 TEST("require that no hits gives no match feature names") {
@@ -780,6 +816,26 @@ TEST("require that search session can be cached") {
     ASSERT_TRUE(session.get());
     EXPECT_EQUAL(request->getTimeOfDoom(), session->getTimeOfDoom());
     EXPECT_EQUAL("a", session->getSessionId());
+}
+
+TEST("require that summary features can be renamed") {
+    MyWorld world;
+    world.basicSetup();
+    world.setup_feature_renames();
+    world.basicResults();
+    DocsumRequest::SP req = world.createSimpleDocsumRequest("f1", "foo");
+    FeatureSet::SP fs = world.getSummaryFeatures(req);
+    const FeatureSet::Value * f = nullptr;
+    EXPECT_EQUAL(5u, fs->numFeatures());
+    EXPECT_EQUAL("attribute(a1)", fs->getNames()[0]);
+    EXPECT_EQUAL("foobar", fs->getNames()[1]);
+    EXPECT_EQUAL("rankingExpression(\"reduce(tensor(x[3])(x),sum)\")", fs->getNames()[2]);
+    EXPECT_EQUAL("tensor(x[3])(x)", fs->getNames()[3]);
+    EXPECT_EQUAL(3u, fs->numDocs());
+    f = fs->getFeaturesByDocId(30);
+    EXPECT_TRUE(f != nullptr);
+    EXPECT_TRUE(f[2].is_double());
+    EXPECT_TRUE(f[3].is_data());
 }
 
 TEST("require that getSummaryFeatures can use cached query setup") {

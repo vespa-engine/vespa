@@ -25,7 +25,7 @@ struct ExtractFeatures {
      * documents (must be in ascending order) using unpack information
      * from a search.
      **/
-    static FeatureSet::UP get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs);
+    static FeatureSet::UP get_feature_set(const MatchToolsFactory &mtf, SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs);
 
     // first: docid, second: result index (must be sorted on docid)
     using OrderedDocs = std::vector<std::pair<uint32_t,uint32_t>>;
