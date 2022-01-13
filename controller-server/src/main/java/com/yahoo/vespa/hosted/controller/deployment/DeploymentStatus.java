@@ -613,6 +613,9 @@ public class DeploymentStatus {
                         && ! existingDeployment.map(Deployment::version).equals(change.platform()))
                         return Optional.empty();
 
+                    if (change.application().isPresent() && ! existingDeployment.map(Deployment::applicationVersion).equals(change.application()))
+                        return Optional.empty();
+
                     Change fullChange = status.application().require(instance).change();
                     if (existingDeployment.map(deployment ->    ! (change.upgrades(deployment.version()) || change.upgrades(deployment.applicationVersion()))
                                                              &&   (fullChange.downgrades(deployment.version()) || fullChange.downgrades(deployment.applicationVersion())))

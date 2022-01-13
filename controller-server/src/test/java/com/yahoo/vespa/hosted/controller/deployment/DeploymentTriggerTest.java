@@ -473,10 +473,18 @@ public class DeploymentTriggerTest {
 
         // Triggering a roll-out of an already deployed application is a no-op.
         assertEquals(Change.empty(), app.instance().change());
-        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
-        assertEquals(Change.empty(), app.instance().change());
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion1));
         assertEquals(Change.empty(), app.instance().change());
+        
+        // Downgrading application version.
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
+        assertEquals(Change.of(appVersion0), app.instance().change());
+        app.runJob(stagingTest)
+           .runJob(productionUsCentral1)
+           .runJob(productionUsEast3)
+           .runJob(productionUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
+        assertEquals(appVersion0, app.instance().deployments().get(productionUsEast3.zone(tester.controller().system())).applicationVersion());
     }
 
     @Test
