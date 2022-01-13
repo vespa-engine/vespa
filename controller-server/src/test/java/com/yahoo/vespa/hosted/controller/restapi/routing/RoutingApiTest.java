@@ -258,7 +258,7 @@ public class RoutingApiTest extends ControllerContainerTest {
 
         // One shared and one exclusive zone
         deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(westZone),
-                                                                            RoutingMethod.shared);
+                                                                            RoutingMethod.sharedLayer4);
         deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(eastZone),
                                                                             RoutingMethod.exclusive);
 
@@ -273,7 +273,7 @@ public class RoutingApiTest extends ControllerContainerTest {
                 .build();
         context.submit(applicationPackage).deploy();
 
-        // GET status for zone using shared routing
+        // GET status for zone using sharedLayer4 routing
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/tenant/application/application/instance/default/environment/prod/region/us-west-1",
                                               "", Request.Method.GET),
                               new File("rotation/deployment-status-initial.json"));
@@ -331,4 +331,5 @@ public class RoutingApiTest extends ControllerContainerTest {
         tester.assertResponse(operatorRequest("http://localhost:8080/routing/v1/status/tenant/t1/application/a1/instance/default/endpoint", "", Request.Method.GET),
                               new File("endpoint/endpoints.json"));
     }
+
 }

@@ -5,7 +5,7 @@
   "isCI": false,
   "endpoints": {
     "dev.us-east-1": [
-      "https://my-user--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/"
+      "https://my-user.application1.tenant1.us-east-1.dev.vespa.oath.cloud/"
     ],
     "prod.us-central-1": [
       "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"
@@ -13,7 +13,7 @@
   },
   "zoneEndpoints": {
     "dev.us-east-1": {
-      "default": "https://my-user--application1--tenant1.us-east-1.dev.vespa.oath.cloud:4443/"
+      "default": "https://my-user.application1.tenant1.us-east-1.dev.vespa.oath.cloud/"
     },
     "prod.us-central-1": {
       "default": "https://application1--tenant1.us-central-1.vespa.oath.cloud:4443/"

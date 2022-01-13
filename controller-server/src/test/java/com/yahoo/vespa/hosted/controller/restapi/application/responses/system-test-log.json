@@ -232,7 +232,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": " |-- https://application--tenant.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
+        "message": " |-- https://application.tenant.us-east-1.test.vespa.oath.cloud/ (cluster 'default')"
       },
       {
         "at": 0,
@@ -259,7 +259,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": " |-- https://application--tenant.us-east-1.test.vespa.oath.cloud:4443/ (cluster 'default')"
+        "message": " |-- https://application.tenant.us-east-1.test.vespa.oath.cloud/ (cluster 'default')"
       },
       {
         "at": 0,

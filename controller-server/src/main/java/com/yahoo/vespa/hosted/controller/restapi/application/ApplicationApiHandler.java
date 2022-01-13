@@ -96,11 +96,11 @@ import com.yahoo.vespa.hosted.controller.maintenance.ResourceMeterMaintainer;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.SupportAccessSerializer;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
+import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationStatus;
-import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
-import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
@@ -139,7 +139,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Scanner;
@@ -1379,18 +1378,18 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         EndpointList zoneEndpoints = controller.routing().readEndpointsOf(deploymentId)
                                                .scope(Endpoint.Scope.zone);
         if (!legacyEndpoints) {
-            zoneEndpoints = zoneEndpoints.not().legacy();
+            zoneEndpoints = zoneEndpoints.not().legacy().direct();
         }
-        for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
+        for (var endpoint : zoneEndpoints) {
             toSlime(endpoint, endpointArray.addObject());
         }
         // Add declared endpoints
         EndpointList declaredEndpoints = controller.routing().declaredEndpointsOf(application)
                                                    .targets(deploymentId);
         if (!legacyEndpoints) {
-            declaredEndpoints = declaredEndpoints.not().legacy();
+            declaredEndpoints = declaredEndpoints.not().legacy().direct();
         }
-        for (var endpoint : controller.routing().directEndpoints(declaredEndpoints, deploymentId.applicationId())) {
+        for (var endpoint : declaredEndpoints) {
             toSlime(endpoint, endpointArray.addObject());
         }
 
@@ -2077,7 +2076,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
-                                                                      controller.routing().readZoneEndpointsOf(deployments),
+                                                                      controller.routing().readTestRunnerEndpointsOf(deployments),
                                                                       controller.applications().reachableContentClustersByZone(deployments)));
     }
 
