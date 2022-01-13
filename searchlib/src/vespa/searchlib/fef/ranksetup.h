@@ -7,7 +7,7 @@
 #include "iqueryenvironment.h"
 #include "blueprintresolver.h"
 #include "rank_program.h"
-#include <unordered_map>
+#include <vespa/searchlib/common/stringmap.h>
 
 namespace search::fef {
 
@@ -33,7 +33,6 @@ public:
         vespalib::string _attribute;
         vespalib::string _operation;
     };
-    using StringStringMap = std::unordered_map<vespalib::string, vespalib::string, vespalib::hash<vespalib::string>>;
 private:
     const BlueprintFactory  &_factory;
     const IIndexEnvironment &_indexEnv;

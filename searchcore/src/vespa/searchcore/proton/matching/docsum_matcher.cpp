@@ -47,7 +47,7 @@ get_feature_set(const MatchToolsFactory &mtf,
     } else {
         matchTools->setup_dump();
     }
-    auto retval = ExtractFeatures::get_feature_set(mtf, matchTools->search(), matchTools->rank_program(), docs);
+    auto retval = ExtractFeatures::get_feature_set(matchTools->search(), matchTools->rank_program(), docs, mtf.get_feature_rename_map());
     if (auto onSummaryTask = mtf.createOnSummaryTask()) {
         onSummaryTask->run(docs);
     }

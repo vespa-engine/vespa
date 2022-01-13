@@ -94,7 +94,7 @@ RankSetup::configure()
         addDumpFeature(feature);
     }
     for (const auto & rename : feature_rename::Rename::lookup(_indexEnv.getProperties())) {
-        _feature_rename_map.emplace(rename.first, rename.second);
+        _feature_rename_map[rename.first] = rename.second;
     }
     split_unpacking_iterators(matching::SplitUnpackingIterators::check(_indexEnv.getProperties()));
     delay_unpacking_iterators(matching::DelayUnpackingIterators::check(_indexEnv.getProperties()));
