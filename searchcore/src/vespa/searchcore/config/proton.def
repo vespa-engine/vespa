@@ -130,7 +130,7 @@ indexing.threads int default=1 restart
 
 ## Option to specify what is most important during indexing.
 ## This is experimental and will most likely be temporary.
-indexing.optimize enum {LATENCY, THROUGHPUT, ADAPTIVE} default=LATENCY restart
+indexing.optimize enum {LATENCY, THROUGHPUT, ADAPTIVE} default=THROUGHPUT restart
 
 ## Maximum number of pending operations for each of the internal
 ## indexing threads.  Only used when visibility delay is zero.
@@ -517,7 +517,7 @@ feeding.shared_field_writer_executor enum {NONE, INDEX, INDEX_AND_ATTRIBUTE, DOC
 ## This limit is only considered when executing tasks for handling external feed operations.
 ## In that case the calling thread (persistence thread) is blocked until the master thread has capacity to handle more tasks.
 ## When this limit is set to 0 it is ignored.
-feeding.master_task_limit int default = 0
+feeding.master_task_limit int default = 1000
 
 ## Adjustment to resource limit when determining if maintenance jobs can run.
 ##

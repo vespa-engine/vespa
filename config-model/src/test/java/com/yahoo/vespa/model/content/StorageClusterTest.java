@@ -117,8 +117,8 @@ public class StorageClusterTest {
 
         StorServerConfig config = new StorServerConfig(builder);
         assertEquals(16, config.max_merges_per_node());
-        assertEquals(1024, config.max_merge_queue_size());
-        assertFalse(config.disable_queue_limits_for_chained_merges());
+        assertEquals(100, config.max_merge_queue_size());
+        assertTrue(config.disable_queue_limits_for_chained_merges());
     }
 
     @Test
@@ -171,10 +171,10 @@ public class StorageClusterTest {
     @Test
     public void async_apply_bucket_diff_can_be_controlled_by_feature_flag() {
         var config = filestorConfigFromProperties(new TestProperties());
-        assertFalse(config.async_apply_bucket_diff());
-
-        config = filestorConfigFromProperties(new TestProperties().setAsyncApplyBucketDiff(true));
         assertTrue(config.async_apply_bucket_diff());
+
+        config = filestorConfigFromProperties(new TestProperties().setAsyncApplyBucketDiff(false));
+        assertFalse(config.async_apply_bucket_diff());
     }
 
     @Test

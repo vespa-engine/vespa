@@ -34,7 +34,7 @@ node_reliability int default=1 restart
 ## merge, only actually starting the operation when every node has
 ## allowed it to pass through.
 max_merges_per_node int default=16
-max_merge_queue_size int default=1024
+max_merge_queue_size int default=100
 
 ## If the persistence provider indicates that it has exhausted one or more
 ## of its internal resources during a mutating operation, new merges will
@@ -51,7 +51,7 @@ resource_exhaustion_merge_back_pressure_duration_secs double default=30.0
 ## the current queue size. This avoids wasting the time spent being accepted
 ## into merge windows, which would happen if the merge were to be bounced with
 ## a busy-reply that would subsequently be unwound through the entire merge chain.
-disable_queue_limits_for_chained_merges bool default=false
+disable_queue_limits_for_chained_merges bool default=true
 
 ## Whether the deadlock detector should be enabled or not. If disabled, it will
 ## still run, but it will never actually abort the process it is running in.

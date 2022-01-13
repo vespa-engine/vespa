@@ -45,7 +45,7 @@ bucket_merge_chunk_size int default=33554432 restart
 
 ## If set, portions of apply bucket diff handling will be performed asynchronously
 ## with persistence thread not waiting for local writes to complete.
-async_apply_bucket_diff bool default=false
+async_apply_bucket_diff bool default=true
 
 ## When merging, it is possible to send more metadata than needed in order to
 ## let local nodes in merge decide which entries fits best to add this time

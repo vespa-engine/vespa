@@ -24,7 +24,7 @@ make_proton_config(double concurrency)
 
     builder.feeding.concurrency = concurrency;
     builder.feeding.sharedFieldWriterExecutor = ProtonConfig::Feeding::SharedFieldWriterExecutor::DOCUMENT_DB;
-    builder.indexing.tasklimit = 300;
+    builder.indexing.tasklimit = 255;
     return builder;
 }
 
@@ -73,7 +73,8 @@ TEST_F(SharedThreadingServiceTest, field_writer_can_be_shared_across_all_documen
     setup(0.75, 8);
     EXPECT_TRUE(field_writer());
     EXPECT_EQ(6, field_writer()->getNumExecutors());
-    EXPECT_EQ(300, field_writer()->first_executor()->getTaskLimit());
+    // This is rounded to the nearest power of 2 when using THROUGHPUT feed executor.
+    EXPECT_EQ(256, field_writer()->first_executor()->getTaskLimit());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

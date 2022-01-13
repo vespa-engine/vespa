@@ -825,7 +825,7 @@ public class ContentBuilderTest extends DomBuilderTest {
 
     @Test
     public void feed_master_task_limit_is_controlled_by_feature_flag() {
-        assertEquals(0, resolveFeedMasterTaskLimitConfigWithFeatureFlag(null));
+        assertEquals(1000, resolveFeedMasterTaskLimitConfigWithFeatureFlag(null));
         assertEquals(2000, resolveFeedMasterTaskLimitConfigWithFeatureFlag(2000));
     }
 

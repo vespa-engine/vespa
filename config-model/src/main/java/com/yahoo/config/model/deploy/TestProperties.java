@@ -40,9 +40,9 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
-    private String sequencerType = "LATENCY";
+    private String sequencerType = "THROUGHPUT";
     private int feedTaskLimit = 1000;
-    private int feedMasterTaskLimit = 0;
+    private int feedMasterTaskLimit = 1000;
     private String sharedFieldWriterExecutor = "NONE";
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
@@ -57,8 +57,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
     private int maxConcurrentMergesPerNode = 16;
-    private int maxMergeQueueSize = 1024;
-    private boolean ignoreMergeQueueLimit = false;
+    private int maxMergeQueueSize = 100;
+    private boolean ignoreMergeQueueLimit = true;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
     private double resourceLimitDisk = 0.8;
@@ -66,11 +66,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double minNodeRatioPerGroup = 0.0;
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
-    private int distributorMergeBusyWait = 10;
+    private int distributorMergeBusyWait = 1;
     private int maxUnCommittedMemory = 123456;
-    private boolean distributorEnhancedMaintenanceScheduling = false;
-    private boolean asyncApplyBucketDiff = false;
-    private boolean unorderedMergeChaining = false;
+    private boolean distributorEnhancedMaintenanceScheduling = true;
+    private boolean asyncApplyBucketDiff = true;
+    private boolean unorderedMergeChaining = true;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
