@@ -465,6 +465,23 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void downgradingApplicationVersionWorks() {
+        var app = tester.newDeploymentContext().submit().deploy();
+        ApplicationVersion appVersion0 = app.lastSubmission().get();
+        app.submit().deploy();
+
+        // Downgrading application version.
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
+        assertEquals(Change.of(appVersion0), app.instance().change());
+        app.runJob(stagingTest)
+           .runJob(productionUsCentral1)
+           .runJob(productionUsEast3)
+           .runJob(productionUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
+        assertEquals(appVersion0, app.instance().deployments().get(productionUsEast3.zone(tester.controller().system())).applicationVersion());
+    }
+
+    @Test
     public void settingANoOpChangeIsANoOp() {
         var app = tester.newDeploymentContext().submit().deploy();
         ApplicationVersion appVersion0 = app.lastSubmission().get();
@@ -475,16 +492,6 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app.instance().change());
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion1));
         assertEquals(Change.empty(), app.instance().change());
-        
-        // Downgrading application version.
-        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
-        assertEquals(Change.of(appVersion0), app.instance().change());
-        app.runJob(stagingTest)
-           .runJob(productionUsCentral1)
-           .runJob(productionUsEast3)
-           .runJob(productionUsWest1);
-        assertEquals(Change.empty(), app.instance().change());
-        assertEquals(appVersion0, app.instance().deployments().get(productionUsEast3.zone(tester.controller().system())).applicationVersion());
     }
 
     @Test
