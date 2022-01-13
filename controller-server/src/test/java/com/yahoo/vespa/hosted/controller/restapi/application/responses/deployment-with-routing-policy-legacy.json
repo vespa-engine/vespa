@@ -23,14 +23,6 @@
     },
     {
       "cluster": "default",
-      "tls": false,
-      "url": "http://instance1.application1.tenant1.us-west-1.prod.vespa.yahooapis.com:4080/",
-      "scope": "zone",
-      "routingMethod": "shared",
-      "legacy": true
-    },
-    {
-      "cluster": "default",
       "tls": true,
       "url": "https://instance1--application1--tenant1.us-west-1.prod.vespa.yahooapis.com:4443/",
       "scope": "zone",

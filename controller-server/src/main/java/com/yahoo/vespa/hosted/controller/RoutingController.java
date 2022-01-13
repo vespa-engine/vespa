@@ -441,14 +441,8 @@ public class RoutingController {
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
-            // Add legacy endpoints
+            // Add legacy endpoint
             if (legacyNamesAvailable && method == RoutingMethod.shared) {
-                endpoints.add(Endpoint.of(routingId.instance())
-                                      .target(routingId.endpointId(), cluster, deployments)
-                                      .on(Port.plain(4080))
-                                      .legacy()
-                                      .routingMethod(method)
-                                      .in(controller.system()));
                 endpoints.add(Endpoint.of(routingId.instance())
                                       .target(routingId.endpointId(), cluster, deployments)
                                       .on(Port.tls(4443))

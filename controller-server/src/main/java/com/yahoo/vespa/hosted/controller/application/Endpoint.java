@@ -42,7 +42,6 @@ public class Endpoint {
     private final Scope scope;
     private final boolean legacy;
     private final RoutingMethod routingMethod;
-    private final boolean tls;
 
     private Endpoint(TenantAndApplicationId application, Optional<InstanceName> instanceName, EndpointId id,
                      ClusterSpec.Id cluster, URI url, List<Target> targets, Scope scope, Port port, boolean legacy,
@@ -63,7 +62,6 @@ public class Endpoint {
         this.scope = requireScope(scope, routingMethod);
         this.legacy = legacy;
         this.routingMethod = routingMethod;
-        this.tls = port.tls;
     }
 
     /**
@@ -125,7 +123,7 @@ public class Endpoint {
 
     /** Returns whether this endpoint supports TLS connections */
     public boolean tls() {
-        return tls;
+        return true;
     }
 
     /** Returns whether this requires a rotation to be reachable */
@@ -164,10 +162,9 @@ public class Endpoint {
     private static URI createUrl(String name, TenantAndApplicationId application, Optional<InstanceName> instance,
                                  List<Target> targets, Scope scope, SystemName system, Port port, boolean legacy,
                                  RoutingMethod routingMethod) {
-        String scheme = port.tls ? "https" : "http";
-        String separator = separator(system, routingMethod, port.tls);
+        String separator = separator(system, routingMethod);
         String portPart = port.isDefault() ? "" : ":" + port.port;
-        return URI.create(scheme + "://" +
+        return URI.create("https://" +
                           sanitize(namePart(name, separator)) +
                           systemPart(system, separator) +
                           sanitize(instancePart(instance, separator)) +
@@ -185,8 +182,7 @@ public class Endpoint {
         return part.replace('_', '-');
     }
 
-    private static String separator(SystemName system, RoutingMethod routingMethod, boolean tls) {
-        if (!tls) return ".";
+    private static String separator(SystemName system, RoutingMethod routingMethod) {
         if (routingMethod.isDirect()) return ".";
         if (system.isPublic()) return ".";
         return "--";
@@ -390,21 +386,19 @@ public class Endpoint {
     /** Represents an endpoint's HTTP port */
     public static class Port {
 
-        private static final Port TLS_DEFAULT = new Port(443, true);
+        private static final Port TLS_DEFAULT = new Port(443);
 
         private final int port;
-        private final boolean tls;
 
-        private Port(int port, boolean tls) {
+        private Port(int port) {
             if (port < 1 || port > 65535) {
                 throw new IllegalArgumentException("Port must be between 1 and 65535, got " + port);
             }
             this.port = port;
-            this.tls = tls;
         }
 
         private boolean isDefault() {
-            return port == 80 || port == 443;
+            return port == 443;
         }
 
         /** Returns the default HTTPS port */
@@ -420,12 +414,7 @@ public class Endpoint {
 
         /** Create a HTTPS port */
         public static Port tls(int port) {
-            return new Port(port, true);
-        }
-
-        /** Create a HTTP port */
-        public static Port plain(int port) {
-            return new Port(port, false);
+            return new Port(port);
         }
 
     }
