@@ -69,6 +69,20 @@ public class BundleValidatorTest {
                         "The org.json library will no longer provided by jdisc runtime on Vespa 8. See https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.");
     }
 
+    @Test
+    public void outputs_deploy_warning_on_deprecated_dependency() throws IOException {
+        StringBuffer buffer = new StringBuffer();
+        DeployLogger logger = createDeployLogger(buffer);
+        BundleValidator validator = new BundleValidator();
+        JarFile jarFile = createTemporaryJarFile("pom-xml-warnings");
+        validator.validateJarFile(logger, jarFile);
+        assertThat(buffer.toString())
+                .contains("For pom.xml in 'pom-xml-warnings.jar': \n" +
+                        "The dependency com.yahoo.vespa:vespa-http-client-extensions is listed below dependencies. \n" +
+                        "The 'vespa-http-client-extensions' artifact will be removed in Vespa 8. " +
+                        "Programmatic use can be safely removed from system/staging tests. See internal Vespa 8 release notes for details.");
+    }
+
     private JarFile createTemporaryJarFile(String testArtifact) throws IOException {
         Path jarFile = tempDir.newFile(testArtifact + ".jar").toPath();
         Path artifactDirectory = Paths.get("src/test/cfg/application/validation/testjars/" + testArtifact);

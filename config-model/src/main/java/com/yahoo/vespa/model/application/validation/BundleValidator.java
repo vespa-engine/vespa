@@ -10,8 +10,17 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.model.VespaModel;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,12 +29,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * A validator for bundles.  Uses BND library for some of the validation.
@@ -61,6 +73,8 @@ public class BundleValidator extends Validator {
             throw new IllegalArgumentException("Non-existing or invalid manifest in " + filename);
         }
         validateManifest(deployLogger, filename, manifest);
+        getPomXmlContent(deployLogger, jarFile)
+                .ifPresent(pomXml -> validatePomXml(deployLogger, filename, pomXml));
     }
 
     private void validateManifest(DeployLogger deployLogger, String filename, Manifest mf) {
@@ -92,18 +106,20 @@ public class BundleValidator extends Validator {
     private static void validateImportedPackages(DeployLogger deployLogger, String filename, Manifest manifest) {
         Domain osgiHeaders = Domain.domain(manifest);
         Parameters importPackage = osgiHeaders.getImportPackage();
-        Map<DeprecatedArtifact, List<String>> deprecatedPackagesInUse = new HashMap<>();
+        Map<DeprecatedProvidedBundle, List<String>> deprecatedPackagesInUse = new HashMap<>();
 
         importPackage.forEach((packageName, attrs) -> {
             VersionRange versionRange = attrs.getVersion() != null
                     ? VersionRange.parseOSGiVersionRange(attrs.getVersion())
                     : null;
 
-            for (DeprecatedArtifact deprecatedArtifact : DeprecatedArtifact.values()) {
-                if (deprecatedArtifact.javaPackages.contains(packageName)
-                        && (versionRange == null || deprecatedArtifact.versionDiscriminator.test(versionRange))) {
-                    deprecatedPackagesInUse.computeIfAbsent(deprecatedArtifact, __ -> new ArrayList<>())
-                            .add(packageName);
+            for (DeprecatedProvidedBundle deprecatedBundle : DeprecatedProvidedBundle.values()) {
+                for (Predicate<String> matcher : deprecatedBundle.javaPackageMatchers) {
+                    if (matcher.test(packageName)
+                            && (versionRange == null || deprecatedBundle.versionDiscriminator.test(versionRange))) {
+                        deprecatedPackagesInUse.computeIfAbsent(deprecatedBundle, __ -> new ArrayList<>())
+                                .add(packageName);
+                    }
                 }
             }
         });
@@ -117,27 +133,91 @@ public class BundleValidator extends Validator {
         });
     }
 
-    private enum DeprecatedArtifact {
+    private static final Pattern POM_FILE_LOCATION = Pattern.compile("META-INF/maven/.+?/.+?/pom.xml");
+
+    private Optional<String> getPomXmlContent(DeployLogger deployLogger, JarFile jarFile) {
+        return jarFile.stream()
+                .filter(f -> POM_FILE_LOCATION.matcher(f.getName()).matches())
+                .findFirst()
+                .map(f -> {
+                    try {
+                        return new String(jarFile.getInputStream(f).readAllBytes());
+                    } catch (IOException e) {
+                        deployLogger.log(Level.INFO,
+                                String.format("Unable to read '%s' from '%s'", f.getName(), jarFile.getName()));
+                        return null;
+                    }
+                });
+    }
+
+    private void validatePomXml(DeployLogger deployLogger, String jarFilename, String pomXmlContent) {
+        try {
+            Document pom = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder()
+                    .parse(new InputSource(new StringReader(pomXmlContent)));
+            NodeList dependencies = (NodeList) XPathFactory.newDefaultInstance().newXPath()
+                    .compile("/project/dependencies/dependency")
+                    .evaluate(pom, XPathConstants.NODESET);
+            for (int i = 0; i < dependencies.getLength(); i++) {
+                Element dependency = (Element) dependencies.item(i);
+                String groupId = dependency.getElementsByTagName("groupId").item(0).getTextContent();
+                String artifactId = dependency.getElementsByTagName("artifactId").item(0).getTextContent();
+                for (DeprecatedMavenArtifact deprecatedArtifact : DeprecatedMavenArtifact.values()) {
+                    if (groupId.equals(deprecatedArtifact.groupId) && artifactId.equals(deprecatedArtifact.artifactId)) {
+                        deployLogger.logApplicationPackage(Level.WARNING,
+                                String.format("For pom.xml in '%s': \n" +
+                                                "The dependency %s:%s is listed below dependencies. \n" +
+                                                "%s",
+                                        jarFilename, groupId, artifactId, deprecatedArtifact.description));
+                    }
+                }
+            }
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            deployLogger.log(Level.INFO, String.format("Unable to parse pom.xml from %s", jarFilename));
+        }
+    }
+
+    private enum DeprecatedMavenArtifact {
+        VESPA_HTTP_CLIENT_EXTENSION("com.yahoo.vespa", "vespa-http-client-extensions",
+                "The 'vespa-http-client-extensions' artifact will be removed in Vespa 8. " +
+                        "Programmatic use can be safely removed from system/staging tests. " +
+                        "See internal Vespa 8 release notes for details.");
+
+        final String groupId;
+        final String artifactId;
+        final String description;
+
+        DeprecatedMavenArtifact(String groupId, String artifactId, String description) {
+            this.groupId = groupId;
+            this.artifactId = artifactId;
+            this.description = description;
+        }
+    }
+
+    private enum DeprecatedProvidedBundle {
         ORG_JSON("org.json:json",
                 "The org.json library will no longer provided by jdisc runtime on Vespa 8. " +
                         "See https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.",
-                Set.of("org.json"));
+                Set.of("org\\.json"));
 
         final String name;
-        final Collection<String> javaPackages;
+        final Collection<Predicate<String>> javaPackageMatchers;
         final Predicate<VersionRange> versionDiscriminator;
         final String description;
 
-        DeprecatedArtifact(String name, String description, Collection<String> javaPackages) {
-            this(name, description, __ -> true, javaPackages);
+        DeprecatedProvidedBundle(String name, String description, Collection<String> javaPackagePatterns) {
+            this(name, description, __ -> true, javaPackagePatterns);
         }
 
-        DeprecatedArtifact(String name,
-                           String description,
-                           Predicate<VersionRange> versionDiscriminator,
-                           Collection<String> javaPackages) {
+        DeprecatedProvidedBundle(String name,
+                                 String description,
+                                 Predicate<VersionRange> versionDiscriminator,
+                                 Collection<String> javaPackagePatterns) {
             this.name = name;
-            this.javaPackages = javaPackages;
+            this.javaPackageMatchers = javaPackagePatterns.stream()
+                .map(s -> Pattern.compile(s).asMatchPredicate())
+                .collect(Collectors.toList());
             this.versionDiscriminator = versionDiscriminator;
             this.description = description;
         }
