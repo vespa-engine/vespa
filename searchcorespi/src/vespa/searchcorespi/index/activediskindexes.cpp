@@ -80,6 +80,10 @@ ActiveDiskIndexes::remove(IndexDiskDir index_disk_dir)
 uint64_t
 ActiveDiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir index_disk_dir) const
 {
+    /*
+     * Only report transient size related to a valid fusion index. This ensures
+     * that transient size is reported once per index collection.
+     */
     if (!index_disk_dir.valid() || !index_disk_dir.is_fusion_index()) {
         return 0u;
     }
@@ -89,11 +93,22 @@ ActiveDiskIndexes::get_transient_size(IndexDiskLayout& layout, IndexDiskDir inde
         std::lock_guard lock(_lock);
         for (auto &entry : _active) {
             if (entry.first < index_disk_dir) {
+                /*
+                 * Indexes before current fusion index are on the way out and
+                 * will be removed when all older index collections
+                 * referencing them are destroyed. Disk space used by these
+                 * indexes is considered transient.
+                 */
                 if (entry.second.get_size_on_disk().has_value()) {
                     transient_size += entry.second.get_size_on_disk().value();
                 }
             }
             if (index_disk_dir < entry.first && entry.first.is_fusion_index()) {
+                /*
+                 * Fusion indexes after current fusion index can be partially
+                 * complete and might be removed if fusion is aborted. Disk
+                 * space used by these indexes is consider transient.
+                 */
                 if (entry.second.get_size_on_disk().has_value()) {
                     transient_size += entry.second.get_size_on_disk().value();
                 } else {

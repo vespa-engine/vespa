@@ -85,6 +85,12 @@ TEST_F(ActiveDiskIndexesTest, remove_works)
 
 TEST_F(ActiveDiskIndexesTest, basic_get_transient_size_works)
 {
+    /*
+     * When starting to use a new fusion index, we have a transient
+     * period with two ISearchableIndexCollection instances:
+     * - old, containing index.fusion.1 and index.flush.2
+     * - new, containing index.fusion.2
+     */
     setActive("index.fusion.1", 1000000);
     setActive("index.flush.2", 500000);
     setActive("index.fusion.2", 1200000);
@@ -92,6 +98,10 @@ TEST_F(ActiveDiskIndexesTest, basic_get_transient_size_works)
     auto flush2 = get_index_disk_dir("index.flush.2");
     auto fusion2 = get_index_disk_dir("index.fusion.2");
     {
+        /*
+         * When using the old index collection, disk space used by
+         * index.fusion.2 is considered transient.
+         */
         SCOPED_TRACE("index.fusion.1");
         assert_transient_size(1200000, fusion1);
     }
@@ -100,29 +110,50 @@ TEST_F(ActiveDiskIndexesTest, basic_get_transient_size_works)
         assert_transient_size(0, flush2);
     }
     {
+        /*
+         * When using the new index collection, disk space used by
+         * index.fusion.1 and index.flush.2 is considered transient.
+         */
         SCOPED_TRACE("index.fusion.2");
         assert_transient_size(1500000, fusion2);
     }
-    notActive("index.fusion.2");
+    notActive("index.fusion.1");
+    notActive("index.flush.2");
     {
-        SCOPED_TRACE("index.fusion.1 after remove of index.fusion.2");
-        assert_transient_size(0, fusion1);
+        /*
+         * old index collection removed.
+         */
+        SCOPED_TRACE("index.fusion.2 after remove of index.fusion.1 and index.flush.1");
+        assert_transient_size(0, fusion2);
     }
 }
 
-TEST_F(ActiveDiskIndexesTest, dynamic_get_transient_size_works)
+TEST_F(ActiveDiskIndexesTest, get_transient_size_during_ongoing_fusion)
 {
+    /*
+     * During ongoing fusion, we have one ISearchableIndexCollection instance:
+     * - old, containing index.fusion.1 and index.flush.2
+     *
+     * Fusion output directory is index.fusion.2
+     */
     setActive("index.fusion.1", 1000000);
+    setActive("index.flush.2", 500000);
     auto fusion1 = get_index_disk_dir("index.fusion.1");
     auto fusion2 = get_index_disk_dir("index.fusion.2");
-    add_not_active(fusion2);
+    add_not_active(fusion2); // start tracking disk space for fusion output
     {
+        /*
+         * Fusion not yet started.
+         */
         SCOPED_TRACE("dir missing");
         assert_transient_size(0, fusion1);
     }
     auto dir = base_dir + "/index.fusion.2";
     vespalib::mkdir(dir, true);
     {
+        /*
+         * Fusion started, but no files written yet.
+         */
         SCOPED_TRACE("empty dir");
         assert_transient_size(0, fusion1);
     }
@@ -136,11 +167,17 @@ TEST_F(ActiveDiskIndexesTest, dynamic_get_transient_size_works)
         ostr.close();
     }
     {
+        /*
+         * Fusion started, one file written.
+         */
         SCOPED_TRACE("single file");
         assert_transient_size((seek_pos + block_size) / block_size * block_size, fusion1);
     }
-    EXPECT_TRUE(remove(fusion2));
+    EXPECT_TRUE(remove(fusion2)); // stop tracking disk space for fusion output
     {
+        /*
+         * Fusion aborted.
+         */
         SCOPED_TRACE("removed");
         assert_transient_size(0, fusion1);
     }
