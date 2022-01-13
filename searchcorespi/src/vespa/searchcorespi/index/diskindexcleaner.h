@@ -6,7 +6,7 @@
 
 namespace searchcorespi {
 namespace index {
-class ActiveDiskIndexes;
+class DiskIndexes;
 
 /**
  * Utility class used to clean and remove index directories.
@@ -16,9 +16,9 @@ struct DiskIndexCleaner {
      * Deletes all indexes with id lower than the most recent fusion id.
      */
     static void clean(const vespalib::string &index_dir,
-                      const ActiveDiskIndexes& active_indexes);
+                      DiskIndexes& disk_indexes);
     static void removeOldIndexes(const vespalib::string &index_dir,
-                                 const ActiveDiskIndexes& active_indexes);
+                                 DiskIndexes& disk_indexes);
 };
 
 }  // namespace index

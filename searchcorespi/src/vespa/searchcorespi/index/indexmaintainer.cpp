@@ -8,6 +8,7 @@
 #include "indexmaintainer.h"
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
+#include "index_disk_dir.h"
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
@@ -88,13 +89,22 @@ class DiskIndexWithDestructorCallback : public IDiskIndex {
 private:
     std::shared_ptr<IDestructorCallback> _callback;
     IDiskIndex::SP                       _index;
+    IndexDiskDir                         _index_disk_dir;
+    IndexDiskLayout&                     _layout;
+    DiskIndexes&                         _disk_indexes;
 
 public:
     DiskIndexWithDestructorCallback(IDiskIndex::SP index,
-                                    std::shared_ptr<IDestructorCallback> callback) noexcept
+                                    std::shared_ptr<IDestructorCallback> callback,
+                                    IndexDiskLayout& layout,
+                                    DiskIndexes& disk_indexes) noexcept
         : _callback(std::move(callback)),
-          _index(std::move(index))
-    { }
+          _index(std::move(index)),
+          _index_disk_dir(IndexDiskLayout::get_index_disk_dir(_index->getIndexDir())),
+          _layout(layout),
+          _disk_indexes(disk_indexes)
+    {
+    }
     ~DiskIndexWithDestructorCallback() override;
     const IDiskIndex &getWrapped() const { return *_index; }
 
@@ -117,8 +127,7 @@ public:
     {
         return _index->createBlueprint(requestContext, fields, term);
     }
-    // TODO: Calculate the total disk size of current fusion indexes and set fusion_size_on_disk().
-    search::SearchableStats getSearchableStats() const override { return _index->getSearchableStats(); }
+    search::SearchableStats getSearchableStats() const override;
     search::SerialNum getSerialNum() const override {
         return _index->getSerialNum();
     }
@@ -142,6 +151,16 @@ public:
 };
 
 DiskIndexWithDestructorCallback::~DiskIndexWithDestructorCallback() = default;
+
+search::SearchableStats
+DiskIndexWithDestructorCallback::getSearchableStats() const
+{
+    auto stats = _index->getSearchableStats();
+    uint64_t transient_size = _disk_indexes.get_transient_size(_layout, _index_disk_dir);
+    stats.fusion_size_on_disk(transient_size);
+    return stats;
+}
+
 
 }  // namespace
 
@@ -272,7 +291,7 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
 void
 IndexMaintainer::deactivateDiskIndexes(vespalib::string indexDir)
 {
-    _active_indexes->notActive(indexDir);
+    _disk_indexes->notActive(indexDir);
     removeOldDiskIndexes();
 }
 
@@ -284,10 +303,13 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
         EventLogger::diskIndexLoadStart(indexDir);
     }
     vespalib::Timer timer;
-    _active_indexes->setActive(indexDir);
+    auto index = _operations.loadDiskIndex(indexDir);
+    auto stats = index->getSearchableStats();
+    _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
     auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
-            _operations.loadDiskIndex(indexDir),
-            makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }));
+            std::move(index),
+            makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
+            _layout, *_disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
@@ -303,11 +325,14 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
         EventLogger::diskIndexLoadStart(indexDir);
     }
     vespalib::Timer timer;
-    _active_indexes->setActive(indexDir);
     const IDiskIndex &wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCallback &>(oldIndex)).getWrapped();
+    auto index = _operations.reloadDiskIndex(wrappedDiskIndex);
+    auto stats = index->getSearchableStats();
+    _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
     auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
-            _operations.reloadDiskIndex(wrappedDiskIndex),
-            makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }));
+            std::move(index),
+            makeLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
+            _layout, *_disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
@@ -844,7 +869,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
                                  IIndexMaintainerOperations &operations)
     : _base_dir(config.getBaseDir()),
       _warmupConfig(config.getWarmup()),
-      _active_indexes(std::make_shared<ActiveDiskIndexes>()),
+      _disk_indexes(std::make_shared<DiskIndexes>()),
       _layout(config.getBaseDir()),
       _schema(config.getSchema()),
       _activeFusionSchema(),
@@ -877,7 +902,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
 {
     // Called by document db init executor thread
     _changeGens.bumpPruneGen();
-    DiskIndexCleaner::clean(_base_dir, *_active_indexes);
+    DiskIndexCleaner::clean(_base_dir, *_disk_indexes);
     FusionSpec spec = IndexReadUtilities::readFusionSpec(_base_dir);
     _next_id = 1 + (spec.flush_ids.empty() ? spec.last_fusion_id : spec.flush_ids.back());
     _last_fusion_id = spec.last_fusion_id;
@@ -1013,6 +1038,27 @@ IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushTok
     return getFusionDir(new_fusion_id);
 }
 
+namespace {
+
+class RemoveFusionIndexGuard {
+    DiskIndexes*       _disk_indexes;
+    IndexDiskDir       _index_disk_dir;
+public:
+    RemoveFusionIndexGuard(DiskIndexes& disk_indexes, IndexDiskDir index_disk_dir)
+        : _disk_indexes(&disk_indexes),
+          _index_disk_dir(index_disk_dir)
+    {
+        _disk_indexes->add_not_active(index_disk_dir);
+    }
+    ~RemoveFusionIndexGuard() {
+        if (_disk_indexes != nullptr) {
+            (void) _disk_indexes->remove(_index_disk_dir);
+        }
+    }
+    void reset() { _disk_indexes = nullptr; }
+};
+
+}
 
 uint32_t
 IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search::IFlushToken> flush_token)
@@ -1034,6 +1080,8 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
     if (FastOS_File::Stat(lastSerialFile.c_str(), &statInfo)) {
         serialNum = IndexReadUtilities::readSerialNum(lastFlushDir);
     }
+    IndexDiskDir fusion_index_disk_dir(fusion_spec.flush_ids.back(), true);
+    RemoveFusionIndexGuard remove_fusion_index_guard(*_disk_indexes, fusion_index_disk_dir);
     FusionRunner fusion_runner(_base_dir, args._schema, tuneFileAttributes, _ctx.getFileHeaderContext());
     uint32_t new_fusion_id = fusion_runner.fuse(fusion_spec, serialNum, _operations, flush_token);
     bool ok = (new_fusion_id != 0);
@@ -1066,6 +1114,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
     }
     ChangeGens changeGens = getChangeGens();
     IDiskIndex::SP new_index(loadDiskIndex(new_fusion_dir));
+    remove_fusion_index_guard.reset();
 
     // Post processing after fusion operation has completed and new disk
     // index has been opened.
@@ -1101,7 +1150,7 @@ void
 IndexMaintainer::removeOldDiskIndexes()
 {
     LockGuard slock(_remove_lock);
-    DiskIndexCleaner::removeOldIndexes(_base_dir, *_active_indexes);
+    DiskIndexCleaner::removeOldIndexes(_base_dir, *_disk_indexes);
 }
 
 IndexMaintainer::FlushStats
