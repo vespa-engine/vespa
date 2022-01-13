@@ -164,9 +164,8 @@ public class BundleValidator extends Validator {
                 for (DeprecatedMavenArtifact deprecatedArtifact : DeprecatedMavenArtifact.values()) {
                     if (groupId.equals(deprecatedArtifact.groupId) && artifactId.equals(deprecatedArtifact.artifactId)) {
                         deployLogger.logApplicationPackage(Level.WARNING,
-                                String.format("For pom.xml in '%s': \n" +
-                                                "The dependency %s:%s is listed below dependencies. \n" +
-                                                "%s",
+                                String.format(
+                                        "The pom.xml of bundle '%s' includes a dependency to the artifact '%s:%s'. \n%s",
                                         jarFilename, groupId, artifactId, deprecatedArtifact.description));
                     }
                 }
@@ -180,7 +179,7 @@ public class BundleValidator extends Validator {
 
     private enum DeprecatedMavenArtifact {
         VESPA_HTTP_CLIENT_EXTENSION("com.yahoo.vespa", "vespa-http-client-extensions",
-                "The 'vespa-http-client-extensions' artifact will be removed in Vespa 8. " +
+                "This artifact will be removed in Vespa 8. " +
                         "Programmatic use can be safely removed from system/staging tests. " +
                         "See internal Vespa 8 release notes for details.");
 

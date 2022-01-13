@@ -77,10 +77,11 @@ public class BundleValidatorTest {
         JarFile jarFile = createTemporaryJarFile("pom-xml-warnings");
         validator.validateJarFile(logger, jarFile);
         assertThat(buffer.toString())
-                .contains("For pom.xml in 'pom-xml-warnings.jar': \n" +
-                        "The dependency com.yahoo.vespa:vespa-http-client-extensions is listed below dependencies. \n" +
-                        "The 'vespa-http-client-extensions' artifact will be removed in Vespa 8. " +
-                        "Programmatic use can be safely removed from system/staging tests. See internal Vespa 8 release notes for details.");
+                .contains("The pom.xml of bundle 'pom-xml-warnings.jar' includes a dependency to the artifact " +
+                        "'com.yahoo.vespa:vespa-http-client-extensions'. \n" +
+                        "This artifact will be removed in Vespa 8. " +
+                        "Programmatic use can be safely removed from system/staging tests. " +
+                        "See internal Vespa 8 release notes for details.\n");
     }
 
     private JarFile createTemporaryJarFile(String testArtifact) throws IOException {
