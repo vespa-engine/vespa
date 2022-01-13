@@ -465,6 +465,23 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void downgradingApplicationVersionWorks() {
+        var app = tester.newDeploymentContext().submit().deploy();
+        ApplicationVersion appVersion0 = app.lastSubmission().get();
+        app.submit().deploy();
+
+        // Downgrading application version.
+        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
+        assertEquals(Change.of(appVersion0), app.instance().change());
+        app.runJob(stagingTest)
+           .runJob(productionUsCentral1)
+           .runJob(productionUsEast3)
+           .runJob(productionUsWest1);
+        assertEquals(Change.empty(), app.instance().change());
+        assertEquals(appVersion0, app.instance().deployments().get(productionUsEast3.zone(tester.controller().system())).applicationVersion());
+    }
+
+    @Test
     public void settingANoOpChangeIsANoOp() {
         var app = tester.newDeploymentContext().submit().deploy();
         ApplicationVersion appVersion0 = app.lastSubmission().get();
@@ -472,8 +489,6 @@ public class DeploymentTriggerTest {
         ApplicationVersion appVersion1 = app.lastSubmission().get();
 
         // Triggering a roll-out of an already deployed application is a no-op.
-        assertEquals(Change.empty(), app.instance().change());
-        tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
         assertEquals(Change.empty(), app.instance().change());
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion1));
         assertEquals(Change.empty(), app.instance().change());
@@ -1114,9 +1129,10 @@ public class DeploymentTriggerTest {
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
         app.runJob(productionCdUsEast1)
            .abortJob(stagingTest) // Complete failing run.
-           .runJob(stagingTest)
+           .runJob(stagingTest)   // Run staging-test for production zone with no prior deployment.
            .runJob(productionCdAwsUsEast1a);
 
+        // Manually deploy to east again, then upgrade the system.
         app.runJob(productionCdUsEast1, cdPackage);
         var version = new Version("7.1");
         tester.controllerTester().upgradeSystem(version);
@@ -1124,16 +1140,16 @@ public class DeploymentTriggerTest {
         // System and staging tests both require unknown versions, and are broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
         app.runJob(productionCdUsEast1)
-           .jobAborted(systemTest)
+           .abortJob(systemTest)
            .jobAborted(stagingTest)
-           .runJob(systemTest)
-           .runJob(stagingTest)
+           .runJob(systemTest)  // Run test for aws zone again.
+           .runJob(stagingTest) // Run test for aws zone again.
            .runJob(productionCdAwsUsEast1a);
 
+        // Deploy manually again, then submit new package.
         app.runJob(productionCdUsEast1, cdPackage);
         app.submit(cdPackage);
-        app.jobAborted(systemTest)
-           .runJob(systemTest);
+        app.runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
         app.runJob(productionCdUsEast1)

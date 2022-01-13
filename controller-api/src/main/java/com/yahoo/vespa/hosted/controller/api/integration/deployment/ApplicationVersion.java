@@ -175,7 +175,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
             return Boolean.compare(buildNumber().isPresent(), o.buildNumber.isPresent()); // Unknown version sorts first
 
         if (deployedDirectly || o.deployedDirectly)
-            return Boolean.compare(deployedDirectly, o.deployedDirectly); // Directly deployed versions sort first
+            return Boolean.compare( ! deployedDirectly, ! o.deployedDirectly); // Directly deployed versions sort first
 
         return Long.compare(buildNumber().getAsLong(), o.buildNumber().getAsLong());
     }

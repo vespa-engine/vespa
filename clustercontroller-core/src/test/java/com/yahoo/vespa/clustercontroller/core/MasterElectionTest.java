@@ -283,7 +283,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForCompleteCycles();
         timer.advanceTime(options.zooKeeperSessionTimeout);
         waitForZookeeperDisconnected();
-        // Noone can be master if server is unavailable
+        // No one can be master if server is unavailable
         log.log(Level.INFO, "Checking master status");
         for (int i=0; i<fleetControllers.size(); ++i) {
             assertFalse("Index " + i, fleetControllers.get(i).isMaster());
