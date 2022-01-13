@@ -1152,7 +1152,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
             if (invalidOptions.isEmpty()) return;
 
-            String message = "Invalid JVM options in services.xml: " + String.join(",", invalidOptions);
+            String message = "Invalid or misplaced JVM options in services.xml: " +
+                    String.join(",", invalidOptions) + "." +
+                    " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
             if (failDeploymentWithInvalidJvmOptions)
                 throw new IllegalArgumentException(message);
             else
@@ -1216,7 +1218,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (options.isEmpty()) return;
 
             Collections.sort(options);
-            String message = "Invalid JVM GC options in services.xml: " + String.join(",", options);
+            String message = "Invalid or misplaced JVM GC options in services.xml: " +
+                    String.join(",", options) + "." +
+                    " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
             if (failDeploymentWithInvalidJvmOptions)
                 throw new IllegalArgumentException(message);
             else

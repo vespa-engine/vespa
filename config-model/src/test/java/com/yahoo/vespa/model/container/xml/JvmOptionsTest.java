@@ -181,7 +181,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                     "-XX:+ParallelGCThreads=8 foo     bar");
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Invalid JVM GC options in services.xml: bar,foo"));
+            assertTrue(e.getMessage().startsWith("Invalid or misplaced JVM GC options in services.xml: bar,foo"));
         }
     }
 
@@ -205,8 +205,10 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         assertEquals(Level.WARNING, firstOption.getFirst());
 
         Collections.sort(strings);
-        assertEquals("Invalid JVM " + (optionName.equals("gc-options") ? "GC " : "") +
-                             "options in services.xml: " + String.join(",", strings), firstOption.getSecond());
+        assertEquals("Invalid or misplaced JVM" + (optionName.equals("gc-options") ? " GC" : "") +
+                             " options in services.xml: " + String.join(",", strings) + "." +
+                             " See https://docs.vespa.ai/en/reference/services-container.html#jvm"
+                             , firstOption.getSecond());
     }
 
     private void buildModelWithJvmOptions(boolean isHosted, TestLogger logger, String optionName, String override) throws IOException, SAXException {
@@ -267,7 +269,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
                                      "-Xms2G foo     bar");
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Invalid JVM options in services.xml: bar,foo"));
+            assertTrue(e.getMessage().contains("Invalid or misplaced JVM options in services.xml: bar,foo"));
         }
     }
 
