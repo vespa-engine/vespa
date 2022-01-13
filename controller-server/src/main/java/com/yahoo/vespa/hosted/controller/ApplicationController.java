@@ -370,7 +370,6 @@ public class ApplicationController {
             try (Lock lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
                 Instance instance = application.get().require(job.application().instance());
-                rejectOldChange(instance, platform, revision, job, zone);
 
                 if (   ! applicationPackage.trustedCertificates().isEmpty()
                     &&   run.testerCertificate().isPresent())
@@ -799,20 +798,6 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Athenz domain in deployment.xml: [" + identityDomain.get().getName() + "] " +
                                                    "must match tenant domain: [" + tenantDomain.getName() + "]");
         }
-    }
-
-    private void rejectOldChange(Instance instance, Version platform, ApplicationVersion revision, JobId job, ZoneId zone) {
-        Deployment deployment = instance.deployments().get(zone);
-        if (deployment == null) return;
-        if (!zone.environment().isProduction()) return;
-
-        boolean platformIsOlder = platform.compareTo(deployment.version()) < 0 && !instance.change().isPinned();
-        boolean revisionIsOlder = revision.compareTo(deployment.applicationVersion()) < 0 &&
-                                  !(revision.isUnknown() && controller.system().isCd());
-        if (platformIsOlder || revisionIsOlder)
-            throw new IllegalArgumentException(Text.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
-                                                             " are older than the currently deployed (platform: %s, application: %s).",
-                                                             job.application(), zone, platform, revision, deployment.version(), deployment.applicationVersion()));
     }
 
     private TenantAndApplicationId dashToUnderscore(TenantAndApplicationId id) {

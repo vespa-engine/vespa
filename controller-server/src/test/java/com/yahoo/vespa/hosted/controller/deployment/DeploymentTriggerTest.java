@@ -1114,9 +1114,10 @@ public class DeploymentTriggerTest {
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
         app.runJob(productionCdUsEast1)
            .abortJob(stagingTest) // Complete failing run.
-           .runJob(stagingTest)
+           .runJob(stagingTest)   // Run staging-test for production zone with no prior deployment.
            .runJob(productionCdAwsUsEast1a);
 
+        // Manually deploy to east again, then upgrade the system.
         app.runJob(productionCdUsEast1, cdPackage);
         var version = new Version("7.1");
         tester.controllerTester().upgradeSystem(version);
@@ -1124,16 +1125,16 @@ public class DeploymentTriggerTest {
         // System and staging tests both require unknown versions, and are broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
         app.runJob(productionCdUsEast1)
-           .jobAborted(systemTest)
+           .abortJob(systemTest)
            .jobAborted(stagingTest)
-           .runJob(systemTest)
-           .runJob(stagingTest)
+           .runJob(systemTest)  // Run test for aws zone again.
+           .runJob(stagingTest) // Run test for aws zone again.
            .runJob(productionCdAwsUsEast1a);
 
+        // Deploy manually again, then submit new package.
         app.runJob(productionCdUsEast1, cdPackage);
         app.submit(cdPackage);
-        app.jobAborted(systemTest)
-           .runJob(systemTest);
+        app.runJob(systemTest);
         // Staging test requires unknown initial version, and is broken.
         tester.controller().applications().deploymentTrigger().forceTrigger(app.instanceId(), productionCdUsEast1, "user", false);
         app.runJob(productionCdUsEast1)
