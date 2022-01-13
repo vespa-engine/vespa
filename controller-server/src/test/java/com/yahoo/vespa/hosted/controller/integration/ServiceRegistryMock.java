@@ -11,15 +11,15 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.MockAccessControlService;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockCloudEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClient;
-import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingDatabaseClientMock;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
@@ -32,10 +32,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.horizon.MockHorizonClie
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopTenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummySystemMonitor;
@@ -59,7 +57,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ZoneRegistryMock zoneRegistryMock;
     private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
-    private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
     private final MockMailer mockMailer = new MockMailer();
     private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final EndpointCertificateValidatorMock endpointCertificateValidatorMock = new EndpointCertificateValidatorMock();
@@ -113,11 +110,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ManualClock clock() {
         return clock;
-    }
-
-    @Override
-    public GlobalRoutingService globalRoutingService() {
-        return memoryGlobalRoutingService;
     }
 
     @Override
@@ -277,10 +269,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public ConfigServerMock configServerMock() {
         return configServerMock;
-    }
-
-    public MemoryGlobalRoutingService globalRoutingServiceMock() {
-        return memoryGlobalRoutingService;
     }
 
     public MockContactRetriever contactRetrieverMock() {

@@ -448,7 +448,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         deploymentTester.upgrader().overrideConfidence(Version.fromString("6.1"), VespaVersion.Confidence.broken);
         deploymentTester.controllerTester().computeVersionStatus();
         setDeploymentMaintainedInfo();
-        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-central-1"));
 
         // GET tenant application deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
@@ -949,7 +948,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               404);
 
         // GET global rotation status
-        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-west-1"));
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
                                       .userIdentity(USER_ID),
                               new File("global-rotation.json"));
@@ -1000,10 +998,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant and deploy
         var app = deploymentTester.newDeploymentContext("tenant1", "application1", "instance1");
         app.submit(applicationPackage).deploy();
-
-        setZoneInRotation("rotation-fqdn-2", ZoneId.from("prod", "us-west-1"));
-        setZoneInRotation("rotation-fqdn-2", ZoneId.from("prod", "us-east-3"));
-        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "eu-west-1"));
 
         // GET global rotation status without specifying endpointId fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1/global-rotation", GET)
@@ -1815,11 +1809,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 }
             });
         }
-    }
-
-    private void setZoneInRotation(String rotationName, ZoneId zone) {
-        tester.serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
-        //new RotationStatusUpdater(tester.controller(), Duration.ofDays(1)).run();
     }
 
     private void updateContactInformation() {
