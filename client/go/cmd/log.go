@@ -32,6 +32,8 @@ var logCmd = &cobra.Command{
 	Long: `Show the Vespa log.
 
 The logs shown can be limited to a relative or fixed period. All timestamps are shown in UTC.
+
+Logs for the past hour are shown if no arguments are given.
 `,
 	Example: `$ vespa log 1h
 $ vespa log --nldequote=false 10m
@@ -68,11 +70,13 @@ $ vespa log --follow`,
 }
 
 func parsePeriod(args []string) (time.Time, time.Time, error) {
-	if len(args) == 1 {
-		if fromArg != "" || toArg != "" {
-			return time.Time{}, time.Time{}, fmt.Errorf("cannot combine --from/--to with relative value: %s", args[0])
+	relativePeriod := fromArg == "" || toArg == ""
+	if relativePeriod {
+		period := "1h"
+		if len(args) > 0 {
+			period = args[0]
 		}
-		d, err := time.ParseDuration(args[0])
+		d, err := time.ParseDuration(period)
 		if err != nil {
 			return time.Time{}, time.Time{}, err
 		}
@@ -82,6 +86,8 @@ func parsePeriod(args []string) (time.Time, time.Time, error) {
 		to := time.Now()
 		from := to.Add(d)
 		return from, to, nil
+	} else if len(args) > 0 {
+		return time.Time{}, time.Time{}, fmt.Errorf("cannot combine --from/--to with relative value: %s", args[0])
 	}
 	from, err := time.Parse(time.RFC3339, fromArg)
 	if err != nil {
