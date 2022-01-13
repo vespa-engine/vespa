@@ -60,7 +60,7 @@ SingleExecutor::sleepProducer(Lock & lock, duration maxWaitTime, uint64_t wakeup
 
 Executor::Task::UP
 SingleExecutor::execute(Task::UP task) {
-    uint64_t wp(0);
+    uint64_t wp;
     {
         Lock guard(_mutex);
         if (_closed) {
@@ -69,6 +69,8 @@ SingleExecutor::execute(Task::UP task) {
         task = wait_for_room_or_put_in_overflow_Q(guard, std::move(task));
         if (task) {
             wp = move_to_main_q(guard, std::move(task));
+        } else {
+            wp = _wp.load(std::memory_order_relaxed) + num_tasks_in_overflow_q(guard);
         }
     }
     if (wp == _wakeupConsumerAt.load(std::memory_order_relaxed)) {
