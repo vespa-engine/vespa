@@ -10,6 +10,8 @@ import java.util.concurrent.TimeoutException;
  */
 public class UncheckedTimeoutException extends RuntimeException {
 
+    public UncheckedTimeoutException() {}
+
     public UncheckedTimeoutException(TimeoutException cause) { super(cause.getMessage(), cause); }
 
     public UncheckedTimeoutException(String message) { super(message); }

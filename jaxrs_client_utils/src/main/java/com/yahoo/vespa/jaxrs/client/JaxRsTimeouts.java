@@ -10,14 +10,14 @@ public interface JaxRsTimeouts {
     /**
      * The connect timeout, which must be at least 1ms. Called once per real REST call.
      *
-     * Throws com.google.common.util.concurrent.UncheckedTimeoutException on timeout.
+     * @throws com.yahoo.concurrent.UncheckedTimeoutException on timeout.
      */
     Duration getConnectTimeoutOrThrow();
 
     /**
      * The read timeout, which must be at least 1ms. Called once per real REST call.
      *
-     * Throws com.google.common.util.concurrent.UncheckedTimeoutException on timeout.
+     * @throws com.yahoo.concurrent.UncheckedTimeoutException on timeout.
      */
     Duration getReadTimeoutOrThrow();
 }

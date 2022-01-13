@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.utils.staterestapi.server;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
-import java.util.logging.Level;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;

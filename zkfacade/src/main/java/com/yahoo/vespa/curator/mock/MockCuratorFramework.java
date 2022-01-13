@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.mock;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.collections.Pair;
 import com.yahoo.concurrent.Lock;
 import com.yahoo.concurrent.Locks;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
