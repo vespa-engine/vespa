@@ -124,7 +124,7 @@ BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
 BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
 %endif
 %else
-BuildRequires: (llvm-devel >= 10.0.1 and llvm-devel < 11)
+BuildRequires: (llvm-devel >= 12.0.1 and llvm-devel < 13)
 %endif
 BuildRequires: vespa-boost-devel >= 1.76.0-1
 BuildRequires: vespa-openssl-devel >= 1.1.1l-1
@@ -302,7 +302,7 @@ Requires: vespa-gtest = 1.11.0
 %define _vespa_llvm_version 12
 %endif
 %else
-%define _vespa_llvm_version 10
+%define _vespa_llvm_version 12
 %endif
 Requires: vespa-gtest = 1.11.0
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
@@ -432,7 +432,7 @@ Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
 Requires: (llvm-libs >= 12.0.0 and llvm-libs < 13)
 %endif
 %else
-Requires: (llvm-libs >= 10.0.1 and llvm-libs < 11)
+Requires: (llvm-libs >= 12.0.1 and llvm-libs < 13)
 %endif
 Requires: vespa-protobuf = 3.19.1
 %endif
