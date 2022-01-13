@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileWriter;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.text.CursorRange;
 
@@ -83,6 +84,11 @@ public class Template implements Form {
         Template template = builder.build();
         values.forEach(template::set);
         return template;
+    }
+
+    public FileWriter getFileWriterTo(Path path) {
+        String content = render();
+        return new FileWriter(path, () -> content);
     }
 
     /** Must be called (if there is a parent) before any other method. */
