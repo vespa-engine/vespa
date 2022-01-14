@@ -57,9 +57,10 @@ public:
 
     ~ResourceUsageTrackerTest();
 
-    void notify(double disk_usage, double memory_usage)
+    void notify(double disk_usage, double memory_usage, double transient_disk_usage = 0.0, double transient_memory_usage = 0.0)
     {
-        _notifier.notify(DiskMemUsageState({ 0.8, disk_usage }, { 0.8, memory_usage }));
+        _notifier.notify(DiskMemUsageState({ 0.8, disk_usage }, { 0.8, memory_usage },
+                                           transient_disk_usage, transient_memory_usage));
     }
 
     ResourceUsage get_usage() { return _listener->get_usage(); }
@@ -75,6 +76,15 @@ TEST_F(ResourceUsageTrackerTest, resource_usage_is_forwarded_to_listener)
     EXPECT_EQ(ResourceUsage(0.5, 0.4), get_usage());
     notify(0.75, 0.25);
     EXPECT_EQ(ResourceUsage(0.75, 0.25), get_usage());
+}
+
+TEST_F(ResourceUsageTrackerTest, transient_resource_usage_is_subtracted_from_absolute_usage)
+{
+    auto register_guard = _tracker->set_listener(*_listener);
+    notify(0.8, 0.5, 0.4, 0.2);
+    EXPECT_EQ(ResourceUsage(0.4, 0.3), get_usage());
+    notify(0.8, 0.5, 0.9, 0.6);
+    EXPECT_EQ(ResourceUsage(0.0, 0.0), get_usage());
 }
 
 TEST_F(ResourceUsageTrackerTest, forwarding_depends_on_register_guard)
