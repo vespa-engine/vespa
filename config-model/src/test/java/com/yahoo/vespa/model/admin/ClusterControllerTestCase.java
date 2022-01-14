@@ -397,7 +397,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
-        assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());
+        assertEquals(16, qrStartConfig.jvm().baseMaxDirectMemorySize());
 
         assertReindexingConfigPresent(model);
         assertReindexingConfiguredOnAdminCluster(model);
