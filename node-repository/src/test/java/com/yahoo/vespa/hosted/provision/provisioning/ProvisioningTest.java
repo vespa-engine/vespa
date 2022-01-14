@@ -871,19 +871,6 @@ public class ProvisioningTest {
     }
 
     @Test
-    public void devsystem_application_deployment_on_devhost() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.dev, Environment.dev, RegionName.from("no-central"))).build();
-
-        tester.makeReadyNodes(4, defaultResources, NodeType.devhost, 1);
-        tester.prepareAndActivateInfraApplication(ProvisioningTester.applicationId(), NodeType.devhost);
-
-        ApplicationId application = ProvisioningTester.applicationId();
-        SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
-        assertEquals(4, state.allHosts.size());
-        tester.activate(application, state.allHosts);
-    }
-
-    @Test
     public void allocates_reserved_nodes_for_type_spec_deployment() {
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         Function<InfraApplication, Collection<HostSpec>> prepareAndActivate = app -> tester.activate(app.getApplicationId(),
