@@ -47,9 +47,7 @@ class TemplateParser {
 
             if (current.eot()) {
                 if (!sentinels.contains(Sentinel.EOT)) {
-                    throw new BadTemplateException(current,
-                                                   "Missing end directive for section started at " +
-                                                   start.calculateLocation().lineAndColumnText());
+                    throw new BadTemplateException(start, "Missing end directive for section started");
                 }
                 return Sentinel.EOT;
             }
@@ -71,12 +69,12 @@ class TemplateParser {
             switch (type) {
                 case "else":
                     if (!sentinels.contains(Sentinel.ELSE))
-                        throw new BadTemplateException(startOfType, "Extraneous 'else'");
+                        throw new BadTemplateException(startOfType, "Stray 'else'");
                     parseEndDirective();
                     return Optional.of(Sentinel.ELSE);
                 case "end":
                     if (!sentinels.contains(Sentinel.END))
-                        throw new BadTemplateException(startOfType, "Extraneous 'end'");
+                        throw new BadTemplateException(startOfType, "Stray 'end'");
                     parseEndDirective();
                     return Optional.of(Sentinel.END);
                 case "if":

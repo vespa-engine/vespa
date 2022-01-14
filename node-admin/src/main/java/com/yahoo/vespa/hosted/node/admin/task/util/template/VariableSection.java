@@ -15,7 +15,7 @@ class VariableSection extends Section {
     private final Cursor nameOffset;
 
     VariableSection(CursorRange range, String name, Cursor nameOffset) {
-        super(range);
+        super("variable", range);
         this.name = name;
         this.nameOffset = nameOffset;
     }
