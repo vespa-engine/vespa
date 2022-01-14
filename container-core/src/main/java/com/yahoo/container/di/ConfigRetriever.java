@@ -70,12 +70,6 @@ public final class ConfigRetriever {
         allKeys.addAll(bootstrapKeys);
         setupComponentSubscriber(allKeys);
 
-        var maybeSnapshot = getConfigsOptional(leastGeneration, isInitializing);
-        log.log(FINE, () -> "getConfigsOnce returning " + maybeSnapshot);
-        return maybeSnapshot;
-    }
-
-    private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean isInitializing) {
         if (componentSubscriber.generation() < bootstrapSubscriber.generation()) {
             return getComponentsSnapshot(leastGeneration, isInitializing);
         }
