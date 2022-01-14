@@ -12,7 +12,9 @@ import java.util.List;
 /**
  * @author Tony Vaagenes
  * @author gjoranv
+ * @deprecated Will be removed in Vespa 8 with no replacement.
  */
+@Deprecated(forRemoval = true, since = "7")
 public class Dependencies<T> {
 
     final Order<T> before;
