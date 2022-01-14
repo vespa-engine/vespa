@@ -361,7 +361,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS = defineFeatureFlag(
             "fail-deployment-with-invalid-jvm-options", false,
-            List.of("hmusum"), "2021-12-20", "2022-01-20",
+            List.of("hmusum"), "2021-12-20", "2022-02-20",
             "Whether to fail deployments with invalid JVM options in services.xml",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
