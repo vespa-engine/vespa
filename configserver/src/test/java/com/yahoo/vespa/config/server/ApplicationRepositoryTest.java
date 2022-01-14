@@ -143,18 +143,6 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void prepareAndActivate() {
-        PrepareResult result = prepareAndActivate(testApp);
-        assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
-        assertTrue(result.configChangeActions().getReindexActions().isEmpty());
-        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
-
-        Tenant tenant = applicationRepository.getTenant(applicationId());
-        Session session = applicationRepository.getActiveLocalSession(tenant, applicationId());
-        session.getAllocatedHosts();
-    }
-
-    @Test
     public void prepareAndActivateWithTenantMetaData() {
         Instant startTime = clock.instant();
         Duration duration = Duration.ofHours(1);
@@ -165,12 +153,13 @@ public class ApplicationRepositoryTest {
         assertTrue(result.configChangeActions().getReindexActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
 
-        Tenant tenant = applicationRepository.getTenant(applicationId());
+        Session session = applicationRepository.getActiveLocalSession(tenant(), applicationId());
+        session.getAllocatedHosts();
 
         assertEquals(startTime.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(tenant).createdTimestamp().toEpochMilli());
+                     applicationRepository.getTenantMetaData(tenant()).createdTimestamp().toEpochMilli());
         assertEquals(deployTime.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(tenant).lastDeployTimestamp().toEpochMilli());
+                     applicationRepository.getTenantMetaData(tenant()).lastDeployTimestamp().toEpochMilli());
 
         // Creating a new tenant will have metadata with timestamp equal to current time
         clock.advance(duration);
