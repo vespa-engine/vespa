@@ -18,7 +18,7 @@ class IfSection extends Section {
 
     IfSection(CursorRange range, boolean negated, String name, Cursor nameOffset,
               SectionList ifSections, Optional<SectionList> elseSections) {
-        super(range);
+        super("if", range);
         this.negated = negated;
         this.name = name;
         this.nameOffset = nameOffset;

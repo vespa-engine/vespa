@@ -17,7 +17,7 @@ class ListSection extends Section {
     private final List<Template> elements = new ArrayList<>();
 
     ListSection(CursorRange range, String name, Cursor nameOffset, Template body) {
-        super(range);
+        super("list", range);
         this.name = name;
         this.nameOffset = new Cursor(nameOffset);
         this.body = body;

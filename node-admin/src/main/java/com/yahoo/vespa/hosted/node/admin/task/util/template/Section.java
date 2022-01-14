@@ -12,10 +12,12 @@ import java.util.Objects;
  * @author hakonhall
  */
 abstract class Section {
+    private final String type;
     private final CursorRange range;
     private Template template;
 
-    protected Section(CursorRange range) {
+    protected Section(String type, CursorRange range) {
+        this.type = type;
         this.range = range;
     }
 
@@ -24,6 +26,7 @@ abstract class Section {
     /** Guaranteed to return non-null after TemplateBuilder::build() returns. */
     protected Template template() { return Objects.requireNonNull(template); }
 
+    protected String type() { return type; }
     protected CursorRange range() { return range; }
 
     abstract void appendTo(StringBuilder buffer);
