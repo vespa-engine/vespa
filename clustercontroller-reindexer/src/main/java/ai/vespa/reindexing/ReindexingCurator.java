@@ -3,8 +3,7 @@ package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
 import ai.vespa.reindexing.Reindexing.Trigger;
-import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.document.DocumentType;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Cursor;
@@ -18,7 +17,6 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -87,7 +85,7 @@ public class ReindexingCurator {
         try {
             return curator.lock(lockPath(cluster), lockTimeout);
         }
-        catch (UncheckedTimeoutException e) { // TODO jonmv: Avoid use of guava classes.
+        catch (UncheckedTimeoutException e) {
             throw new ReindexingLockException(e);
         }
     }

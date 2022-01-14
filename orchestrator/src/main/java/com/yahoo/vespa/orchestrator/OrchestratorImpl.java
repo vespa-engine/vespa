@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
@@ -13,7 +13,6 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
