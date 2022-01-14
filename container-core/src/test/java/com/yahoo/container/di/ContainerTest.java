@@ -93,10 +93,6 @@ public class ContainerTest extends ContainerTestBase {
         container.shutdownConfigurer();
     }
 
-    //@Test TODO
-    public void deconstructor_is_given_guice_components() {
-    }
-
     @Test
     public void component_is_deconstructed_when_not_reused() {
         writeBootstrapConfigs("id1", DestructableComponent.class);

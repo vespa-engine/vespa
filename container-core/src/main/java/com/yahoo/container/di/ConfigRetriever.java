@@ -76,36 +76,45 @@ public final class ConfigRetriever {
     }
 
     private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean isInitializing) {
-        if (componentSubscriber.generation() < bootstrapSubscriber.generation()) {
-            return getComponentsSnapshot(leastGeneration, isInitializing);
+        long newestBootstrapGeneration = bootstrapSubscriber.generation();
+        long newestComponentGeneration = componentSubscriber.generation();
+        boolean gotNewComponentsConfig = false;
+
+        if (newestComponentGeneration < newestBootstrapGeneration) {
+            newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
+            if (newestComponentGeneration < leastGeneration) {
+                log.log(FINE, () -> "Component generation too old: " + componentSubscriber.generation() + " < " + leastGeneration);
+                return Optional.empty();
+            }
+            if (newestComponentGeneration == newestBootstrapGeneration) {
+                log.log(FINE, () -> "getConfigsOptional: new component generation: " + componentSubscriber.generation());
+                return componentsConfigIfChanged();
+            } else {
+                // Should not be a normal case, and hence a warning to allow investigation.
+                log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration +
+                                    ") and components configs (" + newestComponentGeneration + ").");
+
+                // We'll be called again, for new components config.
+                if (newestComponentGeneration < newestBootstrapGeneration)
+                    return Optional.empty();
+
+                gotNewComponentsConfig = true;
+                // Otherwise, config generation was bumped between getting bootstrap config and now.
+                // If bootstrap config has changed, we must return that, to invalidate components config.
+                // Otherwise, we must increment the bootstrap generation, and possibly return the new components config.
+            }
         }
-        long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration(isInitializing);
-        log.log(FINE, () -> "getConfigsOptional: new bootstrap generation: " + newestBootstrapGeneration);
+        newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration(isInitializing);
+        log.log(FINE, "getConfigsOptional: new bootstrap generation: " + newestBootstrapGeneration);
 
         // leastGeneration is used to ensure newer generation (than the latest bootstrap or component gen)
         // when the previous generation was invalidated due to an exception upon creating the component graph.
         if (newestBootstrapGeneration < leastGeneration) {
             return Optional.empty();
         }
-        return bootstrapConfigIfChanged();
-    }
-
-    private Optional<ConfigSnapshot> getComponentsSnapshot(long leastGeneration, boolean isInitializing) {
-        long newestBootstrapGeneration = bootstrapSubscriber.generation();
-        long newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
-        if (newestComponentGeneration < leastGeneration) {
-            log.log(FINE, () -> "Component generation too old: " + componentSubscriber.generation() + " < " + leastGeneration);
-            return Optional.empty();
-        }
-        if (newestComponentGeneration == newestBootstrapGeneration) {
-            log.log(FINE, () -> "getConfigsOptional: new component generation: " + componentSubscriber.generation());
-            return componentsConfigIfChanged();
-        } else {
-            // Should not be a normal case, and hence a warning to allow investigation.
-            log.warning("Did not get same generation for bootstrap (" + newestBootstrapGeneration +
-                                ") and components configs (" + newestComponentGeneration + ").");
-            return Optional.empty();
-        }
+        boolean finalGotNewComponentsConfig = gotNewComponentsConfig;
+        return bootstrapConfigIfChanged()
+                .or(() -> finalGotNewComponentsConfig ? componentsConfigIfChanged() : Optional.empty());
     }
 
     private Optional<ConfigSnapshot> bootstrapConfigIfChanged() {
