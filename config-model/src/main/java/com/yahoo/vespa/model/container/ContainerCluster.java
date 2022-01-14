@@ -160,7 +160,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private boolean deferChangesUntilRestart = false;
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity) {
+    public ContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState, boolean zooKeeperLocalhostAffinity, int defaultPoolNumThreads) {
         super(parent, configSubId);
         this.name = clusterId;
         this.isHostedVespa = stateIsHosted(deployState);
@@ -176,7 +176,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
-        addComponent(new DefaultThreadpoolProvider(this, deployState.featureFlags().metricsproxyNumThreads()));
+        addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");

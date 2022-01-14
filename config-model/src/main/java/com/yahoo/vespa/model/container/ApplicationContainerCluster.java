@@ -94,7 +94,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private List<ApplicationClusterEndpoint> endpointList = List.of();
 
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
-        super(parent, configSubId, clusterId, deployState, true);
+        super(parent, configSubId, clusterId, deployState, true, 10);
         this.tlsClientAuthority = deployState.tlsClientAuthority();
         previousHosts = deployState.getPreviousModel().stream()
                                    .map(Model::allocatedHosts)

@@ -17,7 +17,7 @@ import java.util.Optional;
 public class LogserverContainerCluster extends ContainerCluster<LogserverContainer> {
 
     public LogserverContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
-        super(parent, name, name, deployState, true);
+        super(parent, name, name, deployState, true, deployState.featureFlags().defaultPoolNumThreads());
 
         addDefaultHandlersWithVip();
         addLogHandler();

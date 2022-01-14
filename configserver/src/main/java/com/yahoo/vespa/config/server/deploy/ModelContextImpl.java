@@ -273,7 +273,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
-        @Override public int metricsproxyNumThreads() { return metricsproxyNumThreads; }
+        @Override public int defaultPoolNumThreads() { return metricsproxyNumThreads; }
         @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
