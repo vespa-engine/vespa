@@ -130,6 +130,14 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
+            "hide-shared-routing-endpoint", false,
+            List.of("tokle", "bjormel"), "2020-12-02", "2022-02-01",
+            "Whether the controller should hide shared routing layer endpoint",
+            "Takes effect immediately",
+            APPLICATION_ID
+    );
+
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             List.of("baldersheim"), "2020-12-02", "2022-02-01",
