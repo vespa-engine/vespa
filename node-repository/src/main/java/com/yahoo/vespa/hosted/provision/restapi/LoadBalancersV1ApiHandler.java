@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -18,7 +18,7 @@ public class LoadBalancersV1ApiHandler extends RestApiRequestHandler<LoadBalance
     private final NodeRepository nodeRepository;
 
     @Inject
-    public LoadBalancersV1ApiHandler(LoggingRequestHandler.Context parentCtx, NodeRepository nodeRepository) {
+    public LoadBalancersV1ApiHandler(ThreadedHttpRequestHandler.Context parentCtx, NodeRepository nodeRepository) {
         super(parentCtx, LoadBalancersV1ApiHandler::createRestApiDefinition);
         this.nodeRepository = nodeRepository;
     }

@@ -164,7 +164,7 @@ public class SessionActiveHandlerTest {
     }
 
     private SessionActiveHandler createHandler() {
-        return new SessionActiveHandler(SessionActiveHandler.testOnlyContext(),
+        return new SessionActiveHandler(SessionActiveHandler.testContext(),
                                         applicationRepository,
                                         Zone.defaultZone());
     }

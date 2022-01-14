@@ -5,7 +5,7 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
@@ -34,7 +34,7 @@ import java.util.zip.GZIPInputStream;
  *
  * @author Steinar Knutsen
  */
-public class FeedHandler extends LoggingRequestHandler {
+public class FeedHandler extends ThreadedHttpRequestHandler {
 
     protected final ReplyHandler feedReplyHandler;
     private static final List<Integer> serverSupportedVersions = Collections.unmodifiableList(Arrays.asList(3));

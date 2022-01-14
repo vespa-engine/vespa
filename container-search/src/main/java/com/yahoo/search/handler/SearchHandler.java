@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
-import ai.vespa.cloud.Environment;
-import ai.vespa.cloud.Zone;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
@@ -17,7 +15,7 @@ import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpMethodAclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
@@ -75,7 +73,7 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author bratseth
  */
-public class SearchHandler extends LoggingRequestHandler {
+public class SearchHandler extends ThreadedHttpRequestHandler {
 
     private static final Logger log = Logger.getLogger(SearchHandler.class.getName());
 

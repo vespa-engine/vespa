@@ -3,7 +3,7 @@ package com.yahoo.vespa.serviceview;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.restapi.UriBuilder;
@@ -57,7 +57,7 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
     }
 
     @Inject
-    public StateRequestHandler(LoggingRequestHandler.Context context,
+    public StateRequestHandler(ThreadedHttpRequestHandler.Context context,
                                ConfigserverConfig configserverConfig) {
         super(context, StateRequestHandler::createRestApiDefinition);
         this.restApiPort = configserverConfig.httpport();

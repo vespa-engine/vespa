@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.ca.restapi;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.http.server.jetty.RequestUtils;
 
@@ -50,7 +50,7 @@ import java.util.stream.Stream;
  *
  * @author mpolden
  */
-public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
+public class CertificateAuthorityApiHandler extends ThreadedHttpRequestHandler {
 
     private final SecretStore secretStore;
     private final Certificates certificates;

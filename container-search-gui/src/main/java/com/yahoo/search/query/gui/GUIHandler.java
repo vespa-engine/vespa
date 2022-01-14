@@ -8,7 +8,7 @@ import com.google.inject.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.querytransform.RecallSearcher;
 import com.yahoo.restapi.Path;
@@ -36,7 +36,7 @@ import java.util.logging.Level;
  *
  * @author  Henrik Høiness
  */
-public class GUIHandler extends LoggingRequestHandler {
+public class GUIHandler extends ThreadedHttpRequestHandler {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 

@@ -4,8 +4,7 @@ package com.yahoo.vespa.configserver.flags.http;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
-import java.util.logging.Level;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.configserver.flags.FlagsDb;
@@ -18,18 +17,19 @@ import com.yahoo.yolean.Exceptions;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.Objects;
+import java.util.logging.Level;
 
 /**
  * Handles /flags/v1 requests
  *
  * @author hakonhall
  */
-public class FlagsHandler extends LoggingRequestHandler {
+public class FlagsHandler extends ThreadedHttpRequestHandler {
 
     private final FlagsDb flagsDb;
 
     @Inject
-    public FlagsHandler(LoggingRequestHandler.Context context, FlagsDb flagsDb) {
+    public FlagsHandler(ThreadedHttpRequestHandler.Context context, FlagsDb flagsDb) {
         super(context);
         this.flagsDb = flagsDb;
     }

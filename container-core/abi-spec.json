@@ -2968,7 +2968,7 @@
     "fields": []
   },
   "com.yahoo.processing.handler.AbstractProcessingHandler": {
-    "superClass": "com.yahoo.container.jdisc.LoggingRequestHandler",
+    "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
     "interfaces": [],
     "attributes": [
       "public",

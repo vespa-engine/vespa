@@ -3,7 +3,7 @@ package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.inject.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.Response;
 import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.RestApi;
@@ -32,7 +32,7 @@ public class HostSuspensionRequestHandler extends RestApiRequestHandler<HostSusp
     private final Orchestrator orchestrator;
 
     @Inject
-    public HostSuspensionRequestHandler(LoggingRequestHandler.Context context, Orchestrator orchestrator) {
+    public HostSuspensionRequestHandler(ThreadedHttpRequestHandler.Context context, Orchestrator orchestrator) {
         super(context, HostSuspensionRequestHandler::createRestApiDefinition);
         this.orchestrator = orchestrator;
     }

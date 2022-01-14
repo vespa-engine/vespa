@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
@@ -47,11 +47,11 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  * @author bratseth
  */
 @SuppressWarnings("unused") // Injected
-public class DeploymentApiHandler extends LoggingRequestHandler {
+public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
 
     private final Controller controller;
 
-    public DeploymentApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller) {
+    public DeploymentApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Controller controller) {
         super(parentCtx);
         this.controller = controller;
     }

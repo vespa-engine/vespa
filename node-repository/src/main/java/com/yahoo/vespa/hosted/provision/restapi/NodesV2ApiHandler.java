@@ -11,7 +11,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
@@ -67,7 +67,7 @@ import static com.yahoo.slime.SlimeUtils.optionalString;
  *
  * @author bratseth
  */
-public class NodesV2ApiHandler extends LoggingRequestHandler {
+public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
 
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
@@ -75,7 +75,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private final NodeFlavors nodeFlavors;
 
     @Inject
-    public NodesV2ApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
+    public NodesV2ApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Orchestrator orchestrator,
                              NodeRepository nodeRepository, MetricsDb metricsDb, NodeFlavors flavors) {
         super(parentCtx);
         this.orchestrator = orchestrator;

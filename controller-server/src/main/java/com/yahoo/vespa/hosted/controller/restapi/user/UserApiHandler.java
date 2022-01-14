@@ -7,7 +7,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
  * @author jonmv
  */
 @SuppressWarnings("unused") // Handler
-public class UserApiHandler extends LoggingRequestHandler {
+public class UserApiHandler extends ThreadedHttpRequestHandler {
 
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
 

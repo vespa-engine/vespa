@@ -63,7 +63,7 @@ public class HttpGetConfigHandlerTest {
                 .withOrchestrator(new OrchestratorMock())
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        handler = new HttpGetConfigHandler(HttpGetConfigHandler.testOnlyContext(), tenantRepository);
+        handler = new HttpGetConfigHandler(HttpGetConfigHandler.testContext(), tenantRepository);
         applicationRepository.deploy(testApp, prepareParams());
     }
 

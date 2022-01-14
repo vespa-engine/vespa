@@ -23,7 +23,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ByteArrayResponse;
 import com.yahoo.restapi.ErrorResponse;
@@ -172,7 +172,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private final TestConfigSerializer testConfigSerializer;
 
     @Inject
-    public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
+    public ApplicationApiHandler(ThreadedHttpRequestHandler.Context parentCtx,
                                  Controller controller,
                                  AccessControlRequests accessControlRequests) {
         super(parentCtx, controller.auditLogger());

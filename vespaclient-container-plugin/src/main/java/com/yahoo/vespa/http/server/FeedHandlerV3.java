@@ -4,7 +4,7 @@ package com.yahoo.vespa.http.server;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.messagebus.SessionCache;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  *
  * @author dybis
  */
-public class FeedHandlerV3 extends LoggingRequestHandler {
+public class FeedHandlerV3 extends ThreadedHttpRequestHandler {
 
     private DocumentTypeManager docTypeManager;
     private final Map<String, ClientFeederV3> clientFeederByClientId = new HashMap<>();

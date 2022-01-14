@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.http.server.jetty.testutils.TestDriver;
 import com.yahoo.jdisc.test.MockMetric;
 
@@ -34,11 +34,11 @@ public class RestApiTestDriver implements AutoCloseable {
 
     public static Builder newBuilder(RestApiRequestHandler<?> handler) { return new Builder(handler); }
 
-    @FunctionalInterface public interface RestApiRequestHandlerFactory { RestApiRequestHandler<?> create(LoggingRequestHandler.Context context); }
+    @FunctionalInterface public interface RestApiRequestHandlerFactory { RestApiRequestHandler<?> create(ThreadedHttpRequestHandler.Context context); }
     public static Builder newBuilder(RestApiRequestHandlerFactory factory) { return new Builder(factory); }
 
-    public static LoggingRequestHandler.Context createHandlerTestContext() {
-        return new LoggingRequestHandler.Context(Executors.newSingleThreadExecutor(), new MockMetric());
+    public static ThreadedHttpRequestHandler.Context createHandlerTestContext() {
+        return new ThreadedHttpRequestHandler.Context(Executors.newSingleThreadExecutor(), new MockMetric());
     }
 
     public OptionalInt listenPort() {
