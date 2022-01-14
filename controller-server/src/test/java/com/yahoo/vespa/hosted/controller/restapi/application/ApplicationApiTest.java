@@ -26,8 +26,6 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -126,6 +124,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final String accessDenied = "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}";
 
     private static final ApplicationPackage applicationPackageDefault = new ApplicationPackageBuilder()
+            .withoutAthenzIdentity()
             .instances("default")
             .globalServiceId("foo")
             .region("us-central-1")
@@ -135,6 +134,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
             .build();
 
     private static final ApplicationPackage applicationPackageInstance1 = new ApplicationPackageBuilder()
+            .withoutAthenzIdentity()
             .instances("instance1")
             .globalServiceId("foo")
             .region("us-central-1")
@@ -338,6 +338,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         app1.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsCentral1);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .withoutAthenzIdentity()
                 .instances("instance1")
                 .globalServiceId("foo")
                 .region("us-west-1")
@@ -816,6 +817,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Sixth attempt has a multi-instance deployment spec, and is accepted.
         ApplicationPackage multiInstanceSpec = new ApplicationPackageBuilder()
+                .withoutAthenzIdentity()
                 .instances("instance1,instance2")
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
@@ -1522,7 +1524,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
         var zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
         deploymentTester.controllerTester().zoneRegistry().setRoutingMethod(ZoneApiMock.from(zone),
-                                                                            List.of(RoutingMethod.exclusive, RoutingMethod.shared));
+                                                                            RoutingMethod.exclusive);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
                 .instances("instance1")
@@ -1540,15 +1542,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/instance1", GET)
                                       .userIdentity(USER_ID),
                               new File("deployment-with-routing-policy.json"));
-
-        // GET deployment including legacy endpoints
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/instance1", GET)
-                                      .userIdentity(USER_ID)
-                                      .properties(Map.of("includeLegacyEndpoints", "true")),
-                              new File("deployment-with-routing-policy-legacy.json"));
-
-        // Hide shared endpoints
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.HIDE_SHARED_ROUTING_ENDPOINT.id(), true);
 
         // GET deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/instance1", GET)

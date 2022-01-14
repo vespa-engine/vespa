@@ -52,26 +52,28 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
      */
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
-        this.zones = system.isPublic() ?
-                List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
-                        ZoneApiMock.fromId("staging.aws-us-east-1c"),
-                        ZoneApiMock.fromId("prod.aws-us-east-1c"),
-                        ZoneApiMock.fromId("prod.aws-eu-west-1a")) :
-                List.of(ZoneApiMock.fromId("test.us-east-1"),
-                        ZoneApiMock.fromId("staging.us-east-3"),
-                        ZoneApiMock.fromId("dev.us-east-1"),
-                        ZoneApiMock.fromId("dev.aws-us-east-2a"),
-                        ZoneApiMock.fromId("perf.us-east-3"),
-                        ZoneApiMock.fromId("prod.aws-us-east-1a"),
-                        ZoneApiMock.fromId("prod.ap-northeast-1"),
-                        ZoneApiMock.fromId("prod.ap-northeast-2"),
-                        ZoneApiMock.fromId("prod.ap-southeast-1"),
-                        ZoneApiMock.fromId("prod.us-east-3"),
-                        ZoneApiMock.fromId("prod.us-west-1"),
-                        ZoneApiMock.fromId("prod.us-central-1"),
-                        ZoneApiMock.fromId("prod.eu-west-1"));
-        // All zones use a shared routing method by default
-        setRoutingMethod(this.zones, system.isPublic() ? RoutingMethod.exclusive : RoutingMethod.shared);
+        if (system.isPublic()) {
+            this.zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
+                                 ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                                 ZoneApiMock.fromId("prod.aws-us-east-1c"),
+                                 ZoneApiMock.fromId("prod.aws-eu-west-1a"));
+            setRoutingMethod(this.zones, RoutingMethod.exclusive);
+        } else {
+            this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
+                                 ZoneApiMock.fromId("staging.us-east-3"),
+                                 ZoneApiMock.fromId("dev.us-east-1"),
+                                 ZoneApiMock.fromId("dev.aws-us-east-2a"),
+                                 ZoneApiMock.fromId("perf.us-east-3"),
+                                 ZoneApiMock.fromId("prod.aws-us-east-1a"),
+                                 ZoneApiMock.fromId("prod.ap-northeast-1"),
+                                 ZoneApiMock.fromId("prod.ap-northeast-2"),
+                                 ZoneApiMock.fromId("prod.ap-southeast-1"),
+                                 ZoneApiMock.fromId("prod.us-east-3"),
+                                 ZoneApiMock.fromId("prod.us-west-1"),
+                                 ZoneApiMock.fromId("prod.us-central-1"),
+                                 ZoneApiMock.fromId("prod.eu-west-1"));
+            setRoutingMethod(this.zones, RoutingMethod.sharedLayer4, RoutingMethod.shared);
+        }
     }
 
     public ZoneRegistryMock setDeploymentTimeToLive(ZoneId zone, Duration duration) {

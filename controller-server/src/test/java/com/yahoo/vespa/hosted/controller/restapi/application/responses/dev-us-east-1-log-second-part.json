@@ -11,7 +11,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": " |-- https://application--tenant.us-east-1.dev.vespa.oath.cloud:4443/ (cluster 'default')"
+        "message": " |-- https://application.tenant.us-east-1.dev.vespa.oath.cloud/ (cluster 'default')"
       },
       {
         "at": 0,

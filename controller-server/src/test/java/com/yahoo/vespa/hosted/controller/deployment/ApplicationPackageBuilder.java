@@ -59,7 +59,7 @@ public class ApplicationPackageBuilder {
     private String upgradePolicy = null;
     private String upgradeRollout = null;
     private String globalServiceId = null;
-    private String athenzIdentityAttributes = null;
+    private String athenzIdentityAttributes = "athenz-domain='domain' athenz-service='service'";
     private String searchDefinition = "search test { }";
     private boolean explicitSystemTest = false;
     private boolean explicitStagingTest = false;
@@ -195,7 +195,12 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder athenzIdentity(AthenzDomain domain, AthenzService service) {
         this.athenzIdentityAttributes = Text.format("athenz-domain='%s' athenz-service='%s'", domain.value(),
-                                                      service.value());
+                                                    service.value());
+        return this;
+    }
+
+    public ApplicationPackageBuilder withoutAthenzIdentity() {
+        this.athenzIdentityAttributes = null;
         return this;
     }
 

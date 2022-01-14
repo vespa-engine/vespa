@@ -15,9 +15,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -73,7 +70,6 @@ public class RoutingController {
     private final Controller controller;
     private final RoutingPolicies routingPolicies;
     private final RotationRepository rotationRepository;
-    private final BooleanFlag hideSharedRoutingEndpoint;
 
     public RoutingController(Controller controller, RotationsConfig rotationsConfig) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
@@ -81,7 +77,6 @@ public class RoutingController {
         this.rotationRepository = new RotationRepository(Objects.requireNonNull(rotationsConfig, "rotationsConfig must be non-null"),
                                                          controller.applications(),
                                                          controller.curator());
-        this.hideSharedRoutingEndpoint = Flags.HIDE_SHARED_ROUTING_ENDPOINT.bindTo(controller.flagSource());
     }
 
     /** Create a routing context for given deployment */
@@ -186,17 +181,21 @@ public class RoutingController {
         return EndpointList.copyOf(endpoints);
     }
 
-    /** Read and return zone-scoped endpoints for given deployments, grouped by their zone */
-    public Map<ZoneId, List<Endpoint>> readZoneEndpointsOf(Collection<DeploymentId> deployments) {
-        var endpoints = new TreeMap<ZoneId, List<Endpoint>>(Comparator.comparing(ZoneId::value));
+    /** Read test runner endpoints for given deployments, grouped by their zone */
+    public Map<ZoneId, List<Endpoint>> readTestRunnerEndpointsOf(Collection<DeploymentId> deployments) {
+        TreeMap<ZoneId, List<Endpoint>> endpoints = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {
-            EndpointList zoneEndpoints = readEndpointsOf(deployment).scope(Endpoint.Scope.zone).not().legacy();
-            zoneEndpoints = directEndpoints(zoneEndpoints, deployment.applicationId());
+            EndpointList zoneEndpoints = readEndpointsOf(deployment).scope(Endpoint.Scope.zone)
+                                                                    .not().legacy();
+            EndpointList directEndpoints = zoneEndpoints.direct();
+            if (!directEndpoints.isEmpty()) {
+                zoneEndpoints = directEndpoints; // Use only direct endpoints if we have any
+            }
             if  ( ! zoneEndpoints.isEmpty()) {
                 endpoints.put(deployment.zoneId(), zoneEndpoints.asList());
             }
         }
-        return Collections.unmodifiableMap(endpoints);
+        return Collections.unmodifiableSortedMap(endpoints);
     }
 
     /** Returns certificate DNS names (CN and SAN values) for given deployment */
@@ -353,17 +352,6 @@ public class RoutingController {
                                                         .removeRecords(Record.Type.CNAME,
                                                                        RecordName.from(endpoint.dnsName()),
                                                                        Priority.normal));
-    }
-
-    /** Returns direct routing endpoints if any exist and feature flag is set for given application */
-    // TODO: Remove this when feature flag is removed, and in-line .direct() filter where relevant
-    public EndpointList directEndpoints(EndpointList endpoints, ApplicationId application) {
-        boolean hideSharedEndpoint = hideSharedRoutingEndpoint.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
-        EndpointList directEndpoints = endpoints.direct();
-        if (hideSharedEndpoint && !directEndpoints.isEmpty()) {
-            return directEndpoints;
-        }
-        return endpoints;
     }
 
     /**

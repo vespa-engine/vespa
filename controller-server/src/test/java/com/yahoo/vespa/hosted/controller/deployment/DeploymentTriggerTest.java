@@ -1161,7 +1161,7 @@ public class DeploymentTriggerTest {
     @Test
     public void testsInSeparateInstance() {
         String deploymentSpec =
-                "<deployment version='1.0'>\n" +
+                "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
                 "    <instance id='canary'>\n" +
                 "        <upgrade policy='canary' />\n" +
                 "        <test />\n" +

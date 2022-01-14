@@ -60,8 +60,8 @@ public class RotationRepositoryTest {
         Rotation expected = new Rotation(new RotationId("foo-1"), "foo-1.com");
 
         assertEquals(List.of(expected.id()), rotationIds(application.instance().rotations()));
-        assertEquals(URI.create("https://app1--tenant1.global.vespa.oath.cloud:4443/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(application.instanceId()).primary().get().url());
+        assertEquals(URI.create("https://app1.tenant1.global.vespa.oath.cloud/"),
+                     tester.controller().routing().readDeclaredEndpointsOf(application.instanceId()).direct().first().get().url());
         try (RotationLock lock = repository.lock()) {
             List<AssignedRotation> rotations = repository.getOrAssignRotations(application.application().deploymentSpec(),
                                                                                application.instance(),
@@ -175,10 +175,10 @@ public class RotationRepositoryTest {
         var instance2 = tester.newDeploymentContext("tenant1", "application1", "instance2");
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
         assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
-        assertEquals(URI.create("https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(instance1.instanceId()).primary().get().url());
-        assertEquals(URI.create("https://instance2--application1--tenant1.global.vespa.oath.cloud:4443/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(instance2.instanceId()).primary().get().url());
+        assertEquals(URI.create("https://instance1.application1.tenant1.global.vespa.oath.cloud/"),
+                     tester.controller().routing().readDeclaredEndpointsOf(instance1.instanceId()).direct().first().get().url());
+        assertEquals(URI.create("https://instance2.application1.tenant1.global.vespa.oath.cloud/"),
+                     tester.controller().routing().readDeclaredEndpointsOf(instance2.instanceId()).direct().first().get().url());
     }
 
     @Test
@@ -197,10 +197,10 @@ public class RotationRepositoryTest {
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
         assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
 
-        assertEquals(URI.create("https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(instance1.instanceId()).primary().get().url());
-        assertEquals(URI.create("https://instance2--application1--tenant1.global.vespa.oath.cloud:4443/"),
-                     tester.controller().routing().readDeclaredEndpointsOf(instance2.instanceId()).primary().get().url());
+        assertEquals(URI.create("https://instance1.application1.tenant1.global.vespa.oath.cloud/"),
+                     tester.controller().routing().readDeclaredEndpointsOf(instance1.instanceId()).direct().first().get().url());
+        assertEquals(URI.create("https://instance2.application1.tenant1.global.vespa.oath.cloud/"),
+                     tester.controller().routing().readDeclaredEndpointsOf(instance2.instanceId()).direct().first().get().url());
     }
 
     private void assertSingleRotation(Rotation expected, List<AssignedRotation> assignedRotations, RotationRepository repository) {

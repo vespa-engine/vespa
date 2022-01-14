@@ -35,6 +35,7 @@ import com.yahoo.yolean.Exceptions;
 import java.net.URI;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -98,22 +99,21 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse endpoints(Path path) {
-        var instanceId = instanceFrom(path);
-        var endpoints = controller.routing().readDeclaredEndpointsOf(instanceId)
-                .sortedBy(Comparator.comparing(Endpoint::name))
-                .asList();
+        ApplicationId instanceId = instanceFrom(path);
+        List<Endpoint> endpoints = controller.routing().readDeclaredEndpointsOf(instanceId)
+                                             .sortedBy(Comparator.comparing(Endpoint::dnsName))
+                                             .asList();
 
-        var deployments = endpoints.stream()
-                .flatMap(e -> e.deployments().stream())
-                .distinct()
-                .sorted(Comparator.comparing(DeploymentId::dottedString))
-                .collect(Collectors.toList());
+        List<DeploymentId> deployments = endpoints.stream()
+                                                  .flatMap(e -> e.deployments().stream())
+                                                  .distinct()
+                                                  .collect(Collectors.toList());
 
-        var deploymentsStatus = deployments.stream()
-                .collect(Collectors.toMap(
-                        deploymentId -> deploymentId,
-                        deploymentId -> controller.routing().of(deploymentId).routingStatus())
-                );
+        Map<DeploymentId, RoutingStatus> deploymentsStatus = deployments.stream()
+                                                                        .collect(Collectors.toMap(
+                                                                                deploymentId -> deploymentId,
+                                                                                deploymentId -> controller.routing().of(deploymentId).routingStatus())
+                                                                        );
 
         var slime = new Slime();
         var root = slime.setObject();
