@@ -12,14 +12,15 @@ using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
                                                uint32_t master_task_limit_,
-                                               uint32_t defaultTaskLimit_,
+                                               int32_t defaultTaskLimit_,
                                                OptimizeFor optimize_,
                                                uint32_t kindOfWatermark_,
                                                vespalib::duration reactionTime_,
                                                SharedFieldWriterExecutor shared_field_writer_)
     : _indexingThreads(indexingThreads_),
       _master_task_limit(master_task_limit_),
-      _defaultTaskLimit(defaultTaskLimit_),
+      _defaultTaskLimit(std::abs(defaultTaskLimit_)),
+      _is_task_limit_hard(defaultTaskLimit_ >= 0),
       _optimize(optimize_),
       _kindOfWatermark(kindOfWatermark_),
       _reactionTime(reactionTime_),
@@ -81,6 +82,7 @@ ThreadingServiceConfig::operator==(const ThreadingServiceConfig &rhs) const
     return _indexingThreads == rhs._indexingThreads &&
         _master_task_limit == rhs._master_task_limit &&
         _defaultTaskLimit == rhs._defaultTaskLimit &&
+        _is_task_limit_hard == rhs._is_task_limit_hard &&
         _optimize == rhs._optimize &&
         _kindOfWatermark == rhs._kindOfWatermark &&
         _reactionTime == rhs._reactionTime &&

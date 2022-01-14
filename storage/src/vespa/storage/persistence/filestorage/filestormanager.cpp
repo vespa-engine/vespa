@@ -218,7 +218,7 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
                                                                  _compReg, std::move(operation_throttler));
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
         _sequencedExecutor = vespalib::SequencedTaskExecutor::create(response_executor, numResponseThreads, 10000,
-                                                                     selectSequencer(_config->responseSequencerType));
+                                                                     true, selectSequencer(_config->responseSequencerType));
         assert(_sequencedExecutor);
         LOG(spam, "Setting up the disk");
         for (uint32_t i = 0; i < numThreads; i++) {
