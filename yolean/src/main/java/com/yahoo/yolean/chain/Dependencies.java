@@ -14,7 +14,7 @@ import java.util.List;
  * @author gjoranv
  * @deprecated Will be removed in Vespa 8 with no replacement.
  */
-@Deprecated(forRemoval = true, since = "7")
+@Deprecated
 public class Dependencies<T> {
 
     final Order<T> before;

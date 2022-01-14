@@ -13,7 +13,7 @@ import java.util.Set;
  *
  * @author Tony Vaagenes
  */
-@Deprecated(forRemoval = true, since = "7")
+@Deprecated
 class DirectedGraph {
 
     private IdentityHashMap<Vertex, List<Vertex>> incommingEdges = new IdentityHashMap<>();

@@ -4,7 +4,7 @@ package com.yahoo.yolean.chain;
 /**
  * @author Tony Vaagenes
  */
-@Deprecated(forRemoval = true, since = "7")
+@Deprecated
 interface Vertex {
 
 }

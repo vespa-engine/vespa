@@ -16,7 +16,7 @@ import static java.util.Objects.requireNonNull;
  * @author Tony Vaagenes
  * @deprecated Will be removed in Vespa 8 with no replacement.
  */
-@Deprecated(forRemoval = true, since = "7")
+@Deprecated
 public final class Chain<T> implements Iterable<T> {
 
     private final String id;
