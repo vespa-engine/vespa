@@ -26,12 +26,15 @@ import java.util.Optional;
  *     id: a valid Java identifier
  * </pre>
  *
+ * <p>Other directive delimiters than "%{" and "}" may be used, see {@link TemplateDescriptor}.</p>
+ *
  * <p>Fill the template with variable values ({@link #set(String, String) set()}, set if conditions
  * ({@link #set(String, boolean)}), add list elements ({@link #add(String) add()}, etc, and finally
  * render it as a String ({@link #render()}).</p>
  *
  * <p>To reuse a template, create the template and work on snapshots of that ({@link #snapshot()}).</p>
  *
+ * @see TemplateDescriptor
  * @author hakonhall
  */
 public class Template implements Form {
