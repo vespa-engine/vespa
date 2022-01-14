@@ -578,7 +578,7 @@ public class SessionRepository {
                 // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
                 // we don't want to touch any of them)
                 if (newSessions.contains(candidate.getSessionId())) {
-                    log.log(Level.INFO, () -> "Skipping session " + candidate.getSessionId() + ", newly created: ");
+                    log.log(Level.FINE, () -> "Skipping expiring newly created session " + candidate.getSessionId());
                     continue;
                 }
 
