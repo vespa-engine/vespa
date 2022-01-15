@@ -42,6 +42,7 @@ import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.config.util.ConfigUtils;
@@ -144,10 +145,10 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void prepareAndActivateWithTenantMetaData() {
-        Instant startTime = clock.instant();
+        long startTime = clock.instant().toEpochMilli();
         Duration duration = Duration.ofHours(1);
         clock.advance(duration);
-        Instant deployTime = clock.instant();
+        long deployTime = clock.instant().toEpochMilli();
         PrepareResult result = prepareAndActivate(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getReindexActions().isEmpty());
@@ -156,19 +157,15 @@ public class ApplicationRepositoryTest {
         Session session = applicationRepository.getActiveLocalSession(tenant(), applicationId());
         session.getAllocatedHosts();
 
-        assertEquals(startTime.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(tenant()).createdTimestamp().toEpochMilli());
-        assertEquals(deployTime.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(tenant()).lastDeployTimestamp().toEpochMilli());
+        assertEquals(startTime, tenantMetaData(tenant()).createdTimestamp().toEpochMilli());
+        assertEquals(deployTime, tenantMetaData(tenant()).lastDeployTimestamp().toEpochMilli());
 
         // Creating a new tenant will have metadata with timestamp equal to current time
         clock.advance(duration);
-        Instant createTenantTime = clock.instant();
+        long createTenantTime = clock.instant().toEpochMilli();
         Tenant fooTenant = tenantRepository.addTenant(TenantName.from("foo"));
-        assertEquals(createTenantTime.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(fooTenant).createdTimestamp().toEpochMilli());
-        assertEquals(createTenantTime.toEpochMilli(),
-                     applicationRepository.getTenantMetaData(fooTenant).lastDeployTimestamp().toEpochMilli());
+        assertEquals(createTenantTime, tenantMetaData(fooTenant).createdTimestamp().toEpochMilli());
+        assertEquals(createTenantTime, tenantMetaData(fooTenant).lastDeployTimestamp().toEpochMilli());
     }
 
     @Test
@@ -216,7 +213,7 @@ public class ApplicationRepositoryTest {
     public void createFromActiveSession() {
         long originalSessionId = deployApp(testApp).sessionId();
 
-        long sessionId = applicationRepository.createSessionFromExisting(applicationId(), false, timeoutBudget);
+        long sessionId = createSessionFromExisting(applicationId(), timeoutBudget);
         ApplicationMetaData originalApplicationMetaData = getApplicationMetaData(applicationId(), originalSessionId);
         ApplicationMetaData applicationMetaData = getApplicationMetaData(applicationId(), sessionId);
 
@@ -257,7 +254,6 @@ public class ApplicationRepositoryTest {
 
         // Add file reference that is not in use and should be deleted (older than 'keepFileReferencesDuration')
         File filereferenceDirOldest = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"));
-        //Thread.sleep(Duration.ofSeconds(1).toMillis());
 
         // Add file references that are not in use and could be deleted
         IntStream.range(0, 3).forEach(i -> {
@@ -348,7 +344,7 @@ public class ApplicationRepositoryTest {
             assertTrue(applicationRepository.delete(applicationId()));
         }
 
-        // If delete fails, a retry should work if the failure is transient and zookeeper state should be constistent
+        // If delete fails, a retry should work if the failure is transient and zookeeper state should be consistent
         {
             long sessionId = deployApp(testApp).sessionId();
             assertNotNull(sessionRepository.getRemoteSession(sessionId));
@@ -543,7 +539,7 @@ public class ApplicationRepositoryTest {
         long firstSession = result.sessionId();
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(10));
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
+        long sessionId = createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("tenant:test1 Session 3 is not prepared");
         activate(applicationId(), sessionId, timeoutBudget);
@@ -556,14 +552,13 @@ public class ApplicationRepositoryTest {
     @Test
     public void testActivationTimesOut() {
         // Needed so we can test that the original active session is still active after a failed activation
-        PrepareResult result = deployApp(testAppJdiscOnly);
-        long firstSession = result.sessionId();
+        long firstSession = deployApp(testAppJdiscOnly).sessionId();
 
-        long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
+        long sessionId = createSession(applicationId(), timeoutBudget, testAppJdiscOnly);
         applicationRepository.prepare(sessionId, prepareParams());
         exceptionRule.expect(RuntimeException.class);
         exceptionRule.expectMessage("Timeout exceeded when trying to activate 'test1.testapp'");
-        applicationRepository.activate(applicationRepository.getTenant(applicationId()), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)), false);
+        activate(applicationId(), sessionId, new TimeoutBudget(clock, Duration.ofSeconds(0)));
 
         Session activeSession = applicationRepository.getActiveSession(applicationId());
         assertEquals(firstSession, activeSession.getSessionId());
@@ -576,7 +571,7 @@ public class ApplicationRepositoryTest {
 
         deployApp(testAppJdiscOnly);
 
-        long sessionId2 = applicationRepository.createSessionFromExisting(applicationId(), false, timeoutBudget);
+        long sessionId2 = createSessionFromExisting(applicationId(), timeoutBudget);
         // Deploy and activate another session
         deployApp(testAppJdiscOnly);
 
@@ -618,8 +613,7 @@ public class ApplicationRepositoryTest {
                 .vespaVersion(vespaVersion)
                 .build());
 
-        RequestHandler requestHandler = getRequestHandler(applicationId());
-        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        SimpletypesConfig config = resolve(applicationId(), vespaVersion);
         assertEquals(1337, config.intval());
     }
 
@@ -641,14 +635,13 @@ public class ApplicationRepositoryTest {
                 .vespaVersion(vespaVersion)
                 .build());
 
-        RequestHandler requestHandler = getRequestHandler(applicationId());
-        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        SimpletypesConfig config = resolve(applicationId(), vespaVersion);
         assertEquals(1337, config.intval());
 
-        RequestHandler requestHandler2 = getRequestHandler(appId2);
-        SimpletypesConfig config2 = resolve(SimpletypesConfig.class, requestHandler2, appId2, vespaVersion);
+        SimpletypesConfig config2 = resolve(appId2, vespaVersion);
         assertEquals(1330, config2.intval());
 
+        RequestHandler requestHandler = getRequestHandler(applicationId());
         assertTrue(requestHandler.hasApplication(applicationId(), Optional.of(vespaVersion)));
         assertNull(requestHandler.resolveApplicationId("doesnotexist"));
         assertEquals(new ApplicationId.Builder().tenant(tenant1).applicationName("testapp").build(),
@@ -663,12 +656,11 @@ public class ApplicationRepositoryTest {
                 .vespaVersion(vespaVersion)
                 .build());
 
-        RequestHandler requestHandler = getRequestHandler(applicationId());
-        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        SimpletypesConfig config = resolve(applicationId(), vespaVersion);
         assertEquals(1337, config.intval());
 
         // TODO: Revisit this test, I cannot see that we create a model for version 3.2.1
-        config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), new Version(3, 2, 1));
+        config = resolve(applicationId(), new Version(3, 2, 1));
         assertEquals(1337, config.intval());
     }
 
@@ -680,15 +672,14 @@ public class ApplicationRepositoryTest {
                 .vespaVersion(vespaVersion)
                 .build());
 
-        RequestHandler requestHandler = getRequestHandler(applicationId());
-        SimpletypesConfig config = resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        SimpletypesConfig config = resolve(applicationId(), vespaVersion);
         assertEquals(1337, config.intval());
 
         applicationRepository.delete(applicationId());
 
         exceptionRule.expect(com.yahoo.vespa.config.server.NotFoundException.class);
         exceptionRule.expectMessage("No such application id: test1.testapp");
-        resolve(SimpletypesConfig.class, requestHandler, applicationId(), vespaVersion);
+        resolve(applicationId(), vespaVersion);
     }
 
     private PrepareResult prepareAndActivate(File application) {
@@ -763,12 +754,11 @@ public class ApplicationRepositoryTest {
 
     }
 
-    private <T extends ConfigInstance> T resolve(Class<T> clazz,
-                                                 RequestHandler applications,
-                                                 ApplicationId appId,
-                                                 Version vespaVersion) {
+    private SimpletypesConfig resolve(ApplicationId applicationId, Version vespaVersion) {
         String configId = "";
-        ConfigResponse response = getConfigResponse(clazz, applications, appId, vespaVersion, configId);
+        RequestHandler requestHandler = getRequestHandler(applicationId);
+        Class<SimpletypesConfig> clazz = SimpletypesConfig.class;
+        ConfigResponse response = getConfigResponse(clazz, requestHandler, applicationId, vespaVersion, configId);
         return ConfigPayload.fromUtf8Array(response.getPayload()).toInstance(clazz, configId);
     }
 
@@ -820,6 +810,18 @@ public class ApplicationRepositoryTest {
 
     private void activate(ApplicationId applicationId, long sessionId, TimeoutBudget timeoutBudget) {
         applicationRepository.activate(applicationRepository.getTenant(applicationId), sessionId, timeoutBudget, false);
+    }
+
+    private TenantMetaData tenantMetaData(Tenant tenant) {
+        return applicationRepository.getTenantMetaData(tenant);
+    }
+
+    private long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File app) {
+        return applicationRepository.createSession(applicationId, timeoutBudget, app);
+    }
+
+    private long createSessionFromExisting(ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+        return applicationRepository.createSessionFromExisting(applicationId, false, timeoutBudget);
     }
 
 }
