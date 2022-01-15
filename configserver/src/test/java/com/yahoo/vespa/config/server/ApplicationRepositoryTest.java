@@ -248,19 +248,24 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void deleteUnusedFileReferences() throws IOException, InterruptedException {
+    public void deleteUnusedFileReferences() throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
         Duration keepFileReferencesDuration = Duration.ofSeconds(4);
 
         // Add file reference that is not in use and should be deleted (older than 'keepFileReferencesDuration')
         File filereferenceDirOldest = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"));
+        clock.advance(Duration.ofSeconds(1));
 
         // Add file references that are not in use and could be deleted
         IntStream.range(0, 3).forEach(i -> {
-            createFilereferenceOnDisk(new File(fileReferencesDir, "bar" + i));
-            try { Thread.sleep(Duration.ofSeconds(1).toMillis()); } catch (InterruptedException e) { /* ignore */ }
+            try {
+                createFilereferenceOnDisk(new File(fileReferencesDir, "bar" + i));
+            } catch (IOException e) {
+                fail(e.getMessage());
+            }
+            clock.advance(Duration.ofSeconds(1));
         });
-        Thread.sleep(keepFileReferencesDuration.toMillis());
+        clock.advance(keepFileReferencesDuration);
 
         // Add file reference that is not in use, but should not be deleted (newer than 'keepFileReferencesDuration')
         File filereferenceDirNewest = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"));
@@ -287,10 +292,11 @@ public class ApplicationRepositoryTest {
         assertTrue(filereferenceDirNewest.exists());
     }
 
-    private File createFilereferenceOnDisk(File filereferenceDir) {
+    private File createFilereferenceOnDisk(File filereferenceDir) throws IOException {
         assertTrue(filereferenceDir.mkdir());
-        File bar = new File(filereferenceDir, "file");
-        IOUtils.writeFile(bar, Utf8.toBytes("test"));
+        File file = new File(filereferenceDir, "bar");
+        IOUtils.writeFile(file, Utf8.toBytes("test"));
+        Files.setAttribute(filereferenceDir.toPath(), "lastAccessTime", FileTime.from(clock.instant()));
         return filereferenceDir;
     }
 
