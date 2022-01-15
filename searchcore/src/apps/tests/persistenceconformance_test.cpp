@@ -178,6 +178,12 @@ private:
     MockSharedThreadingService _shared_service;
     storage::spi::dummy::DummyBucketExecutor _bucketExecutor;
 
+    static std::shared_ptr<ProtonConfig> make_proton_config() {
+        ProtonConfigBuilder proton_config;
+        proton_config.indexing.optimize = ProtonConfigBuilder::Indexing::Optimize::LATENCY;
+        return std::make_shared<ProtonConfig>(proton_config);
+    }
+
 public:
     DocumentDBFactory(const vespalib::string &baseDir, int tlsListenPort);
     ~DocumentDBFactory() override;
@@ -196,7 +202,7 @@ public:
         TuneFileDocumentDB::SP tuneFileDocDB(new TuneFileDocumentDB());
         DocumentDBConfigHelper mgr(spec, docType.getName());
         auto b = std::make_shared<BootstrapConfig>(1, factory.getTypeCfg(), factory.getTypeRepo(),
-                                                  std::make_shared<ProtonConfig>(),
+                                                  make_proton_config(),
                                                   std::make_shared<FiledistributorrpcConfig>(),
                                                   std::make_shared<BucketspacesConfig>(),
                                                   tuneFileDocDB, HwInfo());
