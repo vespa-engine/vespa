@@ -113,7 +113,7 @@ class UnrevertableRemoveEntryProcessor : public BucketProcessor::EntryProcessor 
 public:
     using DocumentIdsAndTimeStamps = std::vector<std::pair<spi::Timestamp, spi::DocumentId>>;
     UnrevertableRemoveEntryProcessor(DocumentIdsAndTimeStamps & to_remove)
-            : _to_remove(to_remove)
+        : _to_remove(to_remove)
     {}
 
     void process(spi::DocEntry& entry) override {

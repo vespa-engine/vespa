@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/executor_idle_tracking.h>
 #include <thread>
 #include <atomic>
@@ -19,8 +20,8 @@ namespace vespalib {
  */
 class SingleExecutor final : public vespalib::SyncableThreadExecutor, vespalib::Runnable {
 public:
-    SingleExecutor(init_fun_t func, uint32_t taskLimit);
-    SingleExecutor(init_fun_t func, uint32_t taskLimit, uint32_t watermark, duration reactionTime);
+    SingleExecutor(init_fun_t func, uint32_t reservedQueueSize);
+    SingleExecutor(init_fun_t func, uint32_t reservedQueueSize, bool isQueueSizeHard, uint32_t watermark, duration reactionTime);
     ~SingleExecutor() override;
     Task::UP execute(Task::UP task) override;
     void setTaskLimit(uint32_t taskLimit) override;
@@ -39,12 +40,22 @@ private:
     void drain_tasks();
     void sleepProducer(Lock & guard, duration maxWaitTime, uint64_t wakeupAt);
     void run_tasks_till(uint64_t available);
-    void wait_for_room(Lock & guard);
+    Task::UP wait_for_room_or_put_in_overflow_Q(Lock & guard, Task::UP task);
+    uint64_t move_to_main_q(Lock & guard, Task::UP task);
+    void move_overflow_to_main_q();
+    void move_overflow_to_main_q(Lock & guard);
     uint64_t index(uint64_t counter) const {
         return counter & (_taskLimit.load(std::memory_order_relaxed) - 1);
     }
 
-    uint64_t numTasks() const {
+    uint64_t numTasks();
+    uint64_t numTasks(Lock & guard) const {
+        return num_tasks_in_main_q() + num_tasks_in_overflow_q(guard);
+    }
+    uint64_t num_tasks_in_overflow_q(Lock &) const {
+        return _overflow ? _overflow->size() : 0;
+    }
+    uint64_t num_tasks_in_main_q() const {
         return _wp.load(std::memory_order_relaxed) - _rp.load(std::memory_order_acquire);
     }
     const double                _watermarkRatio;
@@ -67,6 +78,7 @@ private:
     std::atomic<uint32_t>       _watermark;
     const duration              _reactionTime;
     bool                        _closed;
+    std::unique_ptr<ArrayQueue<Task::UP>> _overflow;
 };
 
 }
