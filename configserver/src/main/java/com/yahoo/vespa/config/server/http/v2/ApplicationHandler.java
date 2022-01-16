@@ -387,7 +387,7 @@ public class ApplicationHandler extends HttpHandler {
             object.setString("url", response.uri.toString());
             object.setLong("currentGeneration", response.currentGeneration);
             object.setLong("wantedGeneration", response.wantedGeneration);
-            object.setBool("converged", response.currentGeneration >= response.wantedGeneration);
+            object.setBool("converged", response.converged);
         }
     }
 

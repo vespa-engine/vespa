@@ -288,12 +288,14 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         public final URI uri;
         public final long wantedGeneration;
         public final long currentGeneration;
+        public final boolean converged;
 
         public ServiceListResponse(Map<ServiceInfo, Long> services, URI uri, long wantedGeneration, long currentGeneration) {
             services.forEach((key, value) -> this.services.add(new Service(key, value)));
             this.uri = uri;
             this.wantedGeneration = wantedGeneration;
             this.currentGeneration = currentGeneration;
+            this.converged = currentGeneration >= wantedGeneration;
         }
 
         public List<Service> services() { return services; }

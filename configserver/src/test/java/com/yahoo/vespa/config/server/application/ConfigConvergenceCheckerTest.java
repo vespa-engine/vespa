@@ -28,6 +28,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -94,6 +95,7 @@ public class ConfigConvergenceCheckerTest {
             ServiceListResponse response = checker.getServiceConfigGenerations(application, requestUrl, clientTimeout);
             assertEquals(3, response.wantedGeneration);
             assertEquals(3, response.currentGeneration);
+            assertTrue(response.converged);
             List<ServiceListResponse.Service> services = response.services;
             assertEquals(1, services.size());
             assertService(this.service, services.get(0), 3);
@@ -116,6 +118,7 @@ public class ConfigConvergenceCheckerTest {
             ServiceListResponse response = checker.getServiceConfigGenerations(application, requestUrl, clientTimeout);
             assertEquals(4, response.wantedGeneration);
             assertEquals(3, response.currentGeneration);
+            assertFalse(response.converged);
 
             List<ServiceListResponse.Service> services = response.services;
             assertEquals(2, services.size());
