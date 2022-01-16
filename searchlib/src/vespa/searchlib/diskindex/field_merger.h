@@ -53,7 +53,6 @@ class FieldMerger
     std::unique_ptr<FieldWriter> _writer;
     State _state;
     bool _failed;
-    bool _force_small_merge_chunk;
 
     void make_tmp_dirs();
     bool clean_tmp_dirs();
