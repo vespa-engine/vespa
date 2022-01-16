@@ -89,10 +89,9 @@ public class ConfigConvergenceCheckerTest {
     @Test
     public void service_list_convergence() {
         {
-            URI requestUrl = testServer().resolve("/serviceconverge");
             wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
 
-            ServiceListResponse response = checker.getServiceConfigGenerations(application, requestUrl, clientTimeout);
+            ServiceListResponse response = checker.getConfigGenerationsForAllServices(application, clientTimeout);
             assertEquals(3, response.wantedGeneration);
             assertEquals(3, response.currentGeneration);
             assertTrue(response.converged);
@@ -115,7 +114,7 @@ public class ConfigConvergenceCheckerTest {
 
             URI requestUrl = testServer().resolve("/serviceconverge");
 
-            ServiceListResponse response = checker.getServiceConfigGenerations(application, requestUrl, clientTimeout);
+            ServiceListResponse response = checker.getConfigGenerationsForAllServices(application, clientTimeout);
             assertEquals(4, response.wantedGeneration);
             assertEquals(3, response.currentGeneration);
             assertFalse(response.converged);

@@ -117,10 +117,9 @@ public class ApplicationHandler extends HttpHandler {
     private HttpResponse listServiceConverge(ApplicationId applicationId, HttpRequest request) {
         ServiceListResponse response =
                 applicationRepository.servicesToCheckForConfigConvergence(applicationId,
-                                                                          request.getUri(),
                                                                           getTimeoutFromRequest(request),
                                                                           getVespaVersionFromRequest(request));
-        return new HttpServiceListResponse(response);
+        return new HttpServiceListResponse(response, request.getUri());
     }
 
     private HttpResponse checkServiceConverge(ApplicationId applicationId, String hostAndPort, HttpRequest request) {
@@ -370,7 +369,7 @@ public class ApplicationHandler extends HttpHandler {
     static class HttpServiceListResponse extends JSONResponse {
 
         // Pre-condition: servicesToCheck has a state port
-        public HttpServiceListResponse(ConfigConvergenceChecker.ServiceListResponse response) {
+        public HttpServiceListResponse(ConfigConvergenceChecker.ServiceListResponse response, URI uri) {
             super(200);
             Cursor serviceArray = object.setArray("services");
             response.services().forEach((service) -> {
@@ -381,10 +380,10 @@ public class ApplicationHandler extends HttpHandler {
                 serviceObject.setString("host", hostName);
                 serviceObject.setLong("port", statePort);
                 serviceObject.setString("type", serviceInfo.getServiceType());
-                serviceObject.setString("url", response.uri.toString() + "/" + hostName + ":" + statePort);
+                serviceObject.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
                 serviceObject.setLong("currentGeneration", service.currentGeneration);
             });
-            object.setString("url", response.uri.toString());
+            object.setString("url", uri.toString());
             object.setLong("currentGeneration", response.currentGeneration);
             object.setLong("wantedGeneration", response.wantedGeneration);
             object.setBool("converged", response.converged);

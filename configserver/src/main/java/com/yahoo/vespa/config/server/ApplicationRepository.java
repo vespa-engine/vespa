@@ -88,7 +88,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
@@ -111,8 +110,8 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
-import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceListResponse;
+import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker.ServiceResponse;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getFileReferencesOnDisk;
 import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA_TENANT;
@@ -749,10 +748,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public ServiceListResponse servicesToCheckForConfigConvergence(ApplicationId applicationId,
-                                                                   URI uri,
                                                                    Duration timeoutPerService,
                                                                    Optional<Version> vespaVersion) {
-        return convergeChecker.getServiceConfigGenerations(getApplication(applicationId, vespaVersion), uri, timeoutPerService);
+        return convergeChecker.getConfigGenerationsForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
     }
 
     public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }

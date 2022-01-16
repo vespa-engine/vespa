@@ -90,10 +90,10 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     /** Check all services in given application. Returns the minimum current generation of all services */
-    public ServiceListResponse getServiceConfigGenerations(Application application, URI uri, Duration timeoutPerService) {
+    public ServiceListResponse getConfigGenerationsForAllServices(Application application, Duration timeoutPerService) {
         Map<ServiceInfo, Long> currentGenerations = getServiceConfigGenerations(application, timeoutPerService);
         long currentGeneration = currentGenerations.values().stream().mapToLong(Long::longValue).min().orElse(-1);
-        return new ServiceListResponse(currentGenerations, uri, application.getApplicationGeneration(), currentGeneration);
+        return new ServiceListResponse(currentGenerations, application.getApplicationGeneration(), currentGeneration);
     }
 
     /** Check service identified by host and port in given application */
@@ -256,23 +256,23 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         public final boolean converged;
         public final Optional<String> errorMessage;
 
-        public ServiceResponse(Status status, Long wantedGeneration) {
-            this(status, wantedGeneration, 0L);
+        public ServiceResponse(Status status, long wantedGeneration) {
+            this(status, wantedGeneration, 0);
         }
 
-        public ServiceResponse(Status status, Long wantedGeneration, Long currentGeneration) {
+        public ServiceResponse(Status status, long wantedGeneration, long currentGeneration) {
             this(status, wantedGeneration, currentGeneration, false);
         }
 
-        public ServiceResponse(Status status, Long wantedGeneration, Long currentGeneration, boolean converged) {
+        public ServiceResponse(Status status, long wantedGeneration, long currentGeneration, boolean converged) {
             this(status, wantedGeneration, currentGeneration, converged, Optional.empty());
         }
 
-        public ServiceResponse(Status status, Long wantedGeneration, String errorMessage) {
-            this(status, wantedGeneration, 0L, false, Optional.ofNullable(errorMessage));
+        public ServiceResponse(Status status, long wantedGeneration, String errorMessage) {
+            this(status, wantedGeneration, 0, false, Optional.ofNullable(errorMessage));
         }
 
-        private ServiceResponse(Status status, Long wantedGeneration, Long currentGeneration, boolean converged, Optional<String> errorMessage) {
+        private ServiceResponse(Status status, long wantedGeneration, long currentGeneration, boolean converged, Optional<String> errorMessage) {
             this.status = status;
             this.wantedGeneration = wantedGeneration;
             this.currentGeneration = currentGeneration;
@@ -285,14 +285,12 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     public static class ServiceListResponse {
 
         public final List<Service> services = new ArrayList<>();
-        public final URI uri;
         public final long wantedGeneration;
         public final long currentGeneration;
         public final boolean converged;
 
-        public ServiceListResponse(Map<ServiceInfo, Long> services, URI uri, long wantedGeneration, long currentGeneration) {
+        public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
             services.forEach((key, value) -> this.services.add(new Service(key, value)));
-            this.uri = uri;
             this.wantedGeneration = wantedGeneration;
             this.currentGeneration = currentGeneration;
             this.converged = currentGeneration >= wantedGeneration;
