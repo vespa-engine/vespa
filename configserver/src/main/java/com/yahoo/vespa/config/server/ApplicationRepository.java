@@ -147,6 +147,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Metric metric;
     private final SecretStoreValidator secretStoreValidator;
     private final ClusterReindexingStatusClient clusterReindexingStatusClient;
+    private final FlagSource flagSource;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -203,6 +204,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.metric = Objects.requireNonNull(metric);
         this.secretStoreValidator = Objects.requireNonNull(secretStoreValidator);
         this.clusterReindexingStatusClient = clusterReindexingStatusClient;
+        this.flagSource = flagSource;
     }
 
     public static class Builder {
@@ -1015,6 +1017,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .findFirst();
         return applicationId.orElse(null);
     }
+
+    public FlagSource flagSource() { return flagSource; }
 
     private Session validateThatLocalSessionIsNotActive(Tenant tenant, long sessionId) {
         Session session = getLocalSession(tenant, sessionId);
