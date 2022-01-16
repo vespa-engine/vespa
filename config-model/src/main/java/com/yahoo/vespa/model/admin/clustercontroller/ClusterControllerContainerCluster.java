@@ -22,7 +22,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
 
     public ClusterControllerContainerCluster(
             AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
-        super(parent, subId, name, deployState, false);
+        super(parent, subId, name, deployState, false, deployState.featureFlags().defaultPoolNumThreads());
         addDefaultHandlersWithVip();
         this.reindexingContext = createReindexingContext(deployState);
         setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
