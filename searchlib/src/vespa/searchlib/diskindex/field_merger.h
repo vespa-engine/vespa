@@ -85,7 +85,9 @@ public:
     void merge_field_start();
     void merge_field_finish();
     void process_merge_field(); // Called multiple times
-    bool merge_field();
+    uint32_t get_id() const noexcept { return _id; }
+    bool done() const noexcept { return _state == State::MERGE_DONE; }
+    bool failed() const noexcept { return _failed; }
 };
 
 }
