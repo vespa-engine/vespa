@@ -20,6 +20,7 @@ import java.util.TreeMap;
  *
  * @author Tony Vaagenes
  */
+@Deprecated
 class EnumeratedIdentitySet<T> implements Set<T> {
 
     private int counter = 0;

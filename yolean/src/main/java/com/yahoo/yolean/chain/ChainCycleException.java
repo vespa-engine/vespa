@@ -9,7 +9,9 @@ import java.util.List;
 
 /**
  * @author Tony Vaagenes
+ * @deprecated Will be removed in Vespa 8 with no replacement.
  */
+@Deprecated
 public class ChainCycleException extends RuntimeException {
 
     private final List<?> components;

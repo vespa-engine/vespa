@@ -14,7 +14,9 @@ import static java.util.Objects.requireNonNull;
  * An immutable and ordered list of components
  *
  * @author Tony Vaagenes
+ * @deprecated Will be removed in Vespa 8 with no replacement.
  */
+@Deprecated
 public final class Chain<T> implements Iterable<T> {
 
     private final String id;
