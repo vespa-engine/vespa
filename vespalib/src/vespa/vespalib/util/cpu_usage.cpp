@@ -203,12 +203,10 @@ CpuUsage::do_sample()
     assert(_sampling);
     Sample my_sample;
     std::optional<std::promise<TimedSample>> my_promise;
-    auto t0 = steady_clock::now();
+    auto t = steady_clock::now();
     for (const auto &entry: _threads) {
         my_sample.merge(entry.first->sample());
     }
-    auto t1 = steady_clock::now();
-    auto t = t0 + ((t1 - t0) / 2);
     {
         Guard guard(_lock);
         _sampling = false;

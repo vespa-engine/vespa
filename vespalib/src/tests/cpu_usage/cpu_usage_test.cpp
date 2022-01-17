@@ -165,41 +165,28 @@ TEST("require that cpu samples can be manipulated and inspected") {
 //-----------------------------------------------------------------------------
 
 // prototype for the class we want to use to integrate CPU usage into
-// metrics as smoothed load values. NB: this class is not thread safe.
+// metrics as load values. NB: this class is not thread safe.
 
 class CpuMonitor {
 private:
     CpuUsage::TimedSample _old_sample;
     duration _min_delay;
-    bool _first_time;
     std::array<double,CpuUsage::num_categories> _load;
-
-    // weight of the new load compared to all previously sampled load.
-    static double get_weight(duration dt, bool first_time) {
-        if (first_time || (dt >= 10s)) {
-            return 1.0;
-        }
-        return (to_s(dt)/ to_s(10s));
-    }
 
 public:
     CpuMonitor(duration min_delay)
       : _old_sample(CpuUsage::sample()),
         _min_delay(min_delay),
-        _first_time(true),
         _load() {}
 
     std::array<double,CpuUsage::num_categories> get_load() {
         if (steady_clock::now() >= (_old_sample.first + _min_delay)) {
             auto new_sample = CpuUsage::sample();
-            auto dt = new_sample.first - _old_sample.first;
-            double w = get_weight(dt, _first_time);
+            auto dt = to_s(new_sample.first - _old_sample.first);
             for (size_t i = 0; i < CpuUsage::num_categories; ++i) {
-                double new_load = to_s(new_sample.second[i] - _old_sample.second[i]) / to_s(dt);
-                _load[i] = (_load[i] * (1.0 - w)) + (new_load * w);
+                _load[i] = to_s(new_sample.second[i] - _old_sample.second[i]) / dt;
             }
             _old_sample = new_sample;
-            _first_time = false;
         }
         return _load;
     }
