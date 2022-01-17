@@ -206,6 +206,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.flagSource = flagSource;
     }
 
+    // Should be used by tests only (first constructor in this class makes sure we use injectable components where possible)
     public static class Builder {
         private TenantRepository tenantRepository;
         private Optional<Provisioner> hostProvisioner;
