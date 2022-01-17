@@ -24,7 +24,10 @@ public enum SystemName {
     Public(true, false),
 
     /** Continuous deployment system for testing the Public system */
-    PublicCd(true, true);
+    PublicCd(true, true),
+
+    /** Local development system */
+    dev(false, false);
 
     private final boolean isPublic;
     private final boolean isCd;
@@ -40,6 +43,7 @@ public enum SystemName {
 
     public static SystemName from(String value) {
         switch (value.toLowerCase()) {
+            case "dev": return dev;
             case "cd": return cd;
             case "main": return main;
             case "public": return Public;
@@ -50,6 +54,7 @@ public enum SystemName {
 
     public String value() {
         switch (this) {
+            case dev: return "dev";
             case cd: return "cd";
             case main: return "main";
             case Public: return "public";
