@@ -490,6 +490,18 @@ public class QueryCanonicalizerTestCase {
         assertFalse(shoe.usePositionData());
     }
 
+    @Test
+    public void queryTreeExceedsAllowedSize() {
+        Query query = new Query();
+        QueryTree tree = query.getModel().getQueryTree();
+        tree.setRoot(new WordItem("A"));
+        tree.and(new WordItem("B"));
+
+        assertNull(QueryCanonicalizer.canonicalize(query));
+        query.properties().set("maxQueryItems", 2);
+        assertEquals("Query tree exceeds allowed item count. Configured limit: 2 - Item count: 3", QueryCanonicalizer.canonicalize(query));
+    }
+
     private void assertCanonicalized(String canonicalForm, String expectedError, Item root) {
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(root);

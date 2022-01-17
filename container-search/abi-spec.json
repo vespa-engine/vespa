@@ -5292,6 +5292,7 @@
       "public boolean isEmpty()",
       "public com.yahoo.prelude.query.Item and(com.yahoo.prelude.query.Item)",
       "public static java.util.List getPositiveTerms(com.yahoo.prelude.query.Item)",
+      "public int treeSize()",
       "public bridge synthetic com.yahoo.prelude.query.CompositeItem clone()",
       "public bridge synthetic com.yahoo.prelude.query.Item clone()",
       "public bridge synthetic java.lang.Object clone()"
