@@ -252,36 +252,39 @@ Test::testMinOne()
 void
 Test::testDynamicWindowSize()
 {
-    std::unique_ptr<DynamicTimer> ptr(new DynamicTimer());
-    DynamicTimer *timer = ptr.get();
+    auto ptr = std::make_unique<DynamicTimer>();
+    auto* timer = ptr.get();
     DynamicThrottlePolicy policy(std::move(ptr));
 
-    policy.setWindowSizeIncrement(5);
+    policy.setWindowSizeIncrement(5)
+          .setResizeRate(1);
 
     double windowSize = getWindowSize(policy, *timer, 100);
-    ASSERT_TRUE(windowSize >= 90 && windowSize <= 110);
+    ASSERT_TRUE(windowSize >= 90 && windowSize <= 105);
 
     windowSize = getWindowSize(policy, *timer, 200);
-    ASSERT_TRUE(windowSize >= 90 && windowSize <= 210);
+    ASSERT_TRUE(windowSize >= 180 && windowSize <= 205);
 
     windowSize = getWindowSize(policy, *timer, 50);
-    ASSERT_TRUE(windowSize >= 9 && windowSize <= 55);
+    ASSERT_TRUE(windowSize >= 45 && windowSize <= 55);
 
     windowSize = getWindowSize(policy, *timer, 500);
-    ASSERT_TRUE(windowSize >= 90 && windowSize <= 505);
+    ASSERT_TRUE(windowSize >= 450 && windowSize <= 505);
 
     windowSize = getWindowSize(policy, *timer, 100);
-    ASSERT_TRUE(windowSize >= 90 && windowSize <= 110);
+    ASSERT_TRUE(windowSize >= 90 && windowSize <= 115);
 }
 
 void
 Test::testIdleTimePeriod()
 {
-    ITimer::UP ptr(new DynamicTimer());
-    DynamicTimer *timer = static_cast<DynamicTimer*>(ptr.get());
+    auto ptr = std::make_unique<DynamicTimer>();
+    auto* timer = ptr.get();
     DynamicThrottlePolicy policy(std::move(ptr));
 
-    policy.setWindowSizeIncrement(5);
+    policy.setWindowSizeIncrement(5)
+          .setMinWindowSize(1)
+          .setResizeRate(1);
 
     double windowSize = getWindowSize(policy, *timer, 100);
     ASSERT_TRUE(windowSize >= 90 && windowSize <= 110);
@@ -303,12 +306,13 @@ Test::testIdleTimePeriod()
 void
 Test::testMinWindowSize()
 {
-    ITimer::UP ptr(new DynamicTimer());
-    DynamicTimer *timer = static_cast<DynamicTimer*>(ptr.get());
+    auto ptr = std::make_unique<DynamicTimer>();
+    auto* timer = ptr.get();
     DynamicThrottlePolicy policy(std::move(ptr));
 
-    policy.setWindowSizeIncrement(5);
-    policy.setMinWindowSize(150);
+    policy.setWindowSizeIncrement(5)
+          .setResizeRate(1)
+          .setMinWindowSize(150);
 
     double windowSize = getWindowSize(policy, *timer, 200);
     ASSERT_TRUE(windowSize >= 150 && windowSize <= 210);
@@ -317,12 +321,13 @@ Test::testMinWindowSize()
 void
 Test::testMaxWindowSize()
 {
-    ITimer::UP ptr(new DynamicTimer());
-    DynamicTimer *timer = static_cast<DynamicTimer*>(ptr.get());
+    auto ptr = std::make_unique<DynamicTimer>();
+    auto* timer = ptr.get();
     DynamicThrottlePolicy policy(std::move(ptr));
 
-    policy.setWindowSizeIncrement(5);
-    policy.setMaxWindowSize(50);
+    policy.setWindowSizeIncrement(5)
+          .setResizeRate(1)
+          .setMaxWindowSize(50);
 
     double windowSize = getWindowSize(policy, *timer, 100);
     ASSERT_TRUE(windowSize >= 40 && windowSize <= 50);
@@ -338,6 +343,7 @@ Test::getWindowSize(DynamicThrottlePolicy &policy, DynamicTimer &timer, uint32_t
 {
     SimpleMessage msg("foo");
     SimpleReply reply("bar");
+    reply.setContext(mbus::Context(uint64_t(1))); // To offset pending size bump in static policy
 
     for (uint32_t i = 0; i < 999; ++i) {
         uint32_t numPending = 0;
@@ -354,6 +360,6 @@ Test::getWindowSize(DynamicThrottlePolicy &policy, DynamicTimer &timer, uint32_t
         }
     }
     uint32_t ret = policy.getMaxPendingCount();
-    printf("getWindowSize() = %d\n", ret);
+    fprintf(stderr, "getWindowSize() = %u\n", ret);
     return ret;
 }
