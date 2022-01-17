@@ -74,21 +74,6 @@ findhost
 
 # END environment bootstrap section
 
-usage() {
-    echo "Run Zookeeper command-line client"
-    echo "The following options are recognized:"
-    echo ""
-
-    echo "-h|-help)              print this help text"
-}
-
-while [ $# -gt 0 ]; do
-    case $1 in
-        -h|-help)        usage; exit 0;;
-        *)               echo "Unrecognized option '$1'" >&2; exit 1;;
-    esac
-done
-
 java -cp $VESPA_HOME/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
      -Dlog4j.configuration="log4j-vespa.properties" -Xms32m -Xmx512m \
      com.yahoo.vespa.zookeeper.cli.Main "$@"
