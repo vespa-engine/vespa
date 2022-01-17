@@ -186,6 +186,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
             Application app = applicationRepository.getActiveApplication(applicationId);
 
+            // TODO: Don't wait for config convergence if restartOnDeploy is true for one o more container clusters
+            // (ideally wait for config convergence for all other services)
+
             log.info(session.logPre() + "Wait for services to converge on new generation before restarting");
             ConfigConvergenceChecker convergenceChecker = applicationRepository.configConvergenceChecker();
             ServiceListResponse response = convergenceChecker.getConfigGenerationsForAllServices(app, timeout);
