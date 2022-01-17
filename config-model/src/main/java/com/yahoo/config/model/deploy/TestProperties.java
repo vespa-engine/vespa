@@ -58,7 +58,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private String jvmOmitStackTraceInFastThrowOption;
     private int maxConcurrentMergesPerNode = 16;
     private int maxMergeQueueSize = 100;
-    private boolean ignoreMergeQueueLimit = true;
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = Collections.emptyList();
     private double resourceLimitDisk = 0.8;
@@ -66,10 +65,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double minNodeRatioPerGroup = 0.0;
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
-    private int distributorMergeBusyWait = 1;
     private int maxUnCommittedMemory = 123456;
-    private boolean distributorEnhancedMaintenanceScheduling = true;
-    private boolean asyncApplyBucketDiff = true;
     private boolean unorderedMergeChaining = true;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
@@ -114,16 +110,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerNode; }
     @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
-    @Override public boolean ignoreMergeQueueLimit() { return ignoreMergeQueueLimit; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
-    @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
-    @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-    @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
     @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
@@ -193,11 +185,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setMaxMergeQueueSize(int maxMergeQueueSize) {
         this.maxMergeQueueSize = maxMergeQueueSize;
-        return this;
-    }
-
-    public TestProperties setIgnoreMergeQueueLimit(boolean ignoreMergeQueueLimit) {
-        this.ignoreMergeQueueLimit = ignoreMergeQueueLimit;
         return this;
     }
 
@@ -298,21 +285,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMinNodeRatioPerGroup(double value) {
         this.minNodeRatioPerGroup = value;
-        return this;
-    }
-
-    public TestProperties setDistributorMergeBusyWait(int value) {
-        distributorMergeBusyWait = value;
-        return this;
-    }
-
-    public TestProperties distributorEnhancedMaintenanceScheduling(boolean enhancedScheduling) {
-        distributorEnhancedMaintenanceScheduling = enhancedScheduling;
-        return this;
-    }
-
-    public TestProperties setAsyncApplyBucketDiff(boolean value) {
-        asyncApplyBucketDiff = value;
         return this;
     }
 
