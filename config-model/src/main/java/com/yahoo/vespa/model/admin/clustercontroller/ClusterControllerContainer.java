@@ -40,9 +40,11 @@ public class ClusterControllerContainer extends Container implements
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
     private static final ComponentSpecification ZOOKEEPER_SERVER_BUNDLE = new ComponentSpecification("zookeeper-server");
     private static final ComponentSpecification REINDEXING_CONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-reindexer");
-    // The below adjustments to default netty settings reduces default chunkSize from 16M to 1M
+    // The below adjustments to default netty settings reduces default chunkSize from 16M to 128K
     private static final int DEFAULT_NETTY_PAGE_SIZE = 4096; // Reduced from nettys default of 8192
-    private static final int DEFAULT_NETTY_MAX_ORDER = 8; // Reduced from nettys default of 11
+    private static final int DEFAULT_NETTY_MAX_ORDER = 5; // Reduced from nettys default of 11
+    private static final int DEFAULT_NETTY_NUM_DIRECT_ARENAS = 1; // Reduced from nettys default of 2*cores
+    private static final int DEFAULT_NETTY_NUM_HEAP_ARENAS = 1; // Reduced from nettys default of 2*cores
 
     private final Set<String> bundles = new TreeSet<>();
 
@@ -72,12 +74,16 @@ public class ClusterControllerContainer extends Container implements
         addFileBundle("zookeeper-server");
         configureReindexing();
         configureZooKeeperServer(runStandaloneZooKeeper);
-        prependJvmOptions(defaultNettyBufferSize(DEFAULT_NETTY_PAGE_SIZE, DEFAULT_NETTY_MAX_ORDER));
+        prependJvmOptions(defaultNettyBufferSize(DEFAULT_NETTY_NUM_HEAP_ARENAS, DEFAULT_NETTY_NUM_DIRECT_ARENAS,
+                DEFAULT_NETTY_PAGE_SIZE, DEFAULT_NETTY_MAX_ORDER));
     }
 
-    private static String defaultNettyBufferSize(int pageSize, int maxOrder) {
+    private static String defaultNettyBufferSize(int numHeapArenas, int numDirectArenas, int pageSize, int maxOrder) {
         return new StringBuffer("-Dio.netty.allocator.pageSize=").append(pageSize)
-                .append(" -Dio.netty.allocator.maxOrder=").append(maxOrder).toString();
+                .append(" -Dio.netty.allocator.maxOrder=").append(maxOrder)
+                .append(" -Dio.netty.allocator.numHeapArenas=").append(numHeapArenas)
+                .append(" -Dio.netty.allocator.numDirectArenas=").append(numDirectArenas)
+                .toString();
     }
 
     @Override
