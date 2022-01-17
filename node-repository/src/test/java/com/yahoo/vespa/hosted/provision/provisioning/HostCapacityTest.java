@@ -128,26 +128,6 @@ public class HostCapacityTest {
     }
 
     @Test
-    public void devhostCapacityTest() {
-        // Dev host can assign both configserver and tenant containers.
-
-        var nodeFlavors = FlavorConfigBuilder.createDummies("devhost", "container");
-        var devHost = Node.create("devhost", new IP.Config(Set.of("::1"), createIps(2, 10)), "devhost", nodeFlavors.getFlavorOrThrow("devhost"), NodeType.devhost).build();
-
-        var cfg = Node.reserve(Set.of("::2"), "cfg", "devhost", resources0, NodeType.config).build();
-
-        var nodes = new ArrayList<>(List.of(cfg));
-        var capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
-        assertTrue(capacity.hasCapacity(devHost, resources0));
-
-        var container1 = Node.reserve(Set.of("::3"), "container1", "devhost", resources0, NodeType.tenant).build();
-        nodes = new ArrayList<>(List.of(cfg, container1));
-        capacity = new HostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
-        assertFalse(capacity.hasCapacity(devHost, resources0));
-
-    }
-
-    @Test
     public void verifyCapacityFromAddresses() {
         Node nodeA = Node.reserve(Set.of("::2"), "nodeA", "host1", resources0, NodeType.tenant).build();
         Node nodeB = Node.reserve(Set.of("::3"), "nodeB", "host1", resources0, NodeType.tenant).build();
