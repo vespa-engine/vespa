@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
+#include <sys/resource.h>
 #include <thread>
 
 using namespace vespalib;
@@ -169,31 +170,45 @@ TEST("require that cpu samples can be manipulated and inspected") {
 
 class CpuMonitor {
 private:
+    duration _old_usage;
     CpuUsage::TimedSample _old_sample;
     duration _min_delay;
-    std::array<double,CpuUsage::num_categories> _load;
+    std::array<double,CpuUsage::num_categories+1> _load;
+
+    static duration total_usage() {
+        rusage usage;
+        memset(&usage, 0, sizeof(usage));
+        getrusage(RUSAGE_SELF, &usage);
+        return from_timeval(usage.ru_utime) + from_timeval(usage.ru_stime);
+    }
 
 public:
     CpuMonitor(duration min_delay)
-      : _old_sample(CpuUsage::sample()),
+      : _old_usage(total_usage()),
+        _old_sample(CpuUsage::sample()),
         _min_delay(min_delay),
         _load() {}
 
-    std::array<double,CpuUsage::num_categories> get_load() {
+    std::array<double,CpuUsage::num_categories+1> get_load() {
         if (steady_clock::now() >= (_old_sample.first + _min_delay)) {
+            auto new_usage = total_usage();
             auto new_sample = CpuUsage::sample();
             auto dt = to_s(new_sample.first - _old_sample.first);
+            double sampled_load = 0.0;
             for (size_t i = 0; i < CpuUsage::num_categories; ++i) {
                 _load[i] = to_s(new_sample.second[i] - _old_sample.second[i]) / dt;
+                sampled_load += _load[i];
             }
+            _load[CpuUsage::num_categories] = (to_s(new_usage - _old_usage) / dt) - sampled_load;
+            _old_usage = new_usage;
             _old_sample = new_sample;
         }
         return _load;
     }
 };
 
-std::array<vespalib::string,CpuUsage::num_categories> names
-{ "SETUP", "READ", "WRITE", "COMPACT", "MAINTAIN", "NETWORK", "OTHER"};
+std::array<vespalib::string,CpuUsage::num_categories+1> names
+{ "SETUP", "READ", "WRITE", "COMPACT", "MAINTAIN", "NETWORK", "OTHER", "UNKNOWN" };
 
 void do_sample_cpu_usage(const EndTime &end_time) {
     CpuMonitor monitor(8ms);
@@ -201,7 +216,7 @@ void do_sample_cpu_usage(const EndTime &end_time) {
         std::this_thread::sleep_for(verbose ? 1s : 10ms);
         auto load = monitor.get_load();
         vespalib::string body;
-        for (size_t i = 0; i < CpuUsage::num_categories; ++i) {
+        for (size_t i = 0; i < load.size(); ++i) {
             if (!body.empty()) {
                 body.append(", ");
             }
