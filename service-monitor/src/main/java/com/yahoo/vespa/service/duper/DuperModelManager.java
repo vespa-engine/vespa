@@ -9,8 +9,6 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.DuperModelListener;
@@ -45,7 +43,6 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
     static final ConfigServerApplication configServerApplication = new ConfigServerApplication();
     static final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
     static final TenantHostApplication tenantHostApplication = new TenantHostApplication();
-    static final DevHostApplication devHostApplication = new DevHostApplication();
 
     private final Map<ApplicationId, InfraApplication> supportedInfraApplications;
 
@@ -61,23 +58,18 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
     private boolean infraApplicationsIsComplete = false;
 
     @Inject
-    public DuperModelManager(ConfigserverConfig configServerConfig, FlagSource flagSource, SuperModelProvider superModelProvider) {
+    public DuperModelManager(ConfigserverConfig configServerConfig, SuperModelProvider superModelProvider) {
         this(configServerConfig.multitenant(),
                 configServerConfig.serverNodeType() == ConfigserverConfig.ServerNodeType.Enum.controller,
-             superModelProvider, new DuperModel(), flagSource, SystemName.from(configServerConfig.system()));
+             superModelProvider, new DuperModel());
     }
 
     /** Non-private for testing */
     public DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider,
-                             DuperModel duperModel, FlagSource flagSource, SystemName system) {
+                             DuperModel duperModel) {
         this.duperModel = duperModel;
 
-        if (system == SystemName.dev) {
-            // TODO (mortent): Support controllerApplication in dev system
-            supportedInfraApplications =
-                    Stream.of(devHostApplication, configServerApplication)
-                    .collect(Collectors.toUnmodifiableMap(InfraApplication::getApplicationId, Function.identity()));
-        } else if (multitenant) {
+        if (multitenant) {
             supportedInfraApplications =
                     (isController ?
                             Stream.of(controllerHostApplication, controllerApplication) :
