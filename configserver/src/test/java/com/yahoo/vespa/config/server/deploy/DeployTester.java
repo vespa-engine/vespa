@@ -24,6 +24,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
@@ -37,9 +38,10 @@ import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
-import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -253,7 +255,8 @@ public class DeployTester {
         private Curator curator = new MockCurator();
         private Metrics metrics;
         private List<ModelFactory> modelFactories;
-        private Orchestrator orchestrator;
+        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
+        private FlagSource flagSource = new InMemoryFlagSource();
 
         public DeployTester build() {
             Clock clock = Optional.ofNullable(this.clock).orElseGet(Clock::systemUTC);
@@ -285,9 +288,11 @@ public class DeployTester {
             ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
                     .withTenantRepository(tenantRepository)
                     .withConfigserverConfig(configserverConfig)
-                    .withOrchestrator(Optional.ofNullable(orchestrator).orElseGet(OrchestratorMock::new))
+                    .withOrchestrator(new OrchestratorMock())
                     .withClock(clock)
                     .withProvisioner(provisioner)
+                    .withConfigConvergenceChecker(configConvergenceChecker)
+                    .withFlagSource(flagSource)
                     .build();
 
             return new DeployTester(clock, tenantRepository, applicationRepository);
@@ -336,10 +341,16 @@ public class DeployTester {
             return this;
         }
 
-        public Builder orchestrator(Orchestrator orchestrator) {
-            this.orchestrator = orchestrator;
+        public Builder configConvergenceChecker(ConfigConvergenceChecker configConvergenceChecker) {
+            this.configConvergenceChecker = configConvergenceChecker;
             return this;
         }
+
+        public Builder flagSource(FlagSource flagSource) {
+            this.flagSource = flagSource;
+            return this;
+        }
+
     }
 
 }

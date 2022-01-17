@@ -139,7 +139,7 @@ public class Compressor {
     public byte[] decompress(CompressionType compression, byte[] compressedData, int compressedDataOffset,
                              int expectedUncompressedSize, Optional<Integer> expectedCompressedSize) {
         switch (compression) {
-            case NONE: case INCOMPRESSIBLE: // return a copy of the requested slize of the input buffer
+            case NONE: case INCOMPRESSIBLE: // return a copy of the requested slice of the input buffer
                 int endPosition = expectedCompressedSize.isPresent() ? compressedDataOffset + expectedCompressedSize.get() : compressedData.length;
                 return Arrays.copyOfRange(compressedData, compressedDataOffset, endPosition);
             case LZ4:

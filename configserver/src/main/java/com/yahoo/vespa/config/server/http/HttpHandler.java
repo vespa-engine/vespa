@@ -10,6 +10,7 @@ import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.vespa.config.server.application.ConfigNotConvergedException;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
@@ -68,6 +69,8 @@ public class HttpHandler extends LoggingRequestHandler {
             return HttpErrorResponse.parentHostNotReady(getMessage(e, request));
         } catch (CertificateNotReadyException e) {
             return HttpErrorResponse.certificateNotReady(getMessage(e, request));
+        } catch (ConfigNotConvergedException e) {
+            return HttpErrorResponse.configNotConverged(getMessage(e, request));
         } catch (LoadBalancerServiceException e) {
             return HttpErrorResponse.loadBalancerNotReady(getMessage(e, request));
         } catch (Exception e) {

@@ -556,8 +556,8 @@ public class ApplicationHandlerTest {
 
         { // Known service
             HttpResponse response = createResponse(new ServiceResponse(ServiceResponse.Status.ok,
-                                                                       3L,
-                                                                       3L,
+                                                                       3,
+                                                                       3,
                                                                        true),
                                                    hostAndPort,
                                                    uri);
@@ -601,9 +601,9 @@ public class ApplicationHandlerTest {
         {
             HttpServiceListResponse response =
                     new HttpServiceListResponse(new ServiceListResponse(Map.of(createServiceInfo(hostname, port), 3L),
-                                                                        requestUrl,
                                                                         3L,
-                                                                        3L));
+                                                                        3L),
+                                                requestUrl);
             assertResponse("{\n" +
                                    "  \"services\": [\n" +
                                    "    {\n" +
@@ -635,9 +635,9 @@ public class ApplicationHandlerTest {
 
             HttpServiceListResponse response =
                     new HttpServiceListResponse(new ServiceListResponse(serviceInfos,
-                                                                        requestUrl,
                                                                         4L,
-                                                                        3L));
+                                                                        3L),
+                                                requestUrl);
             assertResponse("{\n" +
                                    "  \"services\": [\n" +
                                    "    {\n" +
