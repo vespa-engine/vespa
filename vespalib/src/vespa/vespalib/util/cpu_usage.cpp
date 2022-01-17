@@ -187,14 +187,14 @@ CpuUsage::remove_thread(ThreadTracker::SP tracker)
 void
 CpuUsage::handle_pending(const Guard &guard)
 {
-    for (auto &thread: _pending_remove) {
-        do_remove_thread(guard, std::move(thread));
-    }
-    _pending_remove.clear();
     for (auto &thread: _pending_add) {
         do_add_thread(guard, std::move(thread));
     }
     _pending_add.clear();
+    for (auto &thread: _pending_remove) {
+        do_remove_thread(guard, std::move(thread));
+    }
+    _pending_remove.clear();
 }
 
 CpuUsage::TimedSample
