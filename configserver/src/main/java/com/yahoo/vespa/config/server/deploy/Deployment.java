@@ -32,7 +32,6 @@ import com.yahoo.vespa.flags.Flags;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -179,25 +178,26 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         BooleanFlag verify = Flags.CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING.bindTo(applicationRepository.flagSource());
         if ( ! verify.value()) return;
 
-        Instant end = clock.instant().plus(Duration.ofMinutes(10));
         // Timeout per service when getting config generations
         Duration timeout = Duration.ofSeconds(10);
-        do {
+        while (true) {
+            params.get().getTimeoutBudget().assertNotTimedOut(
+                    () -> "Timeout exceeded while waiting for config convergence for " + applicationId);
+
             Application app = applicationRepository.getActiveApplication(applicationId);
-            log.info("Wait for services in " + applicationId + " to converge on new generation before restarting");
+
+            log.info(session.logPre() + "Wait for services to converge on new generation before restarting");
             ConfigConvergenceChecker convergenceChecker = applicationRepository.configConvergenceChecker();
             ServiceListResponse response = convergenceChecker.getConfigGenerationsForAllServices(app, timeout);
             if (response.converged) {
-                log.info("services converged on new generation " + response.currentGeneration);
+                log.info(session.logPre() + "Services converged on new generation " + response.currentGeneration);
                 return;
             } else {
-                log.info("services not converged on new generation, wanted generation: " + response.wantedGeneration +
+                log.info(session.logPre() + "Services not converged on new generation, wanted generation: " + response.wantedGeneration +
                                  ", current generation: " + response.currentGeneration + ", will retry");
                 try { Thread.sleep(10_000); } catch (InterruptedException e) { /* ignore */ }
             }
-        } while (clock.instant().isBefore(end));
-
-        throw new RuntimeException("Config has not converged");
+        }
     }
 
     private void storeReindexing(ApplicationId applicationId, long requiredSession) {
