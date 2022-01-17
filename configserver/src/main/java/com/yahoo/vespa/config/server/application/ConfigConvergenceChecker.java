@@ -39,8 +39,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,7 +72,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     );
 
 
-    private final Executor responseHandlerExecutor =
+    private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-convergence-checker-response-handler-"));
     private final ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -194,6 +195,16 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                       .filter(port -> port.getTags().contains("state"))
                       .map(PortInfo::getPort)
                       .findFirst();
+    }
+
+    @Override
+    public void deconstruct()  {
+        responseHandlerExecutor.shutdown();
+        try {
+            responseHandlerExecutor.awaitTermination(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            log.log(Level.WARNING, "Unable to shutdown executor", e);
+        }
     }
 
     private static long generationFromContainerState(JsonNode state) {
