@@ -12,7 +12,7 @@ import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -43,7 +43,7 @@ import static com.yahoo.component.chain.ChainsConfigurer.prepareChainRegistry;
  * @author Tony Vaagenes
  * @author Steinar Knutsen
  */
-public abstract class AbstractProcessingHandler<COMPONENT extends Processor> extends ThreadedHttpRequestHandler {
+public abstract class AbstractProcessingHandler<COMPONENT extends Processor> extends LoggingRequestHandler {
 
     private final static CompoundName freezeListenerKey =new CompoundName("processing.freezeListener");
 

@@ -15,7 +15,7 @@ import com.yahoo.container.jdisc.AclMapping;
 import com.yahoo.container.jdisc.HttpMethodAclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
@@ -73,7 +73,7 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author bratseth
  */
-public class SearchHandler extends ThreadedHttpRequestHandler {
+public class SearchHandler extends LoggingRequestHandler {
 
     private static final Logger log = Logger.getLogger(SearchHandler.class.getName());
 

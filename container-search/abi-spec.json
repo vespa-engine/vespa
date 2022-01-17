@@ -4321,7 +4321,7 @@
     "fields": []
   },
   "com.yahoo.search.handler.SearchHandler": {
-    "superClass": "com.yahoo.container.jdisc.ThreadedHttpRequestHandler",
+    "superClass": "com.yahoo.container.jdisc.LoggingRequestHandler",
     "interfaces": [],
     "attributes": [
       "public"
