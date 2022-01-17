@@ -104,6 +104,7 @@ vespa_define_module(
     src/tests/bitvector
     src/tests/btree
     src/tests/common/bitvector
+    src/tests/common/geogcd
     src/tests/common/location
     src/tests/common/location_iterator
     src/tests/common/matching_elements
