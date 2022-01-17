@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -21,6 +22,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository.Activation;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
+import com.yahoo.vespa.config.server.application.ConfigNotConvergedException;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.ReindexActions;
 import com.yahoo.vespa.config.server.configchange.RestartActions;
@@ -181,8 +183,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         // Timeout per service when getting config generations
         Duration timeout = Duration.ofSeconds(10);
         while (true) {
-            params.get().getTimeoutBudget().assertNotTimedOut(
-                    () -> "Timeout exceeded while waiting for config convergence for " + applicationId);
+            try {
+                params.get().getTimeoutBudget().assertNotTimedOut(
+                        () -> "Timeout exceeded while waiting for config convergence for " + applicationId);
+            } catch (UncheckedTimeoutException e) {
+                throw new ConfigNotConvergedException(e);
+            }
 
             Application app = applicationRepository.getActiveApplication(applicationId);
 
