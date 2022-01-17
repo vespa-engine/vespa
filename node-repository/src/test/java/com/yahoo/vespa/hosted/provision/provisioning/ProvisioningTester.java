@@ -115,8 +115,7 @@ public class ProvisioningTester {
                                                  flagSource,
                                                  new MemoryMetricsDb(clock),
                                                  true,
-                                                 spareCount,
-                                                 1000);
+                                                 spareCount);
         this.orchestrator = orchestrator;
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository,
                                                          zone,

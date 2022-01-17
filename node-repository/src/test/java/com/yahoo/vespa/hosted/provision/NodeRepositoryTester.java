@@ -48,7 +48,7 @@ public class NodeRepositoryTester {
                                             new InMemoryFlagSource(),
                                             new MemoryMetricsDb(clock),
                                             true,
-                                            0, 1000);
+                                            0);
     }
     
     public NodeRepository nodeRepository() { return nodeRepository; }

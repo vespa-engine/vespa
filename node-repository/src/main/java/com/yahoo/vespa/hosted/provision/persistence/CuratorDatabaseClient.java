@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.google.common.cache.AbstractCache;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
@@ -35,7 +37,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -76,8 +80,13 @@ public class CuratorDatabaseClient {
     private final Clock clock;
     private final CuratorCounter provisionIndexCounter;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache, long nodeCacheSize) {
-        this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
+    // Cache Node objects and their znode version. The cache is invalidated if node data is changed, i.e. the znode
+    // version is changed. This will grow to keep all Node objects in memory, which should be fine.
+    private final Map<Path, Pair<Integer, Node>> cachedNodes = new ConcurrentHashMap<>();
+    private final AbstractCache.SimpleStatsCounter cacheStats = new AbstractCache.SimpleStatsCounter();
+
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache) {
+        this.nodeSerializer = new NodeSerializer(flavors);
         this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
@@ -267,9 +276,27 @@ public class CuratorDatabaseClient {
         if (states.length == 0)
             states = Node.State.values();
         for (Node.State state : states) {
-            Optional<byte[]> nodeData = session.getData(toPath(state, hostname));
-            if (nodeData.isPresent())
-                return nodeData.map((data) -> nodeSerializer.fromJson(state, data));
+            Path path = toPath(state, hostname);
+            OptionalInt version = session.getVersion(path);
+            if (version.isEmpty()) {
+                continue;
+            }
+            Pair<Integer, Node> versionAndNode = cachedNodes.compute(path, (ignored, old) -> {
+                if (old != null && old.getFirst() == version.getAsInt()) {
+                    cacheStats.recordHits(1);
+                    return old; // Cached entry has correct version
+                } else {
+                    cacheStats.recordMisses(1);
+                }
+                Optional<byte[]> data = session.getData(path);
+                if (data.isEmpty()) {
+                    return null; // Node disappeared after we read the version
+                }
+                return new Pair<>(version.getAsInt(), nodeSerializer.fromJson(state, data.get()));
+            });
+            if (versionAndNode != null) {
+                return Optional.of(versionAndNode.getSecond());
+            }
         }
         return Optional.empty();
     }
@@ -525,8 +552,9 @@ public class CuratorDatabaseClient {
         return db.cacheStats();
     }
 
-    public CacheStats nodeSerializerCacheStats() {
-        return nodeSerializer.cacheStats();
+    public CacheStats objectCacheStats() {
+        var snapshot = this.cacheStats.snapshot();
+        return new CacheStats(snapshot.hitRate(), snapshot.evictionCount(), cachedNodes.size());
     }
 
     private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {

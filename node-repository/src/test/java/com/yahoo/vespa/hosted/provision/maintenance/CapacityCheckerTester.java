@@ -74,7 +74,7 @@ public class CapacityCheckerTester {
                                             new InMemoryFlagSource(),
                                             new MemoryMetricsDb(clock),
                                             true,
-                                            0, 1000);
+                                            0);
     }
 
     private void updateCapacityChecker() {
