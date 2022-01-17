@@ -103,6 +103,7 @@ public class ApplicationRepositoryTest {
     private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
     private Curator curator;
+    private ConfigserverConfig configserverConfig;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -114,7 +115,7 @@ public class ApplicationRepositoryTest {
     @Before
     public void setup() throws IOException {
         curator = new MockCurator();
-        ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
+        configserverConfig = new ConfigserverConfig.Builder()
                 .payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.UNCOMPRESSED)
                 .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
                 .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
@@ -187,6 +188,16 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void prepareAndActivateWithRestart() {
+        applicationRepository = new ApplicationRepository.Builder()
+                .withTenantRepository(tenantRepository)
+                .withProvisioner(provisioner)
+                .withConfigserverConfig(configserverConfig)
+                .withOrchestrator(orchestrator)
+                .withLogRetriever(new MockLogRetriever())
+                .withClock(clock)
+                .withConfigConvergenceChecker(new MockConfigConvergenceChecker(2))
+                .build();
+
         prepareAndActivate(testAppJdiscOnly);
         PrepareResult result = prepareAndActivate(testAppJdiscOnlyRestart);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());

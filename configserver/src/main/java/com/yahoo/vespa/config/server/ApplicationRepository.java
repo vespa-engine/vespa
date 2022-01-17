@@ -218,6 +218,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private Metric metric = new NullMetric();
         private SecretStoreValidator secretStoreValidator = new SecretStoreValidator(new SecretStoreProvider().get());
         private FlagSource flagSource = new InMemoryFlagSource();
+        private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
 
         public Builder withTenantRepository(TenantRepository tenantRepository) {
             this.tenantRepository = tenantRepository;
@@ -281,11 +282,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return this;
         }
 
+        public Builder withConfigConvergenceChecker(ConfigConvergenceChecker configConvergenceChecker) {
+            this.configConvergenceChecker = configConvergenceChecker;
+            return this;
+        }
+
         public ApplicationRepository build() {
             return new ApplicationRepository(tenantRepository,
                                              hostProvisioner,
                                              InfraDeployerProvider.empty().getInfraDeployer(),
-                                             new ConfigConvergenceChecker(),
+                                             configConvergenceChecker,
                                              httpProxy,
                                              configserverConfig,
                                              orchestrator,
@@ -1042,6 +1048,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public Optional<ApplicationSet> getActiveApplicationSet(ApplicationId appId) {
         return getTenant(appId).getSessionRepository().getActiveApplicationSet(appId);
+    }
+
+    public Application getActiveApplication(ApplicationId applicationId) {
+        return getActiveApplicationSet(applicationId)
+                .map(a -> a.getForVersionOrLatest(Optional.empty(), clock.instant()))
+                .orElseThrow(() -> new RuntimeException("Found no active application for " + applicationId));
     }
 
     private File decompressApplication(InputStream in, String contentType, File tempDir) {
