@@ -1120,40 +1120,6 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    public void distributor_merge_busy_wait_controlled_by_properties() throws Exception {
-        assertEquals(1, resolveDistributorMergeBusyWaitConfig(Optional.empty()));
-        assertEquals(5, resolveDistributorMergeBusyWaitConfig(Optional.of(5)));
-    }
-
-    private int resolveDistributorMergeBusyWaitConfig(Optional<Integer> mergeBusyWait) throws Exception {
-        var props = new TestProperties();
-        if (mergeBusyWait.isPresent()) {
-            props.setDistributorMergeBusyWait(mergeBusyWait.get());
-        }
-        var cluster = createOneNodeCluster(props);
-        var builder = new StorDistributormanagerConfig.Builder();
-        cluster.getDistributorNodes().getConfig(builder);
-        return (new StorDistributormanagerConfig(builder)).inhibit_merge_sending_on_busy_node_duration_sec();
-    }
-
-    @Test
-    public void distributor_enhanced_maintenance_scheduling_controlled_by_properties() throws Exception {
-        assertFalse(resolveDistributorEnhancedSchedulingConfig(Optional.of(false)));
-        assertTrue(resolveDistributorEnhancedSchedulingConfig(Optional.empty()));
-    }
-
-    private boolean resolveDistributorEnhancedSchedulingConfig(Optional<Boolean> enhancedScheduling) throws Exception {
-        var props = new TestProperties();
-        if (enhancedScheduling.isPresent()) {
-            props.distributorEnhancedMaintenanceScheduling(enhancedScheduling.get());
-        }
-        var cluster = createOneNodeCluster(props);
-        var builder = new StorDistributormanagerConfig.Builder();
-        cluster.getDistributorNodes().getConfig(builder);
-        return (new StorDistributormanagerConfig(builder)).implicitly_clear_bucket_priority_on_schedule();
-    }
-
-    @Test
     public void unordered_merge_chaining_config_controlled_by_properties() throws Exception {
         assertFalse(resolveUnorderedMergeChainingConfig(Optional.of(false)));
         assertTrue(resolveUnorderedMergeChainingConfig(Optional.empty()));

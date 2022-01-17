@@ -183,18 +183,14 @@ public class ModelContextImpl implements ModelContext {
         private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
         private final int maxConcurrentMergesPerContentNode;
         private final int maxMergeQueueSize;
-        private final boolean ignoreMergeQueueLimit;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
         private final double minNodeRatioPerGroup;
         private final int metricsproxyNumThreads;
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final double containerShutdownTimeout;
-        private final int distributorMergeBusyWait;
-        private final boolean distributorEnhancedMaintenanceScheduling;
         private final int maxUnCommittedMemory;
         private final boolean forwardIssuesAsErrors;
-        private final boolean asyncApplyBucketDiff;
         private final boolean ignoreThreadStackSizes;
         private final boolean unorderedMergeChaining;
         private final boolean useV8GeoPositions;
@@ -225,18 +221,14 @@ public class ModelContextImpl implements ModelContext {
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
             this.maxConcurrentMergesPerContentNode = flagValue(source, appId, Flags.MAX_CONCURRENT_MERGES_PER_NODE);
             this.maxMergeQueueSize = flagValue(source, appId, Flags.MAX_MERGE_QUEUE_SIZE);
-            this.ignoreMergeQueueLimit = flagValue(source, appId, Flags.IGNORE_MERGE_QUEUE_LIMIT);
             this.resourceLimitDisk = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_DISK);
             this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
             this.minNodeRatioPerGroup = flagValue(source, appId, Flags.MIN_NODE_RATIO_PER_GROUP);
             this.metricsproxyNumThreads = flagValue(source, appId, Flags.METRICSPROXY_NUM_THREADS);
             this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
             this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
-            this.distributorMergeBusyWait = flagValue(source, appId, Flags.DISTRIBUTOR_MERGE_BUSY_WAIT);
-            this.distributorEnhancedMaintenanceScheduling = flagValue(source, appId, Flags.DISTRIBUTOR_ENHANCED_MAINTENANCE_SCHEDULING);
             this.maxUnCommittedMemory = flagValue(source, appId, Flags.MAX_UNCOMMITTED_MEMORY);;
             this.forwardIssuesAsErrors = flagValue(source, appId, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
-            this.asyncApplyBucketDiff = flagValue(source, appId, Flags.ASYNC_APPLY_BUCKET_DIFF);
             this.ignoreThreadStackSizes = flagValue(source, appId, Flags.IGNORE_THREAD_STACK_SIZES);
             this.unorderedMergeChaining = flagValue(source, appId, Flags.UNORDERED_MERGE_CHAINING);
             this.useV8GeoPositions = flagValue(source, appId, Flags.USE_V8_GEO_POSITIONS);
@@ -269,18 +261,14 @@ public class ModelContextImpl implements ModelContext {
         }
         @Override public int maxConcurrentMergesPerNode() { return maxConcurrentMergesPerContentNode; }
         @Override public int maxMergeQueueSize() { return maxMergeQueueSize; }
-        @Override public boolean ignoreMergeQueueLimit() { return ignoreMergeQueueLimit; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
         @Override public int defaultPoolNumThreads() { return metricsproxyNumThreads; }
         @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
-        @Override public int distributorMergeBusyWait() { return distributorMergeBusyWait; }
-        @Override public boolean distributorEnhancedMaintenanceScheduling() { return distributorEnhancedMaintenanceScheduling; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
-        @Override public boolean asyncApplyBucketDiff() { return asyncApplyBucketDiff; }
         @Override public boolean ignoreThreadStackSizes() { return ignoreThreadStackSizes; }
         @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }

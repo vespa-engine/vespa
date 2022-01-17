@@ -208,14 +208,6 @@ public class Flags {
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag IGNORE_MERGE_QUEUE_LIMIT = defineFeatureFlag(
-            "ignore-merge-queue-limit", true,
-            List.of("vekterli", "geirst"), "2021-10-06", "2022-03-01",
-            "Specifies if merges that are forwarded (chained) from another content node are always " +
-                    "allowed to be enqueued even if the queue is otherwise full.",
-            "Takes effect at redeploy",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
             List.of("geirst", "vekterli"), "2021-07-16", "2022-03-01",
@@ -276,28 +268,6 @@ public class Flags {
             "Takes effect on subsequent maintainer invocation",
             TENANT_ID
     );
-
-    public static final UnboundIntFlag DISTRIBUTOR_MERGE_BUSY_WAIT = defineIntFlag(
-            "distributor-merge-busy-wait", 1,
-            List.of("geirst", "vekterli"), "2021-10-04", "2022-03-01",
-            "Number of seconds that scheduling of new merge operations in the distributor should be inhibited " +
-                    "towards a content node that has indicated merge busy",
-            "Takes effect at redeploy",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag DISTRIBUTOR_ENHANCED_MAINTENANCE_SCHEDULING = defineFeatureFlag(
-            "distributor-enhanced-maintenance-scheduling", true,
-            List.of("vekterli", "geirst"), "2021-10-14", "2022-01-31",
-            "Enable enhanced maintenance operation scheduling semantics on the distributor",
-            "Takes effect at redeploy",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag ASYNC_APPLY_BUCKET_DIFF = defineFeatureFlag(
-            "async-apply-bucket-diff", true,
-            List.of("geirst", "vekterli"), "2021-10-22", "2022-01-31",
-            "Whether portions of apply bucket diff handling will be performed asynchronously",
-            "Takes effect at redeploy",
-            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
             "unordered-merge-chaining", true,

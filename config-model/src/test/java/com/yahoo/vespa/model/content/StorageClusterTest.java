@@ -160,24 +160,6 @@ public class StorageClusterTest {
     }
 
     @Test
-    public void ignore_merge_queue_limit_can_be_controlled_by_feature_flag() {
-        var config = configFromProperties(new TestProperties().setIgnoreMergeQueueLimit(true));
-        assertTrue(config.disable_queue_limits_for_chained_merges());
-
-        config = configFromProperties(new TestProperties().setIgnoreMergeQueueLimit(false));
-        assertFalse(config.disable_queue_limits_for_chained_merges());
-    }
-
-    @Test
-    public void async_apply_bucket_diff_can_be_controlled_by_feature_flag() {
-        var config = filestorConfigFromProperties(new TestProperties());
-        assertTrue(config.async_apply_bucket_diff());
-
-        config = filestorConfigFromProperties(new TestProperties().setAsyncApplyBucketDiff(false));
-        assertFalse(config.async_apply_bucket_diff());
-    }
-
-    @Test
     public void testVisitors() {
         StorVisitorConfig.Builder builder = new StorVisitorConfig.Builder();
         parse(cluster("bees",
