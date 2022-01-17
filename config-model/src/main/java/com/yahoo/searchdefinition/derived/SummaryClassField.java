@@ -111,11 +111,7 @@ public class SummaryClassField {
         } else if (fval instanceof TensorFieldValue) {
             return Type.TENSOR;
         } else if (fieldType instanceof CollectionDataType) {
-            if (transform != null && transform.equals(SummaryTransform.POSITIONS)) {
-                return Type.XMLSTRING;
-            } else {
-                return Type.JSONSTRING;
-            }
+            return Type.JSONSTRING;
         } else if (fieldType instanceof MapDataType) {
             return Type.JSONSTRING;
         } else if (fieldType instanceof ReferenceDataType) {
