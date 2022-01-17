@@ -171,8 +171,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         addCommonVespaBundles();
 
-        // TODO Vespa 8: remove LoggingRequestHandler.Context (replaced by ThreadedHttpRequestHandler.Context)
-        addSimpleComponent(com.yahoo.container.jdisc.LoggingRequestHandler.Context.class);
+        // TODO Vespa 8: remove LoggingRequestHandler.Context component if we can break binary compatibility
+        //               (ThreadedHttpRequestHandler.Context is source compatible.)
+        addSimpleComponent("com.yahoo.container.jdisc.LoggingRequestHandler$Context");
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);

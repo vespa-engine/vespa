@@ -73,6 +73,7 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author bratseth
  */
+@SuppressWarnings("deprecation") // super class is deprecated
 public class SearchHandler extends LoggingRequestHandler {
 
     private static final Logger log = Logger.getLogger(SearchHandler.class.getName());
