@@ -15,7 +15,9 @@ import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
+import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_1;
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_2;
@@ -49,7 +51,12 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         for (Element binding : XML.getChildren(handlerElement, "binding"))
             addServerBinding(handler, UserBindingPattern.fromPattern(XML.getValue(binding)), deployState.getDeployLogger());
 
-        for (Element clientBinding : XML.getChildren(handlerElement, "clientBinding"))
+        List<Element> clientBindingsElements = XML.getChildren(handlerElement, "clientBinding");
+        if (! clientBindingsElements.isEmpty()) {
+            deployState.getDeployLogger().logApplicationPackage(
+                    Level.WARNING, "The 'clientBindings' element is deprecated for removal in Vespa 8, with no replacement");
+        }
+        for (Element clientBinding : clientBindingsElements)
             handler.addClientBindings(UserBindingPattern.fromPattern(XML.getValue(clientBinding)));
 
         DomComponentBuilder.addChildren(deployState, parent, handlerElement, handler);

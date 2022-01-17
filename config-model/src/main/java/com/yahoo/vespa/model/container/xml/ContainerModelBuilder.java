@@ -101,6 +101,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -389,7 +390,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addClientProviders(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        for (Element clientSpec: XML.getChildren(spec, "client")) {
+        List<Element> clientElements = XML.getChildren(spec, "client");
+        if (! clientElements.isEmpty()) {
+            log.logApplicationPackage(
+                    Level.WARNING, "The 'client' element is deprecated for removal in Vespa 8, with no replacement");
+        }
+        for (Element clientSpec : clientElements) {
             cluster.addComponent(new DomClientProviderBuilder(cluster).build(deployState, cluster, clientSpec));
         }
     }
