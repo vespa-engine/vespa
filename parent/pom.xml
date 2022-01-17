@@ -474,7 +474,7 @@
             <dependency>
                 <groupId>com.ibm.icu</groupId>
                 <artifactId>icu4j</artifactId>
-                <version>57.2</version>
+                <version>70.1</version>
             </dependency>
             <dependency>
                 <groupId>com.infradna.tool</groupId>
