@@ -291,7 +291,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
         Service cc = model.getService("admin/cluster-controllers/0").get();
         assertTrue(cc instanceof ClusterControllerContainer);
-        assertEquals("-Dio.netty.allocator.pageSize=4096 -Dio.netty.allocator.maxOrder=8", cc.getJvmOptions());
+        assertEquals("-Dio.netty.allocator.pageSize=4096 -Dio.netty.allocator.maxOrder=5 -Dio.netty.allocator.numHeapArenas=1 -Dio.netty.allocator.numDirectArenas=1", cc.getJvmOptions());
     }
 
     private boolean existsHostsWithClusterControllerConfigId(VespaModel model) {
