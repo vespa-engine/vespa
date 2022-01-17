@@ -560,13 +560,4 @@ FieldMerger::process_merge_field()
     }
 }
 
-bool
-FieldMerger::merge_field()
-{
-    while (!_failed && _state != State::MERGE_DONE) {
-        process_merge_field();
-    }
-    return !_failed;
-}
-
 }
