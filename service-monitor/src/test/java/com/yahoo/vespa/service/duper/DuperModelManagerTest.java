@@ -33,12 +33,13 @@ public class DuperModelManagerTest {
     private final SuperModelProvider superModelProvider = mock(SuperModelProvider.class);
     private final SuperModel superModel = mock(SuperModel.class);
     private final DuperModel duperModel = mock(DuperModel.class);
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     private DuperModelManager manager;
     private SuperModelListener superModelListener;
 
     private void makeManager(boolean isController) {
-        manager = new DuperModelManager(true, isController, superModelProvider, duperModel);
+        manager = new DuperModelManager(true, isController, superModelProvider, duperModel, flagSource, SystemName.cd);
 
         when(superModelProvider.getSuperModel()).thenReturn(superModel);
         verify(duperModel, times(0)).add(any());

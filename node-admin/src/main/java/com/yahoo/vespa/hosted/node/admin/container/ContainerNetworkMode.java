@@ -14,7 +14,10 @@ public enum ContainerNetworkMode {
     NPT("vespa-bridge"),
 
     /** A host running a single container in the host network namespace. */
-    HOST_NETWORK("host");
+    HOST_NETWORK("host"),
+
+    /** A host running multiple containers in a shared local network. */
+    LOCAL("vespa-bridge");
 
     private final String networkName;
 

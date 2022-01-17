@@ -53,6 +53,7 @@ public class NodeSerializer {
             case "confighost": return NodeType.confighost;
             case "controller": return NodeType.controller;
             case "controllerhost": return NodeType.controllerhost;
+            case "devhost": return NodeType.devhost;
             default: throw new IllegalArgumentException("Unknown node type '" + nodeType + "'");
         }
     }
@@ -67,6 +68,7 @@ public class NodeSerializer {
             case confighost: return "confighost";
             case controller: return "controller";
             case controllerhost: return "controllerhost";
+            case devhost: return "devhost";
             default: throw new IllegalArgumentException("Unknown node type '" + type.name() + "'");
         }
     }
