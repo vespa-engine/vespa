@@ -72,6 +72,8 @@ public:
 
     virtual void read();
     virtual bool allowRawFeatures();
+    virtual bool need_regenerate_interleaved_features_scan();
+    virtual void scan_element_lengths(uint32_t scan_chunk);
 
     void write(FieldWriter &writer) {
         if (_wordNum != writer.getSparseWordNum()) {
@@ -131,9 +133,10 @@ private:
 public:
     FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner>);
     bool allowRawFeatures() override;
+    bool need_regenerate_interleaved_features_scan() override;
     bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
     void read() override;
-    void scan_element_lengths();
+    void scan_element_lengths(uint32_t scan_chunk) override;
     void getFeatureParams(PostingListParams &params) override;
 };
 

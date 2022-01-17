@@ -33,6 +33,9 @@ class FieldMerger
         MERGE_START,
         RENUMBER_WORD_IDS,
         RENUMBER_WORD_IDS_FINISH,
+        OPEN_POSTINGS_FIELD_READERS,
+        SCAN_ELEMENT_LENGTHS,
+        OPEN_POSTINGS_FIELD_READERS_FINISH,
         MERGE_POSTINGS,
         MERGE_POSTINGS_FINISH,
         MERGE_DONE
@@ -51,6 +54,8 @@ class FieldMerger
     std::vector<std::unique_ptr<FieldReader>> _readers;
     std::unique_ptr<PostingPriorityQueueMerger<FieldReader, FieldWriter>> _heap;
     std::unique_ptr<FieldWriter> _writer;
+    std::shared_ptr<FieldLengthScanner> _field_length_scanner;
+    uint32_t _open_reader_idx;
     State _state;
     bool _failed;
 
@@ -62,12 +67,15 @@ class FieldMerger
     void renumber_word_ids_main();
     bool renumber_word_ids_finish();
     void renumber_word_ids_failed();
-    std::shared_ptr<FieldLengthScanner> allocate_field_length_scanner();
-    bool open_input_field_readers();
+    void allocate_field_length_scanner();
+    bool open_input_field_reader();
+    void open_input_field_readers();
+    void scan_element_lengths();
     bool open_field_writer();
     bool select_cooked_or_raw_features(FieldReader& reader);
     bool setup_merge_heap();
-    bool merge_postings_start();
+    void merge_postings_start();
+    void merge_postings_open_field_readers_done();
     void merge_postings_main();
     bool merge_postings_finish();
     void merge_postings_failed();
