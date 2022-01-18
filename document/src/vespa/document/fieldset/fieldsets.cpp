@@ -47,6 +47,7 @@ FieldCollection::contains(const FieldSet& fields) const
         case Type::NONE:
         case Type::DOCID:
             return true;
+        case Type::DOCUMENT_ONLY:
         case Type::ALL:
             return false;
     }
@@ -59,6 +60,12 @@ FieldSet::copyFields(Document& dest, const Document& src, const FieldSet& fields
 {
     if (fields.getType() == Type::ALL) {
         dest.getFields() = src.getFields();
+        return;
+    } else if (fields.getType() == Type::DOCUMENT_ONLY) {
+        const auto * actual = src.getType().getFieldSet(DocumentOnly::NAME);
+        if (actual != nullptr) {
+            copyFields(dest, src, actual->asCollection());
+        }
         return;
     }
     for (Document::const_iterator it(src.begin()), e(src.end());
@@ -90,6 +97,15 @@ FieldSet::stripFields(Document& doc, const FieldSet& fieldsToKeep)
     {
         doc.clear();
         return;
+    } else if (fieldsToKeep.getType() == Type::DOCUMENT_ONLY) {
+        const auto * actual = doc.getType().getFieldSet(DocumentOnly::NAME);
+        if (actual != nullptr) {
+            return stripFields(doc, actual->asCollection());
+        } else {
+            // XXX - should not happen
+            doc.clear();
+            return;
+        }
     }
     std::vector<const Field*> fieldsToRemove;
     for (Document::const_iterator it(doc.begin()), e(doc.end());

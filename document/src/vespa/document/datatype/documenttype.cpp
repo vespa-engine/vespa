@@ -14,7 +14,29 @@ using vespalib::IllegalArgumentException;
 using vespalib::make_string;
 using vespalib::stringref;
 
+
 namespace document {
+
+namespace {
+FieldCollection build_field_collection(const std::set<vespalib::string> &fields,
+                                       const DocumentType &doc_type)
+{
+    Field::Set::Builder builder;
+    for (const auto & field_name : fields) {
+        if (doc_type.hasField(field_name)) {
+            builder.add(&doc_type.getField(field_name));
+        }
+    }
+    return FieldCollection(doc_type, builder.build());
+}
+} // namespace <unnamed>
+
+DocumentType::FieldSet::FieldSet(const vespalib::string & name, Fields fields,
+                                 const DocumentType & doc_type)
+    : _name(name),
+      _fields(fields),
+      _field_collection(build_field_collection(fields, doc_type))
+{}
 
 IMPLEMENT_IDENTIFIABLE(DocumentType, StructuredDataType);
 
@@ -75,7 +97,7 @@ DocumentType::~DocumentType() = default;
 DocumentType &
 DocumentType::addFieldSet(const vespalib::string & name, FieldSet::Fields fields)
 {
-    _fieldSets[name] = FieldSet(name, std::move(fields));
+    _fieldSets.emplace(name, FieldSet(name, std::move(fields), *this));
     return *this;
 }
 

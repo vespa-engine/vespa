@@ -79,6 +79,7 @@ Field::contains(const FieldSet& fields) const
         case Type::NONE:
         case Type::DOCID:
         return true;
+        case Type::DOCUMENT_ONLY:
         case Type::ALL:
         return false;
     }
