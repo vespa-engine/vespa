@@ -75,7 +75,7 @@ public class VespaModelCreatorWithMockPkg {
                 // is constructed in a special way and cannot always be validated in
                 // this step for unit tests)
                 ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
-                configChangeActions = Validation.validate(model, validationParameters, deployState);
+                configChangeActions = new Validation().validate(model, validationParameters, deployState);
             }
             return model;
         } catch (Exception e) {

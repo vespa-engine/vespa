@@ -242,7 +242,7 @@ public class VespaModelTestCase {
                 .build();
         DeployState deployState = builder.deployLogger(logger).applicationPackage(app).build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        Validation.validate(model, new ValidationParameters(ValidationParameters.IgnoreValidationErrors.TRUE), deployState);
+        new Validation().validate(model, new ValidationParameters(ValidationParameters.IgnoreValidationErrors.TRUE), deployState);
         assertFalse(logger.msgs.isEmpty());
     }
 
@@ -312,7 +312,7 @@ public class VespaModelTestCase {
                 .deployLogger(logger)
                 .build();
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        Validation.validate(model, new ValidationParameters(), deployState);
+        new Validation().validate(model, new ValidationParameters(), deployState);
         assertContainsWarning(logger.msgs, "Directory searchdefinitions/ should not be used for schemas, use schemas/ instead");
     }
 

@@ -37,7 +37,7 @@ public class ValidationOverridesValidatorTest {
 
         var deployState = createDeployState(validationOverridesXml);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-        Validation.validate(model, new ValidationParameters(), deployState);
+        new Validation().validate(model, new ValidationParameters(), deployState);
     }
 
     @Test
@@ -58,7 +58,7 @@ public class ValidationOverridesValidatorTest {
         try {
             var deployState = createDeployState(validationOverridesXml);
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            Validation.validate(model, new ValidationParameters(), deployState);
+            new Validation().validate(model, new ValidationParameters(), deployState);
             fail("Did not get expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals(message, e.getMessage());
