@@ -5,5 +5,11 @@ package com.yahoo.config.model.api;
 import java.util.List;
 
 public interface ApplicationClusterInfo {
+
     List<ApplicationClusterEndpoint> endpoints();
+
+    boolean getDeferChangesUntilRestart();
+
+    String name();
+
 }

@@ -343,6 +343,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         return endpointList;
     }
 
+    @Override
+    public String name() { return getName(); }
+
     public static class MbusParams {
         // the amount of the maxpendingbytes to process concurrently, typically 0.2 (20%)
         final Double maxConcurrentFactor;
