@@ -9,3 +9,6 @@ tenantContainerImage string default=""
 
 # Whether to cache data read from ZooKeeper in-memory.
 useCuratorClientCache bool default=false
+
+# The number of Node objects to cache in-memory.
+nodeCacheSize long default=3000

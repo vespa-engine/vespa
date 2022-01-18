@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.cache.AbstractCache;
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
@@ -9,14 +10,12 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import org.apache.zookeeper.data.Stat;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -156,17 +155,12 @@ public class CuratorDatabase {
 
         @Override
         public List<String> getChildren(Path path) {
-            return get(children, path, () -> List.copyOf(curator.getChildren(path)));
+            return get(children, path, () -> ImmutableList.copyOf(curator.getChildren(path)));
         }
 
         @Override
         public Optional<byte[]> getData(Path path) {
             return get(data, path, () -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
-        }
-
-        @Override
-        public OptionalInt getVersion(Path path) {
-            return curator.getStat(path).stream().mapToInt(Stat::getVersion).findFirst();
         }
 
         private <T> T get(Map<Path, T> values, Path path, Supplier<T> loader) {
@@ -208,12 +202,9 @@ public class CuratorDatabase {
         List<String> getChildren(Path path);
 
         /**
-         * Returns a copy of the content of this child - which may be empty.
+         * Returns the a copy of the content of this child - which may be empty.
          */
         Optional<byte[]> getData(Path path);
-
-        /** Returns the current version of data stored in given path, if path exists. This should never be cached */
-        OptionalInt getVersion(Path path);
 
     }
 
