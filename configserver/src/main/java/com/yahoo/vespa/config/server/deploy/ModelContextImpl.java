@@ -187,6 +187,7 @@ public class ModelContextImpl implements ModelContext {
         private final double resourceLimitMemory;
         private final double minNodeRatioPerGroup;
         private final int metricsproxyNumThreads;
+        private final int availableProcessors;
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final double containerShutdownTimeout;
         private final int maxUnCommittedMemory;
@@ -225,9 +226,10 @@ public class ModelContextImpl implements ModelContext {
             this.resourceLimitMemory = flagValue(source, appId, PermanentFlags.RESOURCE_LIMIT_MEMORY);
             this.minNodeRatioPerGroup = flagValue(source, appId, Flags.MIN_NODE_RATIO_PER_GROUP);
             this.metricsproxyNumThreads = flagValue(source, appId, Flags.METRICSPROXY_NUM_THREADS);
+            this.availableProcessors = flagValue(source, appId, Flags.AVAILABLE_PROCESSORS);
             this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
             this.containerShutdownTimeout = flagValue(source, appId,Flags.CONTAINER_SHUTDOWN_TIMEOUT);
-            this.maxUnCommittedMemory = flagValue(source, appId, Flags.MAX_UNCOMMITTED_MEMORY);;
+            this.maxUnCommittedMemory = flagValue(source, appId, Flags.MAX_UNCOMMITTED_MEMORY);
             this.forwardIssuesAsErrors = flagValue(source, appId, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
             this.ignoreThreadStackSizes = flagValue(source, appId, Flags.IGNORE_THREAD_STACK_SIZES);
             this.unorderedMergeChaining = flagValue(source, appId, Flags.UNORDERED_MERGE_CHAINING);
@@ -265,6 +267,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
         @Override public int defaultPoolNumThreads() { return metricsproxyNumThreads; }
+        @Override public int availableProcessors() { return availableProcessors; }
         @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
