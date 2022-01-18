@@ -115,6 +115,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean enableServerOcspStapling() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default String persistenceAsyncThrottling() {  throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean useQrserverServiceName() { return true; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

@@ -372,6 +372,13 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_QRSERVER_SERVICE_NAME = defineFeatureFlag(
+            "use-qrserver-service-name", true,
+            List.of("arnej"), "2022-01-18", "2022-12-31",
+            "Use backwards-compatible 'qrserver' service name for containers with only 'search' API",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
