@@ -59,6 +59,8 @@ DynamicOperationThrottler::DynamicOperationThrottler(uint32_t min_size_and_windo
       _pending_ops(0),
       _waiting_threads(0)
 {
+    _throttle_policy.setWindowSizeDecrementFactor(1.2);
+    _throttle_policy.setWindowSizeBackOff(0.95);
 }
 
 DynamicOperationThrottler::~DynamicOperationThrottler() = default;
