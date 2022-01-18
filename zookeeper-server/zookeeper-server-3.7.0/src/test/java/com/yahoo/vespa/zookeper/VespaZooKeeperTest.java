@@ -124,18 +124,19 @@ public class VespaZooKeeperTest {
     }
 
     static String writeData(ZookeeperServerConfig config) throws IOException, InterruptedException, KeeperException {
-        ZooKeeperAdmin admin = createAdmin(config);
-        List<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
-        String node = admin.create("/test-node", "hi".getBytes(UTF_8), acl, CreateMode.EPHEMERAL_SEQUENTIAL);
-        String read = new String(admin.getData(node, false, new Stat()), UTF_8);
-        assertEquals("hi", read);
-        return node;
+        try (ZooKeeperAdmin admin = createAdmin(config)) {
+            List<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
+            String node = admin.create("/test-node", "hi".getBytes(UTF_8), acl, CreateMode.EPHEMERAL_SEQUENTIAL);
+            String read = new String(admin.getData(node, false, new Stat()), UTF_8);
+            assertEquals("hi", read);
+            return node;
+        }
     }
 
     static void verifyData(String path, ZookeeperServerConfig config) throws IOException, InterruptedException, KeeperException {
         for (int i = 0; i < 10; i++) {
-            try {
-                assertEquals("hi", new String(createAdmin(config).getData(path, false, new Stat()), UTF_8));
+            try (ZooKeeperAdmin admin = createAdmin(config)) {
+                assertEquals("hi", new String(admin.getData(path, false, new Stat()), UTF_8));
                 return;
             }
             catch (KeeperException.ConnectionLossException e) {
