@@ -18,6 +18,7 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.StringReader;
@@ -154,26 +155,30 @@ public class BundleValidator extends Validator {
         try {
             Document pom = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder()
                     .parse(new InputSource(new StringReader(pomXmlContent)));
-            NodeList dependencies = (NodeList) XPathFactory.newDefaultInstance().newXPath()
-                    .compile("/project/dependencies/dependency")
-                    .evaluate(pom, XPathConstants.NODESET);
-            for (int i = 0; i < dependencies.getLength(); i++) {
-                Element dependency = (Element) dependencies.item(i);
-                String groupId = dependency.getElementsByTagName("groupId").item(0).getTextContent();
-                String artifactId = dependency.getElementsByTagName("artifactId").item(0).getTextContent();
-                for (DeprecatedMavenArtifact deprecatedArtifact : DeprecatedMavenArtifact.values()) {
-                    if (groupId.equals(deprecatedArtifact.groupId) && artifactId.equals(deprecatedArtifact.artifactId)) {
-                        deployLogger.logApplicationPackage(Level.WARNING,
-                                String.format(
-                                        "The pom.xml of bundle '%s' includes a dependency to the artifact '%s:%s'. \n%s",
-                                        jarFilename, groupId, artifactId, deprecatedArtifact.description));
-                    }
-                }
-            }
+            validateDependencies(deployLogger, jarFilename, pom);
         } catch (ParserConfigurationException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {
             deployLogger.log(Level.INFO, String.format("Unable to parse pom.xml from %s", jarFilename));
+        }
+    }
+
+    private static void validateDependencies(DeployLogger deployLogger, String jarFilename, Document pom) throws XPathExpressionException {
+        NodeList dependencies = (NodeList) XPathFactory.newDefaultInstance().newXPath()
+                .compile("/project/dependencies/dependency")
+                .evaluate(pom, XPathConstants.NODESET);
+        for (int i = 0; i < dependencies.getLength(); i++) {
+            Element dependency = (Element) dependencies.item(i);
+            String groupId = dependency.getElementsByTagName("groupId").item(0).getTextContent();
+            String artifactId = dependency.getElementsByTagName("artifactId").item(0).getTextContent();
+            for (DeprecatedMavenArtifact deprecatedArtifact : DeprecatedMavenArtifact.values()) {
+                if (groupId.equals(deprecatedArtifact.groupId) && artifactId.equals(deprecatedArtifact.artifactId)) {
+                    deployLogger.logApplicationPackage(Level.WARNING,
+                            String.format(
+                                    "The pom.xml of bundle '%s' includes a dependency to the artifact '%s:%s'. \n%s",
+                                    jarFilename, groupId, artifactId, deprecatedArtifact.description));
+                }
+            }
         }
     }
 
