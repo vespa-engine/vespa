@@ -212,7 +212,7 @@ FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::str
       averageQueueWaitingTime("averagequeuewait.sum", {}, "Average time an operation spends in input queue.", this),
       queueSize("queuesize", {}, "Size of input message queue.", this),
       pendingMerges("pendingmerge", {}, "Number of buckets currently being merged.", this),
-      throttle_window_size("throttlewindowsize", {}, "Current size of async operation throttler window size", this),
+      throttle_window_size("throttle_window_size", {}, "Current size of async operation throttler window size", this),
       waitingForLockHitRate("waitingforlockrate", {},
               "Amount of times a filestor thread has needed to wait for "
               "lock to take next message in queue.", this),
