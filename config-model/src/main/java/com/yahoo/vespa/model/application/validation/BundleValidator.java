@@ -60,7 +60,7 @@ public class BundleValidator extends Validator {
                 DeployLogger deployLogger = deployState.getDeployLogger();
                 deployLogger.log(Level.FINE, String.format("Validating bundle at '%s'", path));
                 JarFile jarFile = new JarFile(app.getFileReference(path));
-                validateJarFile(deployLogger, jarFile);
+                validateJarFile(deployLogger, deployState.isHosted(), jarFile);
             } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Failed to validate JAR file '" + path.last() + "'", e);
@@ -68,7 +68,7 @@ public class BundleValidator extends Validator {
         }
     }
 
-    void validateJarFile(DeployLogger deployLogger, JarFile jarFile) throws IOException {
+    void validateJarFile(DeployLogger deployLogger, boolean isHosted, JarFile jarFile) throws IOException {
         Manifest manifest = jarFile.getManifest();
         String filename = Paths.get(jarFile.getName()).getFileName().toString();
         if (manifest == null) {
@@ -76,7 +76,7 @@ public class BundleValidator extends Validator {
         }
         validateManifest(deployLogger, filename, manifest);
         getPomXmlContent(deployLogger, jarFile)
-                .ifPresent(pomXml -> validatePomXml(deployLogger, filename, pomXml));
+                .ifPresent(pomXml -> validatePomXml(deployLogger, isHosted, filename, pomXml));
     }
 
     private void validateManifest(DeployLogger deployLogger, String filename, Manifest mf) {
@@ -152,16 +152,18 @@ public class BundleValidator extends Validator {
                 });
     }
 
-    private void validatePomXml(DeployLogger deployLogger, String jarFilename, String pomXmlContent) {
-        try {
-            Document pom = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder()
-                    .parse(new InputSource(new StringReader(pomXmlContent)));
-            validateDependencies(deployLogger, jarFilename, pom);
-            validateRepositories(deployLogger, jarFilename, pom);
-        } catch (ParserConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            deployLogger.log(Level.INFO, String.format("Unable to parse pom.xml from %s", jarFilename));
+    private void validatePomXml(DeployLogger deployLogger, boolean isHosted, String jarFilename, String pomXmlContent) {
+        if (isHosted) {
+            try {
+                Document pom = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder()
+                        .parse(new InputSource(new StringReader(pomXmlContent)));
+                validateDependencies(deployLogger, jarFilename, pom);
+                validateRepositories(deployLogger, jarFilename, pom);
+            } catch (ParserConfigurationException e) {
+                throw new RuntimeException(e);
+            } catch (Exception e) {
+                deployLogger.log(Level.INFO, String.format("Unable to parse pom.xml from %s", jarFilename));
+            }
         }
     }
 
