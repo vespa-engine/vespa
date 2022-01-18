@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.Flags;
 
 import java.time.Clock;
@@ -177,7 +178,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     }
 
     private void waitForConfigToConverge(ApplicationId applicationId) {
-        BooleanFlag verify = Flags.CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING.bindTo(applicationRepository.flagSource());
+        BooleanFlag verify = Flags.CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING
+                .bindTo(applicationRepository.flagSource())
+                .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
         if ( ! verify.value()) return;
 
         // Timeout per service when getting config generations
