@@ -3,7 +3,7 @@ package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
@@ -27,7 +27,7 @@ public class HealthRequestHandler extends RestApiRequestHandler<HealthRequestHan
     private final HealthMonitorApi healthMonitorApi;
 
     @Inject
-    public HealthRequestHandler(LoggingRequestHandler.Context context,
+    public HealthRequestHandler(ThreadedHttpRequestHandler.Context context,
                                 HealthMonitorApi healthMonitorApi) {
         super(context, HealthRequestHandler::createRestApiDefinition);
         this.healthMonitorApi = healthMonitorApi;

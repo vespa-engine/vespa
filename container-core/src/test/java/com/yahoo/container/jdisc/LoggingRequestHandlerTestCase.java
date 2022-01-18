@@ -97,7 +97,7 @@ public class LoggingRequestHandlerTestCase {
         }
     }
 
-    static final class AccessLogTestHandler extends LoggingRequestHandler {
+    static final class AccessLogTestHandler extends ThreadedHttpRequestHandler {
 
         public AccessLogTestHandler(Executor executor) {
             super(executor);

@@ -4,7 +4,7 @@ package com.yahoo.document.restapi.resource;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.Metric;
 
 /**
@@ -12,7 +12,7 @@ import com.yahoo.jdisc.Metric;
  *
  * @author jonmv
  */
-public class RestApi extends LoggingRequestHandler {
+public class RestApi extends ThreadedHttpRequestHandler {
 
     @Inject
     public RestApi() {

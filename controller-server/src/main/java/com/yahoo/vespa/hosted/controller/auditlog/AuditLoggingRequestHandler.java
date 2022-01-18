@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.auditlog;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 
 /**
@@ -12,7 +12,7 @@ import com.yahoo.jdisc.handler.ContentChannel;
  *
  * @author mpolden
  */
-public abstract class AuditLoggingRequestHandler extends LoggingRequestHandler {
+public abstract class AuditLoggingRequestHandler extends ThreadedHttpRequestHandler {
 
     private final AuditLogger auditLogger;
 

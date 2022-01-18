@@ -247,7 +247,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void test_out_of_capacity_response() throws IOException {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
         String exceptionMessage = "Out of capacity";
-        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
+        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testContext(),
                                                                                 applicationRepository,
                                                                                 configserverConfig,
                                                                                 new OutOfCapacityException(exceptionMessage));
@@ -262,7 +262,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void test_that_nullpointerexception_gives_internal_server_error() throws IOException {
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
         String exceptionMessage = "nullpointer thrown in test handler";
-        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
+        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testContext(),
                                                                                 applicationRepository,
                                                                                 configserverConfig,
                                                                                 new NullPointerException(exceptionMessage));
@@ -277,7 +277,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void test_application_lock_failure() throws IOException {
         String exceptionMessage = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
         long sessionId = applicationRepository.createSession(applicationId(), timeoutBudget, app);
-        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testOnlyContext(),
+        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testContext(),
                                                                                 applicationRepository,
                                                                                 configserverConfig,
                                                                                 new ApplicationLockException(new UncheckedTimeoutException(exceptionMessage)));
@@ -314,7 +314,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private SessionHandler createHandler() {
-        return new SessionPrepareHandler(SessionPrepareHandler.testOnlyContext(), applicationRepository, configserverConfig);
+        return new SessionPrepareHandler(SessionPrepareHandler.testContext(), applicationRepository, configserverConfig);
     }
 
     private HttpResponse request(HttpRequest.Method put, long l) {

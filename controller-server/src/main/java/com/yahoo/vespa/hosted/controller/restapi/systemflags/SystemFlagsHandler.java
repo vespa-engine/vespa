@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.Path;
@@ -22,7 +22,7 @@ import java.util.logging.Level;
  * @author bjorncs
  */
 @SuppressWarnings("unused") // Request handler listed in controller's services.xml
-public class SystemFlagsHandler extends LoggingRequestHandler {
+public class SystemFlagsHandler extends ThreadedHttpRequestHandler {
 
     private static final String API_PREFIX = "/system-flags/v1";
 

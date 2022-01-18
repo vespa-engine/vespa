@@ -76,10 +76,10 @@ public class HttpListConfigsHandlerTest {
                 .withConfigserverConfig(configserverConfig)
                 .build();
         applicationRepository.deploy(testApp, prepareParams());
-        handler = new HttpListConfigsHandler(HttpListConfigsHandler.testOnlyContext(),
+        handler = new HttpListConfigsHandler(HttpListConfigsHandler.testContext(),
                                              tenantRepository,
                                              Zone.defaultZone());
-        namedHandler = new HttpListNamedConfigsHandler(HttpListConfigsHandler.testOnlyContext(),
+        namedHandler = new HttpListNamedConfigsHandler(HttpListConfigsHandler.testContext(),
                                                        tenantRepository,
                                                        Zone.defaultZone());
     }

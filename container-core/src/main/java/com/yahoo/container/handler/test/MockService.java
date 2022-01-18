@@ -4,7 +4,7 @@ package com.yahoo.container.handler.test;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.Metric;
 
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * @author Ulf Lilleengen
  */
 @Beta
-public class MockService extends LoggingRequestHandler {
+public class MockService extends ThreadedHttpRequestHandler {
 
     private final MockServiceHandler handler;
 

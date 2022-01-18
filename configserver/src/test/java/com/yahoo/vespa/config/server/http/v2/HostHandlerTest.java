@@ -62,7 +62,7 @@ public class HostHandlerTest {
                 .withOrchestrator(new OrchestratorMock())
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        handler = new HostHandler(HostHandler.testOnlyContext(), applicationRepository);
+        handler = new HostHandler(HostHandler.testContext(), applicationRepository);
     }
 
     @Test

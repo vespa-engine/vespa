@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
@@ -51,7 +51,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     private final ControllerMaintenance maintenance;
     private final Controller controller;
 
-    public ControllerApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller, ControllerMaintenance maintenance) {
+    public ControllerApiHandler(ThreadedHttpRequestHandler.Context parentCtx, Controller controller, ControllerMaintenance maintenance) {
         super(parentCtx, controller.auditLogger());
         this.controller = controller;
         this.maintenance = maintenance;

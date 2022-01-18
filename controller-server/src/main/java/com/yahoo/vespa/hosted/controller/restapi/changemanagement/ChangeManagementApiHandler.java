@@ -6,7 +6,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
@@ -37,7 +37,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
     private final ChangeManagementAssessor assessor;
     private final Controller controller;
 
-    public ChangeManagementApiHandler(LoggingRequestHandler.Context ctx, Controller controller) {
+    public ChangeManagementApiHandler(ThreadedHttpRequestHandler.Context ctx, Controller controller) {
         super(ctx, controller.auditLogger());
         this.assessor = new ChangeManagementAssessor(controller.serviceRegistry().configServer().nodeRepository());
         this.controller = controller;

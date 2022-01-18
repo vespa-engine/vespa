@@ -7,7 +7,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
@@ -56,7 +56,7 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
     private final ServiceMonitor serviceMonitor;
 
     @Inject
-    public InstanceRequestHandler(LoggingRequestHandler.Context context,
+    public InstanceRequestHandler(ThreadedHttpRequestHandler.Context context,
                                   ServiceMonitor serviceMonitor,
                                   StatusService statusService,
                                   SlobrokApi slobrokApi,

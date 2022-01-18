@@ -55,7 +55,7 @@ public class ListApplicationsHandlerTest {
         tenantRepository.addTenant(foobar);
         applicationRepo = tenantRepository.getTenant(mytenant).getApplicationRepo();
         applicationRepo2 = tenantRepository.getTenant(foobar).getApplicationRepo();
-        handler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
+        handler = new ListApplicationsHandler(ListApplicationsHandler.testContext(),
                                               tenantRepository,
                                               new Zone(Environment.dev, RegionName.from("us-east")));
     }

@@ -9,8 +9,8 @@ import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.vespa.config.server.application.ConfigNotConvergedException;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.PrintWriter;
@@ -25,7 +25,7 @@ import java.util.logging.Level;
  *
  * @author hmusum
  */
-public class HttpHandler extends LoggingRequestHandler {
+public class HttpHandler extends ThreadedHttpRequestHandler {
 
     public HttpHandler(HttpHandler.Context ctx) {
         super(ctx);

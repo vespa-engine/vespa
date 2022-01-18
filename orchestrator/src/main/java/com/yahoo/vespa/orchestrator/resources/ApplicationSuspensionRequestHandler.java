@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.http.HttpResponse.Status;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
@@ -31,7 +31,7 @@ public class ApplicationSuspensionRequestHandler extends RestApiRequestHandler<A
     private final Orchestrator orchestrator;
 
     @Inject
-    public ApplicationSuspensionRequestHandler(LoggingRequestHandler.Context context, Orchestrator orchestrator) {
+    public ApplicationSuspensionRequestHandler(ThreadedHttpRequestHandler.Context context, Orchestrator orchestrator) {
         super(context, ApplicationSuspensionRequestHandler::createRestApiDefinition);
         this.orchestrator = orchestrator;
     }

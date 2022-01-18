@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.deployment;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
@@ -36,7 +36,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author jonmv
  */
 @SuppressWarnings("unused") // Handler
-public class BadgeApiHandler extends LoggingRequestHandler {
+public class BadgeApiHandler extends ThreadedHttpRequestHandler {
 
     private final static Logger log = Logger.getLogger(BadgeApiHandler.class.getName());
 

@@ -756,7 +756,7 @@ public class ApplicationHandlerTest {
                           "/environment/" + zone.environment().value() +
                           "/region/" + zone.region().value() +
                           "/instance/" + applicationId.instance().value() + "\"]";
-        ListApplicationsHandler listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
+        ListApplicationsHandler listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testContext(),
                                                                                       tenantRepository,
                                                                                       Zone.defaultZone());
         ListApplicationsHandlerTest.assertResponse(listApplicationsHandler,
@@ -808,7 +808,7 @@ public class ApplicationHandlerTest {
     }
 
     private ApplicationHandler createApplicationHandler(ApplicationRepository applicationRepository) {
-        return new ApplicationHandler(ApplicationHandler.testOnlyContext(), Zone.defaultZone(), applicationRepository);
+        return new ApplicationHandler(ApplicationHandler.testContext(), Zone.defaultZone(), applicationRepository);
     }
 
     private PrepareParams prepareParams(ApplicationId applicationId) {

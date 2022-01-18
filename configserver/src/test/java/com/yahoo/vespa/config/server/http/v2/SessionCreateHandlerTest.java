@@ -195,7 +195,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     }
 
     private SessionCreateHandler createHandler() {
-        return new SessionCreateHandler(SessionCreateHandler.testOnlyContext(),
+        return new SessionCreateHandler(SessionCreateHandler.testContext(),
                                         applicationRepository,
                                         configserverConfig);
     }

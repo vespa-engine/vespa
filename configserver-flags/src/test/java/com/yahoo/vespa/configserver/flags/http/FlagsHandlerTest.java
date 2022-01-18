@@ -41,7 +41,7 @@ public class FlagsHandlerTest {
     private static final String FLAGS_V1_URL = "https://foo.com:4443/flags/v1";
 
     private final FlagsDb flagsDb = new FlagsDbImpl(new MockCurator());
-    private final FlagsHandler handler = new FlagsHandler(FlagsHandler.testOnlyContext(), flagsDb);
+    private final FlagsHandler handler = new FlagsHandler(FlagsHandler.testContext(), flagsDb);
 
     @Test
     public void testV1() {

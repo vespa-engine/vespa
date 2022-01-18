@@ -8,7 +8,7 @@ public class StatusHandlerTest {
     @Test
     public void testSimple() {
         ClusterController controller = new ClusterController();
-        StatusHandler handler = new StatusHandler(controller, StatusHandler.testOnlyContext());
+        StatusHandler handler = new StatusHandler(controller, StatusHandler.testContext());
     }
 
 }

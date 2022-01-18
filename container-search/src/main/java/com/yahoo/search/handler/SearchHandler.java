@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
-import ai.vespa.cloud.Environment;
-import ai.vespa.cloud.Zone;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentSpecification;
@@ -75,6 +73,7 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author bratseth
  */
+@SuppressWarnings("deprecation") // super class is deprecated
 public class SearchHandler extends LoggingRequestHandler {
 
     private static final Logger log = Logger.getLogger(SearchHandler.class.getName());

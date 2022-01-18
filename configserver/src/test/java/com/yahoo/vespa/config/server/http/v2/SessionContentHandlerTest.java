@@ -183,7 +183,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
 
     private SessionContentHandler createHandler() {
         return new SessionContentHandler(
-                SessionContentHandler.testOnlyContext(),
+                SessionContentHandler.testContext(),
                 new ApplicationRepository.Builder()
                         .withTenantRepository(tenantRepository)
                         .withProvisioner(new MockProvisioner())
