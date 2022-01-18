@@ -107,7 +107,7 @@ public class DistributorTest {
 
         assertEquals(1024, conf.splitcount());
         assertEquals(512, conf.joincount());
-        assertEquals(33544432, conf.splitsize());
+        assertEquals(16772216, conf.splitsize());
         assertEquals(16000000, conf.joinsize());
         assertEquals(8, conf.minsplitcount());
         assertTrue(conf.inlinebucketsplitting());
@@ -138,7 +138,7 @@ public class DistributorTest {
 
         assertEquals(1024, conf.splitcount());
         assertEquals(512, conf.joincount());
-        assertEquals(33544432, conf.splitsize());
+        assertEquals(16772216, conf.splitsize());
         assertEquals(16000000, conf.joinsize());
         assertEquals(14, conf.minsplitcount());
         assertTrue(conf.inlinebucketsplitting());
