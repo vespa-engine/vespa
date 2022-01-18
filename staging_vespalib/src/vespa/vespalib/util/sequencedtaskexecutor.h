@@ -35,10 +35,10 @@ public:
     static std::unique_ptr<ISequencedTaskExecutor>
     create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit);
     static std::unique_ptr<ISequencedTaskExecutor>
-    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit, OptimizeFor optimize);
+    create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit, bool is_task_limit_hard, OptimizeFor optimize);
     static std::unique_ptr<ISequencedTaskExecutor>
     create(Runnable::init_fun_t func, uint32_t threads, uint32_t taskLimit,
-           OptimizeFor optimize, uint32_t kindOfWatermark);
+           bool is_task_limit_hard, OptimizeFor optimize, uint32_t kindOfWatermark);
     /**
      * For testing only
      */

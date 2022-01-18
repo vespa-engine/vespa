@@ -2,7 +2,8 @@
 
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/adaptive_sequenced_executor.h>
-
+#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/singleexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 
@@ -22,7 +23,10 @@ class Fixture
 public:
     std::unique_ptr<ISequencedTaskExecutor> _threads;
 
-    Fixture() : _threads(SequencedTaskExecutor::create(sequenced_executor, 2)) { }
+    Fixture(bool is_task_limit_hard = true) :
+        _threads(SequencedTaskExecutor::create(sequenced_executor, 2, 1000, is_task_limit_hard,
+                                               Executor::OptimizeFor::LATENCY))
+    { }
 };
 
 
@@ -258,6 +262,28 @@ TEST("require that you get correct number of executors") {
     EXPECT_EQUAL(7u, seven->getNumExecutors());
 }
 
+void verifyHardLimitForLatency(bool expect_hard) {
+    auto sequenced = SequencedTaskExecutor::create(sequenced_executor, 1, 100, expect_hard, Executor::OptimizeFor::LATENCY);
+    const SequencedTaskExecutor & seq = dynamic_cast<const SequencedTaskExecutor &>(*sequenced);
+    EXPECT_EQUAL(expect_hard,nullptr != dynamic_cast<const BlockingThreadStackExecutor *>(seq.first_executor()));
+}
+
+void verifyHardLimitForThroughput(bool expect_hard) {
+    auto sequenced = SequencedTaskExecutor::create(sequenced_executor, 1, 100, expect_hard, Executor::OptimizeFor::THROUGHPUT);
+    const SequencedTaskExecutor & seq = dynamic_cast<const SequencedTaskExecutor &>(*sequenced);
+    const SingleExecutor * first = dynamic_cast<const SingleExecutor *>(seq.first_executor());
+    EXPECT_TRUE(first != nullptr);
+    EXPECT_EQUAL(expect_hard, first->isBlocking());
+}
+
+TEST("require that you can get executor with both hard and soft limit") {
+    verifyHardLimitForLatency(true);
+    verifyHardLimitForLatency(false);
+    verifyHardLimitForThroughput(true);
+    verifyHardLimitForThroughput(false);
+}
+
+
 TEST("require that you distribute well") {
     auto seven = SequencedTaskExecutor::create(sequenced_executor, 7);
     const SequencedTaskExecutor & seq = dynamic_cast<const SequencedTaskExecutor &>(*seven);
@@ -307,15 +333,15 @@ TEST("Test creation of different types") {
     auto * seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
     ASSERT_TRUE(seq != nullptr);
 
-    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, Executor::OptimizeFor::LATENCY);
+    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, true, Executor::OptimizeFor::LATENCY);
     seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
     ASSERT_TRUE(seq != nullptr);
 
-    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, Executor::OptimizeFor::THROUGHPUT);
+    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, true, Executor::OptimizeFor::THROUGHPUT);
     seq = dynamic_cast<SequencedTaskExecutor *>(iseq.get());
     ASSERT_TRUE(seq != nullptr);
 
-    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, Executor::OptimizeFor::ADAPTIVE, 17);
+    iseq = SequencedTaskExecutor::create(sequenced_executor, 1, 1000, true, Executor::OptimizeFor::ADAPTIVE, 17);
     auto aseq = dynamic_cast<AdaptiveSequencedExecutor *>(iseq.get());
     ASSERT_TRUE(aseq != nullptr);
 }

@@ -14,11 +14,11 @@ using ProtonConfigBuilder = vespa::config::search::core::ProtonConfigBuilder;
 
 struct Fixture {
     ProtonConfig cfg;
-    Fixture(uint32_t baseLineIndexingThreads = 2, uint32_t master_task_limit = 2000, uint32_t task_limit = 500)
+    Fixture(uint32_t baseLineIndexingThreads = 2, uint32_t master_task_limit = 2000, int32_t task_limit = 500)
         : cfg(makeConfig(baseLineIndexingThreads, master_task_limit, task_limit))
     {
     }
-    ProtonConfig makeConfig(uint32_t baseLineIndexingThreads, uint32_t master_task_limit, uint32_t task_limit) {
+    ProtonConfig makeConfig(uint32_t baseLineIndexingThreads, uint32_t master_task_limit, int32_t task_limit) {
         ProtonConfigBuilder builder;
         builder.indexing.threads = baseLineIndexingThreads;
         builder.indexing.tasklimit = task_limit;
@@ -56,6 +56,15 @@ TEST_F("require that task limits are set", Fixture)
     auto tcfg = f.make(24);
     EXPECT_EQUAL(2000u, tcfg.master_task_limit());
     EXPECT_EQUAL(500u, tcfg.defaultTaskLimit());
+    EXPECT_TRUE(tcfg.is_task_limit_hard());
+}
+
+TEST_F("require that negative task limit makes it soft", Fixture(2, 3000, -700))
+{
+    auto tcfg = f.make(24);
+    EXPECT_EQUAL(3000u, tcfg.master_task_limit());
+    EXPECT_EQUAL(700u, tcfg.defaultTaskLimit());
+    EXPECT_FALSE(tcfg.is_task_limit_hard());
 }
 
 namespace {

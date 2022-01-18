@@ -33,6 +33,7 @@ public:
     duration get_reaction_time() const { return _reactionTime; }
     ExecutorStats getStats() override;
     SingleExecutor & shutdown() override;
+    bool isBlocking() const { return !_overflow; }
 private:
     using Lock = std::unique_lock<std::mutex>;
     void drain(Lock & lock);

@@ -28,6 +28,7 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
         _field_writer = vespalib::SequencedTaskExecutor::create(proton_field_writer_executor,
                                                                 fw_cfg.indexingThreads() * 3,
                                                                 fw_cfg.defaultTaskLimit(),
+                                                                fw_cfg.is_task_limit_hard(),
                                                                 fw_cfg.optimize(),
                                                                 fw_cfg.kindOfwatermark());
         if (fw_cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT) {
