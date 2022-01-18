@@ -105,7 +105,7 @@ public class ComplexAttributeFieldsValidatorTestCase {
         DeployState deployState = createDeployState(servicesXml(), schema);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
-        Validation.validate(model, validationParameters, deployState);
+        new Validation().validate(model, validationParameters, deployState);
     }
 
     private static DeployState createDeployState(String servicesXml, String schema) {

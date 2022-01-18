@@ -66,7 +66,7 @@ public class VespaModelCreatorWithFilePkg {
             // is constructed in a special way and cannot always be validated in
             // this step for unit tests)
             ValidationParameters validationParameters = new ValidationParameters(IgnoreValidationErrors.TRUE, FailOnIncompatibleChange.TRUE, CheckRouting.FALSE);
-            Validation.validate(model, validationParameters, deployState);
+            new Validation().validate(model, validationParameters, deployState);
             return model;
         } catch (Exception e) {
             throw e instanceof RuntimeException ? (RuntimeException) e : new RuntimeException(e);
