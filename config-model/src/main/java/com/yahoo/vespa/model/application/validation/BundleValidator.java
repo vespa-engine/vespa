@@ -18,6 +18,7 @@ import org.xml.sax.InputSource;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.StringReader;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -58,7 +60,7 @@ public class BundleValidator extends Validator {
                 DeployLogger deployLogger = deployState.getDeployLogger();
                 deployLogger.log(Level.FINE, String.format("Validating bundle at '%s'", path));
                 JarFile jarFile = new JarFile(app.getFileReference(path));
-                validateJarFile(deployLogger, jarFile);
+                validateJarFile(deployLogger, deployState.isHosted(), jarFile);
             } catch (IOException e) {
                 throw new IllegalArgumentException(
                         "Failed to validate JAR file '" + path.last() + "'", e);
@@ -66,7 +68,7 @@ public class BundleValidator extends Validator {
         }
     }
 
-    void validateJarFile(DeployLogger deployLogger, JarFile jarFile) throws IOException {
+    void validateJarFile(DeployLogger deployLogger, boolean isHosted, JarFile jarFile) throws IOException {
         Manifest manifest = jarFile.getManifest();
         String filename = Paths.get(jarFile.getName()).getFileName().toString();
         if (manifest == null) {
@@ -74,7 +76,7 @@ public class BundleValidator extends Validator {
         }
         validateManifest(deployLogger, filename, manifest);
         getPomXmlContent(deployLogger, jarFile)
-                .ifPresent(pomXml -> validatePomXml(deployLogger, filename, pomXml));
+                .ifPresent(pomXml -> validatePomXml(deployLogger, isHosted, filename, pomXml));
     }
 
     private void validateManifest(DeployLogger deployLogger, String filename, Manifest mf) {
@@ -150,30 +152,60 @@ public class BundleValidator extends Validator {
                 });
     }
 
-    private void validatePomXml(DeployLogger deployLogger, String jarFilename, String pomXmlContent) {
-        try {
-            Document pom = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder()
-                    .parse(new InputSource(new StringReader(pomXmlContent)));
-            NodeList dependencies = (NodeList) XPathFactory.newDefaultInstance().newXPath()
-                    .compile("/project/dependencies/dependency")
-                    .evaluate(pom, XPathConstants.NODESET);
-            for (int i = 0; i < dependencies.getLength(); i++) {
-                Element dependency = (Element) dependencies.item(i);
-                String groupId = dependency.getElementsByTagName("groupId").item(0).getTextContent();
-                String artifactId = dependency.getElementsByTagName("artifactId").item(0).getTextContent();
-                for (DeprecatedMavenArtifact deprecatedArtifact : DeprecatedMavenArtifact.values()) {
-                    if (groupId.equals(deprecatedArtifact.groupId) && artifactId.equals(deprecatedArtifact.artifactId)) {
-                        deployLogger.logApplicationPackage(Level.WARNING,
-                                String.format(
-                                        "The pom.xml of bundle '%s' includes a dependency to the artifact '%s:%s'. \n%s",
-                                        jarFilename, groupId, artifactId, deprecatedArtifact.description));
-                    }
+    private void validatePomXml(DeployLogger deployLogger, boolean isHosted, String jarFilename, String pomXmlContent) {
+        if (isHosted) {
+            try {
+                Document pom = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder()
+                        .parse(new InputSource(new StringReader(pomXmlContent)));
+                validateDependencies(deployLogger, jarFilename, pom);
+                validateRepositories(deployLogger, jarFilename, pom);
+            } catch (ParserConfigurationException e) {
+                throw new RuntimeException(e);
+            } catch (Exception e) {
+                deployLogger.log(Level.INFO, String.format("Unable to parse pom.xml from %s", jarFilename));
+            }
+        }
+    }
+
+    private static void validateDependencies(DeployLogger deployLogger, String jarFilename, Document pom) throws XPathExpressionException {
+        forEachPomXmlElement(pom, "dependencies/dependency", dependency -> {
+            String groupId = dependency.getElementsByTagName("groupId").item(0).getTextContent();
+            String artifactId = dependency.getElementsByTagName("artifactId").item(0).getTextContent();
+            for (DeprecatedMavenArtifact deprecatedArtifact : DeprecatedMavenArtifact.values()) {
+                if (groupId.equals(deprecatedArtifact.groupId) && artifactId.equals(deprecatedArtifact.artifactId)) {
+                    deployLogger.logApplicationPackage(Level.WARNING,
+                            String.format(
+                                    "The pom.xml of bundle '%s' includes a dependency to the artifact '%s:%s'. \n%s",
+                                    jarFilename, groupId, artifactId, deprecatedArtifact.description));
                 }
             }
-        } catch (ParserConfigurationException e) {
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            deployLogger.log(Level.INFO, String.format("Unable to parse pom.xml from %s", jarFilename));
+        });
+    }
+
+    private static void validateRepositories(DeployLogger deployLogger, String jarFilename, Document pom) throws XPathExpressionException {
+        forEachPomXmlElement(pom, "pluginRepositories/pluginRepository",
+                repository -> validateRepository(deployLogger, jarFilename, "pluginRepositories", repository));
+        forEachPomXmlElement(pom, "repositories/repository",
+                repository -> validateRepository(deployLogger, jarFilename, "repositories", repository));
+    }
+
+    private static void validateRepository(DeployLogger deployLogger, String jarFilename, String parentElementName,
+                                           Element element) {
+        String url = element.getElementsByTagName("url").item(0).getTextContent();
+        if (url.contains("vespa-maven-libs-release-local")) {
+            deployLogger.logApplicationPackage(Level.WARNING,
+                    String.format("<%s> in pom.xml of '%s' uses deprecated Maven repository '%s'.\n See announcement.",
+                            parentElementName, jarFilename, url));
+        }
+    }
+
+    private static void forEachPomXmlElement(Document pom, String xpath, Consumer<Element> consumer) throws XPathExpressionException {
+        NodeList dependencies = (NodeList) XPathFactory.newDefaultInstance().newXPath()
+                .compile("/project/" + xpath)
+                .evaluate(pom, XPathConstants.NODESET);
+        for (int i = 0; i < dependencies.getLength(); i++) {
+            Element element = (Element) dependencies.item(i);
+            consumer.accept(element);
         }
     }
 

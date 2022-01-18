@@ -29,7 +29,7 @@ public class BundleValidatorTest {
         // Valid jar file
         JarFile ok = createTemporaryJarFile("ok");
         BundleValidator bundleValidator = new BundleValidator();
-        bundleValidator.validateJarFile(new BaseDeployLogger(), ok);
+        bundleValidator.validateJarFile(new BaseDeployLogger(), false, ok);
 
         // No manifest
         validateWithException("nomanifest", "Non-existing or invalid manifest in nomanifest.jar");
@@ -39,7 +39,7 @@ public class BundleValidatorTest {
         try {
             JarFile jarFile = createTemporaryJarFile(jarName);
             BundleValidator bundleValidator = new BundleValidator();
-            bundleValidator.validateJarFile(new BaseDeployLogger(), jarFile);
+            bundleValidator.validateJarFile(new BaseDeployLogger(), false, jarFile);
             assert (false);
         } catch (IllegalArgumentException e) {
             assertEquals(e.getMessage(), exceptionMessage);
@@ -52,7 +52,7 @@ public class BundleValidatorTest {
 
         DeployLogger logger = createDeployLogger(buffer);
         JarFile jarFile = createTemporaryJarFile("snapshot_bundle");
-        new BundleValidator().validateJarFile(logger, jarFile);
+        new BundleValidator().validateJarFile(logger, false, jarFile);
         assertTrue(buffer.toString().contains("Deploying snapshot bundle"));
     }
 
@@ -62,7 +62,7 @@ public class BundleValidatorTest {
         DeployLogger logger = createDeployLogger(buffer);
         BundleValidator validator = new BundleValidator();
         JarFile jarFile = createTemporaryJarFile("import-warnings");
-        validator.validateJarFile(logger, jarFile);
+        validator.validateJarFile(logger, true, jarFile);
         assertThat(buffer.toString())
                 .contains("For JAR file 'import-warnings.jar': \n" +
                         "Manifest imports the following Java packages from 'org.json:json': [org.json]. \n" +
@@ -70,18 +70,27 @@ public class BundleValidatorTest {
     }
 
     @Test
-    public void outputs_deploy_warning_on_deprecated_dependency() throws IOException {
+    public void outputs_deploy_warnings_for_pom_xml() throws IOException {
         StringBuffer buffer = new StringBuffer();
         DeployLogger logger = createDeployLogger(buffer);
         BundleValidator validator = new BundleValidator();
         JarFile jarFile = createTemporaryJarFile("pom-xml-warnings");
-        validator.validateJarFile(logger, jarFile);
-        assertThat(buffer.toString())
+        validator.validateJarFile(logger, true, jarFile);
+        String output = buffer.toString();
+        assertThat(output)
                 .contains("The pom.xml of bundle 'pom-xml-warnings.jar' includes a dependency to the artifact " +
                         "'com.yahoo.vespa:vespa-http-client-extensions'. \n" +
                         "This artifact will be removed in Vespa 8. " +
                         "Programmatic use can be safely removed from system/staging tests. " +
                         "See internal Vespa 8 release notes for details.\n");
+        assertThat(output)
+                .contains("\n" +
+                        "<pluginRepositories> in pom.xml of 'pom-xml-warnings.jar' uses deprecated Maven repository " +
+                        "'http://myartifactory:8000/artifactory/vespa-maven-libs-release-local'.\n See announcement.");
+        assertThat(output)
+                .contains("\n" +
+                        "<repositories> in pom.xml of 'pom-xml-warnings.jar' uses deprecated Maven repository " +
+                        "'http://myartifactory:8000/artifactory/vespa-maven-libs-release-local'.\n See announcement.");
     }
 
     private JarFile createTemporaryJarFile(String testArtifact) throws IOException {
