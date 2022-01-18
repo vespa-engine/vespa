@@ -12,4 +12,17 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>my-plugin-repository</id>
+            <url>http://myartifactory:8000/artifactory/vespa-maven-libs-release-local</url>
+        </pluginRepository>
+    </pluginRepositories>
+    <repositories>
+        <repository>
+            <id>my-repository</id>
+            <url>http://myartifactory:8000/artifactory/vespa-maven-libs-release-local</url>
+        </repository>
+    </repositories>
 </project>

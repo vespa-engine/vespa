@@ -157,6 +157,7 @@ public class BundleValidator extends Validator {
             Document pom = DocumentBuilderFactory.newDefaultInstance().newDocumentBuilder()
                     .parse(new InputSource(new StringReader(pomXmlContent)));
             validateDependencies(deployLogger, jarFilename, pom);
+            validateRepositories(deployLogger, jarFilename, pom);
         } catch (ParserConfigurationException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {
@@ -177,6 +178,23 @@ public class BundleValidator extends Validator {
                 }
             }
         });
+    }
+
+    private static void validateRepositories(DeployLogger deployLogger, String jarFilename, Document pom) throws XPathExpressionException {
+        forEachPomXmlElement(pom, "pluginRepositories/pluginRepository",
+                repository -> validateRepository(deployLogger, jarFilename, "pluginRepositories", repository));
+        forEachPomXmlElement(pom, "repositories/repository",
+                repository -> validateRepository(deployLogger, jarFilename, "repositories", repository));
+    }
+
+    private static void validateRepository(DeployLogger deployLogger, String jarFilename, String parentElementName,
+                                           Element element) {
+        String url = element.getElementsByTagName("url").item(0).getTextContent();
+        if (url.contains("vespa-maven-libs-release-local")) {
+            deployLogger.logApplicationPackage(Level.WARNING,
+                    String.format("<%s> in pom.xml of '%s' uses deprecated Maven repository '%s'.\n See announcement.",
+                            parentElementName, jarFilename, url));
+        }
     }
 
     private static void forEachPomXmlElement(Document pom, String xpath, Consumer<Element> consumer) throws XPathExpressionException {
