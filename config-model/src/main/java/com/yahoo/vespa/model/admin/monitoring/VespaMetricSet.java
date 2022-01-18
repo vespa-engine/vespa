@@ -637,6 +637,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.active_operations.latency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.active_operations.latency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.active_operations.latency.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_window_size.max"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_window_size.sum"));
+        metrics.add(new Metric("vds.filestor.alldisks.throttle_window_size.count"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.mergemetadatareadlatency.count"));
@@ -652,6 +655,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.max"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.sum"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove_latency.count"));
+        metrics.add(new Metric("vds.filestor.alldisks.allstripes.throttled_rpc_direct_dispatches.rate"));
+        metrics.add(new Metric("vds.filestor.alldisks.allstripes.throttled_persistence_thread_polls.rate"));
+        metrics.add(new Metric("vds.filestor.alldisks.allstripes.timeouts_waiting_for_throttle_token.rate"));
 
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.max"));
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.sum"));
