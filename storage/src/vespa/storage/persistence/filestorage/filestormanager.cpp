@@ -226,11 +226,6 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
                                                                    *_filestorHandler, i % numStripes, _component));
         }
         _bucketExecutorRegistration = _provider->register_executor(std::make_shared<BucketExecutorWrapper>(*this));
-    } else {
-        std::lock_guard guard(_lock);        
-        for (auto& handler : _persistenceHandlers) {
-            handler->configure(*config);
-        }
     }
 }
 

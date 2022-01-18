@@ -27,8 +27,7 @@ MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
                            const ClusterContext& cluster_context, const framework::Clock & clock,
                            vespalib::ISequencedTaskExecutor& executor,
                            uint32_t maxChunkSize,
-                           uint32_t commonMergeChainOptimalizationMinimumSize,
-                           bool async_apply_bucket_diff)
+                           uint32_t commonMergeChainOptimalizationMinimumSize)
     : _clock(clock),
       _cluster_context(cluster_context),
       _env(env),
@@ -37,7 +36,6 @@ MergeHandler::MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
       _monitored_ref_count(std::make_unique<MonitoredRefCount>()),
       _maxChunkSize(maxChunkSize),
       _commonMergeChainOptimalizationMinimumSize(commonMergeChainOptimalizationMinimumSize),
-      _async_apply_bucket_diff(async_apply_bucket_diff),
       _executor(executor)
 {
 }
@@ -1281,9 +1279,6 @@ MergeHandler::handleApplyBucketDiff(api::ApplyBucketDiffCommand& cmd, MessageTra
     if (applyDiffHasLocallyNeededData(cmd.getDiff(), index)) {
        async_results = ApplyBucketDiffState::create(*this, _env._metrics.merge_handler_metrics, _clock, bucket, RetainGuard(*_monitored_ref_count));
        applyDiffLocally(bucket, cmd.getDiff(), index, tracker->context(), async_results);
-       if (!_async_apply_bucket_diff.load(std::memory_order_relaxed)) {
-            check_apply_diff_sync(std::move(async_results));
-        }
     } else {
         LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u).",
             bucket.toString().c_str(), _env._nodeIndex, index);
@@ -1388,9 +1383,6 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply, Messa
             if (applyDiffHasLocallyNeededData(diff, index)) {
                 async_results = ApplyBucketDiffState::create(*this, _env._metrics.merge_handler_metrics, _clock, bucket, RetainGuard(*_monitored_ref_count));
                 applyDiffLocally(bucket, diff, index, s->context, async_results);
-                if (!_async_apply_bucket_diff.load(std::memory_order_relaxed)) {
-                    check_apply_diff_sync(std::move(async_results));
-                }
             } else {
                 LOG(spam, "Merge(%s): Didn't need fetched data on node %u (%u)",
                     bucket.toString().c_str(),
@@ -1478,12 +1470,6 @@ MergeHandler::drain_async_writes()
         // Wait for related ApplyBucketDiffState objects to be destroyed
         _monitored_ref_count->waitForZeroRefCount();
     }
-}
-
-void
-MergeHandler::configure(bool async_apply_bucket_diff) noexcept
-{
-    _async_apply_bucket_diff.store(async_apply_bucket_diff, std::memory_order_release);
 }
 
 void
