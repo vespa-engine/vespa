@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -20,17 +19,14 @@ public enum InfrastructureApplication {
     CONFIG_SERVER("zone-config-servers", NodeType.config),
     PROXY_HOST("proxy-host", NodeType.proxyhost),
     PROXY("routing", NodeType.proxy),
-    TENANT_HOST("tenant-host", NodeType.host),
-    DEV_HOST("dev-host", NodeType.devhost);
+    TENANT_HOST("tenant-host", NodeType.host);
 
     private final ApplicationId id;
     private final NodeType nodeType;
 
     /** Returns all applications that MAY be encountered in hosted Vespa, e.g. not DEV_HOST. */
-    public static List<InfrastructureApplication> inHosted() {
-        return Stream.of(values())
-                     .filter(application -> application != DEV_HOST)
-                     .collect(Collectors.toList());
+    public static List<InfrastructureApplication> toList() {
+        return List.of(values());
     }
 
     public static InfrastructureApplication withNodeType(NodeType nodeType) {

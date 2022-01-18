@@ -135,7 +135,7 @@ public class ControllerMaintenance extends AbstractComponent {
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
-            this.defaultInterval = duration(system.isCd() || system == SystemName.dev ? 1 : 5, MINUTES);
+            this.defaultInterval = duration(system.isCd() ? 1 : 5, MINUTES);
             this.outstandingChangeDeployer = duration(3, MINUTES);
             this.versionStatusUpdater = duration(3, MINUTES);
             this.readyJobsTrigger = duration(1, MINUTES);

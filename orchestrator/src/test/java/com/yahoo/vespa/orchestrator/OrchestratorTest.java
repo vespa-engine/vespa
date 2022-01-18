@@ -61,7 +61,7 @@ public class OrchestratorTest {
         var zone = new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-east-1"));
         this.superModelManager = new MySuperModelProvider();
         var duperModel = new DuperModel();
-        this.duperModelManager = new DuperModelManager(true, false, superModelManager, duperModel, flagSource, zone.system());
+        this.duperModelManager = new DuperModelManager(true, false, superModelManager, duperModel);
         this.monitorManager = mock(UnionMonitorManager.class);
         var metric = mock(Metric.class);
         var serviceMonitor = new ServiceMonitorImpl(duperModelManager, monitorManager, metric, timer, zone);
