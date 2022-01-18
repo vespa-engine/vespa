@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -164,11 +165,7 @@ public class BundleValidator extends Validator {
     }
 
     private static void validateDependencies(DeployLogger deployLogger, String jarFilename, Document pom) throws XPathExpressionException {
-        NodeList dependencies = (NodeList) XPathFactory.newDefaultInstance().newXPath()
-                .compile("/project/dependencies/dependency")
-                .evaluate(pom, XPathConstants.NODESET);
-        for (int i = 0; i < dependencies.getLength(); i++) {
-            Element dependency = (Element) dependencies.item(i);
+        forEachPomXmlElement(pom, "dependencies/dependency", dependency -> {
             String groupId = dependency.getElementsByTagName("groupId").item(0).getTextContent();
             String artifactId = dependency.getElementsByTagName("artifactId").item(0).getTextContent();
             for (DeprecatedMavenArtifact deprecatedArtifact : DeprecatedMavenArtifact.values()) {
@@ -179,6 +176,16 @@ public class BundleValidator extends Validator {
                                     jarFilename, groupId, artifactId, deprecatedArtifact.description));
                 }
             }
+        });
+    }
+
+    private static void forEachPomXmlElement(Document pom, String xpath, Consumer<Element> consumer) throws XPathExpressionException {
+        NodeList dependencies = (NodeList) XPathFactory.newDefaultInstance().newXPath()
+                .compile("/project/" + xpath)
+                .evaluate(pom, XPathConstants.NODESET);
+        for (int i = 0; i < dependencies.getLength(); i++) {
+            Element element = (Element) dependencies.item(i);
+            consumer.accept(element);
         }
     }
 
