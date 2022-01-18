@@ -65,7 +65,7 @@ public class CreatePositionZCurve extends Processor {
             Collection<String> summaryTo = removeSummaryTo(field);
             ensureCompatibleSummary(field, zName,
                                     PositionDataType.getPositionSummaryFieldName(fieldName),
-                                    DataType.getArray(DataType.STRING), // will become "jsonstring"
+                                    DataType.getArray(DataType.STRING), // will become "xmlstring"
                                     SummaryTransform.POSITIONS, summaryTo, validate);
             ensureCompatibleSummary(field, zName,
                                     PositionDataType.getDistanceSummaryFieldName(fieldName),
