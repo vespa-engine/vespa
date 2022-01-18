@@ -35,7 +35,6 @@ public:
     const AsyncHandler & asyncHandler() const { return _asyncHandler; }
     const SplitJoinHandler & splitjoinHandler() const { return _splitJoinHandler; }
     const SimpleMessageHandler & simpleMessageHandler() const { return _simpleHandler; }
-    void configure(vespa::config::content::StorFilestorConfig& config) noexcept;
 private:
     // Message handling functions
     MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, MessageTracker::UP tracker) const;

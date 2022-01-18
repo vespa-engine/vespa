@@ -50,8 +50,7 @@ public:
                  const ClusterContext& cluster_context, const framework::Clock & clock,
                  vespalib::ISequencedTaskExecutor& executor,
                  uint32_t maxChunkSize = 4190208,
-                 uint32_t commonMergeChainOptimalizationMinimumSize = 64,
-                 bool async_apply_bucket_diff = false);
+                 uint32_t commonMergeChainOptimalizationMinimumSize = 64);
 
     ~MergeHandler() override;
 
@@ -79,7 +78,6 @@ public:
     MessageTrackerUP handleApplyBucketDiff(api::ApplyBucketDiffCommand&, MessageTrackerUP) const;
     void handleApplyBucketDiffReply(api::ApplyBucketDiffReply&, MessageSender&, MessageTrackerUP) const;
     void drain_async_writes();
-    void configure(bool async_apply_bucket_diff) noexcept;
 
 private:
     using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
@@ -91,7 +89,6 @@ private:
     std::unique_ptr<vespalib::MonitoredRefCount> _monitored_ref_count;
     const uint32_t            _maxChunkSize;
     const uint32_t            _commonMergeChainOptimalizationMinimumSize;
-    std::atomic<bool>         _async_apply_bucket_diff;
     vespalib::ISequencedTaskExecutor& _executor;
 
     MessageTrackerUP handleGetBucketDiffStage2(api::GetBucketDiffCommand&, MessageTrackerUP) const;
