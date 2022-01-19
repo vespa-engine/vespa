@@ -18,21 +18,21 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implements VespaZooKeeperServer {
 
-    private final AtomicReference<QuorumPeer> peer = new AtomicReference<>();
+    private QuorumPeer peer;
 
     @Inject
     public ReconfigurableVespaZooKeeperServer(Reconfigurer reconfigurer, ZookeeperServerConfig zookeeperServerConfig) {
-        reconfigurer.startOrReconfigure(zookeeperServerConfig, this, VespaQuorumPeer::new, peer::set);
+        peer = reconfigurer.startOrReconfigure(zookeeperServerConfig, this, () -> peer = new VespaQuorumPeer());
     }
 
     @Override
     public void shutdown() {
-        peer.get().shutdown(Duration.ofMinutes(1));
+        peer.shutdown(Duration.ofMinutes(1));
     }
 
     @Override
     public void start(Path configFilePath) {
-        peer.get().start(configFilePath);
+        peer.start(configFilePath);
     }
 
     @Override
