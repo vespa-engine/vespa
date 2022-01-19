@@ -16,6 +16,8 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 /**
  * Implementation of FeedClient. It is a thin layer on top of multiClusterHandler and multiClusterResultAggregator.
@@ -23,6 +25,9 @@ import java.util.concurrent.TimeUnit;
  * @author dybis
  */
 public class FeedClientImpl implements FeedClient {
+
+    private static final Logger log = Logger.getLogger(FeedClientImpl.class.getName());
+    private static final AtomicBoolean warningPrinted = new AtomicBoolean(false);
 
     private final Clock clock;
     private final OperationProcessor operationProcessor;
@@ -46,6 +51,10 @@ public class FeedClientImpl implements FeedClient {
                 sessionParams,
                 timeoutExecutor,
                 clock);
+        if (warningPrinted.compareAndSet(false, true)) {
+            log.warning("The vespa-http-client is deprecated and will be removed in Vespa 8. " +
+                    "See https://docs.vespa.ai/en/vespa8-release-notes.html");
+        }
     }
 
     @Override
