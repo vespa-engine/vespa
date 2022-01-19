@@ -18,6 +18,7 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  * @since 5.1
  */
+@SuppressWarnings("removal")
 public class VespaLevelControllerRepoTest {
 
     static int findControlString(RandomAccessFile f, String s) {

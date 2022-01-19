@@ -12,8 +12,7 @@ import java.util.Comparator;
  * This is due to only looking at the timestamp, so two different messages with
  * the same timestamp would appear "equal" to this comparator.
  *
- * @author vlarsen
- *
+ * @author Vidar Larsen
  */
 public class LogMessageTimeComparator implements Comparator<LogMessage>, Serializable {
 	private static final long serialVersionUID = 1L;

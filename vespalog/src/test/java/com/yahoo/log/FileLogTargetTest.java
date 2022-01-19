@@ -16,6 +16,7 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  * @since 5.1
  */
+@SuppressWarnings("removal")
 public class FileLogTargetTest {
     @Test(expected = RuntimeException.class)
     public void requireThatExceptionIsThrowIfFileNotFound() throws IOException {

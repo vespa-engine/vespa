@@ -10,7 +10,9 @@ import java.util.logging.Level;
  *
  * @author arnej27959
  *
+ * @deprecated Should only be used internally in the log library
  */
+@Deprecated(since = "7", forRemoval = true)
 public interface LevelController {
 
     /**

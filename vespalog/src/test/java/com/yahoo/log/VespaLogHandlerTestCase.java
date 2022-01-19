@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import com.yahoo.log.impl.LogUtils;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +32,7 @@ import static org.junit.Assert.fail;
 /**
  * @author  Bjorn Borud
  */
+@SuppressWarnings("removal")
 public class VespaLogHandlerTestCase {
     private final static String hostname;
     private final static String pid;
@@ -47,8 +50,8 @@ public class VespaLogHandlerTestCase {
     private static final String record4String;
 
     static {
-        hostname = Util.getHostName();
-        pid = Util.getPID();
+        hostname = LogUtils.getHostName();
+        pid = LogUtils.getPID();
 
         record1 = new LogRecord(Level.INFO, "This is a test");
         record1.setInstant(ofEpochSecond(1100011348L, 29_123_543));

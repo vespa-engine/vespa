@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
 /**
  * @author  Bjorn Borud
  */
+@SuppressWarnings("removal")
 public class UtilTestCase {
 
     /**

@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
  * @author  Bjorn Borud
  * @author bjorncs
  */
+@SuppressWarnings("removal")
 public class LogMessage
 {
     private static Logger log = Logger.getLogger(LogMessage.class.getName());
@@ -188,7 +189,7 @@ public class LogMessage
                                 + component.length()
                                 + level.toString().length()
                                 + payload.length()
-                                + 1)
+                                + 7)
             .append(timeStr).append("\t")
             .append(host).append("\t")
             .append(threadProcess).append("\t")
