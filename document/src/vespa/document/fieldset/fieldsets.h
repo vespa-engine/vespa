@@ -33,6 +33,18 @@ public:
     Type getType() const override { return Type::DOCID; }
 };
 
+class DocumentOnly final : public FieldSet
+{
+public:
+    static constexpr const char * NAME = "[document]";
+    bool contains(const FieldSet& fields) const override {
+        return fields.getType() == Type::DOCUMENT_ONLY
+            || fields.getType() == Type::DOCID
+            || fields.getType() == Type::NONE;
+    }
+    Type getType() const override { return Type::DOCUMENT_ONLY; }
+};
+
 class FieldCollection : public FieldSet
 {
 public:

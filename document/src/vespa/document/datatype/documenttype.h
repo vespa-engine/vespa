@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -28,23 +29,19 @@ public:
     class FieldSet {
     public:
         using Fields = std::set<vespalib::string>;
-        FieldSet() = default;
-        explicit FieldSet(const vespalib::string & name) : _name(name), _fields() {}
-        FieldSet(const vespalib::string & name, Fields fields) : _name(name), _fields(std::move(fields)) {}
+        FieldSet(const vespalib::string & name, Fields fields,
+                 const DocumentType & doc_type);
+
         FieldSet(const FieldSet&) = default;
-        FieldSet& operator=(const FieldSet&) = default;
         FieldSet(FieldSet&&) noexcept = default;
-        FieldSet& operator=(FieldSet&&) noexcept = default;
 
         const vespalib::string & getName() const noexcept { return _name; }
         const Fields & getFields() const noexcept { return _fields; }
-        FieldSet & add(vespalib::string & field) {
-            _fields.insert(field);
-            return *this;
-        }
+        const FieldCollection & asCollection() const { return _field_collection; }
     private:
         vespalib::string _name;
         Fields           _fields;
+        FieldCollection  _field_collection;
     };
     using FieldSetMap = std::map<vespalib::string, FieldSet>;
     using ImportedFieldNames = vespalib::hash_set<vespalib::string>;

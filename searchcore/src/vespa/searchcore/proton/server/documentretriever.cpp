@@ -127,6 +127,7 @@ DocumentRetriever::needFetchFromDocStore(const FieldSet & fieldSet) const {
         case FieldSet::Type::NONE:
         case FieldSet::Type::DOCID:
             return false;
+        case FieldSet::Type::DOCUMENT_ONLY:
         case FieldSet::Type::ALL:
             return ! _areAllFieldsAttributes;
         case FieldSet::Type::FIELD: {
@@ -255,6 +256,14 @@ DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::D
             case FieldSet::Type::SET: {
                 const auto &set = static_cast<const document::FieldCollection &>(fieldSet);
                 populate(lid, *doc, set.getFields());
+                break;
+            }
+            case FieldSet::Type::DOCUMENT_ONLY: {
+                const auto * actual = getDocumentType().getFieldSet(document::DocumentOnly::NAME);
+                if (actual != nullptr) {
+                    const auto &set = actual->asCollection();
+                    populate(lid, *doc, set.getFields());
+                }
                 break;
             }
             case FieldSet::Type::NONE:
