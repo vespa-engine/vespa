@@ -252,6 +252,20 @@ TEST_F(VisitorOperationTest, no_bucket) {
               runEmptyVisitor(msg));
 }
 
+TEST_F(VisitorOperationTest, none_fieldset_is_rejected) {
+    enable_cluster_state("distributor:1 storage:1");
+    auto msg = std::make_shared<api::CreateVisitorCommand>(
+            makeBucketSpace(), "dumpvisitor", "instance", "");
+    msg->addBucketToBeVisited(document::BucketId(16, 1));
+    msg->addBucketToBeVisited(nullId);
+    msg->setFieldSet("[none]");
+
+    EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
+              "ReturnCode(ILLEGAL_PARAMETERS, Field set '[none]' is not supported "
+              "for external visitor operations. Use '[id]' to return documents with no fields set.)",
+              runEmptyVisitor(msg));
+}
+
 TEST_F(VisitorOperationTest, only_super_bucket_and_progress_allowed) {
     enable_cluster_state("distributor:1 storage:1");
 
