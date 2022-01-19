@@ -757,7 +757,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public ServiceListResponse servicesToCheckForConfigConvergence(ApplicationId applicationId,
                                                                    Duration timeoutPerService,
                                                                    Optional<Version> vespaVersion) {
-        return convergeChecker.getConfigGenerationsForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
+        return convergeChecker.checkConvergenceForAllServices(getApplication(applicationId, vespaVersion), timeoutPerService);
     }
 
     public ConfigConvergenceChecker configConvergenceChecker() { return convergeChecker; }
