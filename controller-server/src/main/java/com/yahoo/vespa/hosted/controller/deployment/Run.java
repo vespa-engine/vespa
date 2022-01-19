@@ -210,7 +210,7 @@ public class Run {
         return lastVespaLogTimestamp;
     }
 
-    /** Returns the timestamp of the last time no nodes were allowed to be down. */
+    /** Returns since when no nodes have been allowed to be down. */
     public Optional<Instant> noNodesDownSince() {
         return noNodesDownSince;
     }

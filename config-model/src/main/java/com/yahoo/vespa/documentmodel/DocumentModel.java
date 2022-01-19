@@ -9,12 +9,12 @@ import com.yahoo.documentmodel.DocumentTypeRepo;
  * It contains a search manager managing all specified search definitions.
  * It contains a storage manager managing all specified storage definitions.
  *
- * @author    baldersheim
- * @since     2010-02-19
+ * @author baldersheim
  */
 public class DocumentModel {
-    private DocumentTypeRepo documentMan = new DocumentTypeRepo();
-    private SearchManager         searchMan = new SearchManager();
+
+    private final DocumentTypeRepo documentMan = new DocumentTypeRepo();
+    private final SearchManager searchMan = new SearchManager();
 
     /**
      *
@@ -26,6 +26,6 @@ public class DocumentModel {
      *
      * @return Returns the SearchManager
      */
-    public SearchManager     getSearchManager() { return searchMan; }
+    public SearchManager getSearchManager() { return searchMan; }
 
 }

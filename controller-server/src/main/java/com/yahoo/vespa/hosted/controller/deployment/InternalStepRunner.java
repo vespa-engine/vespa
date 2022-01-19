@@ -349,14 +349,12 @@ public class InternalStepRunner implements StepRunner {
 
         String failureReason = null;
 
-        NodeList suspendedTooLong = nodeList
-                .isStateful()
-                .suspendedSince(controller.clock().instant().minus(timeouts.statefulNodesDown()))
-                .and(nodeList
-                        .not().isStateful()
-                        .suspendedSince(controller.clock().instant().minus(timeouts.statelessNodesDown()))
-                );
-        if ( ! suspendedTooLong.isEmpty()) {
+        NodeList suspendedTooLong = nodeList.isStateful()
+                                            .suspendedSince(controller.clock().instant().minus(timeouts.statefulNodesDown()))
+                                            .and(nodeList.not().isStateful()
+                                                         .suspendedSince(controller.clock().instant().minus(timeouts.statelessNodesDown()))
+                                            );
+        if ( ! suspendedTooLong.isEmpty() && deployment.get().at().plus(timeouts.statelessNodesDown()).isBefore(controller.clock().instant())) {
             failureReason = "Some nodes have been suspended for more than the allowed threshold:\n" +
                             suspendedTooLong.asList().stream().map(node -> node.node().hostname().value()).collect(joining("\n"));
         }
