@@ -21,13 +21,18 @@ public class MockConfigConvergenceChecker extends ConfigConvergenceChecker {
     }
 
     @Override
-    public ServiceListResponse getConfigGenerationsForAllServices(Application application, Duration timeoutPerService) {
+    public ServiceListResponse checkConvergenceForAllServices(Application application, Duration timeoutPerService) {
         return new ServiceListResponse(Map.of(), wantedGeneration, wantedGeneration);
     }
 
     @Override
     public ServiceResponse getServiceConfigGeneration(Application application, String hostAndPortToCheck, Duration timeout) {
         return new ServiceResponse(ServiceResponse.Status.ok, wantedGeneration);
+    }
+
+    @Override
+    public ServiceListResponse checkConvergenceUnlessDeferringChangesUntilRestart(Application application, Duration timeoutPerService) {
+        return new ServiceListResponse(Map.of(), wantedGeneration, wantedGeneration);
     }
 
 }

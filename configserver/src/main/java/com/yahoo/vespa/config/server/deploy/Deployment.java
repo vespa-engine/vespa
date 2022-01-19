@@ -193,20 +193,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 throw new ConfigNotConvergedException(e);
             }
 
-            Application app = applicationRepository.getActiveApplication(applicationId);
-
-            // TODO: Don't wait for config convergence if restartOnDeploy is true for one o more container clusters
-            // (ideally wait for config convergence for all other services)
-
-            log.info(session.logPre() + "Wait for services to converge on new generation before restarting");
+            deployLogger.log(Level.INFO, "Wait for services to converge on new generation before restarting");
             ConfigConvergenceChecker convergenceChecker = applicationRepository.configConvergenceChecker();
-            ServiceListResponse response = convergenceChecker.getConfigGenerationsForAllServices(app, timeout);
+            Application app = applicationRepository.getActiveApplication(applicationId);
+            ServiceListResponse response = convergenceChecker.checkConvergenceUnlessDeferringChangesUntilRestart(app, timeout);
             if (response.converged) {
-                log.info(session.logPre() + "Services converged on new generation " + response.currentGeneration);
+                deployLogger.log(Level.INFO, "Services converged on new generation " + response.currentGeneration);
                 return;
             } else {
-                log.info(session.logPre() + "Services not converged on new generation, wanted generation: " + response.wantedGeneration +
-                                 ", current generation: " + response.currentGeneration + ", will retry");
+                deployLogger.log(Level.INFO, "Services not converged on new generation, wanted generation: " +
+                        response.wantedGeneration + ", current generation: " + response.currentGeneration + ", will retry");
                 try { Thread.sleep(10_000); } catch (InterruptedException e) { /* ignore */ }
             }
         }
