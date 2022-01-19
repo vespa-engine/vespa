@@ -10,7 +10,6 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/count_down_latch.h>
 #include <vespa/vespalib/util/error.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -72,7 +71,7 @@ Fusion::Fusion(const Schema& schema, const vespalib::string& dir,
 Fusion::~Fusion() = default;
 
 bool
-Fusion::mergeFields(vespalib::ThreadExecutor & executor, std::shared_ptr<IFlushToken> flush_token)
+Fusion::mergeFields(vespalib::Executor & executor, std::shared_ptr<IFlushToken> flush_token)
 {
     FieldMergersState field_mergers_state(_fusion_out_index, executor, flush_token);
     const Schema &schema = getSchema();
@@ -104,7 +103,7 @@ Fusion::readSchemaFiles()
 }
 
 bool
-Fusion::merge(vespalib::ThreadExecutor& executor, std::shared_ptr<IFlushToken> flush_token)
+Fusion::merge(vespalib::Executor& executor, std::shared_ptr<IFlushToken> flush_token)
 {
     FastOS_StatInfo statInfo;
     if (!FastOS_File::Stat(_fusion_out_index.get_path().c_str(), &statInfo)) {

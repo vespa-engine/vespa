@@ -2,12 +2,12 @@
 
 #pragma once
 
-#include <vespa/document/util/queue.h>
 #include <vespa/vespalib/util/count_down_latch.h>
 #include <atomic>
+#include <vector>
 
 namespace search { class IFlushToken; }
-namespace vespalib { class ThreadExecutor; }
+namespace vespalib { class Executor; }
 
 namespace search::diskindex {
 
@@ -20,16 +20,15 @@ class FusionOutputIndex;
  */
 class FieldMergersState {
     const FusionOutputIndex&                  _fusion_out_index;
-    vespalib::ThreadExecutor&                 _executor;
+    vespalib::Executor&                       _executor;
     std::shared_ptr<IFlushToken>              _flush_token;
-    document::Semaphore                       _concurrent;
     vespalib::CountDownLatch                  _done;
     std::atomic<uint32_t>                     _failed;
     std::vector<std::unique_ptr<FieldMerger>> _field_mergers;
 
     void destroy_field_merger(FieldMerger& field_merger);
 public:
-    FieldMergersState(const FusionOutputIndex& fusion_out_index, vespalib::ThreadExecutor& executor, std::shared_ptr<IFlushToken> flush_token);
+    FieldMergersState(const FusionOutputIndex& fusion_out_index, vespalib::Executor& executor, std::shared_ptr<IFlushToken> flush_token);
     ~FieldMergersState();
     FieldMerger& alloc_field_merger(uint32_t id);
     void field_merger_done(FieldMerger& field_merger, bool failed);
