@@ -48,6 +48,7 @@ import java.util.logging.Logger;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
 
 /**
@@ -66,6 +67,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             QRSERVER.serviceName,
             LOGSERVER_CONTAINER.serviceName,
             CLUSTERCONTROLLER_CONTAINER.serviceName,
+            METRICS_PROXY_CONTAINER.serviceName,
             "searchnode",
             "storagenode",
             "distributor"
