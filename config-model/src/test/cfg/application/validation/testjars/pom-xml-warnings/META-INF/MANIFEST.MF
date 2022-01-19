@@ -1,7 +1,0 @@
-Manifest-Version: 1.0
-Created-By: 1.6.0_20 (Apple Inc.)
-Bundle-ManifestVersion: 2
-Bundle-Name: mybundle
-Bundle-SymbolicName: mybundle
-Bundle-Version: 0
-
