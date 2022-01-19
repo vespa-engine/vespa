@@ -17,7 +17,6 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
-#include <vespa/vespalib/util/threadexecutor.h>
 #include <future>
 
 #include <vespa/log/log.h>

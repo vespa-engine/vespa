@@ -15,7 +15,7 @@ private:
     SyncableThreadServiceObserver  _master;
     ThreadServiceObserver          _index;
     ThreadExecutorObserver         _summary;
-    vespalib::ThreadExecutor     & _shared;
+    vespalib::Executor           & _shared;
     vespalib::SequencedTaskExecutorObserver _indexFieldInverter;
     vespalib::SequencedTaskExecutorObserver _indexFieldWriter;
     vespalib::SequencedTaskExecutorObserver _attributeFieldWriter;
@@ -46,7 +46,7 @@ public:
     vespalib::ThreadExecutor &summary() override {
         return _summary;
     }
-    vespalib::ThreadExecutor &shared() override {
+    vespalib::Executor &shared() override {
         return _shared;
     }
     vespalib::ISequencedTaskExecutor &indexFieldInverter() override {

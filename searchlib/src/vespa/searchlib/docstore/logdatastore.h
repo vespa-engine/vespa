@@ -10,7 +10,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include <vespa/vespalib/util/threadexecutor.h>
+#include <vespa/vespalib/util/executor.h>
 
 #include <set>
 
@@ -84,7 +84,7 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDataStore(vespalib::ThreadExecutor &executor, const vespalib::string &dirName, const Config & config,
+    LogDataStore(vespalib::Executor &executor, const vespalib::string &dirName, const Config & config,
                  const GrowStrategy &growStrategy, const TuneFileSummary &tune,
                  const search::common::FileHeaderContext &fileHeaderContext,
                  transactionlog::SyncProxy &tlSyncer, IBucketizer::SP bucketizer, bool readOnly = false);
@@ -256,7 +256,7 @@ private:
     FileId                                   _prevActive;
     mutable std::mutex                       _updateLock;
     bool                                     _readOnly;
-    vespalib::ThreadExecutor                &_executor;
+    vespalib::Executor                      &_executor;
     SerialNum                                _initFlushSyncToken;
     transactionlog::SyncProxy               &_tlSyncer;
     IBucketizer::SP                          _bucketizer;

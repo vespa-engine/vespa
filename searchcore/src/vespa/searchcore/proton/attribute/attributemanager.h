@@ -80,7 +80,7 @@ private:
     IAttributeFactory::SP _factory;
     std::shared_ptr<search::attribute::Interlock> _interlock;
     vespalib::ISequencedTaskExecutor &_attributeFieldWriter;
-    vespalib::ThreadExecutor& _shared_executor;
+    vespalib::Executor& _shared_executor;
     HwInfo _hwInfo;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
@@ -107,7 +107,7 @@ public:
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext & fileHeaderContext,
                      vespalib::ISequencedTaskExecutor &attributeFieldWriter,
-                     vespalib::ThreadExecutor& shared_executor,
+                     vespalib::Executor& shared_executor,
                      const HwInfo &hwInfo);
 
     AttributeManager(const vespalib::string &baseDir,
@@ -115,7 +115,7 @@ public:
                      const search::TuneFileAttributes &tuneFileAttributes,
                      const search::common::FileHeaderContext & fileHeaderContext,
                      vespalib::ISequencedTaskExecutor &attributeFieldWriter,
-                     vespalib::ThreadExecutor& shared_executor,
+                     vespalib::Executor& shared_executor,
                      const IAttributeFactory::SP &factory,
                      const HwInfo &hwInfo);
 
@@ -171,7 +171,7 @@ public:
 
     vespalib::ISequencedTaskExecutor &getAttributeFieldWriter() const override;
 
-    vespalib::ThreadExecutor& get_shared_executor() const override;
+    vespalib::Executor& get_shared_executor() const override { return _shared_executor; }
 
     search::AttributeVector *getWritableAttribute(const vespalib::string &name) const override;
 

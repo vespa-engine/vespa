@@ -20,7 +20,7 @@ class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
     using Registration = std::unique_ptr<vespalib::IDestructorCallback>;
-    vespalib::ThreadExecutor                           & _sharedExecutor;
+    vespalib::Executor                                 & _sharedExecutor;
     vespalib::ThreadStackExecutor                        _masterExecutor;
     ThreadingServiceConfig::SharedFieldWriterExecutor    _shared_field_writer;
     std::atomic<uint32_t>                                _master_task_limit;
@@ -42,9 +42,9 @@ public:
     /**
      * Convenience constructor used in unit tests.
      */
-    ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor, uint32_t num_treads = 1);
+    ExecutorThreadingService(vespalib::Executor& sharedExecutor, uint32_t num_treads = 1);
 
-    ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor,
+    ExecutorThreadingService(vespalib::Executor& sharedExecutor,
                              vespalib::ISequencedTaskExecutor* field_writer,
                              vespalib::InvokeService * invokeService,
                              const ThreadingServiceConfig& cfg,
@@ -72,7 +72,7 @@ public:
     vespalib::ThreadExecutor &summary() override {
         return *_summaryExecutor;
     }
-    vespalib::ThreadExecutor &shared() override {
+    vespalib::Executor &shared() override {
         return _sharedExecutor;
     }
 

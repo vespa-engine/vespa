@@ -38,11 +38,11 @@ VESPA_THREAD_STACK_TAG(field_writer_executor)
 
 }
 
-ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor, uint32_t num_treads)
+ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor &sharedExecutor, uint32_t num_treads)
     : ExecutorThreadingService(sharedExecutor, nullptr, nullptr, ThreadingServiceConfig::make(num_treads))
 {}
 
-ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor& sharedExecutor,
+ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor& sharedExecutor,
                                                    vespalib::ISequencedTaskExecutor* field_writer,
                                                    vespalib::InvokeService * invokerService,
                                                    const ThreadingServiceConfig& cfg,
