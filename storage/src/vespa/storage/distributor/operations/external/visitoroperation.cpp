@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "visitoroperation.h"
+#include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/storageserver/storagemetricsset.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
@@ -347,6 +348,17 @@ VisitorOperation::verifyOperationSentToCorrectDistributor()
     verifyDistributorOwnsBucket(_superBucket.bid);
 }
 
+void
+VisitorOperation::verify_fieldset_makes_sense_for_visiting()
+{
+    if (_msg->getFieldSet() == document::NoFields::NAME) {
+        throw VisitorVerificationException(
+                api::ReturnCode::ILLEGAL_PARAMETERS,
+                "Field set '[none]' is not supported for external visitor operations. "
+                "Use '[id]' to return documents with no fields set.");
+    }
+}
+
 bool
 VisitorOperation::verifyCreateVisitorCommand(DistributorStripeMessageSender& sender)
 {
@@ -354,6 +366,7 @@ VisitorOperation::verifyCreateVisitorCommand(DistributorStripeMessageSender& sen
         verifyOperationContainsBuckets();
         verifyOperationHasSuperbucketAndProgress();
         verifyOperationSentToCorrectDistributor();
+        verify_fieldset_makes_sense_for_visiting();
         // TODO wrap and test
         if (is_read_for_write() && (_msg->getMaxBucketsPerVisitor() != 1)) {
             throw VisitorVerificationException(
