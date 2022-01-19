@@ -95,7 +95,7 @@ AdaptiveSequencedExecutor::maybe_block_self(std::unique_lock<std::mutex> &lock)
     while (_self.state == Self::State::BLOCKED) {
         _self.cond.wait(lock);
     }
-    while ((_self.state == Self::State::OPEN) && (_self.pending_tasks >= _cfg.max_pending)) {
+    while ((_self.state == Self::State::OPEN) && _cfg.is_above_max_pending(_self.pending_tasks)) {
         _self.state = Self::State::BLOCKED;
         while (_self.state == Self::State::BLOCKED) {
             _self.cond.wait(lock);
@@ -228,7 +228,8 @@ AdaptiveSequencedExecutor::worker_main()
 }
 
 AdaptiveSequencedExecutor::AdaptiveSequencedExecutor(size_t num_strands, size_t num_threads,
-                                                     size_t max_waiting, size_t max_pending)
+                                                     size_t max_waiting, size_t max_pending,
+                                                     bool is_max_pending_hard)
     : ISequencedTaskExecutor(num_strands),
       _thread_tools(std::make_unique<ThreadTools>(*this)),
       _mutex(),
@@ -238,7 +239,7 @@ AdaptiveSequencedExecutor::AdaptiveSequencedExecutor(size_t num_strands, size_t 
       _self(),
       _stats(),
       _idleTracker(steady_clock::now()),
-      _cfg(num_threads, max_waiting, max_pending)
+      _cfg(num_threads, max_waiting, max_pending, is_max_pending_hard)
 {
     _stats.queueSize.add(_self.pending_tasks);
     _thread_tools->start(num_threads);

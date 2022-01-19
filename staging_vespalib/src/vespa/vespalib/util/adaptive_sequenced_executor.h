@@ -51,14 +51,22 @@ private:
         size_t max_waiting;
         size_t max_pending;
         size_t wakeup_limit;
+        bool is_max_pending_hard;
         void set_max_pending(size_t max_pending_in) {
             max_pending = std::max(1uL, max_pending_in);
             wakeup_limit = std::max(1uL, size_t(max_pending * 0.9));
             assert(wakeup_limit > 0);
             assert(wakeup_limit <= max_pending);
         }
-        Config(size_t num_threads_in, size_t max_waiting_in, size_t max_pending_in)
-            : num_threads(num_threads_in), max_waiting(max_waiting_in), max_pending(1000), wakeup_limit(900)
+        bool is_above_max_pending(size_t pending) {
+            return (pending >= max_pending) && is_max_pending_hard;
+        }
+        Config(size_t num_threads_in, size_t max_waiting_in, size_t max_pending_in, bool is_max_pending_hard_in)
+            : num_threads(num_threads_in),
+              max_waiting(max_waiting_in),
+              max_pending(1000),
+              wakeup_limit(900),
+              is_max_pending_hard(is_max_pending_hard_in)
         {
             assert(num_threads > 0);
             set_max_pending(max_pending_in);
@@ -143,7 +151,8 @@ private:
     void worker_main();
 public:
     AdaptiveSequencedExecutor(size_t num_strands, size_t num_threads,
-                              size_t max_waiting, size_t max_pending);
+                              size_t max_waiting, size_t max_pending,
+                              bool is_max_pending_hard);
     ~AdaptiveSequencedExecutor() override;
     ExecutorId getExecutorId(uint64_t component) const override;
     void executeTask(ExecutorId id, Task::UP task) override;

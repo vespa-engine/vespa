@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     std::atomic<long> counter(0);
     std::unique_ptr<ISequencedTaskExecutor> executor;
     if (use_adaptive_executor) {
-        executor = std::make_unique<AdaptiveSequencedExecutor>(num_strands, num_threads, max_waiting, task_limit);
+        executor = std::make_unique<AdaptiveSequencedExecutor>(num_strands, num_threads, max_waiting, task_limit, true);
     } else {
         auto optimize = optimize_for_throughput
                         ? vespalib::Executor::OptimizeFor::THROUGHPUT
