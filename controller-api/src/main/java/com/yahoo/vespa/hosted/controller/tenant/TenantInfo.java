@@ -13,13 +13,35 @@ import java.util.Objects;
  * @author smorgrav
  */
 public class TenantInfo {
+    // Editable as 'Tenant Information - Company Name'
+    // Viewable in the 'Account - Profile' section as 'Company Name'
     private final String name;
+
+    // Editable as 'Tenant Information - Email'
+    // Not displayed outside of 'Edit profile'
     private final String email;
+
+    // Editable as 'Tenant Information - Website'
+    // Viewable in the 'Account - Profile' section at bottom of 'Contact Information'
     private final String website;
+
+    // Editable as 'Contact Information - Contact Name'
+    // Viewable in the 'Account - Profile' section in 'Contact Information'
     private final String contactName;
+
+    // Editable as 'Contact Information - Contact Email'
+    // Viewable in the 'Account - Profile' section in 'Contact Information'
     private final String contactEmail;
+
+    // Not editable in the account setting
+    // Not viewable.
+    // TODO: Remove
     private final String invoiceEmail;
+
+    // See class for more info
     private final TenantInfoAddress address;
+
+    // See class for more info
     private final TenantInfoBillingContact billingContact;
 
     TenantInfo(String name, String email, String website, String contactName, String contactEmail,
