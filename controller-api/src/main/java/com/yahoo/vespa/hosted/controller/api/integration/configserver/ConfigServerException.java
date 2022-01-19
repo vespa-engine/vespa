@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
-import org.apache.hc.core5.http.ClassicHttpRequest;
 
 import java.util.stream.Stream;
 
@@ -41,7 +40,8 @@ public class ConfigServerException extends RuntimeException {
         PARENT_HOST_NOT_READY,
         CERTIFICATE_NOT_READY,
         LOAD_BALANCER_NOT_READY,
-        INCOMPLETE_RESPONSE
+        INCOMPLETE_RESPONSE,
+        CONFIG_NOT_CONVERGED
     }
 
     public static ConfigServerException readException(byte[] body, String context) {
