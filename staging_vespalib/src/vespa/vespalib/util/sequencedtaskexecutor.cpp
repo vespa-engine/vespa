@@ -61,7 +61,7 @@ SequencedTaskExecutor::create(Runnable::init_fun_t func, uint32_t threads, uint3
 {
     if (optimize == OptimizeFor::ADAPTIVE) {
         size_t num_strands = std::min(taskLimit, threads*32);
-        return std::make_unique<AdaptiveSequencedExecutor>(num_strands, threads, kindOfWatermark, taskLimit);
+        return std::make_unique<AdaptiveSequencedExecutor>(num_strands, threads, kindOfWatermark, taskLimit, is_task_limit_hard);
     } else {
         auto executors = std::vector<std::unique_ptr<SyncableThreadExecutor>>();
         executors.reserve(threads);
