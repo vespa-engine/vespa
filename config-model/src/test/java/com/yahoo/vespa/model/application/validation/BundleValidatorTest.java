@@ -64,9 +64,8 @@ public class BundleValidatorTest {
         JarFile jarFile = createTemporaryJarFile("import-warnings");
         validator.validateJarFile(state, jarFile);
         assertThat(buffer.toString())
-                .contains("For JAR file 'import-warnings.jar': \n" +
-                        "Manifest imports the following Java packages from 'org.json:json': [org.json]. \n" +
-                        "The org.json library will no longer provided by jdisc runtime on Vespa 8. See https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.");
+                .contains("JAR file 'import-warnings.jar' imports the packages [org.json] from 'org.json:json'. \n" +
+                        "This bundle is no longer provided on Vespa 8 - see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.");
     }
 
     private DeployState createDeployState(StringBuffer buffer) {

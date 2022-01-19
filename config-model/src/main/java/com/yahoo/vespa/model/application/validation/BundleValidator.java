@@ -75,17 +75,15 @@ public class BundleValidator extends AbstractBundleValidator {
             }
         });
         deprecatedPackagesInUse.forEach((artifact, packagesInUse) -> {
-            log(state, Level.WARNING, "For JAR file '%s': \n" +
-                    "Manifest imports the following Java packages from '%s': %s. \n" +
-                    "%s",
-                    filename(jar), artifact.name, packagesInUse, artifact.description);
+            log(state, Level.WARNING, "JAR file '%s' imports the packages %s from '%s'. \n%s",
+                    filename(jar), packagesInUse, artifact.name, artifact.description);
         });
     }
 
     private enum DeprecatedProvidedBundle {
         ORG_JSON("org.json:json",
-                "The org.json library will no longer provided by jdisc runtime on Vespa 8. " +
-                        "See https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.",
+                "This bundle is no longer provided on Vespa 8 - " +
+                        "see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.",
                 Set.of("org\\.json"));
 
         final String name;
