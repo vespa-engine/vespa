@@ -253,6 +253,7 @@ public class InternalStepRunner implements StepRunner {
                     return result;
                 case ACTIVATION_CONFLICT:
                 case APPLICATION_LOCK_FAILURE:
+                case CONFIG_NOT_CONVERGED:
                     logger.log("Deployment failed with possibly transient error " + e.code() +
                                ", will retry: " + e.getMessage());
                     return result;
