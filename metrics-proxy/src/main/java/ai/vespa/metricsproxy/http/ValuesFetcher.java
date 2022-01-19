@@ -31,8 +31,8 @@ public class ValuesFetcher {
     private final MetricsConsumers metricsConsumers;
 
     public ValuesFetcher(MetricsManager metricsManager,
-                  VespaServices vespaServices,
-                  MetricsConsumers metricsConsumers) {
+                         VespaServices vespaServices,
+                         MetricsConsumers metricsConsumers) {
         this.metricsManager = metricsManager;
         this.vespaServices = vespaServices;
         this.metricsConsumers = metricsConsumers;
@@ -47,7 +47,7 @@ public class ValuesFetcher {
                 .collect(Collectors.toList());
     }
 
-    public MetricsPacket.Builder [] fetchMetricsAsBuilders(String requestedConsumer) throws JsonRenderingException {
+    public MetricsPacket.Builder[] fetchMetricsAsBuilders(String requestedConsumer) throws JsonRenderingException {
         ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
 
         List<MetricsPacket.Builder> builders = metricsManager.getMetricsAsBuilders(vespaServices.getVespaServices(), Instant.now(), consumer)

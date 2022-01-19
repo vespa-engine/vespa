@@ -13,20 +13,20 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 public abstract class Production {
 
     /** True to add, false to replace, default true */
-    protected boolean replacing=true;
+    protected boolean replacing = true;
 
     /** The (0-base) position of this term in the productions of this rule */
-    private int position=0;
+    private int position = 0;
 
     /** The weight (strength) of this production as a percentage (default is 100) */
-    private int weight=100;
+    private int weight = 100;
 
     /** Creates a produced template term with no label and the default type */
     public Production() {
     }
 
     /** True to replace, false to add, if this production can do both. Default true. */
-    public void setReplacing(boolean replacing) { this.replacing=replacing; }
+    public void setReplacing(boolean replacing) { this.replacing = replacing; }
 
     public int getPosition() { return position; }
 
@@ -45,7 +45,7 @@ public abstract class Production {
      * @param offset the offset position at which to produce this. Offsets are used to produce multiple items
      *        at one position, inserted in the right order.
      */
-    public abstract void produce(RuleEvaluation e,int offset);
+    public abstract void produce(RuleEvaluation e, int offset);
 
     /**
      * Called to add the references into the condition of this rule made by this production
@@ -55,6 +55,7 @@ public abstract class Production {
     void addMatchReferences(Set<String> matchReferences) { }
 
     /** All instances of this produces a parseable string output */
+    @Override
     public final String toString() {
         return toInnerString() + (getWeight()!=100 ? ("!" + getWeight()) : "");
     }

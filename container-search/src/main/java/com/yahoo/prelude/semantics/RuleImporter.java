@@ -99,7 +99,7 @@ public class RuleImporter {
             reader = IOUtils.createReader(fileName, "utf-8");
             File file = new File(fileName);
             String absoluteFileName = file.getAbsolutePath();
-            var ruleBase = new RuleBase(stripLastName(file.getName()), linguistics);
+            var ruleBase = new RuleBase(stripLastName(file.getName()));
             privateImportFromReader(reader, absoluteFileName, automataFile, ruleBase);
             return ruleBase;
         }
@@ -205,7 +205,7 @@ public class RuleImporter {
     /** Imports an unitialized rule base */
     public RuleBase privateImportConfig(SemanticRulesConfig.Rulebase ruleBaseConfig) throws ParseException {
         if (config == null) throw new IllegalStateException("Must initialize with config if importing from config");
-        RuleBase ruleBase = new RuleBase(ruleBaseConfig.name(), linguistics);
+        RuleBase ruleBase = new RuleBase(ruleBaseConfig.name());
         return privateImportFromReader(new StringReader(ruleBaseConfig.rules()),
                                        "semantic-rules.cfg",
                                        ruleBaseConfig.automata(),ruleBase);
@@ -234,7 +234,7 @@ public class RuleImporter {
     public RuleBase privateImportFromReader(Reader reader, String sourceName, String automataFile, RuleBase ruleBase) throws ParseException {
         try {
             if (ruleBase == null)
-                ruleBase = new RuleBase(sourceName == null ? "anonymous" : sourceName, linguistics);
+                ruleBase = new RuleBase(sourceName == null ? "anonymous" : sourceName);
             ruleBase.setSource(sourceName.replace('\\', '/'));
             new SemanticsParser(reader, linguistics).semanticRules(ruleBase, this);
             if (automataFile != null && !automataFile.isEmpty())

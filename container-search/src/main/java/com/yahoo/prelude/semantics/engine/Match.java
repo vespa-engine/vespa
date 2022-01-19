@@ -60,7 +60,12 @@ public class Match {
 
     /** Returns a new item representing this match */
     public Item toItem(String label) {
-        var newItem = new WordItem(getReplaceValue(), label);
+        return toItem(label, getReplaceValue());
+    }
+
+    /** Returns a new item representing this match */
+    public Item toItem(String label, String term) {
+        var newItem = new WordItem(term, label);
         newItem.setWeight(item.getWeight());
         return newItem;
     }
@@ -79,6 +84,11 @@ public class Match {
         if ( ! other.item.equals(item)) return false;
 
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "match of " + item + " at " + position + " to be replaced by " + replaceValue;
     }
 
 }
