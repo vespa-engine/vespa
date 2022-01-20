@@ -8,6 +8,7 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
+import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Result;
@@ -71,22 +72,25 @@ class ClientFeederV3 {
         this.hostName = HostName.getLocalhost();
     }
 
-    public boolean timedOut() {
+    boolean timedOut() {
         synchronized (monitor) {
             return Instant.now().isAfter(prevOpsPerSecTime.plusSeconds(6000)) && ongoingRequests.get() == 0;
         }
     }
 
-    public void kill() {
-        // No new requests should be sent to this object, but there can be old one, even though this is very unlikely.
-        while (ongoingRequests.get() > 0) {
-            try {
-                ongoingRequests.wait(100);
-            } catch (InterruptedException e) {
-                break;
+    void kill() {
+        try (ResourceReference ignored = sourceSession.getReference()) {
+            // No new requests should be sent to this object, but there can be old one, even though this is very unlikely.
+            while (ongoingRequests.get() > 0) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    return;
+                }
             }
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Failed to close reference to source session", e);
         }
-        sourceSession.getReference().close();
     }
 
     private void transferPreviousRepliesToResponse(BlockingQueue<OperationStatus> operations) throws InterruptedException {
@@ -98,7 +102,7 @@ class ClientFeederV3 {
         }
     }
 
-    public HttpResponse handleRequest(HttpRequest request) throws IOException {
+    HttpResponse handleRequest(HttpRequest request) throws IOException {
         ongoingRequests.incrementAndGet();
         try {
             FeederSettings feederSettings = new FeederSettings(request);
