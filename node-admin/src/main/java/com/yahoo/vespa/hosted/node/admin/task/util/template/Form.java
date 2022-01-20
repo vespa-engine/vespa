@@ -16,7 +16,7 @@ public interface Form {
     default Template set(String name, int value) { return set(name, Integer.toString(value)); }
     default Template set(String name, long value) { return set(name, Long.toString(value)); }
 
-    default Template set(String name, String format, String first, String... rest) {
+    default Template set(String name, String format, Object first, Object... rest) {
         var args = new Object[1 + rest.length];
         args[0] = first;
         System.arraycopy(rest, 0, args, 1, rest.length);
