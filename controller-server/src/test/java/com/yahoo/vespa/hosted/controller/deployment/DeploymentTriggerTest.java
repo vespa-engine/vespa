@@ -468,7 +468,11 @@ public class DeploymentTriggerTest {
     public void downgradingApplicationVersionWorks() {
         var app = tester.newDeploymentContext().submit().deploy();
         ApplicationVersion appVersion0 = app.lastSubmission().get();
+        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
+
         app.submit().deploy();
+        ApplicationVersion appVersion1 = app.lastSubmission().get();
+        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
 
         // Downgrading application version.
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion0));
@@ -479,19 +483,27 @@ public class DeploymentTriggerTest {
            .runJob(productionUsWest1);
         assertEquals(Change.empty(), app.instance().change());
         assertEquals(appVersion0, app.instance().deployments().get(productionUsEast3.zone(tester.controller().system())).applicationVersion());
+        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
     }
 
     @Test
     public void settingANoOpChangeIsANoOp() {
-        var app = tester.newDeploymentContext().submit().deploy();
+        var app = tester.newDeploymentContext().submit();
+        assertEquals(Optional.empty(), app.instance().latestDeployed());
+
+        app.deploy();
         ApplicationVersion appVersion0 = app.lastSubmission().get();
+        assertEquals(Optional.of(appVersion0), app.instance().latestDeployed());
+
         app.submit().deploy();
         ApplicationVersion appVersion1 = app.lastSubmission().get();
+        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
 
         // Triggering a roll-out of an already deployed application is a no-op.
         assertEquals(Change.empty(), app.instance().change());
         tester.deploymentTrigger().forceChange(app.instanceId(), Change.of(appVersion1));
         assertEquals(Change.empty(), app.instance().change());
+        assertEquals(Optional.of(appVersion1), app.instance().latestDeployed());
     }
 
     @Test

@@ -375,8 +375,11 @@ public class DeploymentTrigger {
         Change remaining = change;
         if (status.jobsToRun(Map.of(instance.name(), change.withoutApplication())).isEmpty())
             remaining = remaining.withoutPlatform();
-        if (status.jobsToRun(Map.of(instance.name(), change.withoutPlatform())).isEmpty())
+        if (status.jobsToRun(Map.of(instance.name(), change.withoutPlatform())).isEmpty()) {
             remaining = remaining.withoutApplication();
+            if (change.application().isPresent())
+                instance = instance.withLatestDeployed(change.application().get());
+        }
         return instance.withChange(remaining);
     }
 
