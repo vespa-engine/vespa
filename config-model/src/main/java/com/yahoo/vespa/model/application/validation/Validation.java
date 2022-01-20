@@ -24,7 +24,6 @@ import com.yahoo.vespa.model.application.validation.change.RedundancyIncreaseVal
 import com.yahoo.vespa.model.application.validation.change.ResourcesReductionValidator;
 import com.yahoo.vespa.model.application.validation.change.StartupCommandChangeValidator;
 import com.yahoo.vespa.model.application.validation.change.StreamingSearchClusterChangeValidator;
-import com.yahoo.vespa.model.application.validation.first.AccessControlOnFirstDeploymentValidator;
 import com.yahoo.vespa.model.application.validation.first.RedundancyOnFirstDeploymentValidator;
 
 import java.time.Instant;
@@ -83,7 +82,6 @@ public class Validation {
         new EndpointCertificateSecretsValidator().validate(model, deployState);
         new AccessControlFilterValidator().validate(model, deployState);
         new CloudWatchValidator().validate(model, deployState);
-        new AwsAccessControlValidator().validate(model, deployState);
         new QuotaValidator().validate(model, deployState);
         new UriBindingsValidator().validate(model, deployState);
 
@@ -135,7 +133,6 @@ public class Validation {
     }
 
     private static void validateFirstTimeDeployment(VespaModel model, DeployState deployState) {
-        new AccessControlOnFirstDeploymentValidator().validate(model, deployState);
         new RedundancyOnFirstDeploymentValidator().validate(model, deployState);
     }
 
