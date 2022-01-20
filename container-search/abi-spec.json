@@ -503,7 +503,8 @@
       "public void <init>(com.yahoo.prelude.query.Item, java.util.Collection)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "protected void adding(com.yahoo.prelude.query.Item)"
+      "protected void adding(com.yahoo.prelude.query.Item)",
+      "public static boolean acceptsChildrenOfType(com.yahoo.prelude.query.Item$ItemType)"
     ],
     "fields": []
   },
@@ -1594,6 +1595,7 @@
       "public boolean hasItemClass(java.lang.Class)",
       "public com.yahoo.prelude.query.Item createItemClass()",
       "public java.lang.String toSign()",
+      "public com.yahoo.prelude.query.Item$ItemType toItemType()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
