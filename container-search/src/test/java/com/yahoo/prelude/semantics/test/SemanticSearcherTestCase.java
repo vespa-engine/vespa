@@ -128,12 +128,12 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testTypeChange() {
-        assertSemantics("RANK doors default:typechange","typechange doors");
+        assertSemantics("RANK default:typechange doors","typechange doors");
     }
 
     @Test
     public void testTypeChangeWithSingularToPluralButNonReplaceWillNotSingularify() {
-        assertSemantics("RANK door default:typechange","typechange door");
+        assertSemantics("RANK default:typechange door","typechange door");
     }
 
     @Test

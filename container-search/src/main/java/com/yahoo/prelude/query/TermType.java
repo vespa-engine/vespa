@@ -3,35 +3,41 @@ package com.yahoo.prelude.query;
 
 
 /**
- * A term type enumeration
+ * A term type enumeration.
  *
  * @author bratseth
  * @author Steinar Knutsen
  */
 public class TermType {
 
-    public static final TermType RANK = new TermType("rank", RankItem.class, null, "$");
+    public static final TermType RANK = new TermType("rank", Item.ItemType.RANK, RankItem.class, null, "$");
 
-    public static final TermType AND = new TermType("and", AndItem.class, null, "+");
+    public static final TermType AND = new TermType("and", Item.ItemType.AND, AndItem.class, null, "+");
 
-    public static final TermType OR = new TermType("or", OrItem.class, null, "?");
+    public static final TermType OR = new TermType("or", Item.ItemType.OR, OrItem.class, null, "?");
 
-    public static final TermType NOT = new TermType("not", NotItem.class, null, "-");
+    public static final TermType NOT = new TermType("not", Item.ItemType.NOT, NotItem.class, null, "-");
 
-    public static final TermType PHRASE = new TermType("phrase", PhraseItem.class, null, "\"");
+    public static final TermType PHRASE = new TermType("phrase", Item.ItemType.PHRASE, PhraseItem.class, null, "\"");
 
-    public static final TermType EQUIV = new TermType("equiv", EquivItem.class, null, "");
+    public static final TermType EQUIV = new TermType("equiv", Item.ItemType.EQUIV, EquivItem.class, null, "");
 
-    public static final TermType DEFAULT = new TermType("", CompositeItem.class, AndItem.class, "");
+    public static final TermType DEFAULT = new TermType("", Item.ItemType.AND, CompositeItem.class, AndItem.class, "");
 
     public final String name;
 
+    private final Item.ItemType itemType;
     private final String sign;
     private final Class<? extends CompositeItem> instanceClass;
     private final Class<? extends CompositeItem> itemClass;
 
-    private TermType(String name, Class<? extends CompositeItem> itemClass, Class<? extends CompositeItem> instanceClass, String sign) {
+    private TermType(String name,
+                     Item.ItemType itemType,
+                     Class<? extends CompositeItem> itemClass,
+                     Class<? extends CompositeItem> instanceClass,
+                     String sign) {
         this.name = name;
+        this.itemType = itemType;
         this.itemClass = itemClass;
         if (instanceClass == null) {
             this.instanceClass = itemClass;
@@ -72,6 +78,8 @@ public class TermType {
     public String toSign() {
         return sign;
     }
+
+    public Item.ItemType toItemType() { return itemType; }
 
     @Override
     public boolean equals(Object o) {

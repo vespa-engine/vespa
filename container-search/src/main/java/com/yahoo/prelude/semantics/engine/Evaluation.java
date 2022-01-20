@@ -245,10 +245,10 @@ public class Evaluation {
     /**
      * Inserts an item to the query being evaluated in a way consistent with the query type
      *
-     * @param items the item to insert
-     * @param parent the parent of this item, or null to set the root
-     * @param index the index at which to insert this into the parent
-     * @param desiredParentType the desired type of the composite which contains item when this returns
+     * @param items the items to insert
+     * @param parent the parent of these items, or null to set the root
+     * @param index the index at which to insert these into the parent
+     * @param desiredParentType the desired type of the composite which contains items when this returns
      */
     public void insertItems(List<Item> items, CompositeItem parent, int index, TermType desiredParentType) {
         if (isEmpty(parent)) {
@@ -282,17 +282,11 @@ public class Evaluation {
             items.forEach(item -> newParent.addItem(item));
             parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
         }
-        else if (items.size() ==1 && desiredParentType.hasItemClass(items.get(0).getClass())) { // This will never happen
-            for (Item item : items)
-                addItem(parent, index, item, desiredParentType);
-        }
-        else if (incompatible(desiredParentType, parent)) {
-            for (Item item : items)
-                insertIncompatibleItem(item, parent, query, desiredParentType);
+        else if (items.size() == 1 && desiredParentType.hasItemClass(items.get(0).getClass())) {
+            addItem(parent, index, items.get(0), desiredParentType);
         }
         else {
-            for (Item item : items)
-                insertIncompatibleItemAsParent(item, parent, query, desiredParentType);
+            insertWithDesiredParentType(items, parent, desiredParentType);
         }
     }
 
@@ -301,12 +295,6 @@ public class Evaluation {
         if (item == null) return true;
         if (item instanceof QueryTree && ((QueryTree) item).isEmpty()) return true;
         return false;
-    }
-
-    /** Returns true if the desired type cannot have childCandidate as a child */
-    private boolean incompatible(TermType desiredParentType, CompositeItem parent) {
-        return desiredParentType == TermType.EQUIV
-               && (parent.getItemType() != Item.ItemType.EQUIV && parent.getItemType() != Item.ItemType.PHRASE);
     }
 
     private void addItem(CompositeItem parent, int index, Item item, TermType desiredParentType) {
@@ -352,31 +340,30 @@ public class Evaluation {
         return true;
     }
 
-    private void insertIncompatibleItem(Item item, CompositeItem parent, Query query, TermType desiredParentType) {
-        CompositeItem newParent = newParent(desiredParentType);
-
-        newParent.addItem(item);
-        parent.addItem(newParent);
-    }
-
-    private CompositeItem newParent(TermType desiredParentType) {
-        return desiredParentType == TermType.DEFAULT ? new AndItem() : (CompositeItem)desiredParentType.createItemClass();
-    }
-
-    private void insertIncompatibleItemAsParent(Item item, CompositeItem parent, Query query, TermType desiredParentType) {
+    private void insertWithDesiredParentType(List<Item> items, CompositeItem parent, TermType desiredParentType) {
         CompositeItem parentsParent = parent.getParent();
 
         CompositeItem newParent = newParent(desiredParentType);
+
         if (! (parentsParent instanceof QueryTree) && parentsParent.getItemType() == newParent.getItemType()) { // Collapse
             newParent = parentsParent;
         }
 
-        // Add items to new parent
-        newParent.addItem(parent);
-        newParent.addItem(item);
+        for (Item item : items)
+            newParent.addItem(item);
 
-        if (newParent != parentsParent) // Insert new parent as root or child of old parent's parent
-            parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
+        if (desiredParentType == TermType.EQUIV || desiredParentType == TermType.PHRASE) { // insert new parent below the current
+            parent.addItem(newParent);
+        }
+        else { // insert new parent above the current
+            newParent.addItem(parent);
+            if (newParent != parentsParent) // Insert new parent as root or child of old parent's parent
+                parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
+        }
+    }
+
+    private CompositeItem newParent(TermType desiredParentType) {
+        return desiredParentType == TermType.DEFAULT ? new AndItem() : (CompositeItem)desiredParentType.createItemClass();
     }
 
     private Item combineItems(Item first, Item second, TermType termType) {
