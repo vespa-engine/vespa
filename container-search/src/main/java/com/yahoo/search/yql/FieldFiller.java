@@ -12,6 +12,7 @@ import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb.Summaryclass;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb.Summaryclass.Fields;
+import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -95,7 +96,7 @@ public class FieldFiller extends Searcher {
         for (Documentdb db : config.documentdb()) {
             for (Summaryclass summary : db.summaryclass()) {
                 Set<String> attributes;
-                if (Execution.ATTRIBUTEPREFETCH.equals(summary.name())) {
+                if (SORTABLE_ATTRIBUTES_SUMMARY_CLASS.equals(summary.name())) {
                     attributes = new HashSet<>(summary.fields().size());
                     for (Fields f : summary.fields()) {
                         attributes.add(f.name());
@@ -134,11 +135,11 @@ public class FieldFiller extends Searcher {
         }
 
         if (intersectionOfAttributes.containsAll(summaryFields)) {
-            if ( ! Execution.ATTRIBUTEPREFETCH.equals(summaryClass)) {
-                execution.fill(result, Execution.ATTRIBUTEPREFETCH);
+            if (! SORTABLE_ATTRIBUTES_SUMMARY_CLASS.equals(summaryClass)) {
+                execution.fill(result, SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
             }
         } else {
-            // Yes, summaryClass may be Execution.ATTRIBUTEPREFETCH here
+            // Yes, summaryClass may be SORTABLE_ATTRIBUTES_SUMMARY_CLASS here
             if ( ! summaryDb.hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
                 execution.fill(result, null);
             }

@@ -24,7 +24,9 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
-import static com.yahoo.search.searchchain.testutil.DocumentSourceSearcher.DEFAULT_SUMMARY_CLASS;;
+import static com.yahoo.search.searchchain.testutil.DocumentSourceSearcher.DEFAULT_SUMMARY_CLASS;
+import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
+
 
 /**
  * Test translation of fields and sources in YQL to the associated concepts in Vespa.
@@ -52,7 +54,7 @@ public class YqlFieldAndSourceTestCase {
         mockBackend.addResult(query, result);
 
         mockBackend.addSummaryClassByCopy(DEFAULT_SUMMARY_CLASS, Arrays.asList(FIELD1, FIELD2));
-        mockBackend.addSummaryClassByCopy(Execution.ATTRIBUTEPREFETCH, Arrays.asList(FIELD2));
+        mockBackend.addSummaryClassByCopy(SORTABLE_ATTRIBUTES_SUMMARY_CLASS, Arrays.asList(FIELD2));
         mockBackend.addSummaryClassByCopy(THIRD_OPTION, Arrays.asList(FIELD3));
 
         DocumentdbInfoConfig config = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder()
@@ -90,7 +92,7 @@ public class YqlFieldAndSourceTestCase {
                                               new Fields.Builder().name(FIELD2).type("string"))),
                 new Summaryclass.Builder()
                         .id(1)
-                        .name(Execution.ATTRIBUTEPREFETCH)
+                        .name(SORTABLE_ATTRIBUTES_SUMMARY_CLASS)
                         .fields(Arrays.asList(new Fields.Builder().name(FIELD2).type("string"))),
                 new Summaryclass.Builder()
                         .id(2)
@@ -112,7 +114,7 @@ public class YqlFieldAndSourceTestCase {
         execution.fill(result);
         assertEquals(1, result.getConcreteHitCount());
         assertTrue(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
-        assertFalse(result.hits().get(0).isFilled(Execution.ATTRIBUTEPREFETCH));
+        assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
     }
 
     @Test
@@ -123,7 +125,7 @@ public class YqlFieldAndSourceTestCase {
         assertEquals(1, result.getConcreteHitCount());
         assertTrue(result.hits().get(0).isFilled(THIRD_OPTION));
         assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
-        assertTrue(result.hits().get(0).isFilled(Execution.ATTRIBUTEPREFETCH));
+        assertTrue(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
     }
 
     @Test
@@ -134,7 +136,7 @@ public class YqlFieldAndSourceTestCase {
         assertEquals(1, result.getConcreteHitCount());
         assertTrue(result.hits().get(0).isFilled(THIRD_OPTION));
         assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
-        assertFalse(result.hits().get(0).isFilled(Execution.ATTRIBUTEPREFETCH));
+        assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
     }
 
     @Test
@@ -145,7 +147,7 @@ public class YqlFieldAndSourceTestCase {
         assertEquals(1, result.getConcreteHitCount());
         assertTrue(result.hits().get(0).isFilled(THIRD_OPTION));
         assertTrue(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
-        assertFalse(result.hits().get(0).isFilled(Execution.ATTRIBUTEPREFETCH));
+        assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
     }
 
 }

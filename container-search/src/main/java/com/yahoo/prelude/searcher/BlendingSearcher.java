@@ -8,6 +8,7 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -113,7 +114,8 @@ public class BlendingSearcher extends Searcher {
 
     private Result sortAndTrimResults(Result result, Query q, int offset, int hits, Execution execution) {
         if (q.getRanking().getSorting() != null) {
-            execution.fillAttributes(result); // Always correct as we can only sort on attributes
+            // TODO: remove or rename this internal summary class for Vespa 9
+            execution.fill(result, VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
             result.hits().sort();
         }
         result.hits().trim(offset, hits);

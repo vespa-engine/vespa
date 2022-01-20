@@ -37,6 +37,9 @@ import java.util.logging.Logger;
  */
 public abstract class VespaBackEndSearcher extends PingableSearcher {
 
+    /** for vespa-internal use only; consider renaming the summary class */
+    public static final String SORTABLE_ATTRIBUTES_SUMMARY_CLASS = "attributeprefetch";
+
     private static final CompoundName TRACE_DISABLE = new CompoundName("trace.disable");
 
     private String serverId;
