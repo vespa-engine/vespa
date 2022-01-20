@@ -13,6 +13,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -26,7 +27,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -216,10 +216,27 @@ public class DeploymentStatus {
      * and has not yet started rolling out, due to some other change or a block window being present at the time of submission.
      */
     public Change outstandingChange(InstanceName instance) {
-        return application.latestVersion().map(Change::of)
+        return nextVersion(instance).map(Change::of)
                           .filter(change -> application.require(instance).change().application().map(change::upgrades).orElse(true))
                           .filter(change -> ! jobsToRun(Map.of(instance, change)).isEmpty())
                           .orElse(Change.empty());
+    }
+
+    /** The next application version to roll out to instance. */
+    private Optional<ApplicationVersion> nextVersion(InstanceName instance) {
+        return Optional.ofNullable(instanceSteps().get(instance)).stream()
+                       .flatMap(this::allDependencies)
+                       .flatMap(step -> step.instance.latestDeployed().stream())
+                       .min(naturalOrder())
+                       .or(application::latestVersion);
+    }
+
+    private Stream<InstanceStatus> allDependencies(StepStatus step) {
+        return step.dependencies.stream()
+                                .flatMap(dep -> Stream.concat(Stream.of(dep), allDependencies(dep)))
+                                .filter(InstanceStatus.class::isInstance)
+                                .map(InstanceStatus.class::cast)
+                                .distinct();
     }
 
     /**
@@ -310,7 +327,7 @@ public class DeploymentStatus {
     /** Adds the primitive steps contained in the given step, which depend on the given previous primitives, to the dependency graph. */
     private List<StepStatus> fillStep(Map<JobId, StepStatus> dependencies, List<StepStatus> allSteps,
                                       DeploymentSpec.Step step, List<StepStatus> previous, InstanceName instance) {
-        if (step.steps().isEmpty()) {
+        if (step.steps().isEmpty() && ! (step instanceof DeploymentInstanceSpec)) {
             if (instance == null)
                 return previous; // Ignore test and staging outside all instances.
 

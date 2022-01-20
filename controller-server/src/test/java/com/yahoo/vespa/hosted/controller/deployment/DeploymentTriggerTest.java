@@ -819,6 +819,115 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void testMultipleInstancesWithDifferentChanges() {
+        DeploymentContext i1 = tester.newDeploymentContext("t", "a", "i1");
+        DeploymentContext i2 = tester.newDeploymentContext("t", "a", "i2");
+        DeploymentContext i3 = tester.newDeploymentContext("t", "a", "i3");
+        DeploymentContext i4 = tester.newDeploymentContext("t", "a", "i4");
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder
+                .fromDeploymentXml("<deployment version='1'>\n" +
+                                   "  <parallel>\n" +
+                                   "    <instance id='i1'>\n" +
+                                   "      <prod>\n" +
+                                   "        <region>us-east-3</region>\n" +
+                                   "        <delay hours='6' />\n" +
+                                   "      </prod>\n" +
+                                   "    </instance>\n" +
+                                   "    <instance id='i2'>\n" +
+                                   "      <prod>\n" +
+                                   "        <region>us-east-3</region>\n" +
+                                   "      </prod>\n" +
+                                   "    </instance>\n" +
+                                   "  </parallel>\n" +
+                                   "  <instance id='i3'>\n" +
+                                   "    <prod>\n" +
+                                   "      <region>us-east-3</region>\n" +
+                                   "        <delay hours='18' />\n" +
+                                   "      <test>us-east-3</test>\n" +
+                                   "    </prod>\n" +
+                                   "  </instance>\n" +
+                                   "  <instance id='i4'>\n" +
+                                   "    <test />\n" +
+                                   "    <staging />\n" +
+                                   "    <prod>\n" +
+                                   "      <region>us-east-3</region>\n" +
+                                   "    </prod>\n" +
+                                   "  </instance>\n" +
+                                   "</deployment>\n");
+
+        // Package is submitted, and change propagated to the two first instances.
+        i1.submit(applicationPackage);
+        Optional<ApplicationVersion> v0 = i1.lastSubmission();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v0, i1.instance().change().application());
+        assertEquals(v0, i2.instance().change().application());
+        assertEquals(Optional.empty(), i3.instance().change().application());
+        assertEquals(Optional.empty(), i4.instance().change().application());
+
+        // Tests run in i4, as they're declared there, and i1 and i2 get to work
+        i4.runJob(systemTest).runJob(stagingTest);
+        i1.runJob(productionUsEast3);
+        i2.runJob(productionUsEast3);
+
+        // Since the post-deployment delay of i1 is incomplete, i3 doesn't yet get the change.
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v0, i1.instance().latestDeployed());
+        assertEquals(v0, i2.instance().latestDeployed());
+        assertEquals(Optional.empty(), i1.instance().change().application());
+        assertEquals(Optional.empty(), i2.instance().change().application());
+        assertEquals(Optional.empty(), i3.instance().change().application());
+        assertEquals(Optional.empty(), i4.instance().change().application());
+
+        // When the delay is done, i3 gets the change.
+        tester.clock().advance(Duration.ofHours(6));
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Optional.empty(), i1.instance().change().application());
+        assertEquals(Optional.empty(), i2.instance().change().application());
+        assertEquals(v0, i3.instance().change().application());
+        assertEquals(Optional.empty(), i4.instance().change().application());
+
+        // v0 begins roll-out in i3, and v1 is submitted and rolls out in i1 and i2 some time later
+        i3.runJob(productionUsEast3); // v0
+        tester.clock().advance(Duration.ofHours(12));
+        i1.submit(applicationPackage);
+        Optional<ApplicationVersion> v1 = i1.lastSubmission();
+        i4.runJob(systemTest).runJob(stagingTest);
+        i1.runJob(productionUsEast3); // v1
+        i2.runJob(productionUsEast3); // v1
+        assertEquals(v1, i1.instance().latestDeployed());
+        assertEquals(v1, i2.instance().latestDeployed());
+        assertEquals(Optional.empty(), i1.instance().change().application());
+        assertEquals(Optional.empty(), i2.instance().change().application());
+        assertEquals(v0, i3.instance().change().application());
+        assertEquals(Optional.empty(), i4.instance().change().application());
+
+        // After some time, v2 also starts rolling out to i1 and i2, but does not complete in i2
+        tester.clock().advance(Duration.ofHours(3));
+        i1.submit(applicationPackage);
+        Optional<ApplicationVersion> v2 = i1.lastSubmission();
+        i4.runJob(systemTest).runJob(stagingTest);
+        i1.runJob(productionUsEast3); // v2
+        tester.clock().advance(Duration.ofHours(3));
+
+        // v1 is all done in i1 and i2, but does not yet roll out in i3; v2 is not completely rolled out there yet.
+        // TODO jonmv: thie belowh new revision policy, but must be faked for now, as v1 would not wait for v0 to complete.
+        //tester.outstandingChangeDeployer().run();
+        assertEquals(v0, i3.instance().change().application());
+
+        // i3 completes v0, which rolls out to i4; v1 is ready for i3, but v2 is not.
+        i3.runJob(testUsEast3);
+        assertEquals(Optional.empty(), i3.instance().change().application());
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v2, i1.instance().latestDeployed());
+        assertEquals(v1, i2.instance().latestDeployed());
+        assertEquals(v0, i3.instance().latestDeployed());
+        assertEquals(Optional.empty(), i1.instance().change().application());
+        assertEquals(v2, i2.instance().change().application());
+        assertEquals(v1, i3.instance().change().application());
+        assertEquals(v0, i4.instance().change().application());
+    }
+
+    @Test
     public void testMultipleInstances() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
