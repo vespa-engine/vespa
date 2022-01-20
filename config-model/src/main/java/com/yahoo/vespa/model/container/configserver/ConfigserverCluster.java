@@ -83,8 +83,6 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.zookeeperClientPort().isPresent()) {
             builder.clientPort(options.zookeeperClientPort().get());
         }
-
-        builder.snapshotMethod(options.zooKeeperSnapshotMethod());
     }
 
     @Override
