@@ -237,7 +237,7 @@ public class DeploymentStatus {
     }
 
     private Map<JobId, Versions> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
-        ImmutableMap.Builder<JobId, Versions> jobs = ImmutableMap.builder();
+        Map<JobId, Versions> jobs = new LinkedHashMap<>();
         jobSteps.forEach((job, step) -> {
             // When computing eager test jobs for outstanding changes, assume current upgrade completes successfully.
             Optional<Deployment> deployment = deploymentFor(job)
@@ -255,12 +255,7 @@ public class DeploymentStatus {
                 && step.completedAt(change).isEmpty())
                 jobs.put(job, Versions.from(change, application, deployment, systemVersion));
         });
-        return jobs.build();
-    }
-
-    /** The production jobs that need to run to complete roll-out of the given change to production. */
-    public Map<JobId, Versions> productionJobs(InstanceName instance, Change change) {
-        return productionJobs(instance, change, false);
+        return jobs;
     }
 
     /** The test jobs that need to run prior to the given production deployment jobs. */
