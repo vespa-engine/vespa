@@ -104,7 +104,6 @@ public class FeedHandlerV3 extends ThreadedHttpRequestHandler {
         // This caused a deadlock when the single Messenger thread in MessageBus was the last one referring this
         // and started destructing something that required something only the messenger thread could provide.
         Thread destroyer = new Thread(() -> {
-            super.destroy();
             cron.shutdown();
             synchronized (monitor) {
                 for (var iterator = clientFeederByClientId.values().iterator(); iterator.hasNext(); ) {
