@@ -144,20 +144,5 @@ public class FeedHandler extends ThreadedHttpRequestHandler {
         }
     }
 
-    @Override
-    protected void destroy() {
-        feedHandlerV3.destroy();
-        // We are forking this to avoid that accidental dereferrencing causes any random thread doing destruction.
-        // This caused a deadlock when the single Messenger thread in MessageBus was the last one referring this
-        // and started destructing something that required something only the messenger thread could provide.
-        Thread destroyer = new Thread(() -> {
-            internalDestroy();
-        });
-        destroyer.setDaemon(true);
-        destroyer.start();
-    }
-
-    private void internalDestroy() {
-        super.destroy();
-    }
+    @Override protected void destroy() { feedHandlerV3.destroy(); }
 }
