@@ -223,7 +223,7 @@ public class ConfigServerBootstrapTest {
                                               .fileReferencesDir(temporaryFolder.newFolder("filedistribution").getAbsolutePath())
                                               .hostedVespa(hosted)
                                               .multitenant(hosted)
-                                              .maxDurationOfBootstrap(2) /* seconds */
+                                              .maxDurationOfBootstrap(0) /* seconds, 0 => it will not retry deployment if bootstrap fails */
                                               .sleepTimeWhenRedeployingFails(0)); /* seconds */
     }
 
