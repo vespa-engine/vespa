@@ -85,12 +85,12 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return matching(job -> job.id().type().isProduction());
     }
 
-    /** Returns the jobs with any runs matching the given versions — targets only for system test, everything present otherwise. */
+    /** Returns the jobs with any runs matching the given versions — targets only for system test, everything present otherwise. */
     public JobList triggeredOn(Versions versions) {
         return matching(job -> ! RunList.from(job).on(versions).isEmpty());
     }
 
-    /** Returns the jobs with successful runs matching the given versions — targets only for system test, everything present otherwise. */
+    /** Returns the jobs with successful runs matching the given versions — targets only for system test, everything present otherwise. */
     public JobList successOn(Versions versions) {
         return matching(job -> ! RunList.from(job).status(RunStatus.success).on(versions).isEmpty());
     }
