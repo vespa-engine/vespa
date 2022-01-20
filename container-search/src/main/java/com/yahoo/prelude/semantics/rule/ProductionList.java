@@ -54,6 +54,7 @@ public class ProductionList {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder buffer = new StringBuilder();
         for (Iterator<Production> i = productions.iterator(); i.hasNext(); ) {

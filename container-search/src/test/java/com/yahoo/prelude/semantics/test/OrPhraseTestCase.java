@@ -14,7 +14,7 @@ public class OrPhraseTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testReplacing1() {
-        assertSemantics("OR (AND new york) title:\"software engineer\"","software engineer new york");
+        assertSemantics("OR title:\"software engineer\" (AND new york)","software engineer new york");
         assertSemantics("title:\"software engineer\"","software engineer"); // Skip or when there is nothing else
     }
 

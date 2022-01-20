@@ -17,8 +17,8 @@ public class MatchOnlyIfNotOnlyTermTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testMatch() {
-        assertSemantics("RANK (AND justin timberlake) showname:\"saturday night live\"!1000", "justin timberlake snl");
-        assertSemantics("RANK (AND justin timberlake) showname:\"saturday night live\"!1000", "justin timberlake saturday night live");
+        assertSemantics("RANK showname:\"saturday night live\"!1000 (AND justin timberlake)", "justin timberlake snl");
+        assertSemantics("RANK showname:\"saturday night live\"!1000 (AND justin timberlake)", "justin timberlake saturday night live");
     }
 
     @Test

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.rule;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -14,28 +15,28 @@ import com.yahoo.prelude.semantics.engine.RuleEvaluation;
  */
 public abstract class CompositeCondition extends Condition {
 
-    private List<Condition> conditions=new java.util.ArrayList<>();
+    private final List<Condition> conditions = new java.util.ArrayList<>();
 
     public CompositeCondition() {
     }
 
     public void preMatchHook(RuleEvaluation e) {
         super.preMatchHook(e);
-        if (e.getTraceLevel()>=3) {
-            e.trace(3,"Evaluating '" + this + "'"  + " at " + e.currentItem());
+        if (e.getTraceLevel() >= 3) {
+            e.trace(3, "Evaluating '" + this + "'"  + " at " + e.currentItem());
             e.indentTrace();
         }
     }
 
     public void postMatchHook(RuleEvaluation e) {
-        if (e.getTraceLevel()>=3) {
+        if (e.getTraceLevel() >= 3) {
             e.unindentTrace();
         }
     }
 
     protected boolean hasOpenChoicepoint(RuleEvaluation evaluation) {
-        for (Iterator<Condition> i=conditionIterator(); i.hasNext(); ) {
-            Condition subCondition=i.next();
+        for (Iterator<Condition> i = conditionIterator(); i.hasNext(); ) {
+            Condition subCondition = i.next();
             if (subCondition.hasOpenChoicepoint(evaluation))
                 return true;
         }
@@ -48,8 +49,8 @@ public abstract class CompositeCondition extends Condition {
     }
 
     /** Sets the condition at the given index */
-    public void setCondition(int index,Condition condition) {
-        conditions.set(index,condition);
+    public void setCondition(int index, Condition condition) {
+        conditions.set(index, condition);
     }
 
     /** Returns the number of subconditions */
@@ -74,7 +75,7 @@ public abstract class CompositeCondition extends Condition {
      * @throws IndexOutOfBoundsException if there is no condition at this index
      */
     public Condition removeCondition(int i) {
-        Condition condition=conditions.remove(i);
+        Condition condition = conditions.remove(i);
         condition.setParent(null);
         return condition;
     }
@@ -82,20 +83,22 @@ public abstract class CompositeCondition extends Condition {
     /** Returns an iterator of the immediate children of this condition */
     public Iterator<Condition> conditionIterator() { return conditions.iterator(); }
 
+    public List<Condition> conditions() { return Collections.unmodifiableList(conditions); }
+
     public void makeReferences(RuleBase rules) {
-        for (Iterator<Condition> i=conditionIterator(); i.hasNext(); ) {
-            Condition condition=i.next();
+        for (Iterator<Condition> i = conditionIterator(); i.hasNext(); ) {
+            Condition condition = i.next();
             condition.makeReferences(rules);
         }
     }
 
     /** Whether this should be output with parentheses, default is parent!=null */
     protected boolean useParentheses() {
-        return getParent()!=null;
+        return getParent() != null;
     }
 
     protected String toInnerString(String conditionSeparator) {
-        if (getLabel()!=null)
+        if (getLabel() != null)
             return getLabel() + ":(" + conditionsToString(conditionSeparator) + ")";
         else if (useParentheses())
             return "(" + conditionsToString(conditionSeparator) + ")";
@@ -104,8 +107,8 @@ public abstract class CompositeCondition extends Condition {
     }
 
     protected final String conditionsToString(String conditionSeparator) {
-        StringBuilder buffer=new StringBuilder();
-        for (Iterator<Condition> i=conditionIterator(); i.hasNext(); ) {
+        StringBuilder buffer = new StringBuilder();
+        for (Iterator<Condition> i = conditionIterator(); i.hasNext(); ) {
             buffer.append(i.next().toString());
             if (i.hasNext())
                 buffer.append(conditionSeparator);

@@ -44,7 +44,7 @@ public class LiteralPhraseProduction extends TermProduction {
     /** Returns a read only view of the terms produced by this, never null */
     public List<String> getTerms() { return Collections.unmodifiableList(terms); }
 
-    public void produce(RuleEvaluation e,int offset) {
+    public void produce(RuleEvaluation e, int offset) {
         PhraseItem newPhrase = new PhraseItem();
         newPhrase.setIndexName(getLabel());
         for (String term : terms)
@@ -52,13 +52,13 @@ public class LiteralPhraseProduction extends TermProduction {
 
         if (replacing) {
             Match matched = e.getNonreferencedMatch(0);
-            insertMatch(e, matched, newPhrase, offset);
+            insertMatch(e, matched, List.of(newPhrase), offset);
         }
         else {
             newPhrase.setWeight(getWeight());
             if (e.getTraceLevel() >= 6)
                 e.trace(6, "Adding '" + newPhrase + "'");
-            e.addItem(newPhrase, getTermType());
+            e.addItems(List.of(newPhrase), getTermType());
         }
     }
 

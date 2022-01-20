@@ -32,7 +32,7 @@ public class ProductionRuleTestCase {
         NamedCondition named = new NamedCondition("brand", term);
         ConditionReference reference = new ConditionReference("brand");
 
-        TermProduction termProduction = new ReferenceTermProduction("brand", "brand");
+        TermProduction termProduction = new ReferenceTermProduction("brand", "brand", false);
         ProductionList productionList = new ProductionList();
         productionList.addProduction(termProduction);
 
@@ -41,7 +41,7 @@ public class ProductionRuleTestCase {
         rule.setProduction(productionList);
 
         // To initialize the condition reference...
-        RuleBase ruleBase = new RuleBase("test", linguistics.linguistics());
+        RuleBase ruleBase = new RuleBase("test");
         ruleBase.addCondition(named);
         ruleBase.addRule(rule);
         ruleBase.initialize();
@@ -49,7 +49,7 @@ public class ProductionRuleTestCase {
         assertTrue("Brand is referenced", rule.matchReferences().contains("brand"));
 
         Query query = new Query("?query=sony");
-        RuleEvaluation e = new Evaluation(query).freshRuleEvaluation();
+        RuleEvaluation e = new Evaluation(query, null).freshRuleEvaluation();
         assertTrue(rule.matches(e));
         rule.produce(e);
         assertEquals("AND brand:sony", query.getModel().getQueryTree().getRoot().toString());

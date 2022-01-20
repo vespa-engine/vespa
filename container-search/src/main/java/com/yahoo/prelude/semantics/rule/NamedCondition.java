@@ -33,7 +33,7 @@ public class NamedCondition {
             e.indentTrace();
         }
 
-        boolean matches=condition.matches(e);
+        boolean matches = condition.matches(e);
 
         if (e.getTraceLevel() >= 3) {
             e.unindentTrace();
@@ -50,6 +50,7 @@ public class NamedCondition {
      * This string representation can always be reparsed to produce an
      * identical rule to this one.
      */
+    @Override
     public String toString() {
         return "[" + conditionName + "] :- " + condition.toString();
     }

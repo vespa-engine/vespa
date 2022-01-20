@@ -190,8 +190,9 @@ public class RuleEvaluation {
     // TODO: Simplistic yet. Nedd to support context nesting etc.
     public void entering(String context) {
         if (context == null) return;
-        if (matchReferences != null && matchReferences.contains(context))
+        if (matchReferences != null && matchReferences.contains(context)) {
             currentContext = context;
+        }
     }
 
     public void leaving(String context) {
@@ -209,7 +210,7 @@ public class RuleEvaluation {
      */
     public void addMatch(FlattenedItem item, String replaceString) {
         evaluation.makeParentMutable(item.getItem());
-        Match match = new Match(item,replaceString);
+        Match match = new Match(item, replaceString);
         if (currentContext != null) {
             ReferencedMatches matches = getReferencedMatches(currentContext);
             if (matches == null) {
@@ -241,8 +242,8 @@ public class RuleEvaluation {
     public Evaluation getEvaluation() { return evaluation; }
 
     /** Adds an item to the query being evaluated in a way consistent with the query type */
-    public void addItem(Item item, TermType termType) {
-        evaluation.addItem(item,termType);
+    public void addItems(List<Item> items, TermType termType) {
+        items.forEach(item -> evaluation.addItem(item, termType));
     }
 
     public void removeItem(Item item) {
@@ -262,13 +263,13 @@ public class RuleEvaluation {
     /**
      * Inserts an item to the query being evaluated in a way consistent with the query type
      *
-     * @param item the item to insert
+     * @param items the items to insert
      * @param parent the parent of this item, or null to set the root
      * @param index the index at which to insert this into the parent
      * @param termType the kind of item to index, this decides the resulting structure
      */
-    public void insertItem(Item item, CompositeItem parent, int index, TermType termType) {
-        evaluation.insertItem(item, parent, index, termType);
+    public void insertItems(List<Item> items, CompositeItem parent, int index, TermType termType) {
+        evaluation.insertItems(items, parent, index, termType);
     }
 
     /** Returns a read-only view of the items of this */

@@ -69,6 +69,7 @@ TOKEN :
     <EQUALS: "="> |
     <EXCLAMATION: "!"> |
     <INCLUDEDIRECTIVE: "@include"> |
+    <LANGUAGEDIRECTIVE: "@language"> |
     <LARGER: ">"> |
     <LARGEREQUALS: ">="> |
     <LEFTBRACE: "("> |
@@ -86,8 +87,8 @@ TOKEN :
     <SLASH: "/"> |
     <SMALLER: "<"> |
     <SMALLEREQUALS: "<="> |
+    <STAR: "*"> |
     <STEMMINGDIRECTIVE: "@stemming"> |
-    <LANGUAGEDIRECTIVE: "@language"> |
     <SUPERDIRECTIVE: "@super"> |
     <IDENTIFIER: (~[
 "\u0000"-"\u002f","\u003a"-"\u003f","\u005b"-"\u005d","\u007b"-"\u00a7","\u00a9","\u00ab"-"\u00ae","\u00b0"-"\u00b3","\u00b6"-"\u00b7","\u00b9","\u00bb"-"\u00bf",
@@ -312,10 +313,14 @@ NamespaceProduction namespaceProduction() :
 ReferenceTermProduction referenceTermProduction() :
 {
     String reference;
+    boolean produceAll = false;
 }
 {
-    <LEFTSQUAREBRACKET> reference = referenceIdentifier() <RIGHTSQUAREBRACKET>
-    { return new ReferenceTermProduction(reference); }
+    <LEFTSQUAREBRACKET>
+        reference = referenceIdentifier()
+        (<STAR> { produceAll = true; })?
+    <RIGHTSQUAREBRACKET>
+    { return new ReferenceTermProduction(reference, produceAll); }
 }
 
 LiteralTermProduction literalTermProduction() :

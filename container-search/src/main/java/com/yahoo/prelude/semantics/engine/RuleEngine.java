@@ -37,7 +37,7 @@ public class RuleEngine {
         //       Probably create indices on the first term like Prolog implementations use to
 
         boolean matchedAnything = false;
-        Evaluation evaluation = new Evaluation(query, traceLevel);
+        Evaluation evaluation = new Evaluation(query, rules, traceLevel);
         if (traceLevel >= 2)
             evaluation.trace(2,"Evaluating query '" + evaluation.getQuery().getModel().getQueryTree().getRoot() + "':");
         for (ListIterator<ProductionRule> i = rules.ruleIterator(); i.hasNext(); ) {

@@ -29,7 +29,7 @@ public class ConditionTestCase {
         var linguistics = new RuleBaseLinguistics(new SimpleLinguistics());
         TermCondition term = new TermCondition("foo", linguistics);
         Query query = new Query("?query=foo");
-        assertTrue(term.matches(new Evaluation(query).freshRuleEvaluation()));
+        assertTrue(term.matches(new Evaluation(query, null).freshRuleEvaluation()));
     }
 
     @Test
@@ -41,11 +41,11 @@ public class ConditionTestCase {
         sequence.addCondition(term1);
         sequence.addCondition(term2);
         Query query = new Query("?query=foo+bar");
-        assertTrue(query + " matches " + sequence,sequence.matches(new Evaluation(query).freshRuleEvaluation()));
+        assertTrue(query + " matches " + sequence,sequence.matches(new Evaluation(query, null).freshRuleEvaluation()));
         Query query2 = new Query("?query=foo");
-        assertFalse(query2 + " does not match " + sequence,sequence.matches(new Evaluation(query2).freshRuleEvaluation()));
+        assertFalse(query2 + " does not match " + sequence,sequence.matches(new Evaluation(query2, null).freshRuleEvaluation()));
         Query query3 = new Query("?query=bar");
-        assertFalse(query3 + " does not match " + sequence,sequence.matches(new Evaluation(query3).freshRuleEvaluation()));
+        assertFalse(query3 + " does not match " + sequence,sequence.matches(new Evaluation(query3, null).freshRuleEvaluation()));
     }
 
     @Test
@@ -57,11 +57,11 @@ public class ConditionTestCase {
         choice.addCondition(term1);
         choice.addCondition(term2);
         Query query1 = new Query("?query=foo+bar");
-        assertTrue(query1 + " matches " + choice, choice.matches(new Evaluation(query1).freshRuleEvaluation()));
+        assertTrue(query1 + " matches " + choice, choice.matches(new Evaluation(query1, null).freshRuleEvaluation()));
         Query query2 = new Query("?query=foo");
-        assertTrue(query2 + " matches " + choice, choice.matches(new Evaluation(query2).freshRuleEvaluation()));
+        assertTrue(query2 + " matches " + choice, choice.matches(new Evaluation(query2, null).freshRuleEvaluation()));
         Query query3 = new Query("?query=bar");
-        assertTrue(query3 + " matches " + choice, choice.matches(new Evaluation(query3).freshRuleEvaluation()));
+        assertTrue(query3 + " matches " + choice, choice.matches(new Evaluation(query3, null).freshRuleEvaluation()));
     }
 
     @Test
@@ -75,13 +75,13 @@ public class ConditionTestCase {
         ProductionRule rule = new ReplacingProductionRule();
         rule.setCondition(reference);
         rule.setProduction(new ProductionList());
-        RuleBase ruleBase = new RuleBase("test", linguistics.linguistics());
+        RuleBase ruleBase = new RuleBase("test");
         ruleBase.addCondition(named);
         ruleBase.addRule(rule);
         ruleBase.initialize();
 
         Query query = new Query("?query=foo");
-        assertTrue(query + "  matches " + reference,reference.matches(new Evaluation(query).freshRuleEvaluation()));
+        assertTrue(query + "  matches " + reference,reference.matches(new Evaluation(query, null).freshRuleEvaluation()));
     }
 
 }
