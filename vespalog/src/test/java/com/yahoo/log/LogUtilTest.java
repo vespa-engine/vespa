@@ -10,6 +10,7 @@ import static org.junit.Assert.assertFalse;
  * @author Ulf Lilleengen
  * @since 5.1
  */
+@SuppressWarnings("removal")
 public class LogUtilTest {
     @Test
     public void testEmpty() {
