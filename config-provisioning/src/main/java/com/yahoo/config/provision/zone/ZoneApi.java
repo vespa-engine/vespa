@@ -15,6 +15,11 @@ public interface ZoneApi {
 
     ZoneId getId();
 
+    /** Returns the SYSTEM.ENVIRONMENT.REGION string. */
+    default String getFullName() {
+        return getSystemName().value() + "." + getEnvironment().value() + "." + getRegionName().value();
+    }
+
     /**
      * Returns the virtual ID of this zone. For ordinary zones this is the same as {@link ZoneApi#getId()}, for a
      * system represented as a zone this is a fixed ID that is independent of the actual zone ID.
