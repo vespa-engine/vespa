@@ -56,6 +56,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     runnable_pair.cpp
     sequence.cpp
     sha1.cpp
+    shared_operation_throttler.cpp
     shared_string_repo.cpp
     sig_catch.cpp
     signalhandler.cpp
