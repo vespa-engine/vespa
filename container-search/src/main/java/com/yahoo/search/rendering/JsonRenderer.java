@@ -77,9 +77,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WR
 public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static final CompoundName WRAP_DEEP_MAPS = new CompoundName("renderer.json.jsonMaps");
-    private static final CompoundName WRAP_MAPS_ALL = new CompoundName("renderer.json.jsonMapsAll");
     private static final CompoundName WRAP_WSETS = new CompoundName("renderer.json.jsonWsets");
-    private static final CompoundName WRAP_WSETS_ALL = new CompoundName("renderer.json.jsonWsetsAll");
     private static final CompoundName DEBUG_RENDERING_KEY = new CompoundName("renderer.json.debug");
     private static final CompoundName JSON_CALLBACK = new CompoundName("jsoncallback");
     private static final CompoundName TENSOR_FORMAT = new CompoundName("format.tensors");
@@ -229,8 +227,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         fieldConsumerSettings.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
         fieldConsumerSettings.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, false);
         fieldConsumerSettings.jsonWsets = props.getBoolean(WRAP_WSETS, false);
-        fieldConsumerSettings.jsonMapsAll = props.getBoolean(WRAP_MAPS_ALL, false);
-        fieldConsumerSettings.jsonWsetsAll = props.getBoolean(WRAP_WSETS_ALL, false);
+        // we may need more fine tuning, but for now use the same query parameters here:
+        fieldConsumerSettings.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, false);
+        fieldConsumerSettings.jsonWsetsAll = props.getBoolean(WRAP_WSETS, false);
         fieldConsumerSettings.tensorShortForm = (props.get(TENSOR_FORMAT) != null &&
                                                  props.getString(TENSOR_FORMAT).equalsIgnoreCase("short"));
     }
