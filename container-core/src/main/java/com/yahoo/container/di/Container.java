@@ -17,6 +17,7 @@ import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.yolean.UncheckedInterruptedException;
 import org.osgi.framework.Bundle;
 
 import java.util.ArrayList;
@@ -153,7 +154,11 @@ public class Container {
     }
 
     private void constructComponents(ComponentGraph graph) {
-        graph.nodes().forEach(Node::constructInstance);
+        graph.nodes().forEach(n -> {
+            if (Thread.interrupted())
+                throw new UncheckedInterruptedException("Interrupted while constructing component graph", true);
+            n.constructInstance();
+        });
     }
 
     private void deconstructObsoleteComponents(ComponentGraph oldGraph,

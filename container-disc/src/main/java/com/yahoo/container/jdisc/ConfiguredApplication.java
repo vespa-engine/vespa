@@ -44,6 +44,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
+import com.yahoo.yolean.UncheckedInterruptedException;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -278,7 +279,7 @@ public final class ConfiguredApplication implements Application {
                     // Block until new config arrives, and it should be applied
                     configurer.getNewComponentGraph(builder.guiceModules().activate(), false);
                     initializeAndActivateContainer(builder);
-                } catch (ConfigInterruptedException e) {
+                } catch (UncheckedInterruptedException | ConfigInterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
                     tryReportFailedComponentGraphConstructionMetric(configurer, e);
