@@ -143,16 +143,19 @@ selectSequencer(StorFilestorConfig::ResponseSequencerType sequencerType) {
     }
 }
 
-std::unique_ptr<SharedOperationThrottler>
+std::unique_ptr<vespalib::SharedOperationThrottler>
 make_operation_throttler_from_config(const StorFilestorConfig& config, size_t num_threads)
 {
     const bool use_dynamic_throttling = (config.asyncOperationThrottlerType == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC);
     if (use_dynamic_throttling) {
         auto config_win_size_incr = std::max(config.asyncOperationDynamicThrottlingWindowIncrement, 1);
         auto win_size_increment = std::max(static_cast<size_t>(config_win_size_incr), num_threads);
-        return SharedOperationThrottler::make_dynamic_throttler(win_size_increment);
+        vespalib::SharedOperationThrottler::DynamicThrottleParams params;
+        params.window_size_increment = win_size_increment;
+        params.min_window_size = win_size_increment;
+        return vespalib::SharedOperationThrottler::make_dynamic_throttler(params);
     } else {
-        return SharedOperationThrottler::make_unlimited_throttler();
+        return vespalib::SharedOperationThrottler::make_unlimited_throttler();
     }
 }
 

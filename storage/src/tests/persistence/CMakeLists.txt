@@ -12,7 +12,6 @@ vespa_add_executable(storage_persistence_gtest_runner_app TEST
     persistencethread_splittest.cpp
     processalltest.cpp
     provider_error_wrapper_test.cpp
-    shared_operation_throttler_test.cpp
     splitbitdetectortest.cpp
     testandsettest.cpp
     gtest_runner.cpp

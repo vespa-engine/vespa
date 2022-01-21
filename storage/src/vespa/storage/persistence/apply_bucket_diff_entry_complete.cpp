@@ -9,7 +9,7 @@ namespace storage {
 
 ApplyBucketDiffEntryComplete::ApplyBucketDiffEntryComplete(std::shared_ptr<ApplyBucketDiffState> state,
                                                            document::DocumentId doc_id,
-                                                           SharedOperationThrottler::Token throttle_token,
+                                                           ThrottleToken throttle_token,
                                                            const char *op,
                                                            const framework::Clock& clock,
                                                            metrics::DoubleAverageMetric& latency_metric)
