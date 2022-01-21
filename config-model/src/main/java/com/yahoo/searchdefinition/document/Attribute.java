@@ -337,8 +337,8 @@ public final class Attribute implements Cloneable, Serializable {
 
     @SuppressWarnings("deprecation")
     private DataType createReferenceDataType() {
-        if (!referenceDocumentType.isPresent()) {
-            throw new IllegalStateException("Referenced document type is not set!");
+        if (referenceDocumentType.isEmpty()) {
+            throw new IllegalStateException("Referenced document type is not set");
         }
         StructuredDataType type = referenceDocumentType.get();
         if (type instanceof DocumentType) {
@@ -350,9 +350,9 @@ public final class Attribute implements Cloneable, Serializable {
 
     public DataType getDataType() {
         DataType dataType = toDataType(type);
-        if (collectionType.equals(Attribute.CollectionType.ARRAY)) {
+        if (collectionType == Attribute.CollectionType.ARRAY) {
             return DataType.getArray(dataType);
-        } else if (collectionType.equals(Attribute.CollectionType.WEIGHTEDSET)) {
+        } else if (collectionType == Attribute.CollectionType.WEIGHTEDSET) {
             return DataType.getWeightedSet(dataType, createIfNonExistent, removeIfZero);
         } else {
             return dataType;
@@ -371,7 +371,7 @@ public final class Attribute implements Cloneable, Serializable {
     public boolean equals(Object object) {
         if (! (object instanceof Attribute)) return false;
 
-        Attribute other=(Attribute)object;
+        Attribute other = (Attribute)object;
         if (!this.name.equals(other.name)) return false;
         return isCompatible(other);
     }

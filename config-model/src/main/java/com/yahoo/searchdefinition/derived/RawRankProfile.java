@@ -408,7 +408,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (Map.Entry<String, String> queryFeatureType : queryFeatureTypes.entrySet()) {
                 properties.add(new Pair<>("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue()));
             }
-            if (properties.size() >= 1000000) throw new RuntimeException("Too many rank properties");
+            if (properties.size() >= 1000000) throw new IllegalArgumentException("Too many rank properties");
             distributeLargeExpressionsAsFiles(properties, largeRankExpressions);
             return properties;
         }

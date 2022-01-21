@@ -252,8 +252,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             NamedSchema searchDefinition =
                     schemaDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSchemas());
             if (searchDefinition == null)
-                throw new RuntimeException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
-                                           this + " does not exist");
+                throw new IllegalArgumentException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
+                                                   this + " does not exist");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
             sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(searchDefinition,
@@ -265,11 +265,11 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
 
     private void addCluster(AbstractSearchCluster sc) {
         if (clusters.containsKey(sc.getClusterName())) {
-            throw new IllegalArgumentException("I already have registered cluster '" + sc.getClusterName() + "'");
+            throw new IllegalArgumentException("Duplicate cluster '" + sc.getClusterName() + "'");
         }
         if (sc instanceof IndexedSearchCluster) {
             if (indexedCluster != null) {
-                throw new IllegalArgumentException("I already have one indexed cluster named '" + indexedCluster.getClusterName());
+                throw new IllegalArgumentException("Duplicate indexed cluster '" + indexedCluster.getClusterName() + "'");
             }
             indexedCluster = (IndexedSearchCluster)sc;
         }

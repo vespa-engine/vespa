@@ -211,7 +211,7 @@ public class StorageGroup {
             Optional<ModelElement> nodes = getNodes(clusterElement);
 
             if (group.isPresent() && nodes.isPresent())
-                throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
+                throw new IllegalArgumentException("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration");
             if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
                     deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 

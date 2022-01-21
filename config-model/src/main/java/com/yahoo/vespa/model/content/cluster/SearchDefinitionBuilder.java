@@ -23,7 +23,7 @@ public class SearchDefinitionBuilder {
                 if (documentType != null) {
                     docTypes.put(documentType.getName(), documentType);
                 } else {
-                    throw new RuntimeException("Document type '" + name + "' not found in application package");
+                    throw new IllegalArgumentException("Document type '" + name + "' not found in application package");
                 }
             }
         }

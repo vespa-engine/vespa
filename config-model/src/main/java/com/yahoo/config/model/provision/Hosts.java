@@ -72,7 +72,7 @@ public class Hosts {
         for (Element hostE : XML.getChildren(doc.getDocumentElement(), "host")) {
             String name = hostE.getAttribute("name");
             if (name.equals("")) {
-                throw new RuntimeException("Missing 'name' attribute for host.");
+                throw new IllegalArgumentException("Missing 'name' attribute for host.");
             }
             if ("localhost".equals(name)) {
                 name = HostName.getLocalhost();

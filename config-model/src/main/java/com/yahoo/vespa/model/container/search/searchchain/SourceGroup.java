@@ -9,25 +9,21 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * A set of sources with the same name,
- * each associated with a different provider,
- * that fills the same role.
+ * A set of sources with the same name, each associated with a different provider, that fills the same role.
+ *
  * @author Tony Vaagenes
  */
 final class SourceGroup {
+
     private final ComponentId id;
     private Source leader;
-    private final Set<Source> participants =
-            new LinkedHashSet<>();
+    private final Set<Source> participants = new LinkedHashSet<>();
 
     private void setLeader(Source leader) {
         assert (validMember(leader));
 
-        if (this.leader != null) {
-            throw new IllegalStateException(
-                    "There can not be two default providers for the source "
-                            + id);
-        }
+        if (this.leader != null)
+            throw new IllegalArgumentException("There can not be two default providers for the source '" + id + "'");
 
         this.leader = leader;
     }
@@ -36,10 +32,8 @@ final class SourceGroup {
         assert (validMember(source));
         assert (!source.equals(leader));
 
-        if (!participants.add(source)) {
-            throw new RuntimeException("Source added twice to the same group "
-                    + source);
-        }
+        if (!participants.add(source))
+            throw new IllegalArgumentException("Source '" + source + "' added twice to the same group");
     }
 
     private boolean validMember(Source leader) {
@@ -55,8 +49,8 @@ final class SourceGroup {
     }
 
     public void add(Source source) {
-        assert source.getComponentId().equals(getComponentId()):
-                "Ids differ: " + source.getComponentId() + " -- " + getComponentId();
+        if ( ! source.getComponentId().equals(getComponentId()))
+            throw new IllegalStateException("Ids differ: " + source.getComponentId() + " and " + getComponentId());
 
         if (Source.GroupOption.leader == source.groupOption) {
             setLeader(source);
@@ -89,7 +83,8 @@ final class SourceGroup {
 
     public void validate() {
         if (leader == null)
-            throw new IllegalStateException("Missing leader for the source " + getComponentId() +
-                    ". One of the sources must use the attribute id instead of idref.");
+            throw new IllegalArgumentException("Missing leader for the source " + getComponentId() +
+                                               ". One of the sources must use the attribute id instead of idref.");
     }
+
 }

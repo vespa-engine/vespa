@@ -158,7 +158,7 @@ public class VespaModelFactory implements ModelFactory {
         try {
             return new VespaModel(configModelRegistry, deployState);
         } catch (IOException | SAXException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 

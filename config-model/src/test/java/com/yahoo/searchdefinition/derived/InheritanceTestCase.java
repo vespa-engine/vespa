@@ -52,7 +52,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void requireThatInheritFromNullIsCaught() throws IOException, ParseException {
         try {
             assertCorrectDeriving("inheritfromnull");
-        } catch (IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
             assertEquals("Document type 'foo' not found", e.getMessage());
         }
     }

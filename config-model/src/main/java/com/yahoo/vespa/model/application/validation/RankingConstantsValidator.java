@@ -8,7 +8,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.InvalidConstantTensor;
+import com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.InvalidConstantTensorException;
 import com.yahoo.vespa.model.search.NamedSchema;
 
 import java.io.FileNotFoundException;
@@ -36,8 +36,8 @@ public class RankingConstantsValidator extends Validator {
         }
     }
 
-    static class TensorValidationFailed extends RuntimeException {
-        TensorValidationFailed(String message) {
+    static class TensorValidationException extends IllegalArgumentException {
+        TensorValidationException(String message) {
             super(message);
         }
     }
@@ -51,14 +51,14 @@ public class RankingConstantsValidator extends Validator {
             for (RankingConstant rc : sd.getSearch().rankingConstants().asMap().values()) {
                 try {
                     validateRankingConstant(rc, applicationPackage);
-                } catch (InvalidConstantTensor | FileNotFoundException ex) {
+                } catch (InvalidConstantTensorException | FileNotFoundException ex) {
                     exceptionMessageCollector.add(ex, rc.getName(), rc.getFileName());
                 }
             }
         }
 
         if (exceptionMessageCollector.exceptionsOccurred) {
-            throw new TensorValidationFailed(exceptionMessageCollector.combinedMessage);
+            throw new TensorValidationException(exceptionMessageCollector.combinedMessage);
         }
     }
 

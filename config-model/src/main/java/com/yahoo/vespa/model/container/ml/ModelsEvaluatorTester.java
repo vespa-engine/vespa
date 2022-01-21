@@ -84,7 +84,7 @@ public class ModelsEvaluatorTester {
             return new ModelsEvaluator(rankProfilesConfig, rankingConstantsConfig, rankingExpressionsConfig, onnxModelsConfig, files);
 
         } catch (IOException | SAXException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         } finally {
             if (temporaryApplicationDir != null) {
                 IOUtils.recursiveDeleteDir(temporaryApplicationDir);

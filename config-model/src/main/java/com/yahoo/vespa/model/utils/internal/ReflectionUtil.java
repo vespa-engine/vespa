@@ -23,8 +23,7 @@ import java.util.stream.Collectors;
  */
 public final class ReflectionUtil {
 
-    private ReflectionUtil() {
-    }
+    private ReflectionUtil() {}
 
     public static Set<ConfigKey<?>> getAllConfigsProduced(Class<? extends ConfigProducer> producerClass, String configId) {
         // TypeToken is @Beta in guava, so consider implementing a simple recursive method instead.
@@ -64,6 +63,7 @@ public final class ReflectionUtil {
 
     /**
      * Compares the config instances and lists any differences that will require service restart.
+     *
      * @param from The previous config.
      * @param to The new config.
      * @return An object describing the difference.
@@ -91,13 +91,9 @@ public final class ReflectionUtil {
     }
 
     private static ConfigKey<?> createConfigKeyFromInstance(Class<?> configInstClass, String configId) {
-        try {
-            String defName = ConfigInstance.getDefName(configInstClass);
-            String defNamespace = ConfigInstance.getDefNamespace(configInstClass);
-            return new ConfigKey<>(defName, configId, defNamespace);
-        } catch (IllegalArgumentException | SecurityException e) {
-            throw new RuntimeException(e);
-        }
+        String defName = ConfigInstance.getDefName(configInstClass);
+        String defNamespace = ConfigInstance.getDefNamespace(configInstClass);
+        return new ConfigKey<>(defName, configId, defNamespace);
     }
 
     private static boolean isConcreteProducer(Class<?> producerInterface) {

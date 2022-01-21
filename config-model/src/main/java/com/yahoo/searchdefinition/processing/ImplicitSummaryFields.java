@@ -31,8 +31,8 @@ public class ImplicitSummaryFields extends Processor {
 
     private void addField(DocumentSummary docsum, SummaryField field, boolean validate) {
         if (validate && docsum.getSummaryField(field.getName()) != null) {
-            throw new IllegalStateException("Summary class '" + docsum.getName() + "' uses reserved field name '" +
-                                            field.getName() + "'.");
+            throw new IllegalArgumentException("Summary class '" + docsum.getName() + "' uses reserved field name '" +
+                                               field.getName() + "'.");
         }
         docsum.add(field);
     }

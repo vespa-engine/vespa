@@ -324,7 +324,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         for (var futureConvertedModel : futureModels) {
             try {
                 futureConvertedModel.get();
-            } catch (ExecutionException |InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -620,7 +620,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @param configId   the id to register with, not necessarily equal to descendant.getConfigId().
      * @param descendant The configProducer descendant to add
      */
-    public void addDescendant(String configId, AbstractConfigProducer descendant) {
+    public void addDescendant(String configId, AbstractConfigProducer<?> descendant) {
         if (id2producer.containsKey(configId)) {
             throw new RuntimeException
                     ("Config ID '" + configId + "' cannot be reserved by an instance of class '" +

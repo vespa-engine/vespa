@@ -193,9 +193,9 @@ public class HostPorts {
         String msg = (service.getClass().equals(otherService.getClass()) && service.requiresWantedPort())
                 ? "You must set port explicitly for all instances of this service type, except the first one. "
                 : "";
-        throw new RuntimeException(service.getServiceName() + " cannot reserve port " + port +
-                    " on " + hostname + ": Already reserved for " + otherService.getServiceName() +
-                    ". " + msg + "Next available port is: " + nextAvailablePort + " ports used: " + portDB);
+        throw new IllegalArgumentException(service.getServiceName() + " cannot reserve port " + port +
+                                           " on " + hostname + ": Already reserved for " + otherService.getServiceName() +
+                                           ". " + msg + "Next available port is: " + nextAvailablePort + " ports used: " + portDB);
     }
 
     private void noMoreAvailablePorts() {

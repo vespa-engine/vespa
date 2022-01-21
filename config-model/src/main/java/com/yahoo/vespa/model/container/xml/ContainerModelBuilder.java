@@ -281,7 +281,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addCloudSecretStore(ApplicationContainerCluster cluster, Element secretStoreElement, DeployState deployState) {
         if ( ! deployState.isHosted()) return;
         if ( ! cluster.getZone().system().isPublic())
-            throw new RuntimeException("cloud secret store is not supported in non-public system, please see documentation");
+            throw new IllegalArgumentException("Cloud secret store is not supported in non-public system, see the documentation");
         CloudSecretStore cloudSecretStore = new CloudSecretStore();
         Map<String, TenantSecretStore> secretStoresByName = deployState.getProperties().tenantSecretStores()
                 .stream()
@@ -296,10 +296,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             TenantSecretStore secretStore = secretStoresByName.get(account);
 
             if (secretStore == null)
-                throw new RuntimeException("No configured secret store named " + account);
+                throw new IllegalArgumentException("No configured secret store named " + account);
 
             if (secretStore.getExternalId().isEmpty())
-                throw new RuntimeException("No external ID has been set");
+                throw new IllegalArgumentException("No external ID has been set");
 
             cloudSecretStore.addConfig(account, region, secretStore.getAwsId(), secretStore.getRole(), secretStore.getExternalId().get());
         }
@@ -447,13 +447,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
-                throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/en/security-model#data-plane");
+                throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
+                                                   "see: https://cloud.vespa.ai/en/security-model#data-plane");
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
 
             boolean enforceHandshakeClientAuth = cluster.getHttp().getAccessControl()
                     .map(accessControl -> accessControl.clientAuthentication)
-                    .map(clientAuth -> clientAuth.equals(AccessControl.ClientAuthentication.need))
+                    .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
                     .orElse(false);
 
             connectorFactory = authorizeClient
@@ -632,14 +633,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void checkVersion(Element spec) {
         String version = spec.getAttribute("version");
 
-        if ( ! Version.fromString(version).equals(new Version(1))) {
-            throw new RuntimeException("Expected container version to be 1.0, but got " + version);
-        }
+        if ( ! Version.fromString(version).equals(new Version(1)))
+            throw new IllegalArgumentException("Expected container version to be 1.0, but got " + version);
     }
 
     private void checkTagName(Element spec, DeployLogger logger) {
         if (spec.getTagName().equals(DEPRECATED_CONTAINER_TAG)) {
-            logger.logApplicationPackage(WARNING, "'" + DEPRECATED_CONTAINER_TAG + "' is deprecated as tag name. Use '" + CONTAINER_TAG + "' instead.");
+            logger.logApplicationPackage(WARNING, "'" + DEPRECATED_CONTAINER_TAG +
+                                                  "' is deprecated as tag name. Use '" + CONTAINER_TAG + "' instead.");
         }
     }
 
@@ -1020,9 +1021,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 AthenzService service = spec.instance(app.getApplicationId().instance())
                                             .flatMap(instanceSpec -> instanceSpec.athenzService(zone.environment(), zone.region()))
                                             .or(() -> spec.athenzService())
-                                            .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration in instance '" + app.getApplicationId().instance() + "'"));
+                                            .orElseThrow(() -> new IllegalArgumentException("Missing Athenz service configuration in instance '" +
+                                                                                            app.getApplicationId().instance() + "'"));
             String zoneDnsSuffix = zone.environment().value() + "-" + zone.region().value() + "." + athenzDnsSuffix;
-            IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs), ztsUrl, zoneDnsSuffix, zone);
+            IdentityProvider identityProvider = new IdentityProvider(domain,
+                                                                     service,
+                                                                     getLoadBalancerName(loadBalancerName, configServerSpecs),
+                                                                     ztsUrl,
+                                                                     zoneDnsSuffix,
+                                                                     zone);
             cluster.addComponent(identityProvider);
 
             cluster.getContainers().forEach(container -> {

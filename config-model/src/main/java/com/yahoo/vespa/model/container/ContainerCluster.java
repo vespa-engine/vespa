@@ -331,8 +331,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public SearchChains getSearchChains() {
         if (containerSearch == null)
-            throw new IllegalStateException("Search components not found in container cluster '" + getSubId() +
-                                            "': Add <search/> to the cluster in services.xml");
+            throw new IllegalArgumentException("Search components not found in container cluster '" + getSubId() +
+                                               "': Add <search/> to the cluster in services.xml");
         return containerSearch.getChains();
     }
 
@@ -371,8 +371,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public DocprocChains getDocprocChains() {
         if (containerDocproc == null)
-            throw new IllegalStateException("Document processing components not found in container cluster '" + getSubId() +
-                                                    "': Add <document-processing/> to the cluster in services.xml");
+            throw new IllegalArgumentException("Document processing components not found in container cluster '" + getSubId() +
+                                            "': Add <document-processing/> to the cluster in services.xml");
         return containerDocproc.getChains();
     }
 

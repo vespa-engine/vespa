@@ -161,7 +161,7 @@ public class DeployState implements ConfigDefinitionStore {
             return hostsReader == null ? new SingleNodeProvisioner() : new HostsXmlProvisioner(hostsReader);
         }
         catch (IOException e) {
-            throw new IllegalStateException("Could not read hosts.xml", e);
+            throw new RuntimeException("Could not read hosts.xml", e);
         }
     }
 

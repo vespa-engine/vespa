@@ -160,7 +160,7 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
      * because config IDs must be registered through setConfigId().
      */
     public final String getConfigId() {
-        if (configId == null) throw new RuntimeException("The system topology must be frozen first.");
+        if (configId == null) throw new IllegalStateException("The system topology must be frozen first.");
         return configId;
     }
 

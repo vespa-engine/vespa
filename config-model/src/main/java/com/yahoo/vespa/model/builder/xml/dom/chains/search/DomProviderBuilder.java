@@ -157,7 +157,6 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private Provider buildProvider(ChainSpecification specWithoutInnerSearchers,
                                    ProviderReader providerReader,
                                    FederationOptions federationOptions) {
@@ -166,7 +165,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         } else if (LocalProviderSpec.includesType(providerReader.type)) {
             return buildLocalProvider(specWithoutInnerSearchers, providerReader, federationOptions);
         } else {
-            throw new RuntimeException("Unknown provider type '" + providerReader.type + "'");
+            throw new IllegalArgumentException("Unknown provider type '" + providerReader.type + "'");
         }
     }
 
@@ -194,7 +193,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
     private void ensureEmpty(ComponentId componentId, Object... objects) {
         for (Object object : objects) {
             if (object != null) {
-                throw new RuntimeException("Invalid provider option in provider '" + componentId + "': value='" + object + "'");
+                throw new IllegalArgumentException("Invalid provider option in provider '" + componentId + "': value='" + object + "'");
             }
         }
     }

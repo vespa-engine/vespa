@@ -41,9 +41,8 @@ public class SearchChains extends Chains<SearchChain> {
     private void setSearchClusterForLocalProvider(Map<String, ? extends AbstractSearchCluster> clusterIndexByName) {
         for (LocalProvider provider : localProviders()) {
             AbstractSearchCluster cluster = clusterIndexByName.get(provider.getClusterName());
-            if (cluster == null) {
-                throw new RuntimeException("No searchable content cluster with id '" + provider.getClusterName() + "'");
-            }
+            if (cluster == null)
+                throw new IllegalArgumentException("No searchable content cluster with id '" + provider.getClusterName() + "'");
             provider.setSearchCluster(cluster);
         }
     }
@@ -53,9 +52,8 @@ public class SearchChains extends Chains<SearchChain> {
             sourceGroup.validate();
 
             if (getChainGroup().getComponentMap().containsKey(sourceGroup.getComponentId())) {
-                throw new RuntimeException(
-                        String.format("Same id used for a source and another search chain/provider: '%s'",
-                                      sourceGroup.getComponentId()));
+                throw new IllegalArgumentException("Id '" + sourceGroup.getComponentId() +
+                                                   "' is used both for a source and another search chain/provider");
             }
         }
     }
