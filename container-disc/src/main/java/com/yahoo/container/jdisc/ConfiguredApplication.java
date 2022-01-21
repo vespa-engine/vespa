@@ -78,7 +78,7 @@ public final class ConfiguredApplication implements Application {
     private final OsgiFramework osgiFramework;
     private final com.yahoo.jdisc.Timer timerSingleton;
     private final AtomicBoolean dumpHeapOnShutdownTimeout = new AtomicBoolean(false);
-    private final AtomicDouble shudownTimeoutS = new AtomicDouble(50.0);
+    private final AtomicDouble shutdownTimeoutS = new AtomicDouble(50.0);
     // Subscriber that is used when this is not a standalone-container. Subscribes
     // to config to make sure that container will be registered in slobrok (by {@link com.yahoo.jrt.slobrok.api.Register})
     // if slobrok config changes (typically slobroks moving to other nodes)
@@ -245,7 +245,7 @@ public final class ConfiguredApplication implements Application {
 
     void reconfigure(QrConfig qrConfig) {
         dumpHeapOnShutdownTimeout.set(qrConfig.shutdown().dumpHeapOnTimeout());
-        shudownTimeoutS.set(qrConfig.shutdown().timeout());
+        shutdownTimeoutS.set(qrConfig.shutdown().timeout());
     }
 
     private void initializeAndActivateContainer(ContainerBuilder builder) {
@@ -420,7 +420,7 @@ public final class ConfiguredApplication implements Application {
     private void startShutdownDeadlineExecutor() {
         shutdownDeadlineExecutor = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Shutdown deadline timer"));
         shutdownDeadlineExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        long delayMillis = (long)(shudownTimeoutS.get() * 1000.0);
+        long delayMillis = (long)(shutdownTimeoutS.get() * 1000.0);
         shutdownDeadlineExecutor.schedule(() -> {
             if (dumpHeapOnShutdownTimeout.get()) {
                 String heapDumpName = Defaults.getDefaults().underVespaHome("var/crash/java_pid.") + santizeFileName(configId) + "." + ProcessHandle.current().pid() + ".hprof";
