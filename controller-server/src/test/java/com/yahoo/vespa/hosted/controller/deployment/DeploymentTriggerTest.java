@@ -107,6 +107,40 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void separateRevisionMakesApplicationChangeWaitForPreviousToComplete() {
+        DeploymentContext app = tester.newDeploymentContext();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradeRevision(null) // separate by default, but we override this in test builder
+                .region("us-east-3")
+                .test("us-east-3")
+                .build();
+
+        app.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        Optional<ApplicationVersion> v0 = app.lastSubmission();
+
+        app.submit(applicationPackage);
+        Optional<ApplicationVersion> v1 = app.lastSubmission();
+        assertEquals(v0, app.instance().change().application());
+
+        // Eager tests still run before new revision rolls out.
+        app.runJob(systemTest).runJob(stagingTest);
+
+        // v0 rolls out completely.
+        app.runJob(testUsEast3);
+        assertEquals(Optional.empty(), app.instance().change().application());
+
+        // v1 starts rolling when v0 is done.
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v1, app.instance().change().application());
+
+        // v1 fails, so v2 starts immediately.
+        app.runJob(productionUsEast3).failDeployment(testUsEast3);
+        app.submit(applicationPackage);
+        Optional<ApplicationVersion> v2 = app.lastSubmission();
+        assertEquals(v2, app.instance().change().application());
+    }
+
+    @Test
     public void leadingUpgradeAllowsApplicationChangeWhileUpgrading() {
         var applicationPackage = new ApplicationPackageBuilder().region("us-east-3")
                                                                 .upgradeRollout("leading")
