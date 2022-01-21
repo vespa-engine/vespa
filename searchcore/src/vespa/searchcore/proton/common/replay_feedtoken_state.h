@@ -8,7 +8,9 @@
 namespace proton::feedtoken {
 
 /*
- * Feed token state used during replay.
+ * Feed token state used during replay. It contains a throttler token
+ * which allows the related shared operation throttler to track the completion
+ * of the feed operation.
  */
 class ReplayState : public IState {
     vespalib::SharedOperationThrottler::Token _throttler_token;
