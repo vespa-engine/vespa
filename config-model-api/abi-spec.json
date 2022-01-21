@@ -194,9 +194,10 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
       "public com.yahoo.config.provision.InstanceName name()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
+      "public com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision upgradeRevision()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout upgradeRollout()",
       "public java.util.List changeBlocker()",
       "public java.util.Optional globalServiceId()",
@@ -363,6 +364,23 @@
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy canary",
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy defaultPolicy",
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy conservative"
+    ]
+  },
+  "com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision[] values()",
+      "public static com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision separate",
+      "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRevision latest"
     ]
   },
   "com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout": {

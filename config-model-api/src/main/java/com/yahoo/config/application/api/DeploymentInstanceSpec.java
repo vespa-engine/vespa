@@ -31,6 +31,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final InstanceName name;
 
     private final DeploymentSpec.UpgradePolicy upgradePolicy;
+    private final DeploymentSpec.UpgradeRevision upgradeRevision;
     private final DeploymentSpec.UpgradeRollout upgradeRollout;
     private final List<DeploymentSpec.ChangeBlocker> changeBlockers;
     private final Optional<String> globalServiceId;
@@ -41,6 +42,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     public DeploymentInstanceSpec(InstanceName name,
                                   List<DeploymentSpec.Step> steps,
                                   DeploymentSpec.UpgradePolicy upgradePolicy,
+                                  DeploymentSpec.UpgradeRevision upgradeRevision,
                                   DeploymentSpec.UpgradeRollout upgradeRollout,
                                   List<DeploymentSpec.ChangeBlocker> changeBlockers,
                                   Optional<String> globalServiceId,
@@ -51,6 +53,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         super(steps);
         this.name = name;
         this.upgradePolicy = upgradePolicy;
+        this.upgradeRevision = upgradeRevision;
         this.upgradeRollout = upgradeRollout;
         this.changeBlockers = changeBlockers;
         this.globalServiceId = globalServiceId;
@@ -150,6 +153,9 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
     public DeploymentSpec.UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
+    /** Returns the upgrade revision strategy of this, which is separate if none is specified */
+    public DeploymentSpec.UpgradeRevision upgradeRevision() { return upgradeRevision; }
+
     /** Returns the upgrade rollout strategy of this, which is separate if none is specified */
     public DeploymentSpec.UpgradeRollout upgradeRollout() { return upgradeRollout; }
 
@@ -198,6 +204,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         DeploymentInstanceSpec other = (DeploymentInstanceSpec) o;
         return globalServiceId.equals(other.globalServiceId) &&
                upgradePolicy == other.upgradePolicy &&
+               upgradeRevision == other.upgradeRevision &&
                upgradeRollout == other.upgradeRollout &&
                changeBlockers.equals(other.changeBlockers) &&
                steps().equals(other.steps()) &&
@@ -208,7 +215,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalServiceId, upgradePolicy, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints);
+        return Objects.hash(globalServiceId, upgradePolicy, upgradeRevision, upgradeRollout, changeBlockers, steps(), athenzService, notifications, endpoints);
     }
 
     @Override

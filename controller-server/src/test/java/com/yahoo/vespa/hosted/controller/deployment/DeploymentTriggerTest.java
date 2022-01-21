@@ -107,6 +107,40 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void separateRevisionMakesApplicationChangeWaitForPreviousToComplete() {
+        DeploymentContext app = tester.newDeploymentContext();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradeRevision(null) // separate by default, but we override this in test builder
+                .region("us-east-3")
+                .test("us-east-3")
+                .build();
+
+        app.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        Optional<ApplicationVersion> v0 = app.lastSubmission();
+
+        app.submit(applicationPackage);
+        Optional<ApplicationVersion> v1 = app.lastSubmission();
+        assertEquals(v0, app.instance().change().application());
+
+        // Eager tests still run before new revision rolls out.
+        app.runJob(systemTest).runJob(stagingTest);
+
+        // v0 rolls out completely.
+        app.runJob(testUsEast3);
+        assertEquals(Optional.empty(), app.instance().change().application());
+
+        // v1 starts rolling when v0 is done.
+        tester.outstandingChangeDeployer().run();
+        assertEquals(v1, app.instance().change().application());
+
+        // v1 fails, so v2 starts immediately.
+        app.runJob(productionUsEast3).failDeployment(testUsEast3);
+        app.submit(applicationPackage);
+        Optional<ApplicationVersion> v2 = app.lastSubmission();
+        assertEquals(v2, app.instance().change().application());
+    }
+
+    @Test
     public void leadingUpgradeAllowsApplicationChangeWhileUpgrading() {
         var applicationPackage = new ApplicationPackageBuilder().region("us-east-3")
                                                                 .upgradeRollout("leading")
@@ -826,6 +860,7 @@ public class DeploymentTriggerTest {
         DeploymentContext i4 = tester.newDeploymentContext("t", "a", "i4");
         ApplicationPackage applicationPackage = ApplicationPackageBuilder
                 .fromDeploymentXml("<deployment version='1'>\n" +
+                                   "  <upgrade revision='separate' />\n" +
                                    "  <parallel>\n" +
                                    "    <instance id='i1'>\n" +
                                    "      <prod>\n" +
@@ -910,8 +945,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(3));
 
         // v1 is all done in i1 and i2, but does not yet roll out in i3; v2 is not completely rolled out there yet.
-        // TODO jonmv: thie belowh new revision policy, but must be faked for now, as v1 would not wait for v0 to complete.
-        //tester.outstandingChangeDeployer().run();
+        tester.outstandingChangeDeployer().run();
         assertEquals(v0, i3.instance().change().application());
 
         // i3 completes v0, which rolls out to i4; v1 is ready for i3, but v2 is not.
