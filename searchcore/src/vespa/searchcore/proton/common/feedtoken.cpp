@@ -33,6 +33,12 @@ State::setResult(ResultUP result, bool documentWasFound) {
     _result = std::move(result);
 }
 
+bool
+State::is_replay() const noexcept
+{
+    return false;
+}
+
 void
 State::fail()
 {
