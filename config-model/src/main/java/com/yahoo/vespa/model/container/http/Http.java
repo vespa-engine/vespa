@@ -98,7 +98,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
 
         for (FilterBinding binding: bindings) {
             if (filters.getComponent(binding.chainId()) == null && chains.getComponent(binding.chainId()) == null)
-                throw new RuntimeException("Can't find filter " + binding.chainId() + " for binding " + binding.binding());
+                throw new IllegalArgumentException("Can't find filter " + binding.chainId() + " for binding " + binding.binding());
         }
     }
 

@@ -13,7 +13,6 @@ import org.w3c.dom.Element;
  * producer in between. This should not be used by new model plugins.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public abstract class LegacyConfigModelBuilder<MODEL extends ConfigModel> extends ConfigModelBuilder<MODEL> {
 

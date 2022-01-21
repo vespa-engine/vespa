@@ -44,7 +44,7 @@ public class Index implements Cloneable, Serializable {
     private boolean prefix;
 
     /** The list of aliases (Strings) to this index name */
-    private Set<String> aliases=new java.util.LinkedHashSet<>(1);
+    private Set<String> aliases = new java.util.LinkedHashSet<>(1);
 
     /**
      * The stemming setting of this field, or null to use the default.
@@ -138,19 +138,18 @@ public class Index implements Cloneable, Serializable {
     }
 
     public String toString() {
-        String rankTypeName=rankType==null ? "(none)" : rankType.name();
-            return
-                "index '" + name +
-                "' [ranktype: " + rankTypeName +
-                ", prefix: " + prefix + "]";
+        String rankTypeName = rankType == null ? "(none)" : rankType.name();
+        return "index '" + name +
+               "' [ranktype: " + rankTypeName +
+               ", prefix: " + prefix + "]";
     }
 
     /** Makes a deep copy of this index */
     @Override
     public Object clone() {
         try {
-            Index copy=(Index)super.clone();
-            copy.aliases=new LinkedHashSet<>(this.aliases);
+            Index copy = (Index)super.clone();
+            copy.aliases = new LinkedHashSet<>(this.aliases);
             return copy;
         }
         catch (CloneNotSupportedException e) {

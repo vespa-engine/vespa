@@ -153,7 +153,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
             Collection<ConfigModelBuilder> builders = configModelRegistry.resolve(xmlId);
 
             if (builders.isEmpty())
-                throw new RuntimeException("Could not resolve tag <" + tagName + " version=\"" + tagVersion + "\"> to a config model component");
+                throw new IllegalArgumentException("Could not resolve tag <" + tagName + " version=\"" + tagVersion + "\"> to a config model component");
 
             for (ConfigModelBuilder builder : builders) {
                 if ( ! model2Element.containsKey(builder)) {

@@ -9,6 +9,8 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
+import java.util.Objects;
+
 /**
  * @author Tony Vaagenes
  * @author gjoranv
@@ -52,7 +54,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                               Integer bufferSize)
     {
         super(new ComponentModel(accessLogClass(logType), null, "container-core", null));
-        this.fileNamePattern = fileNamePattern;
+        this.fileNamePattern = Objects.requireNonNull(fileNamePattern, "File name pattern required when configuring access log");
         this.rotationInterval = rotationInterval;
         this.compression = compressOnRotation;
         this.isHostedVespa = isHostedVespa;
@@ -60,9 +62,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.compressionType = compressionType;
         this.queueSize = (queueSize == null) ? 256 : queueSize;
         this.bufferSize = bufferSize;
-
-        if (fileNamePattern == null)
-            throw new RuntimeException("File name pattern required when configuring access log.");
     }
 
     private static String accessLogClass(AccessLogType logType) {
@@ -114,4 +113,5 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     public String getFileNamePattern() {
         return fileNamePattern;
     }
+
 }

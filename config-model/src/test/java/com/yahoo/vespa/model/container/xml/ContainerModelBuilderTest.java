@@ -778,7 +778,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                     .build();
             createModel(root, state, null, clusterElem);
         } catch (RuntimeException e) {
-            assertEquals("cloud secret store is not supported in non-public system, please see documentation",
+            assertEquals("Cloud secret store is not supported in non-public system, see the documentation",
                          e.getMessage());
             return;
         }

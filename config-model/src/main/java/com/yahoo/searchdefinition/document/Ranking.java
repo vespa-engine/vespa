@@ -69,7 +69,7 @@ public class Ranking implements Cloneable, Serializable {
             return (Ranking)super.clone();
         }
         catch (CloneNotSupportedException e) {
-            throw new RuntimeException("Programming error",e);
+            throw new RuntimeException("Programming error", e);
         }
     }
 

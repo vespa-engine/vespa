@@ -142,7 +142,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
 
             if (c.search.hasIndexedCluster() && !(c.persistenceFactory instanceof ProtonEngine.Factory) )
-                throw new RuntimeException("Indexed search requires proton as engine");
+                throw new IllegalArgumentException("Indexed search requires proton as engine");
 
             if (documentsElement != null) {
                 ModelElement e = documentsElement.child("document-processing");
@@ -220,14 +220,14 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             if (distribution != null) {
                 String attr = distribution.stringAttribute("type");
                 if (attr != null) {
-                    if (attr.toLowerCase().equals("strict")) {
+                    if (attr.equalsIgnoreCase("strict")) {
                         c.distributionMode = DistributionMode.STRICT;
-                    } else if (attr.toLowerCase().equals("loose")) {
+                    } else if (attr.equalsIgnoreCase("loose")) {
                         c.distributionMode = DistributionMode.LOOSE;
-                    } else if (attr.toLowerCase().equals("legacy")) {
+                    } else if (attr.equalsIgnoreCase("legacy")) {
                         c.distributionMode = DistributionMode.LEGACY;
                     } else {
-                        throw new IllegalStateException("Distribution type " + attr + " not supported.");
+                        throw new IllegalArgumentException("Distribution type " + attr + " not supported.");
                     }
                 }
             }

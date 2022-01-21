@@ -830,7 +830,7 @@ public class RankProfile implements Cloneable {
             throw (ParseException)exception.initCause(e);
         }
         catch (IOException e) {
-            throw new RuntimeException("IOException parsing ranking expression '" + name + "'");
+            throw new RuntimeException("IOException parsing ranking expression '" + name + "'", e);
         }
     }
 

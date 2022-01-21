@@ -14,6 +14,7 @@ import java.util.Set;
  * @author Tony Vaagenes
  */
 public class FreezableMap<K, V> implements Map<K, V> {
+
     private boolean frozen = false;
     private Map<K, V> map;
 
@@ -85,7 +86,7 @@ public class FreezableMap<K, V> implements Map<K, V> {
 
     public void freeze() {
         if (frozen)
-            throw new RuntimeException("The map has already been frozen.");
+            throw new IllegalStateException("The map has already been frozen");
         frozen = true;
         map = Collections.unmodifiableMap(map);
     }

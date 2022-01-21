@@ -294,7 +294,7 @@ public class Tuning extends AbstractConfigProducer<Tuning> implements ProtonConf
 
                     public void getConfig(ProtonConfig.Summary.Log.Chunk.Builder chunk) {
                         if (outputInt) {
-                            if (maxSize!=null) chunk.maxbytes(maxSize.intValue());
+                            if (maxSize != null) chunk.maxbytes(maxSize.intValue());
                         } else {
                             throw new IllegalStateException("Fix this, chunk does not have long types");
                         }
@@ -305,6 +305,7 @@ public class Tuning extends AbstractConfigProducer<Tuning> implements ProtonConf
                 }
 
                 public static class LogStore {
+
                     public Long maxFileSize = null;
                     public Component chunk = null;
                     public Double minFileSizeFactor = null;

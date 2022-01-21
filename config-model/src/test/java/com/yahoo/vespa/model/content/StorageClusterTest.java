@@ -414,8 +414,8 @@ public class StorageClusterTest {
             ContentClusterUtils.createCluster(xml, root);
             fail("Did not fail when having both group and nodes");
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            assertEquals("Both group and nodes exists, only one of these tags is legal", e.getMessage());
+            assertEquals("Both <group> and <nodes> is specified: Only one of these tags can be used in the same configuration",
+                         e.getMessage());
         }
     }
 
