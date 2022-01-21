@@ -13,6 +13,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -26,7 +27,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -216,10 +216,27 @@ public class DeploymentStatus {
      * and has not yet started rolling out, due to some other change or a block window being present at the time of submission.
      */
     public Change outstandingChange(InstanceName instance) {
-        return application.latestVersion().map(Change::of)
+        return nextVersion(instance).map(Change::of)
                           .filter(change -> application.require(instance).change().application().map(change::upgrades).orElse(true))
                           .filter(change -> ! jobsToRun(Map.of(instance, change)).isEmpty())
                           .orElse(Change.empty());
+    }
+
+    /** The next application version to roll out to instance. */
+    private Optional<ApplicationVersion> nextVersion(InstanceName instance) {
+        return Optional.ofNullable(instanceSteps().get(instance)).stream()
+                       .flatMap(this::allDependencies)
+                       .flatMap(step -> step.instance.latestDeployed().stream())
+                       .min(naturalOrder())
+                       .or(application::latestVersion);
+    }
+
+    private Stream<InstanceStatus> allDependencies(StepStatus step) {
+        return step.dependencies.stream()
+                                .flatMap(dep -> Stream.concat(Stream.of(dep), allDependencies(dep)))
+                                .filter(InstanceStatus.class::isInstance)
+                                .map(InstanceStatus.class::cast)
+                                .distinct();
     }
 
     /**
@@ -237,7 +254,7 @@ public class DeploymentStatus {
     }
 
     private Map<JobId, Versions> productionJobs(InstanceName instance, Change change, boolean assumeUpgradesSucceed) {
-        ImmutableMap.Builder<JobId, Versions> jobs = ImmutableMap.builder();
+        Map<JobId, Versions> jobs = new LinkedHashMap<>();
         jobSteps.forEach((job, step) -> {
             // When computing eager test jobs for outstanding changes, assume current upgrade completes successfully.
             Optional<Deployment> deployment = deploymentFor(job)
@@ -252,15 +269,10 @@ public class DeploymentStatus {
                                                            : existing);
             if (   job.application().instance().equals(instance)
                 && job.type().isProduction()
-                && step.completedAt(change).isEmpty())
+                && step.completedAt(change, Optional.of(job)).isEmpty()) // Signal strict completion criterion by depending on job itself.
                 jobs.put(job, Versions.from(change, application, deployment, systemVersion));
         });
-        return jobs.build();
-    }
-
-    /** The production jobs that need to run to complete roll-out of the given change to production. */
-    public Map<JobId, Versions> productionJobs(InstanceName instance, Change change) {
-        return productionJobs(instance, change, false);
+        return jobs;
     }
 
     /** The test jobs that need to run prior to the given production deployment jobs. */
@@ -315,7 +327,7 @@ public class DeploymentStatus {
     /** Adds the primitive steps contained in the given step, which depend on the given previous primitives, to the dependency graph. */
     private List<StepStatus> fillStep(Map<JobId, StepStatus> dependencies, List<StepStatus> allSteps,
                                       DeploymentSpec.Step step, List<StepStatus> previous, InstanceName instance) {
-        if (step.steps().isEmpty()) {
+        if (step.steps().isEmpty() && ! (step instanceof DeploymentInstanceSpec)) {
             if (instance == null)
                 return previous; // Ignore test and staging outside all instances.
 
@@ -417,7 +429,7 @@ public class DeploymentStatus {
 
         private final StepType type;
         private final DeploymentSpec.Step step;
-        private final List<StepStatus> dependencies;
+        private final List<StepStatus> dependencies; // All direct dependencies of this step.
         private final InstanceName instance;
 
         private StepStatus(StepType type, DeploymentSpec.Step step, List<StepStatus> dependencies, InstanceName instance) {
@@ -492,7 +504,7 @@ public class DeploymentStatus {
         }
 
         @Override
-        public Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
+        Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
             return readyAt(change, dependent).map(completion -> completion.plus(step().delay()));
         }
 
@@ -520,13 +532,14 @@ public class DeploymentStatus {
          * for this instance, or if no more jobs should run for this instance for the given change.
          */
         @Override
-        public Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
+        Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
             return    (   (change.platform().isEmpty() || change.platform().equals(instance.change().platform()))
                        && (change.application().isEmpty() || change.application().equals(instance.change().application()))
                    || status.jobsToRun(Map.of(instance.name(), change)).isEmpty())
                       ? dependenciesCompletedAt(change, dependent)
                       : Optional.empty();
         }
+        // TODO jonmv: complete for p-jobs: last is XXX, but ready/verified uses any is XXX.
 
         @Override
         public Optional<Instant> blockedUntil(Change change) {
@@ -607,13 +620,15 @@ public class DeploymentStatus {
 
                 /** Complete if deployment is on pinned version, and last successful deployment, or if given versions is strictly a downgrade, and this isn't forced by a pin. */
                 @Override
-                public Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
+                Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     if (     change.isPinned()
                         &&   change.platform().isPresent()
                         && ! existingDeployment.map(Deployment::version).equals(change.platform()))
                         return Optional.empty();
 
-                    if (change.application().isPresent() && ! existingDeployment.map(Deployment::applicationVersion).equals(change.application()))
+                    if (     change.application().isPresent()
+                        && ! existingDeployment.map(Deployment::applicationVersion).equals(change.application())
+                        &&   dependent.equals(job())) // Job should (re-)run in this case, but other dependents need not wait.
                         return Optional.empty();
 
                     Change fullChange = status.application().require(instance).change();
@@ -622,10 +637,12 @@ public class DeploymentStatus {
                                           .orElse(false))
                         return job.lastCompleted().flatMap(Run::end);
 
-                    return job.lastSuccess()
-                              .filter(run ->    change.platform().map(run.versions().targetPlatform()::equals).orElse(true)
-                                             && change.application().map(run.versions().targetApplication()::equals).orElse(true))
-                              .flatMap(Run::end);
+                    return (dependent.equals(job()) ? job.lastSuccess().stream()
+                                                    : RunList.from(job).status(RunStatus.success).asList().stream())
+                            .filter(run ->    change.platform().map(run.versions().targetPlatform()::equals).orElse(true)
+                                           && change.application().map(run.versions().targetApplication()::equals).orElse(true))
+                            .findFirst()
+                            .flatMap(Run::end);
                 }
             };
         }
@@ -635,16 +652,21 @@ public class DeploymentStatus {
             JobStatus job = status.instanceJobs(instance).get(testType);
             return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
-                public Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
+                Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     Versions versions = Versions.from(change, status.application, status.deploymentFor(job.id()), status.systemVersion);
-                    return job.lastSuccess()
-                              .filter(run -> versions.targetsMatch(run.versions()))
-                              .filter(run -> ! status.jobs()
-                                                     .instance(instance)
-                                                     .type(prodType)
-                                                     .lastCompleted().endedNoLaterThan(run.start())
-                                                     .isEmpty())
-                              .map(run -> run.end().get());
+                    return dependent.equals(job()) ? job.lastSuccess()
+                                                        .filter(run -> versions.targetsMatch(run.versions()))
+                                                        .filter(run -> ! status.jobs()
+                                                                               .instance(instance)
+                                                                               .type(prodType)
+                                                                               .lastCompleted().endedNoLaterThan(run.start())
+                                                                               .isEmpty())
+                                                        .map(run -> run.end().get())
+                                                   : RunList.from(job)
+                                                            .matching(run -> versions.targetsMatch(run.versions()))
+                                                            .status(RunStatus.success)
+                                                            .first()
+                                                            .map(run -> run.end().get());
                 }
             };
         }
@@ -655,7 +677,7 @@ public class DeploymentStatus {
             JobStatus job = status.instanceJobs(instance).get(jobType);
             return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
-                public Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
+                Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
                     return RunList.from(job)
                                   .matching(run -> run.versions().targetsMatch(Versions.from(change,
                                                                                              status.application,

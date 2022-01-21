@@ -94,6 +94,7 @@ public class ApplicationSerializer {
     private static final String deploymentJobsField = "deploymentJobs"; // TODO jonmv: clean up serialisation format
     private static final String assignedRotationsField = "assignedRotations";
     private static final String assignedRotationEndpointField = "endpointId";
+    private static final String latestDeployedField = "latestDeployed";
 
     // Deployment fields
     private static final String zoneField = "zone";
@@ -176,6 +177,7 @@ public class ApplicationSerializer {
             assignedRotationsToSlime(instance.rotations(), instanceObject);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
             toSlime(instance.change(), instanceObject, deployingField);
+            instance.latestDeployed().ifPresent(version -> toSlime(version, instanceObject.setObject(latestDeployedField)));
         }
     }
 
@@ -330,12 +332,14 @@ public class ApplicationSerializer {
             List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
             Change change = changeFromSlime(object.field(deployingField));
+            Optional<ApplicationVersion> latestDeployed = latestVersionFromSlime(object.field(latestDeployedField));
             instances.add(new Instance(id.instance(instanceName),
                                        deployments,
                                        jobPauses,
                                        assignedRotations,
                                        rotationStatus,
-                                       change));
+                                       change,
+                                       latestDeployed));
         });
         return instances;
     }

@@ -99,10 +99,7 @@ public class DeploymentTrigger {
                              .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
                     && acceptNewApplicationVersion(status, instanceName)) {
                     application = application.with(instanceName,
-                                                   instance -> {
-                                                       instance = instance.withChange(instance.change().with(outstanding.application().get()));
-                                                       return instance.withChange(remainingChange(instance, status));
-                                                   });
+                                                   instance -> withRemainingChange(instance, instance.change().with(outstanding.application().get()), status));
                 }
             }
             applications().store(application);
@@ -121,7 +118,7 @@ public class DeploymentTrigger {
 
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application ->
                 applications().store(application.with(id.instance(),
-                                                      instance -> instance.withChange(remainingChange(instance, jobs.deploymentStatus(application.get()))))));
+                                                      instance -> withRemainingChange(instance, instance.change(), jobs.deploymentStatus(application.get())))));
     }
 
     /**
@@ -277,13 +274,8 @@ public class DeploymentTrigger {
     /** Overrides the given instance's platform and application changes with any contained in the given change. */
     public void forceChange(ApplicationId instanceId, Change change) {
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
-            Change newChange = change.onTopOf(application.get().require(instanceId.instance()).change());
-            application = application.with(instanceId.instance(),
-                                           instance -> instance.withChange(newChange));
-            DeploymentStatus newStatus = jobs.deploymentStatus(application.get());
-            application = application.with(instanceId.instance(),
-                                           instance -> instance.withChange(remainingChange(instance, newStatus)));
-            applications().store(application);
+            applications().store(application.with(instanceId.instance(),
+                                                  instance -> withRemainingChange(instance, change.onTopOf(application.get().require(instanceId.instance()).change()), jobs.deploymentStatus(application.get()))));
         });
     }
 
@@ -300,7 +292,7 @@ public class DeploymentTrigger {
                 default: throw new IllegalArgumentException("Unknown cancellation choice '" + cancellation + "'!");
             }
             applications().store(application.with(instanceId.instance(),
-                                                  instance -> instance.withChange(change)));
+                                                  instance -> withRemainingChange(instance, change, jobs.deploymentStatus(application.get()))));
         });
     }
 
@@ -379,13 +371,16 @@ public class DeploymentTrigger {
         return status.application().require(instance).change().platform().isEmpty();
     }
 
-    private Change remainingChange(Instance instance, DeploymentStatus status) {
-        Change change = instance.change();
-        if (status.jobsToRun(Map.of(instance.name(), instance.change().withoutApplication())).isEmpty())
-            change = change.withoutPlatform();
-        if (status.jobsToRun(Map.of(instance.name(), instance.change().withoutPlatform())).isEmpty())
-            change = change.withoutApplication();
-        return change;
+    private Instance withRemainingChange(Instance instance, Change change, DeploymentStatus status) {
+        Change remaining = change;
+        if (status.jobsToRun(Map.of(instance.name(), change.withoutApplication())).isEmpty())
+            remaining = remaining.withoutPlatform();
+        if (status.jobsToRun(Map.of(instance.name(), change.withoutPlatform())).isEmpty()) {
+            remaining = remaining.withoutApplication();
+            if (change.application().isPresent())
+                instance = instance.withLatestDeployed(change.application().get());
+        }
+        return instance.withChange(remaining);
     }
 
     // ---------- Version and job helpers ----------
