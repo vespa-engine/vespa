@@ -17,6 +17,7 @@ import com.yahoo.log.LogMessage;
  *
  * @author  Bjorn Borud
  */
+@SuppressWarnings("deprecation")
 public class VerifyLogfile {
 
     public static void main (String[] args) throws IOException {

@@ -386,7 +386,9 @@ public abstract class Event implements Serializable {
      * the prettiest way to do it...
      */
     private static final void log(Logger logger, Object param) {
+        @SuppressWarnings("deprecation")
         LogRecord r = new LogRecord(LogLevel.EVENT, null);
+
         r.setParameters(new Object[] {param});
         r.setLoggerName(logger.getName());
         logger.log(r);

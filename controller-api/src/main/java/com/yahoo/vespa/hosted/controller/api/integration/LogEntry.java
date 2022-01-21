@@ -57,6 +57,7 @@ public class LogEntry {
         return message;
     }
 
+    @SuppressWarnings("deprecation")
     public static List<LogEntry> parseVespaLog(InputStream log, Instant from) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(log, UTF_8))) {
             return reader.lines()
@@ -104,6 +105,7 @@ public class LogEntry {
         return Objects.hash(id, at, type, message);
     }
 
+    @SuppressWarnings("deprecation")
     public static Type typeOf(Level level) {
         return    level.intValue() < Level.INFO.intValue() || level.intValue() == LogLevel.IntValEVENT ? Type.debug
                 : level.intValue() < Level.WARNING.intValue() ? Type.info

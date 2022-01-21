@@ -33,6 +33,7 @@ public class LogMetricsHandler extends AbstractLogHandler {
     private final List<LevelCount> logMetrics = new ArrayList<LevelCount>();
 
     // The log levels that are handled by this plugin
+    @SuppressWarnings("deprecation")
     private static final Level[] levels = {LogLevel.INFO,
             LogLevel.WARNING,
             LogLevel.SEVERE,

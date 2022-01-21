@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Bjorn Borud
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"deprecation", "removal"})
 public class LogSetupTestCase {
     // For testing zookeeper log records
     protected static LogRecord zookeeperLogRecord;
