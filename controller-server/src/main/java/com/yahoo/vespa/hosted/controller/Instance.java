@@ -188,7 +188,7 @@ public class Instance {
         return change;
     }
 
-    /** Returns the application version that last completedd roll-out to this instance. */
+    /** Returns the application version that last rolled out to this instance. */
     public Optional<ApplicationVersion> latestDeployed() {
         return latestDeployed;
     }

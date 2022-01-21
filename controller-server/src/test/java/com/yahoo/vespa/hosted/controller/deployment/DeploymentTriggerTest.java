@@ -860,6 +860,7 @@ public class DeploymentTriggerTest {
         DeploymentContext i4 = tester.newDeploymentContext("t", "a", "i4");
         ApplicationPackage applicationPackage = ApplicationPackageBuilder
                 .fromDeploymentXml("<deployment version='1'>\n" +
+                                   "  <upgrade revision='separate' />\n" +
                                    "  <parallel>\n" +
                                    "    <instance id='i1'>\n" +
                                    "      <prod>\n" +
@@ -944,8 +945,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(3));
 
         // v1 is all done in i1 and i2, but does not yet roll out in i3; v2 is not completely rolled out there yet.
-        // TODO jonmv: thie belowh new revision policy, but must be faked for now, as v1 would not wait for v0 to complete.
-        //tester.outstandingChangeDeployer().run();
+        tester.outstandingChangeDeployer().run();
         assertEquals(v0, i3.instance().change().application());
 
         // i3 completes v0, which rolls out to i4; v1 is ready for i3, but v2 is not.
