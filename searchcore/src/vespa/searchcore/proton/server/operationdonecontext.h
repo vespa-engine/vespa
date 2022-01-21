@@ -4,6 +4,8 @@
 
 #include <vespa/vespalib/util/idestructorcallback.h>
 
+namespace proton::feedtoken { class IState; }
+
 namespace proton {
 
 /**
@@ -16,13 +18,13 @@ namespace proton {
 class OperationDoneContext : public vespalib::IDestructorCallback
 {
 public:
-    using IDestructorCallback = vespalib::IDestructorCallback;
-    OperationDoneContext(IDestructorCallback::SP token);
+    OperationDoneContext(std::shared_ptr<feedtoken::IState> token, std::shared_ptr<IDestructorCallback> done_callback);
 
     ~OperationDoneContext() override;
-    bool hasToken() const { return static_cast<bool>(_token); }
+    bool is_replay() const;
 private:
-    IDestructorCallback::SP _token;
+    std::shared_ptr<feedtoken::IState> _token;
+    std::shared_ptr<vespalib::IDestructorCallback> _done_callback;
 };
 
 }  // namespace proton

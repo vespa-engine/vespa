@@ -28,7 +28,9 @@ class PutDoneContext : public OperationDoneContext
     std::shared_ptr<const document::Document> _doc;
 
 public:
-    PutDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted,
+    PutDoneContext(std::shared_ptr<feedtoken::IState> token,
+                   std::shared_ptr<vespalib::IDestructorCallback> done_callback,
+                   IPendingLidTracker::Token uncommitted,
                    std::shared_ptr<const document::Document> doc, uint32_t lid);
     ~PutDoneContext() override;
 

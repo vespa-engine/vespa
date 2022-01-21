@@ -18,6 +18,7 @@ vespa_add_library(searchcore_pcommon STATIC
     ipendinglidtracker.cpp
     operation_rate_tracker.cpp
     pendinglidtracker.cpp
+    replay_feedtoken_state.cpp
     select_utils.cpp
     selectcontext.cpp
     selectpruner.cpp

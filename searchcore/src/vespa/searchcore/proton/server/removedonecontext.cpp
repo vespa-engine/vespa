@@ -4,8 +4,8 @@
 
 namespace proton {
 
-RemoveDoneContext::RemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted)
-    : OperationDoneContext(std::move(token)),
+RemoveDoneContext::RemoveDoneContext(std::shared_ptr<feedtoken::IState> token, std::shared_ptr<IDestructorCallback> done_callback, IPendingLidTracker::Token uncommitted)
+    : OperationDoneContext(std::move(token), std::move(done_callback)),
       _uncommitted(std::move(uncommitted))
 {
 }
