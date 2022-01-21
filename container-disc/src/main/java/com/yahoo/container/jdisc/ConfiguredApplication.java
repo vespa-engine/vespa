@@ -145,7 +145,7 @@ public final class ConfiguredApplication implements Application {
         configurer = createConfigurer(builder.guiceModules().activate());
         initializeAndActivateContainer(builder);
         startReconfigurerThread();
-        portWatcher = new Thread(this::watchPortChange);
+        portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
         portWatcher.setDaemon(true);
         portWatcher.start();
         slobrokRegistrator = registerInSlobrok(qrConfig); // marks this as up
@@ -291,7 +291,7 @@ public final class ConfiguredApplication implements Application {
                 }
             }
             log.fine("Shutting down HandlersConfigurerDi");
-        });
+        }, "configured-application-reconfigurer");
         reconfigurerThread.start();
     }
 
