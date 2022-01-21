@@ -40,7 +40,7 @@ class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
 
     @Override
     public ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
-        try (final ResourceReference requestReference = request.refer()) {
+        try (final ResourceReference requestReference = request.refer(this)) {
             ContentChannel contentChannel;
             final ReferenceCountingResponseHandler referenceCountingResponseHandler
                     = new ReferenceCountingResponseHandler(request, new NullContentResponseHandler(responseHandler));
