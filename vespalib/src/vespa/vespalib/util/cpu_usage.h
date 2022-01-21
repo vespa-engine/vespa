@@ -122,8 +122,10 @@ private:
     struct SampleConflict {
         std::promise<TimedSample>       sample_promise;
         std::shared_future<TimedSample> future_sample;
+        size_t waiters;
         SampleConflict() : sample_promise(),
-                           future_sample(sample_promise.get_future()) {}
+                           future_sample(sample_promise.get_future()),
+                           waiters(0) {}
     };
 
     // Interface used to perform destructive sampling of the CPU spent

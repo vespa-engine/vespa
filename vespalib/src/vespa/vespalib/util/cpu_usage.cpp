@@ -247,6 +247,7 @@ CpuUsage::sample_or_wait()
                 _conflict = std::make_unique<SampleConflict>();
             }
             my_future = _conflict->future_sample;
+            _conflict->waiters++;
         } else {
             _sampling = true;
         }

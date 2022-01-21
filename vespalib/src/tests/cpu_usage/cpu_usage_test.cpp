@@ -225,6 +225,17 @@ struct CpuUsage::Test {
             Guard guard(my_usage._lock);
             return my_usage._threads.size();
         }
+        bool is_sampling() {
+            Guard guard(my_usage._lock);
+            return my_usage._sampling;
+        }
+        size_t count_conflicts() {
+            Guard guard(my_usage._lock);
+            if (!my_usage._conflict) {
+                return 0;
+            }
+            return my_usage._conflict->waiters;
+        }
         size_t count_simple_samples() {
             size_t result = 0;
             for (const auto &simple: simple_list) {
@@ -282,7 +293,7 @@ TEST_F("require that threads added and removed between CpuUsage sample calls are
     EXPECT_EQUAL(result.second[CpuUsage::Category::READ], duration(30ms));
 }
 
-TEST_MT_FF("require that sample conflicts are resolved correctly", 4, CpuUsage::Test::Fixture(), std::vector<CpuUsage::TimedSample>(3)) {
+TEST_MT_FF("require that sample conflicts are resolved correctly", 5, CpuUsage::Test::Fixture(), std::vector<CpuUsage::TimedSample>(num_threads - 1)) {
     if (thread_id == 0) {
         CpuUsage::Sample s1;
         s1[CpuUsage::Category::SETUP] = 10ms;
@@ -294,19 +305,30 @@ TEST_MT_FF("require that sample conflicts are resolved correctly", 4, CpuUsage::
         s4[CpuUsage::Category::COMPACT] = 40ms;
         f1.add_blocking();
         f1.add_simple(s1); // should be sampled
+        EXPECT_TRUE(!f1.is_sampling());
+        EXPECT_EQUAL(f1.count_conflicts(), 0u);
         TEST_BARRIER(); // #1
         f1.blocking->sync_entry();
+        EXPECT_TRUE(f1.is_sampling());
+        while (f1.count_conflicts() < (num_threads - 2)) {
+            // wait for appropriate number of conflicts
+            std::this_thread::sleep_for(1ms);
+        }
         f1.add_simple(s2); // should NOT be sampled (pending add)
         f1.add_remove_simple(s3); // should be sampled (pending remove);
         EXPECT_EQUAL(f1.count_threads(), 2u);
+        EXPECT_TRUE(f1.is_sampling());
+        EXPECT_EQUAL(f1.count_conflicts(), (num_threads - 2));
         f1.blocking->swap_sample(s4);
         TEST_BARRIER(); // #2
+        EXPECT_TRUE(!f1.is_sampling());
+        EXPECT_EQUAL(f1.count_conflicts(), 0u);
         EXPECT_EQUAL(f1.count_threads(), 3u);
         EXPECT_EQUAL(f2[0].second[CpuUsage::Category::SETUP],   duration(10ms));
         EXPECT_EQUAL(f2[0].second[CpuUsage::Category::READ],    duration(0ms));
         EXPECT_EQUAL(f2[0].second[CpuUsage::Category::WRITE],   duration(30ms));
         EXPECT_EQUAL(f2[0].second[CpuUsage::Category::COMPACT], duration(40ms));
-        for (size_t i = 1; i < 3; ++i) {
+        for (size_t i = 1; i < (num_threads - 1); ++i) {
             EXPECT_EQUAL(f2[i].first, f2[0].first);
             EXPECT_EQUAL(f2[i].second[CpuUsage::Category::SETUP],   f2[0].second[CpuUsage::Category::SETUP]);
             EXPECT_EQUAL(f2[i].second[CpuUsage::Category::READ],    f2[0].second[CpuUsage::Category::READ]);
