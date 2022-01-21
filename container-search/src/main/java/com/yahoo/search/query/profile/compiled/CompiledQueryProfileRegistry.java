@@ -10,6 +10,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.yolean.UncheckedInterruptedException;
 
 /**
  * A set of compiled query profiles.
@@ -28,8 +29,16 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
         QueryProfileRegistry registry = QueryProfileConfigurer.createFromConfig(config);
         typeRegistry = registry.getTypeRegistry();
         for (QueryProfile inputProfile : registry.allComponents()) {
+            abortIfInterrupted();
             register(QueryProfileCompiler.compile(inputProfile, this));
         }
+    }
+
+    // Query profile construction is very expensive and triggers no operations that automatically throws on interrupt
+    // We need to manually check the interrupt flag in case the container reconfigurer should shut down
+    private void abortIfInterrupted() {
+        if (Thread.interrupted())
+            throw new UncheckedInterruptedException("Interrupted while building query profile registry", true);
     }
 
     /** Creates a compiled query profile registry with no types */
