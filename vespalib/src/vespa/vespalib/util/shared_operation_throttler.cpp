@@ -34,7 +34,8 @@ private:
  *
  * Please keep the underlying algorithm in sync with the Java implementation,
  * as that is considered the source of truth. For descriptions of the various
- * parameters, also see the Java code.
+ * parameters, also see the Java code:
+ *   messagebus/src/main/java/com/yahoo/messagebus/DynamicThrottlePolicy.java
  */
 class DynamicThrottlePolicy {
     std::function<steady_time()> _time_provider;
