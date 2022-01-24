@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.SearchOrderer;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.processing.Processing;
@@ -30,7 +29,7 @@ public class Application {
 
     private final ApplicationPackage applicationPackage;
     private final Map<String, Schema> schemas;
-    private final DocumentModel documentModel = new DocumentModel();
+    private final DocumentModel documentModel;
 
     public Application(ApplicationPackage applicationPackage,
                        List<Schema> schemas,
@@ -92,18 +91,14 @@ public class Application {
                                                documentsOnly,
                                                processorsToSkip);
         }
-        buildDocumentModel(schemasSomewhatOrdered);
+
+        this.documentModel = new DocumentModelBuilder().build(schemasSomewhatOrdered);
     }
 
     public ApplicationPackage applicationPackage() { return applicationPackage; }
 
     /** Returns an unmodifiable list of the schemas of this application */
     public Map<String, Schema> schemas() { return schemas; }
-
-    public void buildDocumentModel(List<Schema> schemasSomewhatOrdered) {
-        var builder = new DocumentModelBuilder(documentModel);
-        builder.addToModel(schemasSomewhatOrdered);
-    }
 
     public DocumentModel documentModel() { return documentModel; }
 

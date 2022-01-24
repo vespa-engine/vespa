@@ -11,7 +11,6 @@ import com.yahoo.documentmodel.DocumentTypeRepo;
  *
  * @author baldersheim
  */
-// TODO: This should be removed in favor of Application
 public class DocumentModel {
 
     private final DocumentTypeRepo documentMan = new DocumentTypeRepo();
