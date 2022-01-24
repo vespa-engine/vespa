@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -381,13 +382,22 @@ public final class ConfiguredApplication implements Application {
         }
 
         log.info("Stop: Shutting container down");
-        configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
-        slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
-        Container.get().shutdown();
-
-        unregisterInSlobrok();
-        LogSetup.cleanup();
-        log.info("Stop: Finished");
+        CountDownLatch latch = new CountDownLatch(1);
+        activator.activateContainer(null)
+                .notifyTermination(() -> {
+                    configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
+                    slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
+                    Container.get().shutdown();
+                    unregisterInSlobrok();
+                    LogSetup.cleanup();
+                    log.info("Stop: Finished");
+                    latch.countDown();
+                });
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException("Failed to wait for container deactivation to complete", e, true);
+        }
     }
 
     private void shutdownReconfigurerThread() {
