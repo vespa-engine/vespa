@@ -33,7 +33,7 @@ public class DocumentAccessProvider implements Provider<VespaDocumentAccess> {
 
     @Override
     public void deconstruct() {
-        access.shutdown();
+        access.protectedShutdown();
     }
 
 

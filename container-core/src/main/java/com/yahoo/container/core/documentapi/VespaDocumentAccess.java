@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core.documentapi;
 
-import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AsyncParameters;
@@ -19,12 +18,14 @@ import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
-import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
+import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Wraps a lazily initialised {@link DocumentAccess}. Lazy to allow it to always be set up.
@@ -33,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author jonmv
  */
 public class VespaDocumentAccess extends DocumentAccess {
+
+    private static final Logger log = Logger.getLogger(VespaDocumentAccess.class.getName());
 
     private final MessageBusParams parameters;
 
@@ -68,6 +71,10 @@ public class VespaDocumentAccess extends DocumentAccess {
 
     @Override
     public void shutdown() {
+        log.log(Level.WARNING, "This injected document access should only be shut down by the container", new IllegalStateException());
+    }
+
+    void protectedShutdown() {
         delegate.updateAndGet(access -> {
             super.shutdown();
             shutDown = true;
