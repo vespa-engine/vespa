@@ -18,7 +18,7 @@ import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.apache.maven.plugin.AbstractMojo;
@@ -114,7 +114,7 @@ public class DocumentGenMojo extends AbstractMojo {
         annotationTypes = new HashMap<>();
 
         outputDir.mkdirs();
-        SchemaBuilder builder = buildSearches(schemasDir);
+        ApplicationBuilder builder = buildSearches(schemasDir);
 
         boolean annotationsExported=false;
         for (NewDocumentType docType : builder.getModel().getDocumentManager().getTypes()) {
@@ -134,9 +134,9 @@ public class DocumentGenMojo extends AbstractMojo {
         if (project!=null) project.addCompileSourceRoot(outputDirectory.toString());
     }
 
-    private SchemaBuilder buildSearches(File sdDir) {
+    private ApplicationBuilder buildSearches(File sdDir) {
         File[] sdFiles = sdDir.listFiles((dir, name) -> name.endsWith(".sd"));
-        SchemaBuilder builder = new SchemaBuilder(true);
+        ApplicationBuilder builder = new ApplicationBuilder(true);
         for (File f : sdFiles) {
             try {
                 long modTime = f.lastModified();

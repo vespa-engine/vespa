@@ -68,7 +68,7 @@ public class PredicateDataTypeTestCase {
                                             lowerBoundParameter(lowerBound) +
                                             upperBoundParameter(upperBound))));
 
-        ApoplicationBuilder sb = ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder sb = ApplicationBuilder.createFromString(sd);
         for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
@@ -95,7 +95,7 @@ public class PredicateDataTypeTestCase {
                                             "lower-bound: -100000000000000000L\n" + // +'L'
                                             upperBoundParameter(upperBound))));
 
-        ApoplicationBuilder sb = ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder sb = ApplicationBuilder.createFromString(sd);
         for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
@@ -113,7 +113,7 @@ public class PredicateDataTypeTestCase {
                         predicateFieldSd(
                             attributeFieldSd(
                                     arityParameter(2))));
-        ApoplicationBuilder sb = ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder sb = ApplicationBuilder.createFromString(sd);
         for (ImmutableSDField field : sb.getSchema().allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
@@ -131,7 +131,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Missing arity value in predicate field.");
-        ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder.createFromString(sd);
         fail();
     }
 
@@ -141,7 +141,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For schema 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
-        ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder.createFromString(sd);
     }
 
     @Test
@@ -150,7 +150,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For schema 'p', field 'pf': Use 'attribute' instead of 'index'. This will require a refeed if you have upgraded.");
-        ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder.createFromString(sd);
     }
 
 
@@ -160,7 +160,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid arity value in predicate field, must be greater than 1.");
-        ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder.createFromString(sd);
     }
 
     @Test
@@ -169,7 +169,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Arity parameter is used only for predicate type fields.");
-        ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder.createFromString(sd);
     }
 
     @Test
@@ -181,7 +181,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Parameters lower-bound and upper-bound are used only for predicate type fields.");
-        ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder.createFromString(sd);
     }
 
     @Test
@@ -193,7 +193,7 @@ public class PredicateDataTypeTestCase {
 
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Collections of predicates are not allowed.");
-        ApoplicationBuilder.createFromString(sd);
+        ApplicationBuilder.createFromString(sd);
     }
 
 }

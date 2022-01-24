@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 /**
  * @author gjoranv
  */
-public class SchemaBuilderTest extends ContainerModelBuilderTestBase {
+public class ApplicationBuilderTest extends ContainerModelBuilderTestBase {
 
     private ChainsConfig chainsConfig() {
         return root.getConfig(ChainsConfig.class, "default/component/com.yahoo.search.handler.SearchHandler");

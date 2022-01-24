@@ -14,13 +14,10 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
-import com.yahoo.searchdefinition.derived.SearchOrderer;
-import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchdefinition.parser.SDParser;
 import com.yahoo.searchdefinition.parser.SimpleCharStream;
 import com.yahoo.searchdefinition.parser.TokenMgrException;
-import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.searchdefinition.processing.Processor;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -45,7 +42,7 @@ import java.util.Set;
  * 2) provide the available rank types and rank expressions, using the setRankXXX() methods,
  * 3) invoke the {@link #build()} method
  */
-public class SchemaBuilder {
+public class ApplicationBuilder {
 
     private final ApplicationPackage applicationPackage;
     private final List<Schema> schemas = new ArrayList<>();
@@ -63,65 +60,65 @@ public class SchemaBuilder {
     private final Set<Class<? extends Processor>> processorsToSkip = new HashSet<>();
 
     /** For testing only */
-    public SchemaBuilder() {
+    public ApplicationBuilder() {
         this(new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /** For testing only */
-    public SchemaBuilder(DeployLogger deployLogger) {
+    public ApplicationBuilder(DeployLogger deployLogger) {
         this(MockApplicationPackage.createEmpty(), deployLogger);
     }
 
     /** For testing only */
-    public SchemaBuilder(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
+    public ApplicationBuilder(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
         this(MockApplicationPackage.createEmpty(), deployLogger, rankProfileRegistry);
     }
 
     /** Used for generating documents for typed access to document fields in Java */
-    public SchemaBuilder(boolean documentsOnly) {
+    public ApplicationBuilder(boolean documentsOnly) {
         this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry(), documentsOnly);
     }
 
     /** For testing only */
-    public SchemaBuilder(ApplicationPackage app, DeployLogger deployLogger) {
+    public ApplicationBuilder(ApplicationPackage app, DeployLogger deployLogger) {
         this(app, new MockFileRegistry(), deployLogger, new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /** For testing only */
-    public SchemaBuilder(ApplicationPackage app, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
+    public ApplicationBuilder(ApplicationPackage app, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry) {
         this(app, new MockFileRegistry(), deployLogger, new TestProperties(), rankProfileRegistry, new QueryProfileRegistry());
     }
 
     /** For testing only */
-    public SchemaBuilder(RankProfileRegistry rankProfileRegistry) {
+    public ApplicationBuilder(RankProfileRegistry rankProfileRegistry) {
         this(rankProfileRegistry, new QueryProfileRegistry());
     }
 
     /** For testing only */
-    public SchemaBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
+    public ApplicationBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry) {
         this(rankProfileRegistry, queryProfileRegistry, new TestProperties());
     }
 
-    public SchemaBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry, ModelContext.Properties properties) {
+    public ApplicationBuilder(RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfileRegistry, ModelContext.Properties properties) {
         this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), properties, rankProfileRegistry, queryProfileRegistry);
     }
 
-    public SchemaBuilder(ApplicationPackage app,
-                         FileRegistry fileRegistry,
-                         DeployLogger deployLogger,
-                         ModelContext.Properties properties,
-                         RankProfileRegistry rankProfileRegistry,
-                         QueryProfileRegistry queryProfileRegistry) {
+    public ApplicationBuilder(ApplicationPackage app,
+                              FileRegistry fileRegistry,
+                              DeployLogger deployLogger,
+                              ModelContext.Properties properties,
+                              RankProfileRegistry rankProfileRegistry,
+                              QueryProfileRegistry queryProfileRegistry) {
         this(app, fileRegistry, deployLogger, properties, rankProfileRegistry, queryProfileRegistry, false);
     }
 
-    private SchemaBuilder(ApplicationPackage applicationPackage,
-                          FileRegistry fileRegistry,
-                          DeployLogger deployLogger,
-                          ModelContext.Properties properties,
-                          RankProfileRegistry rankProfileRegistry,
-                          QueryProfileRegistry queryProfileRegistry,
-                          boolean documentsOnly) {
+    private ApplicationBuilder(ApplicationPackage applicationPackage,
+                               FileRegistry fileRegistry,
+                               DeployLogger deployLogger,
+                               ModelContext.Properties properties,
+                               RankProfileRegistry rankProfileRegistry,
+                               QueryProfileRegistry queryProfileRegistry,
+                               boolean documentsOnly) {
         this.applicationPackage = applicationPackage;
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
@@ -303,22 +300,22 @@ public class SchemaBuilder {
      * Convenience factory method to import and build a {@link Schema} object from a string.
      *
      * @param sd the string to build from
-     * @return the built {@link SchemaBuilder} object
+     * @return the built {@link ApplicationBuilder} object
      * @throws ParseException thrown if there is a problem parsing the string
      */
-    public static SchemaBuilder createFromString(String sd) throws ParseException {
+    public static ApplicationBuilder createFromString(String sd) throws ParseException {
         return createFromString(sd, new BaseDeployLogger());
     }
 
-    public static SchemaBuilder createFromString(String sd, DeployLogger logger) throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder(logger);
+    public static ApplicationBuilder createFromString(String sd, DeployLogger logger) throws ParseException {
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
         builder.addSchema(sd);
         builder.build(true);
         return builder;
     }
 
-    public static SchemaBuilder createFromStrings(DeployLogger logger, String ... schemas) throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder(logger);
+    public static ApplicationBuilder createFromStrings(DeployLogger logger, String ... schemas) throws ParseException {
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
         for (var schema : schemas)
             builder.addSchema(schema);
         builder.build(true);
@@ -329,26 +326,26 @@ public class SchemaBuilder {
      * Convenience factory method to import and build a {@link Schema} object from a file. Only for testing.
      *
      * @param fileName the file to build from
-     * @return the built {@link SchemaBuilder} object
+     * @return the built {@link ApplicationBuilder} object
      * @throws IOException    if there was a problem reading the file.
      * @throws ParseException if there was a problem parsing the file content.
      */
-    public static SchemaBuilder createFromFile(String fileName) throws IOException, ParseException {
+    public static ApplicationBuilder createFromFile(String fileName) throws IOException, ParseException {
         return createFromFile(fileName, new BaseDeployLogger());
     }
 
     /**
      * Convenience factory methdd to create a SearchBuilder from multiple SD files. Only for testing.
      */
-    public static SchemaBuilder createFromFiles(Collection<String> fileNames) throws IOException, ParseException {
+    public static ApplicationBuilder createFromFiles(Collection<String> fileNames) throws IOException, ParseException {
         return createFromFiles(fileNames, new BaseDeployLogger());
     }
 
-    public static SchemaBuilder createFromFile(String fileName, DeployLogger logger) throws IOException, ParseException {
+    public static ApplicationBuilder createFromFile(String fileName, DeployLogger logger) throws IOException, ParseException {
         return createFromFile(fileName, logger, new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
-    private static SchemaBuilder createFromFiles(Collection<String> fileNames, DeployLogger logger) throws IOException, ParseException {
+    private static ApplicationBuilder createFromFiles(Collection<String> fileNames, DeployLogger logger) throws IOException, ParseException {
         return createFromFiles(fileNames, new MockFileRegistry(), logger, new TestProperties(), new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
@@ -358,14 +355,14 @@ public class SchemaBuilder {
      * @param fileName the file to build from.
      * @param deployLogger logger for deploy messages.
      * @param rankProfileRegistry registry for rank profiles.
-     * @return the built {@link SchemaBuilder} object.
+     * @return the built {@link ApplicationBuilder} object.
      * @throws IOException    if there was a problem reading the file.
      * @throws ParseException if there was a problem parsing the file content.
      */
-    private static SchemaBuilder createFromFile(String fileName,
-                                                DeployLogger deployLogger,
-                                                RankProfileRegistry rankProfileRegistry,
-                                                QueryProfileRegistry queryprofileRegistry)
+    private static ApplicationBuilder createFromFile(String fileName,
+                                                     DeployLogger deployLogger,
+                                                     RankProfileRegistry rankProfileRegistry,
+                                                     QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
         return createFromFiles(Collections.singletonList(fileName), new MockFileRegistry(), deployLogger, new TestProperties(),
                                rankProfileRegistry, queryprofileRegistry);
@@ -374,19 +371,19 @@ public class SchemaBuilder {
     /**
      * Convenience factory methdd to create a SearchBuilder from multiple SD files..
      */
-    private static SchemaBuilder createFromFiles(Collection<String> fileNames,
-                                                 FileRegistry fileRegistry,
-                                                 DeployLogger deployLogger,
-                                                 ModelContext.Properties properties,
-                                                 RankProfileRegistry rankProfileRegistry,
-                                                 QueryProfileRegistry queryprofileRegistry)
+    private static ApplicationBuilder createFromFiles(Collection<String> fileNames,
+                                                      FileRegistry fileRegistry,
+                                                      DeployLogger deployLogger,
+                                                      ModelContext.Properties properties,
+                                                      RankProfileRegistry rankProfileRegistry,
+                                                      QueryProfileRegistry queryprofileRegistry)
             throws IOException, ParseException {
-        SchemaBuilder builder = new SchemaBuilder(MockApplicationPackage.createEmpty(),
-                                                  fileRegistry,
-                                                  deployLogger,
-                                                  properties,
-                                                  rankProfileRegistry,
-                                                  queryprofileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(MockApplicationPackage.createEmpty(),
+                                                            fileRegistry,
+                                                            deployLogger,
+                                                            properties,
+                                                            rankProfileRegistry,
+                                                            queryprofileRegistry);
         for (String fileName : fileNames) {
             builder.addSchemaFile(fileName);
         }
@@ -395,39 +392,39 @@ public class SchemaBuilder {
     }
 
 
-    public static SchemaBuilder createFromDirectory(String dir, FileRegistry fileRegistry, DeployLogger logger, ModelContext.Properties properties) throws IOException, ParseException {
+    public static ApplicationBuilder createFromDirectory(String dir, FileRegistry fileRegistry, DeployLogger logger, ModelContext.Properties properties) throws IOException, ParseException {
         return createFromDirectory(dir, fileRegistry, logger, properties, new RankProfileRegistry());
     }
-    public static SchemaBuilder createFromDirectory(String dir,
-                                                    FileRegistry fileRegistry,
-                                                    DeployLogger logger,
-                                                    ModelContext.Properties properties,
-                                                    RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
+    public static ApplicationBuilder createFromDirectory(String dir,
+                                                         FileRegistry fileRegistry,
+                                                         DeployLogger logger,
+                                                         ModelContext.Properties properties,
+                                                         RankProfileRegistry rankProfileRegistry) throws IOException, ParseException {
         return createFromDirectory(dir, fileRegistry, logger, properties, rankProfileRegistry, createQueryProfileRegistryFromDirectory(dir));
     }
-    private static SchemaBuilder createFromDirectory(String dir,
-                                                     FileRegistry fileRegistry,
-                                                     DeployLogger logger,
-                                                     ModelContext.Properties properties,
-                                                     RankProfileRegistry rankProfileRegistry,
-                                                     QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
+    private static ApplicationBuilder createFromDirectory(String dir,
+                                                          FileRegistry fileRegistry,
+                                                          DeployLogger logger,
+                                                          ModelContext.Properties properties,
+                                                          RankProfileRegistry rankProfileRegistry,
+                                                          QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
         return createFromDirectory(dir, MockApplicationPackage.fromSearchDefinitionAndRootDirectory(dir), fileRegistry, logger, properties,
                                    rankProfileRegistry, queryProfileRegistry);
     }
 
-    private static SchemaBuilder createFromDirectory(String dir,
-                                                     ApplicationPackage applicationPackage,
-                                                     FileRegistry fileRegistry,
-                                                     DeployLogger deployLogger,
-                                                     ModelContext.Properties properties,
-                                                     RankProfileRegistry rankProfileRegistry,
-                                                     QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
-        SchemaBuilder builder = new SchemaBuilder(applicationPackage,
-                                                  fileRegistry,
-                                                  deployLogger,
-                                                  properties,
-                                                  rankProfileRegistry,
-                                                  queryProfileRegistry);
+    private static ApplicationBuilder createFromDirectory(String dir,
+                                                          ApplicationPackage applicationPackage,
+                                                          FileRegistry fileRegistry,
+                                                          DeployLogger deployLogger,
+                                                          ModelContext.Properties properties,
+                                                          RankProfileRegistry rankProfileRegistry,
+                                                          QueryProfileRegistry queryProfileRegistry) throws IOException, ParseException {
+        ApplicationBuilder builder = new ApplicationBuilder(applicationPackage,
+                                                            fileRegistry,
+                                                            deployLogger,
+                                                            properties,
+                                                            rankProfileRegistry,
+                                                            queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
             builder.addSchemaFile(i.next());
         }
@@ -493,13 +490,13 @@ public class SchemaBuilder {
      * Convenience factory method to import and build a {@link Schema} object from a raw object.
      *
      * @param rawSchema the raw object to build from
-     * @return the built {@link SchemaBuilder} object
+     * @return the built {@link ApplicationBuilder} object
      * @see #addSchemaFile(Schema)
      */
-    public static SchemaBuilder createFromRawSchema(Schema rawSchema,
-                                                    RankProfileRegistry rankProfileRegistry,
-                                                    QueryProfileRegistry queryProfileRegistry) {
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry, queryProfileRegistry);
+    public static ApplicationBuilder createFromRawSchema(Schema rawSchema,
+                                                         RankProfileRegistry rankProfileRegistry,
+                                                         QueryProfileRegistry queryProfileRegistry) {
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry, queryProfileRegistry);
         builder.addSchemaFile(rawSchema);
         builder.build();
         return builder;

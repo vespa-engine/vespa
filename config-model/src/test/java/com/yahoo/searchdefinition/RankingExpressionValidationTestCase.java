@@ -32,7 +32,7 @@ public class RankingExpressionValidationTestCase extends AbstractSchemaTestCase 
     }
 
     private Schema importWithExpression(String expression, RankProfileRegistry registry) throws ParseException {
-        ApoplicationBuilder builder = new ApoplicationBuilder(registry);
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
         builder.addSchema("search test {" +
                           "    document test { " +
                           "        field a type string { " +

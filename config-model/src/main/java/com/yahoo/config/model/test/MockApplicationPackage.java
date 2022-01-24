@@ -19,7 +19,7 @@ import com.yahoo.io.reader.NamedReader;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -118,15 +118,15 @@ public class MockApplicationPackage implements ApplicationPackage {
     @Override
     public List<NamedReader> getSchemas() {
         ArrayList<NamedReader> readers = new ArrayList<>();
-        SchemaBuilder schemaBuilder = new SchemaBuilder(this,
-                                                        new MockFileRegistry(),
-                                                        new BaseDeployLogger(),
-                                                        new TestProperties(),
-                                                        new RankProfileRegistry(),
-                                                        queryProfileRegistry);
+        ApplicationBuilder applicationBuilder = new ApplicationBuilder(this,
+                                                                       new MockFileRegistry(),
+                                                                       new BaseDeployLogger(),
+                                                                       new TestProperties(),
+                                                                       new RankProfileRegistry(),
+                                                                       queryProfileRegistry);
         for (String sd : schemas) {
             try  {
-                String name = schemaBuilder.addSchema(sd).getName();
+                String name = applicationBuilder.addSchema(sd).getName();
                 readers.add(new NamedReader(name + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
             } catch (ParseException e) {
                 throw new RuntimeException(e);

@@ -8,7 +8,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.ApoplicationBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
@@ -74,7 +74,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        schema = ApoplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check il script addition
@@ -101,7 +101,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         field2.parseIndexingScript("{ summary | index }");
         field2.setLiteralBoost(20);
 
-        schema = ApoplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
+        schema = ApplicationBuilder.buildFromRawSchema(schema, rankProfileRegistry, new QueryProfileRegistry());
         new DerivedConfiguration(schema, rankProfileRegistry);
         assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                                      "clear_state | guard { input body | tokenize normalize stem:\"BEST\" | summary body | index body; }",

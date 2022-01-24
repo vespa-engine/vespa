@@ -25,7 +25,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfileRegistry = new QueryProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -91,7 +91,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNameCollision() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -125,7 +125,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNegativeLiteralArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -150,7 +150,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNegativeConstantArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -180,7 +180,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testConstantDivisorInFunction() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -203,7 +203,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
     @Test
     public void test3() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +

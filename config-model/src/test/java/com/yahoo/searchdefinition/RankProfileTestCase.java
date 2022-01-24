@@ -70,7 +70,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     public void requireThatIllegalInheritanceIsChecked() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            ApoplicationBuilder builder = new ApoplicationBuilder(registry, setupQueryProfileTypes());
+            ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
             builder.addSchema(joinLines(
                     "search test {",
                     "  document test { } ",
@@ -87,7 +87,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     public void requireThatSelfInheritanceIsIllegal() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            ApoplicationBuilder builder = new ApoplicationBuilder(registry, setupQueryProfileTypes());
+            ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
             builder.addSchema(joinLines(
                     "schema test {",
                     "  document test { } ",
@@ -103,7 +103,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatSelfInheritanceIsLegalWhenOverloading() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(registry, setupQueryProfileTypes());
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
                 "schema base {",
                 "  document base { } ",
@@ -120,7 +120,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatSidewaysInheritanceIsImpossible() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(registry, setupQueryProfileTypes());
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
                 "schema child1 {",
                 "  document child1 {",
@@ -173,7 +173,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatDefaultCanAlwaysBeInherited() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(registry, setupQueryProfileTypes());
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
                 "schema test {",
                 "  document test { } ",
@@ -186,7 +186,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     public void requireThatCyclicInheritanceIsIllegal() throws ParseException {
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
-            ApoplicationBuilder builder = new ApoplicationBuilder(registry, setupQueryProfileTypes());
+            ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
             builder.addSchema(joinLines(
                     "search test {",
                     "  document test { } ",
@@ -205,7 +205,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     public void requireThatRankProfilesCanInheritNotYetSeenProfiles() throws ParseException
     {
         RankProfileRegistry registry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(registry, setupQueryProfileTypes());
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
                 "search test {",
                 "  document test { } ",
@@ -247,7 +247,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
 
     private void verifyTermwiseLimitAndSomeMoreIncludingInheritance(ModelContext.Properties deployProperties, String sd, Double termwiseLimit) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(sd);
         builder.build();
         Schema schema = builder.getSchema();
@@ -280,7 +280,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatConfigIsDerivedForAttributeTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(registry);
+        ApplicationBuilder builder = new ApplicationBuilder(registry);
         builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
@@ -304,7 +304,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatDenseDimensionsMustBeBound() throws ParseException {
         try {
-            ApoplicationBuilder builder = new ApoplicationBuilder(new RankProfileRegistry());
+            ApplicationBuilder builder = new ApplicationBuilder(new RankProfileRegistry());
             builder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
@@ -333,7 +333,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatConfigIsDerivedForQueryFeatureTypeSettings() throws ParseException {
         RankProfileRegistry registry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(registry, setupQueryProfileTypes());
+        ApplicationBuilder builder = new ApplicationBuilder(registry, setupQueryProfileTypes());
         builder.addSchema(joinLines(
                 "search test {",
                 "  document test { } ",

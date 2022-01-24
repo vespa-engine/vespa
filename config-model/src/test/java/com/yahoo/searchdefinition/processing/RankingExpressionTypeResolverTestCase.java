@@ -7,7 +7,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.TensorFieldType;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.ApoplicationBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
@@ -33,7 +33,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void tensorFirstPhaseMustProduceDouble() throws Exception {
         try {
-            ApoplicationBuilder builder = new ApoplicationBuilder();
+            ApplicationBuilder builder = new ApplicationBuilder();
             builder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
@@ -61,7 +61,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void tensorFirstPhaseFromConstantMustProduceDouble() throws Exception {
         try {
-            ApoplicationBuilder builder = new ApoplicationBuilder();
+            ApplicationBuilder builder = new ApplicationBuilder();
             builder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
@@ -110,7 +110,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void tensorSecondPhaseMustProduceDouble() throws Exception {
         try {
-            ApoplicationBuilder builder = new ApoplicationBuilder();
+            ApplicationBuilder builder = new ApplicationBuilder();
             builder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
@@ -140,7 +140,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void tensorConditionsMustHaveTypeCompatibleBranches() throws Exception {
         try {
-            ApoplicationBuilder schemaBuilder = new ApoplicationBuilder();
+            ApplicationBuilder schemaBuilder = new ApplicationBuilder();
             schemaBuilder.addSchema(joinLines(
                     "search test {",
                     "  document test { ",
@@ -172,7 +172,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void testFunctionInvocationTypes() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
+        ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
@@ -205,7 +205,7 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void testTensorFunctionInvocationTypes_Nested() throws Exception {
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
@@ -247,7 +247,7 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void testAttributeInvocationViaBoundIdentifier() throws Exception {
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchema(joinLines(
                                  "search newsarticle {",
                                  "    document newsarticle {",
@@ -286,7 +286,7 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void testTensorFunctionInvocationTypes_NestedSameName() throws Exception {
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
@@ -331,7 +331,7 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void testTensorFunctionInvocationTypes_viaFuncWithExpr() throws Exception {
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchema(joinLines(
                                  "search test {",
                                  "    document test {",
@@ -353,7 +353,7 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void importedFieldsAreAvailable() throws Exception {
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchema(joinLines(
                 "search parent {",
                 "  document parent {",
@@ -384,7 +384,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void undeclaredQueryFeaturesAreAccepted() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        ApoplicationBuilder builder = new ApoplicationBuilder(logger);
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
         builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
@@ -410,7 +410,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void undeclaredQueryFeaturesAreAcceptedWithWarningWhenUsingTensors() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        ApoplicationBuilder builder = new ApoplicationBuilder(logger);
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
         builder.addSchema(joinLines(
                 "search test {",
                 "  document test { ",
@@ -439,7 +439,7 @@ public class RankingExpressionTypeResolverTestCase {
     @Test
     public void noWarningWhenUsingTensorsWhenQueryFeaturesAreDeclared() throws Exception {
         InspectableDeployLogger logger = new InspectableDeployLogger();
-        ApoplicationBuilder builder = new ApoplicationBuilder(logger);
+        ApplicationBuilder builder = new ApplicationBuilder(logger);
         QueryProfileType myType = new QueryProfileType("mytype");
         myType.addField(new FieldDescription("rank.feature.query(foo)",
                                              new TensorFieldType(TensorType.fromSpec("tensor(d[2])"))),

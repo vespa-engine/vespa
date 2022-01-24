@@ -6,7 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.ApoplicationBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -41,7 +41,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void requireThatIndexedStructFieldCanBeInherited() throws IOException, ParseException {
         String dir = "src/test/derived/inheritstruct/";
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "parent.sd");
         builder.addSchemaFile(dir + "child.sd");
         builder.build();
@@ -64,7 +64,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         List<String> files = Arrays.asList("grandparent.sd", "mother.sd", "father.sd", "child.sd");
         File outDir = tmpDir.newFolder("out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
-            ApoplicationBuilder builder = new ApoplicationBuilder();
+            ApplicationBuilder builder = new ApplicationBuilder();
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
                 builder.addSchemaFile(dir + fileName);
@@ -111,7 +111,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void requireThatStructTypesAreInheritedFromParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromparent/";
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "parent.sd");
         builder.addSchemaFile(dir + "child.sd");
         builder.build();
@@ -122,7 +122,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void requireThatStructTypesAreInheritedFromGrandParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromgrandparent/";
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "grandparent.sd");
         builder.addSchemaFile(dir + "parent.sd");
         builder.addSchemaFile(dir + "child.sd");
@@ -134,7 +134,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void testInheritance() throws IOException, ParseException {
         String dir = "src/test/derived/inheritance/";
-        ApoplicationBuilder builder = new ApoplicationBuilder();
+        ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "grandparent.sd");
         builder.addSchemaFile(dir + "father.sd");
         builder.addSchemaFile(dir + "mother.sd");

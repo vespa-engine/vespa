@@ -31,7 +31,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -468,8 +468,8 @@ public class DeployState implements ConfigDefinitionStore {
         private Application createApplication(RankProfileRegistry rankProfileRegistry,
                                               QueryProfiles queryProfiles,
                                               ValidationParameters validationParameters) {
-            SchemaBuilder builder = new SchemaBuilder(applicationPackage, fileRegistry, logger, properties,
-                                                      rankProfileRegistry, queryProfiles.getRegistry());
+            ApplicationBuilder builder = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
+                                                                rankProfileRegistry, queryProfiles.getRegistry());
             builder.importFromApplicationPackage();
             builder.build(! validationParameters.ignoreValidationErrors());
             return builder.application();
