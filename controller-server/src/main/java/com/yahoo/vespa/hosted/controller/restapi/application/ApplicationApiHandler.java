@@ -70,6 +70,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
@@ -1718,7 +1719,19 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         TenantName tenant = TenantName.from(tenantName);
         Inspector requestObject = toSlime(request.getData()).get();
         controller.tenants().create(accessControlRequests.specification(tenant, requestObject),
-                                    accessControlRequests.credentials(tenant, requestObject, request.getJDiscRequest()));
+                accessControlRequests.credentials(tenant, requestObject, request.getJDiscRequest()));
+        if (controller.system().isPublic()) {
+            User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
+            TenantInfo info = controller.tenants().require(tenant, CloudTenant.class)
+                    .info()
+                    .withContactName(user.name())
+                    .withContactEmail(user.email());
+            // Store changes
+            controller.tenants().lockOrThrow(tenant, LockedTenant.Cloud.class, lockedTenant -> {
+                lockedTenant = lockedTenant.withInfo(info);
+                controller.tenants().store(lockedTenant);
+            });
+        }
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
