@@ -474,31 +474,13 @@ public class DeployState implements ConfigDefinitionStore {
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
                                                               QueryProfiles queryProfiles,
                                                               ValidationParameters validationParameters) {
-            Collection<NamedReader> readers = applicationPackage.getSchemas();
             SchemaBuilder builder = new SchemaBuilder(applicationPackage, fileRegistry, logger, properties,
                                                       rankProfileRegistry, queryProfiles.getRegistry());
-            for (NamedReader reader : readers) {
-                try {
-                    String readerName = reader.getName();
-                    String topLevelName = builder.importReader(reader, readerName);
-                } catch (ParseException e) {
-                    throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
-                } catch (IOException e) {
-                    throw new IllegalArgumentException("Could not read schema file '" + reader.getName() + "'", e);
-                } finally {
-                    closeIgnoreException(reader.getReader());
-                }
-            }
+            builder.importFromApplicationPackage();
             builder.build(! validationParameters.ignoreValidationErrors());
             return SearchDocumentModel.fromBuilder(builder);
         }
 
-        @SuppressWarnings("EmptyCatchBlock")
-        private static void closeIgnoreException(Reader reader) {
-            try {
-                reader.close();
-            } catch(Exception e) {}
-        }
     }
 
 }

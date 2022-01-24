@@ -28,6 +28,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -148,22 +149,34 @@ public class SchemaBuilder {
         return importFile(file.toString());
     }
 
+    public void importFromApplicationPackage() {
+        for (NamedReader reader : application.applicationPackage().getSchemas()) {
+            try {
+                importFrom(reader);
+            } catch (ParseException e) {
+                throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Could not read schema file '" + reader.getName() + "'", e);
+            } finally {
+                closeIgnoreException(reader.getReader());
+            }
+        }
+    }
+
     /**
      * Reads and parses the schema string provided by the given reader. Once all schemas have been
      * imported, call {@link #build()}.
      *
      * @param reader       the reader whose content to import
-     * @param schemaDir the path to use when resolving file references
      * @return the name of the imported schema
      * @throws ParseException thrown if the file does not contain a valid search definition
      */
-    public String importReader(NamedReader reader, String schemaDir) throws IOException, ParseException {
-        String schemaName = importString(IOUtils.readAll(reader), schemaDir);
+    private String importFrom(NamedReader reader) throws IOException, ParseException {
+        String schemaName = importString(IOUtils.readAll(reader), reader.getName());
         String schemaFileName = stripSuffix(reader.getName(), ApplicationPackage.SD_NAME_SUFFIX);
         if ( ! schemaFileName.equals(schemaName)) {
-            throw new IllegalArgumentException("Schema file name ('" + schemaFileName + "') and name of " +
-                                               "top level element ('" + schemaName +
-                                               "') are not equal for file '" + reader.getName() + "'");
+            throw new IllegalArgumentException("The file containing schema '" + schemaName + "' must be named '" +
+                                               schemaName + ApplicationPackage.SD_NAME_SUFFIX + "', not " + reader.getName());
         }
         return schemaName;
     }
@@ -563,4 +576,10 @@ public class SchemaBuilder {
 
     public DeployLogger getDeployLogger() { return deployLogger; }
 
+    @SuppressWarnings("EmptyCatchBlock")
+    private static void closeIgnoreException(Reader reader) {
+        try {
+            reader.close();
+        } catch(Exception e) {}
+    }
 }
