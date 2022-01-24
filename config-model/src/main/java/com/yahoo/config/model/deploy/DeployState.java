@@ -476,7 +476,7 @@ public class DeployState implements ConfigDefinitionStore {
                                                       rankProfileRegistry, queryProfiles.getRegistry());
             builder.importFromApplicationPackage();
             builder.build(! validationParameters.ignoreValidationErrors());
-            return SearchDocumentModel.fromBuilder(builder);
+            return new SearchDocumentModel(builder);
         }
 
     }

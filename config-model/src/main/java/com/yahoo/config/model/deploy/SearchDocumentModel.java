@@ -19,9 +19,9 @@ public class SearchDocumentModel {
     private final DocumentModel documentModel;
     private final List<Schema> schemas;
 
-    public SearchDocumentModel(DocumentModel documentModel, List<Schema> schemas) {
-        this.documentModel = documentModel;
-        this.schemas = schemas;
+    public SearchDocumentModel(SchemaBuilder builder) {
+        this.documentModel = builder.getModel();
+        this.schemas = builder.getSchemaList();
     }
 
     public DocumentModel getDocumentModel() {
@@ -30,14 +30,6 @@ public class SearchDocumentModel {
 
     public List<Schema> getSchemas() {
         return schemas;
-    }
-
-    public static SearchDocumentModel fromBuilder(SchemaBuilder builder) {
-        List<Schema> ret = new ArrayList<>();
-        for (Schema schema : builder.getSchemaList()) {
-            ret.add(schema);
-        }
-        return new SearchDocumentModel(builder.getModel(), ret);
     }
 
 }
