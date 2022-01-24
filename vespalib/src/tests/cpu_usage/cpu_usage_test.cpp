@@ -60,28 +60,26 @@ void verify_sampling(size_t thread_id, size_t num_threads, std::vector<Sampler*>
         TEST_BARRIER(); // #1
         auto t0 = steady_clock::now();
         std::vector<duration> pre_usage = sample(samplers);
-        auto pre_total = cpu_usage::RUsage::sample();
+        auto pre_total = cpu_usage::total_cpu_usage();
         TEST_BARRIER(); // #2
         TEST_BARRIER(); // #3
         auto t1 = steady_clock::now();
         std::vector<duration> post_usage = sample(samplers);
-        auto post_total = cpu_usage::RUsage::sample();
+        auto post_total = cpu_usage::total_cpu_usage();
         TEST_BARRIER(); // #4
         double wall = to_s(t1 - t0);
         std::vector<double> load(4, 0.0);
         for (size_t i = 0; i < 4; ++i) {
             load[i] = to_s(post_usage[i] - pre_usage[i]) / wall;
         }
-        double user_load = to_s(post_total.user - pre_total.user) / wall;
-        double system_load = to_s(post_total.system - pre_total.system) / wall;
-        double total_load = to_s(post_total.total() - pre_total.total()) / wall;
+        double total_load = to_s(post_total - pre_total) / wall;
         EXPECT_GREATER(load[3], load[0]);
         // NB: cannot expect total_load to be greater than load[3]
         // here due to mock loads being 'as expected' while valgrind
         // will cut all loads in about half.
         EXPECT_GREATER(total_load, load[0]);
-        fprintf(stderr, "loads: { %.2f, %.2f, %.2f, %.2f }\n", load[0], load[1], load[2], load[3]);
-        fprintf(stderr, "total load: %.2f (user: %.2f, system: %.2f)\n", total_load, user_load, system_load);
+        fprintf(stderr, "loads: { %.3f, %.3f, %.3f, %.3f }\n", load[0], load[1], load[2], load[3]);
+        fprintf(stderr, "total load: %.3f\n", total_load);
     } else {
         int idx = (thread_id - 1);
         double target_load = double(thread_id - 1) / (num_threads - 2);
@@ -114,9 +112,9 @@ TEST("measure thread CPU clock overhead") {
     fprintf(stderr, "approx overhead per sample (thread CPU clock): %f us\n", min_time_us);
 }
 
-TEST("measure RUsage overhead") {
+TEST("measure total cpu usage overhead") {
     duration d;
-    double min_time_us = BenchmarkTimer::benchmark([&d]() noexcept { d = cpu_usage::RUsage::sample().total(); }, budget) * 1000000.0;
+    double min_time_us = BenchmarkTimer::benchmark([&d]() noexcept { d = cpu_usage::total_cpu_usage(); }, budget) * 1000000.0;
     fprintf(stderr, "approx overhead per RUsage sample: %f us\n", min_time_us);
 }
 
@@ -437,7 +435,7 @@ void do_sample_cpu_usage(const EndTime &end_time) {
             if (!body.empty()) {
                 body.append(", ");
             }
-            body.append(fmt("%s: %.2f", CpuUsage::name_of(CpuUsage::Category(i)).c_str(), load[i]));
+            body.append(fmt("%s: %.3f", CpuUsage::name_of(CpuUsage::Category(i)).c_str(), load[i]));
         }
         fprintf(stderr, "CPU: %s\n", body.c_str());
     }
