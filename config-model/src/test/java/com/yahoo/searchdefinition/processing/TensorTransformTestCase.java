@@ -141,7 +141,7 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfiles = setupQueryProfileTypes();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry, queryProfiles);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field double_field type double { \n" +

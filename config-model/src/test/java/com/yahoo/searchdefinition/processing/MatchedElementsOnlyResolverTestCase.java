@@ -176,16 +176,16 @@ public class MatchedElementsOnlyResolverTestCase {
 
     private Schema buildSearch(String field, String summary) throws ParseException {
         var builder = new SchemaBuilder(new RankProfileRegistry());
-        builder.importString(joinLines("search test {",
-                "  document test {",
-                "    struct elem {",
-                "      field name type string {}",
-                "      field weight type int {}",
-                "    }",
-                field,
-                "  }",
-                summary,
-                "}"));
+        builder.addSchema(joinLines("search test {",
+                                    "  document test {",
+                                    "    struct elem {",
+                                    "      field name type string {}",
+                                    "      field weight type int {}",
+                                    "    }",
+                                    field,
+                                    "  }",
+                                    summary,
+                                    "}"));
         builder.build();
         return builder.getSchema();
     }

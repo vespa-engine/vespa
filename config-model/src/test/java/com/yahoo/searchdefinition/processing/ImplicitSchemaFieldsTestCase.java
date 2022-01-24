@@ -83,7 +83,7 @@ public class ImplicitSchemaFieldsTestCase extends AbstractSchemaTestCase {
     @Test
     public void testRequireThatDerivedConfigurationWorks() throws IOException, ParseException {
         SchemaBuilder sb = new SchemaBuilder();
-        sb.importFile("src/test/examples/nextgen/simple.sd");
+        sb.addSchemaFile("src/test/examples/nextgen/simple.sd");
         sb.build();
         assertNotNull(sb.getSchema());
         new DerivedConfiguration(sb.getSchema(), sb.getRankProfileRegistry());

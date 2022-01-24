@@ -29,7 +29,7 @@ public class RankingConstantTest {
         final String TENSOR_TYPE = "tensor(x{})";
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
-        schemaBuilder.importString(joinLines(
+        schemaBuilder.addSchema(joinLines(
                 "search test {",
                 "  document test { }",
                 "  rank-profile my_rank_profile {",
@@ -62,7 +62,7 @@ public class RankingConstantTest {
         SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("must have a type");
-        schemaBuilder.importString(joinLines(
+        schemaBuilder.addSchema(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -78,7 +78,7 @@ public class RankingConstantTest {
         SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("must have a file");
-        schemaBuilder.importString(joinLines(
+        schemaBuilder.addSchema(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -92,7 +92,7 @@ public class RankingConstantTest {
     public void constant_file_does_not_need_path_or_ending() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
-        schemaBuilder.importString(joinLines(
+        schemaBuilder.addSchema(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -111,7 +111,7 @@ public class RankingConstantTest {
     public void constant_uri_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
-        schemaBuilder.importString(joinLines(
+        schemaBuilder.addSchema(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -131,7 +131,7 @@ public class RankingConstantTest {
     public void constant_https_uri_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
-        schemaBuilder.importString(joinLines(
+        schemaBuilder.addSchema(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -151,7 +151,7 @@ public class RankingConstantTest {
     public void constant_uri_with_port_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
-        schemaBuilder.importString(joinLines(
+        schemaBuilder.addSchema(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -171,7 +171,7 @@ public class RankingConstantTest {
     public void constant_uri_no_dual_slashes_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder schemaBuilder = new SchemaBuilder(rankProfileRegistry);
-        schemaBuilder.importString(joinLines(
+        schemaBuilder.addSchema(joinLines(
                 "search test {",
                 "  document test { }",
                 "  constant foo {",
@@ -195,7 +195,7 @@ public class RankingConstantTest {
                 "Was expecting:\n\n" +
                 "<URI_PATH> ...";
         try {
-            schemaBuilder.importString(joinLines(
+            schemaBuilder.addSchema(joinLines(
                     "search test {",
                     "  document test { }",
                     "  constant foo {",

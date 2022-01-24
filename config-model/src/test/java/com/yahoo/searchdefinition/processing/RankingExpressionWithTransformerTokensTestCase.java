@@ -88,7 +88,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
                 "  rank-profile my_profile inherits default {}\n" +
                 "}";
         SchemaBuilder schemaBuilder = new SchemaBuilder(application, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
-        schemaBuilder.importString(sdContent);
+        schemaBuilder.addSchema(sdContent);
         schemaBuilder.build();
         Schema schema = schemaBuilder.getSchema();
         RankProfile rp = rankProfileRegistry.get(schema, "my_profile");

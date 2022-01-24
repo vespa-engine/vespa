@@ -69,19 +69,19 @@ public class ImportedFieldsTestCase {
 
     private static Schema buildAdSearch(String sdContent) throws ParseException {
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(joinLines(
+        builder.addSchema(joinLines(
                 "schema campaign {",
                 "  document campaign {",
                 "    field budget type int { indexing: attribute }",
                 "  }",
                 "}"));
-        builder.importString(joinLines(
+        builder.addSchema(joinLines(
                 "schema person {",
                 "  document person {",
                 "    field name type string { indexing: attribute }",
                 "  }",
                 "}"));
-        builder.importString(sdContent);
+        builder.addSchema(sdContent);
         builder.build();
         return builder.getSchema("ad");
     }
@@ -313,17 +313,17 @@ public class ImportedFieldsTestCase {
 
     private static Schema buildChildSearch(String parentSdContent, String sdContent) throws ParseException {
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(parentSdContent);
-        builder.importString(sdContent);
+        builder.addSchema(parentSdContent);
+        builder.addSchema(sdContent);
         builder.build();
         return builder.getSchema("child");
     }
 
     private static Schema buildChildSearch(String grandParentSdContent, String parentSdContent, String sdContent) throws ParseException {
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(grandParentSdContent);
-        builder.importString(parentSdContent);
-        builder.importString(sdContent);
+        builder.addSchema(grandParentSdContent);
+        builder.addSchema(parentSdContent);
+        builder.addSchema(sdContent);
         builder.build();
         return builder.getSchema("child");
     }
@@ -490,37 +490,37 @@ public class ImportedFieldsTestCase {
 
     private SchemaBuilder buildParentsUsingInheritance() throws ParseException {
         var builder = new SchemaBuilder();
-        builder.importString(joinLines("schema parent_a {",
-                "document parent_a {",
-                "  struct Entry {",
-                "    field key type string {}",
-                "    field value type string {}",
-                "  }",
-                "  field entries type array<Entry> {",
-                "    indexing: summary",
-                "    struct-field key { indexing: attribute }",
-                "    struct-field value { indexing: attribute }",
-                "  }",
-                "}",
-                "}"));
+        builder.addSchema(joinLines("schema parent_a {",
+                                    "document parent_a {",
+                                    "  struct Entry {",
+                                    "    field key type string {}",
+                                    "    field value type string {}",
+                                    "  }",
+                                    "  field entries type array<Entry> {",
+                                    "    indexing: summary",
+                                    "    struct-field key { indexing: attribute }",
+                                    "    struct-field value { indexing: attribute }",
+                                    "  }",
+                                    "}",
+                                    "}"));
 
-        builder.importString(joinLines("schema parent_b {",
-                "document parent_b inherits parent_a {",
-                "}",
-                "}"));
+        builder.addSchema(joinLines("schema parent_b {",
+                                    "document parent_b inherits parent_a {",
+                                    "}",
+                                    "}"));
 
-        builder.importString(joinLines("schema child {",
-                "document child {",
-                "  field ref_parent_a type reference<parent_a> {",
-                "    indexing: attribute",
-                "  }",
-                "  field ref_parent_b type reference<parent_b> {",
-                "    indexing: attribute",
-                "  }",
-                "}",
-                "import field ref_parent_a.entries as entries_from_a {}",
-                "import field ref_parent_b.entries as entries_from_b {}",
-                "}"));
+        builder.addSchema(joinLines("schema child {",
+                                    "document child {",
+                                    "  field ref_parent_a type reference<parent_a> {",
+                                    "    indexing: attribute",
+                                    "  }",
+                                    "  field ref_parent_b type reference<parent_b> {",
+                                    "    indexing: attribute",
+                                    "  }",
+                                    "}",
+                                    "import field ref_parent_a.entries as entries_from_a {}",
+                                    "import field ref_parent_b.entries as entries_from_b {}",
+                                    "}"));
 
         builder.build();
         return builder;

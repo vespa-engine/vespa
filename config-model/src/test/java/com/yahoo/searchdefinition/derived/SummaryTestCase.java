@@ -135,20 +135,20 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
 
     private static Schema buildCampaignAdModel() throws ParseException {
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importString("search campaign { document campaign {} }");
-        builder.importString(joinLines("search ad {",
-                "  document ad {",
-                "    field campaign_ref type reference<campaign> {",
-                "      indexing: summary | attribute",
-                "    }",
-                "    field other_campaign_ref type reference<campaign> {",
-                "      indexing: summary | attribute",
-                "    }",
-                "  }",
-                "  document-summary my_summary {",
-                "    summary other_campaign_ref type reference<campaign> {}",
-                "  }",
-                "}"));
+        builder.addSchema("search campaign { document campaign {} }");
+        builder.addSchema(joinLines("search ad {",
+                                    "  document ad {",
+                                    "    field campaign_ref type reference<campaign> {",
+                                    "      indexing: summary | attribute",
+                                    "    }",
+                                    "    field other_campaign_ref type reference<campaign> {",
+                                    "      indexing: summary | attribute",
+                                    "    }",
+                                    "  }",
+                                    "  document-summary my_summary {",
+                                    "    summary other_campaign_ref type reference<campaign> {}",
+                                    "  }",
+                                    "}"));
         builder.build();
         return builder.getSchema("ad");
     }

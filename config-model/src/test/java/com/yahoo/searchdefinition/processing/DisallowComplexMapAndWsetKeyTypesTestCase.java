@@ -44,7 +44,7 @@ public class DisallowComplexMapAndWsetKeyTypesTestCase {
     private void testFieldType(String fieldType) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        struct mystruct {}\n" +

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.Index;
@@ -41,8 +42,8 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void requireThatIndexedStructFieldCanBeInherited() throws IOException, ParseException {
         String dir = "src/test/derived/inheritstruct/";
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(dir + "parent.sd");
-        builder.importFile(dir + "child.sd");
+        builder.addSchemaFile(dir + "parent.sd");
+        builder.addSchemaFile(dir + "child.sd");
         builder.build();
         derive("inheritstruct", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritstruct");
@@ -66,7 +67,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             SchemaBuilder builder = new SchemaBuilder();
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
-                builder.importFile(dir + fileName);
+                builder.addSchemaFile(dir + fileName);
             }
             builder.build();
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
@@ -111,8 +112,8 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void requireThatStructTypesAreInheritedFromParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromparent/";
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(dir + "parent.sd");
-        builder.importFile(dir + "child.sd");
+        builder.addSchemaFile(dir + "parent.sd");
+        builder.addSchemaFile(dir + "child.sd");
         builder.build();
         derive("inheritfromparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromparent");
@@ -122,9 +123,9 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void requireThatStructTypesAreInheritedFromGrandParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromgrandparent/";
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(dir + "grandparent.sd");
-        builder.importFile(dir + "parent.sd");
-        builder.importFile(dir + "child.sd");
+        builder.addSchemaFile(dir + "grandparent.sd");
+        builder.addSchemaFile(dir + "parent.sd");
+        builder.addSchemaFile(dir + "child.sd");
         builder.build();
         derive("inheritfromgrandparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromgrandparent");
@@ -134,10 +135,10 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void testInheritance() throws IOException, ParseException {
         String dir = "src/test/derived/inheritance/";
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(dir + "grandparent.sd");
-        builder.importFile(dir + "father.sd");
-        builder.importFile(dir + "mother.sd");
-        builder.importFile(dir + "child.sd");
+        builder.addSchemaFile(dir + "grandparent.sd");
+        builder.addSchemaFile(dir + "father.sd");
+        builder.addSchemaFile(dir + "mother.sd");
+        builder.addSchemaFile(dir + "child.sd");
         builder.build();
         derive("inheritance", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritance");
@@ -146,7 +147,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     @Test
     public void testIndexSettingInheritance() {
         SDDocumentType parent = new SDDocumentType("parent");
-        Schema parentSchema = new Schema("parent");
+        Schema parentSchema = new Schema("parent", MockApplicationPackage.createEmpty());
         parentSchema.addDocument(parent);
         SDField prefixed = parent.addField("prefixed", DataType.STRING);
         prefixed.parseIndexingScript("{ index }");
@@ -154,7 +155,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
 
         SDDocumentType child = new SDDocumentType("child");
         child.inherit(parent);
-        Schema childSchema = new Schema("child");
+        Schema childSchema = new Schema("child", MockApplicationPackage.createEmpty());
         childSchema.addDocument(child);
 
         prefixed = (SDField)child.getField("prefixed");

@@ -21,14 +21,14 @@ public class FastAccessValidatorTest {
     @Test
     public void throws_exception_on_incompatible_use_of_fastaccess() throws ParseException {
         SchemaBuilder builder = new SchemaBuilder(new RankProfileRegistry());
-        builder.importString(
+        builder.addSchema(
                 TestUtil.joinLines(
                         "schema parent {",
                         "  document parent {",
                         "    field int_field type int { indexing: attribute }",
                         "  }",
                         "}"));
-        builder.importString(
+        builder.addSchema(
                 TestUtil.joinLines(
                         "schema test {",
                         "    document test { ",

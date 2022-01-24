@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.searchdefinition.*;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
@@ -73,7 +74,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
     }
     @Test
     public void testPositionDeriving() {
-        Schema schema = new Schema("store");
+        Schema schema = new Schema("store", MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType("store");
         schema.addDocument(document);
         String fieldName = "location";
@@ -190,11 +191,11 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
 
     private Schema buildSearch(String field) throws ParseException {
         var builder = new SchemaBuilder(new RankProfileRegistry());
-        builder.importString(joinLines("search test {",
-                "  document test {",
-                field,
-                "  }",
-                "}"));
+        builder.addSchema(joinLines("search test {",
+                                    "  document test {",
+                                    field,
+                                    "  }",
+                                    "}"));
         builder.build();
         return builder.getSchema();
     }

@@ -20,8 +20,8 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
         final String expectedResultsDirName = "src/test/derived/" + name + "/";
 
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importFile(expectedResultsDirName + "parent.sd");
-        builder.importFile(expectedResultsDirName + "child.sd");
+        builder.addSchemaFile(expectedResultsDirName + "parent.sd");
+        builder.addSchemaFile(expectedResultsDirName + "child.sd");
         builder.build();
 
         Schema schema = builder.getSchema("child");

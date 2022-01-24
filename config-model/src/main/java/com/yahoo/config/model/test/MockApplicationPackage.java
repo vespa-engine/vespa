@@ -126,7 +126,7 @@ public class MockApplicationPackage implements ApplicationPackage {
                                                         queryProfileRegistry);
         for (String sd : schemas) {
             try  {
-                String name = schemaBuilder.importString(sd);
+                String name = schemaBuilder.addSchema(sd).getName();
                 readers.add(new NamedReader(name + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
             } catch (ParseException e) {
                 throw new RuntimeException(e);

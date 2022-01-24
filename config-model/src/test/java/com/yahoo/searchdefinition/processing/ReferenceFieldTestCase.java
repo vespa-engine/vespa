@@ -46,9 +46,9 @@ public class ReferenceFieldTestCase {
                 "    field salesperson_ref type reference<salesperson> { indexing: attribute }\n" +
                 "  }\n" +
                 "}";
-        builder.importString(campaignSdContent);
-        builder.importString(salespersonSdContent);
-        builder.importString(adSdContent);
+        builder.addSchema(campaignSdContent);
+        builder.addSchema(salespersonSdContent);
+        builder.addSchema(adSdContent);
         builder.build();
         Schema schema = builder.getSchema("ad");
         assertSearchContainsReferenceField("campaign_ref", "campaign", schema.getDocument());
@@ -70,8 +70,8 @@ public class ReferenceFieldTestCase {
                         "    field campaign_ref type reference<campaign> { indexing: attribute }\n" +
                         "  }\n" +
                         "}";
-        builder.importString(campaignSdContent);
-        builder.importString(adSdContent);
+        builder.addSchema(campaignSdContent);
+        builder.addSchema(adSdContent);
         exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
         exceptionRule.expectMessage("Document dependency cycle detected: campaign->ad->campaign.");
         builder.build();

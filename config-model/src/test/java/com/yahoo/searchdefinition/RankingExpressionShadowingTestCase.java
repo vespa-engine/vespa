@@ -27,7 +27,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
     public void testBasicFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
@@ -62,7 +62,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
     public void testMultiLevelFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
@@ -114,7 +114,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
     public void testFunctionShadowingArguments() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
@@ -154,7 +154,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfiles = queryProfileWith("query(q)", "tensor(input[1])");
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry, queryProfiles);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +

@@ -22,7 +22,7 @@ import com.yahoo.document.*;
 import com.yahoo.documentmodel.*;
 import com.yahoo.compress.Compressor;
 import com.yahoo.compress.CompressionType;
-import com.yahoo.searchdefinition.Application;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.searchdefinition.DistributableResource;
 import com.yahoo.searchdefinition.document.*;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
@@ -73,7 +73,7 @@ import java.util.logging.Level;
 public class SDParser {
 
     private DocumentTypeManager docMan = null;
-    private Application application;
+    private ApplicationPackage applicationPackage;
     private FileRegistry fileRegistry;
     private DeployLogger deployLogger;
     private ModelContext.Properties properties;
@@ -86,17 +86,17 @@ public class SDParser {
      * @param documentsOnly true to only parse the document aspect of a schema (e.g skip rank profiles)
      */
     public SDParser(SimpleCharStream stream,
+                    ApplicationPackage applicationPackage,
                     FileRegistry fileRegistry,
                     DeployLogger deployLogger,
                     ModelContext.Properties properties,
-                    Application application,
                     RankProfileRegistry rankProfileRegistry,
                     boolean documentsOnly) {
         this(stream);
+        this.applicationPackage = applicationPackage;
         this.fileRegistry = fileRegistry;
         this.deployLogger = deployLogger;
         this.properties = properties;
-        this.application = application;
         this.rankProfileRegistry = rankProfileRegistry;
         this.documentsOnly = documentsOnly;
     }
@@ -423,7 +423,7 @@ Schema rootSchema(String dir) :
 }
 {
     ( ( <SCHEMA> | <SEARCH> ) name = identifier() (<INHERITS> inherited = identifier() )? {
-        schema = new Schema(name, Optional.ofNullable(inherited), application, fileRegistry, deployLogger, properties);
+        schema = new Schema(name, applicationPackage, Optional.ofNullable(inherited), fileRegistry, deployLogger, properties);
         rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
         rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));}
       lbrace() (rootSchemaItem(schema) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
@@ -464,7 +464,7 @@ Object rootSchemaItem(Schema schema) : { }
  */
 Schema rootDocument(String dir) :
 {
-    Schema schema = new DocumentOnlySchema(application, fileRegistry, deployLogger, properties);
+    Schema schema = new DocumentOnlySchema(applicationPackage, fileRegistry, deployLogger, properties);
 }
 {
     ( (rootDocumentItem(schema) (<NL>)*)*<EOF> )
@@ -2561,7 +2561,7 @@ void constantTensor(RankProfile profile, String name) :
 {
     <LBRACE> (<NL>)*
       (( tensorString = tensorValue() |
-         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.getName(), name)) ) (<NL>)* )* <RBRACE>
+         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
     {
         if (tensorType != null) {
             profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorType, tensorString)));

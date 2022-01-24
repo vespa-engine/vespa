@@ -24,7 +24,7 @@ public class VsmFieldsTestCase {
     @SuppressWarnings("deprecation")
     @Test
     public void reference_type_field_is_unsearchable() {
-        Schema schema = new Schema("test", new Application(MockApplicationPackage.createEmpty()), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
+        Schema schema = new Schema("test", MockApplicationPackage.createEmpty(), new MockFileRegistry(), new TestableDeployLogger(), new TestProperties());
         schema.addDocument(new SDDocumentType("test"));
         SDField refField = new TemporarySDField("ref_field", ReferenceDataType.createWithInferredId(TemporaryStructuredDataType.create("parent_type")));
         refField.parseIndexingScript("{ summary }");

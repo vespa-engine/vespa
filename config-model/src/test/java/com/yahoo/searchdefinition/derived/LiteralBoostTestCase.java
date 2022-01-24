@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
@@ -30,7 +31,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testLiteralBoost() {
-        Schema schema = new Schema("literalboost");
+        Schema schema = new Schema("literalboost", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
@@ -63,7 +64,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
      */
     @Test
     public void testNonDefaultRankLiteralBoost() {
-        Schema schema = new Schema("literalboost");
+        Schema schema = new Schema("literalboost", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("literalboost");
         schema.addDocument(document);
@@ -89,7 +90,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
     /** Tests literal boosts in two fields going to the same index */
     @Test
     public void testTwoLiteralBoostFields() {
-        Schema schema = new Schema("msb");
+        Schema schema = new Schema("msb", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("msb");
         schema.addDocument(document);

@@ -22,7 +22,7 @@ public class ReservedRankingExpressionFunctionNamesTestCase {
         TestDeployLogger deployLogger = new TestDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(deployLogger, rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +

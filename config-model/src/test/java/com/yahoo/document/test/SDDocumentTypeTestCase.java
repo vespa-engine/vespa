@@ -9,8 +9,6 @@ import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.searchdefinition.processing.ImportedFieldsResolver;
-import com.yahoo.searchdefinition.processing.OnnxModelTypeResolver;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
@@ -123,7 +121,7 @@ public class SDDocumentTypeTestCase extends AbstractSchemaTestCase {
                 "}");
 
         SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
-        builder.importString(schemaLines);
+        builder.addSchema(schemaLines);
         builder.build(true);
         var application = builder.application();
 

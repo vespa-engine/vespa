@@ -37,7 +37,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
     public void testSimpleImporting() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder sb = new SchemaBuilder(rankProfileRegistry, new QueryProfileRegistry());
-        sb.importFile("src/test/examples/simple.sd");
+        sb.addSchemaFile("src/test/examples/simple.sd");
         sb.build();
         Schema schema = sb.getSchema();
         assertEquals("simple", schema.getName());

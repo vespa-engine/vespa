@@ -48,8 +48,9 @@ import java.util.Set;
 // NOTE: Since this was created we have added Application, and much of the content in this should migrate there.
 public class SchemaBuilder {
 
-    private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
-    private final Application application;
+    private final ApplicationPackage applicationPackage;
+    private final List<Schema> schemas = new ArrayList<>();
+    private final DocumentTypeManager documentTypeManager = new DocumentTypeManager();
     private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
     private final FileRegistry fileRegistry;
@@ -58,7 +59,7 @@ public class SchemaBuilder {
     /** True to build the document aspect only, skipping instantiation of rank profiles */
     private final boolean documentsOnly;
 
-    private boolean isBuilt = false;
+    private Application application;
 
     private final Set<Class<? extends Processor>> processorsToSkip = new HashSet<>();
 
@@ -122,7 +123,7 @@ public class SchemaBuilder {
                           RankProfileRegistry rankProfileRegistry,
                           QueryProfileRegistry queryProfileRegistry,
                           boolean documentsOnly) {
-        this.application = new Application(applicationPackage);
+        this.applicationPackage = applicationPackage;
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
         this.fileRegistry = fileRegistry;
@@ -139,17 +140,17 @@ public class SchemaBuilder {
      * @throws IOException    thrown if the file can not be read for some reason
      * @throws ParseException thrown if the file does not contain a valid search definition
      */
-    public String importFile(String fileName) throws IOException, ParseException {
+    public Schema addSchemaFile(String fileName) throws IOException, ParseException {
         File file = new File(fileName);
-        return importString(IOUtils.readFile(file), file.getAbsoluteFile().getParent());
+        return addSchema(IOUtils.readFile(file), file.getAbsoluteFile().getParent());
     }
 
-    private String importFile(Path file) throws IOException, ParseException {
-        return importFile(file.toString());
+    private Schema addSchemaFile(Path file) throws IOException, ParseException {
+        return addSchemaFile(file.toString());
     }
 
     public void importFromApplicationPackage() {
-        for (NamedReader reader : application.applicationPackage().getSchemas()) {
+        for (NamedReader reader : applicationPackage.getSchemas()) {
             importFrom(reader);
         }
     }
@@ -158,11 +159,11 @@ public class SchemaBuilder {
      * Reads and parses the schema string provided by the given reader. Once all schemas have been
      * imported, call {@link #build()}.
      *
-     * @param reader       the reader whose content to import
+     * @param reader  the reader whose content to import
      */
     private void importFrom(NamedReader reader) {
         try {
-            String schemaName = importString(IOUtils.readAll(reader), reader.getName());
+            String schemaName = addSchema(IOUtils.readAll(reader), reader.getName()).getName();
             String schemaFileName = stripSuffix(reader.getName(), ApplicationPackage.SD_NAME_SUFFIX);
             if ( ! schemaFileName.equals(schemaName)) {
                 throw new IllegalArgumentException("The file containing schema '" + schemaName + "' must be named '" +
@@ -184,22 +185,24 @@ public class SchemaBuilder {
     }
 
     /**
-     * Import search definition.
+     * Adds a schema to this.
      *
-     * @param str the string to parse
-     * @return the name of the imported object
+     * @param string the string to parse
+     * @return the schema
      * @throws ParseException thrown if the file does not contain a valid search definition
      */
-    public String importString(String str) throws ParseException {
-        return importString(str, null);
+    public Schema addSchema(String string) throws ParseException {
+        return addSchema(string, null);
     }
 
-    private String importString(String str, String schemaDir) throws ParseException {
+    private Schema addSchema(String str, String schemaDir) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
-            return importRawSchema(new SDParser(stream, fileRegistry, deployLogger, properties, application,
-                                                rankProfileRegistry, documentsOnly)
-                                           .schema(docTypeMgr, schemaDir));
+            Schema schema = new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
+                                         rankProfileRegistry, documentsOnly)
+                    .schema(documentTypeManager, schemaDir);
+            addSchemaFile(schema);
+            return schema;
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
@@ -213,15 +216,12 @@ public class SchemaBuilder {
      * programmatically constructed schemas used in unit tests.
      *
      * @param schema the object to import
-     * @return the name of the imported object
      * @throws IllegalArgumentException if the given search object has already been processed
      */
-    public String importRawSchema(Schema schema) {
+    public void addSchemaFile(Schema schema) {
         if (schema.getName() == null)
             throw new IllegalArgumentException("Schema has no name");
-        String rawName = schema.getName();
-        application.add(schema);
-        return rawName;
+        schemas.add(schema);
     }
 
     /**
@@ -240,16 +240,14 @@ public class SchemaBuilder {
      * @throws IllegalStateException thrown if this method has already been called
      */
     public void build(boolean validate) {
-        if (isBuilt) throw new IllegalStateException("Application already built");
+        if (application != null) throw new IllegalStateException("Application already built");
 
-        new TemporarySDTypeResolver(application.schemas().values(), deployLogger).process();
-
-        if (validate)
-            application.validate(deployLogger);
+        application = new Application(applicationPackage, schemas, deployLogger);
+        new TemporarySDTypeResolver(schemas, deployLogger).process();
 
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
-        for (Schema schema : application.schemas().values()) {
+        for (Schema schema : schemas) {
             if (schema.hasDocument()) {
                 sdocs.add(schema.getDocument());
             }
@@ -262,22 +260,21 @@ public class SchemaBuilder {
             new FieldOperationApplier().process(sdoc);
         }
 
-        var resolver = new DocumentReferenceResolver(application.schemas().values());
+        var resolver = new DocumentReferenceResolver(schemas);
         sdocs.forEach(resolver::resolveReferences);
         sdocs.forEach(resolver::resolveInheritedReferences);
-        var importedFieldsEnumerator = new ImportedFieldsEnumerator(application.schemas().values());
+        var importedFieldsEnumerator = new ImportedFieldsEnumerator(schemas);
         sdocs.forEach(importedFieldsEnumerator::enumerateImportedFields);
 
         if (validate)
             new DocumentGraphValidator().validateDocumentGraph(sdocs);
 
-        List<Schema> schemasSomewhatOrdered = new ArrayList<>(application.schemas().values());
+        List<Schema> schemasSomewhatOrdered = new ArrayList<>(schemas);
         for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
             new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
             process(schema, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
         }
         application.buildDocumentModel(schemasSomewhatOrdered);
-        isBuilt = true;
     }
 
     /** Returns a modifiable set of processors we should skip for these schemas. Useful for testing. */
@@ -302,7 +299,7 @@ public class SchemaBuilder {
      * @throws IllegalStateException if there is not exactly one search.
      */
     public Schema getSchema() {
-        if ( ! isBuilt)  throw new IllegalStateException("Application not built.");
+        if (application == null)  throw new IllegalStateException("Application not built");
         if (application.schemas().size() != 1)
             throw new IllegalStateException("This call only works if we have 1 schema. Schemas: " +
                                             application.schemas().values());
@@ -322,7 +319,7 @@ public class SchemaBuilder {
      * @throws IllegalStateException if {@link #build()} has not been called.
      */
     public Schema getSchema(String name) {
-        if ( ! isBuilt)  throw new IllegalStateException("Application not built.");
+        if (application == null)  throw new IllegalStateException("Application not built");
         if (name == null) return getSchema();
         return application.schemas().get(name);
     }
@@ -351,7 +348,7 @@ public class SchemaBuilder {
 
     public static SchemaBuilder createFromString(String sd, DeployLogger logger) throws ParseException {
         SchemaBuilder builder = new SchemaBuilder(logger);
-        builder.importString(sd);
+        builder.addSchema(sd);
         builder.build(true);
         return builder;
     }
@@ -359,7 +356,7 @@ public class SchemaBuilder {
     public static SchemaBuilder createFromStrings(DeployLogger logger, String ... schemas) throws ParseException {
         SchemaBuilder builder = new SchemaBuilder(logger);
         for (var schema : schemas)
-            builder.importString(schema);
+            builder.addSchema(schema);
         builder.build(true);
         return builder;
     }
@@ -427,7 +424,7 @@ public class SchemaBuilder {
                                                   rankProfileRegistry,
                                                   queryprofileRegistry);
         for (String fileName : fileNames) {
-            builder.importFile(fileName);
+            builder.addSchemaFile(fileName);
         }
         builder.build(true);
         return builder;
@@ -468,7 +465,7 @@ public class SchemaBuilder {
                                                   rankProfileRegistry,
                                                   queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
-            builder.importFile(i.next());
+            builder.addSchemaFile(i.next());
         }
         builder.build(true);
         return builder;
@@ -533,13 +530,13 @@ public class SchemaBuilder {
      *
      * @param rawSchema the raw object to build from
      * @return the built {@link SchemaBuilder} object
-     * @see #importRawSchema(Schema)
+     * @see #addSchemaFile(Schema)
      */
     public static SchemaBuilder createFromRawSchema(Schema rawSchema,
                                                     RankProfileRegistry rankProfileRegistry,
                                                     QueryProfileRegistry queryProfileRegistry) {
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry, queryProfileRegistry);
-        builder.importRawSchema(rawSchema);
+        builder.addSchemaFile(rawSchema);
         builder.build();
         return builder;
     }
@@ -549,7 +546,7 @@ public class SchemaBuilder {
      *
      * @param rawSchema the raw object to build from
      * @return the built {@link Schema} object
-     * @see #importRawSchema(Schema)
+     * @see #addSchemaFile(Schema)
      */
     public static Schema buildFromRawSchema(Schema rawSchema,
                                             RankProfileRegistry rankProfileRegistry,

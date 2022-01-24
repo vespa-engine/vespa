@@ -169,9 +169,9 @@ public class SchemaTestCase {
         SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
-        builder.importString(parentLines);
-        builder.importString(child1Lines);
-        builder.importString(child2Lines);
+        builder.addSchema(parentLines);
+        builder.addSchema(child1Lines);
+        builder.addSchema(child2Lines);
         builder.build(true);
         var application = builder.application();
 
@@ -310,9 +310,9 @@ public class SchemaTestCase {
         SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
-        builder.importString(parentLines);
-        builder.importString(childLines);
-        builder.importString(grandchildLines);
+        builder.addSchema(parentLines);
+        builder.addSchema(childLines);
+        builder.addSchema(grandchildLines);
         builder.build(true);
         var application = builder.application();
 

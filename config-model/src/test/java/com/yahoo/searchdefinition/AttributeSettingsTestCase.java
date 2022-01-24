@@ -100,7 +100,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     private Schema getSearch(String sd) throws ParseException {
         SchemaBuilder builder = new SchemaBuilder();
-        builder.importString(sd);
+        builder.addSchema(sd);
         builder.build();
         return builder.getSchema();
     }

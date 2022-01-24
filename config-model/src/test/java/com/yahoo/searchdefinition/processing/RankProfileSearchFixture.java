@@ -77,7 +77,7 @@ class RankProfileSearchFixture {
                            rankProfiles +
                            "\n" +
                            "}";
-        builder.importString(sdContent);
+        builder.addSchema(sdContent);
         builder.build();
         schema = builder.getSchema();
     }

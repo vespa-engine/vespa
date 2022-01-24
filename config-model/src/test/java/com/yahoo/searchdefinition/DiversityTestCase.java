@@ -16,7 +16,7 @@ public class DiversityTestCase {
     public void testDiversity() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type int { \n" +
@@ -84,7 +84,7 @@ public class DiversityTestCase {
     private SchemaBuilder getSearchBuilder(String diversity) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type int { \n" +

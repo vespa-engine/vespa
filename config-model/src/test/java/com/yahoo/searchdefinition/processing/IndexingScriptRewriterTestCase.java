@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -154,7 +155,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     private static ScriptExpression processField(SDField unprocessedField) {
         SDDocumentType sdoc = new SDDocumentType("test");
         sdoc.addField(unprocessedField);
-        Schema schema = new Schema("test");
+        Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         schema.addDocument(sdoc);
         new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(),
                                  new QueryProfiles(), true, false, Set.of());

@@ -17,7 +17,7 @@ public class RankingExpressionLoopDetectionTestCase {
     public void testSelfLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -49,7 +49,7 @@ public class RankingExpressionLoopDetectionTestCase {
     public void testNestedLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -84,7 +84,7 @@ public class RankingExpressionLoopDetectionTestCase {
     public void testSelfArgumentLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -119,7 +119,7 @@ public class RankingExpressionLoopDetectionTestCase {
     public void testNoLoopWithSameLocalArgument() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -147,7 +147,7 @@ public class RankingExpressionLoopDetectionTestCase {
     public void testNoLoopWithMultipleInvocations() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "        field a type string { \n" +
@@ -175,7 +175,7 @@ public class RankingExpressionLoopDetectionTestCase {
     public void testNoLoopWithBoundIdentifiers() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "    }\n" +
@@ -198,7 +198,7 @@ public class RankingExpressionLoopDetectionTestCase {
     public void testNoLoopWithTheSameNestedIdentifierWhichIsUnbound() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "    }\n" +
@@ -221,7 +221,7 @@ public class RankingExpressionLoopDetectionTestCase {
     public void testNoLoopWithTheSameAlternatingNestedIdentifierWhichIsUnbound() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                 "    document test { \n" +
                 "    }\n" +

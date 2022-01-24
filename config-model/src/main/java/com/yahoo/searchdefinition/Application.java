@@ -20,23 +20,28 @@ import java.util.Map;
 public class Application {
 
     private final ApplicationPackage applicationPackage;
-    private final Map<String, Schema> schemas = new LinkedHashMap<>();
+    private final Map<String, Schema> schemas;
     private final DocumentModel documentModel = new DocumentModel();
 
-    public Application(ApplicationPackage applicationPackage) {
+    public Application(ApplicationPackage applicationPackage, List<Schema> schemas, DeployLogger logger) {
         this.applicationPackage = applicationPackage;
+
+        Map<String, Schema> schemaMap = new LinkedHashMap<>();
+        for (Schema schema : schemas) {
+            if (schemaMap.containsKey(schema.getName()))
+                throw new IllegalArgumentException("Duplicate schema '" + schema.getName() + "' in " + this);
+            schemaMap.put(schema.getName(), schema);
+        }
+        this.schemas = Collections.unmodifiableMap(schemaMap);
+
+        schemas.forEach(schema -> schema.setOwner(this));
+        schemas.forEach(schema -> schema.validate(logger));
     }
 
     public ApplicationPackage applicationPackage() { return applicationPackage; }
 
-    public void add(Schema schema) {
-        if (schemas.containsKey(schema.getName()))
-            throw new IllegalArgumentException("Duplicate schema '" + schema.getName() + "' in " + this);
-        schemas.put(schema.getName(), schema);
-    }
-
     /** Returns an unmodifiable list of the schemas of this application */
-    public Map<String, Schema> schemas() { return Collections.unmodifiableMap(schemas); }
+    public Map<String, Schema> schemas() { return schemas; }
 
     public void buildDocumentModel(List<Schema> schemasSomewhatOrdered) {
         var builder = new DocumentModelBuilder(documentModel);
@@ -44,11 +49,6 @@ public class Application {
     }
 
     public DocumentModel documentModel() { return documentModel; }
-
-    /** Validates this. Must be called after all content is added to it. */
-    public void validate(DeployLogger logger) {
-        schemas.values().forEach(schema -> schema.validate(logger));
-    }
 
     @Override
     public String toString() { return "application " + applicationPackage.getApplicationId(); }

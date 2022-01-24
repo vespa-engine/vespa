@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
@@ -25,7 +26,7 @@ public class TypeConversionTestCase extends AbstractSchemaTestCase {
     /** Tests that exact-string stuff is not spilled over to the default index */
     @Test
     public void testExactStringToStringTypeConversion() {
-        Schema schema = new Schema("test");
+        Schema schema = new Schema("test", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
         SDDocumentType document = new SDDocumentType("test");
         schema.addDocument(document);

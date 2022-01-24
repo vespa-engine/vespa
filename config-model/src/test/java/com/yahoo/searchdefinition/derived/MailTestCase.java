@@ -17,7 +17,7 @@ public class MailTestCase extends AbstractExportingTestCase {
     public void testMail() throws IOException, ParseException {
         String dir = "src/test/derived/mail/";
         SchemaBuilder sb = new SchemaBuilder();
-        sb.importFile(dir + "mail.sd");
+        sb.addSchemaFile(dir + "mail.sd");
         assertCorrectDeriving(sb, dir, new TestableDeployLogger());
     }
 

@@ -29,7 +29,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                         "search test {\n" +
                         "    document test { \n" +
                         "        field a type double { \n" +
@@ -80,7 +80,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
@@ -151,7 +151,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     public void testNonTopLevelInlining() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
-        builder.importString(
+        builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
                         "        field a type double { \n" +
@@ -200,7 +200,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                                                   new TestProperties(),
                                                   rankProfileRegistry,
                                                   new QueryProfileRegistry());
-        builder.importString(
+        builder.addSchema(
                         "search test {\n" +
                         "    document test { }\n" +
                         "    rank-profile test {\n" +

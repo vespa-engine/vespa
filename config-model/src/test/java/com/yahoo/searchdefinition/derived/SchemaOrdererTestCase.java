@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.searchdefinition.DocumentReference;
@@ -62,7 +63,7 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
     }
 
     private static Schema createSchema(String name, Map<String, Schema> schemas) {
-        Schema schema = new Schema(name);
+        Schema schema = new Schema(name, MockApplicationPackage.createEmpty());
         SDDocumentType document = new SDDocumentType(name);
         document.setDocumentReferences(new DocumentReferences(emptyMap()));
         schema.addDocument(document);

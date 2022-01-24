@@ -33,18 +33,18 @@ public class RankingExpressionValidationTestCase extends AbstractSchemaTestCase 
 
     private Schema importWithExpression(String expression, RankProfileRegistry registry) throws ParseException {
         SchemaBuilder builder = new SchemaBuilder(registry);
-        builder.importString("search test {" +
-                             "    document test { " +
-                             "        field a type string { " +
-                             "            indexing: index " +
-                             "        }" +
-                             "    }" +
-                             "    rank-profile default {" +
-                             "        first-phase {" +
-                             "            expression: " + expression +
-                             "        }" +
-                             "    }" +
-                             "}");
+        builder.addSchema("search test {" +
+                          "    document test { " +
+                          "        field a type string { " +
+                          "            indexing: index " +
+                          "        }" +
+                          "    }" +
+                          "    rank-profile default {" +
+                          "        first-phase {" +
+                          "            expression: " + expression +
+                          "        }" +
+                          "    }" +
+                          "}");
         builder.build();
         return builder.getSchema();
     }
