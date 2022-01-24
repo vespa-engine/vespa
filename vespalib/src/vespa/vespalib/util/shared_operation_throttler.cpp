@@ -244,7 +244,10 @@ DynamicOperationThrottler::DynamicOperationThrottler(const DynamicThrottleParams
 {
 }
 
-DynamicOperationThrottler::~DynamicOperationThrottler() = default;
+DynamicOperationThrottler::~DynamicOperationThrottler()
+{
+    assert(_pending_ops == 0u);
+}
 
 bool
 DynamicOperationThrottler::has_spare_capacity_in_active_window() noexcept
