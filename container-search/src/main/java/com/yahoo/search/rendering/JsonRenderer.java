@@ -134,6 +134,29 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         boolean jsonWsetsAll = false;
         boolean tensorShortForm = false;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
+        void init() {
+            this.debugRendering = false;
+            this.jsonDeepMaps = false;
+            this.jsonWsets = false;
+            this.jsonMapsAll = false;
+            this.jsonWsetsAll = false;
+            this.tensorShortForm = false;
+        }
+        void getSettings(Query q) {
+            if (q == null) {
+                init();
+                return;
+            }
+            var props = q.properties();
+            this.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
+            this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, false);
+            this.jsonWsets = props.getBoolean(WRAP_WSETS, false);
+            // we may need more fine tuning, but for now use the same query parameters here:
+            this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, false);
+            this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, false);
+            this.tensorShortForm = (props.get(TENSOR_FORMAT) != null &&
+                                    props.getString(TENSOR_FORMAT).equalsIgnoreCase("short"));
+        }
     }
     private final FieldConsumerSettings fieldConsumerSettings = new FieldConsumerSettings();
     private LongSupplier timeSource;
@@ -167,12 +190,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void init() {
         super.init();
-        fieldConsumerSettings.debugRendering = false;
-        fieldConsumerSettings.jsonDeepMaps = false;
-        fieldConsumerSettings.jsonWsets = false;
-        fieldConsumerSettings.jsonMapsAll = false;
-        fieldConsumerSettings.jsonWsetsAll = false;
-        fieldConsumerSettings.tensorShortForm = false;
+        fieldConsumerSettings.init();
         setGenerator(null, fieldConsumerSettings);
         renderedChildren = null;
         timeSource = System::currentTimeMillis;
@@ -182,7 +200,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
         beginJsonCallback(stream);
-        getSettings(getResult().getQuery());
+        fieldConsumerSettings.getSettings(getResult().getQuery());
         setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
@@ -211,27 +229,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         generator.writeNumberField(SEARCH_TIME, searchSeconds);
         generator.writeEndObject();
-    }
-
-    private void getSettings(Query q) {
-        if (q == null) {
-            fieldConsumerSettings.debugRendering = false;
-            fieldConsumerSettings.jsonDeepMaps = false;
-            fieldConsumerSettings.jsonWsets = false;
-            fieldConsumerSettings.jsonMapsAll = false;
-            fieldConsumerSettings.jsonWsetsAll = false;
-            fieldConsumerSettings.tensorShortForm = false;
-            return;
-        }
-        var props = q.properties();
-        fieldConsumerSettings.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
-        fieldConsumerSettings.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, false);
-        fieldConsumerSettings.jsonWsets = props.getBoolean(WRAP_WSETS, false);
-        // we may need more fine tuning, but for now use the same query parameters here:
-        fieldConsumerSettings.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, false);
-        fieldConsumerSettings.jsonWsetsAll = props.getBoolean(WRAP_WSETS, false);
-        fieldConsumerSettings.tensorShortForm = (props.get(TENSOR_FORMAT) != null &&
-                                                 props.getString(TENSOR_FORMAT).equalsIgnoreCase("short"));
     }
 
     protected void renderTrace(Trace trace) throws IOException {
