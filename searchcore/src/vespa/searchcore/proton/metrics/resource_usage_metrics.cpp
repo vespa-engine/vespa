@@ -15,7 +15,12 @@ ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet *parent)
       memoryMappings("memory_mappings", {}, "The number of mapped memory areas", this),
       openFileDescriptors("open_file_descriptors", {}, "The number of open files", this),
       feedingBlocked("feeding_blocked", {}, "Whether feeding is blocked due to resource limits being reached (value is either 0 or 1)", this),
-      mallocArena("malloc_arena", {}, "Size of malloc arena", this)
+      mallocArena("malloc_arena", {}, "Size of malloc arena", this),
+      cpu_setup(  "cpu_util", {{"category", "setup"}},   "cpu utilization for the given category", this),
+      cpu_read(   "cpu_util", {{"category", "read"}},    "cpu utilization for the given category", this),
+      cpu_write(  "cpu_util", {{"category", "write"}},   "cpu utilization for the given category", this),
+      cpu_compact("cpu_util", {{"category", "compact"}}, "cpu utilization for the given category", this),
+      cpu_other(  "cpu_util", {{"category", "other"}},   "cpu utilization for the given category", this)
 {
 }
 

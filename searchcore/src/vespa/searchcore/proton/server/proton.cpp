@@ -61,6 +61,7 @@ using vespalib::Slime;
 using vespalib::makeLambdaTask;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
+using CpuCategory = vespalib::CpuUsage::Category;
 
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
@@ -207,6 +208,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       StatusProducer(),
       IPersistenceEngineOwner(),
       ComponentConfigProducer(),
+      _cpu_util(),
       _configUri(configUri),
       _mutex(),
       _metricsHook(std::make_unique<MetricsUpdateHook>(*this)),
@@ -775,6 +777,12 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
 #else
         metrics.resourceUsage.mallocArena.set(UINT64_C(0));
 #endif
+        auto cpu_util = _cpu_util.get_util();
+        metrics.resourceUsage.cpu_setup.set(cpu_util[CpuCategory::SETUP]);
+        metrics.resourceUsage.cpu_read.set(cpu_util[CpuCategory::READ]);
+        metrics.resourceUsage.cpu_write.set(cpu_util[CpuCategory::WRITE]);
+        metrics.resourceUsage.cpu_compact.set(cpu_util[CpuCategory::COMPACT]);
+        metrics.resourceUsage.cpu_other.set(cpu_util[CpuCategory::OTHER]);
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;

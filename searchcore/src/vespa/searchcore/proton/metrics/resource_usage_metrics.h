@@ -22,6 +22,11 @@ struct ResourceUsageMetrics : metrics::MetricSet
     metrics::LongValueMetric openFileDescriptors;
     metrics::LongValueMetric feedingBlocked;
     metrics::LongValueMetric mallocArena;
+    metrics::DoubleValueMetric cpu_setup;
+    metrics::DoubleValueMetric cpu_read;
+    metrics::DoubleValueMetric cpu_write;
+    metrics::DoubleValueMetric cpu_compact;
+    metrics::DoubleValueMetric cpu_other;
 
     ResourceUsageMetrics(metrics::MetricSet *parent);
     ~ResourceUsageMetrics();

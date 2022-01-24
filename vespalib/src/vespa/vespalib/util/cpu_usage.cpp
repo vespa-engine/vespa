@@ -17,11 +17,11 @@ namespace {
 class DummyThreadSampler : public ThreadSampler {
 private:
     steady_time _start;
-    double _load;
+    double _util;
 public:
-    DummyThreadSampler(double load) : _start(steady_clock::now()), _load(load) {}
+    DummyThreadSampler(double util) : _start(steady_clock::now()), _util(util) {}
     duration sample() const noexcept override {
-        return from_s(to_s(steady_clock::now() - _start) * _load);
+        return from_s(to_s(steady_clock::now() - _start) * _util);
     }
 };
 
@@ -53,14 +53,14 @@ duration total_cpu_usage() noexcept {
         return from_timespec(ts);
 }
 
-ThreadSampler::UP create_thread_sampler(bool force_mock_impl, double expected_load) {
+ThreadSampler::UP create_thread_sampler(bool force_mock_impl, double expected_util) {
     if (force_mock_impl) {
-        return std::make_unique<DummyThreadSampler>(expected_load);
+        return std::make_unique<DummyThreadSampler>(expected_util);
     }
 #ifdef __linux__
     return std::make_unique<LinuxThreadSampler>();
 #endif
-    return std::make_unique<DummyThreadSampler>(expected_load);
+    return std::make_unique<DummyThreadSampler>(expected_util);
 }
 
 } // cpu_usage
