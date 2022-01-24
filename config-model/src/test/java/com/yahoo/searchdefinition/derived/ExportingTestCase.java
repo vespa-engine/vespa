@@ -170,4 +170,9 @@ public class ExportingTestCase extends AbstractExportingTestCase {
         assertEquals(0, logger.warnings.size());
     }
 
+    @Test
+    public void testRankProfileModularity() throws IOException, ParseException {
+        assertCorrectDeriving("rankprofilemodularity");
+    }
+
 }
