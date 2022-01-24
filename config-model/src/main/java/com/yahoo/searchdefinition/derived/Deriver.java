@@ -11,18 +11,17 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Auxiliary facade for deriving configs from search definitions
+ * Facade for deriving configs from schemas
  *
  * @author bratseth
  */
 public class Deriver {
 
-    public static SchemaBuilder getSearchBuilder(List<String> sds) {
+    public static SchemaBuilder getSchemaBuilder(List<String> schemas) {
         SchemaBuilder builder = new SchemaBuilder();
         try {
-            for (String s : sds) {
-                builder.importFile(s);
-            }
+            for (String schema : schemas)
+                builder.importFile(schema);
         } catch (ParseException | IOException e) {
             throw new IllegalArgumentException(e);
         }
@@ -34,22 +33,22 @@ public class Deriver {
         return getDocumentManagerConfig(Collections.singletonList(sd));
     }
 
-    public static DocumentmanagerConfig.Builder getDocumentManagerConfig(List<String> sds) {
-        return new DocumentManager().produce(getSearchBuilder(sds).getModel(), new DocumentmanagerConfig.Builder());
+    public static DocumentmanagerConfig.Builder getDocumentManagerConfig(List<String> schemas) {
+        return new DocumentManager().produce(getSchemaBuilder(schemas).getModel(), new DocumentmanagerConfig.Builder());
     }
 
-    public static DocumentmanagerConfig.Builder getDocumentManagerConfig(List<String> sds, boolean useV8DocManagerCfg) {
+    public static DocumentmanagerConfig.Builder getDocumentManagerConfig(List<String> schemas, boolean useV8DocManagerCfg) {
         return new DocumentManager()
             .useV8DocManagerCfg(useV8DocManagerCfg)
-            .produce(getSearchBuilder(sds).getModel(), new DocumentmanagerConfig.Builder());
+            .produce(getSchemaBuilder(schemas).getModel(), new DocumentmanagerConfig.Builder());
     }
 
-    public static DocumenttypesConfig.Builder getDocumentTypesConfig(String sd) {
-        return getDocumentTypesConfig(Collections.singletonList(sd));
+    public static DocumenttypesConfig.Builder getDocumentTypesConfig(String schema) {
+        return getDocumentTypesConfig(Collections.singletonList(schema));
     }
 
-    public static DocumenttypesConfig.Builder getDocumentTypesConfig(List<String> sds) {
-        return new DocumentTypes().produce(getSearchBuilder(sds).getModel(), new DocumenttypesConfig.Builder());
+    public static DocumenttypesConfig.Builder getDocumentTypesConfig(List<String> schemas) {
+        return new DocumentTypes().produce(getSchemaBuilder(schemas).getModel(), new DocumenttypesConfig.Builder());
     }
 
 }

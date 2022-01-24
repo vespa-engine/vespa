@@ -129,7 +129,6 @@ public interface ApplicationPackage {
      * Returns the files in a directory as readers. The readers <b>must</b>
      * be closed by the caller.
      *
-     *
      * @param  pathFromRoot the relative path string from the root of the application package
      * @param  suffix the suffix of files to return, or null to return all
      * @param  recurse return files in all subdirectories (recursively) as well

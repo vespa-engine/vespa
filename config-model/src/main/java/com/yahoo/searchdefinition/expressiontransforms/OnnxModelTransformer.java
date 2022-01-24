@@ -49,12 +49,12 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
 
     private ExpressionNode transformFeature(ReferenceNode feature, RankProfileTransformContext context) {
         if (context.rankProfile() == null) return feature;
-        if (context.rankProfile().getSearch() == null) return feature;
+        if (context.rankProfile().schema() == null) return feature;
         return transformFeature(feature, context.rankProfile());
     }
 
     public static ExpressionNode transformFeature(ReferenceNode feature, RankProfile rankProfile) {
-        ImmutableSchema search = rankProfile.getSearch();
+        ImmutableSchema search = rankProfile.schema();
         final String featureName = feature.getName();
         if ( ! featureName.equals("onnxModel") && ! featureName.equals("onnx")) return feature;
 

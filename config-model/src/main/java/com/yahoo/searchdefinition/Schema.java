@@ -124,6 +124,7 @@ public class Schema implements ImmutableSchema {
                   DeployLogger deployLogger,
                   ModelContext.Properties properties) {
         this(inherited, application, fileRegistry, deployLogger, properties, false);
+        if (1==1) throw new RuntimeException("df");
         this.name = name;
     }
 

@@ -1,0 +1,31 @@
+schema test {
+
+    document test {
+
+        field title type string {
+            indexing: index
+        }
+
+    }
+
+    rank-profile in_schema1 {
+
+        first-phase {
+            expression: nativeRank
+        }
+
+    }
+
+    rank-profile in_schema2 inherits outside_schema2 {
+
+        function f1() {
+            expression: fieldMatch(title) + fo2
+        }
+
+        first-phase {
+            expression: f1
+        }
+
+    }
+
+}

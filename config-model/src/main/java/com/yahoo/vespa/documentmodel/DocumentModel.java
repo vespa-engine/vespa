@@ -11,21 +11,14 @@ import com.yahoo.documentmodel.DocumentTypeRepo;
  *
  * @author baldersheim
  */
+// TODO: This should be removed in favor of Application
 public class DocumentModel {
 
     private final DocumentTypeRepo documentMan = new DocumentTypeRepo();
     private final SearchManager searchMan = new SearchManager();
 
-    /**
-     *
-     * @return Returns the DocumentManager
-     */
     public DocumentTypeRepo getDocumentManager() { return documentMan; }
 
-    /**
-     *
-     * @return Returns the SearchManager
-     */
     public SearchManager getSearchManager() { return searchMan; }
 
 }

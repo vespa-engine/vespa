@@ -470,6 +470,7 @@ public class DeployState implements ConfigDefinitionStore {
                                    reindexing);
         }
 
+        // TODO: This should be moved into Application+SchemaBuilder
         private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
                                                               QueryProfiles queryProfiles,
                                                               ValidationParameters validationParameters) {

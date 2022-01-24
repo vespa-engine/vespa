@@ -11,10 +11,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Internal helper class to retrieve document model and search definitions.
+ * Internal helper class to retrieve document model and schemas.
  *
  * @author Ulf Lilleengen
  */
+// TODO: This should be removed in favor of Application
 public class SearchDocumentModel {
 
     private final DocumentModel documentModel;
@@ -23,7 +24,6 @@ public class SearchDocumentModel {
     public SearchDocumentModel(DocumentModel documentModel, List<NamedSchema> schemas) {
         this.documentModel = documentModel;
         this.schemas = schemas;
-
     }
 
     public DocumentModel getDocumentModel() {
@@ -38,14 +38,6 @@ public class SearchDocumentModel {
         List<NamedSchema> ret = new ArrayList<>();
         for (Schema schema : builder.getSchemaList()) {
             ret.add(new NamedSchema(names.get(schema.getName()), schema));
-        }
-        return new SearchDocumentModel(builder.getModel(), ret);
-    }
-
-    public static SearchDocumentModel fromBuilder(SchemaBuilder builder) {
-        List<NamedSchema> ret = new ArrayList<>();
-        for (Schema schema : builder.getSchemaList()) {
-            ret.add(new NamedSchema(schema.getName(), schema));
         }
         return new SearchDocumentModel(builder.getModel(), ret);
     }
