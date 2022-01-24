@@ -96,7 +96,7 @@ public class ApplicationDeployTest {
         // Check that getFilename works
         ArrayList<String> sdFileNames = new ArrayList<>();
         for (NamedSchema sd : schemas)
-            sdFileNames.add(sd.getFilename());
+            sdFileNames.add(sd.getName() + ApplicationPackage.SD_NAME_SUFFIX);
         Collections.sort(sdFileNames);
         assertEquals("laptop.sd", sdFileNames.get(0));
         assertEquals("music.sd", sdFileNames.get(1));

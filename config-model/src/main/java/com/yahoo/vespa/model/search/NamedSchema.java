@@ -14,8 +14,6 @@ public class NamedSchema {
     private final Schema schema;
     private final String name;
 
-    public static final String fileNameSuffix = ".sd";
-
     public Schema getSearch() {
         return schema;
     }
@@ -27,11 +25,6 @@ public class NamedSchema {
     public NamedSchema(String name, Schema schema) {
         this.name = name;
         this.schema = schema;
-    }
-
-    // Used by admin interface
-    public String getFilename() {
-        return getName() + fileNameSuffix;
     }
 
 }
