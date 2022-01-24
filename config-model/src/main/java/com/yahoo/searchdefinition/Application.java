@@ -3,9 +3,11 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.vespa.documentmodel.DocumentModel;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,6 +21,7 @@ public class Application {
 
     private final ApplicationPackage applicationPackage;
     private final Map<String, Schema> schemas = new LinkedHashMap<>();
+    private final DocumentModel documentModel = new DocumentModel();
 
     public Application(ApplicationPackage applicationPackage) {
         this.applicationPackage = applicationPackage;
@@ -34,6 +37,13 @@ public class Application {
 
     /** Returns an unmodifiable list of the schemas of this application */
     public Map<String, Schema> schemas() { return Collections.unmodifiableMap(schemas); }
+
+    public void buildDocumentModel(List<Schema> schemasSomewhatOrdered) {
+        var builder = new DocumentModelBuilder(documentModel);
+        builder.addToModel(schemasSomewhatOrdered);
+    }
+
+    public DocumentModel documentModel() { return documentModel; }
 
     /** Validates this. Must be called after all content is added to it. */
     public void validate(DeployLogger logger) {

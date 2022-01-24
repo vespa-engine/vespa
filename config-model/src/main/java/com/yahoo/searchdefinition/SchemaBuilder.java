@@ -49,7 +49,6 @@ import java.util.Set;
 public class SchemaBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
-    private final DocumentModel model = new DocumentModel();
     private final Application application;
     private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
@@ -272,13 +271,12 @@ public class SchemaBuilder {
         if (validate)
             new DocumentGraphValidator().validateDocumentGraph(sdocs);
 
-        var builder = new DocumentModelBuilder(model);
         List<Schema> schemasSomewhatOrdered = new ArrayList<>(application.schemas().values());
         for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
             new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
             process(schema, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
         }
-        builder.addToModel(schemasSomewhatOrdered);
+        application.buildDocumentModel(schemasSomewhatOrdered);
         isBuilt = true;
     }
 
@@ -312,9 +310,7 @@ public class SchemaBuilder {
         return application.schemas().values().stream().findAny().get();
     }
 
-    public DocumentModel getModel() {
-        return model;
-    }
+    public DocumentModel getModel() { return application.documentModel(); }
 
     /**
      * Returns the built {@link Schema} object that has the given name. If the name is unknown, this method will simply
