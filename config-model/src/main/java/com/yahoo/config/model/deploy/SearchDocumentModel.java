@@ -34,10 +34,10 @@ public class SearchDocumentModel {
         return schemas;
     }
 
-    public static SearchDocumentModel fromBuilderAndNames(SchemaBuilder builder, Map<String, String> names) {
+    public static SearchDocumentModel fromBuilder(SchemaBuilder builder) {
         List<NamedSchema> ret = new ArrayList<>();
         for (Schema schema : builder.getSchemaList()) {
-            ret.add(new NamedSchema(names.get(schema.getName()), schema));
+            ret.add(new NamedSchema(schema.getName(), schema));
         }
         return new SearchDocumentModel(builder.getModel(), ret);
     }

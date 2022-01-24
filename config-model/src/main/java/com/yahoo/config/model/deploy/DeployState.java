@@ -475,14 +475,13 @@ public class DeployState implements ConfigDefinitionStore {
                                                               QueryProfiles queryProfiles,
                                                               ValidationParameters validationParameters) {
             Collection<NamedReader> readers = applicationPackage.getSchemas();
-            Map<String, String> names = new LinkedHashMap<>();
-            SchemaBuilder builder = new SchemaBuilder(applicationPackage, fileRegistry, logger, properties, rankProfileRegistry, queryProfiles.getRegistry());
+            SchemaBuilder builder = new SchemaBuilder(applicationPackage, fileRegistry, logger, properties,
+                                                      rankProfileRegistry, queryProfiles.getRegistry());
             for (NamedReader reader : readers) {
                 try {
                     String readerName = reader.getName();
                     String topLevelName = builder.importReader(reader, readerName);
                     String sdName = stripSuffix(readerName, ApplicationPackage.SD_NAME_SUFFIX);
-                    names.put(topLevelName, sdName);
                     if ( ! sdName.equals(topLevelName)) {
                         throw new IllegalArgumentException("Schema file name ('" + sdName + "') and name of " +
                                                            "top level element ('" + topLevelName +
@@ -497,7 +496,7 @@ public class DeployState implements ConfigDefinitionStore {
                 }
             }
             builder.build(! validationParameters.ignoreValidationErrors());
-            return SearchDocumentModel.fromBuilderAndNames(builder, names);
+            return SearchDocumentModel.fromBuilder(builder);
         }
 
         private static String stripSuffix(String nodeName, String postfix) {

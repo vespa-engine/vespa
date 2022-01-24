@@ -124,7 +124,6 @@ public class Schema implements ImmutableSchema {
                   DeployLogger deployLogger,
                   ModelContext.Properties properties) {
         this(inherited, application, fileRegistry, deployLogger, properties, false);
-        if (1==1) throw new RuntimeException("df");
         this.name = name;
     }
 
@@ -148,14 +147,10 @@ public class Schema implements ImmutableSchema {
         onnxModels = new OnnxModels(fileRegistry, Optional.of(this));
     }
 
-    protected void setName(String name) {
-        this.name = name;
-    }
+    protected void setName(String name) { this.name = name; }
 
     @Override
-    public String getName() {
-        return name;
-    }
+    public String getName() {return name; }
 
     /** Returns true if this only defines a document type, not a full schema */
     public boolean isDocumentsOnly() {

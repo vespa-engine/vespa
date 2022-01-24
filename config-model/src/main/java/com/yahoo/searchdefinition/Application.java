@@ -26,7 +26,6 @@ public class Application {
 
     public ApplicationPackage applicationPackage() { return applicationPackage; }
 
-
     public void add(Schema schema) {
         if (schemas.containsKey(schema.getName()))
             throw new IllegalArgumentException("Duplicate schema '" + schema.getName() + "' in " + this);
