@@ -14,6 +14,7 @@ import static org.junit.Assert.*;
  *
  * @author  Bjorn Borud
  */
+@SuppressWarnings("deprecation")
 public class LogLevelTestCase {
 
     /**

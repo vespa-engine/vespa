@@ -222,6 +222,7 @@ public class InternalStepRunner implements StepRunner {
                       logger);
     }
 
+    @SuppressWarnings("deprecation")
     private Optional<RunStatus> deploy(Supplier<ActivateResult> deployment, Instant startTime, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();

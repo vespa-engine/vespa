@@ -36,6 +36,7 @@ public class DeployHandlerLogger implements DeployLogger {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void log(Level level, String message) {
         if (level.intValue() <= LogLevel.DEBUG.intValue() && !verbose)
             return;
@@ -46,6 +47,7 @@ public class DeployHandlerLogger implements DeployLogger {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void logApplicationPackage(Level level, String message) {
         if (level.intValue() <= LogLevel.DEBUG.intValue() && !verbose)
             return;

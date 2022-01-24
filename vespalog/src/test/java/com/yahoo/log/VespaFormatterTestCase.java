@@ -19,7 +19,7 @@ import static org.junit.Assert.fail;
 /**
  * @author  Bjorn Borud
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"deprecation", "removal"})
 public class VespaFormatterTestCase {
 
     private String hostname;

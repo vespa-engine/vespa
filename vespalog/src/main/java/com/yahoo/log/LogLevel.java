@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.logging.Level;
 
 
@@ -31,8 +30,11 @@ import java.util.logging.Level;
  *
  * @author  Bjorn Borud
  * @author arnej27959
+ *
+ * @deprecated  Use {@link java.util.logging.Level} instead.
  */
-
+// TODO Vespa 9: move to non-PublicApi package
+@Deprecated(since = "7")
 public class LogLevel extends Level {
     /** A map from the name of the log level to the instance */
     private static final Map<String, Level> nameToLevel;

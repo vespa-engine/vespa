@@ -39,6 +39,7 @@ public class DeployHandlerLoggerTest {
         assertTrue(Pattern.matches(expectedPattern, baos.toString()));
     }
 
+    @SuppressWarnings("deprecation")
     private void logMessages(DeployLogger logger) {
         logger.log(LogLevel.DEBUG, "foobar");
         logger.log(LogLevel.SPAM, "foobar");

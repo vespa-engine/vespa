@@ -79,6 +79,7 @@ class ProtobufSerialization {
                 .build();
     }
 
+    @SuppressWarnings("deprecation")
     private static Level fromLogMessageLevel(LogProtocol.LogMessage.Level level) {
         switch (level) {
             case FATAL:
@@ -104,6 +105,7 @@ class ProtobufSerialization {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static LogProtocol.LogMessage.Level toLogMessageLevel(Level level) {
         Level vespaLevel = LogLevel.getVespaLogLevel(level);
         if (vespaLevel.equals(LogLevel.FATAL)) {

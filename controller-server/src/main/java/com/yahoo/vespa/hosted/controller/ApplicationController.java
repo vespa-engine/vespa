@@ -391,6 +391,8 @@ public class ApplicationController {
             // the source since it's the same application, so it should have the same warnings
             NotificationSource source = zone.environment().isManuallyDeployed() ?
                     NotificationSource.from(deployment) : NotificationSource.from(applicationId);
+
+            @SuppressWarnings("deprecation")
             List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
                     .map(logs -> logs.stream()
                             .filter(log -> log.applicationPackage)
