@@ -26,6 +26,7 @@ import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.application.ContainerActivator;
 import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.DeactivatedContainer;
 import com.yahoo.jdisc.application.GuiceRepository;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -144,7 +145,7 @@ public final class ConfiguredApplication implements Application {
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
-        initializeAndActivateContainer(builder);
+        initializeAndActivateContainer(builder, () -> {});
         startReconfigurerThread();
         portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
         portWatcher.setDaemon(true);
@@ -249,12 +250,13 @@ public final class ConfiguredApplication implements Application {
         shutdownTimeoutS.set(qrConfig.shutdown().timeout());
     }
 
-    private void initializeAndActivateContainer(ContainerBuilder builder) {
+    private void initializeAndActivateContainer(ContainerBuilder builder, Runnable cleanupTask) {
         addHandlerBindings(builder, Container.get().getRequestHandlerRegistry(),
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
         installServerProviders(builder);
 
-        activator.activateContainer(builder); // TODO: .notifyTermination(.. decompose previous component graph ..)
+        DeactivatedContainer deactivated = activator.activateContainer(builder);
+        if (deactivated != null) deactivated.notifyTermination(cleanupTask);
 
         startClients();
         startAndStopServers();
@@ -277,8 +279,8 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                     // Block until new config arrives, and it should be applied
-                    configurer.waitForNextComponentGeneration(builder.guiceModules().activate(), false);
-                    initializeAndActivateContainer(builder);
+                    Runnable cleanupTask = configurer.waitForNextComponentGeneration(builder.guiceModules().activate(), false);
+                    initializeAndActivateContainer(builder, cleanupTask);
                 } catch (UncheckedInterruptedException | ConfigInterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
