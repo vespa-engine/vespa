@@ -247,7 +247,8 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 
     if (putOp.getValidDbdId(_params._subDbId)) {
         if (putOp.changedDbdId() && useDocumentMetaStore(serialNum)) {
-            _gidToLidChangeHandler.notifyPut(token, docId.getGlobalId(), putOp.getLid(), serialNum);
+            FeedToken token_copy = (token && !token->is_replay()) ? token : FeedToken();
+            _gidToLidChangeHandler.notifyPut(std::move(token_copy), docId.getGlobalId(), putOp.getLid(), serialNum);
         }
         auto onWriteDone = createPutDoneContext(std::move(token), {}, get_pending_lid_token(putOp), doc, putOp.getLid());
         putSummary(serialNum, putOp.getLid(), doc, onWriteDone);
