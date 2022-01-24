@@ -28,11 +28,10 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
-import com.yahoo.io.reader.NamedReader;
+import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SchemaBuilder;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -103,8 +102,7 @@ public class DeployState implements ConfigDefinitionStore {
         return new Builder().applicationPackage(applicationPackage).build();
     }
 
-    private DeployState(ApplicationPackage applicationPackage,
-                        SearchDocumentModel searchDocumentModel,
+    private DeployState(Application application,
                         RankProfileRegistry rankProfileRegistry,
                         FileRegistry fileRegistry,
                         ExecutorService executor,
@@ -130,15 +128,15 @@ public class DeployState implements ConfigDefinitionStore {
         this.fileRegistry = fileRegistry;
         this.executor = executor;
         this.rankProfileRegistry = rankProfileRegistry;
-        this.applicationPackage = applicationPackage;
+        this.applicationPackage = application.applicationPackage();
         this.properties = properties;
         this.vespaVersion = vespaVersion;
         this.previousModel = previousModel;
         this.accessLoggingEnabledByDefault = accessLoggingEnabledByDefault;
         this.provisioner = hostProvisioner.orElse(getDefaultModelHostProvisioner(applicationPackage));
         this.provisioned = provisioned;
-        this.schemas = searchDocumentModel.getSchemas();
-        this.documentModel = searchDocumentModel.getDocumentModel();
+        this.schemas = List.copyOf(application.schemas().values());
+        this.documentModel = application.documentModel();
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
         this.endpoints = Set.copyOf(endpoints);
@@ -442,9 +440,8 @@ public class DeployState implements ConfigDefinitionStore {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
             QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
-            SearchDocumentModel searchDocumentModel = createSearchDocumentModel(rankProfileRegistry, queryProfiles, validationParameters);
-            return new DeployState(applicationPackage,
-                                   searchDocumentModel,
+            Application application = createApplication(rankProfileRegistry, queryProfiles, validationParameters);
+            return new DeployState(application,
                                    rankProfileRegistry,
                                    fileRegistry,
                                    executor,
@@ -468,15 +465,14 @@ public class DeployState implements ConfigDefinitionStore {
                                    reindexing);
         }
 
-        // TODO: This should be moved into Application+SchemaBuilder
-        private SearchDocumentModel createSearchDocumentModel(RankProfileRegistry rankProfileRegistry,
-                                                              QueryProfiles queryProfiles,
-                                                              ValidationParameters validationParameters) {
+        private Application createApplication(RankProfileRegistry rankProfileRegistry,
+                                              QueryProfiles queryProfiles,
+                                              ValidationParameters validationParameters) {
             SchemaBuilder builder = new SchemaBuilder(applicationPackage, fileRegistry, logger, properties,
                                                       rankProfileRegistry, queryProfiles.getRegistry());
             builder.importFromApplicationPackage();
             builder.build(! validationParameters.ignoreValidationErrors());
-            return new SearchDocumentModel(builder);
+            return builder.application();
         }
 
     }
