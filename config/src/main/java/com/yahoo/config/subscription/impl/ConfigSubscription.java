@@ -200,11 +200,9 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
     void setConfigAndGeneration(Long generation, boolean applyOnRestart, T config, PayloadChecksums payloadChecksums) {
         ConfigState<T> prev = this.config.get();
         boolean configChanged = !Objects.equals(prev.getConfig(), config);
-        String message = "Config has changed unexpectedly for " + key + ", generation " + generation;
         if (configChanged) {
-            if (log.isLoggable(Level.FINE))
-                message = message + ", config in state :" + prev.getConfig() + ", new config: " + config;
-            log.log(Level.WARNING, message);
+            log.log(Level.WARNING, "Config has changed unexpectedly for " + key + ", generation " + generation +
+                    ", config in state :" + prev.getConfig() + ", new config: " + config);
         }
         this.config.set(new ConfigState<>(true, generation, applyOnRestart, configChanged, config, payloadChecksums));
     }
