@@ -151,15 +151,7 @@ public class SchemaBuilder {
 
     public void importFromApplicationPackage() {
         for (NamedReader reader : application.applicationPackage().getSchemas()) {
-            try {
-                importFrom(reader);
-            } catch (ParseException e) {
-                throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Could not read schema file '" + reader.getName() + "'", e);
-            } finally {
-                closeIgnoreException(reader.getReader());
-            }
+            importFrom(reader);
         }
     }
 
@@ -168,17 +160,22 @@ public class SchemaBuilder {
      * imported, call {@link #build()}.
      *
      * @param reader       the reader whose content to import
-     * @return the name of the imported schema
-     * @throws ParseException thrown if the file does not contain a valid search definition
      */
-    private String importFrom(NamedReader reader) throws IOException, ParseException {
-        String schemaName = importString(IOUtils.readAll(reader), reader.getName());
-        String schemaFileName = stripSuffix(reader.getName(), ApplicationPackage.SD_NAME_SUFFIX);
-        if ( ! schemaFileName.equals(schemaName)) {
-            throw new IllegalArgumentException("The file containing schema '" + schemaName + "' must be named '" +
-                                               schemaName + ApplicationPackage.SD_NAME_SUFFIX + "', not " + reader.getName());
+    private void importFrom(NamedReader reader) {
+        try {
+            String schemaName = importString(IOUtils.readAll(reader), reader.getName());
+            String schemaFileName = stripSuffix(reader.getName(), ApplicationPackage.SD_NAME_SUFFIX);
+            if ( ! schemaFileName.equals(schemaName)) {
+                throw new IllegalArgumentException("The file containing schema '" + schemaName + "' must be named '" +
+                                                   schemaName + ApplicationPackage.SD_NAME_SUFFIX + "', not " + reader.getName());
+            }
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Could not read schema file '" + reader.getName() + "'", e);
+        } finally {
+            closeIgnoreException(reader.getReader());
         }
-        return schemaName;
     }
 
     private static String stripSuffix(String readerName, String suffix) {
