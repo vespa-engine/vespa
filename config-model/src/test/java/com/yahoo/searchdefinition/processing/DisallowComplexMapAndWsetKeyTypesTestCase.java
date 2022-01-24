@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -43,7 +43,7 @@ public class DisallowComplexMapAndWsetKeyTypesTestCase {
 
     private void testFieldType(String fieldType) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +

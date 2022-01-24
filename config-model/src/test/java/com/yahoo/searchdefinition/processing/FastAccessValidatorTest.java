@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -20,7 +20,7 @@ public class FastAccessValidatorTest {
 
     @Test
     public void throws_exception_on_incompatible_use_of_fastaccess() throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder(new RankProfileRegistry());
+        ApoplicationBuilder builder = new ApoplicationBuilder(new RankProfileRegistry());
         builder.addSchema(
                 TestUtil.joinLines(
                         "schema parent {",

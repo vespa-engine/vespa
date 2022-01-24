@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -175,7 +175,7 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     private Schema buildSearch(String field, String summary) throws ParseException {
-        var builder = new SchemaBuilder(new RankProfileRegistry());
+        var builder = new ApoplicationBuilder(new RankProfileRegistry());
         builder.addSchema(joinLines("search test {",
                                     "  document test {",
                                     "    struct elem {",

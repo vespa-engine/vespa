@@ -30,7 +30,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testAttributeSettings() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/attributesettings.sd");
+        Schema schema = ApoplicationBuilder.buildFromFile("src/test/examples/attributesettings.sd");
 
         SDField f1=(SDField) schema.getDocument().getField("f1");
         assertEquals(1, f1.getAttributes().size());
@@ -91,7 +91,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void requireThatFastAccessCanBeSet() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/attributesettings.sd");
+        Schema schema = ApoplicationBuilder.buildFromFile("src/test/examples/attributesettings.sd");
         SDField field = (SDField) schema.getDocument().getField("fast_access");
         assertEquals(1, field.getAttributes().size());
         Attribute attr = field.getAttributes().get(field.getName());
@@ -99,7 +99,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     private Schema getSearch(String sd) throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder();
+        ApoplicationBuilder builder = new ApoplicationBuilder();
         builder.addSchema(sd);
         builder.build();
         return builder.getSchema();

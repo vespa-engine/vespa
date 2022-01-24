@@ -31,7 +31,7 @@ public class SchemaTestCase {
                     "  }" +
                     "}");
             DeployLoggerStub logger = new DeployLoggerStub();
-            SchemaBuilder.createFromStrings(logger, schema);
+            ApoplicationBuilder.createFromStrings(logger, schema);
             assertEquals("schema 'test' inherits 'nonesuch', but this schema does not exist",
                          logger.entries.get(0).message);
             fail("Expected failure");
@@ -60,7 +60,7 @@ public class SchemaTestCase {
                     "    }" +
                     "  }" +
                     "}");
-            SchemaBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
+            ApoplicationBuilder.createFromStrings(new DeployLoggerStub(), parent, child);
         }
         catch (IllegalArgumentException e) {
             assertEquals("schema 'child' inherits 'parent', " +
@@ -166,7 +166,7 @@ public class SchemaTestCase {
                 "  import field parentschema_ref.name as child2_imported {}" +
                 "}");
 
-        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
+        ApoplicationBuilder builder = new ApoplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
         builder.addSchema(parentLines);
@@ -307,7 +307,7 @@ public class SchemaTestCase {
                 "  }" +
                 "}");
 
-        SchemaBuilder builder = new SchemaBuilder(new DeployLoggerStub());
+        ApoplicationBuilder builder = new ApoplicationBuilder(new DeployLoggerStub());
         builder.processorsToSkip().add(OnnxModelTypeResolver.class); // Avoid discovering the Onnx model referenced does not exist
         builder.processorsToSkip().add(ImportedFieldsResolver.class); // Avoid discovering the document reference leads nowhere
         builder.addSchema(parentLines);

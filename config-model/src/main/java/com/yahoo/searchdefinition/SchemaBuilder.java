@@ -40,12 +40,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Helper class for building {@link Schema}s. The pattern for using this is to 1) Import
- * all available search definitions, using the importXXX() methods, 2) provide the available rank types and rank
- * expressions, using the setRankXXX() methods, 3) invoke the {@link #build()} method, and 4) retrieve the built
- * search objects using the {@link #getSchema(String)} method.
+ * Application builder. Usage:
+ * 1) Add all schemas, using the addXXX() methods,
+ * 2) provide the available rank types and rank expressions, using the setRankXXX() methods,
+ * 3) invoke the {@link #build()} method
  */
-// NOTE: Since this was created we have added Application, and much of the content in this should migrate there.
 public class SchemaBuilder {
 
     private final ApplicationPackage applicationPackage;

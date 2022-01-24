@@ -23,7 +23,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testRankPropertyInheritance() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(joinLines(
                 "search test {",
                 "    document test {",
@@ -80,7 +80,7 @@ public class RankPropertiesTestCase extends AbstractSchemaTestCase {
     @Test
     public void testRankProfileMutate() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(joinLines(
                 "search test {",
                 "    document test {",

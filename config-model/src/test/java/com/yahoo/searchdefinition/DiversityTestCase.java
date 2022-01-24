@@ -15,7 +15,7 @@ public class DiversityTestCase {
     @Test
     public void testDiversity() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -60,7 +60,7 @@ public class DiversityTestCase {
     }
     @Test
     public void requireSingleNumericOrString() throws ParseException {
-        SchemaBuilder builder = getSearchBuilder("field b type predicate { indexing: attribute }");
+        ApoplicationBuilder builder = getSearchBuilder("field b type predicate { indexing: attribute }");
 
         try {
             builder.build();
@@ -72,7 +72,7 @@ public class DiversityTestCase {
 
     @Test
     public void requireSingle() throws ParseException {
-        SchemaBuilder builder = getSearchBuilder("field b type array<int> { indexing: attribute }");
+        ApoplicationBuilder builder = getSearchBuilder("field b type array<int> { indexing: attribute }");
 
         try {
             builder.build();
@@ -81,9 +81,9 @@ public class DiversityTestCase {
             assertEquals(getMessagePrefix() + "must be single value numeric, or enumerated attribute, but it is 'Array<int>'", e.getMessage());
         }
     }
-    private SchemaBuilder getSearchBuilder(String diversity) throws ParseException {
+    private ApoplicationBuilder getSearchBuilder(String diversity) throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +

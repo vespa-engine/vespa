@@ -36,7 +36,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
     @SuppressWarnings("deprecation")
     public void testSimpleImporting() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder sb = new SchemaBuilder(rankProfileRegistry, new QueryProfileRegistry());
+        ApoplicationBuilder sb = new ApoplicationBuilder(rankProfileRegistry, new QueryProfileRegistry());
         sb.addSchemaFile("src/test/examples/simple.sd");
         sb.build();
         Schema schema = sb.getSchema();
@@ -170,7 +170,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
     public void testDocumentImporting() throws IOException, ParseException {
         try {
             // Having two documents in one sd-file is illegal.
-            SchemaBuilder.buildFromFile("src/test/examples/documents.sd");
+            ApoplicationBuilder.buildFromFile("src/test/examples/documents.sd");
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -178,7 +178,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testIdImporting() throws IOException, ParseException {
-        Schema schema = SchemaBuilder.buildFromFile("src/test/examples/strange.sd");
+        Schema schema = ApoplicationBuilder.buildFromFile("src/test/examples/strange.sd");
         SDField idecidemyide=(SDField) schema.getDocument().getField("idecidemyide");
         assertEquals(5,idecidemyide.getId());
         SDField sodoi=(SDField) schema.getDocument().getField("sodoi");

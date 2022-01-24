@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -19,7 +19,7 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
         String name = "emptychild";
         final String expectedResultsDirName = "src/test/derived/" + name + "/";
 
-        SchemaBuilder builder = new SchemaBuilder();
+        ApoplicationBuilder builder = new ApoplicationBuilder();
         builder.addSchemaFile(expectedResultsDirName + "parent.sd");
         builder.addSchemaFile(expectedResultsDirName + "child.sd");
         builder.build();

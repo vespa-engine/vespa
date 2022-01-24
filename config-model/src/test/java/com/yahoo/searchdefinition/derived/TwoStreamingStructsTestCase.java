@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -17,13 +17,13 @@ public class TwoStreamingStructsTestCase extends AbstractExportingTestCase {
     public void testTwoStreamingStructsExporting() throws ParseException, IOException {
 
         String root = "src/test/derived/twostreamingstructs";
-        SchemaBuilder builder = new SchemaBuilder();
+        ApoplicationBuilder builder = new ApoplicationBuilder();
         builder.addSchemaFile(root + "/streamingstruct.sd");
         builder.addSchemaFile(root + "/whatever.sd");
         builder.build();
         assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), root);
 
-        builder = new SchemaBuilder();
+        builder = new ApoplicationBuilder();
         builder.addSchemaFile(root + "/streamingstruct.sd");
         builder.addSchemaFile(root + "/whatever.sd");
         builder.build();

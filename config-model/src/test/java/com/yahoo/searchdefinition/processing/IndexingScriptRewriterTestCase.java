@@ -7,7 +7,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.AbstractSchemaTestCase;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -121,7 +121,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
                 "clear_state | guard { input smallattribute | attribute smallattribute; }",
                 "clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                 "clear_state | guard { input title . \" \" . input category | tokenize | summary exact | index exact; }"),
-                       SchemaBuilder.buildFromFile("src/test/examples/simple.sd"));
+                       ApoplicationBuilder.buildFromFile("src/test/examples/simple.sd"));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
                 Arrays.asList("clear_state | guard { input title_src | lowercase | normalize | " +
                               "                      tokenize | index title; }",
                               "clear_state | guard { input title_src | summary title_s; }"),
-                SchemaBuilder.buildFromFile("src/test/examples/indexrewrite.sd"));
+                ApoplicationBuilder.buildFromFile("src/test/examples/indexrewrite.sd"));
     }
 
     @Test

@@ -3,7 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -21,7 +21,7 @@ public class ReservedRankingExpressionFunctionNamesTestCase {
     public void requireThatFunctionsWithReservedNamesIssueAWarning() throws ParseException {
         TestDeployLogger deployLogger = new TestDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(deployLogger, rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(deployLogger, rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +

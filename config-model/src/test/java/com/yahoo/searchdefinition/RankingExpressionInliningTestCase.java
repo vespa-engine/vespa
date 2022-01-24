@@ -28,7 +28,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testFunctionInliningPreserveArithmeticOrdering() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                         "search test {\n" +
                         "    document test { \n" +
@@ -79,7 +79,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testConstants() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -150,7 +150,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     @Test
     public void testNonTopLevelInlining() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -194,12 +194,12 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     public void testFunctionInliningWithReplacement() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         MockDeployLogger deployLogger = new MockDeployLogger();
-        SchemaBuilder builder = new SchemaBuilder(MockApplicationPackage.createEmpty(),
-                                                  new MockFileRegistry(),
-                                                  deployLogger,
-                                                  new TestProperties(),
-                                                  rankProfileRegistry,
-                                                  new QueryProfileRegistry());
+        ApoplicationBuilder builder = new ApoplicationBuilder(MockApplicationPackage.createEmpty(),
+                                                              new MockFileRegistry(),
+                                                              deployLogger,
+                                                              new TestProperties(),
+                                                              rankProfileRegistry,
+                                                              new QueryProfileRegistry());
         builder.addSchema(
                         "search test {\n" +
                         "    document test { }\n" +

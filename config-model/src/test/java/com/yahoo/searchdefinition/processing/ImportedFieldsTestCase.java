@@ -2,7 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.ImportedComplexField;
 import com.yahoo.searchdefinition.document.ImportedField;
@@ -68,7 +68,7 @@ public class ImportedFieldsTestCase {
     }
 
     private static Schema buildAdSearch(String sdContent) throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder();
+        ApoplicationBuilder builder = new ApoplicationBuilder();
         builder.addSchema(joinLines(
                 "schema campaign {",
                 "  document campaign {",
@@ -312,7 +312,7 @@ public class ImportedFieldsTestCase {
     }
 
     private static Schema buildChildSearch(String parentSdContent, String sdContent) throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder();
+        ApoplicationBuilder builder = new ApoplicationBuilder();
         builder.addSchema(parentSdContent);
         builder.addSchema(sdContent);
         builder.build();
@@ -320,7 +320,7 @@ public class ImportedFieldsTestCase {
     }
 
     private static Schema buildChildSearch(String grandParentSdContent, String parentSdContent, String sdContent) throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder();
+        ApoplicationBuilder builder = new ApoplicationBuilder();
         builder.addSchema(grandParentSdContent);
         builder.addSchema(parentSdContent);
         builder.addSchema(sdContent);
@@ -488,8 +488,8 @@ public class ImportedFieldsTestCase {
         assertTrue(attrs.containsAttribute("entries.value"));
     }
 
-    private SchemaBuilder buildParentsUsingInheritance() throws ParseException {
-        var builder = new SchemaBuilder();
+    private ApoplicationBuilder buildParentsUsingInheritance() throws ParseException {
+        var builder = new ApoplicationBuilder();
         builder.addSchema(joinLines("schema parent_a {",
                                     "document parent_a {",
                                     "  struct Entry {",

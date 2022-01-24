@@ -26,7 +26,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
     @Test
     public void testBasicFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -61,7 +61,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
     @Test
     public void testMultiLevelFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -113,7 +113,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
     @Test
     public void testFunctionShadowingArguments() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +
@@ -153,7 +153,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
         // Note: the type assigned to query profile and constant tensors here is not the correct type
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         QueryProfileRegistry queryProfiles = queryProfileWith("query(q)", "tensor(input[1])");
-        SchemaBuilder builder = new SchemaBuilder(rankProfileRegistry, queryProfiles);
+        ApoplicationBuilder builder = new ApoplicationBuilder(rankProfileRegistry, queryProfiles);
         builder.addSchema(
                 "search test {\n" +
                         "    document test { \n" +

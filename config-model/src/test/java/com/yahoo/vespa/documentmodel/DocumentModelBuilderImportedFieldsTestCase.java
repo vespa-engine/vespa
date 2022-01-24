@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
-import com.yahoo.searchdefinition.SchemaBuilder;
+import com.yahoo.searchdefinition.ApoplicationBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
@@ -27,7 +27,7 @@ public class DocumentModelBuilderImportedFieldsTestCase extends AbstractReferenc
     }
 
     private static class TestDocumentModelBuilder {
-        private final SchemaBuilder builder = new SchemaBuilder();
+        private final ApoplicationBuilder builder = new ApoplicationBuilder();
         public TestDocumentModelBuilder addCampaign() throws ParseException {
             builder.addSchema(joinLines("search campaign {",
                                         "  document campaign {",

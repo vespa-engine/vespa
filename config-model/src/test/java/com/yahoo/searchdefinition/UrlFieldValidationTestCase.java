@@ -15,7 +15,7 @@ public class UrlFieldValidationTestCase {
 
     @Test
     public void requireThatInheritedRiseFieldsStillCanBeInConflictButDontThrowException() throws ParseException {
-        SchemaBuilder builder = new SchemaBuilder();
+        ApoplicationBuilder builder = new ApoplicationBuilder();
         builder.addSchema("search test {" +
                           "    document test { " +
                           "        field a type uri { indexing: attribute | summary }" +
