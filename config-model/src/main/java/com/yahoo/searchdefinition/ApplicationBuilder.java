@@ -155,7 +155,7 @@ public class ApplicationBuilder {
      * Reads and parses the schema string provided by the given reader. Once all schemas have been
      * imported, call {@link #build()}.
      *
-     * @param reader  the reader whose content to import
+     * @param reader the reader whose content to import
      */
     private void importFrom(NamedReader reader) {
         try {
@@ -226,8 +226,8 @@ public class ApplicationBuilder {
      *
      * @throws IllegalStateException Thrown if this method has already been called.
      */
-    public void build() {
-        build(true);
+    public Application build() {
+        return build(true);
     }
 
     /**
@@ -235,7 +235,7 @@ public class ApplicationBuilder {
      *
      * @throws IllegalStateException thrown if this method has already been called
      */
-    public void build(boolean validate) {
+    public Application build(boolean validate) {
         if (application != null) throw new IllegalStateException("Application already built");
 
         application = new Application(applicationPackage,
@@ -247,6 +247,7 @@ public class ApplicationBuilder {
                                       validate,
                                       processorsToSkip,
                                       deployLogger);
+        return application;
     }
 
     /** Returns a modifiable set of processors we should skip for these schemas. Useful for testing. */

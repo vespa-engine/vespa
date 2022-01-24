@@ -471,8 +471,7 @@ public class DeployState implements ConfigDefinitionStore {
             ApplicationBuilder builder = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
                                                                 rankProfileRegistry, queryProfiles.getRegistry());
             builder.importFromApplicationPackage();
-            builder.build(! validationParameters.ignoreValidationErrors());
-            return builder.application();
+            return builder.build(! validationParameters.ignoreValidationErrors());
         }
 
     }
