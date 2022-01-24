@@ -76,9 +76,8 @@ public class Deconstructor implements ComponentDeconstructor {
             } else if (component instanceof Provider) {
                 destructibleComponents.add((Deconstructable) component);
             } else if (component instanceof SharedResource) {
-                log.log(FINE, () -> "Releasing container reference to resource " + component);
-                // No need to delay release, as jdisc does ref-counting
-                ((SharedResource) component).release();
+                // Release shared resources in same order as other components in case of usage without reference counting
+                destructibleComponents.add(new SharedResourceReleaser(component));
             }
         }
         if (!destructibleComponents.isEmpty() || !bundles.isEmpty()) {
@@ -102,6 +101,14 @@ public class Deconstructor implements ComponentDeconstructor {
         } catch (TimeoutException e) {
             log.warning("Component deconstruction timed out.");
         }
+    }
+
+    private static class SharedResourceReleaser implements Deconstructable {
+        final SharedResource resource;
+
+        private SharedResourceReleaser(Object resource) { this.resource = (SharedResource) resource; }
+
+        @Override public void deconstruct() { resource.release(); }
     }
 
     private static class DestructComponentTask implements Runnable {

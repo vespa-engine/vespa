@@ -57,9 +57,10 @@ public class DeconstructorTest {
     }
 
     @Test
-    public void require_shared_resource_released() {
+    public void require_shared_resource_released() throws InterruptedException {
         TestSharedResource sharedResource = new TestSharedResource();
         deconstructor.deconstruct(List.of(sharedResource), emptyList());
+        waitForDeconstructToComplete(() -> sharedResource.released);
         assertTrue(sharedResource.released);
     }
 
