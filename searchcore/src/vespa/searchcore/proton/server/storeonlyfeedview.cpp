@@ -247,6 +247,15 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
 
     if (putOp.getValidDbdId(_params._subDbId)) {
         if (putOp.changedDbdId() && useDocumentMetaStore(serialNum)) {
+            /*
+             * Don't pass replay feed token to GidToLidChangeHandler.
+             *
+             * The passed feed token is kept until the ForceCommitDoneTask scheduled by the next
+             * force commit has completed. If a replay feed token containing an active throttler
+             * token is passed to GidToLidChangeHandler then
+             * TransactionLogReplayFeedHandler::make_replay_feed_token() might deadlock, waiting for
+             * active throttler tokens to be destroyed.
+             */
             FeedToken token_copy = (token && !token->is_replay()) ? token : FeedToken();
             _gidToLidChangeHandler.notifyPut(std::move(token_copy), docId.getGlobalId(), putOp.getLid(), serialNum);
         }
