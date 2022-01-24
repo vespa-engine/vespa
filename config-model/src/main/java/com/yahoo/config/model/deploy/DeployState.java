@@ -481,12 +481,6 @@ public class DeployState implements ConfigDefinitionStore {
                 try {
                     String readerName = reader.getName();
                     String topLevelName = builder.importReader(reader, readerName);
-                    String sdName = stripSuffix(readerName, ApplicationPackage.SD_NAME_SUFFIX);
-                    if ( ! sdName.equals(topLevelName)) {
-                        throw new IllegalArgumentException("Schema file name ('" + sdName + "') and name of " +
-                                                           "top level element ('" + topLevelName +
-                                                           "') are not equal for file '" + readerName + "'");
-                    }
                 } catch (ParseException e) {
                     throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
                 } catch (IOException e) {
@@ -497,11 +491,6 @@ public class DeployState implements ConfigDefinitionStore {
             }
             builder.build(! validationParameters.ignoreValidationErrors());
             return SearchDocumentModel.fromBuilder(builder);
-        }
-
-        private static String stripSuffix(String nodeName, String postfix) {
-            assert (nodeName.endsWith(postfix));
-            return nodeName.substring(0, nodeName.length() - postfix.length());
         }
 
         @SuppressWarnings("EmptyCatchBlock")

@@ -149,16 +149,29 @@ public class SchemaBuilder {
     }
 
     /**
-     * Reads and parses the search definition string provided by the given reader. Once all search definitions have been
+     * Reads and parses the schema string provided by the given reader. Once all schemas have been
      * imported, call {@link #build()}.
      *
      * @param reader       the reader whose content to import
-     * @param searchDefDir the path to use when resolving file references
-     * @return the name of the imported object
+     * @param schemaDir the path to use when resolving file references
+     * @return the name of the imported schema
      * @throws ParseException thrown if the file does not contain a valid search definition
      */
-    public String importReader(NamedReader reader, String searchDefDir) throws IOException, ParseException {
-        return importString(IOUtils.readAll(reader), searchDefDir);
+    public String importReader(NamedReader reader, String schemaDir) throws IOException, ParseException {
+        String schemaName = importString(IOUtils.readAll(reader), schemaDir);
+        String schemaFileName = stripSuffix(reader.getName(), ApplicationPackage.SD_NAME_SUFFIX);
+        if ( ! schemaFileName.equals(schemaName)) {
+            throw new IllegalArgumentException("Schema file name ('" + schemaFileName + "') and name of " +
+                                               "top level element ('" + schemaName +
+                                               "') are not equal for file '" + reader.getName() + "'");
+        }
+        return schemaName;
+    }
+
+    private static String stripSuffix(String readerName, String suffix) {
+        if ( ! readerName.endsWith(suffix))
+            throw new IllegalArgumentException("Schema '" + readerName + "' does not end with " + suffix);
+        return readerName.substring(0, readerName.length() - suffix.length());
     }
 
     /**
@@ -172,12 +185,12 @@ public class SchemaBuilder {
         return importString(str, null);
     }
 
-    private String importString(String str, String searchDefDir) throws ParseException {
+    private String importString(String str, String schemaDir) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
             return importRawSchema(new SDParser(stream, fileRegistry, deployLogger, properties, application,
                                                 rankProfileRegistry, documentsOnly)
-                                           .schema(docTypeMgr, searchDefDir));
+                                           .schema(docTypeMgr, schemaDir));
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
