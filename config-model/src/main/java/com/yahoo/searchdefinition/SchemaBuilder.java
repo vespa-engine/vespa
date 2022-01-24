@@ -242,54 +242,19 @@ public class SchemaBuilder {
     public void build(boolean validate) {
         if (application != null) throw new IllegalStateException("Application already built");
 
-        application = new Application(applicationPackage, schemas, deployLogger);
-        new TemporarySDTypeResolver(schemas, deployLogger).process();
-
-        List<SDDocumentType> sdocs = new ArrayList<>();
-        sdocs.add(SDDocumentType.VESPA_DOCUMENT);
-        for (Schema schema : schemas) {
-            if (schema.hasDocument()) {
-                sdocs.add(schema.getDocument());
-            }
-        }
-
-        var orderer = new SDDocumentTypeOrderer(sdocs, deployLogger);
-        orderer.process();
-        for (SDDocumentType sdoc : orderer.getOrdered()) {
-            new FieldOperationApplierForStructs().process(sdoc);
-            new FieldOperationApplier().process(sdoc);
-        }
-
-        var resolver = new DocumentReferenceResolver(schemas);
-        sdocs.forEach(resolver::resolveReferences);
-        sdocs.forEach(resolver::resolveInheritedReferences);
-        var importedFieldsEnumerator = new ImportedFieldsEnumerator(schemas);
-        sdocs.forEach(importedFieldsEnumerator::enumerateImportedFields);
-
-        if (validate)
-            new DocumentGraphValidator().validateDocumentGraph(sdocs);
-
-        List<Schema> schemasSomewhatOrdered = new ArrayList<>(schemas);
-        for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
-            new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
-            process(schema, new QueryProfiles(queryProfileRegistry, deployLogger), validate);
-        }
-        application.buildDocumentModel(schemasSomewhatOrdered);
+        application = new Application(applicationPackage,
+                                      schemas,
+                                      rankProfileRegistry,
+                                      new QueryProfiles(queryProfileRegistry, deployLogger),
+                                      properties,
+                                      documentsOnly,
+                                      validate,
+                                      processorsToSkip,
+                                      deployLogger);
     }
 
     /** Returns a modifiable set of processors we should skip for these schemas. Useful for testing. */
     public Set<Class<? extends Processor>> processorsToSkip() { return processorsToSkip; }
-
-    /**
-     * Processes and returns the given {@link Schema} object. This method has been factored out of the {@link
-     * #build()} method so that subclasses can choose not to build anything.
-     */
-    private void process(Schema schema, QueryProfiles queryProfiles, boolean validate) {
-        new Processing(properties).process(schema, deployLogger,
-                                           rankProfileRegistry, queryProfiles,
-                                           validate, documentsOnly,
-                                           processorsToSkip);
-    }
 
     /**
      * Convenience method to call {@link #getSchema(String)} when there is only a single {@link Schema} object
