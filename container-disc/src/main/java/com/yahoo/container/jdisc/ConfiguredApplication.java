@@ -277,7 +277,7 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                     // Block until new config arrives, and it should be applied
-                    configurer.getNewComponentGraph(builder.guiceModules().activate(), false);
+                    configurer.waitForNextComponentGeneration(builder.guiceModules().activate(), false);
                     initializeAndActivateContainer(builder);
                 } catch (UncheckedInterruptedException | ConfigInterruptedException e) {
                     break;

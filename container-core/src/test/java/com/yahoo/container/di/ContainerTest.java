@@ -333,11 +333,11 @@ public class ContainerTest extends ContainerTestBase {
     }
 
     ComponentGraph getNewComponentGraph(Container container, ComponentGraph oldGraph) {
-        return container.getNewComponentGraph(oldGraph, Guice.createInjector(), true);
+        return container.waitForNextComponentGeneration(oldGraph, Guice.createInjector(), true);
     }
 
     ComponentGraph getNewComponentGraph(Container container) {
-        return container.getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), true);
+        return container.waitForNextComponentGeneration(new ComponentGraph(), Guice.createInjector(), true);
     }
 
     private ComponentTakingConfig createComponentTakingConfig(ComponentGraph componentGraph) {

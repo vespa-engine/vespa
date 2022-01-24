@@ -71,10 +71,10 @@ public class Container {
         });
     }
 
-    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
+    public ComponentGraph waitForNextComponentGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
-            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
+            ComponentGraph newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
             newGraph.reuseNodes(oldGraph);
             constructComponents(newGraph);
             deconstructObsoleteComponents(oldGraph, newGraph, obsoleteBundles);
@@ -85,10 +85,8 @@ public class Container {
         }
     }
 
-    private ComponentGraph getConfigAndCreateGraph(ComponentGraph graph,
-                                                   Injector fallbackInjector,
-                                                   boolean isInitializing,
-                                                   Collection<Bundle> obsoleteBundles) // NOTE: Return value
+    private ComponentGraph waitForNewConfigGenAndCreateGraph(
+            ComponentGraph graph, Injector fallbackInjector, boolean isInitializing, Collection<Bundle> obsoleteBundles) // NOTE: Return value
     {
         ConfigSnapshot snapshot;
         while (true) {

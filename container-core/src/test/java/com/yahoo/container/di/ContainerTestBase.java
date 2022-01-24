@@ -65,7 +65,7 @@ public class ContainerTestBase {
                             throw new UnsupportedOperationException("getBundle not supported.");
                         }
                     });
-            componentGraph = container.getNewComponentGraph(componentGraph, Guice.createInjector(), true);
+            componentGraph = container.waitForNextComponentGeneration(componentGraph, Guice.createInjector(), true);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

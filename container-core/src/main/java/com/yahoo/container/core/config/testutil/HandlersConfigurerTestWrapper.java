@@ -120,7 +120,7 @@ public class HandlersConfigurerTestWrapper {
 
     public void reloadConfig() {
         configurer.reloadConfig(++lastGeneration);
-        configurer.getNewComponentGraph(guiceInjector(), false);
+        configurer.waitForNextComponentGeneration(guiceInjector(), false);
     }
 
     public void shutdown() {
