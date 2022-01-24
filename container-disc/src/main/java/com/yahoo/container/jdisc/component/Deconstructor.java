@@ -16,9 +16,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -49,7 +49,7 @@ public class Deconstructor implements ComponentDeconstructor {
     }
 
     private final ScheduledExecutorService executor =
-            Executors.newScheduledThreadPool(2, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
+            new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
 
     private final Mode mode;
     private final Duration delay;
