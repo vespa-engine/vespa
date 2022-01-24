@@ -4,11 +4,9 @@ package com.yahoo.config.model.deploy;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.model.search.NamedSchema;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Internal helper class to retrieve document model and schemas.
@@ -19,9 +17,9 @@ import java.util.Map;
 public class SearchDocumentModel {
 
     private final DocumentModel documentModel;
-    private final List<NamedSchema> schemas;
+    private final List<Schema> schemas;
 
-    public SearchDocumentModel(DocumentModel documentModel, List<NamedSchema> schemas) {
+    public SearchDocumentModel(DocumentModel documentModel, List<Schema> schemas) {
         this.documentModel = documentModel;
         this.schemas = schemas;
     }
@@ -30,14 +28,14 @@ public class SearchDocumentModel {
         return documentModel;
     }
 
-    public List<NamedSchema> getSchemas() {
+    public List<Schema> getSchemas() {
         return schemas;
     }
 
     public static SearchDocumentModel fromBuilder(SchemaBuilder builder) {
-        List<NamedSchema> ret = new ArrayList<>();
+        List<Schema> ret = new ArrayList<>();
         for (Schema schema : builder.getSchemaList()) {
-            ret.add(new NamedSchema(schema.getName(), schema));
+            ret.add(schema);
         }
         return new SearchDocumentModel(builder.getModel(), ret);
     }

@@ -30,6 +30,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.SchemaBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinition;
@@ -40,7 +41,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
-import com.yahoo.vespa.model.search.NamedSchema;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -69,7 +69,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final DeployLogger logger;
     private final FileRegistry fileRegistry;
     private final DocumentModel documentModel;
-    private final List<NamedSchema> schemas;
+    private final List<Schema> schemas;
     private final ApplicationPackage applicationPackage;
     private final Optional<ConfigDefinitionRepo> configDefinitionRepo;
     private final Optional<ApplicationPackage> permanentApplicationPackage;
@@ -236,9 +236,7 @@ public class DeployState implements ConfigDefinitionStore {
         return applicationPackage;
     }
 
-    public List<NamedSchema> getSchemas() {
-        return schemas;
-    }
+    public List<Schema> getSchemas() { return schemas; }
 
     public DocumentModel getDocumentModel() {
         return documentModel;

@@ -5,6 +5,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -37,9 +38,8 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer<Abstr
         this.index = index;
     }
 
-    public void addDocumentNames(NamedSchema searchDefinition) {
-        String dName = searchDefinition.getSearch().getDocument().getDocumentName().getName();
-        documentNames.add(dName);
+    public void addDocumentNames(Schema schema) {
+        documentNames.add(schema.getDocument().getDocumentName().getName());
     }
 
     /** Returns a List with document names used in this search cluster */
@@ -51,16 +51,15 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer<Abstr
 
     public String getClusterName()              { return clusterName; }
     public final String getIndexingModeName()   { return getIndexingMode().getName(); }
-    public final boolean isRealtime()           { return getIndexingMode() == IndexingMode.REALTIME; }
     public final boolean isStreaming()          { return getIndexingMode() == IndexingMode.STREAMING; }
 
     public final AbstractSearchCluster setQueryTimeout(Double to) {
-        this.queryTimeout=to;
+        this.queryTimeout = to;
         return this;
     }
 
     public final AbstractSearchCluster setVisibilityDelay(double delay) {
-        this.visibilityDelay=delay;
+        this.visibilityDelay = delay;
         return this;
     }
 
@@ -103,16 +102,16 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer<Abstr
 
     public static final class SchemaSpec {
 
-        private final NamedSchema searchDefinition;
+        private final Schema schema;
         private final UserConfigRepo userConfigRepo;
 
-        public SchemaSpec(NamedSchema searchDefinition, UserConfigRepo userConfigRepo) {
-            this.searchDefinition = searchDefinition;
+        public SchemaSpec(Schema schema, UserConfigRepo userConfigRepo) {
+            this.schema = schema;
             this.userConfigRepo = userConfigRepo;
         }
 
-        public NamedSchema getSearchDefinition() {
-            return searchDefinition;
+        public Schema getSchema() {
+            return schema;
         }
 
         public UserConfigRepo getUserConfigs() {

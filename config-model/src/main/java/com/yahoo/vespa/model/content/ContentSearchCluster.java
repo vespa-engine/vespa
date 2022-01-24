@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.documentmodel.NewDocumentType;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.builder.UserConfigBuilder;
@@ -14,7 +15,6 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.search.NamedSchema;
 import com.yahoo.vespa.model.search.NodeSpec;
 import com.yahoo.vespa.model.search.SchemaDefinitionXMLHandler;
 import com.yahoo.vespa.model.search.SearchCluster;
@@ -249,17 +249,15 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private void addSchemas(DeployState deployState, List<ModelElement> searchDefs, AbstractSearchCluster sc) {
         for (ModelElement e : searchDefs) {
             SchemaDefinitionXMLHandler schemaDefinitionXMLHandler = new SchemaDefinitionXMLHandler(e);
-            NamedSchema searchDefinition =
-                    schemaDefinitionXMLHandler.findResponsibleSchema(deployState.getSchemas());
-            if (searchDefinition == null)
+            Schema schema = schemaDefinitionXMLHandler.findResponsibleSchema(deployState.getSchemas());
+            if (schema == null)
                 throw new IllegalArgumentException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
                                                    this + " does not exist");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
-            sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(searchDefinition,
+            sc.getLocalSDS().add(new AbstractSearchCluster.SchemaSpec(schema,
                                                                       UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
-            //need to get the document names from this sdfile
-            sc.addDocumentNames(searchDefinition);
+            sc.addDocumentNames(schema);
         }
     }
 
