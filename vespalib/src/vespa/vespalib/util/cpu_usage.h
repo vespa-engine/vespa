@@ -13,15 +13,9 @@ namespace vespalib {
 namespace cpu_usage {
 
 /**
- * Uses getrusage to sample the total amount of user and system cpu
- * time used so far.
+ * Samples the total CPU usage of this process so far.
  **/
-struct RUsage {
-    duration user;
-    duration system;
-    duration total() const { return user + system; }
-    static RUsage sample() noexcept;
-};
+duration total_cpu_usage() noexcept;
 
 /**
  * Samples the total CPU usage of the thread that created it. Note

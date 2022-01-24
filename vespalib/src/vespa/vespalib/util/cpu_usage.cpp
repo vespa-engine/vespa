@@ -46,13 +46,11 @@ public:
 
 } // <unnamed>
 
-RUsage
-RUsage::sample() noexcept
-{
-    rusage usage;
-    memset(&usage, 0, sizeof(usage));
-    getrusage(RUSAGE_SELF, &usage);
-    return {from_timeval(usage.ru_utime), from_timeval(usage.ru_stime)};
+duration total_cpu_usage() noexcept {
+        timespec ts;
+        memset(&ts, 0, sizeof(ts));
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+        return from_timespec(ts);
 }
 
 ThreadSampler::UP create_thread_sampler(bool force_mock_impl, double expected_load) {
@@ -224,7 +222,7 @@ CpuUsage::do_sample()
         my_sample.merge(_usage);
         _usage = my_sample;
     }
-    auto total = cpu_usage::RUsage::sample().total();
+    auto total = cpu_usage::total_cpu_usage();
     for (size_t i = 0; i < index_of(Category::OTHER); ++i) {
         total -= my_sample[i];
     }
