@@ -250,7 +250,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         for (ModelElement e : searchDefs) {
             SchemaDefinitionXMLHandler schemaDefinitionXMLHandler = new SchemaDefinitionXMLHandler(e);
             NamedSchema searchDefinition =
-                    schemaDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSchemas());
+                    schemaDefinitionXMLHandler.findResponsibleSchema(deployState.getSchemas());
             if (searchDefinition == null)
                 throw new IllegalArgumentException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
                                                    this + " does not exist");

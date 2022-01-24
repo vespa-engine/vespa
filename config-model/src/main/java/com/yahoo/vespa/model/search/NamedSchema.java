@@ -29,16 +29,6 @@ public class NamedSchema {
         this.schema = schema;
     }
 
-    //Find search definition from a collection with the name specified
-    public static NamedSchema findByName(String schemaName, Collection<NamedSchema> schemas) {
-        for (NamedSchema candidate : schemas) {
-            if (candidate.getName().equals(schemaName) )
-                return candidate;
-        }
-
-        return null;
-    }
-
     // Used by admin interface
     public String getFilename() {
         return getName() + fileNameSuffix;

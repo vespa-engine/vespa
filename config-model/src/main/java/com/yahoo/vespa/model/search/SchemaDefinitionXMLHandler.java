@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -13,19 +14,23 @@ import java.util.List;
  */
 public class SchemaDefinitionXMLHandler implements Serializable {
 
-    private String sdName;
+    private String schemaName;
 
     public SchemaDefinitionXMLHandler(ModelElement elem) {
-        sdName = elem.stringAttribute("name");
-        if (sdName == null) {
-            sdName = elem.stringAttribute("type");
+        schemaName = elem.stringAttribute("name");
+        if (schemaName == null) {
+            schemaName = elem.stringAttribute("type");
         }
     }
 
-    public String getName() { return sdName; }
+    public String getName() { return schemaName; }
 
-    public NamedSchema getResponsibleSearchDefinition(List<NamedSchema> schemas) {
-        return NamedSchema.findByName(getName(), schemas );
+    public NamedSchema findResponsibleSchema(List<NamedSchema> schemas) {
+        for (NamedSchema candidate : schemas) {
+            if (candidate.getName().equals(schemaName) )
+                return candidate;
+        }
+        return null;
     }
 
 }
