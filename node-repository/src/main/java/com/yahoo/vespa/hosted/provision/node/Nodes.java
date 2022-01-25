@@ -474,7 +474,7 @@ public class Nodes {
         if (node.state() == Node.State.ready) return node;
 
         Node parentHost = node.parentHostname().flatMap(this::node).orElse(node);
-        List<String> failureReasons = NodeFailer.reasonsToFailParentHost(parentHost);
+        List<String> failureReasons = NodeFailer.reasonsToFailHost(parentHost);
         if ( ! failureReasons.isEmpty())
             illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
 

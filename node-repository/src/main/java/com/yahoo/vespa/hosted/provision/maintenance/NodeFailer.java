@@ -22,10 +22,11 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -40,7 +41,6 @@ import java.util.stream.Collectors;
 public class NodeFailer extends NodeRepositoryMaintainer {
 
     private static final Logger log = Logger.getLogger(NodeFailer.class.getName());
-    private static final Duration nodeRequestInterval = Duration.ofMinutes(10);
 
     /** Metric for number of hosts that we want to fail, but cannot due to throttling */
     static final String throttledHostFailuresMetric = "throttledHostFailures";
@@ -53,8 +53,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     private final Deployer deployer;
     private final Duration downTimeLimit;
+    private final Duration suspendedDownTimeLimit;
     private final Orchestrator orchestrator;
-    private final Instant constructionTime;
     private final ThrottlePolicy throttlePolicy;
     private final Metric metric;
 
@@ -65,8 +65,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         super(nodeRepository, min(downTimeLimit.dividedBy(2), interval), metric);
         this.deployer = deployer;
         this.downTimeLimit = downTimeLimit;
+        this.suspendedDownTimeLimit = downTimeLimit.multipliedBy(4); // Allow more downtime when a node is suspended
         this.orchestrator = orchestrator;
-        this.constructionTime = nodeRepository.clock().instant();
         this.throttlePolicy = throttlePolicy;
         this.metric = metric;
     }
@@ -139,11 +139,11 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         return asSuccessFactor(attempts, failures);
     }
 
-    private List<FailingNode> findReadyFailingNodes() {
-        List<FailingNode> failingNodes = new ArrayList<>();
+    private Collection<FailingNode> findReadyFailingNodes() {
+        Set<FailingNode> failingNodes = new HashSet<>();
         for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
             Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
-            List<String> failureReports = reasonsToFailParentHost(hostNode);
+            List<String> failureReports = reasonsToFailHost(hostNode);
             if (failureReports.size() > 0) {
                 if (hostNode.equals(node)) {
                     failingNodes.add(new FailingNode(node, "Host has failure reports: " + failureReports));
@@ -155,35 +155,38 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         return failingNodes;
     }
 
-    private List<FailingNode> findActiveFailingNodes() {
+    private Collection<FailingNode> findActiveFailingNodes() {
+        Set<FailingNode> failingNodes = new HashSet<>();
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
-        Instant graceTimeEnd = clock().instant().minus(downTimeLimit);
-        List<FailingNode> failingNodes = new ArrayList<>();
+
         for (Node node : activeNodes) {
-            if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
+            Instant graceTimeStart = clock().instant().minus(suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
+            if (node.history().hasEventBefore(History.Event.Type.down, graceTimeStart) && !applicationSuspended(node)) {
                 // Allow a grace period after node re-activation
-                if ( ! node.history().hasEventAfter(History.Event.Type.activated, graceTimeEnd))
+                if (!node.history().hasEventAfter(History.Event.Type.activated, graceTimeStart))
                     failingNodes.add(new FailingNode(node, "Node has been down longer than " + downTimeLimit));
             }
-            else if (hostSuspended(node, activeNodes)) {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
-                if (hostNode.type().isHost()) {
-                    List<String> failureReports = reasonsToFailParentHost(hostNode);
-                    if (failureReports.size() > 0) {
-                        if (hostNode.equals(node)) {
-                            failingNodes.add(new FailingNode(node, "Host has failure reports: " + failureReports));
-                        } else {
-                            failingNodes.add(new FailingNode(node, "Parent (" + hostNode + ") has failure reports: " + failureReports));
-                        }
+        }
+
+        for (Node node : activeNodes) {
+            if (allSuspended(node, activeNodes)) {
+                Node host = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
+                if (host.type().isHost()) {
+                    List<String> failureReports = reasonsToFailHost(host);
+                    if ( ! failureReports.isEmpty()) {
+                        failingNodes.add(new FailingNode(node, host.equals(node) ?
+                                                               "Host has failure reports: " + failureReports :
+                                                               "Parent " + host + " has failure reports: " + failureReports));
                     }
                 }
             }
         }
+
         return failingNodes;
     }
 
-    public static List<String> reasonsToFailParentHost(Node hostNode) {
-        return hostNode.reports().getReports().stream()
+    public static List<String> reasonsToFailHost(Node host) {
+        return host.reports().getReports().stream()
                 .filter(report -> report.getType().hostShouldBeFailed())
                 // The generated string is built from the report's ID, created time, and description only.
                 .map(report -> report.getReportId() + " reported " + report.getCreatedTime() + ": " + report.getDescription())
@@ -192,8 +195,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     /** Returns whether node has any kind of hardware issue */
     static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
-        Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.nodes().node(parent)).orElse(node);
-        return reasonsToFailParentHost(hostNode).size() > 0;
+        Node host = node.parentHostname().flatMap(parent -> nodeRepository.nodes().node(parent)).orElse(node);
+        return reasonsToFailHost(host).size() > 0;
     }
 
     private boolean applicationSuspended(Node node) {
@@ -216,7 +219,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     /** Is the node and all active children suspended? */
-    private boolean hostSuspended(Node node, NodeList activeNodes) {
+    private boolean allSuspended(Node node, NodeList activeNodes) {
         if (!suspended(node)) return false;
         if (node.parentHostname().isPresent()) return true; // optimization
         return activeNodes.stream()
@@ -358,6 +361,17 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         public Node node() { return node; }
         public String reason() { return reason; }
+
+        @Override
+        public boolean equals(Object other) {
+            if ( ! (other instanceof FailingNode)) return false;
+            return ((FailingNode)other).node().equals(this.node());
+        }
+
+        @Override
+        public int hashCode() {
+            return node.hashCode();
+        }
 
     }
 

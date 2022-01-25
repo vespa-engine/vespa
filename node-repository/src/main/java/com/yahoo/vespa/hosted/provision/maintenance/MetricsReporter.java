@@ -201,7 +201,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
         metric.set("wantToRetire", node.status().wantToRetire() ? 1 : 0, context);
         metric.set("wantToDeprovision", node.status().wantToDeprovision() ? 1 : 0, context);
-        metric.set("failReport", NodeFailer.reasonsToFailParentHost(node).isEmpty() ? 0 : 1, context);
+        metric.set("failReport", NodeFailer.reasonsToFailHost(node).isEmpty() ? 0 : 1, context);
 
         if (node.type().isHost()) {
             metric.set("wantToEncrypt", node.reports().getReport("wantToEncrypt").isPresent() ? 1 : 0, context);
