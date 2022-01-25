@@ -126,6 +126,8 @@ public class ApplicationBuilder {
         this.deployLogger = deployLogger;
         this.properties = properties;
         this.documentsOnly = documentsOnly;
+        for (NamedReader reader : applicationPackage.getSchemas())
+            addSchema(reader);
     }
 
     /**
@@ -136,19 +138,13 @@ public class ApplicationBuilder {
      * @throws IOException    thrown if the file can not be read for some reason
      * @throws ParseException thrown if the file does not contain a valid search definition
      */
-    public Schema addSchemaFile(String fileName) throws IOException, ParseException {
+    public Schema add(String fileName) throws IOException, ParseException {
         File file = new File(fileName);
         return addSchema(IOUtils.readFile(file), file.getAbsoluteFile().getParent());
     }
 
-    private Schema addSchemaFile(Path file) throws IOException, ParseException {
-        return addSchemaFile(file.toString());
-    }
-
-    public void importFromApplicationPackage() {
-        for (NamedReader reader : applicationPackage.getSchemas()) {
-            importFrom(reader);
-        }
+    private Schema add(Path file) throws IOException, ParseException {
+        return add(file.toString());
     }
 
     /**
@@ -157,7 +153,7 @@ public class ApplicationBuilder {
      *
      * @param reader the reader whose content to import
      */
-    private void importFrom(NamedReader reader) {
+    private void addSchema(NamedReader reader) {
         try {
             String schemaName = addSchema(IOUtils.readAll(reader), reader.getName()).getName();
             String schemaFileName = stripSuffix(reader.getName(), ApplicationPackage.SD_NAME_SUFFIX);
@@ -197,7 +193,7 @@ public class ApplicationBuilder {
             Schema schema = new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
                                          rankProfileRegistry, documentsOnly)
                     .schema(documentTypeManager, schemaDir);
-            addSchemaFile(schema);
+            add(schema);
             return schema;
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
@@ -214,7 +210,7 @@ public class ApplicationBuilder {
      * @param schema the object to import
      * @throws IllegalArgumentException if the given search object has already been processed
      */
-    public void addSchemaFile(Schema schema) {
+    public void add(Schema schema) {
         if (schema.getName() == null)
             throw new IllegalArgumentException("Schema has no name");
         schemas.add(schema);
@@ -386,7 +382,7 @@ public class ApplicationBuilder {
                                                             rankProfileRegistry,
                                                             queryprofileRegistry);
         for (String fileName : fileNames) {
-            builder.addSchemaFile(fileName);
+            builder.add(fileName);
         }
         builder.build(true);
         return builder;
@@ -427,7 +423,7 @@ public class ApplicationBuilder {
                                                             rankProfileRegistry,
                                                             queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
-            builder.addSchemaFile(i.next());
+            builder.add(i.next());
         }
         builder.build(true);
         return builder;
@@ -492,13 +488,13 @@ public class ApplicationBuilder {
      *
      * @param rawSchema the raw object to build from
      * @return the built {@link ApplicationBuilder} object
-     * @see #addSchemaFile(Schema)
+     * @see #add(Schema)
      */
     public static ApplicationBuilder createFromRawSchema(Schema rawSchema,
                                                          RankProfileRegistry rankProfileRegistry,
                                                          QueryProfileRegistry queryProfileRegistry) {
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry, queryProfileRegistry);
-        builder.addSchemaFile(rawSchema);
+        builder.add(rawSchema);
         builder.build();
         return builder;
     }
@@ -508,7 +504,7 @@ public class ApplicationBuilder {
      *
      * @param rawSchema the raw object to build from
      * @return the built {@link Schema} object
-     * @see #addSchemaFile(Schema)
+     * @see #add(Schema)
      */
     public static Schema buildFromRawSchema(Schema rawSchema,
                                             RankProfileRegistry rankProfileRegistry,

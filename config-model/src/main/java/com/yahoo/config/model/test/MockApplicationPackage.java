@@ -95,8 +95,8 @@ public class MockApplicationPackage implements ApplicationPackage {
     /** Returns the root of this application package relative to the current dir */
     protected File root() { return root; }
 
+    @SuppressWarnings("deprecation") // not redundant
     @Override
-    @SuppressWarnings("deprecation") // NOT redundant
     public String getApplicationName() {
         return "mock application";
     }
@@ -118,21 +118,24 @@ public class MockApplicationPackage implements ApplicationPackage {
     @Override
     public List<NamedReader> getSchemas() {
         ArrayList<NamedReader> readers = new ArrayList<>();
-        ApplicationBuilder applicationBuilder = new ApplicationBuilder(this,
-                                                                       new MockFileRegistry(),
-                                                                       new BaseDeployLogger(),
-                                                                       new TestProperties(),
-                                                                       new RankProfileRegistry(),
-                                                                       queryProfileRegistry);
-        for (String sd : schemas) {
-            try  {
-                String name = applicationBuilder.addSchema(sd).getName();
-                readers.add(new NamedReader(name + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        for (String sd : schemas)
+            readers.add(new NamedReader(extractSdName(sd) + ApplicationPackage.SD_NAME_SUFFIX, new StringReader(sd)));
         return readers;
+    }
+
+    /** To avoid either double parsing or supplying a name explicitly */
+    private String extractSdName(String sd) {
+        String s = sd.split("\n")[0];
+        if (s.startsWith("schema"))
+            s = s.substring("schema".length()).trim();
+        else if (s.startsWith("search"))
+            s = s.substring("search".length()).trim();
+        else
+            throw new IllegalArgumentException("Expected the first line of a schema but got '" + sd + "'");
+        int end = s.indexOf(' ');
+        if (end < 0)
+        end = s.indexOf('}');
+        return s.substring(0, end).trim();
     }
 
     @Override

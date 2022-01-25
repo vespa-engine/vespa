@@ -42,8 +42,8 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void requireThatIndexedStructFieldCanBeInherited() throws IOException, ParseException {
         String dir = "src/test/derived/inheritstruct/";
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(dir + "parent.sd");
-        builder.addSchemaFile(dir + "child.sd");
+        builder.add(dir + "parent.sd");
+        builder.add(dir + "child.sd");
         builder.build();
         derive("inheritstruct", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritstruct");
@@ -67,7 +67,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
             ApplicationBuilder builder = new ApplicationBuilder();
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
-                builder.addSchemaFile(dir + fileName);
+                builder.add(dir + fileName);
             }
             builder.build();
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
@@ -112,8 +112,8 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void requireThatStructTypesAreInheritedFromParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromparent/";
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(dir + "parent.sd");
-        builder.addSchemaFile(dir + "child.sd");
+        builder.add(dir + "parent.sd");
+        builder.add(dir + "child.sd");
         builder.build();
         derive("inheritfromparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromparent");
@@ -123,9 +123,9 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void requireThatStructTypesAreInheritedFromGrandParent() throws IOException, ParseException {
         String dir = "src/test/derived/inheritfromgrandparent/";
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(dir + "grandparent.sd");
-        builder.addSchemaFile(dir + "parent.sd");
-        builder.addSchemaFile(dir + "child.sd");
+        builder.add(dir + "grandparent.sd");
+        builder.add(dir + "parent.sd");
+        builder.add(dir + "child.sd");
         builder.build();
         derive("inheritfromgrandparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromgrandparent");
@@ -135,10 +135,10 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void testInheritance() throws IOException, ParseException {
         String dir = "src/test/derived/inheritance/";
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(dir + "grandparent.sd");
-        builder.addSchemaFile(dir + "father.sd");
-        builder.addSchemaFile(dir + "mother.sd");
-        builder.addSchemaFile(dir + "child.sd");
+        builder.add(dir + "grandparent.sd");
+        builder.add(dir + "father.sd");
+        builder.add(dir + "mother.sd");
+        builder.add(dir + "child.sd");
         builder.build();
         derive("inheritance", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritance");

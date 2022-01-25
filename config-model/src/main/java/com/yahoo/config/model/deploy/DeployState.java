@@ -440,7 +440,9 @@ public class DeployState implements ConfigDefinitionStore {
             RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
             QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
-            Application application = createApplication(rankProfileRegistry, queryProfiles, validationParameters);
+            Application application = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
+                                                             rankProfileRegistry, queryProfiles.getRegistry())
+                    .build(! validationParameters.ignoreValidationErrors());
             return new DeployState(application,
                                    rankProfileRegistry,
                                    fileRegistry,
@@ -463,15 +465,6 @@ public class DeployState implements ConfigDefinitionStore {
                                    accessLoggingEnabledByDefault,
                                    wantedDockerImageRepo,
                                    reindexing);
-        }
-
-        private Application createApplication(RankProfileRegistry rankProfileRegistry,
-                                              QueryProfiles queryProfiles,
-                                              ValidationParameters validationParameters) {
-            ApplicationBuilder builder = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
-                                                                rankProfileRegistry, queryProfiles.getRegistry());
-            builder.importFromApplicationPackage();
-            return builder.build(! validationParameters.ignoreValidationErrors());
         }
 
     }

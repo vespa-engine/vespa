@@ -58,8 +58,8 @@ public class SchemaClusterTest {
         schema2.addDocument(sdt2);
 
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(schema1);
-        builder.addSchemaFile(schema2);
+        builder.add(schema1);
+        builder.add(schema2);
         builder.build();
     }
 

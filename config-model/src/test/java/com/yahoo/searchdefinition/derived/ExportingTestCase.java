@@ -145,8 +145,8 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     public void testTensor2() throws IOException, ParseException {
         String dir = "src/test/derived/tensor2/";
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(dir + "first.sd");
-        builder.addSchemaFile(dir + "second.sd");
+        builder.add(dir + "first.sd");
+        builder.add(dir + "second.sd");
         builder.build();
         derive("tensor2", builder, builder.getSchema("second"));
         assertCorrectConfigFiles("tensor2");

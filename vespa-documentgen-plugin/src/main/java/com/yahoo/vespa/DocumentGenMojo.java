@@ -143,7 +143,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 if (modTime > newestModifiedTime) {
                     newestModifiedTime = modTime;
                 }
-                builder.addSchemaFile(f.getAbsolutePath());
+                builder.add(f.getAbsolutePath());
             } catch (ParseException | IOException e) {
                 throw new IllegalArgumentException(e);
             }

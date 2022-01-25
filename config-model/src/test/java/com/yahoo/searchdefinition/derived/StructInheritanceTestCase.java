@@ -32,7 +32,7 @@ public class StructInheritanceTestCase extends AbstractExportingTestCase {
     public void requireThatStructCanInherit() throws IOException, ParseException {
         String dir = "src/test/derived/structinheritance/";
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(dir + "simple.sd");
+        builder.add(dir + "simple.sd");
         builder.build(false);
         derive("structinheritance", builder, builder.getSchema("simple"));
         assertCorrectConfigFiles("structinheritance");
@@ -44,7 +44,7 @@ public class StructInheritanceTestCase extends AbstractExportingTestCase {
         exceptionRule.expectMessage("cannot inherit from base and redeclare field name");
         String dir = "src/test/derived/structinheritance/";
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.addSchemaFile(dir + "bad.sd");
+        builder.add(dir + "bad.sd");
         builder.build();
         derive("structinheritance", builder, builder.getSchema("bad"));
     }
