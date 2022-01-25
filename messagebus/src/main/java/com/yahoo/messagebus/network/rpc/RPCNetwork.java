@@ -70,7 +70,7 @@ public class RPCNetwork implements Network, MethodHandler {
     private final ExecutorService executor =
             new ThreadPoolExecutor(getNumThreads(), getNumThreads(), 0L, TimeUnit.SECONDS,
                                    new LinkedBlockingQueue<>(),
-                                   ThreadFactoryFactory.getDaemonThreadFactory("mbus.net"), new ThreadPoolExecutor.CallerRunsPolicy());
+                                   ThreadFactoryFactory.getDaemonThreadFactory("mbus.net"));
 
     private static int getNumThreads() {
         return Math.max(2, Runtime.getRuntime().availableProcessors()/2);
