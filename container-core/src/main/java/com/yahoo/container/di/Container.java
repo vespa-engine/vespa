@@ -71,7 +71,7 @@ public class Container {
         });
     }
 
-    public ComponentGraphResult waitForNextComponentGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
+    public ComponentGraphResult waitForNextGraphGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
             ComponentGraph newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
@@ -171,7 +171,7 @@ public class Container {
             if ( ! newComponents.containsKey(component))
                 obsoleteComponents.add(component);
 
-        return () -> componentDeconstructor.deconstruct(obsoleteComponents, obsoleteBundles);
+        return () -> componentDeconstructor.deconstruct(oldGraph.generation(), obsoleteComponents, obsoleteBundles);
     }
 
     private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
@@ -245,10 +245,11 @@ public class Container {
         }
     }
 
-    public void shutdown(ComponentGraph graph, ComponentDeconstructor deconstructor) {
+    public void shutdown(ComponentGraph graph) {
         shutdownConfigurer();
         if (graph != null) {
-            deconstructAllComponents(graph, deconstructor);
+            deconstructAllComponents(graph, componentDeconstructor);
+            componentDeconstructor.shutdown();
         }
     }
 
@@ -263,7 +264,7 @@ public class Container {
 
     private void deconstructAllComponents(ComponentGraph graph, ComponentDeconstructor deconstructor) {
         // This is only used for shutdown, so no need to uninstall any bundles.
-        deconstructor.deconstruct(graph.allConstructedComponentsAndProviders(), Collections.emptyList());
+        deconstructor.deconstruct(graph.generation(), graph.allConstructedComponentsAndProviders(), Collections.emptyList());
     }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,

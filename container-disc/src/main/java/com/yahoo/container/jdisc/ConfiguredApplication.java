@@ -280,7 +280,7 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                     // Block until new config arrives, and it should be applied
-                    Runnable cleanupTask = configurer.waitForNextComponentGeneration(builder.guiceModules().activate(), false);
+                    Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
                     initializeAndActivateContainer(builder, cleanupTask);
                 } catch (UncheckedInterruptedException | ConfigInterruptedException e) {
                     break;
@@ -351,7 +351,7 @@ public final class ConfiguredApplication implements Application {
         return new HandlersConfigurerDi(subscriberFactory,
                                         Container.get(),
                                         configId,
-                                        new Deconstructor(Deconstructor.Mode.RECONFIG),
+                                        new Deconstructor(),
                                         discInjector,
                                         osgiFramework);
     }
@@ -385,7 +385,7 @@ public final class ConfiguredApplication implements Application {
         CountDownLatch latch = new CountDownLatch(1);
         activator.activateContainer(null)
                 .notifyTermination(() -> {
-                    configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
+                    configurer.shutdown();
                     slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
                     Container.get().shutdown();
                     unregisterInSlobrok();
