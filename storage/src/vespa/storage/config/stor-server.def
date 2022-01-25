@@ -33,8 +33,18 @@ node_reliability int default=1 restart
 ## A merge operation will be chained through all nodes involved in the
 ## merge, only actually starting the operation when every node has
 ## allowed it to pass through.
+## NOTE: these config values are _not_ used if merge_throttling_policy.type
+## is configured to DYNAMIC (see below).
 max_merges_per_node int default=16
 max_merge_queue_size int default=100
+
+## Chooses the throttling policy used to control the active merge window size
+## of the MergeThrottler component.
+merge_throttling_policy.type enum { STATIC, DYNAMIC } default=STATIC
+## Only used if merge_throttling_policy.type == DYNAMIC:
+merge_throttling_policy.min_window_size int default=16
+merge_throttling_policy.max_window_size int default=128
+merge_throttling_policy.window_size_increment double default=2.0
 
 ## If the persistence provider indicates that it has exhausted one or more
 ## of its internal resources during a mutating operation, new merges will
