@@ -133,6 +133,8 @@ public class Deconstructor implements ComponentDeconstructor {
 
         @Override
         public void run() {
+            long start = System.currentTimeMillis();
+            log.info(String.format("Starting deconstruction of %d old components from previous config generation", components.size()));
             for (var component : components) {
                 log.log(FINE, () -> "Starting deconstruction of " + component);
                 try {
@@ -154,6 +156,7 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(WARNING, "Non-error not exception throwable thrown when deconstructing component  " + component, e);
                 }
             }
+            log.info(String.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
             // It should now be safe to uninstall the old bundles.
             for (var bundle : bundles) {
                 try {
