@@ -48,7 +48,7 @@ public class Deconstructor implements ComponentDeconstructor {
     public Deconstructor() { this(Duration.ofSeconds(45)); }
 
     @Override
-    public void deconstruct(List<Object> components, Collection<Bundle> bundles) {
+    public void deconstruct(long generation, List<Object> components, Collection<Bundle> bundles) {
         Collection<Deconstructable> destructibleComponents = new ArrayList<>();
         for (var component : components) {
             if (component instanceof AbstractComponent) {
@@ -64,7 +64,7 @@ public class Deconstructor implements ComponentDeconstructor {
             }
         }
         if (!destructibleComponents.isEmpty() || !bundles.isEmpty()) {
-            executor.execute(new DestructComponentTask(destructibleComponents, bundles));
+            executor.execute(new DestructComponentTask(generation, destructibleComponents, bundles));
         }
     }
 
@@ -93,10 +93,12 @@ public class Deconstructor implements ComponentDeconstructor {
     private static class DestructComponentTask implements Runnable {
 
         private final Random random = new Random(System.nanoTime());
+        private final long generation;
         private final Collection<Deconstructable> components;
         private final Collection<Bundle> bundles;
 
-        DestructComponentTask(Collection<Deconstructable> components, Collection<Bundle> bundles) {
+        DestructComponentTask(long generation, Collection<Deconstructable> components, Collection<Bundle> bundles) {
+            this.generation = generation;
             this.components = components;
             this.bundles = bundles;
         }
@@ -113,7 +115,8 @@ public class Deconstructor implements ComponentDeconstructor {
         @Override
         public void run() {
             long start = System.currentTimeMillis();
-            log.info(String.format("Starting deconstruction of %d old components from previous config generation", components.size()));
+            log.info(String.format("Starting deconstruction of %d old components from graph generation %d",
+                    components.size(), generation));
             for (var component : components) {
                 log.log(FINE, () -> "Starting deconstruction of " + component);
                 try {

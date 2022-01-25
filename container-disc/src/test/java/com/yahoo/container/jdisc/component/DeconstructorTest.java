@@ -33,7 +33,7 @@ public class DeconstructorTest {
         deconstructor = new Deconstructor();
 
         var slowDeconstructComponent = new SlowDeconstructComponent();
-        deconstructor.deconstruct(List.of(slowDeconstructComponent), emptyList());
+        deconstructor.deconstruct(0, List.of(slowDeconstructComponent), emptyList());
         deconstructor.shutdown();
         assertTrue(slowDeconstructComponent.destructed);
     }
@@ -41,7 +41,7 @@ public class DeconstructorTest {
     @Test
     public void require_abstract_component_destructed() throws InterruptedException {
         TestAbstractComponent abstractComponent = new TestAbstractComponent();
-        deconstructor.deconstruct(List.of(abstractComponent), emptyList());
+        deconstructor.deconstruct(0, List.of(abstractComponent), emptyList());
 
         waitForDeconstructToComplete(() -> abstractComponent.destructed);
         assertTrue(abstractComponent.destructed);
@@ -50,7 +50,7 @@ public class DeconstructorTest {
     @Test
     public void require_provider_destructed() throws InterruptedException {
         TestProvider provider = new TestProvider();
-        deconstructor.deconstruct(List.of(provider), emptyList());
+        deconstructor.deconstruct(0, List.of(provider), emptyList());
 
         waitForDeconstructToComplete(() -> provider.destructed);
         assertTrue(provider.destructed);
@@ -59,7 +59,7 @@ public class DeconstructorTest {
     @Test
     public void require_shared_resource_released() throws InterruptedException {
         TestSharedResource sharedResource = new TestSharedResource();
-        deconstructor.deconstruct(List.of(sharedResource), emptyList());
+        deconstructor.deconstruct(0, List.of(sharedResource), emptyList());
         waitForDeconstructToComplete(() -> sharedResource.released);
         assertTrue(sharedResource.released);
     }
@@ -68,7 +68,7 @@ public class DeconstructorTest {
     public void bundles_are_uninstalled() throws InterruptedException {
         var bundle = new UninstallableMockBundle();
         // Done by executor, so it takes some time even with a 0 delay.
-        deconstructor.deconstruct(emptyList(), singleton(bundle));
+        deconstructor.deconstruct(0, emptyList(), singleton(bundle));
 
         waitForDeconstructToComplete(() -> bundle.uninstalled);
         assertTrue(bundle.uninstalled);

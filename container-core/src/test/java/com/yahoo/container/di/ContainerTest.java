@@ -219,7 +219,7 @@ public class ContainerTest extends ContainerTestBase {
     public void providers_are_destructed() {
         writeBootstrapConfigs("id1", DestructableProvider.class);
 
-        ComponentDeconstructor deconstructor = (components, bundles) -> {
+        ComponentDeconstructor deconstructor = (generation, components, bundles) -> {
             components.forEach(component -> {
                 if (component instanceof AbstractComponent) {
                     ((AbstractComponent) component).deconstruct();
@@ -312,7 +312,7 @@ public class ContainerTest extends ContainerTestBase {
 
     public static class TestDeconstructor implements ComponentDeconstructor {
         @Override
-        public void deconstruct(List<Object> components, Collection<Bundle> bundles) {
+        public void deconstruct(long generation, List<Object> components, Collection<Bundle> bundles) {
             components.forEach(component -> {
                 if (component instanceof DestructableComponent) {
                     DestructableComponent vespaComponent = (DestructableComponent) component;
