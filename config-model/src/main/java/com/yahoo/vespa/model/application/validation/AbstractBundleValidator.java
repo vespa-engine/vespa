@@ -92,7 +92,7 @@ public abstract class AbstractBundleValidator extends Validator {
     }
 
     protected final void log(DeployState state, Level level, String fmt, Object... args) {
-        state.getDeployLogger().log(level, String.format(fmt, args));
+        state.getDeployLogger().logApplicationPackage(level, String.format(fmt, args));
     }
 
     private static final Pattern POM_FILE_LOCATION = Pattern.compile("META-INF/maven/.+?/.+?/pom.xml");
