@@ -263,4 +263,29 @@ CpuUsage::sample()
     return self().sample_or_wait();
 }
 
+Runnable::init_fun_t
+CpuUsage::wrap(Runnable::init_fun_t init, Category cat)
+{
+    return [init,cat](Runnable &target) {
+        auto my_usage = CpuUsage::use(cat);
+        return init(target);
+    };
+}
+
+Executor::Task::UP
+CpuUsage::wrap(Executor::Task::UP task, Category cat)
+{
+    struct CpuTask : Executor::Task {
+        UP task;
+        Category cat;
+        CpuTask(UP task_in, Category cat_in)
+          : task(std::move(task_in)), cat(cat_in) {}
+        void run() override {
+            auto my_usage = CpuUsage::use(cat);
+            task->run();
+        }
+    };
+    return std::make_unique<CpuTask>(std::move(task), cat);
+}
+
 } // namespace

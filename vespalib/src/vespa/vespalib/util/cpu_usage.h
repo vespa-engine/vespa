@@ -1,5 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "runnable.h"
+#include "executor.h"
 #include "spin_lock.h"
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -178,6 +180,8 @@ private:
 public:
     static MyUsage use(Category cat) { return MyUsage(cat); }
     static TimedSample sample();
+    static Runnable::init_fun_t wrap(Runnable::init_fun_t init, Category cat);
+    static Executor::Task::UP wrap(Executor::Task::UP task, Category cat);
 };
 
 /**

@@ -2,6 +2,7 @@
 
 #include "compile_cache.h"
 #include <vespa/eval/eval/key_gen.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 #include <thread>
 
 namespace vespalib::eval {
@@ -64,6 +65,7 @@ CompileCache::compile(const Function &function, PassParams pass_params)
             assert(res.second);
             token = std::make_unique<Token>(res.first, Token::ctor_tag());
             task = std::make_unique<CompileTask>(function, pass_params, res.first->second.result);
+            task = CpuUsage::wrap(std::move(task), CpuUsage::Category::SETUP);
             if (!_executor_stack.empty()) {
                 executor = _executor_stack.back().second;
             }

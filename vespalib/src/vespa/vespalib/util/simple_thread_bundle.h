@@ -86,8 +86,9 @@ struct Signal {
 class SimpleThreadBundle : public ThreadBundle
 {
 public:
-    typedef fixed_thread_bundle::Work Work;
-    typedef fixed_thread_bundle::Signal Signal;
+    using Work = fixed_thread_bundle::Work;
+    using Signal = fixed_thread_bundle::Signal;
+    using init_fun_t = Runnable::init_fun_t;
 
     typedef std::unique_ptr<SimpleThreadBundle> UP;
     enum Strategy { USE_SIGNAL_LIST, USE_SIGNAL_TREE, USE_BROADCAST };
@@ -97,10 +98,12 @@ public:
     private:
         std::mutex _lock;
         size_t     _bundleSize;
+        init_fun_t _init_fun;
         std::vector<SimpleThreadBundle*> _bundles;
 
     public:
-        Pool(size_t bundleSize);
+        Pool(size_t bundleSize, init_fun_t init_fun);
+        Pool(size_t bundleSize) : Pool(bundleSize, Runnable::default_init_function) {}
         ~Pool();
         SimpleThreadBundle::UP obtain();
         void release(SimpleThreadBundle::UP bundle);
@@ -112,7 +115,7 @@ private:
         Thread thread;
         Signal &signal;
         Runnable::UP hook;
-        Worker(Signal &s, Runnable::UP h);
+        Worker(Signal &s, init_fun_t init_fun, Runnable::UP h);
         void run() override;
     };
 
@@ -122,7 +125,9 @@ private:
     Runnable::UP            _hook;
 
 public:
-    SimpleThreadBundle(size_t size, Strategy strategy = USE_SIGNAL_LIST);
+    SimpleThreadBundle(size_t size, init_fun_t init_fun, Strategy strategy = USE_SIGNAL_LIST);
+    SimpleThreadBundle(size_t size, Strategy strategy = USE_SIGNAL_LIST)
+      : SimpleThreadBundle(size, Runnable::default_init_function, strategy) {}
     ~SimpleThreadBundle();
     size_t size() const override;
     void run(const std::vector<Runnable*> &targets) override;
