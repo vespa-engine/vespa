@@ -95,6 +95,11 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     }
 
     @Override
+    public Optional<String> cloud() {
+        return Optional.ofNullable(System.getenv("VESPA_CLOUD"));
+    }
+
+    @Override
     public Optional<Boolean> useVespaVersionInRequest() {
         return getInstallVariable("use_vespa_version_in_request", Boolean::parseBoolean);
     }
