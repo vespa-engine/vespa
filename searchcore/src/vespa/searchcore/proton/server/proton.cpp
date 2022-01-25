@@ -778,11 +778,11 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.mallocArena.set(UINT64_C(0));
 #endif
         auto cpu_util = _cpu_util.get_util();
-        metrics.resourceUsage.cpu_setup.set(cpu_util[CpuCategory::SETUP]);
-        metrics.resourceUsage.cpu_read.set(cpu_util[CpuCategory::READ]);
-        metrics.resourceUsage.cpu_write.set(cpu_util[CpuCategory::WRITE]);
-        metrics.resourceUsage.cpu_compact.set(cpu_util[CpuCategory::COMPACT]);
-        metrics.resourceUsage.cpu_other.set(cpu_util[CpuCategory::OTHER]);
+        metrics.resourceUsage.cpu_util.setup.set(cpu_util[CpuCategory::SETUP]);
+        metrics.resourceUsage.cpu_util.read.set(cpu_util[CpuCategory::READ]);
+        metrics.resourceUsage.cpu_util.write.set(cpu_util[CpuCategory::WRITE]);
+        metrics.resourceUsage.cpu_util.compact.set(cpu_util[CpuCategory::COMPACT]);
+        metrics.resourceUsage.cpu_util.other.set(cpu_util[CpuCategory::OTHER]);
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;

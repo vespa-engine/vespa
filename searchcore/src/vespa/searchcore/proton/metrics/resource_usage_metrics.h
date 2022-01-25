@@ -12,6 +12,17 @@ namespace proton {
  */
 struct ResourceUsageMetrics : metrics::MetricSet
 {
+    struct CpuUtilMetrics : metrics::MetricSet {
+        metrics::DoubleValueMetric setup;
+        metrics::DoubleValueMetric read;
+        metrics::DoubleValueMetric write;
+        metrics::DoubleValueMetric compact;
+        metrics::DoubleValueMetric other;
+
+        CpuUtilMetrics(metrics::MetricSet *parent);
+        ~CpuUtilMetrics();
+    };
+
     metrics::DoubleValueMetric disk;
     metrics::DoubleValueMetric diskUtilization;
     metrics::DoubleValueMetric memory;
@@ -22,11 +33,7 @@ struct ResourceUsageMetrics : metrics::MetricSet
     metrics::LongValueMetric openFileDescriptors;
     metrics::LongValueMetric feedingBlocked;
     metrics::LongValueMetric mallocArena;
-    metrics::DoubleValueMetric cpu_setup;
-    metrics::DoubleValueMetric cpu_read;
-    metrics::DoubleValueMetric cpu_write;
-    metrics::DoubleValueMetric cpu_compact;
-    metrics::DoubleValueMetric cpu_other;
+    CpuUtilMetrics           cpu_util;
 
     ResourceUsageMetrics(metrics::MetricSet *parent);
     ~ResourceUsageMetrics();
