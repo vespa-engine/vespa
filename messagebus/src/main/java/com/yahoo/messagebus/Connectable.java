@@ -9,5 +9,6 @@ package com.yahoo.messagebus;
 public interface Connectable {
 
     void connect();
+    void disconnect();
 
 }

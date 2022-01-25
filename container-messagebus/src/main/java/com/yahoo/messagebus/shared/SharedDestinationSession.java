@@ -3,7 +3,6 @@ package com.yahoo.messagebus.shared;
 
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
-import java.util.logging.Level;
 import com.yahoo.messagebus.DestinationSession;
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.EmptyReply;
@@ -14,6 +13,7 @@ import com.yahoo.messagebus.MessageHandler;
 import com.yahoo.messagebus.Reply;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -80,6 +80,8 @@ public class SharedDestinationSession extends AbstractResource implements Messag
     public void connect() {
         session.connect();
     }
+
+    @Override public void disconnect() { session.disconnect(); }
 
     @Override
     protected void destroy() {

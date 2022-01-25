@@ -73,7 +73,8 @@
       "abstract"
     ],
     "methods": [
-      "public abstract void connect()"
+      "public abstract void connect()",
+      "public abstract void disconnect()"
     ],
     "fields": []
   },
@@ -96,7 +97,8 @@
       "public java.lang.String getConnectionSpec()",
       "public java.lang.String getName()",
       "public void handleMessage(com.yahoo.messagebus.Message)",
-      "public void connect()"
+      "public void connect()",
+      "public void disconnect()"
     ],
     "fields": []
   },
@@ -245,7 +247,8 @@
       "public java.lang.String getName()",
       "public void handleMessage(com.yahoo.messagebus.Message)",
       "public void handleReply(com.yahoo.messagebus.Reply)",
-      "public void connect()"
+      "public void connect()",
+      "public void disconnect()"
     ],
     "fields": []
   },
