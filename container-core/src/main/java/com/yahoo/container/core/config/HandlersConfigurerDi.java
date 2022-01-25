@@ -143,9 +143,7 @@ public class HandlersConfigurerDi {
         return currentGraph.getInstance(componentClass);
     }
 
-    public void shutdown(ComponentDeconstructor deconstructor) {
-        container.shutdown(currentGraph, deconstructor);
-    }
+    public void shutdown() { container.shutdown(currentGraph); }
 
     /** Returns the currently active application configuration generation */
     public long generation() { return currentGraph.generation(); }

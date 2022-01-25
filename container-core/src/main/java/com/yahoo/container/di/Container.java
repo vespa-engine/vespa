@@ -245,10 +245,11 @@ public class Container {
         }
     }
 
-    public void shutdown(ComponentGraph graph, ComponentDeconstructor deconstructor) {
+    public void shutdown(ComponentGraph graph) {
         shutdownConfigurer();
         if (graph != null) {
-            deconstructAllComponents(graph, deconstructor);
+            deconstructAllComponents(graph, componentDeconstructor);
+            componentDeconstructor.shutdown();
         }
     }
 

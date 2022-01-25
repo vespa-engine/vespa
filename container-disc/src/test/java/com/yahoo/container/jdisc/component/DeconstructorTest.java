@@ -9,7 +9,6 @@ import com.yahoo.jdisc.SharedResource;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
@@ -26,15 +25,16 @@ public class DeconstructorTest {
 
     @Before
     public void init() {
-        deconstructor = new Deconstructor(Deconstructor.Mode.RECONFIG, Duration.ZERO);
+        deconstructor = new Deconstructor();
     }
 
     @Test
-    public void deconstruct_is_synchronous_in_shutdown_mode() {
-        deconstructor = new Deconstructor(Deconstructor.Mode.SHUTDOWN);
+    public void deconstructor_waits_for_completion_on_shutdown() {
+        deconstructor = new Deconstructor();
 
         var slowDeconstructComponent = new SlowDeconstructComponent();
         deconstructor.deconstruct(List.of(slowDeconstructComponent), emptyList());
+        deconstructor.shutdown();
         assertTrue(slowDeconstructComponent.destructed);
     }
 
