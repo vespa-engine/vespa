@@ -8,7 +8,7 @@
 namespace proton {
 
 /*
- * Policy for replay throttling. If params are set then a dynamic throttler
+ * Policy for transaction log replay throttling. If params are set then a dynamic throttler
  * is used, otherwise an unlimited throttler is used.
  */
 class ReplayThrottlingPolicy
