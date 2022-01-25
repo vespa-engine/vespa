@@ -1045,6 +1045,28 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(7, resolveMaxCompactBuffers(OptionalInt.of(7)));
     }
 
+    private ProtonConfig.Replay_throttling_policy.Type.Enum resolveReplayThrottlePolicyType(Optional<String> throttlerType) {
+        TestProperties testProperties = new TestProperties();
+        if (throttlerType.isPresent()) {
+            testProperties.setPersistenceAsyncThrottling(throttlerType.get());
+        }
+        VespaModel model = createEnd2EndOneNode(testProperties);
+        ContentCluster cc = model.getContentClusters().get("storage");
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+        assertEquals(1, protonConfig.documentdb().size());
+        return protonConfig.replay_throttling_policy().type();
+    }
+
+    @Test
+    public void replay_throttling_policy_type_controlled_by_properties() {
+        assertEquals(ProtonConfig.Replay_throttling_policy.Type.Enum.UNLIMITED, resolveReplayThrottlePolicyType(Optional.empty()));
+        assertEquals(ProtonConfig.Replay_throttling_policy.Type.Enum.UNLIMITED, resolveReplayThrottlePolicyType(Optional.of("UNLIMITED")));
+        assertEquals(ProtonConfig.Replay_throttling_policy.Type.Enum.UNLIMITED, resolveReplayThrottlePolicyType(Optional.of("INVALID")));
+        assertEquals(ProtonConfig.Replay_throttling_policy.Type.Enum.DYNAMIC, resolveReplayThrottlePolicyType(Optional.of("DYNAMIC")));
+    }
+
     private long resolveMaxTLSSize(Optional<Flavor> flavor) throws Exception {
         TestProperties testProperties = new TestProperties();
 
