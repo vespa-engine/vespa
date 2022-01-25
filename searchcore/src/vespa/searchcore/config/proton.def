@@ -543,3 +543,11 @@ tensor_implementation enum {TENSOR_ENGINE, FAST_VALUE} default = FAST_VALUE
 
 ## Whether to report issues back to the container via protobuf field
 forward_issues bool default = true
+
+## Chooses the throttling policy used to control the window size
+## of the SharedOperationThrottler component used by replay feed state.
+replay_throttling_policy.type enum { UNLIMITED, DYNAMIC } default=UNLIMITED
+## Only used if replay_throttling_policy.type == DYNAMIC:
+replay_throttling_policy.min_window_size int default=20
+replay_throttling_policy.max_window_size int default=1000
+replay_throttling_policy.window_size_increment int default=20
