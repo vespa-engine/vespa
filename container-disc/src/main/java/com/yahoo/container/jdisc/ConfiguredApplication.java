@@ -26,6 +26,7 @@ import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.application.BindingRepository;
 import com.yahoo.jdisc.application.ContainerActivator;
 import com.yahoo.jdisc.application.ContainerBuilder;
+import com.yahoo.jdisc.application.DeactivatedContainer;
 import com.yahoo.jdisc.application.GuiceRepository;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -54,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -144,7 +146,7 @@ public final class ConfiguredApplication implements Application {
 
         ContainerBuilder builder = createBuilderWithGuiceBindings();
         configurer = createConfigurer(builder.guiceModules().activate());
-        initializeAndActivateContainer(builder);
+        initializeAndActivateContainer(builder, () -> {});
         startReconfigurerThread();
         portWatcher = new Thread(this::watchPortChange, "configured-application-port-watcher");
         portWatcher.setDaemon(true);
@@ -249,12 +251,13 @@ public final class ConfiguredApplication implements Application {
         shutdownTimeoutS.set(qrConfig.shutdown().timeout());
     }
 
-    private void initializeAndActivateContainer(ContainerBuilder builder) {
+    private void initializeAndActivateContainer(ContainerBuilder builder, Runnable cleanupTask) {
         addHandlerBindings(builder, Container.get().getRequestHandlerRegistry(),
                            configurer.getComponent(ApplicationContext.class).discBindingsConfig);
         installServerProviders(builder);
 
-        activator.activateContainer(builder); // TODO: .notifyTermination(.. decompose previous component graph ..)
+        DeactivatedContainer deactivated = activator.activateContainer(builder);
+        if (deactivated != null) deactivated.notifyTermination(cleanupTask);
 
         startClients();
         startAndStopServers();
@@ -277,8 +280,8 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                     // Block until new config arrives, and it should be applied
-                    configurer.getNewComponentGraph(builder.guiceModules().activate(), false);
-                    initializeAndActivateContainer(builder);
+                    Runnable cleanupTask = configurer.waitForNextComponentGeneration(builder.guiceModules().activate(), false);
+                    initializeAndActivateContainer(builder, cleanupTask);
                 } catch (UncheckedInterruptedException | ConfigInterruptedException e) {
                     break;
                 } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
@@ -379,13 +382,22 @@ public final class ConfiguredApplication implements Application {
         }
 
         log.info("Stop: Shutting container down");
-        configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
-        slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
-        Container.get().shutdown();
-
-        unregisterInSlobrok();
-        LogSetup.cleanup();
-        log.info("Stop: Finished");
+        CountDownLatch latch = new CountDownLatch(1);
+        activator.activateContainer(null)
+                .notifyTermination(() -> {
+                    configurer.shutdown(new Deconstructor(Deconstructor.Mode.SHUTDOWN));
+                    slobrokConfigSubscriber.ifPresent(SlobrokConfigSubscriber::shutdown);
+                    Container.get().shutdown();
+                    unregisterInSlobrok();
+                    LogSetup.cleanup();
+                    log.info("Stop: Finished");
+                    latch.countDown();
+                });
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException("Failed to wait for container deactivation to complete", e, true);
+        }
     }
 
     private void shutdownReconfigurerThread() {

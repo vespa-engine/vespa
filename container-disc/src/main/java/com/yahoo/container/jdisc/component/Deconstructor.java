@@ -16,9 +16,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -49,7 +49,7 @@ public class Deconstructor implements ComponentDeconstructor {
     }
 
     private final ScheduledExecutorService executor =
-            Executors.newScheduledThreadPool(2, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
+            new ScheduledThreadPoolExecutor(1, ThreadFactoryFactory.getThreadFactory("component-deconstructor"));
 
     private final Mode mode;
     private final Duration delay;
@@ -76,9 +76,8 @@ public class Deconstructor implements ComponentDeconstructor {
             } else if (component instanceof Provider) {
                 destructibleComponents.add((Deconstructable) component);
             } else if (component instanceof SharedResource) {
-                log.log(FINE, () -> "Releasing container reference to resource " + component);
-                // No need to delay release, as jdisc does ref-counting
-                ((SharedResource) component).release();
+                // Release shared resources in same order as other components in case of usage without reference counting
+                destructibleComponents.add(new SharedResourceReleaser(component));
             }
         }
         if (!destructibleComponents.isEmpty() || !bundles.isEmpty()) {
@@ -104,6 +103,14 @@ public class Deconstructor implements ComponentDeconstructor {
         }
     }
 
+    private static class SharedResourceReleaser implements Deconstructable {
+        final SharedResource resource;
+
+        private SharedResourceReleaser(Object resource) { this.resource = (SharedResource) resource; }
+
+        @Override public void deconstruct() { resource.release(); }
+    }
+
     private static class DestructComponentTask implements Runnable {
 
         private final Random random = new Random(System.nanoTime());
@@ -126,6 +133,8 @@ public class Deconstructor implements ComponentDeconstructor {
 
         @Override
         public void run() {
+            long start = System.currentTimeMillis();
+            log.info(String.format("Starting deconstruction of %d old components from previous config generation", components.size()));
             for (var component : components) {
                 log.log(FINE, () -> "Starting deconstruction of " + component);
                 try {
@@ -147,6 +156,7 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(WARNING, "Non-error not exception throwable thrown when deconstructing component  " + component, e);
                 }
             }
+            log.info(String.format("Completed deconstruction in %.3f seconds", (System.currentTimeMillis() - start) / 1000D));
             // It should now be safe to uninstall the old bundles.
             for (var bundle : bundles) {
                 try {

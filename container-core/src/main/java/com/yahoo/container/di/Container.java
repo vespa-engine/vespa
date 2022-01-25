@@ -71,24 +71,22 @@ public class Container {
         });
     }
 
-    public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
+    public ComponentGraphResult waitForNextComponentGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
-            ComponentGraph newGraph = getConfigAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
+            ComponentGraph newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);
             newGraph.reuseNodes(oldGraph);
             constructComponents(newGraph);
-            deconstructObsoleteComponents(oldGraph, newGraph, obsoleteBundles);
-            return newGraph;
+            Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, obsoleteBundles);
+            return new ComponentGraphResult(newGraph, cleanupTask);
         } catch (Throwable t) {
             invalidateGeneration(oldGraph.generation(), t);
             throw t;
         }
     }
 
-    private ComponentGraph getConfigAndCreateGraph(ComponentGraph graph,
-                                                   Injector fallbackInjector,
-                                                   boolean isInitializing,
-                                                   Collection<Bundle> obsoleteBundles) // NOTE: Return value
+    private ComponentGraph waitForNewConfigGenAndCreateGraph(
+            ComponentGraph graph, Injector fallbackInjector, boolean isInitializing, Collection<Bundle> obsoleteBundles) // NOTE: Return value
     {
         ConfigSnapshot snapshot;
         while (true) {
@@ -161,9 +159,9 @@ public class Container {
         });
     }
 
-    private void deconstructObsoleteComponents(ComponentGraph oldGraph,
-                                               ComponentGraph newGraph,
-                                               Collection<Bundle> obsoleteBundles) {
+    private Runnable createPreviousGraphDeconstructionTask(ComponentGraph oldGraph,
+                                                           ComponentGraph newGraph,
+                                                           Collection<Bundle> obsoleteBundles) {
         Map<Object, ?> newComponents = new IdentityHashMap<>(newGraph.size());
         for (Object component : newGraph.allConstructedComponentsAndProviders())
             newComponents.put(component, null);
@@ -173,7 +171,7 @@ public class Container {
             if ( ! newComponents.containsKey(component))
                 obsoleteComponents.add(component);
 
-        componentDeconstructor.deconstruct(obsoleteComponents, obsoleteBundles);
+        return () -> componentDeconstructor.deconstruct(obsoleteComponents, obsoleteBundles);
     }
 
     private Set<Bundle> installApplicationBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
@@ -281,6 +279,19 @@ public class Container {
 
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.getFromStrings(config.id(), config.classId(), config.bundle());
+    }
+
+    public static class ComponentGraphResult {
+        private final ComponentGraph newGraph;
+        private final Runnable oldComponentsCleanupTask;
+
+        public ComponentGraphResult(ComponentGraph newGraph, Runnable oldComponentsCleanupTask) {
+            this.newGraph = newGraph;
+            this.oldComponentsCleanupTask = oldComponentsCleanupTask;
+        }
+
+        public ComponentGraph newGraph() { return newGraph; }
+        public Runnable oldComponentsCleanupTask() { return oldComponentsCleanupTask; }
     }
 
 }
