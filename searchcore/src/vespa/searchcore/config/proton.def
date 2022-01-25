@@ -549,5 +549,5 @@ forward_issues bool default = true
 replay_throttling_policy.type enum { UNLIMITED, DYNAMIC } default=UNLIMITED
 ## Only used if replay_throttling_policy.type == DYNAMIC:
 replay_throttling_policy.min_window_size int default=20
-replay_throttling_policy.max_window_size int default=1000
+replay_throttling_policy.max_window_size int default=10000
 replay_throttling_policy.window_size_increment int default=20
