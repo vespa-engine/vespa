@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
  * @author  Bjorn Borud
  * @author bjorncs
  */
-@SuppressWarnings("removal")
 public class LogMessage
 {
     private static Logger log = Logger.getLogger(LogMessage.class.getName());

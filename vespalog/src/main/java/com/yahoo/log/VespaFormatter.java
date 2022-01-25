@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
  *
  * @deprecated Should only be used internally in the log library
  */
-@SuppressWarnings("removal")
 @Deprecated(since = "7", forRemoval = true)
 public class VespaFormatter extends SimpleFormatter {
 

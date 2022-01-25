@@ -5,6 +5,7 @@ package com.yahoo.log.event;
  *
  * @author  Bjorn Borud
  */
+@Deprecated(forRemoval = true, since = "7")
 public class Starting extends Event {
     public Starting () {
     }

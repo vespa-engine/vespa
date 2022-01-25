@@ -3,7 +3,6 @@ package com.yahoo.prelude.query.parser;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Segmenter;
-import com.yahoo.log.event.*;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.*;

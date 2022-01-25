@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Steinar Knutsen
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation","removal"}) // TODO Vespa 8: remove
 public class ValueGroupTestCase {
 
     private volatile boolean gotRecord = false;
