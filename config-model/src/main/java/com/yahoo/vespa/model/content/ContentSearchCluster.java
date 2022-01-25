@@ -73,6 +73,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final double defaultFeedConcurrency;
     private final boolean forwardIssuesToQrs;
     private final int defaultMaxCompactBuffers;
+    private final ProtonConfig.Replay_throttling_policy.Type.Enum persistenceAsyncThrottling;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
@@ -202,6 +203,14 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         }
     }
 
+    private static ProtonConfig.Replay_throttling_policy.Type.Enum convertPersistenceAsyncThrottling(String value) {
+        try {
+            return ProtonConfig.Replay_throttling_policy.Type.Enum.valueOf(value);
+        } catch (Throwable t) {
+            return ProtonConfig.Replay_throttling_policy.Type.Enum.UNLIMITED;
+        }
+    }
+
     private ContentSearchCluster(AbstractConfigProducer<?> parent,
                                  String clusterName,
                                  ModelContext.FeatureFlags featureFlags,
@@ -226,6 +235,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
+        this.persistenceAsyncThrottling = convertPersistenceAsyncThrottling(featureFlags.persistenceAsyncThrottling());
     }
 
     public void setVisibilityDelay(double delay) {
@@ -444,6 +454,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         builder.indexing.tasklimit(feedTaskLimit);
         builder.feeding.master_task_limit(feedMasterTaskLimit);
         builder.feeding.shared_field_writer_executor(sharedFieldWriterExecutor);
+        builder.replay_throttling_policy.type(persistenceAsyncThrottling);
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {
