@@ -120,7 +120,7 @@ public class HandlersConfigurerTestWrapper {
 
     public void reloadConfig() {
         configurer.reloadConfig(++lastGeneration);
-        Runnable cleanupTask = configurer.waitForNextComponentGeneration(guiceInjector(), false);
+        Runnable cleanupTask = configurer.waitForNextGraphGeneration(guiceInjector(), false);
         cleanupTask.run();
     }
 

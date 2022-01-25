@@ -71,7 +71,7 @@ public class Container {
         });
     }
 
-    public ComponentGraphResult waitForNextComponentGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
+    public ComponentGraphResult waitForNextGraphGeneration(ComponentGraph oldGraph, Injector fallbackInjector, boolean isInitializing) {
         try {
             Collection<Bundle> obsoleteBundles = new HashSet<>();
             ComponentGraph newGraph = waitForNewConfigGenAndCreateGraph(oldGraph, fallbackInjector, isInitializing, obsoleteBundles);

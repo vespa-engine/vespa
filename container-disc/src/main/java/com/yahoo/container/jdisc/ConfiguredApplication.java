@@ -280,7 +280,7 @@ public final class ConfiguredApplication implements Application {
                     ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                     // Block until new config arrives, and it should be applied
-                    Runnable cleanupTask = configurer.waitForNextComponentGeneration(builder.guiceModules().activate(), false);
+                    Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
                     initializeAndActivateContainer(builder, cleanupTask);
                 } catch (UncheckedInterruptedException | ConfigInterruptedException e) {
                     break;

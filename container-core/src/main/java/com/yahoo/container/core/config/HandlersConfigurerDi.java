@@ -71,7 +71,7 @@ public class HandlersConfigurerDi {
 
         this.vespaContainer = vespaContainer;
         container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
-        Runnable cleanupTask = waitForNextComponentGeneration(discInjector, true);
+        Runnable cleanupTask = waitForNextGraphGeneration(discInjector, true);
         cleanupTask.run();
     }
 
@@ -109,8 +109,8 @@ public class HandlersConfigurerDi {
      * Wait for new config to arrive and produce the new graph
      * @return Task for deconstructing previous component graph and bundles
      */
-    public Runnable waitForNextComponentGeneration(Injector discInjector, boolean isInitializing) {
-        Container.ComponentGraphResult result = container.waitForNextComponentGeneration(
+    public Runnable waitForNextGraphGeneration(Injector discInjector, boolean isInitializing) {
+        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(
                 this.currentGraph,
                 createFallbackInjector(vespaContainer, discInjector),
                 isInitializing);
