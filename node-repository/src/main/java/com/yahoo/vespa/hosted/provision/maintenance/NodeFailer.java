@@ -22,7 +22,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,38 +82,34 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         // Ready nodes
         try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
-            for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
+            for (FailingNode failing : findReadyFailingNodes()) {
                 attempts++;
-                Node node = entry.getKey();
-                if (throttle(node)) {
+                if (throttle(failing.node())) {
                     failures++;
-                    if (node.type().isHost())
+                    if (failing.node().type().isHost())
                         throttledHostFailures++;
                     else
                         throttledNodeFailures++;
                     continue;
                 }
-                String reason = entry.getValue();
-                nodeRepository().nodes().fail(node.hostname(), Agent.NodeFailer, reason);
+                nodeRepository().nodes().fail(failing.node().hostname(), Agent.NodeFailer, failing.reason());
             }
         }
 
         // Active nodes
-        for (Map.Entry<Node, String> entry : getActiveNodesByFailureReason().entrySet()) {
+        for (FailingNode failing : findActiveFailingNodes()) {
             attempts++;
-            Node node = entry.getKey();
-            if (!failAllowedFor(node.type())) continue;
+            if (!failAllowedFor(failing.node().type())) continue;
 
-            if (throttle(node)) {
+            if (throttle(failing.node())) {
                 failures++;
-                if (node.type().isHost())
+                if (failing.node().type().isHost())
                     throttledHostFailures++;
                 else
                     throttledNodeFailures++;
                 continue;
             }
-            String reason = entry.getValue();
-            failActive(node, reason);
+            failActive(failing);
         }
 
         // Active hosts
@@ -143,40 +139,31 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         return asSuccessFactor(attempts, failures);
     }
 
-    private Map<Node, String> getReadyNodesByFailureReason() {
-        Instant oldestAcceptableRequestTime =
-                // Allow requests some time to be registered in case all config servers have been down
-                constructionTime.isAfter(clock().instant().minus(nodeRequestInterval.multipliedBy(2))) ?
-                        Instant.EPOCH :
-
-                        // Nodes are taken as dead if they have not made a config request since this instant.
-                        // Add 10 minutes to the down time limit to allow nodes to make a request that infrequently.
-                        clock().instant().minus(downTimeLimit).minus(nodeRequestInterval);
-
-        Map<Node, String> nodesByFailureReason = new HashMap<>();
+    private List<FailingNode> findReadyFailingNodes() {
+        List<FailingNode> failingNodes = new ArrayList<>();
         for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
             Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
             List<String> failureReports = reasonsToFailParentHost(hostNode);
             if (failureReports.size() > 0) {
                 if (hostNode.equals(node)) {
-                    nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
+                    failingNodes.add(new FailingNode(node, "Host has failure reports: " + failureReports));
                 } else {
-                    nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
+                    failingNodes.add(new FailingNode(node, "Parent (" + hostNode + ") has failure reports: " + failureReports));
                 }
             }
         }
-        return nodesByFailureReason;
+        return failingNodes;
     }
 
-    private Map<Node, String> getActiveNodesByFailureReason() {
+    private List<FailingNode> findActiveFailingNodes() {
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
         Instant graceTimeEnd = clock().instant().minus(downTimeLimit);
-        Map<Node, String> nodesByFailureReason = new HashMap<>();
+        List<FailingNode> failingNodes = new ArrayList<>();
         for (Node node : activeNodes) {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
                 // Allow a grace period after node re-activation
                 if ( ! node.history().hasEventAfter(History.Event.Type.activated, graceTimeEnd))
-                    nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
+                    failingNodes.add(new FailingNode(node, "Node has been down longer than " + downTimeLimit));
             }
             else if (hostSuspended(node, activeNodes)) {
                 Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
@@ -184,15 +171,15 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                     List<String> failureReports = reasonsToFailParentHost(hostNode);
                     if (failureReports.size() > 0) {
                         if (hostNode.equals(node)) {
-                            nodesByFailureReason.put(node, "Host has failure reports: " + failureReports);
+                            failingNodes.add(new FailingNode(node, "Host has failure reports: " + failureReports));
                         } else {
-                            nodesByFailureReason.put(node, "Parent (" + hostNode + ") has failure reports: " + failureReports);
+                            failingNodes.add(new FailingNode(node, "Parent (" + hostNode + ") has failure reports: " + failureReports));
                         }
                     }
                 }
             }
         }
-        return nodesByFailureReason;
+        return failingNodes;
     }
 
     public static List<String> reasonsToFailParentHost(Node hostNode) {
@@ -219,7 +206,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         }
     }
 
-    private boolean nodeSuspended(Node node) {
+    private boolean suspended(Node node) {
         try {
             return orchestrator.getNodeStatus(new HostName(node.hostname())).isSuspended();
         } catch (HostNameNotFoundException e) {
@@ -230,12 +217,12 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     /** Is the node and all active children suspended? */
     private boolean hostSuspended(Node node, NodeList activeNodes) {
-        if (!nodeSuspended(node)) return false;
+        if (!suspended(node)) return false;
         if (node.parentHostname().isPresent()) return true; // optimization
         return activeNodes.stream()
                 .filter(childNode -> childNode.parentHostname().isPresent() &&
                         childNode.parentHostname().get().equals(node.hostname()))
-                .allMatch(this::nodeSuspended);
+                .allMatch(this::suspended);
     }
 
     /**
@@ -264,40 +251,40 @@ public class NodeFailer extends NodeRepositoryMaintainer {
      *
      * @return whether node was successfully failed
      */
-    private boolean failActive(Node node, String reason) {
+    private boolean failActive(FailingNode failing) {
         Optional<Deployment> deployment =
-            deployer.deployFromLocalActive(node.allocation().get().owner(), Duration.ofMinutes(30));
+            deployer.deployFromLocalActive(failing.node().allocation().get().owner(), Duration.ofMinutes(30));
         if (deployment.isEmpty()) return false;
 
-        try (Mutex lock = nodeRepository().nodes().lock(node.allocation().get().owner())) {
+        try (Mutex lock = nodeRepository().nodes().lock(failing.node().allocation().get().owner())) {
             // If the active node that we are trying to fail is of type host, we need to successfully fail all
             // the children nodes running on it before we fail the host
             boolean allTenantNodesFailedOutSuccessfully = true;
-            String reasonForChildFailure = "Failing due to parent host " + node.hostname() + " failure: " + reason;
-            for (Node failingTenantNode : nodeRepository().nodes().list().childrenOf(node)) {
+            String reasonForChildFailure = "Failing due to parent host " + failing.node().hostname() + " failure: " + failing.reason();
+            for (Node failingTenantNode : nodeRepository().nodes().list().childrenOf(failing.node())) {
                 if (failingTenantNode.state() == Node.State.active) {
-                    allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode, reasonForChildFailure);
+                    allTenantNodesFailedOutSuccessfully &= failActive(new FailingNode(failingTenantNode, reasonForChildFailure));
                 } else {
                     nodeRepository().nodes().fail(failingTenantNode.hostname(), Agent.NodeFailer, reasonForChildFailure);
                 }
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            wantToFail(node, true, lock);
+            wantToFail(failing.node(), true, lock);
             try {
                 deployment.get().activate();
                 return true;
             } catch (TransientException e) {
-                log.log(Level.INFO, "Failed to redeploy " + node.allocation().get().owner() +
+                log.log(Level.INFO, "Failed to redeploy " + failing.node().allocation().get().owner() +
                                     " with a transient error, will be retried by application maintainer: " +
                                     Exceptions.toMessageString(e));
                 return true;
             } catch (RuntimeException e) {
                 // Reset want to fail: We'll retry failing unless it heals in the meantime
-                nodeRepository().nodes().node(node.hostname())
+                nodeRepository().nodes().node(failing.node().hostname())
                                         .ifPresent(n -> wantToFail(n, false, lock));
-                log.log(Level.WARNING, "Could not fail " + node + " for " + node.allocation().get().owner() +
-                                       " for " + reason + ": " + Exceptions.toMessageString(e));
+                log.log(Level.WARNING, "Could not fail " + failing.node() + " for " + failing.node().allocation().get().owner() +
+                                       " for " + failing.reason() + ": " + Exceptions.toMessageString(e));
                 return false;
             }
         }
@@ -356,6 +343,21 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                                  allowedToFailOf(totalNodes),
                                  minimumAllowedToFail, throttleWindow);
         }
+
+    }
+
+    private static class FailingNode {
+
+        private final Node node;
+        private final String reason;
+
+        public FailingNode(Node node, String reason) {
+            this.node = node;
+            this.reason = reason;
+        }
+
+        public Node node() { return node; }
+        public String reason() { return reason; }
 
     }
 
