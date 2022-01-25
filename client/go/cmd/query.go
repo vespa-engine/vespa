@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -19,7 +20,7 @@ var queryTimeoutSecs int
 
 func init() {
 	rootCmd.AddCommand(queryCmd)
-	queryCmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query request in seconds")
+	queryCmd.Flags().IntVarP(&queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
 }
 
 var queryCmd = &cobra.Command{
@@ -46,9 +47,19 @@ func query(arguments []string) {
 		key, value := splitArg(arguments[i])
 		urlQuery.Set(key, value)
 	}
+	queryTimeout := urlQuery.Get("timeout")
+	if queryTimeout == "" {
+		// No timeout set by user, use the timeout option
+		queryTimeout = fmt.Sprintf("%ds", queryTimeoutSecs)
+		urlQuery.Set("timeout", queryTimeout)
+	}
 	url.RawQuery = urlQuery.Encode()
-
-	response, err := service.Do(&http.Request{URL: url}, time.Second*time.Duration(queryTimeoutSecs))
+	deadline, err := time.ParseDuration(queryTimeout)
+	if err != nil {
+		fatalErr(err, "Invalid query timeout")
+		return
+	}
+	response, err := service.Do(&http.Request{URL: url}, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {
 		fatalErr(nil, "Request failed: ", err)
 		return
