@@ -125,6 +125,7 @@ public class JsonFeeder implements Closeable {
      * </pre>
      * Note that {@code "id"} is an alias for the document put operation.
      * Exceptional completion will use be an instance of {@link FeedException} or one of its sub-classes.
+     * The input stream will be closed upon exhaustion, or error.
      */
     public CompletableFuture<Void> feedMany(InputStream jsonStream, ResultCallback resultCallback) {
         return feedMany(jsonStream, 1 << 26, resultCallback);
@@ -143,8 +144,7 @@ public class JsonFeeder implements Closeable {
         CompletableFuture<Result> result;
         AtomicInteger pending = new AtomicInteger(1); // The below dispatch loop itself is counted as a single pending operation
         AtomicBoolean finalCallbackInvoked = new AtomicBoolean();
-        try {
-            RingBufferStream buffer = new RingBufferStream(jsonStream, size);
+        try (RingBufferStream buffer = new RingBufferStream(jsonStream, size)) {
             while ((result = buffer.next()) != null) {
                 pending.incrementAndGet();
                 result.whenCompleteAsync((r, t) -> {
@@ -225,7 +225,9 @@ public class JsonFeeder implements Closeable {
             this.data = new byte[size];
             this.size = size;
 
-            new Thread(this::fill, "feed-reader").start();
+            Thread filler = new Thread(this::fill, "feed-reader");
+            filler.setDaemon(true);
+            filler.start();
 
             this.parserAndExecutor = new RingBufferBackedOperationParserAndExecutor(factory.createParser(this));
         }
