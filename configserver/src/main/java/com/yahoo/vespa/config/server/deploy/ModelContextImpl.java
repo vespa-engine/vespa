@@ -201,6 +201,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> ignoredHttpUserAgents;
         private final boolean enableServerOcspStapling;
         private final String persistenceAsyncThrottling;
+        private final String mergeThrottlingPolicy;
         private final boolean useQrserverServiceName;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
@@ -241,6 +242,7 @@ public class ModelContextImpl implements ModelContext {
             this.ignoredHttpUserAgents = flagValue(source, appId, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
             this.enableServerOcspStapling = flagValue(source, appId, Flags.ENABLE_SERVER_OCSP_STAPLING);
             this.persistenceAsyncThrottling = flagValue(source, appId, Flags.PERSISTENCE_ASYNC_THROTTLING);
+            this.mergeThrottlingPolicy = flagValue(source, appId, Flags.MERGE_THROTTLING_POLICY);
             this.useQrserverServiceName =  flagValue(source, appId, Flags.USE_QRSERVER_SERVICE_NAME);
         }
 
