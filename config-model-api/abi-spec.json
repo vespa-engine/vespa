@@ -397,7 +397,8 @@
     ],
     "fields": [
       "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout separate",
-      "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout leading"
+      "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout leading",
+      "public static final enum com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout simultaneous"
     ]
   },
   "com.yahoo.config.application.api.DeploymentSpec": {

@@ -386,12 +386,16 @@ public class DeploymentSpecTest {
                 "   <instance id='default'>" +
                 "      <upgrade rollout='leading' />" +
                 "   </instance>" +
+                "   <instance id='aggressive'>" +
+                "      <upgrade rollout='simultaneous' />" +
+                "   </instance>" +
                 "   <instance id='custom'/>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals("leading", spec.requireInstance("default").upgradeRollout().toString());
         assertEquals("separate", spec.requireInstance("custom").upgradeRollout().toString());
+        assertEquals("simultaneous", spec.requireInstance("aggressive").upgradeRollout().toString());
     }
 
     @Test

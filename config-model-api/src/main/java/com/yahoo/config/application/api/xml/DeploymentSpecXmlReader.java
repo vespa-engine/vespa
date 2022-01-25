@@ -507,7 +507,7 @@ public class DeploymentSpecXmlReader {
         switch (rollout) {
             case "separate": return DeploymentSpec.UpgradeRollout.separate;
             case "leading": return DeploymentSpec.UpgradeRollout.leading;
-            // case "simultaneous": return DeploymentSpec.UpgradePolicy.conservative;
+            case "simultaneous": return DeploymentSpec.UpgradeRollout.simultaneous;
             default: throw new IllegalArgumentException("Illegal upgrade rollout '" + rollout + "': " +
                                                         "Must be one of " + Arrays.toString(DeploymentSpec.UpgradeRollout.values()));
         }
