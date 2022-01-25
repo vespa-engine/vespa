@@ -131,20 +131,20 @@ public class ApplicationBuilder {
     }
 
     /**
-     * Import search definition.
+     * Adds a schema to this application.
      *
      * @param fileName the name of the file to import
      * @return the name of the imported object
      * @throws IOException    thrown if the file can not be read for some reason
      * @throws ParseException thrown if the file does not contain a valid search definition
      */
-    public Schema add(String fileName) throws IOException, ParseException {
+    public Schema addSchemaFile(String fileName) throws IOException, ParseException {
         File file = new File(fileName);
         return addSchema(IOUtils.readFile(file), file.getAbsoluteFile().getParent());
     }
 
-    private Schema add(Path file) throws IOException, ParseException {
-        return add(file.toString());
+    private Schema addSchemaFile(Path file) throws IOException, ParseException {
+        return addSchemaFile(file.toString());
     }
 
     /**
@@ -177,7 +177,7 @@ public class ApplicationBuilder {
     }
 
     /**
-     * Adds a schema to this.
+     * Adds a schema to this application.
      *
      * @param string the string to parse
      * @return the schema
@@ -187,19 +187,8 @@ public class ApplicationBuilder {
         return addSchema(string, null);
     }
 
-    private Schema addSchema(String str, String schemaDir) throws ParseException {
-        SimpleCharStream stream = new SimpleCharStream(str);
-        try {
-            Schema schema = new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
-                                         rankProfileRegistry, documentsOnly)
-                    .schema(documentTypeManager, schemaDir);
-            add(schema);
-            return schema;
-        } catch (TokenMgrException e) {
-            throw new ParseException("Unknown symbol: " + e.getMessage());
-        } catch (ParseException pe) {
-            throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
-        }
+    private Schema addSchema(String schemaString, String schemaDir) throws ParseException {
+        return add(createSchema(schemaString, schemaDir));
     }
 
     /**
@@ -210,10 +199,25 @@ public class ApplicationBuilder {
      * @param schema the object to import
      * @throws IllegalArgumentException if the given search object has already been processed
      */
-    public void add(Schema schema) {
+    public Schema add(Schema schema) {
         if (schema.getName() == null)
             throw new IllegalArgumentException("Schema has no name");
         schemas.add(schema);
+        return schema;
+    }
+
+    private Schema createSchema(String schemaString, String schemaDir) throws ParseException {
+        SimpleCharStream stream = new SimpleCharStream(schemaString);
+        try {
+            Schema schema = new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
+                                         rankProfileRegistry, documentsOnly)
+                    .schema(documentTypeManager, schemaDir);
+            return schema;
+        } catch (TokenMgrException e) {
+            throw new ParseException("Unknown symbol: " + e.getMessage());
+        } catch (ParseException pe) {
+            throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
+        }
     }
 
     /**
@@ -382,7 +386,7 @@ public class ApplicationBuilder {
                                                             rankProfileRegistry,
                                                             queryprofileRegistry);
         for (String fileName : fileNames) {
-            builder.add(fileName);
+            builder.addSchemaFile(fileName);
         }
         builder.build(true);
         return builder;
@@ -423,7 +427,7 @@ public class ApplicationBuilder {
                                                             rankProfileRegistry,
                                                             queryProfileRegistry);
         for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
-            builder.add(i.next());
+            builder.addSchemaFile(i.next());
         }
         builder.build(true);
         return builder;

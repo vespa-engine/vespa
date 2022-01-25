@@ -21,7 +21,7 @@ public class Deriver {
         ApplicationBuilder builder = new ApplicationBuilder();
         try {
             for (String schema : schemas)
-                builder.add(schema);
+                builder.addSchemaFile(schema);
         } catch (ParseException | IOException e) {
             throw new IllegalArgumentException(e);
         }

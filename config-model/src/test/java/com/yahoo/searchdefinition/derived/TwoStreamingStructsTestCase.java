@@ -18,14 +18,14 @@ public class TwoStreamingStructsTestCase extends AbstractExportingTestCase {
 
         String root = "src/test/derived/twostreamingstructs";
         ApplicationBuilder builder = new ApplicationBuilder();
-        builder.add(root + "/streamingstruct.sd");
-        builder.add(root + "/whatever.sd");
+        builder.addSchemaFile(root + "/streamingstruct.sd");
+        builder.addSchemaFile(root + "/whatever.sd");
         builder.build();
         assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), root);
 
         builder = new ApplicationBuilder();
-        builder.add(root + "/streamingstruct.sd");
-        builder.add(root + "/whatever.sd");
+        builder.addSchemaFile(root + "/streamingstruct.sd");
+        builder.addSchemaFile(root + "/whatever.sd");
         builder.build();
         assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), root);
     }
