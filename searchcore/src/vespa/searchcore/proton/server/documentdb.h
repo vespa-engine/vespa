@@ -51,6 +51,7 @@ class ExecutorThreadingServiceStats;
 class IDocumentDBOwner;
 class ISharedThreadingService;
 class ITransientResourceUsageProvider;
+class ReplayThrottlingPolicy;
 class StatusReport;
 struct MetricsWireService;
 
@@ -104,6 +105,7 @@ private:
     ClusterStateHandler                             _clusterStateHandler;
     BucketHandler                                   _bucketHandler;
     index::IndexConfig                              _indexCfg;
+    std::unique_ptr<ReplayThrottlingPolicy>         _replay_throttling_policy;
     ConfigStore::UP                                 _config_store;
     std::shared_ptr<matching::SessionManager>       _sessionManager; // TODO: This should not have to be a shared pointer.
     MetricsWireService                             &_metricsWireService;
