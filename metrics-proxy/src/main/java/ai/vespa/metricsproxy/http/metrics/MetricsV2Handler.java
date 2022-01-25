@@ -31,7 +31,6 @@ import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.app
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static java.util.Collections.singletonMap;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Http handler for the metrics/v2 rest api.
