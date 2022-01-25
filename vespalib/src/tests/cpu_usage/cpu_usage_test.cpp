@@ -68,22 +68,22 @@ void verify_sampling(size_t thread_id, size_t num_threads, std::vector<Sampler*>
         auto post_total = cpu_usage::total_cpu_usage();
         TEST_BARRIER(); // #4
         double wall = to_s(t1 - t0);
-        std::vector<double> load(4, 0.0);
+        std::vector<double> util(4, 0.0);
         for (size_t i = 0; i < 4; ++i) {
-            load[i] = to_s(post_usage[i] - pre_usage[i]) / wall;
+            util[i] = to_s(post_usage[i] - pre_usage[i]) / wall;
         }
-        double total_load = to_s(post_total - pre_total) / wall;
-        EXPECT_GREATER(load[3], load[0]);
-        // NB: cannot expect total_load to be greater than load[3]
-        // here due to mock loads being 'as expected' while valgrind
-        // will cut all loads in about half.
-        EXPECT_GREATER(total_load, load[0]);
-        fprintf(stderr, "loads: { %.3f, %.3f, %.3f, %.3f }\n", load[0], load[1], load[2], load[3]);
-        fprintf(stderr, "total load: %.3f\n", total_load);
+        double total_util = to_s(post_total - pre_total) / wall;
+        EXPECT_GREATER(util[3], util[0]);
+        // NB: cannot expect total_util to be greater than util[3]
+        // here due to mock utils being 'as expected' while valgrind
+        // will cut all utils in about half.
+        EXPECT_GREATER(total_util, util[0]);
+        fprintf(stderr, "utils: { %.3f, %.3f, %.3f, %.3f }\n", util[0], util[1], util[2], util[3]);
+        fprintf(stderr, "total util: %.3f\n", total_util);
     } else {
         int idx = (thread_id - 1);
-        double target_load = double(thread_id - 1) / (num_threads - 2);
-        auto sampler = cpu_usage::create_thread_sampler(force_mock, target_load);
+        double target_util = double(thread_id - 1) / (num_threads - 2);
+        auto sampler = cpu_usage::create_thread_sampler(force_mock, target_util);
         samplers[idx] = sampler.get();
         TEST_BARRIER(); // #1
         TEST_BARRIER(); // #2
@@ -97,7 +97,7 @@ void verify_sampling(size_t thread_id, size_t num_threads, std::vector<Sampler*>
 
 //-----------------------------------------------------------------------------
 
-TEST_MT_F("require that dummy thread-based CPU usage sampling with known expected load works", 5, std::vector<Sampler*>(4, nullptr)) {
+TEST_MT_F("require that dummy thread-based CPU usage sampling with known expected util works", 5, std::vector<Sampler*>(4, nullptr)) {
     TEST_DO(verify_sampling(thread_id, num_threads, f1, true));
 }
 
@@ -396,46 +396,18 @@ TEST("require that thread tracker implementation does not track OTHER cpu use") 
 
 //-----------------------------------------------------------------------------
 
-// prototype for the class we want to use when integrating CPU usage
-// into metrics as load values. NB: this class is not thread safe.
-
-class CpuMonitor {
-private:
-    duration _min_delay;
-    CpuUsage::TimedSample _old_sample;
-    std::array<double,CpuUsage::num_categories> _load;
-
-public:
-    CpuMonitor(duration min_delay)
-      : _min_delay(min_delay),
-        _old_sample(CpuUsage::sample()),
-        _load() {}
-
-    std::array<double,CpuUsage::num_categories> get_load() {
-        if (steady_clock::now() >= (_old_sample.first + _min_delay)) {
-            auto new_sample = CpuUsage::sample();
-            auto dt = to_s(new_sample.first - _old_sample.first);
-            for (size_t i = 0; i < CpuUsage::num_categories; ++i) {
-                _load[i] = to_s(new_sample.second[i] - _old_sample.second[i]) / dt;
-            }
-            _old_sample = new_sample;
-        }
-        return _load;
-    }
-};
-
 void do_sample_cpu_usage(const EndTime &end_time) {
     auto my_usage = CpuUsage::use(CpuUsage::Category::SETUP);
-    CpuMonitor monitor(8ms);
+    CpuUtil cpu(8ms);
     while (!end_time()) {
         std::this_thread::sleep_for(verbose ? 1s : 10ms);
-        auto load = monitor.get_load();
+        auto util = cpu.get_util();
         vespalib::string body;
-        for (size_t i = 0; i < load.size(); ++i) {
+        for (size_t i = 0; i < util.size(); ++i) {
             if (!body.empty()) {
                 body.append(", ");
             }
-            body.append(fmt("%s: %.3f", CpuUsage::name_of(CpuUsage::Category(i)).c_str(), load[i]));
+            body.append(fmt("%s: %.3f", CpuUsage::name_of(CpuUsage::Category(i)).c_str(), util[i]));
         }
         fprintf(stderr, "CPU: %s\n", body.c_str());
     }

@@ -28,7 +28,7 @@ struct ThreadSampler {
     virtual ~ThreadSampler() {}
 };
 
-ThreadSampler::UP create_thread_sampler(bool force_mock_impl = false, double expected_load = 0.16);
+ThreadSampler::UP create_thread_sampler(bool force_mock_impl = false, double expected_util = 0.16);
 
 } // cpu_usage
 
@@ -61,21 +61,25 @@ public:
     static constexpr size_t index_of(Category cat) { return static_cast<size_t>(cat); }
     static constexpr size_t num_categories = 5;
 
-    // A sample contains how much CPU has been spent in various
-    // categories.
-    class Sample {
+    template <typename T>
+    class PerCategory {
     private:
-        std::array<duration,num_categories> _usage;
+        std::array<T,num_categories> _array;
     public:
-        Sample() : _usage() {}
-        size_t size() const { return _usage.size(); }
-        duration &operator[](size_t idx) { return _usage[idx]; }
-        duration &operator[](Category cat) { return _usage[index_of(cat)]; }
-        const duration &operator[](size_t idx) const { return _usage[idx]; }
-        const duration &operator[](Category cat) const { return _usage[index_of(cat)]; }
+        PerCategory() : _array() {}
+        size_t size() const { return _array.size(); }
+        T &operator[](size_t idx) { return _array[idx]; }
+        T &operator[](Category cat) { return _array[index_of(cat)]; }
+        const T &operator[](size_t idx) const { return _array[idx]; }
+        const T &operator[](Category cat) const { return _array[index_of(cat)]; }
+    };
+
+    // A sample contains how much CPU has been spent in each category.
+    class Sample : public PerCategory<duration> {
+    public:
         void merge(const Sample &rhs) {
             for (size_t i = 0; i < size(); ++i) {
-                _usage[i] += rhs._usage[i];
+                (*this)[i] += rhs[i];
             }
         }
     };
@@ -174,6 +178,35 @@ private:
 public:
     static MyUsage use(Category cat) { return MyUsage(cat); }
     static TimedSample sample();
+};
+
+/**
+ * Simple class used to track cpu utilization over time.
+ **/
+class CpuUtil
+{
+private:
+    duration _min_delay;
+    CpuUsage::TimedSample _old_sample;
+    CpuUsage::PerCategory<double> _util;
+
+public:
+    CpuUtil(duration min_delay = 850ms)
+      : _min_delay(min_delay),
+        _old_sample(CpuUsage::sample()),
+        _util() {}
+
+    CpuUsage::PerCategory<double> get_util() {
+        if (steady_clock::now() >= (_old_sample.first + _min_delay)) {
+            auto new_sample = CpuUsage::sample();
+            auto dt = to_s(new_sample.first - _old_sample.first);
+            for (size_t i = 0; i < _util.size(); ++i) {
+                _util[i] = to_s(new_sample.second[i] - _old_sample.second[i]) / dt;
+            }
+            _old_sample = new_sample;
+        }
+        return _util;
+    }
 };
 
 } // namespace

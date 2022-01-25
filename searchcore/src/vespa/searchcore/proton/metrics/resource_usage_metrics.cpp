@@ -4,6 +4,18 @@
 
 namespace proton {
 
+ResourceUsageMetrics::CpuUtilMetrics::CpuUtilMetrics(metrics::MetricSet *parent)
+  : MetricSet("cpu_util", {}, "Unnormalized cpu utilization for various categories", parent),
+    setup("setup", {}, "cpu used by system init and (re-)configuration", this),
+    read("read", {}, "cpu used by reading data from the system", this),
+    write("write", {}, "cpu used by writing data to the system", this),
+    compact("compact", {}, "cpu used by internal data re-structuring", this),
+    other("other", {}, "cpu used by work not classified as a specific category", this)
+{
+}
+
+ResourceUsageMetrics::CpuUtilMetrics::~CpuUtilMetrics() = default;
+
 ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet *parent)
     : MetricSet("resource_usage", {}, "Usage metrics for various resources in this search engine", parent),
       disk("disk", {}, "The relative amount of disk space used on this machine (value in the range [0, 1])", this),
@@ -15,7 +27,8 @@ ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet *parent)
       memoryMappings("memory_mappings", {}, "The number of mapped memory areas", this),
       openFileDescriptors("open_file_descriptors", {}, "The number of open files", this),
       feedingBlocked("feeding_blocked", {}, "Whether feeding is blocked due to resource limits being reached (value is either 0 or 1)", this),
-      mallocArena("malloc_arena", {}, "Size of malloc arena", this)
+      mallocArena("malloc_arena", {}, "Size of malloc arena", this),
+      cpu_util(this)
 {
 }
 
