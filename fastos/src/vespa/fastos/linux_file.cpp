@@ -37,7 +37,18 @@ FastOS_Linux_File::FastOS_Linux_File(const char *filename)
 ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t readOffset)
 {
-    return File_RW_Ops::pread(fh, buffer, length, readOffset);
+    char * data = static_cast<char *>(buffer);
+    ssize_t read(0);
+    while (read < ssize_t(length)) {
+        size_t lenNow = std::min(getChunkSize(), length - read);
+        ssize_t readNow = File_RW_Ops::pread(fh, data + read, lenNow, readOffset + read);
+        if (readNow > 0) {
+            read += readNow;
+        } else {
+            return (read > 0) ? read : readNow;
+        }
+    }
+    return read;
 }
 
 
