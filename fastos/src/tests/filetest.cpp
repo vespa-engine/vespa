@@ -674,7 +674,8 @@ public:
             int64_t position = file.GetPosition();
             Progress(position == 0, "File pointer should be 0 after opening file");
 
-            file.Read(buffer, 4);
+            ssize_t has_read = file.Read(buffer, 4);
+            Progress(has_read == 4, "Must read 4 bytes");
             buffer[4] = '\0';
             position = file.GetPosition();
             Progress(position == 4, "File pointer should be 4 after reading 4 bytes");

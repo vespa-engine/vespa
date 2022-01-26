@@ -123,7 +123,7 @@ public:
      * @param dstlen The length of the destination buffer.
      * @return The number of bytes read.
      */
-    ssize_t Read(void *dst, size_t dstlen) override;
+    [[nodiscard]] ssize_t Read(void *dst, size_t dstlen) override;
     /**
      * Write one byte to the buffered file, flushing to
      * file if necessary.

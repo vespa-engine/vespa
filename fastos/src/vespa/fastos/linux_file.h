@@ -36,7 +36,7 @@ public:
     void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr) override;
 
 
-    ssize_t Read(void *buffer, size_t len) override;
+    [[nodiscard]] ssize_t Read(void *buffer, size_t len) override;
     [[nodiscard]] ssize_t Write2(const void *buffer, size_t len) override;
     bool Open(unsigned int openFlags, const char *filename) override;
 

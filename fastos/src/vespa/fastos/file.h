@@ -324,7 +324,7 @@ public:
      * @return The number of bytes which was actually read,
      *         or -1 on error.
      */
-    virtual ssize_t Read(void *buffer, size_t length) = 0;
+    [[nodiscard]] virtual ssize_t Read(void *buffer, size_t length) = 0;
 
     /**
      * Write [len] bytes from [buffer].  This is just a wrapper for

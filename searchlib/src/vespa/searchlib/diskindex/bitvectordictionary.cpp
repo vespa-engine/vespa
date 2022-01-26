@@ -53,7 +53,8 @@ BitVectorDictionary::open(const vespalib::string &pathPrefix,
         size_t bufSize = sizeof(WordSingleKey) * numEntries;
         assert(idxFile.GetSize() >= static_cast<int64_t>(idxHeaderLen + bufSize));
         if (bufSize > 0) {
-            idxFile.Read(&_entries[0], bufSize);
+            ssize_t has_read = idxFile.Read(&_entries[0], bufSize);
+            assert(has_read == ssize_t(bufSize));
         }
     }
 
