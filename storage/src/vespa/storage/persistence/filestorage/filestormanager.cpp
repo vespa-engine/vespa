@@ -143,17 +143,29 @@ selectSequencer(StorFilestorConfig::ResponseSequencerType sequencerType) {
     }
 }
 
+vespalib::SharedOperationThrottler::DynamicThrottleParams
+dynamic_throttle_params_from_config(const StorFilestorConfig& config, size_t num_threads)
+{
+    const auto& cfg_params = config.asyncOperationThrottler;
+    auto win_size_incr = std::max(static_cast<size_t>(std::max(cfg_params.windowSizeIncrement, 1)), num_threads);
+
+    vespalib::SharedOperationThrottler::DynamicThrottleParams params;
+    params.window_size_increment        = win_size_incr;
+    params.min_window_size              = win_size_incr;
+    params.window_size_decrement_factor = cfg_params.windowSizeDecrementFactor;
+    params.window_size_backoff          = cfg_params.windowSizeBackoff;
+    return params;
+}
+
 std::unique_ptr<vespalib::SharedOperationThrottler>
 make_operation_throttler_from_config(const StorFilestorConfig& config, size_t num_threads)
 {
-    const bool use_dynamic_throttling = (config.asyncOperationThrottlerType == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC);
+    // TODO only use struct config field instead once config model is updated
+    const bool use_dynamic_throttling = ((config.asyncOperationThrottlerType  == StorFilestorConfig::AsyncOperationThrottlerType::DYNAMIC) ||
+                                         (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC));
     if (use_dynamic_throttling) {
-        auto config_win_size_incr = std::max(config.asyncOperationDynamicThrottlingWindowIncrement, 1);
-        auto win_size_increment = std::max(static_cast<size_t>(config_win_size_incr), num_threads);
-        vespalib::SharedOperationThrottler::DynamicThrottleParams params;
-        params.window_size_increment = win_size_increment;
-        params.min_window_size = win_size_increment;
-        return vespalib::SharedOperationThrottler::make_dynamic_throttler(params);
+        auto dyn_params = dynamic_throttle_params_from_config(config, num_threads);
+        return vespalib::SharedOperationThrottler::make_dynamic_throttler(dyn_params);
     } else {
         return vespalib::SharedOperationThrottler::make_unlimited_throttler();
     }
@@ -229,6 +241,10 @@ FileStorManager::configure(std::unique_ptr<StorFilestorConfig> config)
                                                                    *_filestorHandler, i % numStripes, _component));
         }
         _bucketExecutorRegistration = _provider->register_executor(std::make_shared<BucketExecutorWrapper>(*this));
+    } else {
+        assert(_filestorHandler);
+        auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(*config, _threads.size());
+        _filestorHandler->operation_throttler().reconfigure_dynamic_throttling(updated_dyn_throttle_params);
     }
 }
 

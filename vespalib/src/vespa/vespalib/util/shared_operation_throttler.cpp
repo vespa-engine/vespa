@@ -23,6 +23,7 @@ public:
     }
     uint32_t current_window_size() const noexcept override { return 0; }
     uint32_t waiting_threads() const noexcept override { return 0; }
+    void reconfigure_dynamic_throttling(const DynamicThrottleParams&) noexcept override { /* no-op */ }
 private:
     void release_one() noexcept override { /* no-op */ }
 };
@@ -38,6 +39,7 @@ private:
  *   messagebus/src/main/java/com/yahoo/messagebus/DynamicThrottlePolicy.java
  */
 class DynamicThrottlePolicy {
+    SharedOperationThrottler::DynamicThrottleParams _active_params;
     std::function<steady_time()> _time_provider;
     uint32_t _num_sent;
     uint32_t _num_ok;
@@ -66,6 +68,8 @@ public:
     void set_min_window_size(double min_size) noexcept;
     void set_window_size_decrement_factor(double decrement_factor) noexcept;
 
+    void configure(const SharedOperationThrottler::DynamicThrottleParams& params) noexcept;
+
     [[nodiscard]] uint32_t current_window_size() const noexcept {
         return static_cast<uint32_t>(_window_size);
     }
@@ -74,6 +78,8 @@ public:
     void process_response(bool success) noexcept;
 
 private:
+    void internal_unconditional_configure(const SharedOperationThrottler::DynamicThrottleParams& params) noexcept;
+
     [[nodiscard]] uint64_t current_time_as_millis() noexcept {
         return count_ms(_time_provider().time_since_epoch());
     }
@@ -81,7 +87,8 @@ private:
 
 DynamicThrottlePolicy::DynamicThrottlePolicy(const SharedOperationThrottler::DynamicThrottleParams& params,
                                              std::function<steady_time()> time_provider)
-    : _time_provider(std::move(time_provider)),
+    : _active_params(params),
+      _time_provider(std::move(time_provider)),
       _num_sent(0),
       _num_ok(0),
       _resize_rate(3.0),
@@ -98,14 +105,7 @@ DynamicThrottlePolicy::DynamicThrottlePolicy(const SharedOperationThrottler::Dyn
       _weight(1),
       _local_max_throughput(0)
 {
-    // We use setters for convenience, since setting one parameter may imply setting others,
-    // based on it, and there's frequently min/max capping of values.
-    set_window_size_increment(params.window_size_increment);
-    set_min_window_size(params.min_window_size);
-    set_max_window_size(params.max_window_size);
-    set_resize_rate(params.resize_rate);
-    set_window_size_decrement_factor(params.window_size_decrement_factor);
-    set_window_size_backoff(params.window_size_backoff);
+    internal_unconditional_configure(_active_params);
 }
 
 void
@@ -144,6 +144,31 @@ void
 DynamicThrottlePolicy::set_window_size_decrement_factor(double decrement_factor) noexcept
 {
     _decrement_factor = decrement_factor;
+}
+
+void
+DynamicThrottlePolicy::internal_unconditional_configure(const SharedOperationThrottler::DynamicThrottleParams& params) noexcept
+{
+    // We use setters for convenience, since setting one parameter may imply setting others,
+    // based on it, and there's frequently min/max capping of values.
+    set_window_size_increment(params.window_size_increment);
+    set_min_window_size(params.min_window_size);
+    set_max_window_size(params.max_window_size);
+    set_resize_rate(params.resize_rate);
+    set_window_size_decrement_factor(params.window_size_decrement_factor);
+    set_window_size_backoff(params.window_size_backoff);
+}
+
+void
+DynamicThrottlePolicy::configure(const SharedOperationThrottler::DynamicThrottleParams& params) noexcept
+{
+    // To avoid any noise where setting parameters on the throttler may implicitly reduce the
+    // current window size (even though this isn't _currently_ the case), don't invoke any internal
+    // reconfiguration code unless the parameters have actually changed.
+    if (params != _active_params) {
+        internal_unconditional_configure(params);
+        _active_params = params;
+    }
 }
 
 bool
@@ -225,6 +250,7 @@ public:
     Token try_acquire_one() noexcept override;
     uint32_t current_window_size() const noexcept override;
     uint32_t waiting_threads() const noexcept override;
+    void reconfigure_dynamic_throttling(const DynamicThrottleParams& params) noexcept override;
 private:
     void release_one() noexcept override;
     // Non-const since actually checking the send window of a dynamic throttler might change
@@ -338,6 +364,13 @@ DynamicOperationThrottler::waiting_threads() const noexcept
 {
     std::unique_lock lock(_mutex);
     return _waiting_threads;
+}
+
+void
+DynamicOperationThrottler::reconfigure_dynamic_throttling(const DynamicThrottleParams& params) noexcept
+{
+    std::unique_lock lock(_mutex);
+    _throttle_policy.configure(params);
 }
 
 } // anonymous namespace
