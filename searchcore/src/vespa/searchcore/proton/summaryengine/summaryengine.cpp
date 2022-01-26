@@ -2,6 +2,7 @@
 #include "summaryengine.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/cpu_usage.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.summaryengine.summaryengine");
@@ -10,6 +11,7 @@ using namespace search::engine;
 using namespace proton;
 using vespalib::Memory;
 using vespalib::slime::Inspector;
+using vespalib::CpuUsage;
 
 namespace {
 
@@ -61,7 +63,7 @@ SummaryEngine::SummaryEngine(size_t numThreads, bool async)
       _closed(false),
       _forward_issues(true),
       _handlers(),
-      _executor(numThreads, 128_Ki, summary_engine_executor),
+      _executor(numThreads, 128_Ki, CpuUsage::wrap(summary_engine_executor, CpuUsage::Category::READ)),
       _metrics(std::make_unique<DocsumMetrics>())
 { }
 

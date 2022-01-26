@@ -4,4 +4,11 @@
 
 namespace vespalib {
 
+int
+Runnable::default_init_function(Runnable &target)
+{
+    target.run();
+    return 1;
+}
+
 } // namespace vespalib
