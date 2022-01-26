@@ -44,7 +44,18 @@ FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length, int64_t rea
 ssize_t
 FastOS_Linux_File::readInternal(int fh, void *buffer, size_t length)
 {
-    return File_RW_Ops::read(fh, buffer, length);
+    char * data = static_cast<char *>(buffer);
+    ssize_t read(0);
+    while (read < ssize_t(length)) {
+        size_t lenNow = std::min(getChunkSize(), length - read);
+        ssize_t readNow = File_RW_Ops::read(fh, data + read, lenNow);
+        if (readNow > 0) {
+            read += readNow;
+        } else {
+            return (read > 0) ? read : readNow;
+        }
+    }
+    return read;
 }
 
 
@@ -169,7 +180,7 @@ FastOS_Linux_File::Write2(const void *buffer, size_t length)
     const char * data = static_cast<const char *>(buffer);
     ssize_t written(0);
     while (written < ssize_t(length)) {
-        size_t lenNow = std::min(getWriteChunkSize(), length - written);
+        size_t lenNow = std::min(getChunkSize(), length - written);
         ssize_t writtenNow = internalWrite2(data + written, lenNow);
         if (writtenNow > 0) {
             written += writtenNow;
