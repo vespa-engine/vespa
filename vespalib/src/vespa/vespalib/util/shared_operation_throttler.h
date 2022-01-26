@@ -51,9 +51,15 @@ public:
 
     virtual ~SharedOperationThrottler() = default;
 
-    // All methods are thread safe
+    // Acquire a valid throttling token, uninterruptedly blocking until one can be obtained.
     [[nodiscard]] virtual Token blocking_acquire_one() noexcept = 0;
+    // Attempt to acquire a valid throttling token, waiting up to `timeout` for one to be
+    // available. If the timeout is exceeded without any tokens becoming available, an
+    // invalid token will be returned.
     [[nodiscard]] virtual Token blocking_acquire_one(vespalib::duration timeout) noexcept = 0;
+    // Attempt to acquire a valid throttling token if one is immediately available.
+    // An invalid token will be returned if none is available. Never blocks (other than
+    // when contending for the internal throttler mutex).
     [[nodiscard]] virtual Token try_acquire_one() noexcept = 0;
 
     // May return 0, in which case the window size is unlimited.
@@ -62,9 +68,6 @@ public:
     // Exposed for unit testing only.
     [[nodiscard]] virtual uint32_t waiting_threads() const noexcept = 0;
 
-    // Creates a throttler that does exactly zero throttling (but also has zero overhead and locking)
-    static std::unique_ptr<SharedOperationThrottler> make_unlimited_throttler();
-
     struct DynamicThrottleParams {
         uint32_t window_size_increment      = 20;
         uint32_t min_window_size            = 20;
@@ -72,7 +75,18 @@ public:
         double resize_rate                  = 3.0;
         double window_size_decrement_factor = 1.2;
         double window_size_backoff          = 0.95;
+
+        bool operator==(const DynamicThrottleParams&) const noexcept = default;
+        bool operator!=(const DynamicThrottleParams&) const noexcept = default;
     };
+
+    // No-op if underlying throttler does not use a dynamic policy, or if the supplied
+    // parameters are equal to the current configuration.
+    // FIXME leaky abstraction alert!
+    virtual void reconfigure_dynamic_throttling(const DynamicThrottleParams& params) noexcept = 0;
+
+    // Creates a throttler that does exactly zero throttling (but also has zero overhead and locking)
+    static std::unique_ptr<SharedOperationThrottler> make_unlimited_throttler();
 
     // Creates a throttler that uses a DynamicThrottlePolicy under the hood
     static std::unique_ptr<SharedOperationThrottler> make_dynamic_throttler(const DynamicThrottleParams& params);
