@@ -61,6 +61,11 @@ protected:
     FastOS_File      _file;
     uint64_t _fileBitSize;
     index::PostingListCountFileSeqWrite *const _countFile;
+    /**
+     * Make header using feature encode write context.
+     */
+    void makeHeader(const search::common::FileHeaderContext &fileHeaderContext);
+    bool updateHeader();
 public:
     Zc4PostingSeqWrite(index::PostingListCountFileSeqWrite *countFile);
     ~Zc4PostingSeqWrite();
@@ -81,12 +86,6 @@ public:
     void getParams(PostingListParams &params) override;
     void setFeatureParams(const PostingListParams &params) override;
     void getFeatureParams(PostingListParams &params) override;
-
-    /**
-     * Make header using feature encode write context.
-     */
-    void makeHeader(const search::common::FileHeaderContext &fileHeaderContext);
-    void updateHeader();
 };
 
 class ZcPostingSeqWrite : public Zc4PostingSeqWrite

@@ -108,9 +108,9 @@ class PageDict4FileSeqWrite : public index::DictionaryFileSeqWrite
     void makePHeader(const FileHeaderContext &fileHeaderContext);
     void makeSPHeader(const FileHeaderContext &fileHeaderContext);
     void makeSSHeader(const FileHeaderContext &fileHeaderContext);
-    void updatePHeader(uint64_t fileBitSize);
-    void updateSPHeader(uint64_t fileBitSize);
-    void updateSSHeader(uint64_t fileBitSize);
+    bool updatePHeader(uint64_t fileBitSize);
+    bool updateSPHeader(uint64_t fileBitSize);
+    bool updateSSHeader(uint64_t fileBitSize);
 public:
     PageDict4FileSeqWrite();
     ~PageDict4FileSeqWrite();
