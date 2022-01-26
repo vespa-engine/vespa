@@ -365,6 +365,22 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR = defineDoubleFlag(
+            "persistence-throttling-ws-decrement-factor", 1.2,
+            List.of("vekterli"), "2022-01-27", "2022-05-01",
+            "Sets the dynamic throttle policy window size decrement factor for persistence " +
+            "async throttling. Only applies if DYNAMIC policy is used.",
+            "Takes effect on redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_BACKOFF = defineDoubleFlag(
+            "persistence-throttling-ws-backoff", 0.95,
+            List.of("vekterli"), "2022-01-27", "2022-05-01",
+            "Sets the dynamic throttle policy window size backoff for persistence " +
+            "async throttling. Only applies if DYNAMIC policy is used. Valid range [0, 1]",
+            "Takes effect on redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag CHECK_CONFIG_CONVERGENCE_BEFORE_RESTARTING = defineFeatureFlag(
             "check-config-convergence-before-restart", false,
             List.of("hmusum"), "2022-01-16", "2022-02-16",
