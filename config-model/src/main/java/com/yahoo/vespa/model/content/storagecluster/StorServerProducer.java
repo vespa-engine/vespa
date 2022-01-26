@@ -32,6 +32,7 @@ public class StorServerProducer implements StorServerConfig.Producer {
     private Integer maxMergesPerNode;
     private Integer queueSize;
     private Integer bucketDBStripeBits;
+    private StorServerConfig.Merge_throttling_policy.Type.Enum mergeThrottlingPolicyType;
 
     private StorServerProducer setMaxMergesPerNode(Integer value) {
         if (value != null) {
@@ -50,10 +51,19 @@ public class StorServerProducer implements StorServerConfig.Producer {
         return this;
     }
 
+    private static StorServerConfig.Merge_throttling_policy.Type.Enum toThrottlePolicyType(String policyType) {
+        try {
+            return StorServerConfig.Merge_throttling_policy.Type.Enum.valueOf(policyType);
+        } catch (Throwable t) {
+            return StorServerConfig.Merge_throttling_policy.Type.STATIC;
+        }
+    }
+
     StorServerProducer(String clusterName, ModelContext.FeatureFlags featureFlags) {
         this.clusterName = clusterName;
         maxMergesPerNode = featureFlags.maxConcurrentMergesPerNode();
         queueSize = featureFlags.maxMergeQueueSize();
+        mergeThrottlingPolicyType = toThrottlePolicyType(featureFlags.mergeThrottlingPolicy());
     }
 
     @Override
@@ -73,5 +83,7 @@ public class StorServerProducer implements StorServerConfig.Producer {
         if (bucketDBStripeBits != null) {
             builder.content_node_bucket_db_stripe_bits(bucketDBStripeBits);
         }
+        // TODO set throttle policy params based on existing or separate flags
+        builder.merge_throttling_policy(new StorServerConfig.Merge_throttling_policy.Builder().type(mergeThrottlingPolicyType));
     }
 }
