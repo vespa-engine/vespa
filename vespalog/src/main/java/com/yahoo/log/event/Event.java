@@ -28,7 +28,10 @@ import java.util.regex.Pattern;
  * them through the logging API.
  *
  * @author  Bjorn Borud
+ *
+ * @deprecated Only for internal Vespa usage
  */
+@Deprecated(forRemoval = true, since = "7")
 public abstract class Event implements Serializable {
     private static Logger log = Logger.getLogger(Event.class.getName());
 

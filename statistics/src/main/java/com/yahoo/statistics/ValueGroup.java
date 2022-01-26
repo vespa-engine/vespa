@@ -13,6 +13,7 @@ import java.util.HashMap;
  *
  * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
+@SuppressWarnings("removal") // TODO Vespa 8: remove (com.yahoo.log.event)
 @Deprecated
 public class ValueGroup extends Group {
     // A map for names of subevents and Value instances
