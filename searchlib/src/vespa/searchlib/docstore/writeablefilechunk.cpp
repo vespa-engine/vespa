@@ -135,7 +135,9 @@ WriteableFileChunk(vespalib::Executor &executor,
             _idxHeaderLen = writeIdxHeader(fileHeaderContext, _docIdLimit, *idxFile);
         }
         _idxFileSize = idxFile->GetSize();
-        idxFile->Sync();
+        if ( ! idxFile->Sync()) {
+            throw SummaryException("Failed syncing idx file", *idxFile, VESPA_STRLOC);
+        }
     } else {
         throw SummaryException("Failed opening data file", _dataFile, VESPA_STRLOC);
     }
@@ -339,9 +341,14 @@ getAlignedStartPos(FastOS_File & file)
             ssize_t toWrite(Alignment - (startPos & (Alignment-1)));
             ssize_t written = align.Write2(&Padding[0], toWrite);
             if (written == toWrite) {
-                align.Sync();
-                file.SetPosition(align.GetSize());
-                startPos = file.GetPosition();
+                if ( align.Sync() ) {
+                    file.SetPosition(align.GetSize());
+                    startPos = file.GetPosition();
+                } else {
+                    throw SummaryException(
+                            make_string("Failed syncing dat file."),
+                            align, VESPA_STRLOC);
+                }
              } else {
                 throw SummaryException(
                     make_string("Failed writing %ld bytes to dat file. Only %ld written", toWrite, written),
@@ -574,7 +581,8 @@ WriteableFileChunk::freeze()
             setDiskFootprint(getDiskFootprint(guard));
             _frozen = true;
         }
-        _dataFile.Close();
+        bool sync_and_close_ok = _dataFile.Sync() && _dataFile.Close();
+        assert(sync_and_close_ok);
         _bucketMap = BucketDensityComputer(_bucketizer);
     }
 }
