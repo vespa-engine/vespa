@@ -535,7 +535,7 @@ public class DeploymentStatus {
         Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
             return    (   (change.platform().isEmpty() || change.platform().equals(instance.change().platform()))
                        && (change.application().isEmpty() || change.application().equals(instance.change().application()))
-                   || status.jobsToRun(Map.of(instance.name(), change)).isEmpty())
+                   || step().steps().stream().noneMatch(step -> step.concerns(prod)))
                       ? dependenciesCompletedAt(change, dependent)
                       : Optional.empty();
         }
