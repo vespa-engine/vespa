@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.template;
 
+import java.util.Locale;
+
 /**
  * Public methods common to both Template and ListElement.
  *
@@ -20,7 +22,7 @@ public interface Form {
         var args = new Object[1 + rest.length];
         args[0] = first;
         System.arraycopy(rest, 0, args, 1, rest.length);
-        var value = String.format(format, args);
+        var value = String.format(Locale.US, format, args);
 
         return set(name, value);
     }
