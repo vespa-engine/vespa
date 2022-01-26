@@ -216,8 +216,8 @@ public class RankProfile implements Cloneable {
             inherited = resolveInherited();
             if (inherited == null) {
                 String msg = "rank-profile '" + name() + "' inherits '" + inheritedName +
-                             "', but it does not exist anywhere in the inheritance of search '" +
-                             ((schema() != null) ? schema().getName() : " global rank profiles") + "'.";
+                             "', but this is not found in " +
+                             ((schema() != null) ? schema() : " global rank profiles");
                 throw new IllegalArgumentException(msg);
             } else {
                 List<String> children = new ArrayList<>();

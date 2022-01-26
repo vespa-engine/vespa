@@ -12,6 +12,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
+import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.searchdefinition.parser.ParseException;
@@ -27,12 +28,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -40,7 +39,7 @@ import java.util.Set;
  * Application builder. Usage:
  * 1) Add all schemas, using the addXXX() methods,
  * 2) provide the available rank types and rank expressions, using the setRankXXX() methods,
- * 3) invoke the {@link #build()} method
+ * 3) invoke the {@link #build} method
  */
 public class ApplicationBuilder {
 
@@ -143,13 +142,9 @@ public class ApplicationBuilder {
         return addSchema(IOUtils.readFile(file), file.getAbsoluteFile().getParent());
     }
 
-    private Schema addSchemaFile(Path file) throws IOException, ParseException {
-        return addSchemaFile(file.toString());
-    }
-
     /**
      * Reads and parses the schema string provided by the given reader. Once all schemas have been
-     * imported, call {@link #build()}.
+     * imported, call {@link #build}.
      *
      * @param reader the reader whose content to import
      */
@@ -187,12 +182,12 @@ public class ApplicationBuilder {
         return addSchema(string, null);
     }
 
-    private Schema addSchema(String schemaString, String schemaDir) throws ParseException {
-        return add(createSchema(schemaString, schemaDir));
+    private Schema addSchema(String schemaString, String schemaPath) throws ParseException {
+        return add(createSchema(schemaString, schemaPath));
     }
 
     /**
-     * Registers the given schema to the application to be built during {@link #build()}. A
+     * Registers the given schema to the application to be built during {@link #build}. A
      * {@link Schema} object is considered to be "raw" if it has not already been processed. This is the case for most
      * programmatically constructed schemas used in unit tests.
      *
@@ -206,13 +201,18 @@ public class ApplicationBuilder {
         return schema;
     }
 
-    private Schema createSchema(String schemaString, String schemaDir) throws ParseException {
+    private Schema createSchema(String schemaString, String schemaPath) throws ParseException {
+        Schema schema = parseSchema(schemaString, schemaPath);
+        addRankProfileFiles(schema, schemaPath);
+        return schema;
+    }
+
+    private Schema parseSchema(String schemaString, String schemaPath) throws ParseException {
         SimpleCharStream stream = new SimpleCharStream(schemaString);
         try {
-            Schema schema = new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
+            return new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
                                          rankProfileRegistry, documentsOnly)
-                    .schema(documentTypeManager, schemaDir);
-            return schema;
+                    .schema(documentTypeManager, schemaPath);
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
@@ -220,15 +220,40 @@ public class ApplicationBuilder {
         }
     }
 
-    /**
-     * Processes and finalizes the schemas of this.
-     * Only for testing.
-     *
-     * @throws IllegalStateException Thrown if this method has already been called.
-     */
-    public Application build() {
-        return build(true);
+    private void addRankProfileFiles(Schema schema, String schemaPath) {
+        if (applicationPackage == null || schemaPath == null) return;
+        Path rankProfilePath = Path.fromString(schemaPath).append(schema.getName());
+        System.out.println("Adding external rank profiles for " + schema + ": Have " +
+                           applicationPackage.getFiles(rankProfilePath, ".profile").size() +
+                           " files in " + rankProfilePath);
+        for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile")) {
+            parseRankProfile(reader, schema);
+        }
     }
+
+    /** Parses the rank profile of the given reader and adds it to the rank profile registry for this schema. */
+    private void parseRankProfile(NamedReader reader, Schema schema) {
+        try {
+            SimpleCharStream stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
+            try {
+                new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
+                                    rankProfileRegistry, documentsOnly)
+                        .rankProfile(schema);
+            } catch (TokenMgrException e) {
+                throw new ParseException("Unknown symbol: " + e.getMessage());
+            } catch (ParseException pe) {
+                throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
+            }
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException("Could not read rank profile " + reader.getName(), e);
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Could not parse rank profile " + reader.getName(), e);
+        }
+    }
+
+
 
     /**
      * Processes and finalizes the schemas of this.
@@ -278,7 +303,7 @@ public class ApplicationBuilder {
      * @param name the name of the schema to return,
      *             or null to return the only one or throw an exception if there are multiple to choose from
      * @return the built object, or null if none with this name
-     * @throws IllegalStateException if {@link #build()} has not been called.
+     * @throws IllegalStateException if {@link #build} has not been called.
      */
     public Schema getSchema(String name) {
         if (application == null)  throw new IllegalStateException("Application not built");
@@ -426,8 +451,8 @@ public class ApplicationBuilder {
                                                             properties,
                                                             rankProfileRegistry,
                                                             queryProfileRegistry);
-        for (Iterator<Path> i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
-            builder.addSchemaFile(i.next());
+        for (var i = Files.list(new File(dir).toPath()).filter(p -> p.getFileName().toString().endsWith(".sd")).iterator(); i.hasNext(); ) {
+            builder.addSchemaFile(i.next().toString());
         }
         builder.build(true);
         return builder;
@@ -499,7 +524,7 @@ public class ApplicationBuilder {
                                                          QueryProfileRegistry queryProfileRegistry) {
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry, queryProfileRegistry);
         builder.add(rawSchema);
-        builder.build();
+        builder.build(true);
         return builder;
     }
 

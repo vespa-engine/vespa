@@ -89,7 +89,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
                 "}";
         ApplicationBuilder schemaBuilder = new ApplicationBuilder(application, new MockFileRegistry(), new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfileRegistry);
         schemaBuilder.addSchema(sdContent);
-        schemaBuilder.build();
+        schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
         RankProfile rp = rankProfileRegistry.get(schema, "my_profile");
         return new RankProfileTransformContext(rp, queryProfileRegistry, Collections.emptyMap(), null, Collections.emptyMap(), Collections.emptyMap());

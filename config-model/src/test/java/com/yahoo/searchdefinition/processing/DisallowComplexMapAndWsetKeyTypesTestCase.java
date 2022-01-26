@@ -51,7 +51,7 @@ public class DisallowComplexMapAndWsetKeyTypesTestCase {
                         "        field a type " + fieldType + " {}\n" +
                         "    }\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
     }
 
 }

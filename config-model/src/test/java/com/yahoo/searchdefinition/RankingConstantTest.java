@@ -43,7 +43,7 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        schemaBuilder.build();
+        schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
 
         Iterator<RankingConstant> constantIterator = schema.rankingConstants().asMap().values().iterator();
@@ -101,7 +101,7 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        schemaBuilder.build();
+        schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals("simplename", constant.getFileName());
@@ -120,7 +120,7 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        schemaBuilder.build();
+        schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
@@ -140,7 +140,7 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        schemaBuilder.build();
+        schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
@@ -160,7 +160,7 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        schemaBuilder.build();
+        schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
@@ -180,7 +180,7 @@ public class RankingConstantTest {
                 "  }",
                 "}"
         ));
-        schemaBuilder.build();
+        schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
         RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());

@@ -22,7 +22,7 @@ public class UrlFieldValidationTestCase {
                           "    }" +
                           "}");
         try {
-            builder.build();
+            builder.build(true);
             fail("Should have caused an exception");
             // success
         } catch (IllegalArgumentException e) {

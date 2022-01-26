@@ -60,7 +60,7 @@ public class SchemaClusterTest {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.add(schema1);
         builder.add(schema2);
-        builder.build();
+        builder.build(true);
     }
 
     @Test

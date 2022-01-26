@@ -149,7 +149,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                                     "    summary other_campaign_ref type reference<campaign> {}",
                                     "  }",
                                     "}"));
-        builder.build();
+        builder.build(true);
         return builder.getSchema("ad");
     }
 

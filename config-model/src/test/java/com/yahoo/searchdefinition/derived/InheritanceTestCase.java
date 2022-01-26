@@ -44,7 +44,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "parent.sd");
         builder.addSchemaFile(dir + "child.sd");
-        builder.build();
+        builder.build(true);
         derive("inheritstruct", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritstruct");
     }
@@ -69,7 +69,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
                 String fileName = files.get(fileIdx % files.size());
                 builder.addSchemaFile(dir + fileName);
             }
-            builder.build();
+            builder.build(true);
             DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
             DerivedConfiguration.exportDocuments(new DocumentManager().produce(builder.getModel(), b), outDir.getPath());
             DocumentmanagerConfig dc = b.build();
@@ -114,7 +114,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "parent.sd");
         builder.addSchemaFile(dir + "child.sd");
-        builder.build();
+        builder.build(true);
         derive("inheritfromparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromparent");
     }
@@ -126,7 +126,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         builder.addSchemaFile(dir + "grandparent.sd");
         builder.addSchemaFile(dir + "parent.sd");
         builder.addSchemaFile(dir + "child.sd");
-        builder.build();
+        builder.build(true);
         derive("inheritfromgrandparent", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritfromgrandparent");
     }
@@ -139,7 +139,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         builder.addSchemaFile(dir + "father.sd");
         builder.addSchemaFile(dir + "mother.sd");
         builder.addSchemaFile(dir + "child.sd");
-        builder.build();
+        builder.build(true);
         derive("inheritance", builder, builder.getSchema("child"));
         assertCorrectConfigFiles("inheritance");
     }

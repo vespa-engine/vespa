@@ -22,7 +22,7 @@ public class SimpleInheritTestCase extends AbstractExportingTestCase {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(expectedResultsDirName + "parent.sd");
         builder.addSchemaFile(expectedResultsDirName + "child.sd");
-        builder.build();
+        builder.build(true);
 
         Schema schema = builder.getSchema("child");
 

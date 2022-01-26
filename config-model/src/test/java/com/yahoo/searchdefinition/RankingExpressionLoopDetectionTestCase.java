@@ -36,7 +36,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "\n" +
                 "}\n");
         try {
-            builder.build();
+            builder.build(true);
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
@@ -71,7 +71,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "\n" +
                 "}\n");
         try {
-            builder.build();
+            builder.build(true);
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
@@ -106,7 +106,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "\n" +
                 "}\n");
         try {
-            builder.build();
+            builder.build(true);
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
@@ -140,7 +140,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "    }\n" +
                 "\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
     @Test
@@ -168,7 +168,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "    }\n" +
                 "\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
     @Test
@@ -191,7 +191,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
     @Test
@@ -214,7 +214,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
     @Test
@@ -240,7 +240,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}\n");
-        builder.build();
+        builder.build(true);
     }
 
 }

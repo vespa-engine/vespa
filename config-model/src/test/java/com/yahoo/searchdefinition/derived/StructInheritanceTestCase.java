@@ -45,7 +45,7 @@ public class StructInheritanceTestCase extends AbstractExportingTestCase {
         String dir = "src/test/derived/structinheritance/";
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(dir + "bad.sd");
-        builder.build();
+        builder.build(true);
         derive("structinheritance", builder, builder.getSchema("bad"));
     }
 

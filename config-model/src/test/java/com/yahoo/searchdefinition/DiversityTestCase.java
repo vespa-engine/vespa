@@ -42,7 +42,7 @@ public class DiversityTestCase {
                         "        }\n" +
                         "    }\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile.MatchPhaseSettings matchPhase = rankProfileRegistry.get(s, "parent").getMatchPhaseSettings();
         RankProfile.DiversitySettings diversity = matchPhase.getDiversity();
@@ -63,7 +63,7 @@ public class DiversityTestCase {
         ApplicationBuilder builder = getSearchBuilder("field b type predicate { indexing: attribute }");
 
         try {
-            builder.build();
+            builder.build(true);
             fail("Should throw.");
         } catch (IllegalArgumentException e) {
             assertEquals(getMessagePrefix() + "must be single value numeric, or enumerated attribute, but it is 'predicate'", e.getMessage());
@@ -75,7 +75,7 @@ public class DiversityTestCase {
         ApplicationBuilder builder = getSearchBuilder("field b type array<int> { indexing: attribute }");
 
         try {
-            builder.build();
+            builder.build(true);
             fail("Should throw.");
         } catch (IllegalArgumentException e) {
             assertEquals(getMessagePrefix() + "must be single value numeric, or enumerated attribute, but it is 'Array<int>'", e.getMessage());

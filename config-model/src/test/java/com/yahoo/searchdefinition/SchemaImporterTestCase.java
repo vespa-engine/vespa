@@ -38,7 +38,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder sb = new ApplicationBuilder(rankProfileRegistry, new QueryProfileRegistry());
         sb.addSchemaFile("src/test/examples/simple.sd");
-        sb.build();
+        sb.build(true);
         Schema schema = sb.getSchema();
         assertEquals("simple", schema.getName());
         assertTrue(schema.hasDocument());

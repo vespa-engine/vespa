@@ -55,7 +55,7 @@ public class FastAccessValidatorTest {
                 "For schema 'test': The following attributes have a type that is incompatible " +
                         "with fast-access: predicate_attribute, tensor_attribute, reference_attribute. " +
                         "Predicate, tensor and reference attributes are incompatible with fast-access.");
-        builder.build();
+        builder.build(true);
     }
 
 }

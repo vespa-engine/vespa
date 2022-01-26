@@ -49,7 +49,7 @@ public class ReferenceFieldTestCase {
         builder.addSchema(campaignSdContent);
         builder.addSchema(salespersonSdContent);
         builder.addSchema(adSdContent);
-        builder.build();
+        builder.build(true);
         Schema schema = builder.getSchema("ad");
         assertSearchContainsReferenceField("campaign_ref", "campaign", schema.getDocument());
         assertSearchContainsReferenceField("salesperson_ref", "salesperson", schema.getDocument());
@@ -74,7 +74,7 @@ public class ReferenceFieldTestCase {
         builder.addSchema(adSdContent);
         exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
         exceptionRule.expectMessage("Document dependency cycle detected: campaign->ad->campaign.");
-        builder.build();
+        builder.build(true);
     }
 
     private static void assertSearchContainsReferenceField(String expectedFieldname,
@@ -87,4 +87,5 @@ public class ReferenceFieldTestCase {
         ReferenceDataType refField = (ReferenceDataType) dataType;
         assertEquals(referencedDocType, refField.getTargetType().getName());
     }
+
 }

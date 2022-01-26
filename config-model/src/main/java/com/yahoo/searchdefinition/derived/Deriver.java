@@ -25,7 +25,7 @@ public class Deriver {
         } catch (ParseException | IOException e) {
             throw new IllegalArgumentException(e);
         }
-        builder.build();
+        builder.build(true);
         return builder;
     }
 

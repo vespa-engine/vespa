@@ -79,7 +79,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
             builder.build(true);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("rank-profile 'p1' inherits 'notexist', but it does not exist anywhere in the inheritance of search 'test'.", e.getMessage());
+            assertEquals("rank-profile 'p1' inherits 'notexist', but this is not found in schema 'test'", e.getMessage());
         }
     }
 
@@ -166,7 +166,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
             builder.build(true);
             fail("Sideways inheritance should have been enforced");
         } catch (IllegalArgumentException e) {
-            assertEquals("rank-profile 'child' inherits 'parent', but it does not exist anywhere in the inheritance of search 'child1'.", e.getMessage());
+            assertEquals("rank-profile 'child' inherits 'parent', but this is not found in schema 'child1'", e.getMessage());
         }
     }
 
@@ -249,7 +249,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(sd);
-        builder.build();
+        builder.build(true);
         Schema schema = builder.getSchema();
         AttributeFields attributeFields = new AttributeFields(schema);
         verifyRankProfile(rankProfileRegistry.get(schema, "parent"), attributeFields, deployProperties, termwiseLimit);
@@ -291,7 +291,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
                 "  rank-profile p1 {}",
                 "  rank-profile p2 {}",
                 "}"));
-        builder.build();
+        builder.build(true);
         Schema schema = builder.getSchema();
 
         assertEquals(4, registry.all().size());
@@ -311,7 +311,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
                     "    field a type tensor(x[]) { indexing: attribute }",
                     "  }",
                     "}"));
-            builder.build();
+            builder.build(true);
         }
         catch (IllegalArgumentException e) {
             assertEquals("Illegal type in field a type tensor(x[]): Dense tensor dimensions must have a size",

@@ -148,7 +148,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 throw new IllegalArgumentException(e);
             }
         }
-        builder.build();
+        builder.build(true);
         for (Schema schema : builder.getSchemaList() ) {
             this.searches.put(schema.getName(), schema);
         }

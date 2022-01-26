@@ -13,6 +13,7 @@ import java.io.IOException;
  * @author arnej27959
  */
 public class TwoStreamingStructsTestCase extends AbstractExportingTestCase {
+
     @Test
     public void testTwoStreamingStructsExporting() throws ParseException, IOException {
 
@@ -20,13 +21,14 @@ public class TwoStreamingStructsTestCase extends AbstractExportingTestCase {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchemaFile(root + "/streamingstruct.sd");
         builder.addSchemaFile(root + "/whatever.sd");
-        builder.build();
+        builder.build(true);
         assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), root);
 
         builder = new ApplicationBuilder();
         builder.addSchemaFile(root + "/streamingstruct.sd");
         builder.addSchemaFile(root + "/whatever.sd");
-        builder.build();
+        builder.build(true);
         assertCorrectDeriving(builder, builder.getSchema("streamingstruct"), root);
     }
+
 }

@@ -48,7 +48,7 @@ public class RankingExpressionTypeResolverTestCase {
                     "  }",
                     "}"
             ));
-            builder.build();
+            builder.build(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
@@ -96,7 +96,7 @@ public class RankingExpressionTypeResolverTestCase {
                     "  }",
                     "}"
             ));
-            builder.build();
+            builder.build(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
@@ -128,7 +128,7 @@ public class RankingExpressionTypeResolverTestCase {
                     "  }",
                     "}"
             ));
-            builder.build();
+            builder.build(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
@@ -158,7 +158,7 @@ public class RankingExpressionTypeResolverTestCase {
                     "  }",
                     "}"
             ));
-            schemaBuilder.build();
+            schemaBuilder.build(true);
             fail("Expected exception");
         }
         catch (IllegalArgumentException expected) {
@@ -194,7 +194,7 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.build();
+        builder.build(true);
         RankProfile profile =
                 builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[3])"),
@@ -236,7 +236,7 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.build();
+        builder.build(true);
         RankProfile profile =
                 builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[1])"),
@@ -280,7 +280,7 @@ public class RankingExpressionTypeResolverTestCase {
                                  "        first-phase { expression: commonfirstphase(eustaticrank) }",
                                  "    }",
                                  "}"));
-        builder.build();
+        builder.build(true);
         RankProfile profile = builder.getRankProfileRegistry().get(builder.getSchema(), "eurank");
     }
 
@@ -320,7 +320,7 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.build();
+        builder.build(true);
         RankProfile profile =
                 builder.getRankProfileRegistry().get(builder.getSchema(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[10],y[1])"),
@@ -345,7 +345,7 @@ public class RankingExpressionTypeResolverTestCase {
                                  "        summary-features { test_func_via_func_with_expr }",
                                  "    }",
                                  "}"));
-        builder.build();
+        builder.build(true);
         RankProfile profile = builder.getRankProfileRegistry().get(builder.getSchema(), "test");
         assertEquals(TensorType.fromSpec("tensor<float>(y{})"),
                      summaryFeatures(profile).get("test_func_via_func_with_expr").type(profile.typeContext(builder.getQueryProfileRegistry())));
@@ -378,7 +378,7 @@ public class RankingExpressionTypeResolverTestCase {
                 "  }",
                 "}"
         ));
-        builder.build();
+        builder.build(true);
     }
 
     @Test

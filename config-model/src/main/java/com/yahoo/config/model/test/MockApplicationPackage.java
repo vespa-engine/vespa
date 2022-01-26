@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -145,7 +146,20 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public List<NamedReader> getFiles(Path dir, String fileSuffix, boolean recurse) {
-        return new ArrayList<>();
+        try {
+            File dirFile = new File(root, dir.getName());
+            if ( ! dirFile.exists()) return List.of();
+            if (recurse) throw new RuntimeException("Recurse not implemented");
+            List<NamedReader> readers = new ArrayList<>();
+            for (var i = Files.list(dirFile.toPath()).filter(p -> p.getFileName().toString().endsWith(fileSuffix)).iterator(); i.hasNext(); ) {
+                var file = i.next();
+                readers.add(new NamedReader(file.toString(), IOUtils.createReader(file.toString())));
+            }
+            return readers;
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

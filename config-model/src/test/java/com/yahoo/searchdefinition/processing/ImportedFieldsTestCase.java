@@ -82,7 +82,7 @@ public class ImportedFieldsTestCase {
                 "  }",
                 "}"));
         builder.addSchema(sdContent);
-        builder.build();
+        builder.build(true);
         return builder.getSchema("ad");
     }
 
@@ -315,7 +315,7 @@ public class ImportedFieldsTestCase {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchema(parentSdContent);
         builder.addSchema(sdContent);
-        builder.build();
+        builder.build(true);
         return builder.getSchema("child");
     }
 
@@ -324,7 +324,7 @@ public class ImportedFieldsTestCase {
         builder.addSchema(grandParentSdContent);
         builder.addSchema(parentSdContent);
         builder.addSchema(sdContent);
-        builder.build();
+        builder.build(true);
         return builder.getSchema("child");
     }
 
@@ -522,7 +522,7 @@ public class ImportedFieldsTestCase {
                                     "import field ref_parent_b.entries as entries_from_b {}",
                                     "}"));
 
-        builder.build();
+        builder.build(true);
         return builder;
     }
 

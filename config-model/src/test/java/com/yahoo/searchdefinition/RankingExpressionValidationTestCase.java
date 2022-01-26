@@ -45,7 +45,7 @@ public class RankingExpressionValidationTestCase extends AbstractSchemaTestCase 
                           "        }" +
                           "    }" +
                           "}");
-        builder.build();
+        builder.build(true);
         return builder.getSchema();
     }
 

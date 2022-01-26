@@ -38,7 +38,7 @@ public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
         ApplicationBuilder search = new ApplicationBuilder();
         search.addSchemaFile("src/test/configmodel/types/other_doc.sd");
         search.addSchemaFile("src/test/configmodel/types/type_with_doc_field.sd");
-        search.build();
+        search.build(true);
         DocumentModel model = search.getModel();
 
         DocumenttypesConfig.Builder documenttypesCfg = new DocumentTypes().produce(model, new DocumenttypesConfig.Builder());
@@ -52,7 +52,7 @@ public class DocumentModelBuilderTestCase extends AbstractSchemaTestCase {
         search.addSchemaFile("src/test/cfg/search/data/travel/schemas/TTData.sd");
         search.addSchemaFile("src/test/cfg/search/data/travel/schemas/TTEdge.sd");
         search.addSchemaFile("src/test/cfg/search/data/travel/schemas/TTPOI.sd");
-        search.build();
+        search.build(true);
     }
 
     private DocumentModel createAndTestModel(String sd) throws IOException, ParseException {

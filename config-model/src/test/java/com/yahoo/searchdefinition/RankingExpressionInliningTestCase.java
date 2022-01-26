@@ -65,7 +65,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
@@ -125,7 +125,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
@@ -181,7 +181,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
 
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
@@ -215,7 +215,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                         "        }\n" +
                         "    }\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         assertEquals("foo(2)", test.getFirstPhaseRanking().getRoot().toString());

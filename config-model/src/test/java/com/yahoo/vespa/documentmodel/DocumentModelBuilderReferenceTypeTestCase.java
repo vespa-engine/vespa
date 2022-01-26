@@ -71,7 +71,7 @@ public class DocumentModelBuilderReferenceTypeTestCase extends AbstractReference
         }
         public DocumentModel build(String adSdContent) throws ParseException {
             builder.addSchema(adSdContent);
-            builder.build();
+            builder.build(true);
             return builder.getModel();
         }
     }

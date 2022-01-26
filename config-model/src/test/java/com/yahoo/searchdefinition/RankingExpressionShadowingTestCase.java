@@ -45,7 +45,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         List<Pair<String, String>> testRankProperties = createRawRankProfile(test, new QueryProfileRegistry(), s).configProperties();
@@ -86,7 +86,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         List<Pair<String, String>> testRankProperties = createRawRankProfile(test, new QueryProfileRegistry(), s).configProperties();
@@ -132,7 +132,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
                         "    }\n" +
                         "\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
         List<Pair<String, String>> testRankProperties = createRawRankProfile(test, new QueryProfileRegistry(), s).configProperties();
@@ -193,7 +193,7 @@ public class RankingExpressionShadowingTestCase extends AbstractSchemaTestCase {
                         "        file: ignored.json\n" +
                         "    }\n" +
                         "}\n");
-        builder.build();
+        builder.build(true);
         Schema s = builder.getSchema();
         RankProfile test = rankProfileRegistry.get(s, "test").compile(queryProfiles, new ImportedMlModels());
         List<Pair<String, String>> testRankProperties = createRawRankProfile(test, queryProfiles, s).configProperties();

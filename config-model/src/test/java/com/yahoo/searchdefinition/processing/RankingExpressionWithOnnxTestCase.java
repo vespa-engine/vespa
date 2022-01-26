@@ -399,8 +399,10 @@ public class RankingExpressionWithOnnxTestCase {
 
         @Override
         public List<NamedReader> getFiles(Path path, String suffix) {
+            File[] files = getFileReference(path).listFiles();
+            if (files == null)  return List.of();
             List<NamedReader> readers = new ArrayList<>();
-            for (File file : getFileReference(path).listFiles()) {
+            for (File file : files) {
                 if ( ! file.getName().endsWith(suffix)) continue;
                 try {
                     readers.add(new NamedReader(file.getName(), new FileReader(file)));

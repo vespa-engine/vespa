@@ -115,7 +115,7 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
      * This will fail if the builder contains multiple search definitions.
      */
     protected DerivedConfiguration assertCorrectDeriving(ApplicationBuilder builder, String dirName, DeployLogger logger) throws IOException {
-        builder.build();
+        builder.build(true);
         DerivedConfiguration derived = derive(dirName, null, new TestProperties(), builder, logger);
         assertCorrectConfigFiles(dirName);
         return derived;

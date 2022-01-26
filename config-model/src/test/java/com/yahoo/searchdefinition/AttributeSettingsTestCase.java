@@ -98,15 +98,15 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertTrue(attr.isFastAccess());
     }
 
-    private Schema getSearch(String sd) throws ParseException {
+    private Schema getSchema(String sd) throws ParseException {
         ApplicationBuilder builder = new ApplicationBuilder();
         builder.addSchema(sd);
-        builder.build();
+        builder.build(true);
         return builder.getSchema();
     }
 
     private Attribute getAttributeF(String sd) throws ParseException {
-        Schema schema = getSearch(sd);
+        Schema schema = getSchema(sd);
         SDField field = (SDField) schema.getDocument().getField("f");
         return field.getAttributes().get(field.getName());
     }
@@ -153,14 +153,14 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     @Test
     public void requireThatMutableCanNotbeSetInDocument() throws ParseException {
         try {
-            getSearch("search test {\n" +
-                    "  document test {\n" +
-                    "    field f type int {\n" +
-                    "      indexing: attribute\n" +
-                    "      attribute: mutable\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}\n");
+            getSchema("search test {\n" +
+                      "  document test {\n" +
+                      "    field f type int {\n" +
+                      "      indexing: attribute\n" +
+                      "      attribute: mutable\n" +
+                      "    }\n" +
+                      "  }\n" +
+                      "}\n");
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.", e.getMessage());
@@ -185,7 +185,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
     }
 
     private Schema getSearchWithMutables() throws ParseException {
-        return getSearch(
+        return getSchema(
                 "search test {\n" +
                     "  document test { \n" +
                     "    field a type int { \n" +
