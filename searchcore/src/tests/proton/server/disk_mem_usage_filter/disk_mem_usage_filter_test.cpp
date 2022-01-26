@@ -121,18 +121,22 @@ TEST_F(DiskMemUsageFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
               "capacity: 100, used: 90, diskUsed: 0.9, diskLimit: 0.8}}");
 }
 
-TEST_F(DiskMemUsageFilterTest, transient_disk_usage_is_tracked_in_usage_state_and_metrics)
+TEST_F(DiskMemUsageFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics)
 {
-    _filter.set_transient_resource_usage({40, 0});
-    EXPECT_EQ(0.4, _filter.usageState().transient_disk_usage());
-    EXPECT_EQ(0.4, _filter.get_metrics().get_transient_disk_usage());
+    _filter.set_transient_resource_usage({15, 0});
+    EXPECT_DOUBLE_EQ(0.15, _filter.usageState().transient_disk_usage());
+    EXPECT_DOUBLE_EQ(0.15, _filter.get_metrics().transient_disk_usage());
+    EXPECT_DOUBLE_EQ(0.05, _filter.usageState().non_transient_disk_usage());
+    EXPECT_DOUBLE_EQ(0.05, _filter.get_metrics().non_transient_disk_usage());
 }
 
-TEST_F(DiskMemUsageFilterTest, transient_memory_usage_is_tracked_in_usage_state_and_metrics)
+TEST_F(DiskMemUsageFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics)
 {
-    _filter.set_transient_resource_usage({0, 200});
-    EXPECT_EQ(0.2, _filter.usageState().transient_memory_usage());
-    EXPECT_EQ(0.2, _filter.get_metrics().get_transient_memory_usage());
+    _filter.set_transient_resource_usage({0, 100});
+    EXPECT_DOUBLE_EQ(0.1, _filter.usageState().transient_memory_usage());
+    EXPECT_DOUBLE_EQ(0.1, _filter.get_metrics().transient_memory_usage());
+    EXPECT_DOUBLE_EQ(0.2, _filter.usageState().non_transient_memory_usage());
+    EXPECT_DOUBLE_EQ(0.2, _filter.get_metrics().non_transient_memory_usage());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
