@@ -37,7 +37,7 @@ public:
 
 
     ssize_t Read(void *buffer, size_t len) override;
-    ssize_t Write2(const void *buffer, size_t len) override;
+    [[nodiscard]] ssize_t Write2(const void *buffer, size_t len) override;
     bool Open(unsigned int openFlags, const char *filename) override;
 
     static bool InitializeClass();

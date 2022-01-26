@@ -19,7 +19,7 @@ TEST("main") {
     printf ("testing 11 byte long file\n");
     bufFile.WriteOpen("testfile1");
     bufFile.addNum(1,10,' ');
-    bufFile.CheckedWrite("\n",1);
+    ASSERT_TRUE(bufFile.CheckedWrite("\n",1));
     ASSERT_TRUE(bufFile.Close());
     FastOS_File::Stat("testfile1", &statInfo);
     if (statInfo._size != 11) {
@@ -33,7 +33,7 @@ TEST("main") {
     bufFile.WriteOpen("testfile2");
     char buf[8192]; // allocate 8K buffer
     memset(buf,0xff,8192);
-    bufFile.CheckedWrite(buf,4095); // write almost 4K
+    ASSERT_TRUE(bufFile.CheckedWrite(buf,4095)); // write almost 4K
     ASSERT_TRUE(bufFile.Close());
     FastOS_File::Stat("testfile2", &statInfo);
     if (statInfo._size != 4095) {
@@ -45,7 +45,7 @@ TEST("main") {
     // test 3
     printf ("testing 4096 byte long file\n");
     bufFile.WriteOpen("testfile3");
-    bufFile.CheckedWrite(buf,4096);  // write exactly 4K
+    ASSERT_TRUE(bufFile.CheckedWrite(buf,4096));  // write exactly 4K
     ASSERT_TRUE(bufFile.Close());
     FastOS_File::Stat("testfile3", &statInfo);
     if (statInfo._size != 4096) {
@@ -57,7 +57,7 @@ TEST("main") {
     // test 4
     printf ("testing 4097 byte long file\n");
     bufFile.WriteOpen("testfile4");
-    bufFile.CheckedWrite(buf,4097);   // write a bit over 4K
+    ASSERT_TRUE(bufFile.CheckedWrite(buf,4097));   // write a bit over 4K
     ASSERT_TRUE(bufFile.Close());
     FastOS_File::Stat("testfile4", &statInfo);
     if (statInfo._size != 4097) {
@@ -74,7 +74,7 @@ TEST("main") {
             bufFile.addNum(value,6,' ');
             value++;
         }
-        bufFile.CheckedWrite("\n",1);
+        ASSERT_TRUE(bufFile.CheckedWrite("\n",1));
     }
     ASSERT_TRUE(bufFile.Close());
     FastOS_File::Stat("testfile5", &statInfo);

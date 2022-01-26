@@ -430,7 +430,8 @@ void
 DomainPart::write(FastOS_FileInterface &file, SerialNumRange range, vespalib::ConstBufferRef buf)
 {
     std::lock_guard guard(_writeLock);
-    if ( ! file.CheckedWrite(buf.data(), buf.size()) ) {
+    size_t written = file.Write2(buf.data(), buf.size());
+    if ( written != buf.size() ) {
         throw runtime_error(handleWriteError("Failed writing the entry.", file, byteSize(), range, buf.size()));
     }
     LOG(debug, "Wrote chunk with and %zu bytes, range[%" PRIu64 ", %" PRIu64 "]", buf.size(), range.from(), range.to());

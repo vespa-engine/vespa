@@ -245,8 +245,8 @@ FastOS_FileInterface::CopyFile( const char *src, const char *dst )
                 do {
                     unsigned int readBytes = s.Read( tmpBuf, bufSize );
                     if (readBytes > 0) {
-
-                        if ( !d.CheckedWrite( tmpBuf, readBytes)) {
+                        ssize_t written = d.Write2(tmpBuf, readBytes);
+                        if ( written != readBytes) {
                             success = false;
                         }
                         copied += readBytes;

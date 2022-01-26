@@ -107,7 +107,7 @@ public:
      * @param src The source buffer.
      * @param srclen The length of the source buffer.
      */
-    ssize_t Write2(const void*, size_t) override;
+    [[nodiscard]] ssize_t Write2(const void*, size_t) override;
     /**
      * Write a string to a buffered file, flushing to file
      * as necessary.

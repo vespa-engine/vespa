@@ -334,7 +334,7 @@ public:
      * @param len     number of bytes to write
      * @return Boolean success/failure
      */
-    bool CheckedWrite(const void *buffer, size_t len);
+    [[nodiscard]] bool CheckedWrite(const void *buffer, size_t len);
 
     /**
      * Write [len] bytes from [buffer].
@@ -342,7 +342,7 @@ public:
      * @param len     number of bytes to write
      * @return The number of bytes actually written, or -1 on error
      */
-    virtual ssize_t Write2(const void *buffer, size_t len) = 0;
+    [[nodiscard]] virtual ssize_t Write2(const void *buffer, size_t len) = 0;
 
     /**
      * Read [length] bytes into [buffer]. Caution! If the actual number

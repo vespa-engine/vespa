@@ -238,7 +238,8 @@ Fast_BufferedFile::ReadLine(char *line, size_t buflen)
     }
 }
 
-ssize_t Fast_BufferedFile::Write2(const void * src, size_t srclen)
+ssize_t
+Fast_BufferedFile::Write2(const void * src, size_t srclen)
 {
     const char *p, *pe;
     p = static_cast<const char *>(src);
