@@ -84,7 +84,7 @@ private:
     // And setFAdviseOptions() per file.
     static int    _defaultFAdviseOptions;
     int           _fAdviseOptions;
-    size_t        _writeChunkSize;
+    size_t        _chunkSize;
     void WriteBufInternal(const void *buffer, size_t length);
 
 protected:
@@ -485,8 +485,8 @@ public:
     /**
      * Set the write chunk size used in WriteBuf.
      */
-    void SetWriteChunkSize(size_t writeChunkSize);
-    size_t getWriteChunkSize() const { return _writeChunkSize; }
+    void setChunkSize(size_t chunkSize) { _chunkSize = chunkSize; }
+    size_t getChunkSize() const { return _chunkSize; }
 
     /**
      * Get restrictions for direct disk I/O. The file should be opened

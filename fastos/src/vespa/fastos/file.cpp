@@ -34,11 +34,11 @@ int FastOS_FileInterface::_defaultFAdviseOptions = POSIX_FADV_NORMAL;
 int FastOS_FileInterface::_defaultFAdviseOptions = 0;
 #endif
 
-static const size_t MAX_WRITE_CHUNK_SIZE = 0x4000000; // 64 MB
+static const size_t MAX_CHUNK_SIZE = 0x4000000; // 64 MB
 
 FastOS_FileInterface::FastOS_FileInterface(const char *filename)
     : _fAdviseOptions(_defaultFAdviseOptions),
-      _writeChunkSize(MAX_WRITE_CHUNK_SIZE),
+      _chunkSize(MAX_CHUNK_SIZE),
       _filename(),
       _openFlags(0),
       _directIOEnabled(false),
@@ -136,13 +136,6 @@ void
 FastOS_FileInterface::EnableDirectIO()
 {
     // Only subclasses with support for DirectIO do something here.
-}
-
-
-void
-FastOS_FileInterface::SetWriteChunkSize(size_t writeChunkSize)
-{
-    _writeChunkSize = writeChunkSize;
 }
 
 
