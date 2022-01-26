@@ -204,9 +204,7 @@ Fast_BufferedFile::SetPosition(const int64_t s)
 const char *
 Fast_BufferedFile::GetFileName(void) const
 {
-    return (_file.get() == NULL)
-        ? ""
-        : _file->GetFileName();
+    return _file ? _file->GetFileName() : "";
 }
 
 char *
@@ -228,7 +226,7 @@ Fast_BufferedFile::ReadLine(char *line, size_t buflen)
             fillReadBuf();
             if (_bufi >= _bufe) {
                 if (p == line)
-                    return NULL;
+                    return nullptr;
                 *p = 0;
                 return line;
             }
@@ -394,8 +392,8 @@ Fast_BufferedFile::Fast_BufferedFile(FastOS_FileInterface *file, size_t bufferSi
     FastOS_FileInterface(),
     _fileleft(static_cast<uint64_t>(-1)),
     _buf(vespalib::alloc::Alloc::allocMMap(computeBufLen(bufferSize))),
-    _bufi(NULL),
-    _bufe(NULL),
+    _bufi(nullptr),
+    _bufe(nullptr),
     _filepos(0),
     _directIOEnabled(false),
     _file(file)
@@ -405,7 +403,8 @@ Fast_BufferedFile::Fast_BufferedFile(FastOS_FileInterface *file, size_t bufferSi
 
 Fast_BufferedFile::~Fast_BufferedFile(void)
 {
-    Close();
+    bool close_ok = Close();
+    assert(close_ok);
 }
 
 void

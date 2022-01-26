@@ -407,7 +407,7 @@ bool FastOS_UNIX_File::Rename (const char *currentFileName, const char *newFileN
 }
 
 bool
-FastOS_UNIX_File::Sync(void)
+FastOS_UNIX_File::Sync()
 {
     assert(IsOpened());
 

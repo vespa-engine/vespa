@@ -129,7 +129,7 @@ TEST("require that rawbuf can read from file") {
     buf.readFile(file, 100);
     EXPECT_EQUAL("foobarbaz", getString(buf));
 
-    file.Close();
+    ASSERT_TRUE(file.Close());
     file.Delete();
 }
 

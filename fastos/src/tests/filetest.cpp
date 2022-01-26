@@ -32,7 +32,6 @@ bool createFile(const char* fileName,
                 success = true;
             }
         }
-        cf.Close();
     }
     return success;
 }
@@ -269,8 +268,8 @@ public:
             ssize_t wroteB = file.Write2(buffer, bufSize);
             Progress(wroteB == bufSize, "Writing %d bytes to file", bufSize);
 
-            file.Close();
-
+            bool close_ok = file.Close();
+            assert(close_ok);
             file.enableMemoryMap(mmap_flags);
 
             rc = file.OpenReadOnly();
@@ -323,7 +322,8 @@ public:
             ssize_t wroteB = file.Write2(buffer, bufSize);
             Progress(wroteB == bufSize, "Writing %d bytes to file", bufSize);
 
-            file.Close();
+            bool close_ok = file.Close();
+            assert(close_ok);
 
             if (rc) {
                 file.EnableDirectIO();
@@ -556,7 +556,8 @@ public:
 
         if (myFile->OpenExisting()) {
             Progress(false, "OpenExisting() should not work when '%s' does not exist.", rwFilename.c_str());
-            myFile->Close();
+            bool close_ok = myFile->Close();
+            assert(close_ok);
         } else {
             Progress(true, "OpenExisting() should fail when '%s' does not exist, and it did.", rwFilename.c_str());
         }
@@ -684,8 +685,6 @@ public:
             position = file.GetPosition();
             Progress(position == 4, "File pointer should still be 4 after ReadBuf");
             Progress(strcmp(buffer, "a test") == 0, "[a test]=[%s]", buffer);
-
-            file.Close();
         }
 
         PrintSeparator();

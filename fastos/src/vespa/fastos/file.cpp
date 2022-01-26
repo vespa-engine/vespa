@@ -11,6 +11,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <cstdlib>
+#include <cassert>
 
 DirectIOException::DirectIOException(const char * fileName, const void * buffer, size_t length, int64_t offset) :
     std::exception(),
@@ -258,8 +259,10 @@ FastOS_FileInterface::CopyFile( const char *src, const char *dst )
                 delete [] tmpBuf;
             } // else out of memory ?
 
-            s.Close();
-            d.Close();
+            bool close_ok = s.Close();
+            assert(close_ok);
+            close_ok = d.Close();
+            assert(close_ok);
         } // else Could not open source or destination file.
     } // else Source file does not exist, or input args are invalid.
 

@@ -8,8 +8,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 /**
  * Utility class with functions to write aspects of an index to disk.
@@ -40,7 +39,6 @@ struct IndexWriteUtilities
                           search::SerialNum serialNum);
 };
 
-} // namespace index
-} // namespace searchcorespi
+}
 
 

@@ -79,29 +79,31 @@ void writeConfig(const vespalib::string &path,
 double measureDiskWriteSpeed(const vespalib::string &path,
                              size_t diskWriteLen)
 {
-    FastOS_File testFile;
     vespalib::string fileName = path + "/hwinfo-writespeed";
     size_t bufferLen = 1_Mi;
     Alloc buffer(Alloc::allocMMap(bufferLen));
     memset(buffer.get(), 0, buffer.size());
-    testFile.EnableDirectIO();
-    testFile.OpenWriteOnlyTruncate(fileName.c_str());
-    sync();
-    sleep(1);
-    sync();
-    sleep(1);
-    Clock::time_point before = Clock::now();
-    size_t residue = diskWriteLen;
-    while (residue > 0) {
-        size_t writeNow = std::min(residue, bufferLen);
-        testFile.WriteBuf(buffer.get(), writeNow);
-        residue -= writeNow;
+    double diskWriteSpeed;
+    {
+        FastOS_File testFile;
+        testFile.EnableDirectIO();
+        testFile.OpenWriteOnlyTruncate(fileName.c_str());
+        sync();
+        sleep(1);
+        sync();
+        sleep(1);
+        Clock::time_point before = Clock::now();
+        size_t residue = diskWriteLen;
+        while (residue > 0) {
+            size_t writeNow = std::min(residue, bufferLen);
+            testFile.WriteBuf(buffer.get(), writeNow);
+            residue -= writeNow;
+        }
+        Clock::time_point after = Clock::now();
+        double elapsed = vespalib::to_s(after - before);
+        diskWriteSpeed = diskWriteLen / elapsed / 1_Mi;
     }
-    Clock::time_point after = Clock::now();
-    testFile.Close();
     vespalib::unlink(fileName);
-    double elapsed = vespalib::to_s(after - before);
-    double diskWriteSpeed = diskWriteLen / elapsed / 1_Mi;
     return diskWriteSpeed;
 }
 

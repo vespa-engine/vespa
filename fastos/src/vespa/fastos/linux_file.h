@@ -25,9 +25,7 @@ protected:
 
 public:
     FastOS_Linux_File (const char *filename = nullptr);
-    ~FastOS_Linux_File () {
-        Close();
-    }
+    ~FastOS_Linux_File ();
     bool GetDirectIORestrictions(size_t &memoryAlignment, size_t &transferGranularity, size_t &transferMaximum) override;
     bool DirectIOPadding(int64_t offset, size_t length, size_t &padBefore, size_t &padAfter) override;
     void EnableDirectIO() override;
