@@ -13,20 +13,19 @@ namespace search::util {
 static inline char *
 StripString(char *str)
 {
-    char *first = NULL; // first non-space char
-    char *last  = NULL; // last non-space char
+    char *last  = nullptr; // last non-space char
 
-    if (str == NULL)
-        return NULL;
+    if (str == nullptr)
+        return nullptr;
 
     for (; *str != '\0' && isspace(*str); str++);
-    first = str;
+    char *first = str;
 
     for (; *str != '\0'; str++)
         if (!isspace(*str))
             last = str;
 
-    if (last != NULL)
+    if (last != nullptr)
         *(last + 1) = '\0';
 
     return first;
@@ -76,8 +75,7 @@ StringEnum::Save(const char *filename)
         file.WriteString("\n");
     }
 
-    file.Close();
-    return true;
+    return file.Sync();
 }
 
 
@@ -100,7 +98,7 @@ StringEnum::Load(const char *filename)
     entryCnt   = 0;
 
     pt = StripString(file.ReadLine(line, sizeof(line)));
-    if (pt == NULL || *pt == '\0')
+    if (pt == nullptr || *pt == '\0')
         return false;
     lineNumber++;
 
@@ -108,7 +106,7 @@ StringEnum::Load(const char *filename)
 
     while (!file.Eof()) {
         pt = StripString(file.ReadLine(line, sizeof(line)));
-        if (pt == NULL)  // end of input ?
+        if (pt == nullptr)  // end of input ?
             break;
         lineNumber++;
         if (*pt == '\0') // empty line ?
@@ -121,7 +119,6 @@ StringEnum::Load(const char *filename)
         entryCnt++;
     }
 
-    file.Close();
     if (entries != _numEntries
         || entries != entryCnt) {
         Clear();
@@ -162,7 +159,7 @@ const char *
 StringEnum::Lookup(uint32_t value) const
 {
     if (value >= _numEntries)
-        return NULL;
+        return nullptr;
 
     if (_numEntries > _reverseMap.size())
         CreateReverseMapping();

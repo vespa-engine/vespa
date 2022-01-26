@@ -124,7 +124,9 @@ handleReadError(const char *text, FastOS_FileInterface &file, ssize_t len, ssize
         e += fmt(" Truncate to %" PRId64 " and continue", lastKnownGoodPos);
         LOG(error, "%s", e.c_str());
         FastOS_File truncateFile(file.GetFileName());
-        file.Close();
+        if ( ! file.Close()) {
+            e += getError(file);
+        }
         if ( truncateFile.OpenWriteOnlyExisting()) {
             if (truncateFile.SetSize(lastKnownGoodPos)) {
                 if (truncateFile.Close()) {
@@ -243,7 +245,6 @@ DomainPart::buildPacketMapping(bool allowTruncate)
         }
         currPos = transLog.GetPosition();
     }
-    transLog.Close();
     return currPos;
 }
 

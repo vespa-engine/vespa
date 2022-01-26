@@ -15,7 +15,6 @@ namespace {
 
 vespalib::string myId5("Zc.5");
 vespalib::string myId4("Zc.4");
-vespalib::string emptyId;
 vespalib::string interleaved_features("interleaved_features");
 
 }
@@ -98,9 +97,8 @@ Zc4PostingSeqRead::close()
 {
     auto &readContext = _reader.get_read_context();
     readContext.dropComprBuf();
-    _file.Close();
     readContext.setFile(nullptr);
-    return true;
+    return _file.Close();
 }
 
 

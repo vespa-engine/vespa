@@ -2,7 +2,6 @@
 
 #include "wordnummapper.h"
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <cassert>
 
 namespace search::diskindex {
 
@@ -33,7 +32,6 @@ WordNumMapping::readMappingFile(const vespalib::string &name,
 
     old2newwordfile.Read(&map[1],
                          static_cast<size_t>(tempfilesize));
-    old2newwordfile.Close();
     map[0] = noWordNum();
     map[tempfileentries + 1] = noWordNumHigh();
 }

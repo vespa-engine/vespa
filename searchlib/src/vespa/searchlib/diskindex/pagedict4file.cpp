@@ -15,7 +15,6 @@ namespace {
 vespalib::string myPId("PageDict4P.1");
 vespalib::string mySPId("PageDict4SP.1");
 vespalib::string mySSId("PageDict4SS.1");
-vespalib::string emptyId;
 
 void assertOpenWriteOnly(bool ok, const vespalib::string &fileName)
 {
@@ -265,10 +264,7 @@ PageDict4FileSeqRead::close()
     _ssReadContext.setFile(nullptr);
     _spReadContext.setFile(nullptr);
     _pReadContext.setFile(nullptr);
-    _ssfile.Close();
-    _spfile.Close();
-    _pfile.Close();
-    return true;
+    return _ssfile.Close() && _spfile.Close() &&_pfile.Close();
 }
 
 

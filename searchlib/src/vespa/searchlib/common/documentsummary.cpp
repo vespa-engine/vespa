@@ -33,7 +33,6 @@ DocumentSummary::readDocIdLimit(const vespalib::string &dir, uint32_t &count)
     p = qcntfile.ReadLine(numbuf, sizeof(numbuf));
     while (*p >= '0' && *p <= '9')
         qcnt = qcnt * 10 + *p++ - '0';
-    qcntfile.Close();
     count = qcnt;
     return true;
 }
@@ -52,8 +51,14 @@ DocumentSummary::writeDocIdLimit(const vespalib::string &dir, uint32_t count)
     }
     qcntfile.addNum(count, 0, ' ');
     qcntfile.WriteByte('\n');
-    qcntfile.Sync();
-    qcntfile.Close();
+    if ( ! qcntfile.Sync() ) {
+        LOG(error, "Could not sync %s: %s", qcntname.c_str(), getLastErrorString().c_str());
+        return false;
+    }
+    if ( ! qcntfile.Close() ) {
+        LOG(error, "Could not sync %s: %s", qcntname.c_str(), getLastErrorString().c_str());
+        return false;
+    }
     return true;
 }
 
